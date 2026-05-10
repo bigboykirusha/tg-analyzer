@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from '../../composables/useI18n'
+import { useToast } from '../../composables/useToast'
 const { toasts, remove } = useToast()
 const { t } = useI18n()
 
@@ -16,13 +18,7 @@ function variantLabel(variant: string) {
   <Teleport to="body">
     <div class="toast-region" aria-live="polite" :aria-label="t('toast.notifications')">
       <TransitionGroup name="toast">
-        <article
-          v-for="toast in toasts"
-          :key="toast.id"
-          class="toast"
-          :class="`toast-${toast.variant}`"
-          role="status"
-        >
+        <article v-for="toast in toasts" :key="toast.id" class="toast" :class="`toast-${toast.variant}`" role="status">
           <div class="toast-indicator" aria-hidden="true" />
           <div class="toast-copy">
             <span class="screen-reader">{{ variantLabel(toast.variant) }}</span>

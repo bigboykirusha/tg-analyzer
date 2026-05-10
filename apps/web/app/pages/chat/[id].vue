@@ -17,8 +17,10 @@ import PopoverMenu from '../../components/ui/PopoverMenu.vue'
 import SegmentedControl from '../../components/ui/SegmentedControl.vue'
 import Skeleton from '../../components/ui/Skeleton.vue'
 import { useAuth } from '../../composables/useAuth'
+import { useI18n } from '../../composables/useI18n'
 import { useParseProgress } from '../../composables/useParseProgress'
 import { useStats } from '../../composables/useStats'
+import { useToast } from '../../composables/useToast'
 import { useAuthStore } from '../../stores/auth'
 import { useStatsStore } from '../../stores/stats'
 
@@ -58,10 +60,10 @@ const resolvedTextMessageCount = computed(() => {
 
   return Math.max(
     chat.value.totalMessages
-      - chat.value.mediaCount
-      - chat.value.voiceCount
-      - chat.value.stickerCount
-      - chat.value.fileCount,
+    - chat.value.mediaCount
+    - chat.value.voiceCount
+    - chat.value.stickerCount
+    - chat.value.fileCount,
     0,
   )
 })
@@ -567,10 +569,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-else-if="loadError" class="page-stack animate-fade-in">
-      <EmptyState
-        :title="t('chat.loadErrorTitle')"
-        :description="loadError"
-      >
+      <EmptyState :title="t('chat.loadErrorTitle')" :description="loadError">
         <template #action>
           <div class="error-actions">
             <Button variant="secondary" @click="navigateTo('/dashboard')">{{ t('common.back') }}</Button>
@@ -593,14 +592,10 @@ onBeforeUnmount(() => {
           </Button>
 
           <div class="toolbar-actions">
-            <Button
-              variant="secondary"
-              size="sm"
-              :loading="reparsing"
+            <Button variant="secondary" size="sm" :loading="reparsing"
               :disabled="auth.user?.telegramSessionActive === false"
               :title="auth.user?.telegramSessionActive === false ? t('dashboard.sessionInactive') : undefined"
-              @click="reparseChat"
-            >
+              @click="reparseChat">
               {{ reparsing ? t('chat.starting') : t('chat.reparse') }}
             </Button>
 
@@ -608,13 +603,8 @@ onBeforeUnmount(() => {
               <template #trigger>
                 <Button variant="ghost" size="sm" @click="shareOpen = !shareOpen">{{ t('chat.share') }}</Button>
               </template>
-              <button
-                v-for="item in shareActions"
-                :key="item.key"
-                type="button"
-                class="share-option"
-                @click="item.action"
-              >
+              <button v-for="item in shareActions" :key="item.key" type="button" class="share-option"
+                @click="item.action">
                 {{ item.label }}
               </button>
             </PopoverMenu>
@@ -630,12 +620,15 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="report-meta text-body-sm">
-              <span>{{ t('chat.firstMsg') }}: <span class="mono-value">{{ formatDate(chat?.firstMessageAt ?? null) }}</span></span>
-              <span>{{ t('chat.last') }}: <span class="mono-value">{{ formatDate(chat?.lastMessageAt ?? null) }}</span></span>
+              <span>{{ t('chat.firstMsg') }}: <span class="mono-value">{{ formatDate(chat?.firstMessageAt ?? null)
+                  }}</span></span>
+              <span>{{ t('chat.last') }}: <span class="mono-value">{{ formatDate(chat?.lastMessageAt ?? null)
+                  }}</span></span>
             </div>
 
             <div class="report-meta text-body-sm">
-              <span>{{ t('chat.lastAnalyzed') }}: <span class="mono-value">{{ formatRelative(chat?.parsedAt ?? null) }}</span></span>
+              <span>{{ t('chat.lastAnalyzed') }}: <span class="mono-value">{{ formatRelative(chat?.parsedAt ?? null)
+                  }}</span></span>
             </div>
           </div>
         </div>
@@ -688,12 +681,8 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="facts-grid">
-            <div
-              v-for="(fact, index) in overviewFacts"
-              :key="fact.key"
-              class="fact-card stagger-item"
-              :style="{ '--delay': `${index * 40}ms` }"
-            >
+            <div v-for="(fact, index) in overviewFacts" :key="fact.key" class="fact-card stagger-item"
+              :style="{ '--delay': `${index * 40}ms` }">
               <span class="text-label">{{ fact.label }}</span>
               <strong class="fact-value mono-value">{{ fact.value }}</strong>
               <span class="text-caption">{{ fact.sub }}</span>
@@ -708,9 +697,7 @@ onBeforeUnmount(() => {
             <p class="text-body-sm section-text">{{ t('chat.compositionText') }}</p>
           </div>
 
-          <CompositionChart
-            :composition="resolvedComposition"
-          />
+          <CompositionChart :composition="resolvedComposition" />
         </article>
       </section>
 
@@ -749,21 +736,18 @@ onBeforeUnmount(() => {
 
         <article class="card section-card chart-card" @click="openChart('daily')">
           <div class="section-copy">
-              <span class="text-label">{{ t('chat.dailyDynamics') }}</span>
-              <h2 class="text-h2">{{ t('chat.dailyDynamics') }}</h2>
-              <p class="text-body-sm section-text">{{ t('chat.dailyArcText') }}</p>
-            </div>
+            <span class="text-label">{{ t('chat.dailyDynamics') }}</span>
+            <h2 class="text-h2">{{ t('chat.dailyDynamics') }}</h2>
+            <p class="text-body-sm section-text">{{ t('chat.dailyArcText') }}</p>
+          </div>
 
           <DailyVolumeChart :items="continuousDailyActivity" />
         </article>
       </section>
 
       <section v-if="showWords" class="page-stack">
-        <EmptyState
-          v-if="!hasWords && !hasEmoji"
-          :title="t('chat.noTextTitle')"
-          :description="t('chat.noTextDescription')"
-        />
+        <EmptyState v-if="!hasWords && !hasEmoji" :title="t('chat.noTextTitle')"
+          :description="t('chat.noTextDescription')" />
 
         <template v-else>
           <article class="card section-card">
@@ -774,11 +758,7 @@ onBeforeUnmount(() => {
             </div>
 
             <WordsChart v-if="hasWords" :mine="topWords.mine" :theirs="topWords.theirs" />
-            <EmptyState
-              v-else
-              :title="t('chat.noWordsTitle')"
-              :description="t('chat.noWordsDescription')"
-            />
+            <EmptyState v-else :title="t('chat.noWordsTitle')" :description="t('chat.noWordsDescription')" />
           </article>
 
           <div class="report-grid">
@@ -813,11 +793,7 @@ onBeforeUnmount(() => {
                   {{ item.value }} <span class="mono-value chip-count">{{ formatNumber(item.count) }}</span>
                 </span>
               </div>
-              <EmptyState
-                v-else
-                :title="t('chat.distinctiveMine')"
-                :description="t('chat.noDistinctiveMine')"
-              />
+              <EmptyState v-else :title="t('chat.distinctiveMine')" :description="t('chat.noDistinctiveMine')" />
             </article>
 
             <article class="card section-card">
@@ -831,11 +807,7 @@ onBeforeUnmount(() => {
                   {{ item.value }} <span class="mono-value chip-count">{{ formatNumber(item.count) }}</span>
                 </span>
               </div>
-              <EmptyState
-                v-else
-                :title="t('chat.distinctiveTheirs')"
-                :description="t('chat.noDistinctiveTheirs')"
-              />
+              <EmptyState v-else :title="t('chat.distinctiveTheirs')" :description="t('chat.noDistinctiveTheirs')" />
             </article>
           </div>
         </template>
@@ -859,7 +831,8 @@ onBeforeUnmount(() => {
         <div class="grid-kpi timeline-kpi-grid">
           <MetricCard :label="t('chat.mostActiveMonth')" :value="mostActiveMonthLabel" />
           <MetricCard :label="t('chat.trend')" :value="trendLabel" />
-          <MetricCard :label="t('chat.silences')" :value="formatNumber(chat?.conversationFacts.silencePeriodsOver30Days.length ?? 0)" />
+          <MetricCard :label="t('chat.silences')"
+            :value="formatNumber(chat?.conversationFacts.silencePeriodsOver30Days.length ?? 0)" />
           <MetricCard :label="t('chat.silenceDays')" :value="formatNumber(totalLongSilenceDays)" />
         </div>
 
@@ -876,22 +849,14 @@ onBeforeUnmount(() => {
           </div>
 
           <div v-if="chat?.conversationFacts.silencePeriodsOver30Days.length" class="timeline-gap-grid">
-            <div
-              v-for="(gap, index) in chat.conversationFacts.silencePeriodsOver30Days"
-              :key="`${gap.from}-${gap.to}`"
-              class="gap-card stagger-item"
-              :style="{ '--delay': `${index * 40}ms` }"
-            >
+            <div v-for="(gap, index) in chat.conversationFacts.silencePeriodsOver30Days" :key="`${gap.from}-${gap.to}`"
+              class="gap-card stagger-item" :style="{ '--delay': `${index * 40}ms` }">
               <strong class="gap-value mono-value">{{ formatDurationFromSec(gap.seconds) }}</strong>
               <span class="text-body-sm">{{ formatDateRange(gap.from, gap.to) }}</span>
             </div>
           </div>
 
-          <EmptyState
-            v-else
-            :title="t('chat.noLongSilenceTitle')"
-            :description="t('chat.noLongSilenceDescription')"
-          />
+          <EmptyState v-else :title="t('chat.noLongSilenceTitle')" :description="t('chat.noLongSilenceDescription')" />
         </article>
       </section>
 
@@ -904,7 +869,8 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="chart-overlay-body">
-              <BalanceChart v-if="expandedChart === 'balance'" :sent="chat?.sentMessages ?? 0" :received="chat?.receivedMessages ?? 0" />
+              <BalanceChart v-if="expandedChart === 'balance'" :sent="chat?.sentMessages ?? 0"
+                :received="chat?.receivedMessages ?? 0" />
               <CompositionChart v-else-if="expandedChart === 'composition'" :composition="resolvedComposition" />
               <ActivityHeatmap v-else-if="expandedChart === 'heatmap'" :points="continuousDailyActivity" />
               <WeekdayChart v-else-if="expandedChart === 'weekday'" :activity="chat?.weekdayActivity ?? {}" />
@@ -959,7 +925,7 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
 }
 
-.toolbar-actions > * {
+.toolbar-actions>* {
   flex: 0 0 auto;
 }
 
@@ -1221,6 +1187,7 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+
   .page-toolbar,
   .report-heading,
   .title-row,

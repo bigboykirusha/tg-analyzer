@@ -7,6 +7,13 @@ import Button from '../components/ui/Button.vue'
 import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import Skeleton from '../components/ui/Skeleton.vue'
+import { useAuth } from '../composables/useAuth'
+import { useI18n } from '../composables/useI18n'
+import { useParseProgress } from '../composables/useParseProgress'
+import { useStats } from '../composables/useStats'
+import { useToast } from '../composables/useToast'
+import { useAuthStore } from '../stores/auth'
+import { useStatsStore } from '../stores/stats'
 
 const auth = useAuthStore()
 const { bootstrap, deleteAccount, logout, terminateTelegramSession } = useAuth()
