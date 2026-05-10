@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "build": "corepack pnpm -r build",
     "dev": "corepack pnpm --filter @tg-analyzer/api dev",
