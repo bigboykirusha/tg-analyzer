@@ -10,6 +10,11 @@ export interface ParseJobData {
 export const parseDialogsQueue = new Queue<ParseJobData>('parse-dialogs', {
   connection: redis,
   defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 10_000,
+    },
     removeOnComplete: 50,
     removeOnFail: 50,
   },

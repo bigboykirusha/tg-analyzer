@@ -4,16 +4,6 @@ const { logout } = useAuth()
 const route = useRoute()
 const { locale, setLocale, t } = useI18n()
 
-const initials = computed(() => {
-  const label = auth.user?.firstName || auth.user?.username || 'TG'
-  return label
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('')
-})
-
 const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 </script>
 
@@ -26,7 +16,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
       </div>
 
       <div class="sidebar-user">
-        <div class="user-avatar">{{ initials }}</div>
+        <ProfileAvatar :title="auth.user?.firstName || auth.user?.username || t('common.anonymous')" />
         <div class="user-info">
           <span class="user-name">{{ auth.user?.firstName || auth.user?.username || t('common.anonymous') }}</span>
           <span class="user-handle">@{{ auth.user?.username || t('common.telegram') }}</span>
@@ -64,6 +54,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 
     <div class="mobile-topbar">
       <div class="mobile-brand">
+        <ProfileAvatar :title="auth.user?.firstName || auth.user?.username || t('common.anonymous')" size="sm" />
         <span class="logo-mark">&lt;T&gt;</span>
         <span class="logo-text">tg analyzer</span>
       </div>
@@ -99,7 +90,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 .sidebar {
   display: flex;
   flex-direction: column;
-  padding: var(--space-4);
+  padding: var(--space-3);
   border-right: 1px solid var(--border-subtle);
   background:
     radial-gradient(circle at top, var(--accent-glow-soft), transparent 24%),
@@ -118,7 +109,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-4) var(--space-2);
+  padding: var(--space-3) var(--space-2);
 }
 
 .logo-mark {
@@ -130,7 +121,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 .logo-text {
   font-size: 14px;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   color: var(--text-primary);
 }
 
@@ -193,24 +184,9 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
   background: var(--bg-surface);
 }
 
-.user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background: var(--accent-muted);
-  color: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
 .user-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   flex: 1;
   min-width: 0;
 }
@@ -288,7 +264,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
     top: 0;
     z-index: 40;
     display: block;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-2) var(--space-3);
     border-right: none;
     border-bottom: 1px solid var(--border-subtle);
     background: var(--panel-translucent-strong);
@@ -307,6 +283,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
+    min-height: 44px;
     min-width: 0;
   }
 
@@ -324,8 +301,8 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 
   .mobile-nav-item {
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border: none;
     background: transparent;
     color: var(--text-secondary);
@@ -334,6 +311,13 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
   .mobile-nav-item-active {
     background: var(--accent-muted);
     color: var(--accent);
+  }
+
+  .logo-text {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 </style>

@@ -13,6 +13,25 @@ defineProps<{
 
 const emit = defineEmits<{ cancel: [] }>()
 const { t, formatNumber } = useI18n()
+
+function statusLabel(status: string) {
+  if (status === 'completed') {
+    return t('common.statusCompleted')
+  }
+  if (status === 'failed') {
+    return t('common.statusFailed')
+  }
+  if (status === 'cancelled') {
+    return t('common.statusCancelled')
+  }
+  if (status === 'running') {
+    return t('common.statusRunning')
+  }
+  if (status === 'pending') {
+    return t('common.statusPending')
+  }
+  return status
+}
 </script>
 
 <template>
@@ -24,7 +43,7 @@ const { t, formatNumber } = useI18n()
         <p class="text-body-sm progress-message">{{ message || t('parse.waiting') }}</p>
       </div>
       <Badge :variant="status === 'completed' ? 'success' : status === 'failed' ? 'danger' : status === 'cancelled' ? 'warning' : status === 'running' ? 'info' : 'default'">
-        {{ status }}
+        {{ statusLabel(status) }}
       </Badge>
     </div>
 

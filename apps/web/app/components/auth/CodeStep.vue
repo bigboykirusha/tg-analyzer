@@ -77,6 +77,12 @@ function submit() {
   }
   emit('submit')
 }
+
+onMounted(() => {
+  requestAnimationFrame(() => {
+    focusInput(Math.max(0, digits.value.findIndex((digit) => !digit)))
+  })
+})
 </script>
 
 <template>
@@ -90,8 +96,13 @@ function submit() {
           :ref="setInputRef(index)"
           :value="digits[index]"
           class="otp-input"
+          type="text"
+          name="one-time-code"
           inputmode="numeric"
           autocomplete="one-time-code"
+          autocapitalize="off"
+          autocorrect="off"
+          spellcheck="false"
           maxlength="1"
           :aria-label="t('login.codeLabel')"
           @input="handleInput($event, index)"

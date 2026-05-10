@@ -14,6 +14,7 @@ export function useParseProgress() {
   const socketRef = useState<WebSocket | null>('parse-progress-socket', () => null)
   const retryCount = useState<number>('parse-progress-retry-count', () => 0)
   const retryTimeout = useState<number | null>('parse-progress-retry-timeout', () => null)
+  const intentionalClose = useState<boolean>('parse-progress-intentional-close', () => false)
   const auth = useAuthStore()
   const config = useRuntimeConfig()
 
@@ -61,6 +62,7 @@ export function useParseProgress() {
 
     const socket = new WebSocket(`${config.public.wsUrl}/ws/parse-progress?token=${auth.accessToken}`)
     socketRef.value = socket
+    intentionalClose.value = false
 
     socket.onopen = () => {
       retryCount.value = 0
@@ -68,7 +70,12 @@ export function useParseProgress() {
     }
 
     socket.onmessage = (event) => {
-      const data = JSON.parse(event.data) as ParseProgressWsEvent & Partial<ParseProgressDto>
+      let data: ParseProgressWsEvent & Partial<ParseProgressDto>
+      try {
+        data = JSON.parse(event.data) as ParseProgressWsEvent & Partial<ParseProgressDto>
+      } catch {
+        return
+      }
       if (data.type === 'progress') {
         progress.value = {
           current: data.current,
@@ -111,6 +118,10 @@ export function useParseProgress() {
 
     socket.onclose = () => {
       socketRef.value = null
+      if (intentionalClose.value) {
+        intentionalClose.value = false
+        return
+      }
       scheduleReconnect()
     }
   }
@@ -120,6 +131,7 @@ export function useParseProgress() {
       clearTimeout(retryTimeout.value)
       retryTimeout.value = null
     }
+    intentionalClose.value = true
     socketRef.value?.close()
     socketRef.value = null
   }

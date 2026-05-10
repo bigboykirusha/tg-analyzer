@@ -84,7 +84,7 @@ export function usePhoneInput(initialCountry = 'RU') {
 
   function setFromNormalized(value: string) {
     const digits = onlyDigits(value)
-    const match = PHONE_COUNTRIES
+    const match = [...PHONE_COUNTRIES]
       .sort((left, right) => right.dialCode.length - left.dialCode.length)
       .find((item) => digits.startsWith(onlyDigits(item.dialCode)))
 

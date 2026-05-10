@@ -11,6 +11,7 @@ import type {
 } from '@tg-analyzer/shared'
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm'
 import { db, schema } from '../db'
+import type { TelegramMessageLike } from './telegram.service'
 
 const emojiRegex = /\p{Extended_Pictographic}/gu
 const wordRegex = /[\p{L}\p{N}_-]{2,}/gu
@@ -19,17 +20,16 @@ const LONG_SILENCE_MS = 30 * 24 * 60 * 60 * 1000
 const STOP_WORDS_RU = new Set([
   'и', 'в', 'не', 'на', 'я', 'что', 'тот', 'это', 'с', 'он',
   'как', 'по', 'но', 'они', 'к', 'из', 'у', 'за', 'то', 'же',
-  'от', 'так', 'а', 'да', 'ну', 'вот', 'уже', 'ещё', 'бы', 'ли',
-  'до', 'со', 'мне', 'ты', 'мы', 'вы', 'она', 'оно', 'об', 'её',
-  'его', 'их', 'ей', 'им', 'нас', 'вас', 'нет', 'был', 'была',
-  'были', 'быть', 'есть', 'буду', 'всё', 'все', 'или', 'если',
-  'когда', 'чтобы', 'потому', 'этот', 'эта', 'эти', 'при', 'без',
-  'под', 'над', 'для', 'про', 'меня', 'тебя', 'него', 'неё', 'них',
-  'себя', 'там', 'тут', 'где', 'куда', 'мой', 'твой', 'свой',
-  'наш', 'ваш', 'чем', 'можно', 'надо', 'нужно', 'только', 'вообще',
-  'просто', 'очень', 'тоже', 'зато', 'хотя', 'пока', 'потом',
-  'после', 'перед', 'между', 'через', 'здесь', 'туда', 'оттуда',
-  'ведь', 'даже', 'лишь', 'именно', 'разве', 'неужели', 'вдруг',
+  'от', 'так', 'а', 'да', 'ну', 'вот', 'уже', 'ещё', 'еще', 'бы',
+  'ли', 'до', 'со', 'мне', 'ты', 'мы', 'вы', 'она', 'оно', 'об',
+  'её', 'ее', 'его', 'их', 'ей', 'им', 'нас', 'вас', 'нет', 'был',
+  'была', 'были', 'быть', 'есть', 'буду', 'всё', 'все', 'или', 'если', 'когда',
+  'чтобы', 'потому', 'этот', 'эта', 'эти', 'при', 'без', 'под', 'над', 'для',
+  'про', 'меня', 'тебя', 'него', 'неё', 'нее', 'них', 'себя', 'там', 'тут',
+  'где', 'куда', 'мой', 'твой', 'свой', 'наш', 'ваш', 'чем', 'можно', 'надо',
+  'нужно', 'только', 'вообще', 'просто', 'очень', 'тоже', 'зато', 'хотя', 'пока', 'потом',
+  'после', 'перед', 'между', 'через', 'здесь', 'туда', 'оттуда', 'ведь', 'даже', 'лишь',
+  'именно', 'разве', 'неужели', 'вдруг',
 ])
 const STOP_WORDS_EN = new Set([
   'i', 'me', 'my', 'myself', 'we', 'our', 'you', 'your', 'he', 'him',
@@ -289,7 +289,7 @@ export function aggregateMessage(
   acc.fileCount += Number(messageType === 'file')
 }
 
-export function projectTelegramMessageMetadata(message: any): AggregationMessageInput {
+export function projectTelegramMessageMetadata(message: TelegramMessageLike): AggregationMessageInput {
   return {
     message: typeof message?.message === 'string' ? message.message : '',
     date: normalizeMessageDate(message?.date),
@@ -508,8 +508,15 @@ function computeTrend(months: MonthlyActivityDto[]): ConversationFactsDto['trend
   if (months.length < 6) {
     return 'unknown'
   }
-  const lastThree = months.slice(-3).reduce((sum, item) => sum + item.total, 0)
-  const previousThree = months.slice(-6, -3).reduce((sum, item) => sum + item.total, 0)
+  const totalsByMonth = new Map(months.map((item) => [item.month, item.total]))
+  const lastMonth = months[months.length - 1]?.month
+  if (!lastMonth) {
+    return 'unknown'
+  }
+
+  const monthWindow = buildMonthWindow(lastMonth, 6)
+  const previousThree = monthWindow.slice(0, 3).reduce((sum, month) => sum + (totalsByMonth.get(month) ?? 0), 0)
+  const lastThree = monthWindow.slice(3).reduce((sum, month) => sum + (totalsByMonth.get(month) ?? 0), 0)
   if (!previousThree && !lastThree) {
     return 'unknown'
   }
@@ -520,6 +527,18 @@ function computeTrend(months: MonthlyActivityDto[]): ConversationFactsDto['trend
     return 'fading'
   }
   return 'stable'
+}
+
+function buildMonthWindow(lastMonth: string, count: number) {
+  const [year, month] = lastMonth.split('-').map(Number)
+  const cursor = new Date(year, month - 1, 1)
+  cursor.setMonth(cursor.getMonth() - count + 1)
+
+  return Array.from({ length: count }, () => {
+    const value = toLocalMonthKey(cursor)
+    cursor.setMonth(cursor.getMonth() + 1)
+    return value
+  })
 }
 
 export async function saveAggregates(params: {

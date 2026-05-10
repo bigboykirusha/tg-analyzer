@@ -13,6 +13,8 @@ import Badge from '../../components/ui/Badge.vue'
 import Button from '../../components/ui/Button.vue'
 import EmptyState from '../../components/ui/EmptyState.vue'
 import MetricCard from '../../components/ui/MetricCard.vue'
+import PopoverMenu from '../../components/ui/PopoverMenu.vue'
+import SegmentedControl from '../../components/ui/SegmentedControl.vue'
 import Skeleton from '../../components/ui/Skeleton.vue'
 import { useAuth } from '../../composables/useAuth'
 import { useParseProgress } from '../../composables/useParseProgress'
@@ -24,17 +26,19 @@ const route = useRoute()
 const auth = useAuthStore()
 const { bootstrap } = useAuth()
 const { fetchChat, fetchParseStatus } = useStats()
-const { applyStatus, connect } = useParseProgress()
+const { applyStatus, connect, disconnect } = useParseProgress()
 const stats = useStatsStore()
 const { t, formatNumber, formatDate: formatLocaleDate, formatRelative, intlLocale } = useI18n()
+const toast = useToast()
 
 const ready = ref(false)
 const loadError = ref('')
 const copied = ref(false)
 const reparsing = ref(false)
-const feedback = ref('')
 const shareOpen = ref(false)
 const activeView = ref<'overview' | 'rhythm' | 'words' | 'timeline'>('overview')
+const isMobileLayout = ref(false)
+const expandedChart = ref<null | 'balance' | 'composition' | 'heatmap' | 'weekday' | 'hourly' | 'daily' | 'timeline'>(null)
 
 const routeChatId = computed(() => String(route.params.id))
 const chat = computed(() => stats.selectedChat)
@@ -42,6 +46,7 @@ const isPrivateChat = computed(() => chat.value?.chatType === 'private')
 const totalMessages = computed(() => chat.value?.totalMessages ?? 0)
 const sentShare = computed(() => totalMessages.value ? Math.round(((chat.value?.sentMessages ?? 0) / totalMessages.value) * 100) : 0)
 const receivedShare = computed(() => 100 - sentShare.value)
+const balanceLeadLabel = computed(() => sentShare.value >= receivedShare.value ? t('chat.balanceYouLead') : t('chat.balanceTheyLead'))
 const resolvedTextMessageCount = computed(() => {
   if (!chat.value) {
     return 0
@@ -93,13 +98,19 @@ const overallWordsPerTextMessage = computed(() => {
   }).format(chat.value.totalWords / resolvedTextMessageCount.value)
 })
 const peakHour = computed(() => {
-  const hourly = chat.value?.hourlyActivity ?? {}
+  const hourly = chat.value?.hourlyActivitySplit ?? {}
   const entries = Object.entries(hourly)
-  if (!entries.length) {
+  if (entries.length) {
+    const best = [...entries].sort((left, right) => (right[1]?.total ?? 0) - (left[1]?.total ?? 0))[0]
+    return best ? `${best[0].padStart(2, '0')}:00` : '--:--'
+  }
+
+  const fallback = Object.entries(chat.value?.hourlyActivity ?? {})
+  if (!fallback.length) {
     return '--:--'
   }
 
-  const best = [...entries].sort((left, right) => right[1] - left[1])[0]
+  const best = [...fallback].sort((left, right) => right[1] - left[1])[0]
   return best ? `${best[0].padStart(2, '0')}:00` : '--:--'
 })
 const hasWords = computed(() => Boolean(chat.value?.topWordsBySender.mine.length || chat.value?.topWordsBySender.theirs.length))
@@ -153,7 +164,7 @@ const totalLongSilenceDays = computed(() => {
   return Math.round(totalSeconds / 86400)
 })
 const dailyMomentum = computed(() => {
-  const points = chat.value?.dailyActivity ?? []
+  const points = continuousDailyActivity.value
   if (points.length < 14) {
     return 'unknown'
   }
@@ -173,12 +184,24 @@ const dailyMomentum = computed(() => {
   }
   return 'stable'
 })
-const reportViews: Array<{ key: typeof activeView.value; label: string }> = [
-  { key: 'overview', label: 'chat.overview' },
-  { key: 'rhythm', label: 'chat.rhythm' },
-  { key: 'words', label: 'chat.words' },
-  { key: 'timeline', label: 'chat.timeline' },
-]
+const continuousDailyActivity = computed(() => {
+  return fillDailyGaps(
+    chat.value?.dailyActivity ?? [],
+    chat.value?.firstMessageAt ?? null,
+    chat.value?.lastMessageAt ?? null,
+  )
+})
+const reportViews = computed(() => [
+  { value: 'overview' as const, label: t('chat.overview') },
+  { value: 'rhythm' as const, label: t('chat.rhythm') },
+  { value: 'words' as const, label: t('chat.words') },
+  { value: 'timeline' as const, label: t('chat.timeline') },
+])
+const showAllSections = computed(() => isMobileLayout.value)
+const showOverview = computed(() => showAllSections.value || activeView.value === 'overview')
+const showRhythm = computed(() => showAllSections.value || activeView.value === 'rhythm')
+const showWords = computed(() => showAllSections.value || activeView.value === 'words')
+const showTimeline = computed(() => showAllSections.value || activeView.value === 'timeline')
 
 const overviewFacts = computed(() => {
   const items = [
@@ -297,24 +320,24 @@ const shareActions = computed(() => [
 ])
 
 async function refreshReport() {
-  feedback.value = ''
   loadError.value = ''
 
   try {
     await fetchChat(routeChatId.value)
+    toast.success(t('common.refreshed'))
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : t('chat.loadError')
+    toast.error(loadError.value)
   }
 }
 
 async function reparseChat() {
   if (auth.user?.telegramSessionActive === false) {
-    feedback.value = t('dashboard.sessionInactive')
+    toast.warning(t('dashboard.sessionInactive'))
     return
   }
 
   reparsing.value = true
-  feedback.value = ''
   try {
     await useApiFetch('/api/parse/start', {
       method: 'POST',
@@ -322,9 +345,9 @@ async function reparseChat() {
     })
     applyStatus(await fetchParseStatus())
     connect()
-    feedback.value = t('chat.reparseStarted')
+    toast.success(t('chat.reparseStarted'))
   } catch (error) {
-    feedback.value = error instanceof Error ? error.message : t('chat.reparseError')
+    toast.error(error instanceof Error ? error.message : t('chat.reparseError'))
   } finally {
     reparsing.value = false
   }
@@ -338,6 +361,7 @@ async function copyReportLink() {
   await navigator.clipboard.writeText(window.location.href)
   copied.value = true
   shareOpen.value = false
+  toast.success(t('chat.copied'))
   window.setTimeout(() => {
     copied.value = false
   }, 1400)
@@ -357,6 +381,7 @@ async function shareNative() {
       url: window.location.href,
     })
     shareOpen.value = false
+    toast.success(t('chat.shared'))
     return
   }
 
@@ -378,6 +403,7 @@ function shareTo(service: 'telegram' | 'whatsapp' | 'x') {
 
   shareOpen.value = false
   window.open(targets[service], '_blank', 'noopener,noreferrer')
+  toast.info(t('chat.shareOpened'))
 }
 
 function printReport() {
@@ -387,6 +413,7 @@ function printReport() {
 
   shareOpen.value = false
   window.print()
+  toast.info(t('chat.printReady'))
 }
 
 function formatDate(value: string | null) {
@@ -452,7 +479,56 @@ function formatDecimal(value: number | null | undefined) {
   }).format(value)
 }
 
+function fillDailyGaps(items: Array<{ date: string; sent: number; received: number; total: number }>, firstMessageAt: string | null, lastMessageAt: string | null) {
+  if (!items.length) {
+    return items
+  }
+
+  const startDate = firstMessageAt?.slice(0, 10) ?? items[0]?.date
+  const endDate = lastMessageAt?.slice(0, 10) ?? items[items.length - 1]?.date
+  if (!startDate || !endDate) {
+    return items
+  }
+
+  const itemMap = new Map(items.map((item) => [item.date, item]))
+  const filled: typeof items = []
+  const start = new Date(`${startDate}T00:00:00`)
+  const end = new Date(`${endDate}T00:00:00`)
+
+  for (const cursor = new Date(start); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
+    const date = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`
+    const existing = itemMap.get(date)
+    filled.push(existing ?? { date, sent: 0, received: 0, total: 0 })
+  }
+
+  return filled
+}
+
+function setMobileLayout() {
+  if (!import.meta.client) {
+    isMobileLayout.value = false
+    return
+  }
+  isMobileLayout.value = window.innerWidth <= 768
+}
+
+function openChart(name: typeof expandedChart.value) {
+  if (!isMobileLayout.value || !name) {
+    return
+  }
+  expandedChart.value = name
+}
+
+function closeExpandedChart() {
+  expandedChart.value = null
+}
+
 onMounted(async () => {
+  setMobileLayout()
+  if (import.meta.client) {
+    window.addEventListener('resize', setMobileLayout)
+  }
+
   try {
     const refreshed = await bootstrap()
     if (!auth.isAuthorized && !refreshed) {
@@ -467,13 +543,20 @@ onMounted(async () => {
     ready.value = true
   }
 })
+
+onBeforeUnmount(() => {
+  if (import.meta.client) {
+    window.removeEventListener('resize', setMobileLayout)
+  }
+  disconnect()
+})
 </script>
 
 <template>
   <AppLayout>
     <div v-if="!ready" class="page-stack">
       <section class="card">
-        <Skeleton height="220px" radius="var(--radius-xl)" />
+        <Skeleton height="220px" radius="var(--radius-lg)" />
       </section>
       <div class="grid-kpi">
         <Skeleton v-for="item in 4" :key="item" height="120px" radius="var(--radius-md)" />
@@ -498,43 +581,43 @@ onMounted(async () => {
     </div>
 
     <div v-else class="page-stack animate-fade-in">
-      <section v-if="feedback" class="feedback-card text-body-sm">
-        {{ feedback }}
-      </section>
-
       <header class="report-header">
         <div class="page-toolbar no-print">
-          <Button variant="ghost" @click="navigateTo('/dashboard')">
-            <span aria-hidden="true">&larr;</span>
+          <Button variant="ghost" class="toolbar-back" @click="navigateTo('/dashboard')">
+            <template #icon>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 18 9 12l6-6" />
+              </svg>
+            </template>
             {{ t('common.back') }}
           </Button>
 
           <div class="toolbar-actions">
-            <Button variant="secondary" @click="refreshReport">{{ t('common.refresh') }}</Button>
             <Button
               variant="secondary"
+              size="sm"
               :loading="reparsing"
               :disabled="auth.user?.telegramSessionActive === false"
+              :title="auth.user?.telegramSessionActive === false ? t('dashboard.sessionInactive') : undefined"
               @click="reparseChat"
             >
               {{ reparsing ? t('chat.starting') : t('chat.reparse') }}
             </Button>
 
-            <div class="share-menu">
-              <Button variant="ghost" @click="shareOpen = !shareOpen">{{ t('chat.share') }}</Button>
-
-              <div v-if="shareOpen" class="share-popover">
-                <button
-                  v-for="item in shareActions"
-                  :key="item.key"
-                  type="button"
-                  class="share-option"
-                  @click="item.action"
-                >
-                  {{ item.label }}
-                </button>
-              </div>
-            </div>
+            <PopoverMenu v-model:open="shareOpen">
+              <template #trigger>
+                <Button variant="ghost" size="sm" @click="shareOpen = !shareOpen">{{ t('chat.share') }}</Button>
+              </template>
+              <button
+                v-for="item in shareActions"
+                :key="item.key"
+                type="button"
+                class="share-option"
+                @click="item.action"
+              >
+                {{ item.label }}
+              </button>
+            </PopoverMenu>
           </div>
         </div>
 
@@ -544,7 +627,6 @@ onMounted(async () => {
           <div class="report-title-block">
             <div class="title-row">
               <h1 class="text-h1 report-title">{{ chat?.chatName || chat?.tgChatId }}</h1>
-              <Badge variant="default">{{ chat?.chatType || 'chat' }}</Badge>
             </div>
 
             <div class="report-meta text-body-sm">
@@ -562,27 +644,16 @@ onMounted(async () => {
           <MetricCard :label="t('chat.messages')" :value="formatNumber(totalMessages)" />
           <MetricCard :label="t('chat.yourShare')" :value="`${sentShare}%`" />
           <MetricCard :label="t('chat.wordsPerTextMsg')" :value="overallWordsPerTextMessage" />
-          <MetricCard :label="t('chat.peakHour')" :value="peakHour" />
+          <MetricCard :label="t('chat.peakHour')" :value="peakHour" :sub="t('chat.peakHourSub')" />
         </div>
       </header>
 
-      <div class="tabs-scroll no-print">
-        <nav class="tabs tabs-inline">
-          <button
-            v-for="view in reportViews"
-            :key="view.key"
-            type="button"
-            class="tab"
-            :class="{ 'tab-active': activeView === view.key }"
-            @click="activeView = view.key"
-          >
-            {{ t(view.label) }}
-          </button>
-        </nav>
+      <div v-if="!showAllSections" class="tabs-scroll no-print">
+        <SegmentedControl v-model="activeView" :options="reportViews" />
       </div>
 
-      <section v-if="activeView === 'overview'" class="report-grid">
-        <article class="card section-card">
+      <section v-if="showOverview" class="report-grid">
+        <article class="card section-card chart-card" @click="openChart('balance')">
           <div class="section-header">
             <div class="section-copy">
               <span class="text-label">{{ t('chat.balance') }}</span>
@@ -593,6 +664,20 @@ onMounted(async () => {
           </div>
 
           <BalanceChart :sent="chat?.sentMessages ?? 0" :received="chat?.receivedMessages ?? 0" />
+
+          <div class="balance-summary">
+            <div class="balance-summary-row">
+              <span class="balance-summary-label">{{ t('dashboard.sent') }}</span>
+              <strong class="mono-value">{{ formatNumber(chat?.sentMessages ?? 0) }}</strong>
+            </div>
+            <div class="balance-summary-row">
+              <span class="balance-summary-label">{{ t('dashboard.recv') }}</span>
+              <strong class="mono-value">{{ formatNumber(chat?.receivedMessages ?? 0) }}</strong>
+            </div>
+            <div class="balance-summary-note text-body-sm">
+              {{ t('chat.balanceLead') }} <span class="mono-value">{{ balanceLeadLabel }}</span>
+            </div>
+          </div>
         </article>
 
         <article class="card section-card">
@@ -616,7 +701,7 @@ onMounted(async () => {
           </div>
         </article>
 
-        <article class="card section-card report-span">
+        <article class="card section-card report-span chart-card" @click="openChart('composition')">
           <div class="section-copy">
             <span class="text-label">{{ t('chat.messageComposition') }}</span>
             <h2 class="text-h2">{{ t('chat.compositionTitle') }}</h2>
@@ -629,19 +714,19 @@ onMounted(async () => {
         </article>
       </section>
 
-      <section v-else-if="activeView === 'rhythm'" class="page-stack">
-        <article class="card section-card">
+      <section v-if="showRhythm" class="page-stack">
+        <article class="card section-card chart-card" @click="openChart('heatmap')">
           <div class="section-copy">
             <span class="text-label">{{ t('chat.heatmap') }}</span>
             <h2 class="text-h2">{{ t('chat.dailyActivity') }}</h2>
             <p class="text-body-sm section-text">{{ t('chat.heatmapText') }}</p>
           </div>
 
-          <ActivityHeatmap :points="chat?.dailyActivity ?? []" />
+          <ActivityHeatmap :points="continuousDailyActivity" />
         </article>
 
         <div class="report-grid">
-          <article class="card section-card">
+          <article class="card section-card chart-card" @click="openChart('weekday')">
             <div class="section-copy">
               <span class="text-label">{{ t('chat.weekdays') }}</span>
               <h2 class="text-h2">{{ t('chat.weekdayPattern') }}</h2>
@@ -651,7 +736,7 @@ onMounted(async () => {
             <WeekdayChart :activity="chat?.weekdayActivity ?? {}" />
           </article>
 
-          <article class="card section-card">
+          <article class="card section-card chart-card" @click="openChart('hourly')">
             <div class="section-copy">
               <span class="text-label">{{ t('chat.hours') }}</span>
               <h2 class="text-h2">{{ t('chat.hourlySentReceived') }}</h2>
@@ -662,17 +747,18 @@ onMounted(async () => {
           </article>
         </div>
 
-        <article class="card section-card">
+        <article class="card section-card chart-card" @click="openChart('daily')">
           <div class="section-copy">
               <span class="text-label">{{ t('chat.dailyDynamics') }}</span>
               <h2 class="text-h2">{{ t('chat.dailyDynamics') }}</h2>
+              <p class="text-body-sm section-text">{{ t('chat.dailyArcText') }}</p>
             </div>
 
-          <DailyVolumeChart :items="chat?.dailyActivity ?? []" />
+          <DailyVolumeChart :items="continuousDailyActivity" />
         </article>
       </section>
 
-      <section v-else-if="activeView === 'words'" class="page-stack">
+      <section v-if="showWords" class="page-stack">
         <EmptyState
           v-if="!hasWords && !hasEmoji"
           :title="t('chat.noTextTitle')"
@@ -755,8 +841,8 @@ onMounted(async () => {
         </template>
       </section>
 
-      <section v-else class="page-stack">
-        <article class="card section-card">
+      <section v-if="showTimeline" class="page-stack">
+        <article class="card section-card chart-card" @click="openChart('timeline')">
           <div class="section-header">
             <div class="section-copy">
               <span class="text-label">{{ t('chat.timeline') }}</span>
@@ -767,7 +853,7 @@ onMounted(async () => {
             <Badge variant="accent">{{ trendLabel }}</Badge>
           </div>
 
-          <DailyVolumeChart :items="chat?.dailyActivity ?? []" />
+          <DailyVolumeChart :items="continuousDailyActivity" />
         </article>
 
         <div class="grid-kpi timeline-kpi-grid">
@@ -808,6 +894,26 @@ onMounted(async () => {
           />
         </article>
       </section>
+
+      <Transition name="popover">
+        <div v-if="expandedChart" class="chart-overlay no-print" @click.self="closeExpandedChart">
+          <div class="chart-overlay-panel">
+            <div class="chart-overlay-head">
+              <strong>{{ t('chat.expandChart') }}</strong>
+              <Button variant="ghost" size="sm" @click="closeExpandedChart">{{ t('chat.closeChart') }}</Button>
+            </div>
+
+            <div class="chart-overlay-body">
+              <BalanceChart v-if="expandedChart === 'balance'" :sent="chat?.sentMessages ?? 0" :received="chat?.receivedMessages ?? 0" />
+              <CompositionChart v-else-if="expandedChart === 'composition'" :composition="resolvedComposition" />
+              <ActivityHeatmap v-else-if="expandedChart === 'heatmap'" :points="continuousDailyActivity" />
+              <WeekdayChart v-else-if="expandedChart === 'weekday'" :activity="chat?.weekdayActivity ?? {}" />
+              <HourlyChart v-else-if="expandedChart === 'hourly'" :activity="chat?.hourlyActivitySplit ?? {}" />
+              <DailyVolumeChart v-else :items="continuousDailyActivity" />
+            </div>
+          </div>
+        </div>
+      </Transition>
     </div>
   </AppLayout>
 </template>
@@ -827,7 +933,7 @@ onMounted(async () => {
 .section-header {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .page-toolbar,
@@ -841,12 +947,28 @@ onMounted(async () => {
   min-width: 0;
 }
 
-.feedback-card {
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
+.toolbar-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex: 0 1 auto;
+  margin-left: auto;
+}
+
+.toolbar-back {
+  flex: 0 0 auto;
+}
+
+.toolbar-actions > * {
+  flex: 0 0 auto;
+}
+
+.toolbar-actions :deep(.popover-root) {
+  flex: 0 0 auto;
+}
+
+.toolbar-actions :deep(.ui-button) {
+  white-space: nowrap;
 }
 
 .report-header {
@@ -855,10 +977,10 @@ onMounted(async () => {
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-5);
+  gap: var(--space-4);
+  padding: var(--space-4);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   background: var(--panel-translucent-strong);
   backdrop-filter: blur(14px);
   min-width: 0;
@@ -933,9 +1055,42 @@ onMounted(async () => {
 
 .fact-value,
 .gap-value {
-  font-size: 22px;
+  font-size: 20px;
   color: var(--text-primary);
   overflow-wrap: anywhere;
+}
+
+.chart-card {
+  min-width: 0;
+}
+
+.balance-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.balance-summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.balance-summary-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.balance-summary-note {
+  grid-column: 1 / -1;
+  color: var(--text-secondary);
 }
 
 .tabs-scroll {
@@ -948,34 +1103,13 @@ onMounted(async () => {
   display: none;
 }
 
-.tabs-inline {
-  width: max-content;
-}
-
-.share-menu {
-  position: relative;
-}
-
-.share-popover {
-  position: absolute;
-  top: calc(100% + var(--space-2));
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: 180px;
-  padding: var(--space-2);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-md);
-}
-
 .share-option {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  min-height: 36px;
+  min-height: 40px;
+  width: 100%;
+  min-width: 0;
   padding: 0 var(--space-3);
   border: 0;
   border-radius: var(--radius-sm);
@@ -983,6 +1117,9 @@ onMounted(async () => {
   color: var(--text-primary);
   font: inherit;
   cursor: pointer;
+  white-space: normal;
+  text-align: left;
+  overflow-wrap: anywhere;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
@@ -1030,6 +1167,53 @@ onMounted(async () => {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.chart-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: var(--space-3);
+  background: color-mix(in srgb, var(--bg-base) 82%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.chart-overlay-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 860px);
+  min-height: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.chart-overlay-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.chart-overlay-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4);
+}
+
+.chart-overlay-body :deep(.chart-lg) {
+  height: 420px;
+}
+
+.chart-overlay-body :deep(.chart-sm) {
+  height: 360px;
+}
+
 @media (max-width: 1024px) {
   .report-grid {
     grid-template-columns: 1fr;
@@ -1038,7 +1222,6 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .page-toolbar,
-  .toolbar-actions,
   .report-heading,
   .title-row,
   .section-header {
@@ -1046,11 +1229,25 @@ onMounted(async () => {
     align-items: stretch;
   }
 
+  .page-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .toolbar-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    margin-left: auto;
+  }
+
   .report-header {
-    top: var(--space-2);
-    gap: var(--space-4);
-    padding: var(--space-4);
-    border-radius: var(--radius-lg);
+    position: static;
+    gap: var(--space-3);
+    padding: var(--space-3);
   }
 
   .facts-grid,
@@ -1058,16 +1255,51 @@ onMounted(async () => {
     grid-template-columns: 1fr;
   }
 
-  .toolbar-actions > *,
-  .share-menu,
-  .share-menu > * {
-    width: 100%;
+  .balance-summary {
+    grid-template-columns: 1fr;
   }
 
-  .share-popover {
-    left: 0;
-    right: 0;
+  .chart-card {
+    cursor: zoom-in;
+  }
+
+  .chart-overlay {
+    padding: 0;
+  }
+
+  .chart-overlay-panel {
+    width: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .chart-overlay-body {
+    padding: var(--space-3);
+  }
+
+  .chart-overlay-body :deep(.chart-lg) {
+    height: 360px;
+  }
+
+  .chart-overlay-body :deep(.chart-sm) {
+    height: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-toolbar {
+    align-items: flex-start;
+  }
+
+  .toolbar-actions {
+    max-width: calc(100% - 84px);
+    gap: var(--space-2);
+  }
+
+  .toolbar-actions :deep(.ui-button) {
     min-width: 0;
+    padding-inline: var(--space-3);
+    font-size: 13px;
   }
 }
 

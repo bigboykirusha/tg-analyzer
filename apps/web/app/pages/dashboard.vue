@@ -4,6 +4,7 @@ import ChatAvatar from '../components/ChatAvatar.vue'
 import ParseProgress from '../components/stats/ParseProgress.vue'
 import Badge from '../components/ui/Badge.vue'
 import Button from '../components/ui/Button.vue'
+import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import Skeleton from '../components/ui/Skeleton.vue'
 
@@ -13,10 +14,10 @@ const { clearHistory, deleteChat, fetchChats, fetchHistory, fetchParseDialogs, f
 const stats = useStatsStore()
 const { progress, applyStatus, connect, disconnect, reset } = useParseProgress()
 const { t, formatNumber, formatDate: formatLocaleDate, formatRelative } = useI18n()
+const toast = useToast()
 
 const pending = ref(false)
 const cancelling = ref(false)
-const feedback = ref('')
 const securityPending = ref<'telegram' | 'account' | null>(null)
 const deletingChatId = ref<string | null>(null)
 const clearingHistory = ref(false)
@@ -25,8 +26,16 @@ const parseDialogsLoading = ref(false)
 const parseDialogsError = ref('')
 const dialogSearch = ref('')
 const visibleDialogsCount = ref(18)
+const confirmState = ref<{
+  type: 'terminate' | 'delete-account' | 'delete-report' | 'clear-history'
+  title: string
+  description: string
+  confirmLabel: string
+  variant: 'default' | 'danger'
+  chatId?: string
+} | null>(null)
 
-const analyzedChats = computed(() => stats.chats)
+const analyzedChats = computed(() => stats.chats.filter((chat) => chat.chatType === 'private'))
 const telegramSessionActive = computed(() => auth.telegramSessionActive)
 const isParseActive = computed(() => progress.value.status === 'running' || progress.value.status === 'pending')
 const isParseTerminal = computed(() => ['completed', 'failed', 'cancelled'].includes(progress.value.status))
@@ -52,7 +61,7 @@ const filteredDialogs = computed(() => {
   const query = dialogSearch.value.trim().toLowerCase()
 
   return stats.parseDialogs
-    .filter((dialog) => dialog.type !== 'channel')
+    .filter((dialog) => dialog.type === 'private')
     .filter((dialog) => {
       if (!query) {
         return true
@@ -67,7 +76,6 @@ const hasMoreDialogs = computed(() => filteredDialogs.value.length > visibleDial
 
 async function startParse(chatIds?: string[]) {
   pending.value = true
-  feedback.value = ''
 
   try {
     const result = await useApiFetch<{ jobId: string }>('/api/parse/start', {
@@ -75,7 +83,7 @@ async function startParse(chatIds?: string[]) {
       body: chatIds?.length ? { chatIds } : {},
     })
 
-    feedback.value = t('dashboard.startedJob', { jobId: result.jobId })
+    toast.success(t('dashboard.parseStarted'), t('dashboard.startedJob', { jobId: result.jobId }))
 
     const parseStatus = await fetchParseStatus()
     applyStatus(parseStatus)
@@ -84,9 +92,9 @@ async function startParse(chatIds?: string[]) {
   } catch (error) {
     const retryAfter = (error as { data?: { retryAfter?: number } })?.data?.retryAfter
     if (typeof retryAfter === 'number' && retryAfter > 0) {
-      feedback.value = t('dashboard.cooldown', { time: formatCooldown(retryAfter) })
+      toast.warning(t('dashboard.cooldownTitle'), t('dashboard.cooldown', { time: formatCooldown(retryAfter) }))
     } else {
-      feedback.value = error instanceof Error ? error.message : t('dashboard.startError')
+      toast.error(error instanceof Error ? error.message : t('dashboard.startError'))
     }
   } finally {
     pending.value = false
@@ -95,7 +103,6 @@ async function startParse(chatIds?: string[]) {
 
 async function cancelActiveParse() {
   cancelling.value = true
-  feedback.value = ''
 
   try {
     await useApiFetch('/api/parse/cancel', {
@@ -110,9 +117,9 @@ async function cancelActiveParse() {
       fetchParseStatus().then(applyStatus),
     ])
 
-    feedback.value = t('dashboard.cancelled')
+    toast.info(t('dashboard.cancelled'))
   } catch (error) {
-    feedback.value = error instanceof Error ? error.message : t('dashboard.cancelError')
+    toast.error(error instanceof Error ? error.message : t('dashboard.cancelError'))
   } finally {
     cancelling.value = false
   }
@@ -120,7 +127,7 @@ async function cancelActiveParse() {
 
 async function startDialogParse(dialog: { id: string; title: string }) {
   if (!telegramSessionActive.value) {
-    feedback.value = t('dashboard.sessionInactive')
+    toast.warning(t('dashboard.sessionInactive'))
     return
   }
 
@@ -194,89 +201,154 @@ function statusVariant(status: string) {
   return 'default'
 }
 
+function statusLabel(status: string) {
+  if (status === 'completed') {
+    return t('common.statusCompleted')
+  }
+  if (status === 'failed') {
+    return t('common.statusFailed')
+  }
+  if (status === 'cancelled') {
+    return t('common.statusCancelled')
+  }
+  if (status === 'running') {
+    return t('common.statusRunning')
+  }
+  if (status === 'pending') {
+    return t('common.statusPending')
+  }
+  return status
+}
+
 async function handleTerminateTelegramSession() {
   securityPending.value = 'telegram'
-  feedback.value = ''
 
   try {
     await terminateTelegramSession()
-    feedback.value = t('dashboard.sessionInactive')
+    toast.info(t('dashboard.sessionInactive'))
   } catch (error) {
-    feedback.value = error instanceof Error ? error.message : t('dashboard.terminateError')
+    toast.error(error instanceof Error ? error.message : t('dashboard.terminateError'))
   } finally {
     securityPending.value = null
+    confirmState.value = null
   }
 }
 
 async function handleDeleteAccount() {
-  if (!import.meta.client) {
-    return
-  }
-
-  const confirmed = window.confirm(t('dashboard.deleteConfirm'))
-  if (!confirmed) {
-    return
-  }
-
   securityPending.value = 'account'
-  feedback.value = ''
 
   try {
     await deleteAccount()
   } catch (error) {
-    feedback.value = error instanceof Error ? error.message : t('dashboard.deleteError')
+    toast.error(error instanceof Error ? error.message : t('dashboard.deleteError'))
   } finally {
     securityPending.value = null
+    confirmState.value = null
   }
 }
 
-async function handleDeleteReport(chatId: string, title: string) {
-  if (!import.meta.client) {
-    return
-  }
-
-  const confirmed = window.confirm(t('dashboard.deleteReportConfirm', { name: title }))
-  if (!confirmed) {
-    return
-  }
-
+async function handleDeleteReport(chatId: string) {
   deletingChatId.value = chatId
-  feedback.value = ''
 
   try {
     await deleteChat(chatId)
     await fetchChats()
-    feedback.value = t('dashboard.reportDeleted')
+    toast.success(t('dashboard.reportDeleted'))
   } catch (error) {
-    feedback.value = error instanceof Error ? error.message : t('dashboard.deleteReportError')
+    toast.error(error instanceof Error ? error.message : t('dashboard.deleteReportError'))
   } finally {
     deletingChatId.value = null
+    confirmState.value = null
   }
 }
 
 async function handleClearHistory() {
-  if (!import.meta.client) {
-    return
-  }
-
-  const confirmed = window.confirm(t('dashboard.clearHistoryConfirm'))
-  if (!confirmed) {
-    return
-  }
-
   clearingHistory.value = true
-  feedback.value = ''
 
   try {
     await clearHistory()
     await fetchHistory()
-    feedback.value = t('dashboard.historyCleared')
+    toast.success(t('dashboard.historyCleared'))
   } catch (error) {
-    feedback.value = error instanceof Error ? error.message : t('dashboard.clearHistoryError')
+    toast.error(error instanceof Error ? error.message : t('dashboard.clearHistoryError'))
   } finally {
     clearingHistory.value = false
+    confirmState.value = null
   }
 }
+
+function openTerminateConfirm() {
+  confirmState.value = {
+    type: 'terminate',
+    title: t('dashboard.terminateTelegram'),
+    description: t('dashboard.terminateConfirm'),
+    confirmLabel: t('dashboard.terminateTelegram'),
+    variant: 'default',
+  }
+}
+
+function openDeleteAccountConfirm() {
+  confirmState.value = {
+    type: 'delete-account',
+    title: t('dashboard.deleteAccount'),
+    description: t('dashboard.deleteConfirm'),
+    confirmLabel: t('dashboard.deleteAccount'),
+    variant: 'danger',
+  }
+}
+
+function openDeleteReportConfirm(chatId: string, title: string) {
+  confirmState.value = {
+    type: 'delete-report',
+    title: t('dashboard.deleteReport'),
+    description: t('dashboard.deleteReportConfirm', { name: title }),
+    confirmLabel: t('dashboard.deleteReport'),
+    variant: 'danger',
+    chatId,
+  }
+}
+
+function openClearHistoryConfirm() {
+  confirmState.value = {
+    type: 'clear-history',
+    title: t('dashboard.clearHistory'),
+    description: t('dashboard.clearHistoryConfirm'),
+    confirmLabel: t('dashboard.clearHistory'),
+    variant: 'danger',
+  }
+}
+
+async function confirmAction() {
+  if (!confirmState.value) {
+    return
+  }
+
+  if (confirmState.value.type === 'terminate') {
+    await handleTerminateTelegramSession()
+  } else if (confirmState.value.type === 'delete-account') {
+    await handleDeleteAccount()
+  } else if (confirmState.value.type === 'delete-report' && confirmState.value.chatId) {
+    await handleDeleteReport(confirmState.value.chatId)
+  } else if (confirmState.value.type === 'clear-history') {
+    await handleClearHistory()
+  }
+}
+
+const confirmLoading = computed(() => {
+  if (!confirmState.value) {
+    return false
+  }
+  if (confirmState.value.type === 'terminate') {
+    return securityPending.value === 'telegram'
+  }
+  if (confirmState.value.type === 'delete-account') {
+    return securityPending.value === 'account'
+  }
+  if (confirmState.value.type === 'delete-report') {
+    return deletingChatId.value === confirmState.value.chatId
+  }
+  return clearingHistory.value
+})
 
 watch(isParseActive, async (active, wasActive) => {
   if (active) {
@@ -318,21 +390,21 @@ onMounted(async () => {
     try {
       applyStatus(await fetchParseStatus())
     } catch (error) {
-      feedback.value = error instanceof Error ? error.message : t('dashboard.loadStatsError')
+      toast.error(error instanceof Error ? error.message : t('dashboard.loadStatsError'))
     }
 
     await Promise.all([
       fetchChats().catch((error) => {
-        feedback.value = error instanceof Error ? error.message : t('dashboard.loadStatsError')
+        toast.error(error instanceof Error ? error.message : t('dashboard.loadStatsError'))
       }),
       fetchHistory().catch((error) => {
-        feedback.value = error instanceof Error ? error.message : t('dashboard.loadStatsError')
+        toast.error(error instanceof Error ? error.message : t('dashboard.loadStatsError'))
       }),
     ])
 
     await loadParseDialogs()
   } catch (error) {
-    feedback.value = error instanceof Error ? error.message : t('dashboard.loadStatsError')
+    toast.error(error instanceof Error ? error.message : t('dashboard.loadStatsError'))
   } finally {
     ready.value = true
   }
@@ -394,10 +466,6 @@ onMounted(async () => {
         @cancel="cancelActiveParse"
       />
 
-      <section v-if="feedback" class="feedback-card text-body-sm">
-        {{ feedback }}
-      </section>
-
       <div class="dashboard-grid">
         <section class="card section-card">
           <div class="section-header">
@@ -432,26 +500,29 @@ onMounted(async () => {
             </div>
 
             <div v-if="visibleDialogs.length" class="dialog-list">
-              <button
+              <div
                 v-for="(dialog, index) in visibleDialogs"
                 :key="dialog.id"
-                type="button"
                 class="dialog-item stagger-item"
-              :style="{ '--delay': `${index * 35}ms` }"
-                @click="startDialogParse(dialog)"
+                :style="{ '--delay': `${index * 35}ms` }"
               >
-                <ChatAvatar :chat-id="dialog.id" :title="dialog.title" :has-avatar="dialog.hasAvatar" />
-                <div class="dialog-copy">
-                  <span class="dialog-title">{{ dialog.title }}</span>
+                <div class="dialog-main">
+                  <ChatAvatar :chat-id="dialog.id" :title="dialog.title" :has-avatar="dialog.hasAvatar" />
+                  <div class="dialog-copy">
+                    <span class="dialog-title">{{ dialog.title }}</span>
+                  </div>
                 </div>
-                <span
-                  class="dialog-analyze"
-                  :class="{ 'dialog-analyze-loading': pending }"
-                  @click.stop="startDialogParse(dialog)"
+                <Button
+                  variant="primary"
+                  size="sm"
+                  class="dialog-action"
+                  :loading="pending"
+                  :disabled="pending"
+                  @click="startDialogParse(dialog)"
                 >
                   {{ pending ? t('common.loading') : t('dashboard.analyze') }}
-                </span>
-              </button>
+                </Button>
+              </div>
             </div>
             <EmptyState
               v-else
@@ -486,11 +557,10 @@ onMounted(async () => {
                 <NuxtLink :to="`/chat/${chat.tgChatId}`" class="analyzed-link">
                   <div class="analyzed-head">
                     <div class="analyzed-meta">
-                      <ChatAvatar :chat-id="chat.tgChatId" :title="chat.chatName || chat.tgChatId" />
-                      <div class="dialog-copy">
-                        <span class="dialog-title">{{ chat.chatName || chat.tgChatId }}</span>
-                        <Badge variant="default">{{ chat.chatType || 'chat' }}</Badge>
-                      </div>
+                    <ChatAvatar :chat-id="chat.tgChatId" :title="chat.chatName || chat.tgChatId" />
+                    <div class="dialog-copy">
+                      <span class="dialog-title">{{ chat.chatName || chat.tgChatId }}</span>
+                    </div>
                     </div>
                     <span class="mono-value analyzed-count">{{ formatNumber(chat.totalMessages) }}</span>
                   </div>
@@ -508,7 +578,7 @@ onMounted(async () => {
                     variant="danger"
                     size="sm"
                     :loading="deletingChatId === chat.tgChatId"
-                    @click="handleDeleteReport(chat.tgChatId, chat.chatName || chat.tgChatId)"
+                    @click="openDeleteReportConfirm(chat.tgChatId, chat.chatName || chat.tgChatId)"
                   >
                     {{ t('dashboard.deleteReport') }}
                   </Button>
@@ -537,7 +607,7 @@ onMounted(async () => {
                   variant="danger"
                   size="sm"
                   :loading="clearingHistory"
-                  @click="handleClearHistory"
+                  @click="openClearHistoryConfirm"
                 >
                   {{ t('dashboard.clearHistory') }}
                 </Button>
@@ -554,7 +624,7 @@ onMounted(async () => {
                 >
                   <div class="history-row-head">
                     <span class="history-title">{{ item.chatName || item.jobId }}</span>
-                    <Badge :variant="statusVariant(item.status)">{{ item.status }}</Badge>
+                    <Badge :variant="statusVariant(item.status)">{{ statusLabel(item.status) }}</Badge>
                   </div>
                   <div class="history-progress progress-bar">
                     <div class="progress-bar-fill" :style="{ width: `${historyProgress(item)}%` }" />
@@ -589,10 +659,10 @@ onMounted(async () => {
                 {{ t('dashboard.sessionInactive') }}
               </div>
 
-              <Button variant="secondary" size="lg" :loading="securityPending === 'telegram'" @click="handleTerminateTelegramSession">
+              <Button variant="secondary" size="lg" :loading="securityPending === 'telegram'" @click="openTerminateConfirm">
                 {{ securityPending === 'telegram' ? t('dashboard.stopping') : t('dashboard.terminateTelegram') }}
               </Button>
-              <Button variant="danger" size="lg" :loading="securityPending === 'account'" @click="handleDeleteAccount">
+              <Button variant="danger" size="lg" :loading="securityPending === 'account'" @click="openDeleteAccountConfirm">
                 {{ securityPending === 'account' ? t('dashboard.deleting') : t('dashboard.deleteAccount') }}
               </Button>
               <Button v-if="!telegramSessionActive" variant="primary" size="lg" @click="logout">
@@ -602,6 +672,18 @@ onMounted(async () => {
           </section>
         </section>
       </div>
+
+      <ConfirmDialog
+        :open="Boolean(confirmState)"
+        :title="confirmState?.title ?? ''"
+        :description="confirmState?.description ?? ''"
+        :confirm-label="confirmState?.confirmLabel ?? ''"
+        :cancel-label="t('common.cancel')"
+        :variant="confirmState?.variant ?? 'default'"
+        :loading="confirmLoading"
+        @close="confirmState = null"
+        @confirm="confirmAction"
+      />
     </div>
   </AppLayout>
 </template>
@@ -659,7 +741,6 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 
-.feedback-card,
 .info-banner {
   border-radius: var(--radius-md);
   padding: var(--space-4);
@@ -727,31 +808,40 @@ onMounted(async () => {
 }
 
 .dialog-item {
-  position: relative;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
-  min-height: 70px;
+  min-height: 64px;
   padding: var(--space-3);
-  padding-right: var(--space-4);
-  cursor: pointer;
-  overflow: hidden;
+  min-width: 0;
 }
 
-.dialog-item:hover,
 .analyzed-card:hover,
 .history-row:hover {
   border-color: var(--border-strong);
   background: var(--bg-overlay);
 }
 
+.dialog-item:hover {
+  border-color: var(--border-default);
+}
+
+.dialog-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1;
+}
+
 .dialog-copy {
   min-width: 0;
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .dialog-title,
@@ -764,45 +854,9 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
-.dialog-analyze {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 156px;
-  padding: 0 var(--space-5);
-  border-left: 1px solid var(--accent-muted-hover);
-  background: var(--accent);
-  color: var(--text-inverse);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.1;
-  opacity: 0;
-  transform: translateX(calc(100% - var(--space-3)));
-  transition: opacity var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  pointer-events: none;
-}
-
-.dialog-item:hover .dialog-analyze,
-.dialog-item:focus-visible .dialog-analyze {
-  opacity: 1;
-  transform: translateX(0);
-  pointer-events: auto;
-}
-
-.dialog-analyze:hover {
-  background: var(--accent-dim);
-}
-
-.dialog-analyze-loading {
-  opacity: 1;
-  transform: translateX(0);
-  pointer-events: none;
+.dialog-action {
+  flex: 0 0 auto;
+  min-width: 112px;
 }
 
 .more-row {
@@ -851,6 +905,8 @@ onMounted(async () => {
 }
 
 .analyzed-foot {
+  display: grid;
+  gap: 4px;
   color: var(--text-secondary);
 }
 
@@ -893,7 +949,6 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .workspace-header,
-  .dialog-copy,
   .analyzed-head,
   .section-actions,
   .analyzed-actions,
@@ -914,25 +969,16 @@ onMounted(async () => {
   }
 
   .dialog-item {
-    align-items: flex-start;
+    align-items: stretch;
+    flex-direction: column;
   }
 
-  .dialog-analyze {
-    width: 132px;
-    opacity: 1;
-    transform: none;
-    pointer-events: auto;
-  }
-}
-
-@media (max-width: 420px) {
-  .dialog-item {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+  .dialog-main {
+    align-items: center;
   }
 
-  .dialog-analyze {
-    width: 120px;
+  .dialog-action {
+    width: 100%;
   }
 }
 </style>

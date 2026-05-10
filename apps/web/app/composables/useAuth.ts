@@ -9,11 +9,31 @@ import type {
 export function useAuth() {
   const auth = useAuthStore()
 
+  async function restoreSession() {
+    try {
+      const result = await useApiFetch<AuthSuccessResponse>('/api/auth/refresh', {
+        method: 'POST',
+      })
+      auth.setAccess(result.accessToken, result.user)
+      return result
+    } catch {
+      auth.clear()
+      return null
+    }
+  }
+
   async function bootstrap() {
     auth.loadPersisted()
-    if (!auth.accessToken) {
-      return refresh()
+
+    if (!auth.user || !auth.accessToken) {
+      return restoreSession()
     }
+
+    if (shouldRefreshToken(auth.accessToken)) {
+      return restoreSession()
+    }
+
+    return { accessToken: auth.accessToken, user: auth.user }
   }
 
   async function sendCode(phone: string) {
@@ -55,16 +75,7 @@ export function useAuth() {
   }
 
   async function refresh() {
-    try {
-      const result = await useApiFetch<AuthSuccessResponse>('/api/auth/refresh', {
-        method: 'POST',
-      })
-      auth.setAccess(result.accessToken, result.user)
-      return result
-    } catch {
-      auth.clear()
-      return null
-    }
+    return restoreSession()
   }
 
   async function logout() {
@@ -102,5 +113,40 @@ export function useAuth() {
     logout,
     terminateTelegramSession,
     deleteAccount,
+  }
+}
+
+function shouldRefreshToken(token: string) {
+  const payload = parseJwtPayload(token)
+  if (!payload?.exp) {
+    return true
+  }
+
+  const refreshThresholdMs = 60 * 1000
+  return payload.exp * 1000 <= Date.now() + refreshThresholdMs
+}
+
+function parseJwtPayload(token: string): { exp?: number } | null {
+  if (!import.meta.client) {
+    return null
+  }
+
+  const parts = token.split('.')
+  if (parts.length !== 3) {
+    return null
+  }
+
+  try {
+    const encoded = parts[1]
+    if (!encoded) {
+      return null
+    }
+    const normalized = encoded
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(Math.ceil(encoded.length / 4) * 4, '=')
+    return JSON.parse(window.atob(normalized)) as { exp?: number }
+  } catch {
+    return null
   }
 }

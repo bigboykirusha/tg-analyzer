@@ -15,6 +15,8 @@ export const useAuthStore = defineStore('auth', {
     setAccess(accessToken: string, user: UserDto) {
       this.accessToken = accessToken
       this.user = user
+      this.tempToken = ''
+      this.phoneCodeHash = ''
       this.telegramSessionActive = user.telegramSessionActive !== false
       if (import.meta.client) {
         localStorage.setItem('tg-analyzer-access-token', accessToken)
@@ -40,7 +42,12 @@ export const useAuthStore = defineStore('auth', {
       }
       this.accessToken = localStorage.getItem('tg-analyzer-access-token') ?? ''
       const rawUser = localStorage.getItem('tg-analyzer-user')
-      this.user = rawUser ? JSON.parse(rawUser) as UserDto : null
+      try {
+        this.user = rawUser ? JSON.parse(rawUser) as UserDto : null
+      } catch {
+        this.user = null
+        localStorage.removeItem('tg-analyzer-user')
+      }
       this.telegramSessionActive = this.user?.telegramSessionActive !== false
     },
     clear() {

@@ -4,7 +4,7 @@ import CodeStep from '../components/auth/CodeStep.vue'
 import PasswordStep from '../components/auth/PasswordStep.vue'
 
 const auth = useAuthStore()
-const { sendCode, verifyCode, verifyPassword } = useAuth()
+const { bootstrap, sendCode, verifyCode, verifyPassword } = useAuth()
 const { locale, setLocale, t } = useI18n()
 
 const step = ref<'phone' | 'code' | 'password'>('phone')
@@ -68,6 +68,13 @@ async function handlePassword() {
     loading.value = false
   }
 }
+
+onMounted(async () => {
+  const restored = await bootstrap()
+  if (auth.isAuthorized || restored) {
+    await navigateTo('/dashboard')
+  }
+})
 </script>
 
 <template>
@@ -75,16 +82,16 @@ async function handlePassword() {
     <div class="login-noise" aria-hidden="true" />
 
     <section class="login-panel animate-scale-in">
-      <div class="language-switch" :aria-label="t('nav.language')">
-        <button type="button" :class="{ active: locale === 'ru' }" @click="setLocale('ru')">RU</button>
-        <button type="button" :class="{ active: locale === 'en' }" @click="setLocale('en')">EN</button>
-      </div>
-
       <div class="login-brand">
         <span class="brand-mark">&lt;T&gt;</span>
         <div class="brand-copy">
-          <span class="text-label">{{ t('login.brandLabel') }}</span>
-          <h1 class="text-h1">{{ t('login.title') }}</h1>
+          <div class="brand-topline">
+            <h1 class="text-h1">{{ t('login.title') }}</h1>
+            <div class="language-switch" :aria-label="t('nav.language')">
+              <button type="button" :class="{ active: locale === 'ru' }" @click="setLocale('ru')">RU</button>
+              <button type="button" :class="{ active: locale === 'en' }" @click="setLocale('en')">EN</button>
+            </div>
+          </div>
           <p class="text-body login-lead">{{ t('login.lead') }}</p>
         </div>
       </div>
@@ -171,7 +178,6 @@ async function handlePassword() {
 }
 
 .language-switch {
-  align-self: flex-end;
   display: inline-flex;
   gap: var(--space-1);
   padding: var(--space-1);
@@ -209,9 +215,9 @@ async function handlePassword() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-xl);
+  width: 68px;
+  height: 68px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border-default);
   background: var(--bg-surface);
   color: var(--accent);
@@ -224,6 +230,14 @@ async function handlePassword() {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  flex: 1;
+}
+
+.brand-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .login-lead {
@@ -254,7 +268,7 @@ async function handlePassword() {
   gap: var(--space-6);
   padding: var(--space-8);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   background: var(--panel-translucent);
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(12px);
@@ -327,11 +341,24 @@ async function handlePassword() {
     padding: var(--space-4);
   }
 
+  .brand-topline {
+    align-items: center;
+  }
+
+  .language-switch {
+    margin-left: auto;
+  }
+
+  .login-lead {
+    display: none;
+  }
+
   .login-card {
     padding: var(--space-6);
   }
 
   .brand-mark {
+    min-width: 48px;
     width: 48px;
     height: 48px;
   }

@@ -37,7 +37,7 @@
   }
 
   .app-main {
-    padding: var(--space-4);
+    padding: var(--space-3);
   }
 }
 </style>

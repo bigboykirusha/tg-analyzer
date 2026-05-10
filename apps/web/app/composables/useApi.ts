@@ -1,5 +1,11 @@
 let refreshPromise: Promise<string | null> | null = null
 
+type FetchErrorLike = {
+  response?: {
+    status?: number
+  }
+}
+
 async function doRefresh(apiUrl: string) {
   const auth = useAuthStore()
   try {
@@ -17,6 +23,9 @@ async function doRefresh(apiUrl: string) {
     return refreshResult.accessToken
   } catch {
     auth.clear()
+    if (import.meta.client) {
+      await navigateTo('/login')
+    }
     return null
   }
 }
@@ -53,13 +62,17 @@ export function useApiFetch<T>(path: string, options: Parameters<typeof $fetch<T
     headers: createHeaders(),
   })
 
-  return execute().catch(async (error: any) => {
+  return execute().catch(async (error: FetchErrorLike) => {
     if (error?.response?.status !== 401 || path === '/api/auth/refresh') {
       throw error
     }
 
     const newToken = await refreshAccessToken(config.public.apiUrl)
     if (!newToken) {
+      auth.clear()
+      if (import.meta.client) {
+        await navigateTo('/login')
+      }
       throw error
     }
 

@@ -70,7 +70,7 @@ export function setRefreshCookie(reply: FastifyReply, sessionId: string, userId:
   )
   reply.setCookie(cookieName, token, {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
     secure: config.COOKIE_SECURE,
     expires: addDays(new Date(), 30),
@@ -78,5 +78,10 @@ export function setRefreshCookie(reply: FastifyReply, sessionId: string, userId:
 }
 
 export function clearRefreshCookie(reply: FastifyReply) {
-  reply.clearCookie(cookieName, { path: '/' })
+  reply.clearCookie(cookieName, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: config.COOKIE_SECURE,
+  })
 }

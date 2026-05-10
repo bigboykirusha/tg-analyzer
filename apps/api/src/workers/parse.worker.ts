@@ -1,10 +1,18 @@
 import { Worker, type Job } from 'bullmq'
 import { parseDialogsQueue, type ParseJobData } from '../queues/parse.queue'
 import { redis } from '../services/redis.service'
-import { normalizeTelegramDialogType, telegramPool } from '../services/telegram.service'
+import {
+  isTelegramSessionExpiredError,
+  normalizeTelegramDialogType,
+  telegramPool,
+  withFloodWaitRetry,
+  type TelegramDialog,
+  type TelegramMessageLike,
+} from '../services/telegram.service'
 import {
   clearActiveJob,
   clearCancelledJob,
+  deactivateTelegramSessions,
   getActiveSessionForUser,
   isCancelledJob,
   publishParseProgress,
@@ -32,7 +40,12 @@ class ParseJobCancelledError extends Error {
   }
 }
 
-async function parseDialog(client: any, userId: string, jobId: string, dialog: any, context: {
+type TelegramClientLike = {
+  getDialogs(options: { limit: number }): Promise<TelegramDialog[]>
+  getMessages(entity: unknown, options: { limit: number; offsetId: number }): Promise<TelegramMessageLike[]>
+}
+
+async function parseDialog(client: TelegramClientLike, userId: string, jobId: string, dialog: TelegramDialog, context: {
   chatIndex: number
   totalChats: number
   job: Job<ParseJobData>
@@ -46,7 +59,7 @@ async function parseDialog(client: any, userId: string, jobId: string, dialog: a
   while (hasMore) {
     await ensureNotCancelled(userId, jobId)
 
-    const messages = await withFloodWaitRetry<any[]>(() => client.getMessages(dialog.entity, {
+    const messages = await withFloodWaitRetry(() => client.getMessages(dialog.entity, {
       limit: 100,
       offsetId,
     }))
@@ -59,7 +72,7 @@ async function parseDialog(client: any, userId: string, jobId: string, dialog: a
       hasMore = false
     }
 
-    offsetId = messages[messages.length - 1].id
+    offsetId = messages[messages.length - 1]?.id ?? offsetId
     for (const message of messages) {
       await ensureNotCancelled(userId, jobId)
       // We intentionally keep only cheap message metadata and counters.
@@ -98,112 +111,104 @@ async function parseDialog(client: any, userId: string, jobId: string, dialog: a
   return accumulator.totalMessages
 }
 
-async function withFloodWaitRetry<T>(action: () => Promise<T>): Promise<T> {
-  try {
-    return await action()
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    const match = message.match(/FLOOD_WAIT_?(\d+)/i)
-    if (!match) {
-      throw error
-    }
-    const seconds = Number(match[1])
-    await sleep((seconds + 1) * 1000)
-    return action()
-  }
-}
-
 export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job: Job<ParseJobData>) => {
-  const { userId, jobId, chatIds } = job.data
-  await ensureNotCancelled(userId, jobId)
-
-  await publishParseProgress(userId, {
-    type: 'progress',
-    current: 0,
-    total: chatIds?.length ?? 0,
-    chatName: '',
-    status: 'pending',
-    message: 'Connecting to Telegram',
-  })
-
-  const session = await getActiveSessionForUser(userId)
-  if (!session) {
-    throw new Error('Active Telegram session not found')
-  }
-
-  const client = await telegramPool.connectAuthorizedClient(userId, session)
-  await publishParseProgress(userId, {
-    type: 'progress',
-    current: 0,
-    total: chatIds?.length ?? 0,
-    chatName: '',
-    status: 'running',
-    message: 'Loading chat list',
-  })
-
-  const dialogs = await withFloodWaitRetry(() => client.getDialogs({ limit: 500 }))
-  const targetDialogs = chatIds?.length
-    ? dialogs.filter((dialog: any) => chatIds.includes(String(dialog.id)))
-    : dialogs
-
-  await updateParseJob(jobId, {
-    status: 'running',
-    totalChats: targetDialogs.length,
-    parsedChats: 0,
-    totalMessages: 0,
-  })
-
-  await publishParseProgress(userId, {
-    type: 'progress',
-    current: 0,
-    total: targetDialogs.length,
-    chatName: '',
-    status: 'running',
-    message: targetDialogs.length ? 'Starting message scan' : 'No matching chats found',
-  })
-
-  let totalMessages = 0
-  for (let index = 0; index < targetDialogs.length; index += 1) {
+  try {
+    const { userId, jobId, chatIds } = job.data
     await ensureNotCancelled(userId, jobId)
 
-    const dialog = targetDialogs[index]
     await publishParseProgress(userId, {
       type: 'progress',
-      current: index + 1,
-      total: targetDialogs.length,
-      chatName: dialog.title ?? dialog.name ?? 'Unknown',
-      status: 'running',
-      message: `Parsing chat ${index + 1} of ${targetDialogs.length}`,
+      current: 0,
+      total: chatIds?.length ?? 0,
+      chatName: '',
+      status: 'pending',
+      message: 'Connecting to Telegram',
     })
 
-    const count = await parseDialog(client, userId, jobId, dialog, {
-      chatIndex: index + 1,
-      totalChats: targetDialogs.length,
-      job,
+    const session = await getActiveSessionForUser(userId)
+    if (!session) {
+      throw new Error('Active Telegram session not found')
+    }
+
+    const client = await telegramPool.connectAuthorizedClient(userId, session) as unknown as TelegramClientLike
+    await publishParseProgress(userId, {
+      type: 'progress',
+      current: 0,
+      total: chatIds?.length ?? 0,
+      chatName: '',
+      status: 'running',
+      message: 'Loading chat list',
     })
-    totalMessages += count
+
+    const dialogs = await withFloodWaitRetry(() => client.getDialogs({ limit: 500 }))
+    const targetDialogs = chatIds?.length
+      ? dialogs.filter((dialog) => chatIds.includes(String(dialog.id)))
+      : dialogs
 
     await updateParseJob(jobId, {
-      parsedChats: index + 1,
-      totalMessages,
+      status: 'running',
+      totalChats: targetDialogs.length,
+      parsedChats: 0,
+      totalMessages: 0,
     })
 
-    await sleep(500)
-  }
+    await publishParseProgress(userId, {
+      type: 'progress',
+      current: 0,
+      total: targetDialogs.length,
+      chatName: '',
+      status: 'running',
+      message: targetDialogs.length ? 'Starting message scan' : 'No matching chats found',
+    })
 
-  await updateParseJob(jobId, {
-    status: 'completed',
-    totalMessages,
-    completedAt: new Date(),
-  })
-  await publishParseProgress(userId, {
-    type: 'completed',
-    status: 'completed',
-    totalMessages,
-    message: `Completed. Parsed ${targetDialogs.length} chat${targetDialogs.length === 1 ? '' : 's'}`,
-  })
-  await clearActiveJob(userId)
-  await clearCancelledJob(userId, jobId)
+    let totalMessages = 0
+    for (let index = 0; index < targetDialogs.length; index += 1) {
+      await ensureNotCancelled(userId, jobId)
+
+      const dialog = targetDialogs[index]
+      await publishParseProgress(userId, {
+        type: 'progress',
+        current: index + 1,
+        total: targetDialogs.length,
+        chatName: dialog.title ?? dialog.name ?? 'Unknown',
+        status: 'running',
+        message: `Parsing chat ${index + 1} of ${targetDialogs.length}`,
+      })
+
+      const count = await parseDialog(client, userId, jobId, dialog, {
+        chatIndex: index + 1,
+        totalChats: targetDialogs.length,
+        job,
+      })
+      totalMessages += count
+
+      await updateParseJob(jobId, {
+        parsedChats: index + 1,
+        totalMessages,
+      })
+
+      await sleep(500)
+    }
+
+    await updateParseJob(jobId, {
+      status: 'completed',
+      totalMessages,
+      completedAt: new Date(),
+    })
+    await publishParseProgress(userId, {
+      type: 'completed',
+      status: 'completed',
+      totalMessages,
+      message: `Completed. Parsed ${targetDialogs.length} chat${targetDialogs.length === 1 ? '' : 's'}`,
+    })
+    await clearActiveJob(userId)
+    await clearCancelledJob(userId, jobId)
+  } catch (error) {
+    if (isTelegramSessionExpiredError(error)) {
+      job.discard()
+    }
+    throw error
+  }
 }, {
   connection: redis,
   concurrency: 2,
@@ -236,9 +241,14 @@ parseWorker.on('failed', async (job, error) => {
     return
   }
 
+  if (isTelegramSessionExpiredError(error)) {
+    await deactivateTelegramSessions(job.data.userId)
+    await telegramPool.disconnectAuthorizedClient(job.data.userId)
+  }
+
   await updateParseJob(job.data.jobId, {
     status: 'failed',
-    errorMessage: error.message,
+    errorMessage: isTelegramSessionExpiredError(error) ? 'Telegram session expired' : error.message,
     completedAt: new Date(),
   })
   await publishParseProgress(job.data.userId, {

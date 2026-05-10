@@ -5,6 +5,6 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply) 
     await request.jwtVerify()
     request.authUserId = request.user.sub
   } catch {
-    reply.status(401).send({ message: 'Unauthorized' })
+    return reply.status(401).send({ message: 'Unauthorized' })
   }
 }

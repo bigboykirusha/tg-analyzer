@@ -23,6 +23,7 @@ defineProps<{
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
+  min-width: 0;
 }
 
 .metric-label {
@@ -36,9 +37,10 @@ defineProps<{
 .metric-value {
   font-size: 28px;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: var(--text-primary);
   line-height: 1;
+  overflow-wrap: anywhere;
 }
 
 .metric-sub {

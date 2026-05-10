@@ -10,6 +10,7 @@ import {
   clearCancelledJob,
   clearParseHistory,
   createParseJob,
+  deactivateTelegramSessions,
   ensureFullParseCooldown,
   findCurrentParseJob,
   findParseJobById,
@@ -22,10 +23,16 @@ import {
   setChatCooldown,
   updateParseJob,
 } from '../services/session.service'
-import { normalizeTelegramDialogType, telegramPool } from '../services/telegram.service'
+import {
+  isTelegramSessionExpiredError,
+  normalizeTelegramDialogType,
+  telegramPool,
+  withFloodWaitRetry,
+  type TelegramDialog,
+} from '../services/telegram.service'
 
 const startSchema = z.object({
-  chatIds: z.array(z.string()).optional(),
+  chatIds: z.array(z.string().regex(/^-?\d+$/)).max(500).optional(),
 })
 
 const CHAT_REPARSE_COOLDOWN_SECONDS = 60 * 60
@@ -61,9 +68,20 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
         })
       }
 
-      const client = await telegramPool.connectAuthorizedClient(userId, session)
-      const dialogs = await client.getDialogs({ limit: 500 })
-      const dialog = dialogs.find((item: any) => String(item.id) === chatIds[0]) as any
+      let dialogs: TelegramDialog[]
+      try {
+        const client = await telegramPool.connectAuthorizedClient(userId, session)
+        dialogs = await withFloodWaitRetry(() => client.getDialogs({ limit: 500 })) as unknown as TelegramDialog[]
+      } catch (error) {
+        if (isTelegramSessionExpiredError(error)) {
+          await deactivateTelegramSessions(userId)
+          await telegramPool.disconnectAuthorizedClient(userId)
+          return reply.status(401).send({ message: 'Telegram session expired' })
+        }
+        throw error
+      }
+
+      const dialog = dialogs.find((item) => String(item.id) === chatIds[0])
       targetChat = dialog
         ? {
             id: Number(dialog.id),
@@ -71,7 +89,11 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
           }
         : null
     } else if (!chatIds?.length) {
-      await ensureFullParseCooldown(userId)
+      try {
+        await ensureFullParseCooldown(userId)
+      } catch {
+        return reply.status(429).send({ message: 'Full parse cooldown is still active' })
+      }
     }
 
     const jobId = await createParseJob({
@@ -128,23 +150,32 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(404).send({ message: 'Active Telegram session not found' })
     }
 
-    const client = await telegramPool.connectAuthorizedClient(userId, session)
-    const dialogs = await client.getDialogs({ limit: 500 })
+    try {
+      const client = await telegramPool.connectAuthorizedClient(userId, session)
+      const dialogs = await withFloodWaitRetry(() => client.getDialogs({ limit: 500 })) as unknown as TelegramDialog[]
 
-    const mapped: ParseDialogDto[] = dialogs.map((dialog: any) => ({
-      id: String(dialog.id),
-      title: dialog.title ?? dialog.name ?? String(dialog.id),
-      type: normalizeTelegramDialogType(dialog),
-      hasAvatar: Boolean(dialog.entity?.photo ?? dialog.photo),
-    }))
+      const mapped: ParseDialogDto[] = dialogs.map((dialog) => ({
+        id: String(dialog.id),
+        title: dialog.title ?? dialog.name ?? String(dialog.id),
+        type: normalizeTelegramDialogType(dialog),
+        hasAvatar: Boolean(dialog.entity?.photo ?? dialog.photo),
+      }))
 
-    const result: ParseDialogsResponse = {
-      dialogs: mapped,
-      truncated: dialogs.length === 500,
-      total: dialogs.length,
+      const result: ParseDialogsResponse = {
+        dialogs: mapped,
+        truncated: dialogs.length === 500,
+        total: dialogs.length,
+      }
+
+      return result
+    } catch (error) {
+      if (isTelegramSessionExpiredError(error)) {
+        await deactivateTelegramSessions(userId)
+        await telegramPool.disconnectAuthorizedClient(userId)
+        return reply.status(401).send({ message: 'Telegram session expired' })
+      }
+      throw error
     }
-
-    return result
   })
 
   fastify.get('/dialogs/:dialogId/avatar', { preHandler: requireAuth }, async (request, reply) => {
@@ -155,8 +186,18 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(404).send({ message: 'Active Telegram session not found' })
     }
 
-    const client = await telegramPool.connectAuthorizedClient(userId, session)
-    const avatar = await telegramPool.getDialogAvatar(userId, params.dialogId, client)
+    let avatar: Buffer | null = null
+    try {
+      const client = await telegramPool.connectAuthorizedClient(userId, session)
+      avatar = await telegramPool.getDialogAvatar(userId, params.dialogId, client)
+    } catch (error) {
+      if (isTelegramSessionExpiredError(error)) {
+        await deactivateTelegramSessions(userId)
+        await telegramPool.disconnectAuthorizedClient(userId)
+        return reply.status(401).send({ message: 'Telegram session expired' })
+      }
+      throw error
+    }
 
     if (!avatar) {
       return reply.status(404).send({ message: 'Avatar not found' })

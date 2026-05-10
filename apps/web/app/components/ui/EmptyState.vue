@@ -32,10 +32,10 @@ defineProps<{
   justify-content: center;
   gap: var(--space-4);
   text-align: center;
-  padding: var(--space-10) var(--space-6);
+  padding: var(--space-8) var(--space-5);
   border: 1px dashed var(--border-default);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
+  background: var(--bg-surface);
 }
 
 .empty-icon {

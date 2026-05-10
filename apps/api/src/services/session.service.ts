@@ -237,10 +237,13 @@ export async function revokeRefreshSession(tokenId: string) {
   await db.delete(schema.refreshSessions).where(eq(schema.refreshSessions.tokenId, tokenId))
 }
 
-export async function findRefreshSession(tokenId: string) {
-  return db.query.refreshSessions.findFirst({
-    where: eq(schema.refreshSessions.tokenId, tokenId),
-  })
+export async function consumeRefreshSession(tokenId: string) {
+  const [session] = await db
+    .delete(schema.refreshSessions)
+    .where(eq(schema.refreshSessions.tokenId, tokenId))
+    .returning()
+
+  return session ?? null
 }
 
 export async function cleanupExpiredRefreshSessions() {

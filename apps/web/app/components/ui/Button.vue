@@ -35,7 +35,10 @@ const classes = computed(() => [
     :class="classes"
     :disabled="disabled || loading"
   >
-    <span v-if="loading" class="btn-spinner" />
+    <span class="btn-icon" aria-hidden="true">
+      <span v-if="loading" class="btn-spinner" />
+      <slot v-else name="icon" />
+    </span>
     <slot />
   </button>
 </template>
@@ -53,6 +56,7 @@ const classes = computed(() => [
   transition: all var(--transition-fast);
   max-width: 100%;
   min-width: 0;
+  min-height: 44px;
   white-space: normal;
   text-align: center;
   line-height: 1.2;
@@ -64,19 +68,19 @@ const classes = computed(() => [
 }
 
 .btn-sm {
-  height: 32px;
+  min-height: 36px;
   padding: 0 var(--space-3);
   font-size: 13px;
 }
 
 .btn-md {
-  height: 38px;
+  min-height: 40px;
   padding: 0 var(--space-4);
   font-size: 14px;
 }
 
 .btn-lg {
-  height: 44px;
+  min-height: 44px;
   padding: 0 var(--space-6);
   font-size: 15px;
 }
@@ -133,6 +137,29 @@ const classes = computed(() => [
   pointer-events: none;
 }
 
+.btn-icon:empty {
+  display: none;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.btn-icon :deep(svg) {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .btn-spinner {
   width: 14px;
   height: 14px;
@@ -145,6 +172,12 @@ const classes = computed(() => [
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .ui-button {
+    min-height: 44px;
   }
 }
 </style>
