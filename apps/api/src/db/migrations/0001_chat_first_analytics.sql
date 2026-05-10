@@ -1,0 +1,10 @@
+ALTER TABLE "chat_stats" ADD COLUMN "daily_activity_json" jsonb DEFAULT '[]'::jsonb NOT NULL;
+ALTER TABLE "chat_stats" ADD COLUMN "weekday_activity" jsonb DEFAULT '{}'::jsonb NOT NULL;
+ALTER TABLE "chat_stats" ADD COLUMN "monthly_activity" jsonb DEFAULT '[]'::jsonb NOT NULL;
+ALTER TABLE "chat_stats" ADD COLUMN "hourly_activity_split" jsonb DEFAULT '{}'::jsonb NOT NULL;
+ALTER TABLE "chat_stats" ADD COLUMN "top_words_by_sender" jsonb DEFAULT '{"mine":[],"theirs":[]}'::jsonb NOT NULL;
+ALTER TABLE "chat_stats" ADD COLUMN "top_emoji_by_sender" jsonb DEFAULT '{"mine":[],"theirs":[]}'::jsonb NOT NULL;
+ALTER TABLE "chat_stats" ADD COLUMN "unique_words_by_sender" jsonb DEFAULT '{"mine":[],"theirs":[]}'::jsonb NOT NULL;
+ALTER TABLE "chat_stats" ADD COLUMN "response_stats" jsonb DEFAULT '{"medianMineSec":null,"medianTheirsSec":null,"mineSamples":0,"theirsSamples":0}'::jsonb NOT NULL;
+ALTER TABLE "chat_stats" ADD COLUMN "conversation_facts" jsonb DEFAULT '{"activeDays":0,"longestGap":null,"mostActiveDate":null,"maxStreakDays":0,"firstMessageAt":null,"silencePeriodsOver30Days":[],"trend":"unknown","mostActiveMonth":null}'::jsonb NOT NULL;
+ALTER TABLE "chat_stats" ADD COLUMN "words_per_message" jsonb DEFAULT '{"mine":null,"theirs":null}'::jsonb NOT NULL;

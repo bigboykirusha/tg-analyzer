@@ -1,0 +1,19 @@
+{
+  "name": "tg-analyzer",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "build": "corepack pnpm -r build",
+    "dev": "corepack pnpm --filter @tg-analyzer/api dev",
+    "dev:web": "corepack pnpm --filter @tg-analyzer/web dev",
+    "dev:worker": "corepack pnpm --filter @tg-analyzer/api dev:worker",
+    "check": "corepack pnpm -r check",
+    "db:push": "corepack pnpm --filter @tg-analyzer/api db:push",
+    "db:migrate": "corepack pnpm --filter @tg-analyzer/api db:migrate"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.3",
+    "dotenv": "^17.4.2"
+  }
+}
