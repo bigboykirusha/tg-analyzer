@@ -1,9 +1,3 @@
-import dotenv from 'dotenv'
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = dirname(fileURLToPath(import.meta.url))
-
-dotenv.config({ path: resolve(currentDir, '../../.env') })
-dotenv.config({ path: resolve(currentDir, '../../../.env') })
-dotenv.config()
+// На продакшне переменные inject-ятся Railway напрямую
+// dotenv нужен только локально — но tsx его подхватывает сам
+export {}
