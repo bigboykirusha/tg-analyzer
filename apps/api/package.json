@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "dev:worker": "tsx watch src/workers/index.ts",
-    "build": "tsup src/index.ts src/workers/index.ts --format esm --out-dir dist --clean --external telegram --external @node-rs --no-splitting",
+    "build": "tsup src/index.ts src/workers/index.ts --format esm --out-dir dist --clean --external telegram --external dotenv --external pg --external bcrypt",
     "check": "tsc --project tsconfig.json --noEmit",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
