@@ -53,8 +53,10 @@ export async function buildServer() {
   return app
 }
 
-const server = await buildServer()
-await server.listen({
-  host: config.API_HOST,
-  port: config.API_PORT,
-})
+;(async () => {
+  const server = await buildServer()
+  await server.listen({
+    host: config.API_HOST,
+    port: config.API_PORT,
+  })
+})()
