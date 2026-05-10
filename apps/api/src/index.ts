@@ -17,6 +17,7 @@ export async function buildServer() {
   await app.register(cors, {
     origin: (origin, cb) => {
       const allowed = config.CORS_ORIGIN.split(',').map(o => o.trim())
+      console.log('CORS check — origin:', origin, '| allowed:', allowed)
       if (!origin || allowed.includes('*') || allowed.includes(origin)) {
         cb(null, true)
       } else {
