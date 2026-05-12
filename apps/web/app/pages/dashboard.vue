@@ -122,8 +122,6 @@ async function startParse(chatIds?: string[]) {
       body: chatIds?.length ? { chatIds } : {},
     })
 
-    toast.success(t('dashboard.parseStarted'), t('dashboard.startedJob', { jobId: result.jobId }))
-
     const parseStatus = await fetchParseStatus()
     applyStatus(parseStatus)
     connect()

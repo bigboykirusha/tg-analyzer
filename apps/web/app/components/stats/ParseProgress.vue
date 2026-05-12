@@ -402,8 +402,8 @@ function statusVariant(status: string) {
     right: var(--space-3);
     bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
     z-index: 30;
-    gap: 10px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 12px;
     border-radius: 14px;
     border-color: var(--border-strong);
     background: var(--panel-translucent-strong);
@@ -411,12 +411,18 @@ function statusVariant(status: string) {
     box-shadow: var(--shadow-lg);
   }
 
-  .progress-card-mobile-floating .progress-header {
-    gap: 6px;
+  .progress-card-mobile-floating .text-label,
+  .progress-card-mobile-floating .progress-meta,
+  .progress-card-mobile-floating .progress-chat {
+    display: none;
   }
 
   .progress-card-mobile-floating .progress-copy {
     gap: 2px;
+  }
+
+  .progress-card-mobile-floating .progress-title-row {
+    display: none;
   }
 
   .progress-card-mobile-floating .text-h3 {
@@ -424,36 +430,23 @@ function statusVariant(status: string) {
     line-height: 1.2;
   }
 
-  .progress-card-mobile-floating .progress-message,
-  .progress-card-mobile-floating .progress-chat,
-  .progress-card-mobile-floating .progress-meta {
-    font-size: 12px;
-    line-height: 1.35;
+  .progress-card-mobile-floating .progress-message {
+    font-size: 14px;
+    line-height: 1.3;
   }
 
   .progress-card-mobile-floating .progress-bar {
     height: 6px;
   }
 
-  .progress-card-mobile-floating .meta-left,
-  .progress-card-mobile-floating .meta-right {
-    gap: 1px;
-  }
-
-  .progress-card-mobile-floating .meta-right {
-    text-align: left;
-    font-size: 11px;
-  }
-
   .progress-card-mobile-floating .progress-actions {
-    margin-top: -2px;
+    margin-top: 0;
   }
 
   .progress-card-mobile-floating .cancel-button {
-    min-height: 28px;
-    padding: 0 10px;
-    font-size: 12px;
-    border-radius: 9999px;
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 13px;
   }
 }
 </style>
