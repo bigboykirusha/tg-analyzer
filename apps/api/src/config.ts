@@ -15,7 +15,7 @@ const envSchema = z.object({
   COOKIE_SECURE: z.coerce.boolean().optional(),
   COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).optional(),
   COOKIE_DOMAIN: z.string().min(1).optional(),
-  REFRESH_SESSION_GRACE_SECONDS: z.coerce.number().int().positive().default(15),
+  REFRESH_SESSION_GRACE_SECONDS: z.coerce.number().int().positive().default(300),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
   AUTH_RATE_LIMIT_WINDOW: z.string().default('1 minute'),
   FULL_PARSE_COOLDOWN_HOURS: z.coerce.number().int().positive().default(24),

@@ -51,7 +51,7 @@ class TelegramPool {
   private avatarCache = new Map<string, { data: Buffer; expiresAt: number }>()
   private readonly avatarCacheTtlMs = 60 * 60 * 1000
   private readonly avatarCacheMaxEntries = 1000
-  private readonly clientLeaseTtlMs = 2 * 60 * 1000
+  private readonly clientLeaseTtlMs = 5 * 60 * 1000
   private readonly clientLeaseWaitTimeoutMs = 15 * 1000
   private readonly clientLeasePollMs = 250
 

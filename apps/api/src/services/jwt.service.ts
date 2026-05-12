@@ -71,7 +71,7 @@ export async function issueAccessToken(reply: FastifyReply, user: {
       tgUserId: String(user.tgUserId),
       username: user.username,
     } satisfies AccessPayload,
-    { expiresIn: '15m' },
+    { expiresIn: '1h' },
   )
 
   return { accessToken, user: toUserDto(user, telegramSessionActiveOverride ?? telegramSession?.isActive ?? false) }
