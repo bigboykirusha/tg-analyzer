@@ -2,9 +2,10 @@
 import PhoneStep from '../components/auth/PhoneStep.vue'
 import CodeStep from '../components/auth/CodeStep.vue'
 import PasswordStep from '../components/auth/PasswordStep.vue'
+import guestMiddleware from '../middleware/guest'
 
 definePageMeta({
-  middleware: ['guest'],
+  middleware: [guestMiddleware],
 })
 
 const auth = useAuthStore()

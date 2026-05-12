@@ -13,11 +13,12 @@ import { useI18n } from '../composables/useI18n'
 import { useParseProgress } from '../composables/useParseProgress'
 import { useStats } from '../composables/useStats'
 import { useToast } from '../composables/useToast'
+import authMiddleware from '../middleware/auth'
 import { useAuthStore } from '../stores/auth'
 import { useStatsStore } from '../stores/stats'
 
 definePageMeta({
-  middleware: ['auth'],
+  middleware: [authMiddleware],
 })
 
 const auth = useAuthStore()
