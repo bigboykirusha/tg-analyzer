@@ -952,7 +952,14 @@ onBeforeUnmount(() => {
               {{ reparsing ? t('chat.starting') : t('chat.reparse') }}
             </Button>
 
-            <Button v-if="isMobileLayout" variant="ghost" size="sm" @click="shareOpen = true">{{ t('chat.share') }}</Button>
+            <Button v-if="isMobileLayout" variant="ghost" size="sm" :aria-label="t('chat.share')" @click="shareOpen = true">
+              <svg class="share-trigger-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 16V4" />
+                <path d="m7 9 5-5 5 5" />
+                <path d="M6 14v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-4" />
+              </svg>
+              <span class="screen-reader">{{ t('chat.share') }}</span>
+            </Button>
             <PopoverMenu v-else v-model:open="shareOpen" align="end">
               <template #trigger>
                 <Button variant="ghost" size="sm" @click="shareOpen = !shareOpen">{{ t('chat.share') }}</Button>
@@ -1594,6 +1601,16 @@ onBeforeUnmount(() => {
   text-align: left;
   overflow-wrap: anywhere;
   transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.share-trigger-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .share-option:hover {

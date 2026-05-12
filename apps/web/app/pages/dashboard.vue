@@ -8,6 +8,7 @@ import Button from '../components/ui/Button.vue'
 import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import Skeleton from '../components/ui/Skeleton.vue'
+import StatusDot from '../components/ui/StatusDot.vue'
 import { useAuth } from '../composables/useAuth'
 import { useI18n } from '../composables/useI18n'
 import { useParseProgress } from '../composables/useParseProgress'
@@ -23,7 +24,7 @@ definePageMeta({
 
 const auth = useAuthStore()
 const { deleteAccount, logout, terminateTelegramSession } = useAuth()
-const { clearHistory, deleteChat, deleteHistoryItem, fetchChats, fetchHistory, fetchParseDialogs, fetchParseStatus } = useStats()
+const { clearHistory, deleteChat, fetchChats, fetchHistory, fetchParseDialogs, fetchParseStatus } = useStats()
 const stats = useStatsStore()
 const { progress, applyStatus, connect, disconnect, reset } = useParseProgress()
 const { t, formatNumber, formatDate: formatLocaleDate, formatRelative } = useI18n()
@@ -33,7 +34,6 @@ const pending = ref(false)
 const cancelling = ref(false)
 const securityPending = ref<'telegram' | 'account' | null>(null)
 const deletingChatId = ref<string | null>(null)
-const deletingHistoryJobId = ref<string | null>(null)
 const clearingHistory = ref(false)
 const ready = ref(false)
 const parseDialogsLoading = ref(false)
@@ -110,8 +110,9 @@ async function loadParseDialogs() {
       && (error as { statusCode?: number }).statusCode === 409
 
     if (isBusyError) {
-      parseDialogsBusy.value = true
-      parseDialogsError.value = t('dashboard.dialogsBusy')
+      if (!selectedDialogId.value && stats.parseDialogs.length) {
+        selectedDialogId.value = stats.parseDialogs.find((dialog) => dialog.type === 'private')?.id ?? null
+      }
       return
     }
 
@@ -219,6 +220,12 @@ function formatShortDate(value: string | null) {
   })
 }
 
+function formatHistoryDates(item: ParseHistoryItem) {
+  const started = formatShortDate(item.createdAt)
+  const finished = item.completedAt ? formatShortDate(item.completedAt) : t('dashboard.historyStillActive')
+  return `${started} • ${finished}`
+}
+
 function formatCooldown(seconds: number) {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
@@ -311,17 +318,17 @@ function dialogTypeLabel(type: ParseDialogDto['type']) {
 function dialogState(dialog: ParseDialogDto) {
   if (progress.value.chatId === dialog.id && isParseActive.value) {
     return {
-      label: statusLabel(progress.value.status),
       variant: 'info' as const,
+      label: statusLabel(progress.value.status),
     }
   }
 
   if (analyzedChatIds.value.has(dialog.id)) {
     return {
+      variant: 'accent' as const,
       label: selectedDialogId.value === dialog.id && selectedDialogCooldownLike.value
         ? t('dashboard.recentReport')
         : t('dashboard.reportReady'),
-      variant: 'accent' as const,
     }
   }
 
@@ -338,6 +345,14 @@ function formatHistoryScope(item: ParseHistoryItem) {
   }
 
   return item.jobId
+}
+
+function shouldRenderHistoryError(item: ParseHistoryItem) {
+  if (!item.errorMessage) {
+    return false
+  }
+
+  return !/busy with another operation|transient duplicate-auth conflict/i.test(item.errorMessage)
 }
 
 async function handleTerminateTelegramSession() {
@@ -397,20 +412,6 @@ async function handleClearHistory() {
   }
 }
 
-async function handleDeleteHistoryItem(jobId: string) {
-  deletingHistoryJobId.value = jobId
-
-  try {
-    await deleteHistoryItem(jobId)
-    toast.success(t('dashboard.historyItemDeleted'))
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('dashboard.deleteHistoryItemError'))
-  } finally {
-    deletingHistoryJobId.value = null
-    confirmState.value = null
-  }
-}
-
 function openTerminateConfirm() {
   confirmState.value = {
     type: 'terminate',
@@ -452,17 +453,6 @@ function openClearHistoryConfirm() {
   }
 }
 
-function openDeleteHistoryItemConfirm(jobId: string) {
-  confirmState.value = {
-    type: 'delete-history-item',
-    title: t('dashboard.deleteHistoryItem'),
-    description: t('dashboard.deleteHistoryItemConfirm'),
-    confirmLabel: t('dashboard.deleteHistoryItem'),
-    variant: 'danger',
-    jobId,
-  }
-}
-
 async function confirmAction() {
   if (!confirmState.value) {
     return
@@ -476,8 +466,6 @@ async function confirmAction() {
     await handleDeleteReport(confirmState.value.chatId)
   } else if (confirmState.value.type === 'clear-history') {
     await handleClearHistory()
-  } else if (confirmState.value.type === 'delete-history-item' && confirmState.value.jobId) {
-    await handleDeleteHistoryItem(confirmState.value.jobId)
   }
 }
 
@@ -493,9 +481,6 @@ const confirmLoading = computed(() => {
   }
   if (confirmState.value.type === 'delete-report') {
     return deletingChatId.value === confirmState.value.chatId
-  }
-  if (confirmState.value.type === 'delete-history-item') {
-    return deletingHistoryJobId.value === confirmState.value.jobId
   }
   return clearingHistory.value
 })
@@ -625,7 +610,19 @@ onMounted(async () => {
                 <ChatAvatar :chat-id="selectedDialog.id" :title="selectedDialog.title" :has-avatar="selectedDialog.hasAvatar" />
                 <div class="dialog-copy">
                   <span class="text-label">{{ t('dashboard.currentSelection') }}</span>
-                  <strong class="dialog-title">{{ selectedDialog.title }}</strong>
+                  <div class="dialog-title-row">
+                    <strong class="dialog-title">{{ selectedDialog.title }}</strong>
+                    <StatusDot
+                      v-if="selectedDialogReport"
+                      variant="accent"
+                      :label="t('dashboard.reportReady')"
+                    />
+                    <StatusDot
+                      v-if="progress.chatId === selectedDialog.id && isParseActive"
+                      variant="info"
+                      :label="statusLabel(progress.status)"
+                    />
+                  </div>
                   <span class="text-caption selection-subline">
                     {{ dialogTypeLabel(selectedDialog.type) }}
                     <template v-if="selectedDialogReport">
@@ -635,8 +632,6 @@ onMounted(async () => {
                 </div>
               </div>
               <div class="selection-actions">
-                <Badge v-if="selectedDialogReport" variant="accent">{{ t('dashboard.reportReady') }}</Badge>
-                <Badge v-if="progress.chatId === selectedDialog.id && isParseActive" variant="info">{{ statusLabel(progress.status) }}</Badge>
                 <Button
                   variant="primary"
                   size="sm"
@@ -673,10 +668,6 @@ onMounted(async () => {
           </div>
 
           <div v-else class="stack-lg">
-            <div v-if="stats.parseDialogsTruncated" class="info-banner info-banner-tone">
-              {{ t('dashboard.truncated', { total: formatNumber(stats.parseDialogsTotal) }) }}
-            </div>
-
             <div v-if="visibleDialogs.length" class="dialog-list">
               <button
                 v-for="(dialog, index) in visibleDialogs"
@@ -690,14 +681,16 @@ onMounted(async () => {
                 <div class="dialog-main">
                   <ChatAvatar :chat-id="dialog.id" :title="dialog.title" :has-avatar="dialog.hasAvatar" />
                   <div class="dialog-copy">
-                    <span class="dialog-title">{{ dialog.title }}</span>
+                    <div class="dialog-title-row">
+                      <span class="dialog-title">{{ dialog.title }}</span>
+                      <StatusDot
+                        v-if="dialogState(dialog)"
+                        :variant="dialogState(dialog)?.variant ?? 'default'"
+                        :label="dialogState(dialog)?.label ?? ''"
+                      />
+                    </div>
                     <span class="text-caption selection-subline">{{ dialogTypeLabel(dialog.type) }}</span>
                   </div>
-                </div>
-                <div class="dialog-side">
-                  <Badge v-if="dialogState(dialog)" :variant="dialogState(dialog)?.variant ?? 'default'">
-                    {{ dialogState(dialog)?.label }}
-                  </Badge>
                 </div>
               </button>
             </div>
@@ -780,15 +773,6 @@ onMounted(async () => {
               </div>
               <div class="section-actions">
                 <Badge variant="default">{{ t('dashboard.jobsCount', { count: formatNumber(stats.history.length) }) }}</Badge>
-                <Button
-                  v-if="stats.history.length"
-                  variant="danger"
-                  size="sm"
-                  :loading="clearingHistory"
-                  @click="openClearHistoryConfirm"
-                >
-                  {{ t('dashboard.clearHistory') }}
-                </Button>
               </div>
             </div>
 
@@ -801,29 +785,20 @@ onMounted(async () => {
                   :style="{ '--delay': `${index * 40}ms` }"
                 >
                   <div class="history-row-head">
-                    <span class="history-title">{{ formatHistoryScope(item) }}</span>
-                    <Badge :variant="statusVariant(item.status)">{{ statusLabel(item.status) }}</Badge>
+                    <div class="dialog-title-row">
+                      <span class="history-title">{{ formatHistoryScope(item) }}</span>
+                      <StatusDot :variant="statusVariant(item.status)" :label="statusLabel(item.status)" />
+                    </div>
                   </div>
                   <div class="history-progress progress-bar">
                     <div class="progress-bar-fill" :style="{ width: `${historyProgress(item)}%` }" />
                   </div>
                   <div class="history-meta text-caption">
                     <span class="mono-value">{{ formatNumber(item.totalMessages) }} {{ t('common.messages') }}</span>
-                    <span class="mono-value">{{ t('dashboard.historyChatsCount', { parsed: formatNumber(item.parsedChats), total: formatNumber(item.totalChats || 1) }) }}</span>
-                    <span class="mono-value">{{ formatShortDate(item.createdAt) }}</span>
-                    <span class="mono-value">{{ item.completedAt ? formatShortDate(item.completedAt) : t('dashboard.historyStillActive') }}</span>
+                    <span class="history-separator" aria-hidden="true" />
+                    <span class="mono-value history-dates">{{ formatHistoryDates(item) }}</span>
                   </div>
-                  <div v-if="item.status !== 'running' && item.status !== 'pending'" class="history-actions">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      :loading="deletingHistoryJobId === item.jobId"
-                      @click="openDeleteHistoryItemConfirm(item.jobId)"
-                    >
-                      {{ t('dashboard.deleteHistoryItem') }}
-                    </Button>
-                  </div>
-                  <div v-if="item.errorMessage" class="detail-error text-body-sm">
+                  <div v-if="shouldRenderHistoryError(item)" class="detail-error text-body-sm">
                     {{ item.errorMessage }}
                   </div>
                 </div>
@@ -929,6 +904,7 @@ onMounted(async () => {
 .hero-copy p,
 .section-text {
   color: var(--text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .info-banner {
@@ -1030,6 +1006,13 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 
+.dialog-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
 .dialog-item {
   display: flex;
   align-items: center;
@@ -1061,13 +1044,6 @@ onMounted(async () => {
   gap: var(--space-3);
   min-width: 0;
   flex: 1;
-}
-
-.dialog-side {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
 }
 
 .dialog-copy {
@@ -1127,6 +1103,7 @@ onMounted(async () => {
 .analyzed-actions {
   justify-content: flex-end;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .analyzed-meta {
@@ -1138,9 +1115,22 @@ onMounted(async () => {
 }
 
 .analyzed-foot {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
   color: var(--text-secondary);
+}
+
+.analyzed-foot span + span::before {
+  content: '';
+  display: inline-flex;
+  width: 4px;
+  height: 4px;
+  margin-right: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--text-tertiary);
+  vertical-align: middle;
 }
 
 .analyzed-count {
@@ -1163,8 +1153,27 @@ onMounted(async () => {
 }
 
 .history-meta {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow-x: auto;
   color: var(--text-secondary);
+  scrollbar-width: none;
+}
+
+.history-meta::-webkit-scrollbar {
+  display: none;
+}
+
+.history-separator {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--text-tertiary);
+  flex: 0 0 auto;
+}
+
+.history-dates {
+  min-width: 0;
 }
 
 .detail-error {
@@ -1173,6 +1182,7 @@ onMounted(async () => {
   padding: var(--space-3);
   background: var(--color-danger-muted);
   color: var(--color-danger);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1200px) {
@@ -1188,8 +1198,6 @@ onMounted(async () => {
   .analyzed-head,
   .section-actions,
   .analyzed-actions,
-  .history-row-head,
-  .history-meta,
   .dialog-item {
     flex-direction: column;
     align-items: stretch;
@@ -1209,13 +1217,66 @@ onMounted(async () => {
     padding: var(--space-4);
   }
 
+  .section-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .analyzed-card {
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .analyzed-link {
+    gap: var(--space-2);
+  }
+
+  .analyzed-meta {
+    gap: var(--space-2);
+  }
+
+  .analyzed-count {
+    font-size: 12px;
+  }
+
   .dialog-main,
   .selection-main {
     align-items: center;
   }
 
-  .dialog-side {
-    align-items: flex-start;
+  .analyzed-foot {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+
+  .analyzed-foot::-webkit-scrollbar {
+    display: none;
+  }
+
+  .history-row {
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .history-row-head {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .history-progress {
+    height: 3px;
+  }
+
+  .history-meta {
+    gap: var(--space-2);
+    font-size: 11px;
+  }
+
+  .detail-error {
+    padding: var(--space-2);
+    font-size: 12px;
   }
 }
 </style>

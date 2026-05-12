@@ -9,10 +9,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   await bootstrap()
 
   if (auth.isAuthorized) {
-    return navigateTo('/dashboard')
+    return navigateTo('/dashboard', { replace: true })
   }
 
   if (to.path === '/') {
-    return navigateTo('/login')
+    return navigateTo('/login', { replace: true })
   }
 })

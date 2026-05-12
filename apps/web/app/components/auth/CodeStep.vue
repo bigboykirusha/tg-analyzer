@@ -78,11 +78,6 @@ function submit() {
   emit('submit')
 }
 
-onMounted(() => {
-  requestAnimationFrame(() => {
-    focusInput(Math.max(0, digits.value.findIndex((digit) => !digit)))
-  })
-})
 </script>
 
 <template>

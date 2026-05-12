@@ -82,10 +82,13 @@ html {
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
   touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  scrollbar-gutter: stable;
 }
 
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   background: var(--bg-base);
   color: var(--text-primary);
@@ -106,6 +109,16 @@ select {
   font: inherit;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select,
+  .input,
+  .textarea {
+    font-size: 16px;
+  }
 }
 
 ::-webkit-scrollbar {
@@ -383,14 +396,6 @@ select {
 @media (max-width: 768px) {
   .page-shell {
     padding: var(--space-3);
-  }
-
-  input,
-  textarea,
-  select,
-  .input,
-  .textarea {
-    font-size: 16px;
   }
 
   .section-header {

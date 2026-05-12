@@ -26,6 +26,8 @@ const phonePlaceholder = computed(() => {
   return [prefix, suffix].filter(Boolean).join(' ')
 })
 
+const phoneMaxLength = computed(() => phoneInput.maxDisplayLength.value)
+
 function flagSrc(code: string) {
   return `https://flagcdn.com/w40/${code.toLowerCase()}.png`
 }
@@ -128,6 +130,7 @@ function submit() {
           v-model="phoneDisplay"
           class="input phone-input"
           :placeholder="phonePlaceholder"
+          :maxlength="phoneMaxLength"
           inputmode="tel"
           autocomplete="tel"
         >

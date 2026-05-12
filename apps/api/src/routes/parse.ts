@@ -27,10 +27,13 @@ import {
   updateParseJob,
 } from '../services/session.service'
 import {
+  isSystemTelegramDialog,
+  isTelegramSessionDuplicatedError,
   isTelegramSessionExpiredError,
   isTelegramSessionBusyError,
   normalizeTelegramDialogType,
   telegramPool,
+  withTelegramReconnectRetry,
   withFloodWaitRetry,
   type TelegramDialog,
 } from '../services/telegram.service'
@@ -40,9 +43,11 @@ const startSchema = z.object({
 })
 
 const CHAT_REPARSE_COOLDOWN_SECONDS = 60 * 60
+const PARSE_DIALOGS_LIST_LIMIT = 300
 
 function mapParseDialogs(dialogs: TelegramDialog[]): ParseDialogsResponse {
-  const mapped: ParseDialogDto[] = dialogs.map((dialog) => ({
+  const filteredDialogs = dialogs.filter((dialog) => !isSystemTelegramDialog(dialog))
+  const mapped: ParseDialogDto[] = filteredDialogs.map((dialog) => ({
     id: String(dialog.id),
     title: dialog.title ?? dialog.name ?? String(dialog.id),
     type: normalizeTelegramDialogType(dialog),
@@ -51,8 +56,8 @@ function mapParseDialogs(dialogs: TelegramDialog[]): ParseDialogsResponse {
 
   return {
     dialogs: mapped,
-    truncated: dialogs.length === 500,
-    total: dialogs.length,
+    truncated: dialogs.length === PARSE_DIALOGS_LIST_LIMIT,
+    total: filteredDialogs.length,
   }
 }
 
@@ -89,23 +94,28 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
 
       let dialogs: TelegramDialog[]
       try {
-        const client = await telegramPool.connectAuthorizedClient(userId, session)
-        dialogs = await withFloodWaitRetry(() => client.getDialogs({ limit: 500 })) as unknown as TelegramDialog[]
+        dialogs = await withTelegramReconnectRetry(async () => {
+          const client = await telegramPool.connectAuthorizedClient(userId, session)
+          return await withFloodWaitRetry(() => client.getDialogs({ limit: 500 })) as unknown as TelegramDialog[]
+        }, async () => {
+          await telegramPool.disconnectAuthorizedClient(userId)
+        })
       } catch (error) {
         if (isTelegramSessionExpiredError(error)) {
           await deactivateTelegramSessions(userId)
           await telegramPool.disconnectAuthorizedClient(userId)
           return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
         }
-        if (isTelegramSessionBusyError(error)) {
-          return reply.status(409).send({ message: 'Telegram session is busy with another operation' })
+        if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
+          await telegramPool.disconnectAuthorizedClient(userId)
+          return reply.status(409).send()
         }
         throw error
       } finally {
         await telegramPool.disconnectAuthorizedClient(userId)
       }
 
-      const dialog = dialogs.find((item) => String(item.id) === chatIds[0])
+      const dialog = dialogs.find((item) => String(item.id) === chatIds[0] && !isSystemTelegramDialog(item))
       targetChat = dialog
         ? {
             id: Number(dialog.id),
@@ -118,6 +128,10 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       } catch {
         return reply.status(429).send({ message: 'Full parse cooldown is still active' })
       }
+    }
+
+    if (chatIds?.length === 1 && !targetChat) {
+      return reply.status(404).send({ message: 'Chat not found or unavailable for parsing' })
     }
 
     const jobId = await createParseJob({
@@ -177,8 +191,12 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     try {
-      const client = await telegramPool.connectAuthorizedClient(userId, session)
-      const dialogs = await withFloodWaitRetry(() => client.getDialogs({ limit: 500 })) as unknown as TelegramDialog[]
+      const dialogs = await withTelegramReconnectRetry(async () => {
+        const client = await telegramPool.connectAuthorizedClient(userId, session)
+        return await withFloodWaitRetry(() => client.getDialogs({ limit: PARSE_DIALOGS_LIST_LIMIT })) as unknown as TelegramDialog[]
+      }, async () => {
+        await telegramPool.disconnectAuthorizedClient(userId)
+      })
       const result = mapParseDialogs(dialogs)
       await cacheParseDialogs(userId, result)
 
@@ -189,13 +207,14 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
         await telegramPool.disconnectAuthorizedClient(userId)
         return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
       }
-      if (isTelegramSessionBusyError(error)) {
+      if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
+        await telegramPool.disconnectAuthorizedClient(userId)
         const cached = await getCachedParseDialogs(userId)
         if (cached) {
           return cached
         }
 
-        return reply.status(409).send({ message: 'Telegram session is busy with another operation' })
+        return reply.status(409).send()
       }
       throw error
     } finally {
@@ -213,16 +232,21 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
 
     let avatar: Buffer | null = null
     try {
-      const client = await telegramPool.connectAuthorizedClient(userId, session)
-      avatar = await telegramPool.getDialogAvatar(userId, params.dialogId, client)
+      avatar = await withTelegramReconnectRetry(async () => {
+        const client = await telegramPool.connectAuthorizedClient(userId, session)
+        return telegramPool.getDialogAvatar(userId, params.dialogId, client)
+      }, async () => {
+        await telegramPool.disconnectAuthorizedClient(userId)
+      })
     } catch (error) {
       if (isTelegramSessionExpiredError(error)) {
         await deactivateTelegramSessions(userId)
         await telegramPool.disconnectAuthorizedClient(userId)
         return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
       }
-      if (isTelegramSessionBusyError(error)) {
-        return reply.status(409).send({ message: 'Telegram session is busy with another operation' })
+      if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
+        await telegramPool.disconnectAuthorizedClient(userId)
+        return reply.status(409).send()
       }
       throw error
     } finally {

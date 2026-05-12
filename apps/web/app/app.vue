@@ -1,4 +1,4 @@
 <template>
   <NuxtPage />
-  <ToastProvider />
+  <UiToastProvider />
 </template>

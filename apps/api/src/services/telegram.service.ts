@@ -18,7 +18,10 @@ export type TelegramDialog = {
   title?: string
   name?: string
   entity?: {
+    id?: unknown
     className?: string
+    username?: string
+    self?: boolean
     bot?: boolean
     broadcast?: boolean
     megagroup?: boolean
@@ -359,6 +362,19 @@ export function normalizeTelegramDialogType(dialog: TelegramDialog): 'private' |
   return 'unknown'
 }
 
+export function isSystemTelegramDialog(dialog: TelegramDialog) {
+  const entity = dialog.entity ?? {}
+  const normalizedTitle = String(dialog.title ?? dialog.name ?? '').trim().toLowerCase()
+  const normalizedUsername = String(entity.username ?? '').trim().toLowerCase()
+  const rawId = entity.id ?? dialog.id
+  const numericId = typeof rawId === 'number' ? rawId : Number(rawId)
+
+  return entity.self === true
+    || numericId === 777000
+    || normalizedUsername === 'telegram'
+    || normalizedTitle === 'telegram'
+}
+
 export function getTelegramUserData(client: TelegramClient) {
   const entity = client.getMe() as unknown as Promise<{
     id: { value?: bigint } | number
@@ -425,11 +441,40 @@ export function getFloodWaitSeconds(error: unknown) {
 
 export function isTelegramSessionExpiredError(error: unknown) {
   const message = String((error as { errorMessage?: unknown; message?: unknown })?.errorMessage ?? (error as Error)?.message ?? '')
-  return /AUTH_KEY_UNREGISTERED|SESSION_REVOKED|SESSION_EXPIRED|USER_DEACTIVATED|AUTH_KEY_INVALID|AUTH_KEY_DUPLICATED/i.test(message)
+  return /AUTH_KEY_UNREGISTERED|SESSION_REVOKED|SESSION_EXPIRED|USER_DEACTIVATED|AUTH_KEY_INVALID/i.test(message)
+}
+
+export function isTelegramSessionDuplicatedError(error: unknown) {
+  const message = String((error as { errorMessage?: unknown; message?: unknown })?.errorMessage ?? (error as Error)?.message ?? '')
+  return /AUTH_KEY_DUPLICATED/i.test(message)
 }
 
 export function isTelegramSessionBusyError(error: unknown) {
   return error instanceof TelegramSessionBusyError
+}
+
+export async function withTelegramReconnectRetry<T>(
+  action: () => Promise<T>,
+  resetConnection: () => Promise<void>,
+  maxAttempts = 2,
+): Promise<T> {
+  let attempt = 0
+
+  while (attempt < maxAttempts) {
+    try {
+      return await action()
+    } catch (error) {
+      attempt += 1
+      if (!isTelegramSessionDuplicatedError(error) || attempt >= maxAttempts) {
+        throw error
+      }
+
+      await resetConnection()
+      await sleep(400)
+    }
+  }
+
+  return action()
 }
 
 export async function withFloodWaitRetry<T>(action: () => Promise<T>, maxAttempts = 2): Promise<T> {

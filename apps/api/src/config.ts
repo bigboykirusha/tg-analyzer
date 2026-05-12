@@ -12,7 +12,9 @@ const envSchema = z.object({
   SESSION_ENCRYPTION_KEY: z.string().regex(/^[0-9a-fA-F]{64}$/),
   JWT_SECRET: z.string().min(16),
   JWT_REFRESH_SECRET: z.string().min(16),
-  COOKIE_SECURE: z.coerce.boolean().default(false),
+  COOKIE_SECURE: z.coerce.boolean().optional(),
+  COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).optional(),
+  COOKIE_DOMAIN: z.string().min(1).optional(),
   REFRESH_SESSION_GRACE_SECONDS: z.coerce.number().int().positive().default(15),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
   AUTH_RATE_LIMIT_WINDOW: z.string().default('1 minute'),
@@ -20,6 +22,14 @@ const envSchema = z.object({
   DATA_RETENTION_DAYS: z.coerce.number().int().positive().default(365),
 })
 
-export const config = envSchema.parse(process.env)
+const rawConfig = envSchema.parse(process.env)
+const cookieSecure = rawConfig.COOKIE_SECURE ?? rawConfig.NODE_ENV === 'production'
+const cookieSameSite = rawConfig.COOKIE_SAME_SITE ?? (cookieSecure ? 'none' : 'lax')
+
+export const config = {
+  ...rawConfig,
+  COOKIE_SECURE: cookieSecure,
+  COOKIE_SAME_SITE: cookieSecure ? cookieSameSite : (cookieSameSite === 'none' ? 'lax' : cookieSameSite),
+}
 
 export const cookieName = 'tg_analyzer_refresh'

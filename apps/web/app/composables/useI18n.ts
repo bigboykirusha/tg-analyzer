@@ -515,7 +515,7 @@ const messages: Record<Locale, Messages> = {
     'dashboard.activeJobNotice': 'Сейчас уже выполняется другой парсинг.',
     'dashboard.cooldownNotice': 'Этот чат недавно анализировался и может быть на паузе.',
     'dashboard.rerunHint': 'Можно запустить парсинг заново, чтобы обновить этот отчет.',
-    'dashboard.firstReportHint': 'Выберите этот чат, чтобы создать первый отчет.',
+    'dashboard.firstReportHint': 'Выберите этот чат, чтобы создать отчет.',
     'dashboard.dialogTypePrivate': 'Личный',
     'dashboard.dialogTypeGroup': 'Группа',
     'dashboard.dialogTypeChannel': 'Канал',

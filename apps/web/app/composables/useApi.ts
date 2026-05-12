@@ -2,6 +2,7 @@ import type { ApiErrorResponse, AuthSuccessResponse, UserDto } from '@tg-analyze
 import { isDefinitiveAuthFailureCode, isTokenUsable } from '../utils/auth'
 
 let refreshPromise: Promise<RefreshResult> | null = null
+let loginRedirectInFlight = false
 
 type FetchErrorLike = {
   message?: string
@@ -48,14 +49,34 @@ function setTransientAuthHealth(auth: ReturnType<typeof useAuthStore>) {
   auth.setAuthHealth(isTokenUsable(auth.accessToken) && auth.telegramSessionActive ? 'ready' : 'degraded')
 }
 
+async function handleTelegramReauthRequired(auth: ReturnType<typeof useAuthStore>) {
+  auth.clear()
+  await redirectToLogin()
+}
+
 async function redirectToLogin() {
   if (!import.meta.client) {
     return
   }
 
-  if (window.location.pathname !== '/login') {
-    await navigateTo('/login')
+  if (window.location.pathname === '/login' || loginRedirectInFlight) {
+    return
   }
+
+  loginRedirectInFlight = true
+
+  try {
+    await navigateTo('/login', { replace: true })
+  } catch {
+    // Fall through to a hard redirect when navigation is triggered from a background request.
+  }
+
+  if (window.location.pathname !== '/login') {
+    window.location.replace('/login')
+    return
+  }
+
+  loginRedirectInFlight = false
 }
 
 async function doRefresh(apiUrl: string): Promise<RefreshResult> {
@@ -86,7 +107,8 @@ async function doRefresh(apiUrl: string): Promise<RefreshResult> {
     const error = normalizeApiError(rawError)
 
     if (error.code === 'TELEGRAM_REAUTH_REQUIRED') {
-      auth.setTelegramSessionActive(false)
+      await handleTelegramReauthRequired(auth)
+      return { accessToken: null, user: null, error, definitiveFailure: true }
     }
 
     if (isDefinitiveAuthFailureCode(error.code)) {
@@ -135,7 +157,7 @@ export function useApiFetch<T>(path: string, options: Parameters<typeof $fetch<T
     const error = normalizeApiError(rawError)
 
     if (error.code === 'TELEGRAM_REAUTH_REQUIRED') {
-      auth.setTelegramSessionActive(false)
+      await handleTelegramReauthRequired(auth)
       throw error
     }
 

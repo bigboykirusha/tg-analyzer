@@ -158,7 +158,7 @@ async function handleCode() {
       return
     }
 
-    await navigateTo('/dashboard')
+    await navigateTo('/dashboard', { replace: true })
   } catch (err) {
     error.value = err instanceof Error ? err.message : t('login.invalidCodeError')
   } finally {
@@ -171,7 +171,7 @@ async function handlePassword() {
   error.value = ''
   try {
     await verifyPassword({ password: password.value })
-    await navigateTo('/dashboard')
+    await navigateTo('/dashboard', { replace: true })
   } catch (err) {
     error.value = err instanceof Error ? err.message : t('login.invalidPasswordError')
   } finally {
@@ -288,6 +288,7 @@ async function handlePassword() {
 .login-page {
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: stretch;
   justify-content: center;

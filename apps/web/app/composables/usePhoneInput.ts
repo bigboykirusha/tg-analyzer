@@ -82,6 +82,17 @@ export function usePhoneInput(initialCountry = 'RU') {
   })
 
   const normalizedPhone = computed(() => `${country.value.dialCode}${nationalDigits.value}`)
+  const maxDisplayLength = computed(() => {
+    const { pattern } = country.value
+    if (!pattern.length) {
+      return country.value.maxDigits
+    }
+
+    const totalDigits = pattern.reduce((sum, size) => sum + size, 0)
+    const spaces = Math.max(0, pattern.length - 1)
+    const parentheses = pattern[0] ? 2 : 0
+    return totalDigits + spaces + parentheses
+  })
 
   const isValid = computed(() => (
     nationalDigits.value.length >= country.value.minDigits
@@ -115,6 +126,7 @@ export function usePhoneInput(initialCountry = 'RU') {
     countries: PHONE_COUNTRIES,
     displayValue,
     normalizedPhone,
+    maxDisplayLength,
     isValid,
     setCountry,
     setFromNormalized,

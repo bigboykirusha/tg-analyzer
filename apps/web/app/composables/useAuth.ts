@@ -6,13 +6,26 @@ import type {
   VerifyPasswordBody,
 } from '@tg-analyzer/shared'
 import { refreshAccessToken } from './useApi'
-import { isDefinitiveAuthFailureCode, isTokenExpiringSoon } from '../utils/auth'
+import { isDefinitiveAuthFailureCode, isTokenExpiringSoon, isTokenUsable } from '../utils/auth'
+
+let bootstrapPromise: Promise<AuthSuccessResponse | null> | null = null
 
 export function useAuth() {
   const auth = useAuthStore()
   const config = useRuntimeConfig()
 
-  async function restoreSession() {
+  function getPersistedSession() {
+    if (!auth.isAuthorized || !auth.user || !isTokenUsable(auth.accessToken)) {
+      return null
+    }
+
+    return {
+      accessToken: auth.accessToken,
+      user: auth.user,
+    } satisfies AuthSuccessResponse
+  }
+
+  async function restoreSession(allowPersistedFallback = false) {
     const result = await refreshAccessToken(config.public.apiUrl)
 
     if (result.accessToken && result.user) {
@@ -26,36 +39,40 @@ export function useAuth() {
       return null
     }
 
-    if (auth.isAuthorized && auth.user) {
-      return {
-        accessToken: auth.accessToken,
-        user: auth.user,
-      } satisfies AuthSuccessResponse
+    if (allowPersistedFallback) {
+      return getPersistedSession()
     }
 
     return null
   }
 
-  async function bootstrap() {
+  async function runBootstrap() {
     auth.loadPersisted()
+    const persistedSession = getPersistedSession()
 
-    if (auth.isAuthorized && auth.user) {
+    if (persistedSession) {
       auth.setAuthHealth(auth.telegramSessionActive ? 'ready' : 'degraded')
 
       if (!isTokenExpiringSoon(auth.accessToken)) {
-        return {
-          accessToken: auth.accessToken,
-          user: auth.user,
-        } satisfies AuthSuccessResponse
+        return persistedSession
       }
 
-      return await restoreSession() ?? {
-        accessToken: auth.accessToken,
-        user: auth.user,
-      }
+      return await restoreSession(true) ?? persistedSession
     }
 
-    return restoreSession()
+    return restoreSession(false)
+  }
+
+  async function bootstrap() {
+    if (bootstrapPromise) {
+      return bootstrapPromise
+    }
+
+    bootstrapPromise = runBootstrap().finally(() => {
+      bootstrapPromise = null
+    })
+
+    return bootstrapPromise
   }
 
   async function sendCode(phone: string) {
@@ -107,7 +124,7 @@ export function useAuth() {
       })
     } finally {
       auth.clear()
-      await navigateTo('/login')
+      await navigateTo('/login', { replace: true })
     }
   }
 
@@ -123,7 +140,7 @@ export function useAuth() {
       method: 'DELETE',
     })
     auth.clear()
-    await navigateTo('/login')
+    await navigateTo('/login', { replace: true })
   }
 
   return {

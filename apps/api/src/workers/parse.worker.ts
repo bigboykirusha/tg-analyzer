@@ -2,10 +2,13 @@ import { Worker, type Job } from 'bullmq'
 import { parseDialogsQueue, type ParseJobData } from '../queues/parse.queue'
 import { redis } from '../services/redis.service'
 import {
+  isSystemTelegramDialog,
+  isTelegramSessionDuplicatedError,
   isTelegramSessionExpiredError,
   isTelegramSessionBusyError,
   normalizeTelegramDialogType,
   telegramPool,
+  withTelegramReconnectRetry,
   withFloodWaitRetry,
   type TelegramDialog,
   type TelegramMessageLike,
@@ -46,7 +49,11 @@ type TelegramClientLike = {
   getMessages(entity: unknown, options: { limit: number; offsetId: number }): Promise<TelegramMessageLike[]>
 }
 
-async function parseDialog(client: TelegramClientLike, userId: string, jobId: string, dialog: TelegramDialog, context: {
+async function parseDialog(userId: string, session: {
+  sessionString: string
+  sessionIv: string
+  authTag: string
+}, jobId: string, dialog: TelegramDialog, context: {
   chatIndex: number
   totalChats: number
   job: Job<ParseJobData>
@@ -60,10 +67,15 @@ async function parseDialog(client: TelegramClientLike, userId: string, jobId: st
   while (hasMore) {
     await ensureNotCancelled(userId, jobId)
 
-    const messages = await withFloodWaitRetry(() => client.getMessages(dialog.entity, {
-      limit: 100,
-      offsetId,
-    }))
+    const messages = await withTelegramReconnectRetry(async () => {
+      const client = await telegramPool.connectAuthorizedClient(userId, session) as unknown as TelegramClientLike
+      return await withFloodWaitRetry(() => client.getMessages(dialog.entity, {
+        limit: 100,
+        offsetId,
+      }))
+    }, async () => {
+      await telegramPool.disconnectAuthorizedClient(userId)
+    })
 
     if (!messages || messages.length === 0) {
       break
@@ -133,7 +145,6 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       throw new Error('Active Telegram session not found')
     }
 
-    const client = await telegramPool.connectAuthorizedClient(userId, session) as unknown as TelegramClientLike
     await publishParseProgress(userId, {
       type: 'progress',
       current: 0,
@@ -144,10 +155,15 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       message: 'Loading chat list',
     })
 
-    const dialogs = await withFloodWaitRetry(() => client.getDialogs({ limit: 500 }))
+    const dialogs = await withTelegramReconnectRetry(async () => {
+      const client = await telegramPool.connectAuthorizedClient(userId, session) as unknown as TelegramClientLike
+      return await withFloodWaitRetry(() => client.getDialogs({ limit: 500 }))
+    }, async () => {
+      await telegramPool.disconnectAuthorizedClient(userId)
+    })
     const targetDialogs = chatIds?.length
-      ? dialogs.filter((dialog) => chatIds.includes(String(dialog.id)))
-      : dialogs
+      ? dialogs.filter((dialog) => chatIds.includes(String(dialog.id)) && !isSystemTelegramDialog(dialog))
+      : dialogs.filter((dialog) => !isSystemTelegramDialog(dialog))
 
     await updateParseJob(jobId, {
       status: 'running',
@@ -181,7 +197,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
         message: `Parsing chat ${index + 1} of ${targetDialogs.length}`,
       })
 
-      const count = await parseDialog(client, userId, jobId, dialog, {
+      const count = await parseDialog(userId, session, jobId, dialog, {
         chatIndex: index + 1,
         totalChats: targetDialogs.length,
         job,
@@ -257,13 +273,14 @@ parseWorker.on('failed', async (job, error) => {
   }
 
   const errorMessage = error instanceof Error ? error.message : String(error)
+  const isTransientTelegramConflict = isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)
 
   await updateParseJob(job.data.jobId, {
     status: 'failed',
     errorMessage: isTelegramSessionExpiredError(error)
       ? 'Telegram session expired'
-      : isTelegramSessionBusyError(error)
-        ? 'Telegram session is busy with another operation'
+      : isTransientTelegramConflict
+        ? null
         : errorMessage,
     completedAt: new Date(),
   })

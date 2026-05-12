@@ -14,6 +14,7 @@ export const useAuthStore = defineStore('auth', {
     phoneCodeHash: '' as string,
     telegramSessionActive: true,
     authHealth: 'unauthenticated' as AuthHealth,
+    hydrated: false,
   }),
   getters: {
     isAuthorized: (state) => Boolean(state.accessToken && state.user),
@@ -53,6 +54,10 @@ export const useAuthStore = defineStore('auth', {
         return
       }
 
+      if (this.hydrated) {
+        return
+      }
+
       const persistedAccessToken = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) ?? ''
       const rawUser = localStorage.getItem(USER_STORAGE_KEY)
 
@@ -69,6 +74,7 @@ export const useAuthStore = defineStore('auth', {
         this.accessToken = ''
         this.telegramSessionActive = true
         this.authHealth = 'unauthenticated'
+        this.hydrated = true
         localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
         localStorage.removeItem(USER_STORAGE_KEY)
         return
@@ -76,6 +82,7 @@ export const useAuthStore = defineStore('auth', {
 
       this.telegramSessionActive = this.user.telegramSessionActive !== false
       this.authHealth = this.telegramSessionActive ? 'ready' : 'degraded'
+      this.hydrated = true
     },
     clear() {
       this.user = null
@@ -84,6 +91,8 @@ export const useAuthStore = defineStore('auth', {
       this.phoneCodeHash = ''
       this.telegramSessionActive = true
       this.authHealth = 'unauthenticated'
+      this.hydrated = true
+      useStatsStore().reset()
       if (import.meta.client) {
         localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
         localStorage.removeItem(USER_STORAGE_KEY)

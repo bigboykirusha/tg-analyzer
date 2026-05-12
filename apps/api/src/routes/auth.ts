@@ -24,12 +24,14 @@ import {
 } from '../services/session.service'
 import {
   exportSession,
+  isTelegramSessionDuplicatedError,
   getTelegramUserData,
   isTelegramSessionExpiredError,
   isTelegramSessionBusyError,
   signInWithCode,
   signInWithPassword,
   telegramPool,
+  withTelegramReconnectRetry,
 } from '../services/telegram.service'
 import { config, cookieName } from '../config'
 import { requireAuth } from '../middleware/auth.middleware'
@@ -114,6 +116,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/refresh', async (request, reply) => {
     const token = request.cookies[cookieName]
     if (!token) {
+      request.log.warn({ path: request.url }, 'refresh cookie missing')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Refresh cookie missing', 'AUTH_REFRESH_INVALID')
     }
@@ -122,26 +125,31 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       payload = jwt.verify(token, config.JWT_REFRESH_SECRET, { issuer: 'tg-analyzer' }) as { sub: string; sessionId: string }
     } catch {
+      request.log.warn({ path: request.url }, 'invalid refresh token')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Invalid refresh token', 'AUTH_REFRESH_INVALID')
     }
 
     const rotation = await rotateRefreshSession(payload.sessionId)
     if (rotation.status === 'invalid') {
+      request.log.warn({ userId: payload.sub, sessionId: payload.sessionId }, 'refresh session invalid')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Refresh session invalid', 'AUTH_REFRESH_INVALID')
     }
     if (rotation.status === 'replayed') {
+      request.log.warn({ userId: payload.sub, sessionId: payload.sessionId }, 'refresh session replay detected')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Refresh session replay detected', 'AUTH_REFRESH_REPLAYED')
     }
     if (!('session' in rotation)) {
+      request.log.warn({ userId: payload.sub, sessionId: payload.sessionId }, 'refresh session missing after rotation')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Refresh session invalid', 'AUTH_REFRESH_INVALID')
     }
 
     const session = rotation.session
     if (session.userId !== payload.sub) {
+      request.log.warn({ expectedUserId: payload.sub, actualUserId: session.userId, sessionId: payload.sessionId }, 'refresh session user mismatch')
       await revokeRefreshSession(payload.sessionId)
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Refresh session invalid', 'AUTH_REFRESH_INVALID')
@@ -151,6 +159,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       where: eq(schema.users.id, session.userId),
     })
     if (!user) {
+      request.log.warn({ userId: session.userId, sessionId: payload.sessionId }, 'refresh user not found')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'User not found', 'AUTH_REFRESH_INVALID')
     }
@@ -211,15 +220,20 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     let avatar: Buffer | null = null
     try {
-      const client = await telegramPool.connectAuthorizedClient(userId, session)
-      avatar = await telegramPool.getSelfAvatar(userId, client)
+      avatar = await withTelegramReconnectRetry(async () => {
+        const client = await telegramPool.connectAuthorizedClient(userId, session)
+        return telegramPool.getSelfAvatar(userId, client)
+      }, async () => {
+        await telegramPool.disconnectAuthorizedClient(userId)
+      })
     } catch (error) {
       if (isTelegramSessionExpiredError(error)) {
         await deactivateTelegramSessions(userId)
         await telegramPool.disconnectAuthorizedClient(userId)
         return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
       }
-      if (isTelegramSessionBusyError(error)) {
+      if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
+        await telegramPool.disconnectAuthorizedClient(userId)
         return reply.status(409).send({ message: 'Telegram session is busy with another operation' })
       }
       throw error

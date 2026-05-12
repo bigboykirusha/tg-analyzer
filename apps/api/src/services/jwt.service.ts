@@ -5,6 +5,7 @@ import { cookieName, config } from '../config'
 import { db, schema } from '../db'
 import { eq } from 'drizzle-orm'
 import type { FastifyReply } from 'fastify'
+import type { CookieSerializeOptions } from '@fastify/cookie'
 import type { UserDto } from '@tg-analyzer/shared'
 import { createRefreshSession } from './session.service'
 
@@ -17,6 +18,16 @@ export interface AccessPayload {
 export interface RefreshPayload {
   sub: string
   sessionId: string
+}
+
+function getRefreshCookieOptions(): CookieSerializeOptions {
+  return {
+    httpOnly: true,
+    sameSite: config.COOKIE_SAME_SITE,
+    path: '/',
+    secure: config.COOKIE_SECURE,
+    domain: config.COOKIE_DOMAIN,
+  }
 }
 
 export function toUserDto(user: {
@@ -73,19 +84,13 @@ export function setRefreshCookie(reply: FastifyReply, sessionId: string, userId:
     { expiresIn: '30d', issuer: 'tg-analyzer' },
   )
   reply.setCookie(cookieName, token, {
-    httpOnly: true,
-    sameSite: 'strict',
-    path: '/',
-    secure: config.COOKIE_SECURE,
+    ...getRefreshCookieOptions(),
     expires: addDays(new Date(), 30),
   })
 }
 
 export function clearRefreshCookie(reply: FastifyReply) {
   reply.clearCookie(cookieName, {
-    path: '/',
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: config.COOKIE_SECURE,
+    ...getRefreshCookieOptions(),
   })
 }

@@ -12,6 +12,7 @@
   display: grid;
   grid-template-columns: 240px 1fr;
   min-height: 100vh;
+  min-height: 100dvh;
   min-width: 0;
   background: var(--bg-base);
   color: var(--text-primary);
@@ -20,6 +21,7 @@
 
 .app-main {
   overflow-y: auto;
+  min-height: 100dvh;
   min-width: 0;
   padding: var(--space-8) var(--space-10);
 }

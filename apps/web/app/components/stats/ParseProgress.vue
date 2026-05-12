@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Badge from '../ui/Badge.vue'
+import StatusDot from '../ui/StatusDot.vue'
 
 defineProps<{
   current: number
@@ -32,6 +32,22 @@ function statusLabel(status: string) {
   }
   return status
 }
+
+function statusVariant(status: string) {
+  if (status === 'completed') {
+    return 'success'
+  }
+  if (status === 'failed') {
+    return 'danger'
+  }
+  if (status === 'cancelled') {
+    return 'warning'
+  }
+  if (status === 'running') {
+    return 'info'
+  }
+  return 'default'
+}
 </script>
 
 <template>
@@ -39,12 +55,12 @@ function statusLabel(status: string) {
     <div class="progress-header">
       <div class="progress-copy">
         <div class="text-label">{{ t('parse.label') }}</div>
-        <h3 class="text-h3">{{ t('parse.title') }}</h3>
+        <div class="progress-title-row">
+          <h3 class="text-h3">{{ t('parse.title') }}</h3>
+          <StatusDot :variant="statusVariant(status)" :label="statusLabel(status)" />
+        </div>
         <p class="text-body-sm progress-message">{{ message || t('parse.waiting') }}</p>
       </div>
-      <Badge :variant="status === 'completed' ? 'success' : status === 'failed' ? 'danger' : status === 'cancelled' ? 'warning' : status === 'running' ? 'info' : 'default'">
-        {{ statusLabel(status) }}
-      </Badge>
     </div>
 
     <div class="progress-bar">
@@ -87,6 +103,12 @@ function statusLabel(status: string) {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+}
+
+.progress-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .progress-message {
