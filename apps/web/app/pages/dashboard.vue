@@ -17,7 +17,7 @@ import { useAuthStore } from '../stores/auth'
 import { useStatsStore } from '../stores/stats'
 
 definePageMeta({
-  middleware: 'auth',
+  middleware: ['auth'],
 })
 
 const auth = useAuthStore()

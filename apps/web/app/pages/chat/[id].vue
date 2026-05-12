@@ -27,7 +27,7 @@ import { useAuthStore } from '../../stores/auth'
 import { useStatsStore } from '../../stores/stats'
 
 definePageMeta({
-  middleware: 'auth',
+  middleware: ['auth'],
 })
 
 const route = useRoute()
@@ -386,7 +386,90 @@ const sessionFacts = computed(() => {
     },
   ]
 })
-const insightItems = computed(() => chat.value?.conversationFacts.insights ?? [])
+const insightItems = computed(() => {
+  const items = chat.value?.conversationFacts.insights ?? []
+
+  return items.map((item) => {
+    if (item.key === 'session-intensity' && sessionStats.value) {
+      return {
+        ...item,
+        title: t('chat.insightSessionIntensityTitle'),
+        description: t('chat.insightSessionIntensityDescription', {
+          sessions: formatNumber(sessionStats.value.totalSessions),
+          average: formatNumber(sessionStats.value.averageSessionMessages),
+        }),
+      }
+    }
+
+    if (item.key === 'long-session' && sessionStats.value?.longestSessionDurationSec) {
+      return {
+        ...item,
+        title: t('chat.insightLongSessionTitle'),
+        description: t('chat.insightLongSessionDescription', {
+          hours: formatNumber(Math.round(sessionStats.value.longestSessionDurationSec / 3600)),
+          messages: formatNumber(sessionStats.value.longestSessionMessages),
+        }),
+      }
+    }
+
+    if (item.key === 'trend-growing') {
+      return {
+        ...item,
+        title: t('chat.insightTrendGrowingTitle'),
+        description: t('chat.insightTrendGrowingDescription'),
+      }
+    }
+
+    if (item.key === 'trend-fading') {
+      return {
+        ...item,
+        title: t('chat.insightTrendFadingTitle'),
+        description: t('chat.insightTrendFadingDescription'),
+      }
+    }
+
+    if (item.key === 'long-gap' && chat.value?.conversationFacts.longestGap?.seconds) {
+      return {
+        ...item,
+        title: t('chat.insightLongGapTitle'),
+        description: t('chat.insightLongGapDescription', {
+          days: formatNumber(Math.round(chat.value.conversationFacts.longestGap.seconds / 86400)),
+        }),
+      }
+    }
+
+    if (item.key === 'relationship-score' && relationshipScore.value) {
+      return {
+        ...item,
+        title: t('chat.insightRelationshipScoreTitle'),
+        description: t('chat.insightRelationshipScoreDescription', {
+          score: formatNumber(relationshipScore.value.score),
+          label: relationshipLabel.value.toLowerCase(),
+        }),
+      }
+    }
+
+    if (item.key === 'response-asymmetry') {
+      const responseStats = chat.value?.responseStats
+      const myMedian = responseStats?.medianMineSec
+      const theirMedian = responseStats?.medianTheirsSec
+      if (myMedian !== null && myMedian !== undefined && theirMedian !== null && theirMedian !== undefined) {
+        const slowerSide = myMedian > theirMedian ? t('chat.insightYou') : t('chat.insightContact')
+        const gapHours = Math.abs(myMedian - theirMedian) / 3600
+        return {
+          ...item,
+          title: t('chat.insightResponseAsymmetryTitle'),
+          description: t('chat.insightResponseAsymmetryDescription', {
+            side: slowerSide,
+            hours: gapHours.toFixed(1),
+          }),
+        }
+      }
+    }
+
+    return item
+  })
+})
 const insightToneLabel = (tone: 'positive' | 'neutral' | 'warning') => {
   const labels = {
     positive: t('chat.insightPositive'),

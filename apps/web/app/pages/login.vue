@@ -4,7 +4,7 @@ import CodeStep from '../components/auth/CodeStep.vue'
 import PasswordStep from '../components/auth/PasswordStep.vue'
 
 definePageMeta({
-  middleware: 'guest',
+  middleware: ['guest'],
 })
 
 const auth = useAuthStore()
@@ -19,7 +19,7 @@ const password = ref('')
 const loading = ref(false)
 const error = ref('')
 
-const siteUrl = computed(() => runtimeConfig.public.siteUrl.replace(/\/$/, ''))
+const siteUrl = computed(() => String(runtimeConfig.public.siteUrl ?? '').replace(/\/$/, ''))
 const loginUrl = computed(() => `${siteUrl.value}/login`)
 const logoPath = '/logo.svg'
 const logoUrl = computed(() => `${siteUrl.value}/logo.svg`)
