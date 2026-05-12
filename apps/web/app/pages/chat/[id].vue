@@ -50,6 +50,7 @@ const reportRefreshing = ref(false)
 const reportExportRef = ref<HTMLElement | null>(null)
 
 const routeChatId = computed(() => String(route.params.id))
+const isRuLocale = computed(() => intlLocale.value.startsWith('ru'))
 const chat = computed(() => stats.selectedChat)
 const parseForCurrentChat = computed(() => progress.value.chatId === routeChatId.value)
 const parseActiveForCurrentChat = computed(() => parseForCurrentChat.value && ['running', 'pending'].includes(progress.value.status))
@@ -331,15 +332,40 @@ const relationshipLabel = computed(() => {
   }
 
   const labels = {
-    balanced: t('chat.relationshipBalanced'),
-    warm: t('chat.relationshipWarm'),
-    cooling: t('chat.relationshipCooling'),
-    one_sided: t('chat.relationshipOneSided'),
-    emerging: t('chat.relationshipEmerging'),
+    balanced: isRuLocale.value ? 'Ровный баланс' : 'Balanced dynamic',
+    warm: isRuLocale.value ? 'Живой контакт' : 'Warm contact',
+    cooling: isRuLocale.value ? 'Темп снижается' : 'Cooling down',
+    one_sided: isRuLocale.value ? 'Перекос в одну сторону' : 'One-sided pattern',
+    emerging: isRuLocale.value ? 'Контакт формируется' : 'Still forming',
   }
 
   return labels[label]
 })
+
+function scoreTone(value: number | null, warningThreshold = 55, successThreshold = 75) {
+  if (value === null) {
+    return 'default'
+  }
+
+  if (value < warningThreshold) {
+    return 'danger'
+  }
+
+  if (value < successThreshold) {
+    return 'warning'
+  }
+
+  return 'success'
+}
+
+function metricCardToneClass(tone: string) {
+  return {
+    'fact-card-danger': tone === 'danger',
+    'fact-card-warning': tone === 'warning',
+    'fact-card-success': tone === 'success',
+  }
+}
+
 const relationshipMetrics = computed(() => {
   const score = relationshipScore.value
   if (!score) {
@@ -347,13 +373,57 @@ const relationshipMetrics = computed(() => {
   }
 
   return [
-    { key: 'reciprocity', label: t('chat.relationshipReciprocity'), value: score.reciprocity },
-    { key: 'responsiveness', label: t('chat.relationshipResponsiveness'), value: score.responsiveness },
-    { key: 'stability', label: t('chat.relationshipStability'), value: score.stability },
-    { key: 'attention', label: t('chat.relationshipAttention'), value: score.attentionBalance },
+    {
+      key: 'reciprocity',
+      label: isRuLocale.value ? 'Баланс сообщений' : 'Message balance',
+      value: score.reciprocity,
+      detail: isRuLocale.value
+        ? 'Показывает, насколько общий объем сообщений с обеих сторон близок друг к другу.'
+        : 'Shows how close both sides are in total message volume.',
+      tone: scoreTone(score.reciprocity),
+    },
+    {
+      key: 'responsiveness',
+      label: isRuLocale.value ? 'Скорость ответа' : 'Reply speed',
+      value: score.responsiveness,
+      detail: isRuLocale.value
+        ? 'Чем выше значение, тем быстрее вы обычно отвечаете друг другу.'
+        : 'Higher means replies usually come faster on both sides.',
+      tone: scoreTone(score.responsiveness),
+    },
+    {
+      key: 'stability',
+      label: isRuLocale.value ? 'Регулярность' : 'Regularity',
+      value: score.stability,
+      detail: isRuLocale.value
+        ? 'Оценивает, насколько стабильно чат живет без долгих провалов и редких всплесков.'
+        : 'Estimates how steady the chat stays over time without long drop-offs.',
+      tone: scoreTone(score.stability),
+    },
+    {
+      key: 'attention',
+      label: isRuLocale.value ? 'Баланс инициативы' : 'Initiative balance',
+      value: score.attentionBalance,
+      detail: isRuLocale.value
+        ? 'Показывает, насколько равномерно обе стороны начинают разговор после пауз.'
+        : 'Shows how evenly both sides tend to restart the conversation after gaps.',
+      tone: scoreTone(score.attentionBalance),
+    },
   ]
 })
 const sessionStats = computed(() => chat.value?.conversationFacts.sessionStats ?? null)
+const densestSessionHighlight = computed(() => {
+  const highlights = sessionStats.value?.highlights ?? []
+  return highlights.length
+    ? [...highlights].sort((left, right) => right.totalMessages - left.totalMessages)[0] ?? null
+    : null
+})
+const longestSessionHighlight = computed(() => {
+  const highlights = sessionStats.value?.highlights ?? []
+  return highlights.length
+    ? [...highlights].sort((left, right) => right.durationSec - left.durationSec)[0] ?? null
+    : null
+})
 const sessionFacts = computed(() => {
   const value = sessionStats.value
   if (!value) {
@@ -375,15 +445,21 @@ const sessionFacts = computed(() => {
     },
     {
       key: 'avg-duration',
-      label: t('chat.avgSessionDuration'),
-      value: formatDurationFromSec(value.averageSessionDurationSec),
-      sub: t('chat.avgSessionDurationSub'),
+      label: isRuLocale.value ? 'Пик в одном окне' : 'Peak in one window',
+      value: densestSessionHighlight.value
+        ? `${formatNumber(densestSessionHighlight.value.totalMessages)} ${t('common.messages')}`
+        : t('common.na'),
+      sub: isRuLocale.value
+        ? 'Максимум сообщений в одном окне без паузы дольше 8 часов'
+        : 'Most messages inside one window without a break longer than 8 hours',
+      tone: 'success',
     },
     {
       key: 'night-share',
       label: t('chat.nightSessions'),
       value: value.nightSessionsPct !== null ? `${value.nightSessionsPct}%` : t('common.na'),
       sub: t('chat.nightSessionsSub'),
+      tone: scoreTone(value.nightSessionsPct === null ? null : 100 - value.nightSessionsPct, 45, 70),
     },
   ]
 })
@@ -403,13 +479,15 @@ const insightItems = computed(() => {
     }
 
     if (item.key === 'long-session' && sessionStats.value?.longestSessionDurationSec) {
+      const longestSession = longestSessionHighlight.value
       return {
         ...item,
-        title: t('chat.insightLongSessionTitle'),
-        description: t('chat.insightLongSessionDescription', {
-          hours: formatNumber(Math.round(sessionStats.value.longestSessionDurationSec / 3600)),
-          messages: formatNumber(sessionStats.value.longestSessionMessages),
-        }),
+        title: isRuLocale.value ? 'Растянутое окно общения' : 'Extended conversation window',
+        description: longestSession
+          ? (isRuLocale.value
+              ? `Самое длинное окно заняло ${formatDurationFromSec(longestSession.durationSec)} и собрало ${formatNumber(longestSession.totalMessages)} сообщений. Это не непрерывный разговор, а цепочка сообщений без паузы дольше 8 часов.`
+              : `The longest window lasted ${formatDurationFromSec(longestSession.durationSec)} and included ${formatNumber(longestSession.totalMessages)} messages. This is not continuous chatting, but a chain without any gap longer than 8 hours.`)
+          : item.description,
       }
     }
 
@@ -1057,9 +1135,14 @@ onBeforeUnmount(() => {
             <div class="section-copy">
               <span class="text-label">{{ t('chat.relationship') }}</span>
               <h2 class="text-h2">{{ t('chat.relationshipTitle') }}</h2>
-              <p class="text-body-sm section-text">{{ t('chat.relationshipText') }}</p>
+              <p class="text-body-sm section-text">
+                {{ isRuLocale ? 'Сводный блок про баланс сообщений, инициативу, скорость ответов и регулярность общения.' : 'A plain-language view of message balance, initiative, reply speed, and consistency.' }}
+              </p>
             </div>
-            <Badge v-if="relationshipScore" variant="accent">{{ relationshipLabel }}</Badge>
+            <Badge v-if="relationshipScore"
+              :variant="relationshipScore.score < 55 ? 'danger' : relationshipScore.score < 75 ? 'warning' : 'accent'">
+              {{ relationshipLabel }}
+            </Badge>
           </div>
 
           <template v-if="relationshipScore">
@@ -1069,9 +1152,11 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="facts-grid">
-              <div v-for="metric in relationshipMetrics" :key="metric.key" class="fact-card">
+              <div v-for="metric in relationshipMetrics" :key="metric.key" class="fact-card"
+                :class="metricCardToneClass(metric.tone)">
                 <span class="text-label">{{ metric.label }}</span>
                 <strong class="fact-value mono-value">{{ metric.value !== null ? `${metric.value}%` : t('common.na') }}</strong>
+                <span class="text-caption metric-explainer">{{ metric.detail }}</span>
               </div>
             </div>
           </template>
@@ -1233,7 +1318,8 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="facts-grid">
-            <div v-for="fact in sessionFacts" :key="fact.key" class="fact-card">
+            <div v-for="fact in sessionFacts" :key="fact.key" class="fact-card"
+              :class="metricCardToneClass(fact.tone ?? 'default')">
               <span class="text-label">{{ fact.label }}</span>
               <strong class="fact-value mono-value">{{ fact.value }}</strong>
               <span class="text-caption">{{ fact.sub }}</span>
@@ -1242,10 +1328,30 @@ onBeforeUnmount(() => {
 
           <div v-if="sessionStats?.highlights.length" class="timeline-gap-grid">
             <div v-for="session in sessionStats.highlights" :key="session.startedAt" class="gap-card">
+              <span class="text-label">
+                {{
+                  densestSessionHighlight
+                    && session.startedAt === densestSessionHighlight.startedAt
+                    && session.endedAt === densestSessionHighlight.endedAt
+                    ? (isRuLocale ? 'Пик сообщений' : 'Peak message window')
+                    : longestSessionHighlight
+                      && session.startedAt === longestSessionHighlight.startedAt
+                      && session.endedAt === longestSessionHighlight.endedAt
+                      ? (isRuLocale ? 'Самое длинное окно' : 'Longest window')
+                      : (isRuLocale ? 'Окно общения' : 'Conversation window')
+                }}
+              </span>
               <strong class="gap-value mono-value">{{ formatNumber(session.totalMessages) }} {{ t('common.messages') }}</strong>
               <span class="text-body-sm">{{ formatDateRange(session.startedAt, session.endedAt) }}</span>
               <span class="text-caption">
                 {{ formatDurationFromSec(session.durationSec) }} • {{ formatNumber(session.sentMessages) }} / {{ formatNumber(session.receivedMessages) }}
+              </span>
+              <span class="text-caption metric-explainer">
+                {{
+                  isRuLocale
+                    ? 'Сессия остается одной, пока между соседними сообщениями нет паузы дольше 8 часов.'
+                    : 'A session stays open until there is a break longer than 8 hours between messages.'
+                }}
               </span>
             </div>
           </div>
@@ -1522,10 +1628,30 @@ onBeforeUnmount(() => {
   background: var(--bg-elevated);
 }
 
+.fact-card-success {
+  border-color: color-mix(in srgb, var(--color-success) 45%, var(--border-subtle));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-success-muted) 55%, var(--bg-elevated)) 0%, var(--bg-elevated) 100%);
+}
+
+.fact-card-warning {
+  border-color: color-mix(in srgb, var(--color-warning) 45%, var(--border-subtle));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-warning-muted) 55%, var(--bg-elevated)) 0%, var(--bg-elevated) 100%);
+}
+
+.fact-card-danger {
+  border-color: color-mix(in srgb, var(--color-danger) 45%, var(--border-subtle));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-danger-muted) 55%, var(--bg-elevated)) 0%, var(--bg-elevated) 100%);
+}
+
 .fact-value,
 .gap-value {
   font-size: 20px;
   color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.metric-explainer {
+  color: var(--text-secondary);
   overflow-wrap: anywhere;
 }
 
