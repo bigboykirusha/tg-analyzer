@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ParseDialogDto, ParseHistoryItem } from '@tg-analyzer/shared'
 import AppLayout from '../components/AppLayout.vue'
 import ChatAvatar from '../components/ChatAvatar.vue'
 import ParseProgress from '../components/stats/ParseProgress.vue'
@@ -15,9 +16,13 @@ import { useToast } from '../composables/useToast'
 import { useAuthStore } from '../stores/auth'
 import { useStatsStore } from '../stores/stats'
 
+definePageMeta({
+  middleware: 'auth',
+})
+
 const auth = useAuthStore()
-const { bootstrap, deleteAccount, logout, terminateTelegramSession } = useAuth()
-const { clearHistory, deleteChat, fetchChats, fetchHistory, fetchParseDialogs, fetchParseStatus } = useStats()
+const { deleteAccount, logout, terminateTelegramSession } = useAuth()
+const { clearHistory, deleteChat, deleteHistoryItem, fetchChats, fetchHistory, fetchParseDialogs, fetchParseStatus } = useStats()
 const stats = useStatsStore()
 const { progress, applyStatus, connect, disconnect, reset } = useParseProgress()
 const { t, formatNumber, formatDate: formatLocaleDate, formatRelative } = useI18n()
@@ -27,42 +32,35 @@ const pending = ref(false)
 const cancelling = ref(false)
 const securityPending = ref<'telegram' | 'account' | null>(null)
 const deletingChatId = ref<string | null>(null)
+const deletingHistoryJobId = ref<string | null>(null)
 const clearingHistory = ref(false)
 const ready = ref(false)
 const parseDialogsLoading = ref(false)
 const parseDialogsError = ref('')
+const parseDialogsBusy = ref(false)
 const dialogSearch = ref('')
 const visibleDialogsCount = ref(18)
+const selectedDialogId = ref<string | null>(null)
 const confirmState = ref<{
-  type: 'terminate' | 'delete-account' | 'delete-report' | 'clear-history'
+  type: 'terminate' | 'delete-account' | 'delete-report' | 'clear-history' | 'delete-history-item'
   title: string
   description: string
   confirmLabel: string
   variant: 'default' | 'danger'
   chatId?: string
+  jobId?: string
 } | null>(null)
 
-const analyzedChats = computed(() => stats.chats.filter((chat) => chat.chatType === 'private'))
+const analyzedChats = computed(() =>
+  [...stats.chats]
+    .filter((chat) => chat.chatType === 'private')
+    .sort((left, right) => new Date(right.parsedAt ?? 0).getTime() - new Date(left.parsedAt ?? 0).getTime()),
+)
+const analyzedChatIds = computed(() => new Set(analyzedChats.value.map((chat) => chat.tgChatId)))
 const telegramSessionActive = computed(() => auth.telegramSessionActive)
 const isParseActive = computed(() => progress.value.status === 'running' || progress.value.status === 'pending')
 const isParseTerminal = computed(() => ['completed', 'failed', 'cancelled'].includes(progress.value.status))
 const latestHistoryItems = computed(() => stats.history.slice(0, 8))
-
-async function loadParseDialogs() {
-  parseDialogsLoading.value = true
-  parseDialogsError.value = ''
-
-  try {
-    await fetchParseDialogs()
-  } catch (error) {
-    parseDialogsError.value = error instanceof Error ? error.message : t('dashboard.loadDialogsError')
-    if (parseDialogsError.value.toLowerCase().includes('telegram session')) {
-      auth.setTelegramSessionActive(false)
-    }
-  } finally {
-    parseDialogsLoading.value = false
-  }
-}
 
 const filteredDialogs = computed(() => {
   const query = dialogSearch.value.trim().toLowerCase()
@@ -80,6 +78,54 @@ const filteredDialogs = computed(() => {
 
 const visibleDialogs = computed(() => filteredDialogs.value.slice(0, visibleDialogsCount.value))
 const hasMoreDialogs = computed(() => filteredDialogs.value.length > visibleDialogsCount.value)
+const selectedDialog = computed(() => filteredDialogs.value.find((dialog) => dialog.id === selectedDialogId.value)
+  ?? stats.parseDialogs.find((dialog) => dialog.id === selectedDialogId.value)
+  ?? null)
+const selectedDialogReport = computed(() => analyzedChats.value.find((chat) => chat.tgChatId === selectedDialogId.value) ?? null)
+const selectedDialogCooldownLike = computed(() => {
+  const parsedAt = selectedDialogReport.value?.parsedAt
+  if (!parsedAt) {
+    return false
+  }
+
+  const diffMs = Date.now() - new Date(parsedAt).getTime()
+  return diffMs < 60 * 60 * 1000
+})
+const activeHistoryJob = computed(() => stats.history.find((item) => item.status === 'running' || item.status === 'pending') ?? null)
+const selectedDialogDisabled = computed(() => !selectedDialog.value || !telegramSessionActive.value || pending.value || isParseActive.value)
+
+async function loadParseDialogs() {
+  parseDialogsLoading.value = true
+  parseDialogsError.value = ''
+  parseDialogsBusy.value = false
+
+  try {
+    await fetchParseDialogs()
+    if (!selectedDialogId.value && stats.parseDialogs.length) {
+      selectedDialogId.value = stats.parseDialogs.find((dialog) => dialog.type === 'private')?.id ?? null
+    }
+  } catch (error) {
+    const isBusyError = typeof (error as { statusCode?: number } | null)?.statusCode === 'number'
+      && (error as { statusCode?: number }).statusCode === 409
+
+    if (isBusyError) {
+      parseDialogsBusy.value = true
+      parseDialogsError.value = t('dashboard.dialogsBusy')
+      return
+    }
+
+    parseDialogsError.value = error instanceof Error ? error.message : t('dashboard.loadDialogsError')
+  } finally {
+    parseDialogsLoading.value = false
+  }
+}
+
+async function refreshOperationalData() {
+  await Promise.all([
+    fetchHistory(),
+    fetchChats(),
+  ])
+}
 
 async function startParse(chatIds?: string[]) {
   pending.value = true
@@ -132,20 +178,38 @@ async function cancelActiveParse() {
   }
 }
 
-async function startDialogParse(dialog: { id: string; title: string }) {
+async function startSelectedDialogParse() {
+  if (!selectedDialog.value) {
+    toast.warning(t('dashboard.selectOne'))
+    return
+  }
+
   if (!telegramSessionActive.value) {
     toast.warning(t('dashboard.sessionInactive'))
     return
   }
 
-  await startParse([dialog.id])
+  if (isParseActive.value) {
+    toast.warning(activeHistoryJob.value?.chatName ?? t('dashboard.cancelParse'))
+    return
+  }
+
+  await startParse([selectedDialog.value.id])
+}
+
+function selectDialog(dialog: ParseDialogDto) {
+  selectedDialogId.value = dialog.id
 }
 
 function showMoreDialogs() {
   visibleDialogsCount.value += 18
 }
 
-function formatShortDate(value: string) {
+function formatShortDate(value: string | null) {
+  if (!value) {
+    return t('common.na')
+  }
+
   return formatLocaleDate(value, {
     month: 'short',
     day: 'numeric',
@@ -168,9 +232,13 @@ function formatCooldown(seconds: number) {
   return t('common.durationSeconds', { seconds: remainingSeconds })
 }
 
-function historyProgress(item: { totalMessages: number; status: string }) {
+function historyProgress(item: ParseHistoryItem) {
   if (item.status === 'completed') {
     return 100
+  }
+
+  if (item.totalChats > 0) {
+    return Math.round((item.parsedChats / item.totalChats) * 100)
   }
 
   if (item.status === 'running') {
@@ -225,6 +293,50 @@ function statusLabel(status: string) {
     return t('common.statusPending')
   }
   return status
+}
+
+function dialogTypeLabel(type: ParseDialogDto['type']) {
+  const labels: Record<ParseDialogDto['type'], string> = {
+    private: t('dashboard.dialogTypePrivate'),
+    group: t('dashboard.dialogTypeGroup'),
+    channel: t('dashboard.dialogTypeChannel'),
+    bot: t('dashboard.dialogTypeBot'),
+    unknown: t('dashboard.dialogTypeUnknown'),
+  }
+
+  return labels[type]
+}
+
+function dialogState(dialog: ParseDialogDto) {
+  if (progress.value.chatId === dialog.id && isParseActive.value) {
+    return {
+      label: statusLabel(progress.value.status),
+      variant: 'info' as const,
+    }
+  }
+
+  if (analyzedChatIds.value.has(dialog.id)) {
+    return {
+      label: selectedDialogId.value === dialog.id && selectedDialogCooldownLike.value
+        ? t('dashboard.recentReport')
+        : t('dashboard.reportReady'),
+      variant: 'accent' as const,
+    }
+  }
+
+  return null
+}
+
+function formatHistoryScope(item: ParseHistoryItem) {
+  if (item.totalChats > 1) {
+    return `${formatNumber(item.parsedChats)} / ${formatNumber(item.totalChats)}`
+  }
+
+  if (item.chatName) {
+    return item.chatName
+  }
+
+  return item.jobId
 }
 
 async function handleTerminateTelegramSession() {
@@ -284,6 +396,20 @@ async function handleClearHistory() {
   }
 }
 
+async function handleDeleteHistoryItem(jobId: string) {
+  deletingHistoryJobId.value = jobId
+
+  try {
+    await deleteHistoryItem(jobId)
+    toast.success(t('dashboard.historyItemDeleted'))
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('dashboard.deleteHistoryItemError'))
+  } finally {
+    deletingHistoryJobId.value = null
+    confirmState.value = null
+  }
+}
+
 function openTerminateConfirm() {
   confirmState.value = {
     type: 'terminate',
@@ -325,6 +451,17 @@ function openClearHistoryConfirm() {
   }
 }
 
+function openDeleteHistoryItemConfirm(jobId: string) {
+  confirmState.value = {
+    type: 'delete-history-item',
+    title: t('dashboard.deleteHistoryItem'),
+    description: t('dashboard.deleteHistoryItemConfirm'),
+    confirmLabel: t('dashboard.deleteHistoryItem'),
+    variant: 'danger',
+    jobId,
+  }
+}
+
 async function confirmAction() {
   if (!confirmState.value) {
     return
@@ -338,6 +475,8 @@ async function confirmAction() {
     await handleDeleteReport(confirmState.value.chatId)
   } else if (confirmState.value.type === 'clear-history') {
     await handleClearHistory()
+  } else if (confirmState.value.type === 'delete-history-item' && confirmState.value.jobId) {
+    await handleDeleteHistoryItem(confirmState.value.jobId)
   }
 }
 
@@ -354,7 +493,14 @@ const confirmLoading = computed(() => {
   if (confirmState.value.type === 'delete-report') {
     return deletingChatId.value === confirmState.value.chatId
   }
+  if (confirmState.value.type === 'delete-history-item') {
+    return deletingHistoryJobId.value === confirmState.value.jobId
+  }
   return clearingHistory.value
+})
+
+watch(dialogSearch, () => {
+  visibleDialogsCount.value = 18
 })
 
 watch(isParseActive, async (active, wasActive) => {
@@ -364,10 +510,7 @@ watch(isParseActive, async (active, wasActive) => {
   }
 
   if (wasActive) {
-    await Promise.all([
-      fetchHistory(),
-      fetchChats(),
-    ]).catch(() => undefined)
+    await refreshOperationalData().catch(() => undefined)
   }
 }, { immediate: true })
 
@@ -376,10 +519,7 @@ watch(isParseTerminal, async (terminal) => {
     return
   }
 
-  await Promise.all([
-    fetchHistory(),
-    fetchChats(),
-  ]).catch(() => undefined)
+  await refreshOperationalData().catch(() => undefined)
 })
 
 onBeforeUnmount(() => {
@@ -388,12 +528,6 @@ onBeforeUnmount(() => {
 
 onMounted(async () => {
   try {
-    const refreshed = await bootstrap()
-    if (!auth.isAuthorized && !refreshed) {
-      await navigateTo('/login')
-      return
-    }
-
     try {
       applyStatus(await fetchParseStatus())
     } catch (error) {
@@ -428,9 +562,9 @@ onMounted(async () => {
         <section class="card">
           <div class="stack-md">
             <Skeleton height="24px" width="160px" />
-            <Skeleton height="44px" />
+            <Skeleton height="132px" radius="var(--radius-md)" />
             <div class="list-grid">
-              <Skeleton v-for="item in 6" :key="item" height="80px" radius="var(--radius-md)" />
+              <Skeleton v-for="item in 6" :key="item" height="88px" radius="var(--radius-md)" />
             </div>
           </div>
         </section>
@@ -454,11 +588,8 @@ onMounted(async () => {
         <div class="hero-copy">
           <span class="text-label">{{ t('dashboard.workspace') }}</span>
           <h1 class="text-h1">{{ t('dashboard.title') }}</h1>
-          <p class="text-body-lg">
-            {{ t('dashboard.subtitle') }}
-          </p>
+          <p class="text-body-lg">{{ t('dashboard.subtitle') }}</p>
         </div>
-
       </header>
 
       <ParseProgress
@@ -487,17 +618,56 @@ onMounted(async () => {
             <input v-model="dialogSearch" type="text" class="input" :placeholder="t('dashboard.search')" />
           </div>
 
+          <div v-if="selectedDialog" class="selection-card">
+            <div class="selection-head">
+              <div class="selection-main">
+                <ChatAvatar :chat-id="selectedDialog.id" :title="selectedDialog.title" :has-avatar="selectedDialog.hasAvatar" />
+                <div class="dialog-copy">
+                  <span class="text-label">{{ t('dashboard.currentSelection') }}</span>
+                  <strong class="dialog-title">{{ selectedDialog.title }}</strong>
+                  <span class="text-caption selection-subline">
+                    {{ dialogTypeLabel(selectedDialog.type) }}
+                    <template v-if="selectedDialogReport">
+                      &bull; {{ t('dashboard.lastAnalyzed', { time: formatRelative(selectedDialogReport.parsedAt) }) }}
+                    </template>
+                  </span>
+                </div>
+              </div>
+              <div class="selection-actions">
+                <Badge v-if="selectedDialogReport" variant="accent">{{ t('dashboard.reportReady') }}</Badge>
+                <Badge v-if="progress.chatId === selectedDialog.id && isParseActive" variant="info">{{ statusLabel(progress.status) }}</Badge>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  :loading="pending"
+                  :disabled="selectedDialogDisabled"
+                  @click="startSelectedDialogParse"
+                >
+                  {{ pending ? t('common.loading') : t('dashboard.analyze') }}
+                </Button>
+              </div>
+            </div>
+
+            <div class="selection-meta text-caption">
+              <span v-if="!telegramSessionActive">{{ t('dashboard.sessionInactive') }}</span>
+              <span v-else-if="isParseActive && progress.chatId !== selectedDialog.id">{{ t('dashboard.activeJobNotice') }}</span>
+              <span v-else-if="selectedDialogCooldownLike">{{ t('dashboard.cooldownNotice') }}</span>
+              <span v-else-if="selectedDialogReport">{{ t('dashboard.rerunHint') }}</span>
+              <span v-else>{{ t('dashboard.firstReportHint') }}</span>
+            </div>
+          </div>
+
           <div v-if="!telegramSessionActive" class="info-banner warning-banner">
             {{ t('dashboard.sessionInactive') }}
           </div>
 
           <div v-else-if="parseDialogsLoading" class="list-grid">
             <div v-for="item in 6" :key="item" class="card-elevated dialog-skeleton">
-              <Skeleton height="80px" radius="var(--radius-md)" />
+              <Skeleton height="88px" radius="var(--radius-md)" />
             </div>
           </div>
 
-          <div v-else-if="parseDialogsError" class="info-banner danger-banner">
+          <div v-else-if="parseDialogsError" class="info-banner" :class="parseDialogsBusy ? 'warning-banner' : 'danger-banner'">
             {{ parseDialogsError }}
           </div>
 
@@ -507,29 +677,28 @@ onMounted(async () => {
             </div>
 
             <div v-if="visibleDialogs.length" class="dialog-list">
-              <div
+              <button
                 v-for="(dialog, index) in visibleDialogs"
                 :key="dialog.id"
+                type="button"
                 class="dialog-item stagger-item"
+                :class="{ 'dialog-item-selected': selectedDialogId === dialog.id }"
                 :style="{ '--delay': `${index * 35}ms` }"
+                @click="selectDialog(dialog)"
               >
                 <div class="dialog-main">
                   <ChatAvatar :chat-id="dialog.id" :title="dialog.title" :has-avatar="dialog.hasAvatar" />
                   <div class="dialog-copy">
                     <span class="dialog-title">{{ dialog.title }}</span>
+                    <span class="text-caption selection-subline">{{ dialogTypeLabel(dialog.type) }}</span>
                   </div>
                 </div>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  class="dialog-action"
-                  :loading="pending"
-                  :disabled="pending"
-                  @click="startDialogParse(dialog)"
-                >
-                  {{ pending ? t('common.loading') : t('dashboard.analyze') }}
-                </Button>
-              </div>
+                <div class="dialog-side">
+                  <Badge v-if="dialogState(dialog)" :variant="dialogState(dialog)?.variant ?? 'default'">
+                    {{ dialogState(dialog)?.label }}
+                  </Badge>
+                </div>
+              </button>
             </div>
             <EmptyState
               v-else
@@ -564,10 +733,11 @@ onMounted(async () => {
                 <NuxtLink :to="`/chat/${chat.tgChatId}`" class="analyzed-link">
                   <div class="analyzed-head">
                     <div class="analyzed-meta">
-                    <ChatAvatar :chat-id="chat.tgChatId" :title="chat.chatName || chat.tgChatId" />
-                    <div class="dialog-copy">
-                      <span class="dialog-title">{{ chat.chatName || chat.tgChatId }}</span>
-                    </div>
+                      <ChatAvatar :chat-id="chat.tgChatId" :title="chat.chatName || chat.tgChatId" />
+                      <div class="dialog-copy">
+                        <span class="dialog-title">{{ chat.chatName || chat.tgChatId }}</span>
+                        <span class="text-caption selection-subline">{{ formatShortDate(chat.parsedAt) }}</span>
+                      </div>
                     </div>
                     <span class="mono-value analyzed-count">{{ formatNumber(chat.totalMessages) }}</span>
                   </div>
@@ -630,7 +800,7 @@ onMounted(async () => {
                   :style="{ '--delay': `${index * 40}ms` }"
                 >
                   <div class="history-row-head">
-                    <span class="history-title">{{ item.chatName || item.jobId }}</span>
+                    <span class="history-title">{{ formatHistoryScope(item) }}</span>
                     <Badge :variant="statusVariant(item.status)">{{ statusLabel(item.status) }}</Badge>
                   </div>
                   <div class="history-progress progress-bar">
@@ -638,7 +808,19 @@ onMounted(async () => {
                   </div>
                   <div class="history-meta text-caption">
                     <span class="mono-value">{{ formatNumber(item.totalMessages) }} {{ t('common.messages') }}</span>
+                    <span class="mono-value">{{ t('dashboard.historyChatsCount', { parsed: formatNumber(item.parsedChats), total: formatNumber(item.totalChats || 1) }) }}</span>
                     <span class="mono-value">{{ formatShortDate(item.createdAt) }}</span>
+                    <span class="mono-value">{{ item.completedAt ? formatShortDate(item.completedAt) : t('dashboard.historyStillActive') }}</span>
+                  </div>
+                  <div v-if="item.status !== 'running' && item.status !== 'pending'" class="history-actions">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      :loading="deletingHistoryJobId === item.jobId"
+                      @click="openDeleteHistoryItemConfirm(item.jobId)"
+                    >
+                      {{ t('dashboard.deleteHistoryItem') }}
+                    </Button>
                   </div>
                   <div v-if="item.errorMessage" class="detail-error text-body-sm">
                     {{ item.errorMessage }}
@@ -800,18 +982,51 @@ onMounted(async () => {
   border: none;
 }
 
+.selection-card,
 .dialog-item,
 .analyzed-card,
 .history-row {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   background: var(--bg-surface);
+  transition: all var(--transition-fast);
 }
 
-.dialog-item,
-.analyzed-card,
-.history-row {
-  transition: all var(--transition-fast);
+.selection-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background:
+    radial-gradient(circle at top right, var(--accent-glow-soft), transparent 30%),
+    linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
+}
+
+.selection-head,
+.selection-main,
+.selection-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.selection-head {
+  justify-content: space-between;
+}
+
+.selection-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.selection-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.selection-subline,
+.selection-meta {
+  color: var(--text-secondary);
 }
 
 .dialog-item {
@@ -822,16 +1037,21 @@ onMounted(async () => {
   min-height: 64px;
   padding: var(--space-3);
   min-width: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 
+.dialog-item:hover,
+.dialog-item-selected,
 .analyzed-card:hover,
 .history-row:hover {
   border-color: var(--border-strong);
   background: var(--bg-overlay);
 }
 
-.dialog-item:hover {
-  border-color: var(--border-default);
+.dialog-item-selected {
+  box-shadow: inset 0 0 0 1px var(--border-default);
 }
 
 .dialog-main {
@@ -840,6 +1060,13 @@ onMounted(async () => {
   gap: var(--space-3);
   min-width: 0;
   flex: 1;
+}
+
+.dialog-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
 }
 
 .dialog-copy {
@@ -859,11 +1086,6 @@ onMounted(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.dialog-action {
-  flex: 0 0 auto;
-  min-width: 112px;
 }
 
 .more-row {
@@ -889,8 +1111,10 @@ onMounted(async () => {
 .analyzed-foot,
 .history-row-head,
 .history-meta,
+.history-actions,
 .section-actions,
-.analyzed-actions {
+.analyzed-actions,
+.section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -898,6 +1122,7 @@ onMounted(async () => {
 }
 
 .section-actions,
+.history-actions,
 .analyzed-actions {
   justify-content: flex-end;
   flex-wrap: wrap;
@@ -937,6 +1162,7 @@ onMounted(async () => {
 }
 
 .history-meta {
+  flex-wrap: wrap;
   color: var(--text-secondary);
 }
 
@@ -956,13 +1182,20 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .workspace-header,
+  .selection-head,
+  .selection-actions,
   .analyzed-head,
   .section-actions,
   .analyzed-actions,
   .history-row-head,
-  .history-meta {
+  .history-meta,
+  .dialog-item {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .section-header {
+    align-items: flex-start;
   }
 
   .workspace-header {
@@ -975,17 +1208,13 @@ onMounted(async () => {
     padding: var(--space-4);
   }
 
-  .dialog-item {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .dialog-main {
+  .dialog-main,
+  .selection-main {
     align-items: center;
   }
 
-  .dialog-action {
-    width: 100%;
+  .dialog-side {
+    align-items: flex-start;
   }
 }
 </style>

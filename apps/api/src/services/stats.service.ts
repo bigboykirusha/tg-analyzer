@@ -4,9 +4,12 @@ import type {
   DirectionalCountDto,
   DirectionalTopItemsDto,
   GlobalStatsDto,
+  InsightDto,
   MessageCompositionDto,
   MonthlyActivityDto,
+  RelationshipScoreDto,
   ResponseStatsDto,
+  SessionStatsDto,
   TopItemDto,
 } from '@tg-analyzer/shared'
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm'
@@ -18,18 +21,18 @@ const wordRegex = /[\p{L}\p{N}_-]{2,}/gu
 const SESSION_BOUNDARY_MS = 8 * 60 * 60 * 1000
 const LONG_SILENCE_MS = 30 * 24 * 60 * 60 * 1000
 const STOP_WORDS_RU = new Set([
-  'и', 'в', 'не', 'на', 'я', 'что', 'тот', 'это', 'с', 'он',
-  'как', 'по', 'но', 'они', 'к', 'из', 'у', 'за', 'то', 'же',
-  'от', 'так', 'а', 'да', 'ну', 'вот', 'уже', 'ещё', 'еще', 'бы',
-  'ли', 'до', 'со', 'мне', 'ты', 'мы', 'вы', 'она', 'оно', 'об',
-  'её', 'ее', 'его', 'их', 'ей', 'им', 'нас', 'вас', 'нет', 'был',
-  'была', 'были', 'быть', 'есть', 'буду', 'всё', 'все', 'или', 'если', 'когда',
-  'чтобы', 'потому', 'этот', 'эта', 'эти', 'при', 'без', 'под', 'над', 'для',
-  'про', 'меня', 'тебя', 'него', 'неё', 'нее', 'них', 'себя', 'там', 'тут',
-  'где', 'куда', 'мой', 'твой', 'свой', 'наш', 'ваш', 'чем', 'можно', 'надо',
-  'нужно', 'только', 'вообще', 'просто', 'очень', 'тоже', 'зато', 'хотя', 'пока', 'потом',
-  'после', 'перед', 'между', 'через', 'здесь', 'туда', 'оттуда', 'ведь', 'даже', 'лишь',
-  'именно', 'разве', 'неужели', 'вдруг',
+  '\u0438', '\u0432', '\u043d\u0435', '\u043d\u0430', '\u044f', '\u0447\u0442\u043e', '\u0442\u043e\u0442', '\u044d\u0442\u043e', '\u0441', '\u043e\u043d',
+  '\u043a\u0430\u043a', '\u043f\u043e', '\u043d\u043e', '\u043e\u043d\u0438', '\u043a', '\u0438\u0437', '\u0443', '\u0437\u0430', '\u0442\u043e', '\u0436\u0435',
+  '\u043e\u0442', '\u0442\u0430\u043a', '\u0430', '\u0434\u0430', '\u043d\u0443', '\u0432\u043e\u0442', '\u0443\u0436\u0435', '\u0435\u0449\u0451', '\u0435\u0449\u0435', '\u0431\u044b',
+  '\u043b\u0438', '\u0434\u043e', '\u0441\u043e', '\u043c\u043d\u0435', '\u0442\u044b', '\u043c\u044b', '\u0432\u044b', '\u043e\u043d\u0430', '\u043e\u043d\u043e', '\u043e\u0431',
+  '\u0435\u0451', '\u0435\u0435', '\u0435\u0433\u043e', '\u0438\u0445', '\u0435\u0439', '\u0438\u043c', '\u043d\u0430\u0441', '\u0432\u0430\u0441', '\u043d\u0435\u0442', '\u0431\u044b\u043b',
+  '\u0431\u044b\u043b\u0430', '\u0431\u044b\u043b\u0438', '\u0431\u044b\u0442\u044c', '\u0435\u0441\u0442\u044c', '\u0431\u0443\u0434\u0443', '\u0432\u0441\u0451', '\u0432\u0441\u0435', '\u0438\u043b\u0438', '\u0435\u0441\u043b\u0438', '\u043a\u043e\u0433\u0434\u0430',
+  '\u0447\u0442\u043e\u0431\u044b', '\u043f\u043e\u0442\u043e\u043c\u0443', '\u044d\u0442\u043e\u0442', '\u044d\u0442\u0430', '\u044d\u0442\u0438', '\u043f\u0440\u0438', '\u0431\u0435\u0437', '\u043f\u043e\u0434', '\u043d\u0430\u0434', '\u0434\u043b\u044f',
+  '\u043f\u0440\u043e', '\u043c\u0435\u043d\u044f', '\u0442\u0435\u0431\u044f', '\u043d\u0435\u0433\u043e', '\u043d\u0435\u0451', '\u043d\u0435\u0435', '\u043d\u0438\u0445', '\u0441\u0435\u0431\u044f', '\u0442\u0430\u043c', '\u0442\u0443\u0442',
+  '\u0433\u0434\u0435', '\u043a\u0443\u0434\u0430', '\u043c\u043e\u0439', '\u0442\u0432\u043e\u0439', '\u0441\u0432\u043e\u0439', '\u043d\u0430\u0448', '\u0432\u0430\u0448', '\u0447\u0435\u043c', '\u043c\u043e\u0436\u043d\u043e', '\u043d\u0430\u0434\u043e',
+  '\u043d\u0443\u0436\u043d\u043e', '\u0442\u043e\u043b\u044c\u043a\u043e', '\u0432\u043e\u043e\u0431\u0449\u0435', '\u043f\u0440\u043e\u0441\u0442\u043e', '\u043e\u0447\u0435\u043d\u044c', '\u0442\u043e\u0436\u0435', '\u0437\u0430\u0442\u043e', '\u0445\u043e\u0442\u044f', '\u043f\u043e\u043a\u0430', '\u043f\u043e\u0442\u043e\u043c',
+  '\u043f\u043e\u0441\u043b\u0435', '\u043f\u0435\u0440\u0435\u0434', '\u043c\u0435\u0436\u0434\u0443', '\u0447\u0435\u0440\u0435\u0437', '\u0437\u0434\u0435\u0441\u044c', '\u0442\u0443\u0434\u0430', '\u043e\u0442\u0442\u0443\u0434\u0430', '\u0432\u0435\u0434\u044c', '\u0434\u0430\u0436\u0435', '\u043b\u0438\u0448\u044c',
+  '\u0438\u043c\u0435\u043d\u043d\u043e', '\u0440\u0430\u0437\u0432\u0435', '\u043d\u0435\u0443\u0436\u0435\u043b\u0438', '\u0432\u0434\u0440\u0443\u0433',
 ])
 const STOP_WORDS_EN = new Set([
   'i', 'me', 'my', 'myself', 'we', 'our', 'you', 'your', 'he', 'him',
@@ -138,6 +141,9 @@ export function createChatAccumulator(): AggregatedChatStats & {
       silencePeriodsOver30Days: [],
       trend: 'unknown',
       mostActiveMonth: null,
+      sessionStats: createEmptySessionStats(),
+      relationshipScore: null,
+      insights: [],
     },
     wordsPerMessage: { mine: null, theirs: null },
     avgResponseSec: null,
@@ -163,6 +169,19 @@ function createDirectionalCount(): DirectionalCountDto {
   return { sent: 0, received: 0, total: 0 }
 }
 
+function createEmptySessionStats(): SessionStatsDto {
+  return {
+    totalSessions: 0,
+    averageSessionMessages: 0,
+    averageSessionDurationSec: null,
+    longestSessionMessages: 0,
+    longestSessionDurationSec: null,
+    sessionsPerActiveWeek: 0,
+    nightSessionsPct: null,
+    highlights: [],
+  }
+}
+
 function incrementDirectional(count: DirectionalCountDto, outgoing: boolean) {
   count.total += 1
   if (outgoing) {
@@ -182,6 +201,23 @@ function toLocalDayKey(date: Date) {
 
 function toLocalMonthKey(date: Date) {
   return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}`
+}
+
+function normalizeWordToken(word: string) {
+  const normalized = word
+    .toLowerCase()
+    .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')
+
+  if (!normalized || normalized.length < 2) {
+    return null
+  }
+
+  const lettersOnly = normalized.replace(/[\p{N}_-]/gu, '')
+  if (lettersOnly.length < 2) {
+    return null
+  }
+
+  return normalized
 }
 
 function primaryMessageType(message: AggregationMessageInput): keyof MessageCompositionDto {
@@ -267,7 +303,10 @@ export function aggregateMessage(
     acc.theirsWords += words.length
   }
   for (const word of words) {
-    const normalized = word.toLowerCase()
+    const normalized = normalizeWordToken(word)
+    if (!normalized) {
+      continue
+    }
     if (stopWords.has(normalized)) {
       continue
     }
@@ -431,15 +470,39 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
   const mostActiveMonth = monthlyRows.length
     ? [...monthlyRows].sort((left, right) => right.total - left.total)[0]?.month ?? null
     : null
+  const activeDays = dailyRows.length
+  const maxStreakDays = computeMaxStreak(Array.from(acc.dailyActivity.keys()))
+  const trend = computeTrend(monthlyRows)
+  const sessionStats = buildSessionStats(timeline, activeDays)
+  const relationshipScore = computeRelationshipScore({
+    privateLike,
+    sentMessages: acc.sentMessages,
+    receivedMessages: acc.receivedMessages,
+    iWriteFirstPct: acc.iWriteFirstPct,
+    responseStats: acc.responseStats,
+    activeDays,
+    maxStreakDays,
+    trend,
+  })
+  const insights = generateInsights({
+    trend,
+    longestGap,
+    sessionStats,
+    relationshipScore,
+    responseStats: acc.responseStats,
+  })
   acc.conversationFacts = {
-    activeDays: dailyRows.length,
+    activeDays,
     longestGap,
     mostActiveDate: mostActiveDate ? { date: mostActiveDate.date, total: mostActiveDate.total } : null,
-    maxStreakDays: computeMaxStreak(Array.from(acc.dailyActivity.keys())),
+    maxStreakDays,
     firstMessageAt: acc.firstMessageAt?.toISOString() ?? null,
     silencePeriodsOver30Days: silencePeriodsOver30Days.sort((left, right) => right.seconds - left.seconds).slice(0, 8),
-    trend: computeTrend(monthlyRows),
+    trend,
     mostActiveMonth,
+    sessionStats,
+    relationshipScore,
+    insights,
   }
 
   return acc
@@ -465,6 +528,26 @@ function median(values: number[]) {
   return sorted.length % 2
     ? sorted[middle]
     : Math.round((sorted[middle - 1] + sorted[middle]) / 2)
+}
+
+function clamp(value: number, min = 0, max = 100) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function average(values: number[]) {
+  if (!values.length) {
+    return 0
+  }
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+function averageOrNull(values: number[]) {
+  if (!values.length) {
+    return null
+  }
+
+  return Math.round(average(values))
 }
 
 function mapDailyActivity(map: Map<string, { sent: number; received: number }>) {
@@ -539,6 +622,263 @@ function buildMonthWindow(lastMonth: string, count: number) {
     cursor.setMonth(cursor.getMonth() + 1)
     return value
   })
+}
+
+function buildSessionStats(
+  timeline: Array<{ outgoing: boolean; timestamp: Date }>,
+  activeDays: number,
+): SessionStatsDto {
+  if (!timeline.length) {
+    return createEmptySessionStats()
+  }
+
+  const sessions: SessionStatsDto['highlights'] = []
+  let currentSession = {
+    startedAt: timeline[0].timestamp,
+    endedAt: timeline[0].timestamp,
+    totalMessages: 1,
+    sentMessages: timeline[0].outgoing ? 1 : 0,
+    receivedMessages: timeline[0].outgoing ? 0 : 1,
+  }
+
+  for (let index = 1; index < timeline.length; index += 1) {
+    const item = timeline[index]
+    const previous = timeline[index - 1]
+    const gapMs = item.timestamp.getTime() - previous.timestamp.getTime()
+
+    if (gapMs > SESSION_BOUNDARY_MS) {
+      sessions.push({
+        startedAt: currentSession.startedAt.toISOString(),
+        endedAt: currentSession.endedAt.toISOString(),
+        durationSec: Math.max(0, Math.round((currentSession.endedAt.getTime() - currentSession.startedAt.getTime()) / 1000)),
+        totalMessages: currentSession.totalMessages,
+        sentMessages: currentSession.sentMessages,
+        receivedMessages: currentSession.receivedMessages,
+      })
+
+      currentSession = {
+        startedAt: item.timestamp,
+        endedAt: item.timestamp,
+        totalMessages: 1,
+        sentMessages: item.outgoing ? 1 : 0,
+        receivedMessages: item.outgoing ? 0 : 1,
+      }
+      continue
+    }
+
+    currentSession.endedAt = item.timestamp
+    currentSession.totalMessages += 1
+    if (item.outgoing) {
+      currentSession.sentMessages += 1
+    } else {
+      currentSession.receivedMessages += 1
+    }
+  }
+
+  sessions.push({
+    startedAt: currentSession.startedAt.toISOString(),
+    endedAt: currentSession.endedAt.toISOString(),
+    durationSec: Math.max(0, Math.round((currentSession.endedAt.getTime() - currentSession.startedAt.getTime()) / 1000)),
+    totalMessages: currentSession.totalMessages,
+    sentMessages: currentSession.sentMessages,
+    receivedMessages: currentSession.receivedMessages,
+  })
+
+  const durations = sessions.map((session) => session.durationSec)
+  const messageCounts = sessions.map((session) => session.totalMessages)
+  const nightSessions = sessions.filter((session) => {
+    const hour = new Date(session.startedAt).getHours()
+    return hour >= 23 || hour <= 5
+  }).length
+  const activeWeeks = Math.max(activeDays / 7, 1)
+  const longestByDuration = [...sessions].sort((left, right) => right.durationSec - left.durationSec)[0] ?? null
+  const densestByMessages = [...sessions].sort((left, right) => right.totalMessages - left.totalMessages)[0] ?? null
+  const highlights = [densestByMessages, longestByDuration]
+    .filter((value, index, items): value is NonNullable<typeof value> => Boolean(value) && items.indexOf(value) === index)
+    .slice(0, 3)
+
+  return {
+    totalSessions: sessions.length,
+    averageSessionMessages: Math.round(average(messageCounts)),
+    averageSessionDurationSec: averageOrNull(durations),
+    longestSessionMessages: Math.max(...messageCounts),
+    longestSessionDurationSec: durations.length ? Math.max(...durations) : null,
+    sessionsPerActiveWeek: Number((sessions.length / activeWeeks).toFixed(1)),
+    nightSessionsPct: sessions.length ? Math.round((nightSessions / sessions.length) * 100) : null,
+    highlights,
+  }
+}
+
+function scoreResponsiveness(medianSeconds: number | null) {
+  if (medianSeconds === null) {
+    return null
+  }
+
+  if (medianSeconds <= 15 * 60) {
+    return 100
+  }
+  if (medianSeconds <= 60 * 60) {
+    return 85
+  }
+  if (medianSeconds <= 4 * 60 * 60) {
+    return 65
+  }
+  if (medianSeconds <= 24 * 60 * 60) {
+    return 40
+  }
+  return 20
+}
+
+function computeRelationshipScore(params: {
+  privateLike: boolean
+  sentMessages: number
+  receivedMessages: number
+  iWriteFirstPct: number | null
+  responseStats: ResponseStatsDto
+  activeDays: number
+  maxStreakDays: number
+  trend: ConversationFactsDto['trend']
+}): RelationshipScoreDto | null {
+  if (!params.privateLike) {
+    return null
+  }
+
+  const totalMessages = params.sentMessages + params.receivedMessages
+  if (!totalMessages) {
+    return null
+  }
+
+  const shareDelta = Math.abs(params.sentMessages - params.receivedMessages) / totalMessages
+  const reciprocity = clamp(Math.round((1 - shareDelta) * 100))
+  const attentionBalance = params.iWriteFirstPct === null
+    ? reciprocity
+    : clamp(100 - Math.abs(params.iWriteFirstPct - 50) * 2)
+  const responsivenessSamples = [params.responseStats.medianMineSec, params.responseStats.medianTheirsSec]
+    .reduce<number[]>((acc, value) => {
+      const scored = scoreResponsiveness(value)
+      if (scored !== null) {
+        acc.push(scored)
+      }
+      return acc
+    }, [])
+  const responsiveness = responsivenessSamples.length ? Math.round(average(responsivenessSamples)) : null
+  const stability = clamp(Math.round(
+    Math.min(1, params.activeDays / 60) * 45
+    + Math.min(1, params.maxStreakDays / 21) * 35
+    + (params.trend === 'fading' ? 5 : params.trend === 'growing' ? 20 : params.trend === 'stable' ? 15 : 10),
+  ))
+  const score = clamp(Math.round(
+    reciprocity * 0.3
+    + (responsiveness ?? 55) * 0.25
+    + stability * 0.25
+    + attentionBalance * 0.2,
+  ))
+
+  let label: RelationshipScoreDto['label'] = 'balanced'
+  if (score >= 78 && params.trend !== 'fading') {
+    label = 'warm'
+  } else if (params.trend === 'fading' || (responsiveness !== null && responsiveness < 45)) {
+    label = 'cooling'
+  } else if (reciprocity < 45 || attentionBalance < 40) {
+    label = 'one_sided'
+  } else if (params.activeDays < 14 || params.maxStreakDays < 5) {
+    label = 'emerging'
+  }
+
+  return {
+    score,
+    label,
+    reciprocity,
+    responsiveness,
+    stability,
+    attentionBalance,
+  }
+}
+
+function generateInsights(params: {
+  trend: ConversationFactsDto['trend']
+  longestGap: ConversationFactsDto['longestGap']
+  sessionStats: SessionStatsDto
+  relationshipScore: RelationshipScoreDto | null
+  responseStats: ResponseStatsDto
+}): InsightDto[] {
+  const insights: InsightDto[] = []
+
+  if (params.sessionStats.totalSessions > 0) {
+    insights.push({
+      key: 'session-intensity',
+      title: 'Conversation rhythm',
+      description: `The chat formed ${params.sessionStats.totalSessions} sessions, averaging ${params.sessionStats.averageSessionMessages} messages each.`,
+      tone: 'neutral',
+    })
+  }
+
+  if (params.sessionStats.longestSessionDurationSec && params.sessionStats.longestSessionDurationSec >= 3 * 60 * 60) {
+    insights.push({
+      key: 'long-session',
+      title: 'High-intensity window',
+      description: `Your longest session lasted ${Math.round(params.sessionStats.longestSessionDurationSec / 3600)}h and reached ${params.sessionStats.longestSessionMessages} messages.`,
+      tone: 'positive',
+    })
+  }
+
+  if (params.trend === 'growing') {
+    insights.push({
+      key: 'trend-growing',
+      title: 'Momentum is building',
+      description: 'Recent activity is stronger than the previous period, which suggests the connection is warming up.',
+      tone: 'positive',
+    })
+  } else if (params.trend === 'fading') {
+    insights.push({
+      key: 'trend-fading',
+      title: 'Momentum cooled down',
+      description: 'Recent activity dropped versus the previous period, so this conversation may be losing cadence.',
+      tone: 'warning',
+    })
+  }
+
+  if (params.longestGap && params.longestGap.seconds >= 45 * 24 * 60 * 60) {
+    insights.push({
+      key: 'long-gap',
+      title: 'Extended silence',
+      description: `There was a long break of about ${Math.round(params.longestGap.seconds / 86400)} days between messages.`,
+      tone: 'warning',
+    })
+  }
+
+  if (params.relationshipScore) {
+    const tone = params.relationshipScore.label === 'cooling' || params.relationshipScore.label === 'one_sided'
+      ? 'warning'
+      : params.relationshipScore.label === 'warm'
+        ? 'positive'
+        : 'neutral'
+    insights.push({
+      key: 'relationship-score',
+      title: 'Relationship dynamics',
+      description: `The balance score is ${params.relationshipScore.score}/100 with a ${params.relationshipScore.label.replace('_', ' ')} pattern.`,
+      tone,
+    })
+  }
+
+  if ((params.responseStats.mineSamples + params.responseStats.theirsSamples) >= 6) {
+    const myMedian = params.responseStats.medianMineSec
+    const theirMedian = params.responseStats.medianTheirsSec
+    if (myMedian !== null && theirMedian !== null) {
+      const slowerSide = myMedian > theirMedian ? 'You' : 'Your contact'
+      const gapHours = Math.abs(myMedian - theirMedian) / 3600
+      if (gapHours >= 1) {
+        insights.push({
+          key: 'response-asymmetry',
+          title: 'Reply tempo mismatch',
+          description: `${slowerSide} usually respond slower, with a median gap difference of about ${gapHours.toFixed(1)} hours.`,
+          tone: 'neutral',
+        })
+      }
+    }
+  }
+
+  return insights.slice(0, 5)
 }
 
 export async function saveAggregates(params: {
@@ -871,6 +1211,43 @@ export async function getTop(userId: string, type: string, limit = 10) {
   }
 }
 
+function normalizeConversationFacts(value: (typeof schema.chatStats.$inferSelect)['conversationFacts']): ConversationFactsDto {
+  const sessionStats = value?.sessionStats
+  const relationshipScore = value?.relationshipScore
+
+  return {
+    activeDays: value?.activeDays ?? 0,
+    longestGap: value?.longestGap ?? null,
+    mostActiveDate: value?.mostActiveDate ?? null,
+    maxStreakDays: value?.maxStreakDays ?? 0,
+    firstMessageAt: value?.firstMessageAt ?? null,
+    silencePeriodsOver30Days: Array.isArray(value?.silencePeriodsOver30Days) ? value.silencePeriodsOver30Days : [],
+    trend: value?.trend ?? 'unknown',
+    mostActiveMonth: value?.mostActiveMonth ?? null,
+    sessionStats: {
+      totalSessions: sessionStats?.totalSessions ?? 0,
+      averageSessionMessages: sessionStats?.averageSessionMessages ?? 0,
+      averageSessionDurationSec: sessionStats?.averageSessionDurationSec ?? null,
+      longestSessionMessages: sessionStats?.longestSessionMessages ?? 0,
+      longestSessionDurationSec: sessionStats?.longestSessionDurationSec ?? null,
+      sessionsPerActiveWeek: sessionStats?.sessionsPerActiveWeek ?? 0,
+      nightSessionsPct: sessionStats?.nightSessionsPct ?? null,
+      highlights: Array.isArray(sessionStats?.highlights) ? sessionStats.highlights : [],
+    },
+    relationshipScore: relationshipScore
+      ? {
+          score: relationshipScore.score ?? 0,
+          label: relationshipScore.label ?? 'balanced',
+          reciprocity: relationshipScore.reciprocity ?? null,
+          responsiveness: relationshipScore.responsiveness ?? null,
+          stability: relationshipScore.stability ?? null,
+          attentionBalance: relationshipScore.attentionBalance ?? null,
+        }
+      : null,
+    insights: Array.isArray(value?.insights) ? value.insights : [],
+  }
+}
+
 function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
   const legacyTextMessageCount = Math.max(
     (row.totalMessages ?? 0)
@@ -928,7 +1305,7 @@ function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
           sticker: row.stickerCount ?? 0,
           file: row.fileCount ?? 0,
         },
-    conversationFacts: row.conversationFacts,
+    conversationFacts: normalizeConversationFacts(row.conversationFacts),
     wordsPerMessage: row.wordsPerMessage,
   }
 }
@@ -947,3 +1324,4 @@ function decimalOrNull(value: number | null) {
   }
   return value.toFixed(2)
 }
+

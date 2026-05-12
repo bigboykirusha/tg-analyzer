@@ -3,6 +3,7 @@ import { computeCheck } from 'telegram/Password'
 import { StringSession } from 'telegram/sessions/index.js'
 import { config } from '../config'
 import { decryptSession } from './crypto.service'
+import { redis } from './redis.service'
 import { sleep } from '../utils/sleep'
 
 type PhoneCodeState = {
@@ -41,10 +42,15 @@ export type TelegramMessageLike = {
 class TelegramPool {
   private clients = new Map<string, TelegramClient>()
   private pending = new Map<string, PhoneCodeState>()
+  private clientLeaseTokens = new Map<string, string>()
+  private clientLeaseHeartbeats = new Map<string, NodeJS.Timeout>()
   private readonly pendingTtlMs = 5 * 60 * 1000
   private avatarCache = new Map<string, { data: Buffer; expiresAt: number }>()
   private readonly avatarCacheTtlMs = 60 * 60 * 1000
   private readonly avatarCacheMaxEntries = 1000
+  private readonly clientLeaseTtlMs = 2 * 60 * 1000
+  private readonly clientLeaseWaitTimeoutMs = 15 * 1000
+  private readonly clientLeasePollMs = 250
 
   private pruneExpiredPending() {
     const now = Date.now()
@@ -125,11 +131,88 @@ class TelegramPool {
     return true
   }
 
+  private getClientLeaseKey(userId: string) {
+    return `telegram:client:${userId}`
+  }
+
+  private startClientLeaseHeartbeat(userId: string, token: string) {
+    this.stopClientLeaseHeartbeat(userId)
+    const intervalMs = Math.max(5_000, Math.floor(this.clientLeaseTtlMs / 3))
+    const timer = setInterval(() => {
+      void this.refreshClientLease(userId, token)
+    }, intervalMs)
+    timer.unref?.()
+    this.clientLeaseHeartbeats.set(userId, timer)
+  }
+
+  private stopClientLeaseHeartbeat(userId: string) {
+    const timer = this.clientLeaseHeartbeats.get(userId)
+    if (timer) {
+      clearInterval(timer)
+      this.clientLeaseHeartbeats.delete(userId)
+    }
+  }
+
+  private async refreshClientLease(userId: string, token: string) {
+    const key = this.getClientLeaseKey(userId)
+    const current = await redis.get(key)
+    if (current !== token) {
+      this.stopClientLeaseHeartbeat(userId)
+      this.clientLeaseTokens.delete(userId)
+      return
+    }
+
+    await redis.pexpire(key, this.clientLeaseTtlMs)
+  }
+
+  private async acquireClientLease(userId: string) {
+    const existingToken = this.clientLeaseTokens.get(userId)
+    if (existingToken) {
+      await this.refreshClientLease(userId, existingToken)
+      return existingToken
+    }
+
+    const key = this.getClientLeaseKey(userId)
+    const token = `${process.pid}:${Date.now()}:${Math.random().toString(36).slice(2)}`
+    const startedAt = Date.now()
+
+    while (Date.now() - startedAt < this.clientLeaseWaitTimeoutMs) {
+      const acquired = await redis.set(key, token, 'PX', this.clientLeaseTtlMs, 'NX')
+      if (acquired === 'OK') {
+        this.clientLeaseTokens.set(userId, token)
+        this.startClientLeaseHeartbeat(userId, token)
+        return token
+      }
+
+      await sleep(this.clientLeasePollMs)
+    }
+
+    throw new TelegramSessionBusyError()
+  }
+
+  private async releaseClientLease(userId: string) {
+    const token = this.clientLeaseTokens.get(userId)
+    this.stopClientLeaseHeartbeat(userId)
+    this.clientLeaseTokens.delete(userId)
+
+    if (!token) {
+      return
+    }
+
+    const key = this.getClientLeaseKey(userId)
+    const current = await redis.get(key)
+    if (current === token) {
+      await redis.del(key)
+    }
+  }
+
   async connectAuthorizedClient(userId: string, encryptedSession: {
     sessionString: string
     sessionIv: string
     authTag: string
   }) {
+    await this.acquireClientLease(userId)
+
     const existing = this.clients.get(userId)
     if (existing) {
       if (!(existing as { connected?: boolean }).connected) {
@@ -158,11 +241,14 @@ class TelegramPool {
 
   async disconnectAuthorizedClient(userId: string) {
     const client = this.clients.get(userId)
-    if (!client) {
-      return
+    try {
+      if (client) {
+        await client.disconnect()
+        this.clients.delete(userId)
+      }
+    } finally {
+      await this.releaseClientLease(userId)
     }
-    await client.disconnect()
-    this.clients.delete(userId)
   }
 
   async getDialogAvatar(userId: string, dialogId: string, client: TelegramClient) {
@@ -246,6 +332,13 @@ class TelegramPool {
 }
 
 export const telegramPool = new TelegramPool()
+
+export class TelegramSessionBusyError extends Error {
+  constructor() {
+    super('Telegram session is busy with another operation')
+    this.name = 'TelegramSessionBusyError'
+  }
+}
 
 export function normalizeTelegramDialogType(dialog: TelegramDialog): 'private' | 'group' | 'channel' | 'bot' | 'unknown' {
   const entity = dialog.entity ?? {}
@@ -332,7 +425,11 @@ export function getFloodWaitSeconds(error: unknown) {
 
 export function isTelegramSessionExpiredError(error: unknown) {
   const message = String((error as { errorMessage?: unknown; message?: unknown })?.errorMessage ?? (error as Error)?.message ?? '')
-  return /AUTH_KEY_UNREGISTERED|SESSION_REVOKED|SESSION_EXPIRED|USER_DEACTIVATED|AUTH_KEY_INVALID/i.test(message)
+  return /AUTH_KEY_UNREGISTERED|SESSION_REVOKED|SESSION_EXPIRED|USER_DEACTIVATED|AUTH_KEY_INVALID|AUTH_KEY_DUPLICATED/i.test(message)
+}
+
+export function isTelegramSessionBusyError(error: unknown) {
+  return error instanceof TelegramSessionBusyError
 }
 
 export async function withFloodWaitRetry<T>(action: () => Promise<T>, maxAttempts = 2): Promise<T> {

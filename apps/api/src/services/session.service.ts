@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import { and, desc, eq, inArray, lt, notInArray } from 'drizzle-orm'
+import { and, desc, eq, gt, inArray, isNotNull, isNull, lt, notInArray, or } from 'drizzle-orm'
 import { db, schema } from '../db'
 import { redis } from './redis.service'
 import { config } from '../config'
+import { addDays } from '../utils/date'
 
 const TEMP_AUTH_PREFIX = 'auth:temp'
 const PROGRESS_PREFIX = 'parse:progress'
@@ -10,6 +11,22 @@ const ACTIVE_JOB_PREFIX = 'parse:active'
 const FULL_PARSE_COOLDOWN_PREFIX = 'parse:cooldown'
 const CANCELLED_JOB_PREFIX = 'parse:cancelled'
 const CHAT_COOLDOWN_PREFIX = 'parse:chat-cooldown'
+const DIALOG_CACHE_PREFIX = 'parse:dialogs'
+const REFRESH_SESSION_TTL_DAYS = 30
+const DIALOG_CACHE_TTL_SECONDS = 60 * 60 * 6
+
+export interface CachedParseDialogs {
+  dialogs: {
+    id: string
+    title: string
+    type: 'private' | 'group' | 'channel' | 'bot' | 'unknown'
+    hasAvatar?: boolean
+  }[]
+  truncated: boolean
+  total: number
+}
+
+export type RefreshSessionRecord = typeof schema.refreshSessions.$inferSelect
 
 export interface PendingPasswordContext {
   phone: string
@@ -42,6 +59,21 @@ export async function getPendingPasswordContext(token: string): Promise<PendingP
 
 export async function clearPendingPasswordContext(token: string) {
   await redis.del(`${TEMP_AUTH_PREFIX}:${token}`)
+}
+
+export async function createRefreshSession(userId: string, familyId = randomUUID()) {
+  const tokenId = randomUUID()
+  const [created] = await db
+    .insert(schema.refreshSessions)
+    .values({
+      userId,
+      familyId,
+      tokenId,
+      expiresAt: addDays(new Date(), REFRESH_SESSION_TTL_DAYS),
+    })
+    .returning()
+
+  return created
 }
 
 export async function upsertTelegramSession(input: {
@@ -160,6 +192,15 @@ export async function setChatCooldown(userId: string, chatId: string, ttlSeconds
   await redis.set(`${CHAT_COOLDOWN_PREFIX}:${userId}:${chatId}`, '1', 'EX', ttlSeconds)
 }
 
+export async function cacheParseDialogs(userId: string, payload: CachedParseDialogs) {
+  await redis.set(`${DIALOG_CACHE_PREFIX}:${userId}`, JSON.stringify(payload), 'EX', DIALOG_CACHE_TTL_SECONDS)
+}
+
+export async function getCachedParseDialogs(userId: string) {
+  const raw = await redis.get(`${DIALOG_CACHE_PREFIX}:${userId}`)
+  return parseJsonOrNull<CachedParseDialogs>(raw)
+}
+
 export async function createParseJob(input: {
   userId: string
   chatId?: number | null
@@ -233,19 +274,134 @@ export async function clearParseHistory(userId: string) {
   return deleted.length
 }
 
-export async function revokeRefreshSession(tokenId: string) {
-  await db.delete(schema.refreshSessions).where(eq(schema.refreshSessions.tokenId, tokenId))
+export async function deleteParseHistoryItem(userId: string, jobId: string) {
+  const deleted = await db
+    .delete(schema.parseJobs)
+    .where(and(
+      eq(schema.parseJobs.userId, userId),
+      eq(schema.parseJobs.id, jobId),
+      notInArray(schema.parseJobs.status, ['pending', 'running']),
+    ))
+    .returning({ id: schema.parseJobs.id })
+
+  return deleted.length > 0
 }
 
-export async function consumeRefreshSession(tokenId: string) {
-  const [session] = await db
-    .delete(schema.refreshSessions)
-    .where(eq(schema.refreshSessions.tokenId, tokenId))
-    .returning()
+export async function revokeRefreshSession(tokenId: string) {
+  await revokeRefreshSessionFamilyByTokenId(tokenId)
+}
 
-  return session ?? null
+export async function revokeRefreshSessionFamily(familyId: string) {
+  await db
+    .update(schema.refreshSessions)
+    .set({ revokedAt: new Date() })
+    .where(and(
+      eq(schema.refreshSessions.familyId, familyId),
+      isNull(schema.refreshSessions.revokedAt),
+    ))
+}
+
+export async function revokeRefreshSessionFamilyByTokenId(tokenId: string) {
+  const session = await db.query.refreshSessions.findFirst({
+    where: eq(schema.refreshSessions.tokenId, tokenId),
+  })
+
+  if (!session) {
+    return false
+  }
+
+  await revokeRefreshSessionFamily(session.familyId)
+  return true
+}
+
+export async function rotateRefreshSession(tokenId: string): Promise<
+  | { status: 'rotated' | 'grace'; session: RefreshSessionRecord }
+  | { status: 'invalid' | 'replayed' }
+> {
+  return db.transaction(async (tx) => {
+    const now = new Date()
+    const successorTokenId = randomUUID()
+    const graceUntil = new Date(now.getTime() + config.REFRESH_SESSION_GRACE_SECONDS * 1000)
+
+    const [rotated] = await tx
+      .update(schema.refreshSessions)
+      .set({
+        replacedByTokenId: successorTokenId,
+        rotatedAt: now,
+        graceUntil,
+      })
+      .where(and(
+        eq(schema.refreshSessions.tokenId, tokenId),
+        isNull(schema.refreshSessions.replacedByTokenId),
+        isNull(schema.refreshSessions.revokedAt),
+        gt(schema.refreshSessions.expiresAt, now),
+      ))
+      .returning()
+
+    if (rotated) {
+      const [successor] = await tx
+        .insert(schema.refreshSessions)
+        .values({
+          userId: rotated.userId,
+          familyId: rotated.familyId,
+          tokenId: successorTokenId,
+          expiresAt: addDays(now, REFRESH_SESSION_TTL_DAYS),
+        })
+        .returning()
+
+      return { status: 'rotated', session: successor } as const
+    }
+
+    const current = await tx.query.refreshSessions.findFirst({
+      where: eq(schema.refreshSessions.tokenId, tokenId),
+    })
+
+    if (!current || current.revokedAt || current.expiresAt <= now) {
+      return { status: 'invalid' } as const
+    }
+
+    if (!current.replacedByTokenId) {
+      return { status: 'invalid' } as const
+    }
+
+    if (!current.graceUntil || current.graceUntil < now) {
+      await tx
+        .update(schema.refreshSessions)
+        .set({ revokedAt: now })
+        .where(eq(schema.refreshSessions.familyId, current.familyId))
+
+      return { status: 'replayed' } as const
+    }
+
+    const successor = await tx.query.refreshSessions.findFirst({
+      where: and(
+        eq(schema.refreshSessions.tokenId, current.replacedByTokenId),
+        isNull(schema.refreshSessions.revokedAt),
+        gt(schema.refreshSessions.expiresAt, now),
+      ),
+    })
+
+    if (!successor) {
+      await tx
+        .update(schema.refreshSessions)
+        .set({ revokedAt: now })
+        .where(eq(schema.refreshSessions.familyId, current.familyId))
+
+      return { status: 'invalid' } as const
+    }
+
+    return { status: 'grace', session: successor } as const
+  })
 }
 
 export async function cleanupExpiredRefreshSessions() {
-  await db.delete(schema.refreshSessions).where(lt(schema.refreshSessions.expiresAt, new Date()))
+  const now = new Date()
+  await db.delete(schema.refreshSessions).where(or(
+    lt(schema.refreshSessions.expiresAt, now),
+    isNotNull(schema.refreshSessions.revokedAt),
+    and(
+      isNotNull(schema.refreshSessions.replacedByTokenId),
+      lt(schema.refreshSessions.graceUntil, now),
+    ),
+  ))
 }

@@ -6,6 +6,7 @@ import { db, schema } from '../db'
 import { eq } from 'drizzle-orm'
 import type { FastifyReply } from 'fastify'
 import type { UserDto } from '@tg-analyzer/shared'
+import { createRefreshSession } from './session.service'
 
 export interface AccessPayload {
   sub: string
@@ -39,10 +40,20 @@ export async function issueAuthTokens(reply: FastifyReply, user: {
   username: string | null
   firstName: string | null
 }, telegramSessionActiveOverride?: boolean) {
+  const refreshSession = await createRefreshSession(user.id)
+  setRefreshCookie(reply, refreshSession.tokenId, user.id)
+  return issueAccessToken(reply, user, telegramSessionActiveOverride)
+}
+
+export async function issueAccessToken(reply: FastifyReply, user: {
+  id: string
+  tgUserId: number
+  username: string | null
+  firstName: string | null
+}, telegramSessionActiveOverride?: boolean) {
   const telegramSession = await db.query.telegramSessions.findFirst({
     where: eq(schema.telegramSessions.userId, user.id),
   })
-  const sessionId = randomUUID()
   const accessToken = await reply.jwtSign(
     {
       sub: user.id,
@@ -52,13 +63,6 @@ export async function issueAuthTokens(reply: FastifyReply, user: {
     { expiresIn: '15m' },
   )
 
-  await db.insert(schema.refreshSessions).values({
-    userId: user.id,
-    tokenId: sessionId,
-    expiresAt: addDays(new Date(), 30),
-  })
-
-  setRefreshCookie(reply, sessionId, user.id)
   return { accessToken, user: toUserDto(user, telegramSessionActiveOverride ?? telegramSession?.isActive ?? false) }
 }
 

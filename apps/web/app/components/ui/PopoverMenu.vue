@@ -173,7 +173,7 @@ onBeforeUnmount(() => {
     padding-top: max(var(--space-4), env(safe-area-inset-top));
     padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
     border: 0;
-    border-radius: 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     background: var(--bg-base);
   }
 }

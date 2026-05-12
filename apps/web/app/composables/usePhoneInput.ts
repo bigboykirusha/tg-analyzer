@@ -17,7 +17,7 @@ export const PHONE_COUNTRIES: PhoneCountry[] = [
   { code: 'US', flag: '🇺🇸', dialCode: '+1', pattern: [3, 3, 4], minDigits: 10, maxDigits: 10 },
   { code: 'GB', flag: '🇬🇧', dialCode: '+44', pattern: [4, 3, 4], minDigits: 10, maxDigits: 11 },
   { code: 'DE', flag: '🇩🇪', dialCode: '+49', pattern: [3, 3, 4], minDigits: 10, maxDigits: 11 },
-  { code: 'FR', flag: '🇫🇷', dialCode: '+33', pattern: [1, 2, 2, 2, 2], minDigits: 9, maxDigits: 9 },
+  { code: 'PL', flag: '🇵🇱', dialCode: '+48', pattern: [3, 3, 3], minDigits: 9, maxDigits: 9 },
   { code: 'TR', flag: '🇹🇷', dialCode: '+90', pattern: [3, 3, 2, 2], minDigits: 10, maxDigits: 10 },
   { code: 'AE', flag: '🇦🇪', dialCode: '+971', pattern: [2, 3, 4], minDigits: 9, maxDigits: 9 },
   { code: 'IL', flag: '🇮🇱', dialCode: '+972', pattern: [2, 3, 4], minDigits: 9, maxDigits: 9 },
@@ -35,21 +35,32 @@ function trimToPattern(value: string, country: PhoneCountry) {
 }
 
 function formatGroups(digits: string, pattern: number[]) {
+  const firstGroup = pattern[0] ?? 0
+  if (!firstGroup) {
+    return digits
+  }
+
+  const restPattern = pattern.slice(1)
   const groups: string[] = []
   let cursor = 0
 
-  for (const size of pattern) {
+  const firstPart = digits.slice(0, firstGroup)
+  if (firstPart) {
+    groups.push(`(${firstPart}`)
+    cursor += firstPart.length
+
+    if (firstPart.length === firstGroup) {
+      groups[0] = `${groups[0]})`
+    }
+  }
+
+  for (const size of restPattern) {
     const part = digits.slice(cursor, cursor + size)
     if (!part) {
       break
     }
     groups.push(part)
     cursor += size
-  }
-
-  const rest = digits.slice(cursor)
-  if (rest) {
-    groups.push(rest)
   }
 
   return groups.join(' ')

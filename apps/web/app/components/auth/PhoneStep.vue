@@ -9,12 +9,21 @@ const emit = defineEmits<{ submit: [] }>()
 const { t } = useI18n()
 const phoneInput = usePhoneInput()
 const phoneDisplay = phoneInput.displayValue
-const touched = ref(false)
 const countryOpen = ref(false)
 
 const selectedCountryLabel = computed(() => {
   const country = phoneInput.country.value
   return country.dialCode
+})
+
+const phonePlaceholder = computed(() => {
+  const [firstGroup = 0, ...rest] = phoneInput.country.value.pattern
+  const prefix = firstGroup > 0 ? `(${Array.from({ length: firstGroup }, (_, index) => String((index + 1) % 10)).join('')})` : ''
+  const suffix = rest
+    .map((size) => Array.from({ length: size }, (_, index) => String((index + 1) % 10)).join(''))
+    .join(' ')
+
+  return [prefix, suffix].filter(Boolean).join(' ')
 })
 
 function flagSrc(code: string) {
@@ -42,7 +51,6 @@ function selectCountry(code: string) {
 }
 
 function submit() {
-  touched.value = true
   if (!phoneInput.isValid.value) {
     return
   }
@@ -119,19 +127,14 @@ function submit() {
         <input
           v-model="phoneDisplay"
           class="input phone-input"
-          :class="{ 'input-invalid': touched && !phoneInput.isValid.value }"
-          :placeholder="t('login.phonePlaceholder')"
+          :placeholder="phonePlaceholder"
           inputmode="tel"
           autocomplete="tel"
-          @blur="touched = true"
         >
       </div>
-      <span v-if="touched && !phoneInput.isValid.value" class="field-error text-caption">
-        {{ t('login.invalidPhone') }}
-      </span>
     </label>
 
-    <Button variant="primary" size="lg" :loading="loading" :disabled="!phoneInput.isValid.value" block>
+    <Button variant="primary" size="lg" :loading="loading" :disabled="loading || !phoneInput.isValid.value" block>
       {{ loading ? t('login.sendingCode') : t('login.getCode') }}
     </Button>
   </form>
@@ -247,15 +250,6 @@ function submit() {
 
 .phone-input {
   font-family: var(--font-mono);
-}
-
-.input-invalid {
-  border-color: var(--color-danger);
-  box-shadow: 0 0 0 3px var(--color-danger-muted);
-}
-
-.field-error {
-  color: var(--color-danger);
 }
 
 @media (max-width: 420px) {

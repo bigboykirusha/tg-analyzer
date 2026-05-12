@@ -1,19 +1,14 @@
 <script setup lang="ts">
-const auth = useAuthStore()
-const { bootstrap } = useAuth()
-const { t } = useI18n()
-const ready = ref(false)
-
-onMounted(async () => {
-  await bootstrap()
-  ready.value = true
-  await navigateTo(auth.isAuthorized ? '/dashboard' : '/login')
+definePageMeta({
+  middleware: 'guest',
 })
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="redirect-screen">
-    <span class="text-label">{{ ready ? t('common.redirecting') : t('common.loading') }}</span>
+    <span class="text-label">{{ t('common.redirecting') }}</span>
   </div>
 </template>
 

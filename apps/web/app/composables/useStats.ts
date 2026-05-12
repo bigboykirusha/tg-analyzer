@@ -3,6 +3,7 @@ import type {
   ChatStatsDto,
   ClearHistoryResponse,
   DeleteResponse,
+  DeleteHistoryItemResponse,
   GlobalStatsDto,
   PagedChatsResponse,
   ParseDialogsResponse,
@@ -12,13 +13,14 @@ import type {
 
 export function useStats() {
   const store = useStatsStore()
+  store.hydrateParseDialogs()
 
   async function fetchGlobal() {
     store.globalStats = await useApiFetch<GlobalStatsDto>('/api/stats/global')
   }
 
-  async function fetchChats(page = 1) {
-    const result = await useApiFetch<PagedChatsResponse>(`/api/stats/chats?page=${page}&limit=20&sort=total_messages&order=desc`)
+  async function fetchChats(page = 1, sort = 'parsed_at', order: 'asc' | 'desc' = 'desc') {
+    const result = await useApiFetch<PagedChatsResponse>(`/api/stats/chats?page=${page}&limit=20&sort=${sort}&order=${order}`)
     store.chats = result.chats
   }
 
@@ -48,15 +50,22 @@ export function useStats() {
     store.history = store.history.filter((item) => item.status === 'pending' || item.status === 'running')
   }
 
+  async function deleteHistoryItem(jobId: string) {
+    await useApiFetch<DeleteHistoryItemResponse>(`/api/parse/history/${jobId}`, { method: 'DELETE' })
+    store.history = store.history.filter((item) => item.jobId !== jobId)
+  }
+
   async function fetchParseStatus() {
     return useApiFetch<ParseStatusResponse>('/api/parse/status')
   }
 
   async function fetchParseDialogs() {
     const result = await useApiFetch<ParseDialogsResponse>('/api/parse/dialogs')
-    store.parseDialogs = result.dialogs
-    store.parseDialogsTruncated = result.truncated
-    store.parseDialogsTotal = result.total
+    store.setParseDialogs({
+      dialogs: result.dialogs,
+      truncated: result.truncated,
+      total: result.total,
+    })
   }
 
   return {
@@ -67,6 +76,7 @@ export function useStats() {
     fetchActivity,
     fetchHistory,
     clearHistory,
+    deleteHistoryItem,
     fetchParseStatus,
     fetchParseDialogs,
   }

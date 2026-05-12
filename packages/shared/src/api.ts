@@ -1,5 +1,17 @@
 export type JobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
 
+export type AuthErrorCode =
+  | 'AUTH_UNAUTHORIZED'
+  | 'AUTH_REFRESH_INVALID'
+  | 'AUTH_REFRESH_REPLAYED'
+  | 'TELEGRAM_REAUTH_REQUIRED'
+  | 'AUTH_TEMP_TOKEN_INVALID'
+
+export interface ApiErrorResponse {
+  message: string
+  code?: AuthErrorCode | string
+}
+
 export interface UserDto {
   id: string
   tgUserId: string
@@ -66,6 +78,7 @@ export interface ParseDialogsResponse {
 export interface ParseProgressDto {
   current: number
   total: number
+  chatId: string | null
   chatName: string
   status: JobStatus | 'idle'
   message?: string
@@ -98,6 +111,8 @@ export interface DeleteResponse {
 export interface ClearHistoryResponse extends DeleteResponse {
   deleted: number
 }
+
+export interface DeleteHistoryItemResponse extends DeleteResponse {}
 
 export interface PagedChatsResponse {
   chats: ChatStatsDto[]
@@ -143,6 +158,42 @@ export interface ResponseStatsDto {
   theirsSamples: number
 }
 
+export interface SessionHighlightDto {
+  startedAt: string
+  endedAt: string
+  durationSec: number
+  totalMessages: number
+  sentMessages: number
+  receivedMessages: number
+}
+
+export interface SessionStatsDto {
+  totalSessions: number
+  averageSessionMessages: number
+  averageSessionDurationSec: number | null
+  longestSessionMessages: number
+  longestSessionDurationSec: number | null
+  sessionsPerActiveWeek: number
+  nightSessionsPct: number | null
+  highlights: SessionHighlightDto[]
+}
+
+export interface RelationshipScoreDto {
+  score: number
+  label: 'balanced' | 'warm' | 'cooling' | 'one_sided' | 'emerging'
+  reciprocity: number | null
+  responsiveness: number | null
+  stability: number | null
+  attentionBalance: number | null
+}
+
+export interface InsightDto {
+  key: string
+  title: string
+  description: string
+  tone: 'positive' | 'neutral' | 'warning'
+}
+
 export interface ConversationFactsDto {
   activeDays: number
   longestGap: LongestGapDto | null
@@ -152,6 +203,9 @@ export interface ConversationFactsDto {
   silencePeriodsOver30Days: LongestGapDto[]
   trend: 'growing' | 'stable' | 'fading' | 'unknown'
   mostActiveMonth: string | null
+  sessionStats: SessionStatsDto
+  relationshipScore: RelationshipScoreDto | null
+  insights: InsightDto[]
 }
 
 export interface DirectionalTopItemsDto {
@@ -243,6 +297,7 @@ export interface ParseProgressEvent {
   type: 'progress'
   current: number
   total: number
+  chatId: string | null
   chatName: string
   status?: JobStatus
   message?: string
@@ -251,6 +306,7 @@ export interface ParseProgressEvent {
 
 export interface ParseCompletedEvent {
   type: 'completed'
+  chatId?: string | null
   status?: 'completed'
   totalMessages?: number
   message?: string
@@ -258,12 +314,14 @@ export interface ParseCompletedEvent {
 
 export interface ParseFailedEvent {
   type: 'failed'
+  chatId?: string | null
   status?: 'failed'
   message: string
 }
 
 export interface ParseCancelledEvent {
   type: 'cancelled'
+  chatId?: string | null
   status?: 'cancelled'
   message?: string
 }

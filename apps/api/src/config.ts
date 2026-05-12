@@ -13,6 +13,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(16),
   JWT_REFRESH_SECRET: z.string().min(16),
   COOKIE_SECURE: z.coerce.boolean().default(false),
+  REFRESH_SESSION_GRACE_SECONDS: z.coerce.number().int().positive().default(15),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
   AUTH_RATE_LIMIT_WINDOW: z.string().default('1 minute'),
   FULL_PARSE_COOLDOWN_HOURS: z.coerce.number().int().positive().default(24),

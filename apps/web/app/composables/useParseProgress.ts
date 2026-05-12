@@ -1,4 +1,6 @@
 import type { ParseProgressDto, ParseProgressWsEvent, ParseStatusResponse } from '@tg-analyzer/shared'
+import { refreshAccessToken } from './useApi'
+import { isTokenExpiringSoon, isTokenUsable } from '../utils/auth'
 
 const MAX_RETRIES = 5
 
@@ -6,6 +8,7 @@ export function useParseProgress() {
   const progress = useState<ParseProgressDto>('parse-progress', () => ({
     current: 0,
     total: 0,
+    chatId: null,
     chatName: '',
     status: 'idle',
     message: '',
@@ -15,6 +18,7 @@ export function useParseProgress() {
   const retryCount = useState<number>('parse-progress-retry-count', () => 0)
   const retryTimeout = useState<number | null>('parse-progress-retry-timeout', () => null)
   const intentionalClose = useState<boolean>('parse-progress-intentional-close', () => false)
+  const forceRefresh = useState<boolean>('parse-progress-force-refresh', () => false)
   const auth = useAuthStore()
   const config = useRuntimeConfig()
 
@@ -22,6 +26,7 @@ export function useParseProgress() {
     progress.value = {
       current: status.progress.current ?? 0,
       total: status.progress.total ?? 0,
+      chatId: status.progress.chatId ?? null,
       chatName: status.progress.chatName ?? '',
       status: status.progress.status ?? status.status,
       message: status.progress.message ?? '',
@@ -38,20 +43,39 @@ export function useParseProgress() {
     }
   }
 
+  async function ensureSocketAccessToken() {
+    if (!auth.isAuthorized || !auth.accessToken) {
+      return false
+    }
+
+    if (!forceRefresh.value && !isTokenExpiringSoon(auth.accessToken, 30 * 1000)) {
+      return true
+    }
+
+    const refreshResult = await refreshAccessToken(config.public.apiUrl)
+    if (refreshResult.accessToken) {
+      forceRefresh.value = false
+      return true
+    }
+
+    return Boolean(auth.accessToken && isTokenUsable(auth.accessToken))
+  }
+
   function scheduleReconnect() {
-    if (!import.meta.client || retryCount.value >= MAX_RETRIES || progress.value.status !== 'running' || !auth.accessToken) {
+    const reconnectable = progress.value.status === 'running' || progress.value.status === 'pending'
+    if (!import.meta.client || retryCount.value >= MAX_RETRIES || !reconnectable || !auth.isAuthorized) {
       return
     }
 
     const delay = Math.min(1000 * 2 ** retryCount.value, 30000)
     retryTimeout.value = window.setTimeout(() => {
       retryCount.value += 1
-      connect()
+      void connect()
     }, delay)
   }
 
-  function connect() {
-    if (!import.meta.client || !auth.accessToken || socketRef.value) {
+  async function connect() {
+    if (!import.meta.client || socketRef.value || !auth.isAuthorized) {
       return
     }
 
@@ -60,12 +84,18 @@ export function useParseProgress() {
       retryTimeout.value = null
     }
 
+    const hasAccessToken = await ensureSocketAccessToken()
+    if (!hasAccessToken || !auth.accessToken) {
+      return
+    }
+
     const socket = new WebSocket(`${config.public.wsUrl}/ws/parse-progress?token=${auth.accessToken}`)
     socketRef.value = socket
     intentionalClose.value = false
 
     socket.onopen = () => {
       retryCount.value = 0
+      forceRefresh.value = false
       void fetchCurrentStatus()
     }
 
@@ -80,6 +110,7 @@ export function useParseProgress() {
         progress.value = {
           current: data.current,
           total: data.total,
+          chatId: data.chatId ?? null,
           chatName: data.chatName ?? '',
           status: data.status ?? 'running',
           message: data.message ?? '',
@@ -89,25 +120,31 @@ export function useParseProgress() {
       if (data.type === 'completed') {
         progress.value = {
           ...progress.value,
+          chatId: data.chatId ?? progress.value.chatId ?? null,
           status: 'completed',
           message: data.message ?? 'Parse completed',
         }
+        void fetchCurrentStatus()
         disconnect()
       }
       if (data.type === 'failed' || data.type === 'error') {
         progress.value = {
           ...progress.value,
+          chatId: 'chatId' in data ? (data.chatId ?? progress.value.chatId ?? null) : progress.value.chatId,
           status: 'failed',
           message: 'message' in data ? data.message : progress.value.message,
         }
+        void fetchCurrentStatus()
         disconnect()
       }
       if (data.type === 'cancelled') {
         progress.value = {
           ...progress.value,
+          chatId: data.chatId ?? progress.value.chatId ?? null,
           status: 'cancelled',
           message: data.message ?? 'Parse cancelled',
         }
+        void fetchCurrentStatus()
         disconnect()
       }
     }
@@ -116,8 +153,11 @@ export function useParseProgress() {
       socket.close()
     }
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
       socketRef.value = null
+      if (event.code === 1008) {
+        forceRefresh.value = true
+      }
       if (intentionalClose.value) {
         intentionalClose.value = false
         return
@@ -138,9 +178,11 @@ export function useParseProgress() {
 
   function reset() {
     retryCount.value = 0
+    forceRefresh.value = false
     progress.value = {
       current: 0,
       total: 0,
+      chatId: null,
       chatName: '',
       status: 'idle',
       message: '',

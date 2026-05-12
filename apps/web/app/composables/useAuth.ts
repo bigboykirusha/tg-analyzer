@@ -5,35 +5,57 @@ import type {
   VerifyCodeBody,
   VerifyPasswordBody,
 } from '@tg-analyzer/shared'
+import { refreshAccessToken } from './useApi'
+import { isDefinitiveAuthFailureCode, isTokenExpiringSoon } from '../utils/auth'
 
 export function useAuth() {
   const auth = useAuthStore()
+  const config = useRuntimeConfig()
 
   async function restoreSession() {
-    try {
-      const result = await useApiFetch<AuthSuccessResponse>('/api/auth/refresh', {
-        method: 'POST',
-      })
-      auth.setAccess(result.accessToken, result.user)
-      return result
-    } catch {
-      auth.clear()
+    const result = await refreshAccessToken(config.public.apiUrl)
+
+    if (result.accessToken && result.user) {
+      return {
+        accessToken: result.accessToken,
+        user: result.user,
+      } satisfies AuthSuccessResponse
+    }
+
+    if (result.definitiveFailure && result.error?.code && isDefinitiveAuthFailureCode(result.error.code)) {
       return null
     }
+
+    if (auth.isAuthorized && auth.user) {
+      return {
+        accessToken: auth.accessToken,
+        user: auth.user,
+      } satisfies AuthSuccessResponse
+    }
+
+    return null
   }
 
   async function bootstrap() {
     auth.loadPersisted()
 
-    if (!auth.user || !auth.accessToken) {
-      return restoreSession()
+    if (auth.isAuthorized && auth.user) {
+      auth.setAuthHealth(auth.telegramSessionActive ? 'ready' : 'degraded')
+
+      if (!isTokenExpiringSoon(auth.accessToken)) {
+        return {
+          accessToken: auth.accessToken,
+          user: auth.user,
+        } satisfies AuthSuccessResponse
+      }
+
+      return await restoreSession() ?? {
+        accessToken: auth.accessToken,
+        user: auth.user,
+      }
     }
 
-    if (shouldRefreshToken(auth.accessToken)) {
-      return restoreSession()
-    }
-
-    return { accessToken: auth.accessToken, user: auth.user }
+    return restoreSession()
   }
 
   async function sendCode(phone: string) {
@@ -113,40 +135,5 @@ export function useAuth() {
     logout,
     terminateTelegramSession,
     deleteAccount,
-  }
-}
-
-function shouldRefreshToken(token: string) {
-  const payload = parseJwtPayload(token)
-  if (!payload?.exp) {
-    return true
-  }
-
-  const refreshThresholdMs = 60 * 1000
-  return payload.exp * 1000 <= Date.now() + refreshThresholdMs
-}
-
-function parseJwtPayload(token: string): { exp?: number } | null {
-  if (!import.meta.client) {
-    return null
-  }
-
-  const parts = token.split('.')
-  if (parts.length !== 3) {
-    return null
-  }
-
-  try {
-    const encoded = parts[1]
-    if (!encoded) {
-      return null
-    }
-    const normalized = encoded
-      .replace(/-/g, '+')
-      .replace(/_/g, '/')
-      .padEnd(Math.ceil(encoded.length / 4) * 4, '=')
-    return JSON.parse(window.atob(normalized)) as { exp?: number }
-  } catch {
-    return null
   }
 }

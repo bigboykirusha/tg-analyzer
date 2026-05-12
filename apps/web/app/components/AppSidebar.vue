@@ -54,7 +54,6 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 
     <div class="mobile-topbar">
       <div class="mobile-brand">
-        <ProfileAvatar :title="auth.user?.firstName || auth.user?.username || t('common.anonymous')" size="sm" />
         <span class="logo-mark">&lt;T&gt;</span>
         <span class="logo-text">tg analyzer</span>
       </div>

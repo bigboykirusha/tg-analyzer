@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
 import AppLayout from '../../components/AppLayout.vue'
 import ChatAvatar from '../../components/ChatAvatar.vue'
 import ActivityHeatmap from '../../components/stats/ActivityHeatmap.vue'
@@ -7,6 +9,7 @@ import CompositionChart from '../../components/stats/CompositionChart.vue'
 import DailyVolumeChart from '../../components/stats/DailyVolumeChart.vue'
 import EmojiGrid from '../../components/stats/EmojiGrid.vue'
 import HourlyChart from '../../components/stats/HourlyChart.vue'
+import ParseProgress from '../../components/stats/ParseProgress.vue'
 import WeekdayChart from '../../components/stats/WeekdayChart.vue'
 import WordsChart from '../../components/stats/WordsChart.vue'
 import Badge from '../../components/ui/Badge.vue'
@@ -16,7 +19,6 @@ import MetricCard from '../../components/ui/MetricCard.vue'
 import PopoverMenu from '../../components/ui/PopoverMenu.vue'
 import SegmentedControl from '../../components/ui/SegmentedControl.vue'
 import Skeleton from '../../components/ui/Skeleton.vue'
-import { useAuth } from '../../composables/useAuth'
 import { useI18n } from '../../composables/useI18n'
 import { useParseProgress } from '../../composables/useParseProgress'
 import { useStats } from '../../composables/useStats'
@@ -24,26 +26,34 @@ import { useToast } from '../../composables/useToast'
 import { useAuthStore } from '../../stores/auth'
 import { useStatsStore } from '../../stores/stats'
 
+definePageMeta({
+  middleware: 'auth',
+})
+
 const route = useRoute()
 const auth = useAuthStore()
-const { bootstrap } = useAuth()
 const { fetchChat, fetchParseStatus } = useStats()
-const { applyStatus, connect, disconnect } = useParseProgress()
+const { progress, applyStatus, connect, disconnect } = useParseProgress()
 const stats = useStatsStore()
 const { t, formatNumber, formatDate: formatLocaleDate, formatRelative, intlLocale } = useI18n()
 const toast = useToast()
 
 const ready = ref(false)
 const loadError = ref('')
-const copied = ref(false)
 const reparsing = ref(false)
 const shareOpen = ref(false)
 const activeView = ref<'overview' | 'rhythm' | 'words' | 'timeline'>('overview')
 const isMobileLayout = ref(false)
 const expandedChart = ref<null | 'balance' | 'composition' | 'heatmap' | 'weekday' | 'hourly' | 'daily' | 'timeline'>(null)
+const reportRefreshing = ref(false)
+const reportExportRef = ref<HTMLElement | null>(null)
 
 const routeChatId = computed(() => String(route.params.id))
 const chat = computed(() => stats.selectedChat)
+const parseForCurrentChat = computed(() => progress.value.chatId === routeChatId.value)
+const parseActiveForCurrentChat = computed(() => parseForCurrentChat.value && ['running', 'pending'].includes(progress.value.status))
+const parseTerminalForCurrentChat = computed(() => parseForCurrentChat.value && ['completed', 'failed', 'cancelled'].includes(progress.value.status))
+const reportStale = computed(() => parseActiveForCurrentChat.value || reparsing.value)
 const isPrivateChat = computed(() => chat.value?.chatType === 'private')
 const totalMessages = computed(() => chat.value?.totalMessages ?? 0)
 const sentShare = computed(() => totalMessages.value ? Math.round(((chat.value?.sentMessages ?? 0) / totalMessages.value) * 100) : 0)
@@ -312,24 +322,134 @@ const trendLabel = computed(() => {
 
   return labels[trend]
 })
-const shareActions = computed(() => [
-  { key: 'native', label: t('chat.systemShare'), action: shareNative },
-  { key: 'copy', label: copied.value ? t('chat.copied') : t('chat.copyLink'), action: copyReportLink },
-  { key: 'telegram', label: 'Telegram', action: () => shareTo('telegram') },
-  { key: 'whatsapp', label: 'WhatsApp', action: () => shareTo('whatsapp') },
-  { key: 'x', label: 'X', action: () => shareTo('x') },
-  { key: 'print', label: t('chat.savePdf'), action: printReport },
-])
+const relationshipScore = computed(() => chat.value?.conversationFacts.relationshipScore ?? null)
+const relationshipLabel = computed(() => {
+  const label = relationshipScore.value?.label
+  if (!label) {
+    return t('common.na')
+  }
 
-async function refreshReport() {
+  const labels = {
+    balanced: t('chat.relationshipBalanced'),
+    warm: t('chat.relationshipWarm'),
+    cooling: t('chat.relationshipCooling'),
+    one_sided: t('chat.relationshipOneSided'),
+    emerging: t('chat.relationshipEmerging'),
+  }
+
+  return labels[label]
+})
+const relationshipMetrics = computed(() => {
+  const score = relationshipScore.value
+  if (!score) {
+    return []
+  }
+
+  return [
+    { key: 'reciprocity', label: t('chat.relationshipReciprocity'), value: score.reciprocity },
+    { key: 'responsiveness', label: t('chat.relationshipResponsiveness'), value: score.responsiveness },
+    { key: 'stability', label: t('chat.relationshipStability'), value: score.stability },
+    { key: 'attention', label: t('chat.relationshipAttention'), value: score.attentionBalance },
+  ]
+})
+const sessionStats = computed(() => chat.value?.conversationFacts.sessionStats ?? null)
+const sessionFacts = computed(() => {
+  const value = sessionStats.value
+  if (!value) {
+    return []
+  }
+
+  return [
+    {
+      key: 'total',
+      label: t('chat.sessionCount'),
+      value: formatNumber(value.totalSessions),
+      sub: t('chat.sessionCountSub'),
+    },
+    {
+      key: 'avg-messages',
+      label: t('chat.avgSessionSize'),
+      value: formatNumber(value.averageSessionMessages),
+      sub: t('chat.avgSessionSizeSub'),
+    },
+    {
+      key: 'avg-duration',
+      label: t('chat.avgSessionDuration'),
+      value: formatDurationFromSec(value.averageSessionDurationSec),
+      sub: t('chat.avgSessionDurationSub'),
+    },
+    {
+      key: 'night-share',
+      label: t('chat.nightSessions'),
+      value: value.nightSessionsPct !== null ? `${value.nightSessionsPct}%` : t('common.na'),
+      sub: t('chat.nightSessionsSub'),
+    },
+  ]
+})
+const insightItems = computed(() => chat.value?.conversationFacts.insights ?? [])
+const insightToneLabel = (tone: 'positive' | 'neutral' | 'warning') => {
+  const labels = {
+    positive: t('chat.insightPositive'),
+    neutral: t('chat.insightNeutral'),
+    warning: t('chat.insightWarning'),
+  }
+
+  return labels[tone]
+}
+const insightToneVariant = (tone: 'positive' | 'neutral' | 'warning') => {
+  const variants = {
+    positive: 'success',
+    neutral: 'accent',
+    warning: 'warning',
+  } as const
+
+  return variants[tone]
+}
+const canSharePdfFile = computed(() => {
+  if (!import.meta.client || typeof navigator === 'undefined' || typeof navigator.canShare !== 'function') {
+    return false
+  }
+
+  try {
+    return navigator.canShare({
+      files: [new File(['tg analyzer'], 'report.pdf', { type: 'application/pdf' })],
+    })
+  } catch {
+    return false
+  }
+})
+const shareActions = computed(() => {
+  const actions: { key: string; label: string; action: () => void | Promise<void> }[] = [
+    { key: 'download-pdf', label: t('chat.downloadPdf'), action: downloadReportPdf },
+  ]
+
+  if (canSharePdfFile.value) {
+    actions.unshift(
+      { key: 'telegram', label: 'Telegram', action: () => sharePdfViaChooser('Telegram') },
+      { key: 'whatsapp', label: 'WhatsApp', action: () => sharePdfViaChooser('WhatsApp') },
+      { key: 'other', label: t('chat.shareOtherApps'), action: () => sharePdfViaChooser() },
+    )
+  }
+
+  return actions
+})
+
+async function refreshReport(notify = true) {
+  reportRefreshing.value = true
   loadError.value = ''
 
   try {
     await fetchChat(routeChatId.value)
-    toast.success(t('common.refreshed'))
+    if (notify) {
+      toast.success(t('common.refreshed'))
+    }
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : t('chat.loadError')
-    toast.error(loadError.value)
+    if (notify) {
+      toast.error(loadError.value)
+    }
+  } finally {
+    reportRefreshing.value = false
   }
 }
 
@@ -355,67 +475,178 @@ async function reparseChat() {
   }
 }
 
-async function copyReportLink() {
-  if (!import.meta.client) {
-    return
-  }
-
-  await navigator.clipboard.writeText(window.location.href)
-  copied.value = true
-  shareOpen.value = false
-  toast.success(t('chat.copied'))
-  window.setTimeout(() => {
-    copied.value = false
-  }, 1400)
+function buildSafeExportName() {
+  return ((chat.value?.chatName || routeChatId.value)
+    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, ' ')
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 60)) || 'telegram-chat'
 }
 
-async function shareNative() {
+function downloadFile(file: File) {
   if (!import.meta.client) {
     return
   }
 
-  const title = `${chat.value?.chatName || 'Telegram chat'} ${t('common.report')}`
-  const text = `TG Analyzer: ${formatNumber(totalMessages.value)} ${t('common.messages')}, ${formatNumber(chat.value?.conversationFacts.activeDays ?? 0)} ${t('chat.activeDays')}.`
-  if (navigator.share) {
-    await navigator.share({
-      title,
-      text,
-      url: window.location.href,
+  try {
+    const url = URL.createObjectURL(file)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = file.name
+    document.body.append(link)
+    link.click()
+    window.setTimeout(() => {
+      link.remove()
+      URL.revokeObjectURL(url)
+    }, 1000)
+  } catch (error) {
+    throw error instanceof Error ? error : new Error(String(error))
+  }
+}
+
+async function createReportPdfFile() {
+  if (!import.meta.client) {
+    throw new Error('Client-only action')
+  }
+
+  expandedChart.value = null
+  shareOpen.value = false
+  await nextTick()
+
+  let exportRoot: HTMLElement | null = null
+  try {
+    const target = reportExportRef.value
+    if (!target) {
+      throw new Error('Report content is unavailable')
+    }
+
+    exportRoot = target.cloneNode(true) as HTMLElement
+    exportRoot.classList.add('pdf-export-clone')
+    exportRoot.querySelectorAll('.no-print, .dialog-backdrop, .chart-overlay').forEach((node) => node.remove())
+    Object.assign(exportRoot.style, {
+      position: 'fixed',
+      left: '-20000px',
+      top: '0',
+      width: `${Math.ceil(target.scrollWidth)}px`,
+      maxWidth: 'none',
+      minWidth: `${Math.ceil(target.scrollWidth)}px`,
+      background: '#ffffff',
+      zIndex: '-1',
+      pointerEvents: 'none',
+      overflow: 'visible',
     })
-    shareOpen.value = false
-    toast.success(t('chat.shared'))
-    return
-  }
+    document.body.append(exportRoot)
 
-  await copyReportLink()
+    const exportWidth = Math.ceil(exportRoot.scrollWidth)
+    const exportHeight = Math.ceil(exportRoot.scrollHeight)
+
+    const canvas = await html2canvas(exportRoot, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+      width: exportWidth,
+      height: exportHeight,
+      windowWidth: exportWidth,
+      windowHeight: exportHeight,
+      scrollX: 0,
+      scrollY: 0,
+    })
+
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'pt',
+      format: 'a4',
+      compress: true,
+    })
+
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const pageHeightPx = Math.floor((canvas.width * pageHeight) / pageWidth)
+    const totalPages = Math.max(1, Math.ceil(canvas.height / pageHeightPx))
+
+    for (let pageIndex = 0; pageIndex < totalPages; pageIndex += 1) {
+      if (pageIndex > 0) {
+        pdf.addPage()
+      }
+
+      const sliceTop = pageIndex * pageHeightPx
+      const sliceHeight = Math.min(pageHeightPx, canvas.height - sliceTop)
+      const pageCanvas = document.createElement('canvas')
+      pageCanvas.width = canvas.width
+      pageCanvas.height = sliceHeight
+
+      const pageContext = pageCanvas.getContext('2d')
+      if (!pageContext) {
+        throw new Error('Canvas is unavailable')
+      }
+
+      pageContext.fillStyle = '#ffffff'
+      pageContext.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
+      pageContext.drawImage(
+        canvas,
+        0,
+        sliceTop,
+        canvas.width,
+        sliceHeight,
+        0,
+        0,
+        canvas.width,
+        sliceHeight,
+      )
+
+      const pageImageHeight = (sliceHeight * pageWidth) / canvas.width
+      const pageImage = pageCanvas.toDataURL('image/jpeg', 0.92)
+
+      pdf.addImage(
+        pageImage,
+        'JPEG',
+        0,
+        0,
+        pageWidth,
+        pageImageHeight,
+        undefined,
+        'FAST',
+      )
+    }
+
+    const blob = pdf.output('blob')
+    return new File([blob], `${buildSafeExportName()}-report.pdf`, { type: 'application/pdf' })
+  } finally {
+    exportRoot?.remove()
+  }
 }
 
-function shareTo(service: 'telegram' | 'whatsapp' | 'x') {
-  if (!import.meta.client) {
-    return
+async function downloadReportPdf() {
+  try {
+    const file = await createReportPdfFile()
+    downloadFile(file)
+    toast.success(t('chat.pdfReady'))
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('chat.pdfReady'))
   }
-
-  const url = encodeURIComponent(window.location.href)
-  const text = encodeURIComponent(`TG Analyzer: ${chat.value?.chatName || routeChatId.value}`)
-  const targets = {
-    telegram: `https://t.me/share/url?url=${url}&text=${text}`,
-    whatsapp: `https://wa.me/?text=${text}%20${url}`,
-    x: `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
-  }
-
-  shareOpen.value = false
-  window.open(targets[service], '_blank', 'noopener,noreferrer')
-  toast.info(t('chat.shareOpened'))
 }
 
-function printReport() {
-  if (!import.meta.client) {
+async function sharePdfViaChooser(targetApp?: string) {
+  if (!import.meta.client || !navigator.share || !canSharePdfFile.value) {
+    await downloadReportPdf()
     return
   }
 
-  shareOpen.value = false
-  window.print()
-  toast.info(t('chat.printReady'))
+  try {
+    const file = await createReportPdfFile()
+    await navigator.share({
+      title: `${chat.value?.chatName || routeChatId.value} ${t('common.report')}`,
+      files: [file],
+    })
+    toast.success(targetApp ? t('chat.pickAppReady', { app: targetApp }) : t('chat.shared'))
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return
+    }
+
+    toast.error(error instanceof Error ? error.message : t('chat.shared'))
+  }
 }
 
 function formatDate(value: string | null) {
@@ -525,6 +756,37 @@ function closeExpandedChart() {
   expandedChart.value = null
 }
 
+async function loadInitialReport() {
+  try {
+    applyStatus(await fetchParseStatus())
+  } catch {
+    // Keep report loading independent from parse status refresh.
+  }
+
+  if (parseActiveForCurrentChat.value) {
+    connect()
+  }
+
+  await fetchChat(routeChatId.value)
+}
+
+watch(parseActiveForCurrentChat, (active) => {
+  if (active) {
+    connect()
+    return
+  }
+
+  disconnect()
+})
+
+watch(parseTerminalForCurrentChat, async (terminal, previous) => {
+  if (!terminal || previous) {
+    return
+  }
+
+  await refreshReport(false)
+})
+
 onMounted(async () => {
   setMobileLayout()
   if (import.meta.client) {
@@ -532,13 +794,7 @@ onMounted(async () => {
   }
 
   try {
-    const refreshed = await bootstrap()
-    if (!auth.isAuthorized && !refreshed) {
-      await navigateTo('/login')
-      return
-    }
-
-    await fetchChat(routeChatId.value)
+    await loadInitialReport()
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : t('chat.loadError')
   } finally {
@@ -579,7 +835,20 @@ onBeforeUnmount(() => {
       </EmptyState>
     </div>
 
-    <div v-else class="page-stack animate-fade-in">
+    <div v-else ref="reportExportRef" class="page-stack animate-fade-in">
+      <ParseProgress
+        v-if="parseActiveForCurrentChat"
+        :current="progress.current"
+        :total="progress.total"
+        :chat-name="progress.chatName"
+        :status="progress.status"
+        :message="progress.message"
+      />
+
+      <div v-else-if="reportStale" class="info-banner info-banner-tone">
+        {{ t('chat.reportRefreshing') }}
+      </div>
+
       <header class="report-header">
         <div class="page-toolbar no-print">
           <Button variant="ghost" class="toolbar-back" @click="navigateTo('/dashboard')">
@@ -593,13 +862,14 @@ onBeforeUnmount(() => {
 
           <div class="toolbar-actions">
             <Button variant="secondary" size="sm" :loading="reparsing"
-              :disabled="auth.user?.telegramSessionActive === false"
+              :disabled="auth.user?.telegramSessionActive === false || parseActiveForCurrentChat"
               :title="auth.user?.telegramSessionActive === false ? t('dashboard.sessionInactive') : undefined"
               @click="reparseChat">
               {{ reparsing ? t('chat.starting') : t('chat.reparse') }}
             </Button>
 
-            <PopoverMenu v-model:open="shareOpen">
+            <Button v-if="isMobileLayout" variant="ghost" size="sm" @click="shareOpen = true">{{ t('chat.share') }}</Button>
+            <PopoverMenu v-else v-model:open="shareOpen" align="end">
               <template #trigger>
                 <Button variant="ghost" size="sm" @click="shareOpen = !shareOpen">{{ t('chat.share') }}</Button>
               </template>
@@ -629,6 +899,7 @@ onBeforeUnmount(() => {
             <div class="report-meta text-body-sm">
               <span>{{ t('chat.lastAnalyzed') }}: <span class="mono-value">{{ formatRelative(chat?.parsedAt ?? null)
                   }}</span></span>
+              <span v-if="reportStale" class="stale-indicator mono-value">{{ t('chat.refreshing') }}</span>
             </div>
           </div>
         </div>
@@ -688,6 +959,33 @@ onBeforeUnmount(() => {
               <span class="text-caption">{{ fact.sub }}</span>
             </div>
           </div>
+        </article>
+
+        <article class="card section-card report-span">
+          <div class="section-header">
+            <div class="section-copy">
+              <span class="text-label">{{ t('chat.relationship') }}</span>
+              <h2 class="text-h2">{{ t('chat.relationshipTitle') }}</h2>
+              <p class="text-body-sm section-text">{{ t('chat.relationshipText') }}</p>
+            </div>
+            <Badge v-if="relationshipScore" variant="accent">{{ relationshipLabel }}</Badge>
+          </div>
+
+          <template v-if="relationshipScore">
+            <div class="relationship-score">
+              <strong class="mono-value relationship-score-value">{{ relationshipScore.score }}/100</strong>
+              <span class="text-body-sm">{{ relationshipLabel }}</span>
+            </div>
+
+            <div class="facts-grid">
+              <div v-for="metric in relationshipMetrics" :key="metric.key" class="fact-card">
+                <span class="text-label">{{ metric.label }}</span>
+                <strong class="fact-value mono-value">{{ metric.value !== null ? `${metric.value}%` : t('common.na') }}</strong>
+              </div>
+            </div>
+          </template>
+
+          <EmptyState v-else :title="t('chat.relationshipEmptyTitle')" :description="t('chat.relationshipEmptyDescription')" />
         </article>
 
         <article class="card section-card report-span chart-card" @click="openChart('composition')">
@@ -838,6 +1136,32 @@ onBeforeUnmount(() => {
 
         <article class="card section-card">
           <div class="section-copy">
+            <span class="text-label">{{ t('chat.sessions') }}</span>
+            <h2 class="text-h2">{{ t('chat.sessionsTitle') }}</h2>
+            <p class="text-body-sm section-text">{{ t('chat.sessionsText') }}</p>
+          </div>
+
+          <div class="facts-grid">
+            <div v-for="fact in sessionFacts" :key="fact.key" class="fact-card">
+              <span class="text-label">{{ fact.label }}</span>
+              <strong class="fact-value mono-value">{{ fact.value }}</strong>
+              <span class="text-caption">{{ fact.sub }}</span>
+            </div>
+          </div>
+
+          <div v-if="sessionStats?.highlights.length" class="timeline-gap-grid">
+            <div v-for="session in sessionStats.highlights" :key="session.startedAt" class="gap-card">
+              <strong class="gap-value mono-value">{{ formatNumber(session.totalMessages) }} {{ t('common.messages') }}</strong>
+              <span class="text-body-sm">{{ formatDateRange(session.startedAt, session.endedAt) }}</span>
+              <span class="text-caption">
+                {{ formatDurationFromSec(session.durationSec) }} • {{ formatNumber(session.sentMessages) }} / {{ formatNumber(session.receivedMessages) }}
+              </span>
+            </div>
+          </div>
+        </article>
+
+        <article class="card section-card">
+          <div class="section-copy">
             <span class="text-label">{{ t('chat.longSilences') }}</span>
             <h2 class="text-h2">{{ t('chat.breaks') }}</h2>
             <p class="text-body-sm section-text">
@@ -858,7 +1182,54 @@ onBeforeUnmount(() => {
 
           <EmptyState v-else :title="t('chat.noLongSilenceTitle')" :description="t('chat.noLongSilenceDescription')" />
         </article>
+
+        <article class="card section-card">
+          <div class="section-copy">
+            <span class="text-label">{{ t('chat.insights') }}</span>
+            <h2 class="text-h2">{{ t('chat.insightsTitle') }}</h2>
+            <p class="text-body-sm section-text">{{ t('chat.insightsText') }}</p>
+          </div>
+
+          <div v-if="insightItems.length" class="insights-list">
+            <div v-for="item in insightItems" :key="item.key" class="insight-card">
+              <div class="insight-head">
+                <strong>{{ item.title }}</strong>
+                <Badge :variant="insightToneVariant(item.tone)">{{ insightToneLabel(item.tone) }}</Badge>
+              </div>
+              <p class="text-body-sm section-text">{{ item.description }}</p>
+            </div>
+          </div>
+
+          <EmptyState v-else :title="t('chat.insightsEmptyTitle')" :description="t('chat.insightsEmptyDescription')" />
+        </article>
       </section>
+
+      <Teleport to="body">
+        <Transition name="dialog">
+          <div v-if="shareOpen && isMobileLayout" class="dialog-backdrop no-print" @click.self="shareOpen = false">
+            <section class="dialog-panel share-dialog-panel" role="dialog" aria-modal="true" :aria-labelledby="`share-title-${routeChatId}`">
+              <div class="share-sheet-head">
+                <div class="section-copy">
+                  <span class="text-label">{{ t('chat.shareLabel') }}</span>
+                  <h2 :id="`share-title-${routeChatId}`" class="text-h3">{{ t('chat.shareTitle') }}</h2>
+                  <p class="text-body-sm section-text">{{ t('chat.shareText') }}</p>
+                </div>
+                <button class="share-sheet-close" type="button" :aria-label="t('common.close')" @click="shareOpen = false">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m7 7 10 10M17 7 7 17" />
+                  </svg>
+                </button>
+              </div>
+              <div class="share-dialog-actions">
+                <button v-for="item in shareActions" :key="item.key" type="button" class="share-option share-option-card"
+                  @click="item.action">
+                  {{ item.label }}
+                </button>
+              </div>
+            </section>
+          </div>
+        </Transition>
+      </Teleport>
 
       <Transition name="popover">
         <div v-if="expandedChart" class="chart-overlay no-print" @click.self="closeExpandedChart">
@@ -890,6 +1261,42 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: var(--space-6);
   min-width: 0;
+}
+
+.pdf-export-clone {
+  background: #fff;
+}
+
+.pdf-export-clone .no-print,
+.pdf-export-clone .dialog-backdrop,
+.pdf-export-clone .chart-overlay {
+  display: none !important;
+}
+
+.pdf-export-clone .report-header {
+  position: static;
+  top: auto;
+  backdrop-filter: none;
+  background: #fff;
+}
+
+.pdf-export-clone .card,
+.pdf-export-clone .report-header {
+  box-shadow: none;
+}
+
+.info-banner {
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.info-banner-tone {
+  border-color: var(--color-info);
+  background: var(--color-info-muted);
+  color: var(--color-info);
 }
 
 .page-toolbar,
@@ -991,6 +1398,10 @@ onBeforeUnmount(() => {
   color: var(--text-secondary);
 }
 
+.stale-indicator {
+  color: var(--color-info);
+}
+
 .report-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1009,7 +1420,8 @@ onBeforeUnmount(() => {
 }
 
 .fact-card,
-.gap-card {
+.gap-card,
+.insight-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -1024,6 +1436,17 @@ onBeforeUnmount(() => {
   font-size: 20px;
   color: var(--text-primary);
   overflow-wrap: anywhere;
+}
+
+.relationship-score {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.relationship-score-value {
+  font-size: clamp(28px, 4vw, 40px);
 }
 
 .chart-card {
@@ -1093,6 +1516,28 @@ onBeforeUnmount(() => {
   background: var(--bg-overlay);
 }
 
+.share-sheet-head,
+.share-sheet-close {
+  display: none;
+}
+
+.share-dialog-panel {
+  width: min(100%, 460px);
+}
+
+.share-dialog-actions {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.share-option-card {
+  min-height: 52px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
 .error-actions {
   display: flex;
   justify-content: center;
@@ -1133,6 +1578,19 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.insights-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.insight-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 .chart-overlay {
   position: fixed;
   inset: 0;
@@ -1143,6 +1601,49 @@ onBeforeUnmount(() => {
   padding: var(--space-3);
   background: color-mix(in srgb, var(--bg-base) 82%, transparent);
   backdrop-filter: blur(10px);
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(0, 0, 0, 0.64);
+}
+
+.dialog-panel {
+  display: flex;
+  width: min(100%, 420px);
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.dialog-enter-active,
+.dialog-leave-active {
+  transition: opacity var(--transition-base);
+}
+
+.dialog-enter-active .dialog-panel,
+.dialog-leave-active .dialog-panel {
+  transition: transform var(--transition-base);
+}
+
+.dialog-enter-from,
+.dialog-leave-to {
+  opacity: 0;
+}
+
+.dialog-enter-from .dialog-panel,
+.dialog-leave-to .dialog-panel {
+  transform: translateY(8px) scale(0.98);
 }
 
 .chart-overlay-panel {
@@ -1193,7 +1694,7 @@ onBeforeUnmount(() => {
   .title-row,
   .section-header {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
   }
 
   .page-toolbar {
@@ -1215,6 +1716,12 @@ onBeforeUnmount(() => {
     position: static;
     gap: var(--space-3);
     padding: var(--space-3);
+  }
+
+  .report-heading > :deep(.avatar-shell) {
+    width: 48px;
+    height: 48px;
+    font-size: 14px;
   }
 
   .facts-grid,
@@ -1254,6 +1761,11 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 480px) {
+  .dialog-backdrop {
+    align-items: flex-end;
+    padding: var(--space-3);
+  }
+
   .page-toolbar {
     align-items: flex-start;
   }
@@ -1268,6 +1780,44 @@ onBeforeUnmount(() => {
     padding-inline: var(--space-3);
     font-size: 13px;
   }
+
+  .share-sheet-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-bottom: var(--space-4);
+    margin-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .share-sheet-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+  }
+
+  .share-sheet-close svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.8;
+  }
+
+  .share-dialog-panel {
+    width: 100%;
+    padding: var(--space-4);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1281,11 +1831,49 @@ onBeforeUnmount(() => {
 }
 
 @media print {
+  :global(body) {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  :global(.app-main) {
+    padding: 0 !important;
+  }
+
   .report-header {
     position: static;
     backdrop-filter: none;
-    background: var(--bg-surface);
+    background: #fff;
     box-shadow: none;
+    border-color: #d9d9d9;
+  }
+
+  .card,
+  .fact-card,
+  .gap-card,
+  .insight-card,
+  .balance-summary-row,
+  .word-chip,
+  .info-banner {
+    background: #fff !important;
+    color: #111 !important;
+    border-color: #d9d9d9 !important;
+    box-shadow: none !important;
+  }
+
+  .section-text,
+  .report-meta,
+  .balance-summary-note,
+  .text-caption,
+  .balance-summary-label {
+    color: #555 !important;
+  }
+
+  .chart-card,
+  .report-grid,
+  .facts-grid,
+  .timeline-gap-grid {
+    break-inside: avoid;
   }
 }
 </style>

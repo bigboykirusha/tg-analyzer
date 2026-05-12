@@ -1,4 +1,9 @@
 <script setup lang="ts">
+const AVATAR_CACHE_TTL_MS = 60 * 60 * 1000
+const AVATAR_CACHE_MAX_ENTRIES = 300
+const avatarCache = new Map<string, { url: string; expiresAt: number }>()
+const avatarRequests = new Map<string, Promise<string | null>>()
+
 const props = withDefaults(defineProps<{
   chatId: string
   title: string | null | undefined
@@ -13,6 +18,29 @@ const errored = ref(false)
 const avatarUrl = ref<string | null>(null)
 const auth = useAuthStore()
 const config = useRuntimeConfig()
+
+function pruneAvatarCache() {
+  const now = Date.now()
+  for (const [key, entry] of avatarCache.entries()) {
+    if (entry.expiresAt <= now) {
+      URL.revokeObjectURL(entry.url)
+      avatarCache.delete(key)
+    }
+  }
+
+  while (avatarCache.size > AVATAR_CACHE_MAX_ENTRIES) {
+    const oldestKey = avatarCache.keys().next().value
+    if (!oldestKey) {
+      break
+    }
+
+    const entry = avatarCache.get(oldestKey)
+    if (entry) {
+      URL.revokeObjectURL(entry.url)
+    }
+    avatarCache.delete(oldestKey)
+  }
+}
 
 const sizeClass = computed(() => {
   if (props.size === 'sm') {
@@ -34,25 +62,47 @@ const initials = computed(() => {
 })
 
 async function loadAvatar() {
-  if (!import.meta.client || !props.hasAvatar || !auth.accessToken) {
+  if (!import.meta.client || !props.hasAvatar || !auth.accessToken || !auth.user?.id) {
     avatarUrl.value = null
     return
   }
 
-  if (avatarUrl.value) {
-    URL.revokeObjectURL(avatarUrl.value)
-    avatarUrl.value = null
+  pruneAvatarCache()
+  const cacheKey = `${auth.user.id}:${props.chatId}`
+  const cached = avatarCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) {
+    avatarUrl.value = cached.url
+    errored.value = false
+    return
   }
 
   try {
-    const blob = await $fetch<Blob>(`${config.public.apiUrl}/api/parse/dialogs/${props.chatId}/avatar`, {
-      credentials: 'include',
-      headers: {
-        Authorization: `Bearer ${auth.accessToken}`,
-      },
-      responseType: 'blob',
-    })
-    avatarUrl.value = URL.createObjectURL(blob)
+    let request = avatarRequests.get(cacheKey)
+    if (!request) {
+      request = $fetch<Blob>(`${config.public.apiUrl}/api/parse/dialogs/${props.chatId}/avatar`, {
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${auth.accessToken}`,
+        },
+        responseType: 'blob',
+      })
+        .then((blob) => {
+          const objectUrl = URL.createObjectURL(blob)
+          avatarCache.set(cacheKey, {
+            url: objectUrl,
+            expiresAt: Date.now() + AVATAR_CACHE_TTL_MS,
+          })
+          pruneAvatarCache()
+          return objectUrl
+        })
+        .finally(() => {
+          avatarRequests.delete(cacheKey)
+        })
+
+      avatarRequests.set(cacheKey, request)
+    }
+
+    avatarUrl.value = await request
     errored.value = false
   } catch {
     avatarUrl.value = null
@@ -64,12 +114,6 @@ watch(() => [props.chatId, props.hasAvatar, auth.accessToken], () => {
   errored.value = false
   void loadAvatar()
 }, { immediate: true })
-
-onBeforeUnmount(() => {
-  if (avatarUrl.value) {
-    URL.revokeObjectURL(avatarUrl.value)
-  }
-})
 </script>
 
 <template>

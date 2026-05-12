@@ -11,6 +11,7 @@ import { authRoutes } from './routes/auth'
 import { parseRoutes } from './routes/parse'
 import { statsRoutes } from './routes/stats'
 import { wsRoutes } from './routes/ws'
+import { isApiError } from './services/api-error.service'
 import { redis } from './services/redis.service'
 
 export async function buildServer() {
@@ -49,15 +50,16 @@ export async function buildServer() {
 
   app.get('/health', async () => ({ ok: true }))
   app.setErrorHandler((rawError, request, reply) => {
-    const error = rawError as Error & { statusCode?: number }
+    const error = rawError as Error & { statusCode?: number; code?: string }
     const statusCode = error.statusCode && error.statusCode >= 400 ? error.statusCode : 500
     const responseStatus = error.name === 'ZodError' ? 400 : statusCode
     const message = responseStatus >= 500 && config.NODE_ENV === 'production'
       ? 'Internal server error'
       : error.message
+    const code = isApiError(error) ? error.code : undefined
 
     request.log.error({ err: error }, 'request failed')
-    reply.status(responseStatus).send({ message })
+    reply.status(responseStatus).send({ message, code })
   })
 
   await app.register(authRoutes, { prefix: '/api/auth' })

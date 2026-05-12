@@ -5,16 +5,20 @@ import { z } from 'zod'
 import { and, eq } from 'drizzle-orm'
 import {
   clearRefreshCookie,
+  issueAccessToken,
   issueAuthTokens,
+  setRefreshCookie,
 } from '../services/jwt.service'
 import { db, schema } from '../db'
+import { createApiError, sendApiError } from '../services/api-error.service'
 import { encryptSession } from '../services/crypto.service'
 import {
   clearPendingPasswordContext,
-  consumeRefreshSession,
   deactivateTelegramSessions,
   getPendingPasswordContext,
   revokeRefreshSession,
+  revokeRefreshSessionFamilyByTokenId,
+  rotateRefreshSession,
   savePendingPasswordContext,
   upsertTelegramSession,
 } from '../services/session.service'
@@ -22,6 +26,7 @@ import {
   exportSession,
   getTelegramUserData,
   isTelegramSessionExpiredError,
+  isTelegramSessionBusyError,
   signInWithCode,
   signInWithPassword,
   telegramPool,
@@ -87,13 +92,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/verify-password', { config: authRateLimitConfig }, async (request, reply) => {
     const tempToken = request.headers.authorization?.replace(/^Bearer\s+/i, '')
     if (!tempToken) {
-      return reply.status(401).send({ message: 'Missing temp token' })
+      return sendApiError(reply, 401, 'Missing temp token', 'AUTH_TEMP_TOKEN_INVALID')
     }
 
     const context = await getPendingPasswordContext(tempToken)
     if (!context) {
       await telegramPool.abortPendingClient(tempToken)
-      return reply.status(401).send({ message: 'Temp token expired' })
+      return sendApiError(reply, 401, 'Temp token expired', 'AUTH_TEMP_TOKEN_INVALID')
     }
 
     const { password } = verifyPasswordSchema.parse(request.body)
@@ -109,39 +114,58 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/refresh', async (request, reply) => {
     const token = request.cookies[cookieName]
     if (!token) {
-      return reply.status(401).send({ message: 'Refresh cookie missing' })
+      clearRefreshCookie(reply)
+      return sendApiError(reply, 401, 'Refresh cookie missing', 'AUTH_REFRESH_INVALID')
     }
 
+    let payload: { sub: string; sessionId: string }
     try {
-      const payload = jwt.verify(token, config.JWT_REFRESH_SECRET, { issuer: 'tg-analyzer' }) as { sub: string; sessionId: string }
-      const session = await consumeRefreshSession(payload.sessionId)
-      if (!session || session.userId !== payload.sub) {
-        clearRefreshCookie(reply)
-        return reply.status(401).send({ message: 'Refresh session invalid' })
-      }
-
-      const user = await db.query.users.findFirst({
-        where: eq(schema.users.id, payload.sub),
-      })
-      if (!user) {
-        clearRefreshCookie(reply)
-        return reply.status(401).send({ message: 'User not found' })
-      }
-
-      const result = await issueAuthTokens(reply, user)
-      return reply.send(result)
+      payload = jwt.verify(token, config.JWT_REFRESH_SECRET, { issuer: 'tg-analyzer' }) as { sub: string; sessionId: string }
     } catch {
       clearRefreshCookie(reply)
-      return reply.status(401).send({ message: 'Invalid refresh token' })
+      return sendApiError(reply, 401, 'Invalid refresh token', 'AUTH_REFRESH_INVALID')
     }
+
+    const rotation = await rotateRefreshSession(payload.sessionId)
+    if (rotation.status === 'invalid') {
+      clearRefreshCookie(reply)
+      return sendApiError(reply, 401, 'Refresh session invalid', 'AUTH_REFRESH_INVALID')
+    }
+    if (rotation.status === 'replayed') {
+      clearRefreshCookie(reply)
+      return sendApiError(reply, 401, 'Refresh session replay detected', 'AUTH_REFRESH_REPLAYED')
+    }
+    if (!('session' in rotation)) {
+      clearRefreshCookie(reply)
+      return sendApiError(reply, 401, 'Refresh session invalid', 'AUTH_REFRESH_INVALID')
+    }
+
+    const session = rotation.session
+    if (session.userId !== payload.sub) {
+      await revokeRefreshSession(payload.sessionId)
+      clearRefreshCookie(reply)
+      return sendApiError(reply, 401, 'Refresh session invalid', 'AUTH_REFRESH_INVALID')
+    }
+
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.id, session.userId),
+    })
+    if (!user) {
+      clearRefreshCookie(reply)
+      return sendApiError(reply, 401, 'User not found', 'AUTH_REFRESH_INVALID')
+    }
+
+    setRefreshCookie(reply, session.tokenId, user.id)
+    const result = await issueAccessToken(reply, user)
+    return reply.send(result)
   })
 
-  fastify.post('/logout', { preHandler: requireAuth }, async (request, reply) => {
+  fastify.post('/logout', async (request, reply) => {
     const refreshToken = request.cookies[cookieName]
     if (refreshToken) {
       try {
         const payload = jwt.verify(refreshToken, config.JWT_REFRESH_SECRET, { issuer: 'tg-analyzer' }) as { sub: string; sessionId: string }
-        await revokeRefreshSession(payload.sessionId)
+        await revokeRefreshSessionFamilyByTokenId(payload.sessionId)
       } catch {
         // noop
       }
@@ -163,9 +187,11 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         await client.invoke(new Api.auth.LogOut())
         await telegramPool.disconnectAuthorizedClient(userId)
       } catch (error) {
-        if (!isTelegramSessionExpiredError(error)) {
+        if (!isTelegramSessionExpiredError(error) && !isTelegramSessionBusyError(error)) {
           request.log.warn({ err: error }, 'telegram logout failed')
         }
+      } finally {
+        await telegramPool.disconnectAuthorizedClient(userId)
       }
     }
 
@@ -180,7 +206,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     })
 
     if (!session) {
-      return reply.status(404).send({ message: 'Active Telegram session not found' })
+      return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
     }
 
     let avatar: Buffer | null = null
@@ -191,9 +217,14 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       if (isTelegramSessionExpiredError(error)) {
         await deactivateTelegramSessions(userId)
         await telegramPool.disconnectAuthorizedClient(userId)
-        return reply.status(401).send({ message: 'Telegram session expired' })
+        return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
+      }
+      if (isTelegramSessionBusyError(error)) {
+        return reply.status(409).send({ message: 'Telegram session is busy with another operation' })
       }
       throw error
+    } finally {
+      await telegramPool.disconnectAuthorizedClient(userId)
     }
 
     if (!avatar) {
@@ -209,6 +240,15 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const userId = request.authUserId!
     await telegramPool.disconnectAuthorizedClient(userId)
     await db.delete(schema.users).where(eq(schema.users.id, userId))
+    const refreshToken = request.cookies[cookieName]
+    if (refreshToken) {
+      try {
+        const payload = jwt.verify(refreshToken, config.JWT_REFRESH_SECRET, { issuer: 'tg-analyzer' }) as { sub: string; sessionId: string }
+        await revokeRefreshSessionFamilyByTokenId(payload.sessionId)
+      } catch {
+        // noop
+      }
+    }
     clearRefreshCookie(reply)
     return reply.send({ success: true })
   })
@@ -217,58 +257,60 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 async function finalizeTelegramAuth(phoneCodeHash: string, reply: FastifyReply) {
   const pending = await telegramPool.finalizePendingClient(phoneCodeHash)
   if (!pending) {
-    throw new Error('Telegram auth session not found')
+    throw createApiError(401, 'Telegram auth session not found', 'AUTH_TEMP_TOKEN_INVALID')
   }
 
-  const me = await getTelegramUserData(pending.client)
-  const tgUserId = typeof me.id === 'number' ? me.id : Number(me.id.value)
+  try {
+    const me = await getTelegramUserData(pending.client)
+    const tgUserId = typeof me.id === 'number' ? me.id : Number(me.id.value)
 
-  let user = await db.query.users.findFirst({
-    where: eq(schema.users.tgUserId, tgUserId),
-  })
+    let user = await db.query.users.findFirst({
+      where: eq(schema.users.tgUserId, tgUserId),
+    })
 
-  if (!user) {
-    const [created] = await db
-      .insert(schema.users)
-      .values({
-        tgUserId,
-        tgPhone: pending.phone,
-        username: me.username ?? null,
-        firstName: me.firstName ?? null,
-        lastLogin: new Date(),
-      })
-      .returning()
-    user = created
-  } else {
-    const [updated] = await db
-      .update(schema.users)
-      .set({
-        tgPhone: pending.phone,
-        username: me.username ?? null,
-        firstName: me.firstName ?? null,
-        lastLogin: new Date(),
-      })
-      .where(eq(schema.users.id, user.id))
-      .returning()
-    user = updated
+    if (!user) {
+      const [created] = await db
+        .insert(schema.users)
+        .values({
+          tgUserId,
+          tgPhone: pending.phone,
+          username: me.username ?? null,
+          firstName: me.firstName ?? null,
+          lastLogin: new Date(),
+        })
+        .returning()
+      user = created
+    } else {
+      const [updated] = await db
+        .update(schema.users)
+        .set({
+          tgPhone: pending.phone,
+          username: me.username ?? null,
+          firstName: me.firstName ?? null,
+          lastLogin: new Date(),
+        })
+        .where(eq(schema.users.id, user.id))
+        .returning()
+      user = updated
+    }
+
+    const sessionString = exportSession(pending.client)
+    const encrypted = encryptSession(sessionString)
+    await upsertTelegramSession({
+      userId: user.id,
+      encrypted: encrypted.encrypted,
+      iv: encrypted.iv,
+      authTag: encrypted.authTag,
+    })
+
+    return issueAuthTokens(reply, user, true)
+  } finally {
+    await pending.client.disconnect().catch(() => undefined)
   }
-
-  const sessionString = exportSession(pending.client)
-  const encrypted = encryptSession(sessionString)
-  await upsertTelegramSession({
-    userId: user.id,
-    encrypted: encrypted.encrypted,
-    iv: encrypted.iv,
-    authTag: encrypted.authTag,
-  })
-
-  return issueAuthTokens(reply, user, true)
 }
 
 function throwAuthError(error: unknown, fallbackMessage: string): never {
   const message = error instanceof Error ? error.message : String(error)
   const statusCode = /expired|not found/i.test(message) ? 401 : 400
-  const authError = new Error(fallbackMessage)
-  ;(authError as Error & { statusCode: number }).statusCode = statusCode
-  throw authError
+  throw createApiError(statusCode, fallbackMessage)
 }

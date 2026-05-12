@@ -3,6 +3,7 @@ import { parseDialogsQueue, type ParseJobData } from '../queues/parse.queue'
 import { redis } from '../services/redis.service'
 import {
   isTelegramSessionExpiredError,
+  isTelegramSessionBusyError,
   normalizeTelegramDialogType,
   telegramPool,
   withFloodWaitRetry,
@@ -89,6 +90,7 @@ async function parseDialog(client: TelegramClientLike, userId: string, jobId: st
       type: 'progress',
       current: context.chatIndex,
       total: context.totalChats,
+      chatId: String(dialog.id),
       chatName,
       status: 'running',
       message: `Scanning ${scannedMessages.toLocaleString('en-US')} messages`,
@@ -112,14 +114,15 @@ async function parseDialog(client: TelegramClientLike, userId: string, jobId: st
 }
 
 export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job: Job<ParseJobData>) => {
+  const { userId, jobId, chatIds } = job.data
   try {
-    const { userId, jobId, chatIds } = job.data
     await ensureNotCancelled(userId, jobId)
 
     await publishParseProgress(userId, {
       type: 'progress',
       current: 0,
       total: chatIds?.length ?? 0,
+      chatId: chatIds?.length === 1 ? chatIds[0] : null,
       chatName: '',
       status: 'pending',
       message: 'Connecting to Telegram',
@@ -135,6 +138,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       type: 'progress',
       current: 0,
       total: chatIds?.length ?? 0,
+      chatId: chatIds?.length === 1 ? chatIds[0] : null,
       chatName: '',
       status: 'running',
       message: 'Loading chat list',
@@ -156,6 +160,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       type: 'progress',
       current: 0,
       total: targetDialogs.length,
+      chatId: targetDialogs.length === 1 ? String(targetDialogs[0]?.id) : null,
       chatName: '',
       status: 'running',
       message: targetDialogs.length ? 'Starting message scan' : 'No matching chats found',
@@ -170,6 +175,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
         type: 'progress',
         current: index + 1,
         total: targetDialogs.length,
+        chatId: String(dialog.id),
         chatName: dialog.title ?? dialog.name ?? 'Unknown',
         status: 'running',
         message: `Parsing chat ${index + 1} of ${targetDialogs.length}`,
@@ -197,6 +203,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
     })
     await publishParseProgress(userId, {
       type: 'completed',
+      chatId: targetDialogs.length === 1 ? String(targetDialogs[0]?.id) : null,
       status: 'completed',
       totalMessages,
       message: `Completed. Parsed ${targetDialogs.length} chat${targetDialogs.length === 1 ? '' : 's'}`,
@@ -208,6 +215,8 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       job.discard()
     }
     throw error
+  } finally {
+    await telegramPool.disconnectAuthorizedClient(userId)
   }
 }, {
   connection: redis,
@@ -233,6 +242,7 @@ parseWorker.on('failed', async (job, error) => {
     })
     await publishParseProgress(job.data.userId, {
       type: 'cancelled',
+      chatId: job.data.chatIds?.length === 1 ? job.data.chatIds[0] : null,
       status: 'cancelled',
       message: 'Parse cancelled',
     })
@@ -246,15 +256,22 @@ parseWorker.on('failed', async (job, error) => {
     await telegramPool.disconnectAuthorizedClient(job.data.userId)
   }
 
+  const errorMessage = error instanceof Error ? error.message : String(error)
+
   await updateParseJob(job.data.jobId, {
     status: 'failed',
-    errorMessage: isTelegramSessionExpiredError(error) ? 'Telegram session expired' : error.message,
+    errorMessage: isTelegramSessionExpiredError(error)
+      ? 'Telegram session expired'
+      : isTelegramSessionBusyError(error)
+        ? 'Telegram session is busy with another operation'
+        : errorMessage,
     completedAt: new Date(),
   })
   await publishParseProgress(job.data.userId, {
     type: 'failed',
+    chatId: job.data.chatIds?.length === 1 ? job.data.chatIds[0] : null,
     status: 'failed',
-    message: error.message,
+    message: errorMessage,
   })
   await clearActiveJob(job.data.userId)
   await clearCancelledJob(job.data.userId, job.data.jobId)

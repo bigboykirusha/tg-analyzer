@@ -111,6 +111,37 @@ export const chatStats = pgTable('chat_stats', {
     silencePeriodsOver30Days: Array<{ seconds: number; from: string | null; to: string | null }>
     trend: 'growing' | 'stable' | 'fading' | 'unknown'
     mostActiveMonth: string | null
+    sessionStats: {
+      totalSessions: number
+      averageSessionMessages: number
+      averageSessionDurationSec: number | null
+      longestSessionMessages: number
+      longestSessionDurationSec: number | null
+      sessionsPerActiveWeek: number
+      nightSessionsPct: number | null
+      highlights: Array<{
+        startedAt: string
+        endedAt: string
+        durationSec: number
+        totalMessages: number
+        sentMessages: number
+        receivedMessages: number
+      }>
+    }
+    relationshipScore: {
+      score: number
+      label: 'balanced' | 'warm' | 'cooling' | 'one_sided' | 'emerging'
+      reciprocity: number | null
+      responsiveness: number | null
+      stability: number | null
+      attentionBalance: number | null
+    } | null
+    insights: Array<{
+      key: string
+      title: string
+      description: string
+      tone: 'positive' | 'neutral' | 'warning'
+    }>
   }>().default({
     activeDays: 0,
     longestGap: null,
@@ -120,6 +151,18 @@ export const chatStats = pgTable('chat_stats', {
     silencePeriodsOver30Days: [],
     trend: 'unknown',
     mostActiveMonth: null,
+    sessionStats: {
+      totalSessions: 0,
+      averageSessionMessages: 0,
+      averageSessionDurationSec: null,
+      longestSessionMessages: 0,
+      longestSessionDurationSec: null,
+      sessionsPerActiveWeek: 0,
+      nightSessionsPct: null,
+      highlights: [],
+    },
+    relationshipScore: null,
+    insights: [],
   }).notNull(),
   wordsPerMessage: jsonb('words_per_message').$type<{ mine: number | null; theirs: number | null }>().default({ mine: null, theirs: null }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -157,7 +200,12 @@ export const globalStats = pgTable('global_stats', {
 export const refreshSessions = pgTable('refresh_sessions', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  familyId: varchar('family_id', { length: 255 }).notNull(),
   tokenId: varchar('token_id', { length: 255 }).notNull().unique(),
+  replacedByTokenId: varchar('replaced_by_token_id', { length: 255 }),
+  rotatedAt: timestamp('rotated_at', { withTimezone: true }),
+  graceUntil: timestamp('grace_until', { withTimezone: true }),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })

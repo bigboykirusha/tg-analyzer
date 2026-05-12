@@ -26,10 +26,14 @@ withDefaults(defineProps<{
 
 .badge::before {
   content: '';
+  display: block;
+  flex: 0 0 auto;
+  align-self: center;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: currentColor;
+  transform: translateY(0.5px);
 }
 
 .badge-default {
@@ -42,6 +46,10 @@ withDefaults(defineProps<{
   background: var(--accent-muted);
   border-color: transparent;
   color: var(--accent);
+}
+
+.badge-accent::before {
+  transform: translateY(-1px);
 }
 
 .badge-success {

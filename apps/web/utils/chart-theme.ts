@@ -34,7 +34,6 @@ export function createChartTheme() {
       right: 0,
       top: 8,
       bottom: 0,
-      containLabel: true,
     },
     xAxis: {
       axisLine: { show: false },

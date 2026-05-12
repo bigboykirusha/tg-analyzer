@@ -18,6 +18,7 @@ export default defineNuxtConfig({
     public: {
       apiUrl: process.env.NUXT_PUBLIC_API_URL ?? 'http://localhost:3001',
       wsUrl: process.env.NUXT_PUBLIC_WS_URL ?? 'ws://localhost:3001',
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
     },
   },
   typescript: {
