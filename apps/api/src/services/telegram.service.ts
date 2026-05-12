@@ -1,5 +1,5 @@
 import { Api, TelegramClient } from 'telegram'
-import { computeCheck } from 'telegram/Password'
+import { computeCheck } from 'telegram/Password.js'
 import { StringSession } from 'telegram/sessions/index.js'
 import { config } from '../config'
 import { decryptSession } from './crypto.service'

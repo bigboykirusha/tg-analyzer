@@ -19,6 +19,11 @@ const code = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
+const isMounted = ref(false)
+
+onMounted(() => {
+  isMounted.value = true
+})
 
 const siteUrl = computed(() => String(runtimeConfig.public.siteUrl ?? '').replace(/\/$/, ''))
 const loginUrl = computed(() => `${siteUrl.value}/login`)
@@ -36,49 +41,49 @@ const seoKeywords = computed(() => locale.value === 'ru'
 
 const capabilityCards = computed(() => locale.value === 'ru'
   ? [
-      {
-        eyebrow: 'Что внутри',
-        title: 'Отчет по одному чату без визуального шума',
-        body: 'Выбираете диалог, запускаете парсинг и сразу получаете чистую аналитику по динамике, словам, эмодзи и ритму общения.',
-      },
-      {
-        eyebrow: 'Что увидите',
-        title: 'Пики активности, баланс диалога и долгие паузы',
-        body: 'Сервис показывает, кто ведет разговор, в какие часы чат оживает и где появляются затяжные разрывы в общении.',
-      },
-      {
-        eyebrow: 'Как это работает',
-        title: 'Логин через Telegram, без хранения сообщений',
-        body: 'Нужен только безопасный вход, после чего строятся агрегированные метрики и обзор поведения без сохранения текста переписки.',
-      },
-    ]
+    {
+      eyebrow: 'Что внутри',
+      title: 'Отчет по одному чату без визуального шума',
+      body: 'Выбираете диалог, запускаете парсинг и сразу получаете чистую аналитику по динамике, словам, эмодзи и ритму общения.',
+    },
+    {
+      eyebrow: 'Что увидите',
+      title: 'Пики активности, баланс диалога и долгие паузы',
+      body: 'Сервис показывает, кто ведет разговор, в какие часы чат оживает и где появляются затяжные разрывы в общении.',
+    },
+    {
+      eyebrow: 'Как это работает',
+      title: 'Логин через Telegram, без хранения сообщений',
+      body: 'Нужен только безопасный вход, после чего строятся агрегированные метрики и обзор поведения без сохранения текста переписки.',
+    },
+  ]
   : [
-      {
-        eyebrow: 'Inside the product',
-        title: 'One chat, one focused report',
-        body: 'Pick a dialog, run parsing, and jump straight into analytics for timing, vocabulary, emoji usage, and conversation rhythm.',
-      },
-      {
-        eyebrow: 'What you can see',
-        title: 'Activity peaks, balance, and long silence gaps',
-        body: 'The report highlights who drives the conversation, when the chat comes alive, and where long pauses reshape the dynamic.',
-      },
-      {
-        eyebrow: 'How it works',
-        title: 'Telegram login with no message storage',
-        body: 'You only authorize access, then the app builds aggregate metrics and behavioral views without storing your message content.',
-      },
-    ])
+    {
+      eyebrow: 'Inside the product',
+      title: 'One chat, one focused report',
+      body: 'Pick a dialog, run parsing, and jump straight into analytics for timing, vocabulary, emoji usage, and conversation rhythm.',
+    },
+    {
+      eyebrow: 'What you can see',
+      title: 'Activity peaks, balance, and long silence gaps',
+      body: 'The report highlights who drives the conversation, when the chat comes alive, and where long pauses reshape the dynamic.',
+    },
+    {
+      eyebrow: 'How it works',
+      title: 'Telegram login with no message storage',
+      body: 'You only authorize access, then the app builds aggregate metrics and behavioral views without storing your message content.',
+    },
+  ])
 
 const quickStats = computed(() => locale.value === 'ru'
   ? [
-      { value: '1 чат', label: 'один сфокусированный отчет за запуск' },
-      { value: '24ч', label: 'разбивка активности по часам суток' },
-    ]
+    { value: '1 чат', label: 'один сфокусированный отчет за запуск' },
+    { value: '24ч', label: 'разбивка активности по часам суток' },
+  ]
   : [
-      { value: '1 chat', label: 'one focused report per run' },
-      { value: '24h', label: 'activity split across the day' },
-    ])
+    { value: '1 chat', label: 'one focused report per run' },
+    { value: '24h', label: 'activity split across the day' },
+  ])
 
 const featureBullets = computed(() => locale.value === 'ru'
   ? ['Таймлайн активности по дням и месяцам', 'Слова, эмодзи и состав сообщений', 'Инсайты по темпу и взаимности общения']
@@ -182,12 +187,14 @@ async function handlePassword() {
 
 <template>
   <div class="login-page">
-    <div class="login-noise" aria-hidden="true" />
-    <div class="login-orbit login-orbit-left" aria-hidden="true" />
-    <div class="login-orbit login-orbit-right" aria-hidden="true" />
+    <template v-if="isMounted">
+      <div class="login-noise" aria-hidden="true" />
+      <div class="login-orbit login-orbit-left" aria-hidden="true" />
+      <div class="login-orbit login-orbit-right" aria-hidden="true" />
+    </template>
 
     <section class="login-shell animate-scale-in">
-      <aside class="login-side login-side-left">
+      <aside v-if="isMounted" class="login-side login-side-left">
         <div class="login-side-block login-side-intro">
           <span class="side-kicker">{{ locale === 'ru' ? 'TG Analyzer' : 'TG Analyzer' }}</span>
           <h2 class="text-h2 side-title">
@@ -229,12 +236,8 @@ async function handlePassword() {
         </div>
 
         <div class="login-progress">
-          <div
-            v-for="index in 3"
-            :key="index"
-            class="progress-step"
-            :class="{ 'progress-step-active': stepIndex >= index - 1 }"
-          />
+          <div v-for="index in 3" :key="index" class="progress-step"
+            :class="{ 'progress-step-active': stepIndex >= index - 1 }" />
         </div>
 
         <div class="login-card">
@@ -253,9 +256,12 @@ async function handlePassword() {
           </div>
 
           <Transition name="auth-step" mode="out-in">
-            <PhoneStep v-if="step === 'phone'" key="phone" v-model:phone="phone" :loading="loading" @submit="handlePhone" />
-            <CodeStep v-else-if="step === 'code'" key="code" v-model:code="code" :loading="loading" @submit="handleCode" />
-            <PasswordStep v-else key="password" v-model:password="password" :loading="loading" @submit="handlePassword" />
+            <PhoneStep v-if="step === 'phone'" key="phone" v-model:phone="phone" :loading="loading"
+              @submit="handlePhone" />
+            <CodeStep v-else-if="step === 'code'" key="code" v-model:code="code" :loading="loading"
+              @submit="handleCode" />
+            <PasswordStep v-else key="password" v-model:password="password" :loading="loading"
+              @submit="handlePassword" />
           </Transition>
 
           <p v-if="error" class="login-error text-body-sm">
@@ -266,14 +272,15 @@ async function handlePassword() {
         <div class="login-trust">
           <span class="trust-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
-              <path d="M8 10V7.75A4 4 0 0 1 12 4a4 4 0 0 1 4 3.75V10m-7.25 0h6.5A1.75 1.75 0 0 1 17 11.75v5.5A1.75 1.75 0 0 1 15.25 19h-6.5A1.75 1.75 0 0 1 7 17.25v-5.5A1.75 1.75 0 0 1 8.75 10Z" />
+              <path
+                d="M8 10V7.75A4 4 0 0 1 12 4a4 4 0 0 1 4 3.75V10m-7.25 0h6.5A1.75 1.75 0 0 1 17 11.75v5.5A1.75 1.75 0 0 1 15.25 19h-6.5A1.75 1.75 0 0 1 7 17.25v-5.5A1.75 1.75 0 0 1 8.75 10Z" />
             </svg>
           </span>
           <p class="text-body-sm">{{ t('login.trust') }}</p>
         </div>
       </section>
 
-      <aside class="login-side login-side-right">
+      <aside v-if="isMounted" class="login-side login-side-right">
         <article v-for="card in capabilityCards" :key="card.title" class="login-side-card">
           <span class="side-kicker">{{ card.eyebrow }}</span>
           <h3 class="text-h3">{{ card.title }}</h3>
