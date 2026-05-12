@@ -73,8 +73,34 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       await clearActiveJob(userId)
     }
 
-    if (activeMarker && activeJob) {
-      return reply.status(409).send({ message: 'A parse job is already running' })
+    if (activeJob) {
+      // Check if the job is actually alive in BullMQ
+      let isAlive = true
+      if (activeJob.bullJobId) {
+        const bullJob = await parseDialogsQueue.getJob(activeJob.bullJobId)
+        if (!bullJob) {
+          isAlive = false
+        } else {
+          const state = await bullJob.getState()
+          if (['completed', 'failed', 'unknown'].includes(state)) {
+            isAlive = false
+          }
+        }
+      }
+
+      if (!isAlive) {
+        await updateParseJob(activeJob.id, {
+          status: 'failed',
+          errorMessage: 'Job stalled or disappeared from queue',
+          completedAt: new Date()
+        })
+        await clearActiveJob(userId)
+      } else {
+        return reply.status(409).send({
+          message: 'A parse job is already running',
+          jobId: activeJob.id
+        })
+      }
     }
 
     const session = await getActiveSessionForUser(userId)
@@ -108,7 +134,10 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
         }
         if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
           await telegramPool.disconnectAuthorizedClient(userId)
-          return reply.status(409).send()
+          return reply.status(409).send({
+            message: 'Telegram session is busy. If you have an active parse running, wait for it or cancel it.',
+            code: 'TELEGRAM_SESSION_BUSY'
+          })
         }
         throw error
       } finally {
@@ -118,9 +147,9 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       const dialog = dialogs.find((item) => String(item.id) === chatIds[0] && !isSystemTelegramDialog(item))
       targetChat = dialog
         ? {
-            id: Number(dialog.id),
-            title: dialog.title ?? dialog.name ?? String(dialog.id),
-          }
+          id: Number(dialog.id),
+          title: dialog.title ?? dialog.name ?? String(dialog.id),
+        }
         : null
     } else if (!chatIds?.length) {
       try {

@@ -71,7 +71,7 @@ export async function issueAccessToken(reply: FastifyReply, user: {
       tgUserId: String(user.tgUserId),
       username: user.username,
     } satisfies AccessPayload,
-    { expiresIn: '1h' },
+    { expiresIn: '30d' },
   )
 
   return { accessToken, user: toUserDto(user, telegramSessionActiveOverride ?? telegramSession?.isActive ?? false) }
@@ -81,11 +81,11 @@ export function setRefreshCookie(reply: FastifyReply, sessionId: string, userId:
   const token = jwt.sign(
     { sub: userId, sessionId } satisfies RefreshPayload,
     config.JWT_REFRESH_SECRET,
-    { expiresIn: '30d', issuer: 'tg-analyzer' },
+    { expiresIn: '90d', issuer: 'tg-analyzer' },
   )
   reply.setCookie(cookieName, token, {
     ...getRefreshCookieOptions(),
-    expires: addDays(new Date(), 30),
+    expires: addDays(new Date(), 90),
   })
 }
 

@@ -83,6 +83,7 @@ export interface ParseProgressDto {
   status: JobStatus | 'idle'
   message?: string
   scannedMessages?: number
+  startTime?: number
 }
 
 export interface ParseStatusResponse {

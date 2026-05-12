@@ -30,6 +30,8 @@ import {
 } from '../services/stats.service'
 import { sleep } from '../utils/sleep'
 
+const SCAN_PROGRESS_INTERVAL_MS = 1500
+
 async function ensureNotCancelled(userId: string, jobId: string) {
   const cancelled = await isCancelledJob(userId, jobId)
   if (cancelled) {
@@ -57,6 +59,7 @@ async function parseDialog(userId: string, session: {
   chatIndex: number
   totalChats: number
   job: Job<ParseJobData>
+  startTime: number
 }) {
   const accumulator = createChatAccumulator()
   let offsetId = 0
@@ -107,9 +110,10 @@ async function parseDialog(userId: string, session: {
       status: 'running',
       message: `Scanning ${scannedMessages.toLocaleString('en-US')} messages`,
       scannedMessages,
+      startTime: context.startTime,
     })
 
-    await sleep(300)
+    await sleep(SCAN_PROGRESS_INTERVAL_MS)
   }
 
   await saveAggregates({
@@ -127,6 +131,7 @@ async function parseDialog(userId: string, session: {
 
 export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job: Job<ParseJobData>) => {
   const { userId, jobId, chatIds } = job.data
+  const startTime = Date.now()
   try {
     await ensureNotCancelled(userId, jobId)
 
@@ -138,6 +143,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       chatName: '',
       status: 'pending',
       message: 'Connecting to Telegram',
+      startTime,
     })
 
     const session = await getActiveSessionForUser(userId)
@@ -153,6 +159,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       chatName: '',
       status: 'running',
       message: 'Loading chat list',
+      startTime,
     })
 
     const dialogs = await withTelegramReconnectRetry(async () => {
@@ -180,6 +187,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       chatName: '',
       status: 'running',
       message: targetDialogs.length ? 'Starting message scan' : 'No matching chats found',
+      startTime,
     })
 
     let totalMessages = 0
@@ -195,12 +203,14 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
         chatName: dialog.title ?? dialog.name ?? 'Unknown',
         status: 'running',
         message: `Parsing chat ${index + 1} of ${targetDialogs.length}`,
+        startTime,
       })
 
       const count = await parseDialog(userId, session, jobId, dialog, {
         chatIndex: index + 1,
         totalChats: targetDialogs.length,
         job,
+        startTime,
       })
       totalMessages += count
 

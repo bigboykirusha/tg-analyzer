@@ -41,7 +41,8 @@ const parseDialogsError = ref('')
 const parseDialogsBusy = ref(false)
 const dialogSearch = ref('')
 const visibleDialogsCount = ref(18)
-const selectedDialogId = ref<string | null>(null)
+const pendingChatId = ref<string | null>(null)
+const hasMountedProgressState = ref(false)
 const confirmState = ref<{
   type: 'terminate' | 'delete-account' | 'delete-report' | 'clear-history' | 'delete-history-item'
   title: string
@@ -79,21 +80,8 @@ const filteredDialogs = computed(() => {
 
 const visibleDialogs = computed(() => filteredDialogs.value.slice(0, visibleDialogsCount.value))
 const hasMoreDialogs = computed(() => filteredDialogs.value.length > visibleDialogsCount.value)
-const selectedDialog = computed(() => filteredDialogs.value.find((dialog) => dialog.id === selectedDialogId.value)
-  ?? stats.parseDialogs.find((dialog) => dialog.id === selectedDialogId.value)
-  ?? null)
-const selectedDialogReport = computed(() => analyzedChats.value.find((chat) => chat.tgChatId === selectedDialogId.value) ?? null)
-const selectedDialogCooldownLike = computed(() => {
-  const parsedAt = selectedDialogReport.value?.parsedAt
-  if (!parsedAt) {
-    return false
-  }
-
-  const diffMs = Date.now() - new Date(parsedAt).getTime()
-  return diffMs < 60 * 60 * 1000
-})
+const analyzedChatMap = computed(() => new Map(analyzedChats.value.map((chat) => [chat.tgChatId, chat])))
 const activeHistoryJob = computed(() => stats.history.find((item) => item.status === 'running' || item.status === 'pending') ?? null)
-const selectedDialogDisabled = computed(() => !selectedDialog.value || !telegramSessionActive.value || pending.value || isParseActive.value)
 
 async function loadParseDialogs() {
   parseDialogsLoading.value = true
@@ -102,17 +90,12 @@ async function loadParseDialogs() {
 
   try {
     await fetchParseDialogs()
-    if (!selectedDialogId.value && stats.parseDialogs.length) {
-      selectedDialogId.value = stats.parseDialogs.find((dialog) => dialog.type === 'private')?.id ?? null
-    }
   } catch (error) {
     const isBusyError = typeof (error as { statusCode?: number } | null)?.statusCode === 'number'
       && (error as { statusCode?: number }).statusCode === 409
 
     if (isBusyError) {
-      if (!selectedDialogId.value && stats.parseDialogs.length) {
-        selectedDialogId.value = stats.parseDialogs.find((dialog) => dialog.type === 'private')?.id ?? null
-      }
+      toast.warning(t('dashboard.loadDialogsError'), t('dashboard.cancelParse'))
       return
     }
 
@@ -131,6 +114,7 @@ async function refreshOperationalData() {
 
 async function startParse(chatIds?: string[]) {
   pending.value = true
+  pendingChatId.value = chatIds?.length === 1 ? (chatIds[0] ?? null) : null
 
   try {
     const result = await useApiFetch<{ jobId: string }>('/api/parse/start', {
@@ -145,14 +129,24 @@ async function startParse(chatIds?: string[]) {
     connect()
     await fetchHistory()
   } catch (error) {
-    const retryAfter = (error as { data?: { retryAfter?: number } })?.data?.retryAfter
-    if (typeof retryAfter === 'number' && retryAfter > 0) {
+    const err = error as any
+    const retryAfter = err.data?.retryAfter
+    const code = err.data?.code
+
+    if (err.statusCode === 409) {
+      if (code === 'TELEGRAM_SESSION_BUSY') {
+        toast.warning(t('dashboard.startError'), err.message || t('dashboard.cancelParse'))
+      } else {
+        toast.info(t('dashboard.activeParse'), err.message || t('dashboard.cancelParse'))
+      }
+    } else if (typeof retryAfter === 'number' && retryAfter > 0) {
       toast.warning(t('dashboard.cooldownTitle'), t('dashboard.cooldown', { time: formatCooldown(retryAfter) }))
     } else {
       toast.error(error instanceof Error ? error.message : t('dashboard.startError'))
     }
   } finally {
     pending.value = false
+    pendingChatId.value = null
   }
 }
 
@@ -180,12 +174,7 @@ async function cancelActiveParse() {
   }
 }
 
-async function startSelectedDialogParse() {
-  if (!selectedDialog.value) {
-    toast.warning(t('dashboard.selectOne'))
-    return
-  }
-
+async function startDialogParse(dialog: ParseDialogDto) {
   if (!telegramSessionActive.value) {
     toast.warning(t('dashboard.sessionInactive'))
     return
@@ -196,11 +185,7 @@ async function startSelectedDialogParse() {
     return
   }
 
-  await startParse([selectedDialog.value.id])
-}
-
-function selectDialog(dialog: ParseDialogDto) {
-  selectedDialogId.value = dialog.id
+  await startParse([dialog.id])
 }
 
 function showMoreDialogs() {
@@ -326,13 +311,62 @@ function dialogState(dialog: ParseDialogDto) {
   if (analyzedChatIds.value.has(dialog.id)) {
     return {
       variant: 'accent' as const,
-      label: selectedDialogId.value === dialog.id && selectedDialogCooldownLike.value
+      label: isDialogCooldownLike(dialog)
         ? t('dashboard.recentReport')
         : t('dashboard.reportReady'),
     }
   }
 
   return null
+}
+
+function getDialogReport(dialog: ParseDialogDto) {
+  return analyzedChatMap.value.get(dialog.id) ?? null
+}
+
+function isDialogCooldownLike(dialog: ParseDialogDto) {
+  const parsedAt = getDialogReport(dialog)?.parsedAt
+  if (!parsedAt) {
+    return false
+  }
+
+  const diffMs = Date.now() - new Date(parsedAt).getTime()
+  return diffMs < 60 * 60 * 1000
+}
+
+function dialogActionLabel(dialog: ParseDialogDto) {
+  return getDialogReport(dialog) ? t('chat.reparse') : t('dashboard.analyze')
+}
+
+function dialogParseDisabled(dialog: ParseDialogDto) {
+  return !telegramSessionActive.value
+    || pending.value
+    || isParseActive.value
+    || pendingChatId.value === dialog.id
+}
+
+function dialogHint(dialog: ParseDialogDto) {
+  if (!telegramSessionActive.value) {
+    return t('dashboard.sessionInactive')
+  }
+
+  if (isParseActive.value && progress.value.chatId === dialog.id) {
+    return progress.value.message || statusLabel(progress.value.status)
+  }
+
+  if (isParseActive.value) {
+    return t('dashboard.activeJobNotice')
+  }
+
+  if (isDialogCooldownLike(dialog)) {
+    return t('dashboard.cooldownNotice')
+  }
+
+  if (getDialogReport(dialog)) {
+    return t('dashboard.rerunHint')
+  }
+
+  return t('dashboard.firstReportHint')
 }
 
 function formatHistoryScope(item: ParseHistoryItem) {
@@ -508,6 +542,30 @@ watch(isParseTerminal, async (terminal) => {
   await refreshOperationalData().catch(() => undefined)
 })
 
+watch(() => progress.value.status, (status, previousStatus) => {
+  if (!hasMountedProgressState.value) {
+    hasMountedProgressState.value = true
+    return
+  }
+
+  if (status === previousStatus) {
+    return
+  }
+
+  const wasActive = previousStatus === 'running' || previousStatus === 'pending'
+  if (!wasActive) {
+    return
+  }
+
+  if (status === 'completed') {
+    toast.success(t('dashboard.reportReady'), progress.value.message || t('common.statusCompleted'))
+  } else if (status === 'failed') {
+    toast.error(t('common.statusFailed'), progress.value.message || t('dashboard.startError'))
+  } else if (status === 'cancelled') {
+    toast.info(t('common.statusCancelled'), progress.value.message || t('dashboard.cancelled'))
+  }
+})
+
 onBeforeUnmount(() => {
   disconnect()
 })
@@ -569,7 +627,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-else class="page-stack animate-fade-in">
+    <div v-else class="page-stack animate-fade-in" :class="{ 'page-stack-with-mobile-toast': isParseActive }">
       <header class="workspace-header">
         <div class="hero-copy">
           <span class="text-label">{{ t('dashboard.workspace') }}</span>
@@ -578,17 +636,10 @@ onMounted(async () => {
         </div>
       </header>
 
-      <ParseProgress
-        v-if="isParseActive"
-        :current="progress.current"
-        :total="progress.total"
-        :chat-name="progress.chatName"
-        :status="progress.status"
-        :message="progress.message"
-        cancellable
-        :cancelling="cancelling"
-        @cancel="cancelActiveParse"
-      />
+      <ParseProgress v-if="isParseActive" compact mobile-floating :current="progress.current" :total="progress.total"
+        :chat-name="progress.chatName" :status="progress.status" :message="progress.message"
+        :scanned-messages="progress.scannedMessages" :start-time="progress.startTime" cancellable
+        :cancelling="cancelling" @cancel="cancelActiveParse" />
 
       <div class="dashboard-grid">
         <section class="card section-card">
@@ -604,55 +655,6 @@ onMounted(async () => {
             <input v-model="dialogSearch" type="text" class="input" :placeholder="t('dashboard.search')" />
           </div>
 
-          <div v-if="selectedDialog" class="selection-card">
-            <div class="selection-head">
-              <div class="selection-main">
-                <ChatAvatar :chat-id="selectedDialog.id" :title="selectedDialog.title" :has-avatar="selectedDialog.hasAvatar" />
-                <div class="dialog-copy">
-                  <span class="text-label">{{ t('dashboard.currentSelection') }}</span>
-                  <div class="dialog-title-row">
-                    <strong class="dialog-title">{{ selectedDialog.title }}</strong>
-                    <StatusDot
-                      v-if="selectedDialogReport"
-                      variant="accent"
-                      :label="t('dashboard.reportReady')"
-                    />
-                    <StatusDot
-                      v-if="progress.chatId === selectedDialog.id && isParseActive"
-                      variant="info"
-                      :label="statusLabel(progress.status)"
-                    />
-                  </div>
-                  <span class="text-caption selection-subline">
-                    {{ dialogTypeLabel(selectedDialog.type) }}
-                    <template v-if="selectedDialogReport">
-                      &bull; {{ t('dashboard.lastAnalyzed', { time: formatRelative(selectedDialogReport.parsedAt) }) }}
-                    </template>
-                  </span>
-                </div>
-              </div>
-              <div class="selection-actions">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  :loading="pending"
-                  :disabled="selectedDialogDisabled"
-                  @click="startSelectedDialogParse"
-                >
-                  {{ pending ? t('common.loading') : t('dashboard.analyze') }}
-                </Button>
-              </div>
-            </div>
-
-            <div class="selection-meta text-caption">
-              <span v-if="!telegramSessionActive">{{ t('dashboard.sessionInactive') }}</span>
-              <span v-else-if="isParseActive && progress.chatId !== selectedDialog.id">{{ t('dashboard.activeJobNotice') }}</span>
-              <span v-else-if="selectedDialogCooldownLike">{{ t('dashboard.cooldownNotice') }}</span>
-              <span v-else-if="selectedDialogReport">{{ t('dashboard.rerunHint') }}</span>
-              <span v-else>{{ t('dashboard.firstReportHint') }}</span>
-            </div>
-          </div>
-
           <div v-if="!telegramSessionActive" class="info-banner warning-banner">
             {{ t('dashboard.sessionInactive') }}
           </div>
@@ -663,42 +665,45 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div v-else-if="parseDialogsError" class="info-banner" :class="parseDialogsBusy ? 'warning-banner' : 'danger-banner'">
+          <div v-else-if="parseDialogsError" class="info-banner"
+            :class="parseDialogsBusy ? 'warning-banner' : 'danger-banner'">
             {{ parseDialogsError }}
           </div>
 
           <div v-else class="stack-lg">
             <div v-if="visibleDialogs.length" class="dialog-list">
-              <button
-                v-for="(dialog, index) in visibleDialogs"
-                :key="dialog.id"
-                type="button"
-                class="dialog-item stagger-item"
-                :class="{ 'dialog-item-selected': selectedDialogId === dialog.id }"
-                :style="{ '--delay': `${index * 35}ms` }"
-                @click="selectDialog(dialog)"
-              >
+              <div v-for="(dialog, index) in visibleDialogs" :key="dialog.id" class="dialog-item stagger-item"
+                :class="{ 'dialog-item-active': progress.chatId === dialog.id && isParseActive }"
+                :style="{ '--delay': `${index * 35}ms` }">
                 <div class="dialog-main">
                   <ChatAvatar :chat-id="dialog.id" :title="dialog.title" :has-avatar="dialog.hasAvatar" />
                   <div class="dialog-copy">
                     <div class="dialog-title-row">
                       <span class="dialog-title">{{ dialog.title }}</span>
-                      <StatusDot
-                        v-if="dialogState(dialog)"
-                        :variant="dialogState(dialog)?.variant ?? 'default'"
-                        :label="dialogState(dialog)?.label ?? ''"
-                      />
+                      <StatusDot v-if="dialogState(dialog)" :variant="dialogState(dialog)?.variant ?? 'default'"
+                        :label="dialogState(dialog)?.label ?? ''" />
                     </div>
-                    <span class="text-caption selection-subline">{{ dialogTypeLabel(dialog.type) }}</span>
+                    <span class="text-caption selection-subline">
+                      {{ dialogTypeLabel(dialog.type) }}
+                      <template v-if="getDialogReport(dialog)?.parsedAt">
+                        &bull; {{ t('dashboard.lastAnalyzed', { time: formatRelative(getDialogReport(dialog)?.parsedAt) }) }}
+                      </template>
+                    </span>
+                    <span class="text-caption dialog-hint">{{ dialogHint(dialog) }}</span>
                   </div>
                 </div>
-              </button>
+                <div class="dialog-actions">
+                  <NuxtLink v-if="getDialogReport(dialog)" :to="`/chat/${dialog.id}`" class="dialog-action-link">
+                    {{ t('common.report') }}
+                  </NuxtLink>
+                  <Button variant="primary" size="sm" :loading="pendingChatId === dialog.id"
+                    :disabled="dialogParseDisabled(dialog)" @click="startDialogParse(dialog)">
+                    {{ dialogActionLabel(dialog) }}
+                  </Button>
+                </div>
+              </div>
             </div>
-            <EmptyState
-              v-else
-              :title="t('dashboard.noChatsTitle')"
-              :description="t('dashboard.noChatsDescription')"
-            />
+            <EmptyState v-else :title="t('dashboard.noChatsTitle')" :description="t('dashboard.noChatsDescription')" />
 
             <div v-if="hasMoreDialogs" class="more-row">
               <Button variant="secondary" @click="showMoreDialogs">{{ t('common.showMore') }}</Button>
@@ -714,16 +719,13 @@ onMounted(async () => {
                 <h2 class="text-h2">{{ t('dashboard.analyzedTitle') }}</h2>
                 <p class="text-body-sm section-text">{{ t('dashboard.analyzedText') }}</p>
               </div>
-              <Badge variant="accent">{{ t('dashboard.readyCount', { count: formatNumber(analyzedChats.length) }) }}</Badge>
+              <Badge variant="accent">{{ t('dashboard.readyCount', { count: formatNumber(analyzedChats.length) }) }}
+              </Badge>
             </div>
 
             <div v-if="analyzedChats.length" class="analyzed-list">
-              <div
-                v-for="(chat, index) in analyzedChats"
-                :key="chat.tgChatId"
-                class="analyzed-card stagger-item"
-                :style="{ '--delay': `${index * 45}ms` }"
-              >
+              <div v-for="(chat, index) in analyzedChats" :key="chat.tgChatId" class="analyzed-card stagger-item"
+                :style="{ '--delay': `${index * 45}ms` }">
                 <NuxtLink :to="`/chat/${chat.tgChatId}`" class="analyzed-link">
                   <div class="analyzed-head">
                     <div class="analyzed-meta">
@@ -745,23 +747,16 @@ onMounted(async () => {
                 </NuxtLink>
 
                 <div class="analyzed-actions">
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    :loading="deletingChatId === chat.tgChatId"
-                    @click="openDeleteReportConfirm(chat.tgChatId, chat.chatName || chat.tgChatId)"
-                  >
+                  <Button variant="danger" size="sm" :loading="deletingChatId === chat.tgChatId"
+                    @click="openDeleteReportConfirm(chat.tgChatId, chat.chatName || chat.tgChatId)">
                     {{ t('dashboard.deleteReport') }}
                   </Button>
                 </div>
               </div>
             </div>
 
-            <EmptyState
-              v-else
-              :title="t('dashboard.noParsedTitle')"
-              :description="t('dashboard.noParsedDescription')"
-            />
+            <EmptyState v-else :title="t('dashboard.noParsedTitle')"
+              :description="t('dashboard.noParsedDescription')" />
           </section>
 
           <section class="card section-card">
@@ -772,18 +767,15 @@ onMounted(async () => {
                 <p class="text-body-sm section-text">{{ t('dashboard.runHistoryText') }}</p>
               </div>
               <div class="section-actions">
-                <Badge variant="default">{{ t('dashboard.jobsCount', { count: formatNumber(stats.history.length) }) }}</Badge>
+                <Badge variant="default">{{ t('dashboard.jobsCount', { count: formatNumber(stats.history.length) }) }}
+                </Badge>
               </div>
             </div>
 
             <div v-if="stats.history.length" class="history-layout">
               <div class="history-list">
-                <div
-                  v-for="(item, index) in latestHistoryItems"
-                  :key="item.jobId"
-                  class="history-row stagger-item"
-                  :style="{ '--delay': `${index * 40}ms` }"
-                >
+                <div v-for="(item, index) in latestHistoryItems" :key="item.jobId" class="history-row stagger-item"
+                  :style="{ '--delay': `${index * 40}ms` }">
                   <div class="history-row-head">
                     <div class="dialog-title-row">
                       <span class="history-title">{{ formatHistoryScope(item) }}</span>
@@ -805,11 +797,7 @@ onMounted(async () => {
               </div>
             </div>
 
-            <EmptyState
-              v-else
-              :title="t('dashboard.noJobsTitle')"
-              :description="t('dashboard.noJobsDescription')"
-            />
+            <EmptyState v-else :title="t('dashboard.noJobsTitle')" :description="t('dashboard.noJobsDescription')" />
           </section>
 
           <section class="card section-card">
@@ -820,35 +808,33 @@ onMounted(async () => {
             </div>
 
             <div class="stack-md">
-              <div v-if="!telegramSessionActive" class="info-banner warning-banner">
+              <div v-if="!telegramSessionActive" class="info-banner warning-banner session-desktop-only">
                 {{ t('dashboard.sessionInactive') }}
               </div>
 
-              <Button variant="secondary" size="lg" :loading="securityPending === 'telegram'" @click="openTerminateConfirm">
+              <Button class="session-desktop-only" variant="secondary" size="lg" :loading="securityPending === 'telegram'"
+                @click="openTerminateConfirm">
                 {{ securityPending === 'telegram' ? t('dashboard.stopping') : t('dashboard.terminateTelegram') }}
               </Button>
-              <Button variant="danger" size="lg" :loading="securityPending === 'account'" @click="openDeleteAccountConfirm">
+              <Button class="session-desktop-only" variant="danger" size="lg" :loading="securityPending === 'account'"
+                @click="openDeleteAccountConfirm">
                 {{ securityPending === 'account' ? t('dashboard.deleting') : t('dashboard.deleteAccount') }}
               </Button>
-              <Button v-if="!telegramSessionActive" variant="primary" size="lg" @click="logout">
+              <Button class="session-desktop-only" v-if="!telegramSessionActive" variant="primary" size="lg" @click="logout">
                 {{ t('common.relogin') }}
+              </Button>
+              <Button class="session-mobile-only" variant="primary" size="lg" @click="logout">
+                {{ t('common.logout') }}
               </Button>
             </div>
           </section>
         </section>
       </div>
 
-      <ConfirmDialog
-        :open="Boolean(confirmState)"
-        :title="confirmState?.title ?? ''"
-        :description="confirmState?.description ?? ''"
-        :confirm-label="confirmState?.confirmLabel ?? ''"
-        :cancel-label="t('common.cancel')"
-        :variant="confirmState?.variant ?? 'default'"
-        :loading="confirmLoading"
-        @close="confirmState = null"
-        @confirm="confirmAction"
-      />
+      <ConfirmDialog :open="Boolean(confirmState)" :title="confirmState?.title ?? ''"
+        :description="confirmState?.description ?? ''" :confirm-label="confirmState?.confirmLabel ?? ''"
+        :cancel-label="t('common.cancel')" :variant="confirmState?.variant ?? 'default'" :loading="confirmLoading"
+        @close="confirmState = null" @confirm="confirmAction" />
     </div>
   </AppLayout>
 </template>
@@ -872,6 +858,10 @@ onMounted(async () => {
 
 .stack-lg {
   gap: var(--space-6);
+}
+
+.session-mobile-only {
+  display: none;
 }
 
 .dashboard-grid {
@@ -959,7 +949,6 @@ onMounted(async () => {
   border: none;
 }
 
-.selection-card,
 .dialog-item,
 .analyzed-card,
 .history-row {
@@ -969,40 +958,8 @@ onMounted(async () => {
   transition: all var(--transition-fast);
 }
 
-.selection-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  background:
-    radial-gradient(circle at top right, var(--accent-glow-soft), transparent 30%),
-    linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
-}
-
-.selection-head,
-.selection-main,
-.selection-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.selection-head {
-  justify-content: space-between;
-}
-
-.selection-main {
-  min-width: 0;
-  flex: 1;
-}
-
-.selection-actions {
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-
 .selection-subline,
-.selection-meta {
+.dialog-hint {
   color: var(--text-secondary);
 }
 
@@ -1017,24 +974,21 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
-  min-height: 64px;
-  padding: var(--space-3);
+  gap: var(--space-4);
+  min-height: 78px;
+  padding: var(--space-4);
   min-width: 0;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
 }
 
 .dialog-item:hover,
-.dialog-item-selected,
+.dialog-item-active,
 .analyzed-card:hover,
 .history-row:hover {
   border-color: var(--border-strong);
   background: var(--bg-overlay);
 }
 
-.dialog-item-selected {
+.dialog-item-active {
   box-shadow: inset 0 0 0 1px var(--border-default);
 }
 
@@ -1055,6 +1009,34 @@ onMounted(async () => {
   gap: 4px;
 }
 
+.dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+}
+
+.dialog-action-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.dialog-action-link:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-overlay);
+}
+
 .dialog-title,
 .history-title {
   font-size: 14px;
@@ -1068,6 +1050,10 @@ onMounted(async () => {
 .more-row {
   display: flex;
   justify-content: center;
+}
+
+.page-stack-with-mobile-toast {
+  padding-bottom: 0;
 }
 
 .analyzed-card {
@@ -1122,7 +1108,7 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 
-.analyzed-foot span + span::before {
+.analyzed-foot span+span::before {
   content: '';
   display: inline-flex;
   width: 4px;
@@ -1192,13 +1178,19 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
+
+  .session-desktop-only {
+    display: none;
+  }
+
+  .session-mobile-only {
+    display: inline-flex;
+  }
+
   .workspace-header,
-  .selection-head,
-  .selection-actions,
   .analyzed-head,
   .section-actions,
-  .analyzed-actions,
-  .dialog-item {
+  .analyzed-actions {
     flex-direction: column;
     align-items: stretch;
   }
@@ -1239,9 +1231,26 @@ onMounted(async () => {
     font-size: 12px;
   }
 
+  .dialog-item,
   .dialog-main,
-  .selection-main {
-    align-items: center;
+  .dialog-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dialog-item {
+    gap: var(--space-3);
+    min-height: unset;
+    padding: var(--space-3);
+  }
+
+  .dialog-actions {
+    width: 100%;
+  }
+
+  .dialog-action-link {
+    width: 100%;
+    min-height: 44px;
   }
 
   .analyzed-foot {
@@ -1277,6 +1286,12 @@ onMounted(async () => {
   .detail-error {
     padding: var(--space-2);
     font-size: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-stack-with-mobile-toast {
+    padding-bottom: calc(92px + var(--space-6));
   }
 }
 </style>

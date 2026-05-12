@@ -12,7 +12,7 @@ const FULL_PARSE_COOLDOWN_PREFIX = 'parse:cooldown'
 const CANCELLED_JOB_PREFIX = 'parse:cancelled'
 const CHAT_COOLDOWN_PREFIX = 'parse:chat-cooldown'
 const DIALOG_CACHE_PREFIX = 'parse:dialogs'
-const REFRESH_SESSION_TTL_DAYS = 30
+const REFRESH_SESSION_TTL_DAYS = 90
 const DIALOG_CACHE_TTL_SECONDS = 60 * 60 * 6
 
 export interface CachedParseDialogs {

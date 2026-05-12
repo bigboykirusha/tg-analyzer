@@ -70,12 +70,6 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
         </svg>
         <span class="screen-reader">{{ t('common.report') }}</span>
       </NuxtLink>
-      <button class="mobile-nav-item" type="button" @click="logout">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M10 6H6.75A1.75 1.75 0 0 0 5 7.75v8.5C5 17.216 5.784 18 6.75 18H10m4-8h-8m8 0-2.5-2.5M14 10l-2.5 2.5" />
-        </svg>
-        <span class="screen-reader">{{ t('common.logout') }}</span>
-      </button>
       <button class="mobile-nav-item mobile-language" type="button" @click="setLocale(locale === 'ru' ? 'en' : 'ru')">
         {{ locale.toUpperCase() }}
         <span class="screen-reader">{{ t('nav.language') }}</span>

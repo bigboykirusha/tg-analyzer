@@ -31,6 +31,7 @@ export function useParseProgress() {
       status: status.progress.status ?? status.status,
       message: status.progress.message ?? '',
       scannedMessages: status.progress.scannedMessages ?? 0,
+      startTime: status.progress.startTime,
     }
   }
 
