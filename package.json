@@ -8,10 +8,12 @@
   },
   "scripts": {
     "build": "corepack pnpm -r build",
-    "dev": "corepack pnpm --filter @tg-analyzer/api dev",
+    "dev": "node scripts/dev.mjs",
+    "dev:api": "corepack pnpm --filter @tg-analyzer/api dev",
     "dev:web": "corepack pnpm --filter @tg-analyzer/web dev",
     "dev:worker": "corepack pnpm --filter @tg-analyzer/api dev:worker",
     "check": "corepack pnpm -r check",
+    "test": "corepack pnpm --filter @tg-analyzer/api test",
     "db:push": "corepack pnpm --filter @tg-analyzer/api db:push",
     "db:migrate": "corepack pnpm --filter @tg-analyzer/api db:migrate"
   },

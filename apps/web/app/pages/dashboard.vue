@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { ParseDialogDto, ParseHistoryItem } from '@tg-analyzer/shared'
+import type { ApiClientError } from '../composables/useApi'
 import AppLayout from '../components/AppLayout.vue'
 import ChatAvatar from '../components/ChatAvatar.vue'
+import Container from '../components/layout/Container.vue'
 import ParseProgress from '../components/stats/ParseProgress.vue'
 import Badge from '../components/ui/Badge.vue'
 import Button from '../components/ui/Button.vue'
@@ -9,6 +11,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import Skeleton from '../components/ui/Skeleton.vue'
 import StatusDot from '../components/ui/StatusDot.vue'
+import { AlertCircle, BarChart2, Clock, MessageSquare, WifiOff } from '../lib/icons'
 import { useAuth } from '../composables/useAuth'
 import { useI18n } from '../composables/useI18n'
 import { useParseProgress } from '../composables/useParseProgress'
@@ -24,9 +27,9 @@ definePageMeta({
 
 const auth = useAuthStore()
 const { deleteAccount, logout, terminateTelegramSession } = useAuth()
-const { clearHistory, deleteChat, fetchChats, fetchHistory, fetchParseDialogs, fetchParseStatus } = useStats()
+const { clearHistory, deleteChat, deleteHistoryItem, fetchChats, fetchHistory, fetchParseDialogs } = useStats()
 const stats = useStatsStore()
-const { progress, applyStatus, connect, disconnect, reset } = useParseProgress()
+const { progress, bootstrapped, bootstrapFromServer, connect, disconnect, reset } = useParseProgress()
 const { t, formatNumber, formatDate: formatLocaleDate, formatRelative } = useI18n()
 const toast = useToast()
 
@@ -34,6 +37,7 @@ const pending = ref(false)
 const cancelling = ref(false)
 const securityPending = ref<'telegram' | 'account' | null>(null)
 const deletingChatId = ref<string | null>(null)
+const deletingHistoryJobId = ref<string | null>(null)
 const clearingHistory = ref(false)
 const ready = ref(false)
 const parseDialogsLoading = ref(false)
@@ -42,7 +46,6 @@ const parseDialogsBusy = ref(false)
 const dialogSearch = ref('')
 const visibleDialogsCount = ref(18)
 const pendingChatId = ref<string | null>(null)
-const hasMountedProgressState = ref(false)
 const confirmState = ref<{
   type: 'terminate' | 'delete-account' | 'delete-report' | 'clear-history' | 'delete-history-item'
   title: string
@@ -95,7 +98,8 @@ async function loadParseDialogs() {
       && (error as { statusCode?: number }).statusCode === 409
 
     if (isBusyError) {
-      toast.warning(t('dashboard.loadDialogsError'), t('dashboard.cancelParse'))
+      parseDialogsBusy.value = true
+      parseDialogsError.value = t('dashboard.dialogsBusy')
       return
     }
 
@@ -117,19 +121,17 @@ async function startParse(chatIds?: string[]) {
   pendingChatId.value = chatIds?.length === 1 ? (chatIds[0] ?? null) : null
 
   try {
-    const result = await useApiFetch<{ jobId: string }>('/api/parse/start', {
+    await useApiFetch<{ jobId: string }>('/api/parse/start', {
       method: 'POST',
       body: chatIds?.length ? { chatIds } : {},
     })
 
-    const parseStatus = await fetchParseStatus()
-    applyStatus(parseStatus)
-    connect()
+    await bootstrapFromServer()
     await fetchHistory()
   } catch (error) {
-    const err = error as any
+    const err = error as ApiClientError
     const retryAfter = err.data?.retryAfter
-    const code = err.data?.code
+    const code = err.code ?? (typeof err.data?.code === 'string' ? err.data.code : undefined)
 
     if (err.statusCode === 409) {
       if (code === 'TELEGRAM_SESSION_BUSY') {
@@ -161,7 +163,7 @@ async function cancelActiveParse() {
 
     await Promise.all([
       fetchHistory(),
-      fetchParseStatus().then(applyStatus),
+      bootstrapFromServer(),
     ])
 
     toast.info(t('dashboard.cancelled'))
@@ -444,6 +446,21 @@ async function handleClearHistory() {
   }
 }
 
+async function handleDeleteHistoryItem(jobId: string) {
+  deletingHistoryJobId.value = jobId
+
+  try {
+    await deleteHistoryItem(jobId)
+    await fetchHistory()
+    toast.success(t('dashboard.historyItemDeleted'))
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('dashboard.deleteHistoryItemError'))
+  } finally {
+    deletingHistoryJobId.value = null
+    confirmState.value = null
+  }
+}
+
 function openTerminateConfirm() {
   confirmState.value = {
     type: 'terminate',
@@ -485,6 +502,17 @@ function openClearHistoryConfirm() {
   }
 }
 
+function openDeleteHistoryItemConfirm(jobId: string) {
+  confirmState.value = {
+    type: 'delete-history-item',
+    title: t('dashboard.deleteHistoryItem'),
+    description: t('dashboard.deleteHistoryItemConfirm'),
+    confirmLabel: t('dashboard.deleteHistoryItem'),
+    variant: 'danger',
+    jobId,
+  }
+}
+
 async function confirmAction() {
   if (!confirmState.value) {
     return
@@ -498,6 +526,8 @@ async function confirmAction() {
     await handleDeleteReport(confirmState.value.chatId)
   } else if (confirmState.value.type === 'clear-history') {
     await handleClearHistory()
+  } else if (confirmState.value.type === 'delete-history-item' && confirmState.value.jobId) {
+    await handleDeleteHistoryItem(confirmState.value.jobId)
   }
 }
 
@@ -514,6 +544,9 @@ const confirmLoading = computed(() => {
   if (confirmState.value.type === 'delete-report') {
     return deletingChatId.value === confirmState.value.chatId
   }
+  if (confirmState.value.type === 'delete-history-item') {
+    return deletingHistoryJobId.value === confirmState.value.jobId
+  }
   return clearingHistory.value
 })
 
@@ -522,30 +555,32 @@ watch(dialogSearch, () => {
 })
 
 watch(isParseActive, async (active, wasActive) => {
+  if (!bootstrapped.value) {
+    return
+  }
+
   if (active) {
     connect()
     return
   }
 
+  disconnect()
+
   if (wasActive) {
     await refreshOperationalData().catch(() => undefined)
   }
-}, { immediate: true })
+})
 
 watch(isParseTerminal, async (terminal) => {
-  if (!terminal) {
+  if (!bootstrapped.value || !terminal) {
     return
   }
 
+  disconnect()
   await refreshOperationalData().catch(() => undefined)
 })
 
 watch(() => progress.value.status, (status, previousStatus) => {
-  if (!hasMountedProgressState.value) {
-    hasMountedProgressState.value = true
-    return
-  }
-
   if (status === previousStatus) {
     return
   }
@@ -571,7 +606,7 @@ onBeforeUnmount(() => {
 onMounted(async () => {
   try {
     try {
-      applyStatus(await fetchParseStatus())
+      await bootstrapFromServer()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('dashboard.loadStatsError'))
     }
@@ -596,12 +631,13 @@ onMounted(async () => {
 
 <template>
   <AppLayout>
+    <Container size="default">
     <div v-if="!ready" class="page-stack">
-      <section class="card">
+      <section class="card workspace-card">
         <Skeleton height="144px" radius="var(--radius-lg)" />
       </section>
       <div class="dashboard-grid">
-        <section class="card">
+        <section class="card workspace-card">
           <div class="stack-md">
             <Skeleton height="24px" width="160px" />
             <Skeleton height="132px" radius="var(--radius-md)" />
@@ -611,16 +647,21 @@ onMounted(async () => {
           </div>
         </section>
         <section class="stack-lg">
-          <section class="card">
+          <section class="card workspace-card">
             <div class="list-grid">
               <Skeleton v-for="item in 4" :key="item" height="96px" radius="var(--radius-md)" />
             </div>
           </section>
-          <section class="card">
+          <section class="card workspace-card">
             <div class="list-grid">
               <Skeleton v-for="item in 3" :key="item" height="96px" radius="var(--radius-md)" />
             </div>
           </section>
+        </section>
+        <section class="card workspace-card">
+          <div class="list-grid">
+            <Skeleton v-for="item in 4" :key="`history-${item}`" height="96px" radius="var(--radius-md)" />
+          </div>
         </section>
       </div>
     </div>
@@ -640,7 +681,7 @@ onMounted(async () => {
         :cancelling="cancelling" @cancel="cancelActiveParse" />
 
       <div class="dashboard-grid">
-        <section class="card section-card">
+        <section class="card section-card workspace-card">
           <div class="section-header">
             <div class="section-copy">
               <span class="text-label">{{ t('dashboard.sourceLabel') }}</span>
@@ -663,12 +704,24 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div v-else-if="parseDialogsError" class="info-banner"
-            :class="parseDialogsBusy ? 'warning-banner' : 'danger-banner'">
-            {{ parseDialogsError }}
-          </div>
+          <EmptyState
+            v-else-if="parseDialogsError"
+            :icon="parseDialogsBusy ? WifiOff : AlertCircle"
+            :title="parseDialogsBusy ? t('dashboard.dialogsBusy') : t('dashboard.loadDialogsError')"
+            :description="parseDialogsError"
+          >
+            <template #action>
+              <Button variant="secondary" @click="loadParseDialogs">
+                {{ t('common.retry') }}
+              </Button>
+            </template>
+          </EmptyState>
 
           <div v-else class="stack-lg">
+            <div v-if="stats.parseDialogsTruncated" class="info-banner warning-banner">
+              {{ t('dashboard.truncated', { total: formatNumber(stats.parseDialogsTotal) }) }}
+            </div>
+
             <div v-if="visibleDialogs.length" class="dialog-list">
               <div v-for="(dialog, index) in visibleDialogs" :key="dialog.id" class="dialog-item stagger-item"
                 :class="{ 'dialog-item-active': progress.chatId === dialog.id && isParseActive }"
@@ -701,7 +754,12 @@ onMounted(async () => {
                 </div>
               </div>
             </div>
-            <EmptyState v-else :title="t('dashboard.noChatsTitle')" :description="t('dashboard.noChatsDescription')" />
+            <EmptyState
+              v-else
+              :icon="MessageSquare"
+              :title="t('dashboard.noChatsTitle')"
+              :description="t('dashboard.noChatsDescription')"
+            />
 
             <div v-if="hasMoreDialogs" class="more-row">
               <Button variant="secondary" @click="showMoreDialogs">{{ t('common.showMore') }}</Button>
@@ -709,8 +767,7 @@ onMounted(async () => {
           </div>
         </section>
 
-        <section class="stack-lg">
-          <section class="card section-card">
+        <section class="card section-card workspace-card">
             <div class="section-header">
               <div class="section-copy">
                 <span class="text-label">{{ t('dashboard.analyzedLabel') }}</span>
@@ -753,11 +810,16 @@ onMounted(async () => {
               </div>
             </div>
 
-            <EmptyState v-else :title="t('dashboard.noParsedTitle')"
-              :description="t('dashboard.noParsedDescription')" />
-          </section>
+            <EmptyState
+              v-else
+              :icon="BarChart2"
+              :title="t('dashboard.noParsedTitle')"
+              :description="t('dashboard.noParsedDescription')"
+            />
+        </section>
 
-          <section class="card section-card">
+        <section class="stack-lg dashboard-side-column">
+          <section class="card section-card workspace-card">
             <div class="section-header">
               <div class="section-copy">
                 <span class="text-label">{{ t('dashboard.runHistoryLabel') }}</span>
@@ -765,6 +827,10 @@ onMounted(async () => {
                 <p class="text-body-sm section-text">{{ t('dashboard.runHistoryText') }}</p>
               </div>
               <div class="section-actions">
+                <Button v-if="stats.history.length" variant="secondary" size="sm" :loading="clearingHistory"
+                  @click="openClearHistoryConfirm">
+                  {{ t('dashboard.clearHistory') }}
+                </Button>
                 <Badge variant="default">{{ t('dashboard.jobsCount', { count: formatNumber(stats.history.length) }) }}
                 </Badge>
               </div>
@@ -791,14 +857,25 @@ onMounted(async () => {
                   <div v-if="shouldRenderHistoryError(item)" class="detail-error text-body-sm">
                     {{ item.errorMessage }}
                   </div>
+                  <div v-if="item.status !== 'running' && item.status !== 'pending'" class="history-actions">
+                    <Button variant="ghost" size="sm" :loading="deletingHistoryJobId === item.jobId"
+                      @click="openDeleteHistoryItemConfirm(item.jobId)">
+                      {{ t('dashboard.deleteHistoryItem') }}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <EmptyState v-else :title="t('dashboard.noJobsTitle')" :description="t('dashboard.noJobsDescription')" />
+            <EmptyState
+              v-else
+              :icon="Clock"
+              :title="t('dashboard.noJobsTitle')"
+              :description="t('dashboard.noJobsDescription')"
+            />
           </section>
 
-          <section class="card section-card">
+          <section class="card section-card workspace-card mobile-security-section">
             <div class="section-copy">
               <span class="text-label">{{ t('dashboard.securityLabel') }}</span>
               <h2 class="text-h2">{{ t('dashboard.securityTitle') }}</h2>
@@ -821,6 +898,14 @@ onMounted(async () => {
               <Button class="session-desktop-only" v-if="!telegramSessionActive" variant="primary" size="lg" @click="logout">
                 {{ t('common.relogin') }}
               </Button>
+              <Button class="session-mobile-only" variant="secondary" size="lg" :loading="securityPending === 'telegram'"
+                @click="openTerminateConfirm">
+                {{ securityPending === 'telegram' ? t('dashboard.stopping') : t('dashboard.terminateTelegram') }}
+              </Button>
+              <Button class="session-mobile-only" variant="danger" size="lg" :loading="securityPending === 'account'"
+                @click="openDeleteAccountConfirm">
+                {{ securityPending === 'account' ? t('dashboard.deleting') : t('dashboard.deleteAccount') }}
+              </Button>
               <Button class="session-mobile-only" variant="primary" size="lg" @click="logout">
                 {{ t('common.logout') }}
               </Button>
@@ -834,6 +919,7 @@ onMounted(async () => {
         :cancel-label="t('common.cancel')" :variant="confirmState?.variant ?? 'default'" :loading="confirmLoading"
         @close="confirmState = null" @confirm="confirmAction" />
     </div>
+    </Container>
   </AppLayout>
 </template>
 
@@ -862,9 +948,13 @@ onMounted(async () => {
   display: none;
 }
 
+.mobile-security-section {
+  display: none;
+}
+
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr) minmax(300px, 0.8fr);
   gap: var(--space-6);
   min-width: 0;
 }
@@ -874,11 +964,10 @@ onMounted(async () => {
   justify-content: space-between;
   gap: var(--space-6);
   padding: var(--space-5) var(--space-6);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
-  background:
-    radial-gradient(circle at top right, var(--accent-glow-soft), transparent 24%),
-    linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
+  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
+  box-shadow: var(--shadow-sm);
 }
 
 .hero-copy {
@@ -926,6 +1015,11 @@ onMounted(async () => {
   flex-direction: column;
   gap: var(--space-5);
   min-width: 0;
+}
+
+.workspace-card {
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-sm);
 }
 
 .source-actions {
@@ -983,11 +1077,12 @@ onMounted(async () => {
 .analyzed-card:hover,
 .history-row:hover {
   border-color: var(--border-strong);
-  background: var(--bg-overlay);
+  background: var(--bg-elevated);
 }
 
 .dialog-item-active {
-  box-shadow: inset 0 0 0 1px var(--border-default);
+  border-color: var(--accent-border);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
 }
 
 .dialog-main {
@@ -1020,7 +1115,7 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
+  min-height: 44px;
   padding: 0 var(--space-3);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
@@ -1032,7 +1127,7 @@ onMounted(async () => {
 
 .dialog-action-link:hover {
   border-color: var(--border-strong);
-  background: var(--bg-overlay);
+  background: var(--bg-elevated);
 }
 
 .dialog-title,
@@ -1125,6 +1220,10 @@ onMounted(async () => {
   min-width: 0;
 }
 
+.dashboard-side-column {
+  min-width: 0;
+}
+
 .history-row {
   display: flex;
   flex-direction: column;
@@ -1173,6 +1272,10 @@ onMounted(async () => {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
+
+  .mobile-security-section {
+    display: flex;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1183,6 +1286,10 @@ onMounted(async () => {
 
   .session-mobile-only {
     display: inline-flex;
+  }
+
+  .mobile-security-section {
+    display: flex;
   }
 
   .workspace-header,

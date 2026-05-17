@@ -13,6 +13,12 @@ type PhoneCodeState = {
   expiresAt: number
 }
 
+type PersistedPhoneCodeState = {
+  phone: string
+  sessionString: string
+  expiresAt: number
+}
+
 export type TelegramDialog = {
   id?: unknown
   title?: string
@@ -55,6 +61,68 @@ class TelegramPool {
   private readonly clientLeaseWaitTimeoutMs = 15 * 1000
   private readonly clientLeasePollMs = 250
 
+  private getPendingRedisKey(key: string) {
+    return `telegram:pending-auth:${key}`
+  }
+
+  private async savePendingState(key: string, pending: PhoneCodeState) {
+    const ttlSeconds = Math.max(1, Math.ceil((pending.expiresAt - Date.now()) / 1000))
+    const payload: PersistedPhoneCodeState = {
+      phone: pending.phone,
+      sessionString: String(pending.client.session.save()),
+      expiresAt: pending.expiresAt,
+    }
+    await redis.set(this.getPendingRedisKey(key), JSON.stringify(payload), 'EX', ttlSeconds)
+  }
+
+  private async loadPendingState(key: string) {
+    const raw = await redis.get(this.getPendingRedisKey(key))
+    if (!raw) {
+      return null
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as PersistedPhoneCodeState
+      if (!parsed.phone || !parsed.sessionString || !parsed.expiresAt || parsed.expiresAt <= Date.now()) {
+        await redis.del(this.getPendingRedisKey(key))
+        return null
+      }
+
+      return parsed
+    } catch {
+      await redis.del(this.getPendingRedisKey(key))
+      return null
+    }
+  }
+
+  private async deletePendingState(key: string) {
+    await redis.del(this.getPendingRedisKey(key))
+  }
+
+  private async hydratePendingClient(key: string) {
+    const persisted = await this.loadPendingState(key)
+    if (!persisted) {
+      return null
+    }
+
+    const client = new TelegramClient(
+      new StringSession(persisted.sessionString),
+      config.TELEGRAM_API_ID,
+      config.TELEGRAM_API_HASH,
+      { connectionRetries: 5 },
+    )
+    await client.connect()
+
+    const pending = {
+      client,
+      phoneCodeHash: key,
+      phone: persisted.phone,
+      expiresAt: persisted.expiresAt,
+    } satisfies PhoneCodeState
+    this.pending.set(key, pending)
+    return pending
+  }
+
   private pruneExpiredPending() {
     const now = Date.now()
     for (const [key, pending] of this.pending.entries()) {
@@ -64,6 +132,7 @@ class TelegramPool {
 
       void pending.client.disconnect().catch(() => undefined)
       this.pending.delete(key)
+      void this.deletePendingState(key)
     }
   }
 
@@ -94,43 +163,68 @@ class TelegramPool {
       phone,
       expiresAt: Date.now() + this.pendingTtlMs,
     })
+    await this.savePendingState(phoneCodeHash, this.pending.get(phoneCodeHash)!)
     return phoneCodeHash
   }
 
-  getPendingClient(phoneCodeHash: string) {
+  async getPendingClient(phoneCodeHash: string) {
     this.pruneExpiredPending()
-    return this.pending.get(phoneCodeHash) ?? null
+    const existing = this.pending.get(phoneCodeHash)
+    if (existing) {
+      return existing
+    }
+
+    return this.hydratePendingClient(phoneCodeHash)
   }
 
   async finalizePendingClient(phoneCodeHash: string) {
     this.pruneExpiredPending()
-    const pending = this.pending.get(phoneCodeHash)
+    const pending = await this.getPendingClient(phoneCodeHash)
     if (pending) {
       this.pending.delete(phoneCodeHash)
+      await this.deletePendingState(phoneCodeHash)
     }
     return pending
   }
 
   async abortPendingClient(phoneCodeHash: string) {
     this.pruneExpiredPending()
-    const pending = this.pending.get(phoneCodeHash)
+    const pending = await this.getPendingClient(phoneCodeHash)
     if (pending) {
       await pending.client.disconnect()
       this.pending.delete(phoneCodeHash)
     }
+    await this.deletePendingState(phoneCodeHash)
   }
 
-  rekeyPendingClient(previousKey: string, nextKey: string) {
+  async rekeyPendingClient(previousKey: string, nextKey: string) {
     this.pruneExpiredPending()
-    const pending = this.pending.get(previousKey)
+    const pending = await this.getPendingClient(previousKey)
     if (!pending) {
       return false
     }
+
     this.pending.delete(previousKey)
-    this.pending.set(nextKey, {
+    await this.deletePendingState(previousKey)
+
+    const nextPending = {
       ...pending,
+      phoneCodeHash: nextKey,
       expiresAt: Date.now() + this.pendingTtlMs,
-    })
+    } satisfies PhoneCodeState
+    this.pending.set(nextKey, nextPending)
+    await this.savePendingState(nextKey, nextPending)
+    return true
+  }
+
+  async persistPendingClient(key: string) {
+    const pending = await this.getPendingClient(key)
+    if (!pending) {
+      return false
+    }
+
+    pending.expiresAt = Date.now() + this.pendingTtlMs
+    await this.savePendingState(key, pending)
     return true
   }
 
@@ -385,7 +479,7 @@ export function getTelegramUserData(client: TelegramClient) {
 }
 
 export async function signInWithCode(phone: string, code: string, phoneCodeHash: string) {
-  const pending = telegramPool.getPendingClient(phoneCodeHash)
+  const pending = await telegramPool.getPendingClient(phoneCodeHash)
   if (!pending || pending.phone !== phone) {
     throw new Error('Phone code session not found or expired')
   }
@@ -400,6 +494,7 @@ export async function signInWithCode(phone: string, code: string, phoneCodeHash:
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     if (message.includes('SESSION_PASSWORD_NEEDED')) {
+      await telegramPool.persistPendingClient(phoneCodeHash)
       return { needsPassword: true as const, client: pending.client }
     }
     throw error
@@ -407,7 +502,7 @@ export async function signInWithCode(phone: string, code: string, phoneCodeHash:
 }
 
 export async function signInWithPassword(tempToken: string, password: string) {
-  const pending = telegramPool.getPendingClient(tempToken)
+  const pending = await telegramPool.getPendingClient(tempToken)
   if (!pending) {
     throw new Error('Password verification session not found or expired')
   }
@@ -421,6 +516,7 @@ export async function signInWithPassword(tempToken: string, password: string) {
     throw new Error('2FA verification failed')
   }
 
+  await telegramPool.persistPendingClient(tempToken)
   return pending.client
 }
 

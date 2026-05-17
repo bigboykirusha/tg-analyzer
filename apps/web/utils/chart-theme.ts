@@ -18,7 +18,7 @@ export const COLORS = {
   textPrimary: () => cssVar('--text-primary', '#f0f0f0'),
   border: () => cssVar('--border-subtle', '#1f1f1f'),
   surface: () => cssVar('--bg-elevated', '#1a1a1a'),
-  accentMuted: () => cssVar('--accent-muted', 'rgba(232, 255, 107, 0.08)'),
+  accentMuted: () => cssVar('--accent-subtle', 'rgba(232, 255, 107, 0.08)'),
 }
 
 export function createChartTheme() {
@@ -30,10 +30,11 @@ export function createChartTheme() {
     },
     color: [COLORS.accent(), COLORS.received(), COLORS.neutral(), COLORS.neutralSoft()],
     grid: {
-      left: 0,
-      right: 0,
-      top: 8,
-      bottom: 0,
+      left: 8,
+      right: 8,
+      top: 12,
+      bottom: 8,
+      containLabel: true,
     },
     xAxis: {
       axisLine: { show: false },
@@ -41,7 +42,7 @@ export function createChartTheme() {
       axisLabel: {
         color: COLORS.textMuted(),
         fontSize: 12,
-        fontFamily: 'DM Sans, sans-serif',
+        fontFamily: 'DM Mono, monospace',
       },
       splitLine: { show: false },
     },
@@ -51,18 +52,19 @@ export function createChartTheme() {
       axisLabel: {
         color: COLORS.textMuted(),
         fontSize: 12,
-        fontFamily: 'DM Sans, sans-serif',
+        fontFamily: 'DM Mono, monospace',
       },
       splitLine: {
         lineStyle: { color: COLORS.border(), type: 'solid' },
       },
     },
     tooltip: {
-      backgroundColor: COLORS.surface(),
+      backgroundColor: cssVar('--bg-overlay', '#222222'),
       borderColor: cssVar('--border-default', '#2a2a2a'),
       borderWidth: 1,
-      textStyle: { color: COLORS.textPrimary(), fontSize: 13, fontFamily: 'DM Sans, sans-serif' },
-      padding: [8, 12],
+      textStyle: { color: COLORS.textPrimary(), fontSize: 13, fontFamily: 'DM Mono, monospace' },
+      padding: [10, 12],
+      extraCssText: 'border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);',
     },
   }
 }

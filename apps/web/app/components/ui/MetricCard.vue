@@ -8,9 +8,9 @@ defineProps<{
 
 <template>
   <div class="metric">
-    <span class="metric-label">{{ label }}</span>
-    <span class="metric-value mono-value">{{ value }}</span>
-    <span v-if="sub" class="metric-sub">{{ sub }}</span>
+    <span class="metric-label t-label">{{ label }}</span>
+    <span class="metric-value t-metric">{{ value }}</span>
+    <span v-if="sub" class="metric-sub t-small">{{ sub }}</span>
   </div>
 </template>
 
@@ -27,24 +27,15 @@ defineProps<{
 }
 
 .metric-label {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--text-tertiary);
 }
 
 .metric-value {
-  font-size: 28px;
-  font-weight: 600;
-  letter-spacing: 0;
   color: var(--text-primary);
-  line-height: 1;
   overflow-wrap: anywhere;
 }
 
 .metric-sub {
-  font-size: 12px;
   color: var(--text-secondary);
 }
 </style>

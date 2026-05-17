@@ -16,22 +16,50 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ cancel: [] }>()
-const { locale, t, formatNumber } = useI18n()
+const { t, formatNumber } = useI18n()
 
 const elapsedSeconds = ref(0)
 let timer: number | null = null
 
 const normalizedMessage = computed(() => props.message?.trim() ?? '')
-
+const showChatProgress = computed(() => props.total > 1)
 const isScanningMessage = computed(() => /^Scanning\s+[\d,\s]+\s+messages$/i.test(normalizedMessage.value))
 
-const displayMessage = computed(() => {
-  if (isScanningMessage.value) {
-    return locale.value === 'ru' ? 'Сканируем сообщения' : 'Scanning messages'
+const phaseInfo = computed(() => {
+  if (props.status === 'pending') {
+    return {
+      message: t('parse.waiting'),
+      currentStep: 1,
+      totalSteps: 4,
+      progress: 8,
+    }
   }
 
-  return normalizedMessage.value || t('parse.waiting')
+  const message = normalizedMessage.value
+  if (!message) {
+    return null
+  }
+
+  if (/^Connecting to Telegram$/i.test(message)) {
+    return { message: t('parse.connecting'), currentStep: 1, totalSteps: 4, progress: 18 }
+  }
+
+  if (/^Loading chat list$/i.test(message)) {
+    return { message: t('parse.loadingChats'), currentStep: 2, totalSteps: 4, progress: 34 }
+  }
+
+  if (/^Starting message scan$/i.test(message)) {
+    return { message: t('parse.preparingScan'), currentStep: 3, totalSteps: 4, progress: 52 }
+  }
+
+  if (isScanningMessage.value) {
+    return { message: t('parse.scanningMessages'), currentStep: 4, totalSteps: 4, progress: 76 }
+  }
+
+  return { message, currentStep: 0, totalSteps: 0, progress: 0 }
 })
+
+const displayMessage = computed(() => phaseInfo.value?.message || normalizedMessage.value || t('parse.waiting'))
 
 const formattedScanned = computed(() => {
   if (typeof props.scannedMessages !== 'number' || props.scannedMessages <= 0) {
@@ -53,9 +81,48 @@ const completedChats = computed(() => {
   return Math.max(0, props.current - (props.status === 'running' ? 1 : 0))
 })
 
-const showChatProgress = computed(() => props.total > 1)
+const phaseSummary = computed(() => {
+  if (showChatProgress.value || !phaseInfo.value?.totalSteps) {
+    return null
+  }
 
-const isIndeterminate = computed(() => props.status === 'running' && !showChatProgress.value)
+  return t('parse.stepSummary', {
+    current: formatNumber(phaseInfo.value.currentStep),
+    total: formatNumber(phaseInfo.value.totalSteps),
+  })
+})
+
+const isIndeterminate = computed(() =>
+  props.status === 'running' && !showChatProgress.value && !(phaseInfo.value?.progress && phaseInfo.value.progress > 0),
+)
+
+const progressPercent = computed(() => {
+  if (props.status === 'completed') {
+    return 100
+  }
+
+  if (!showChatProgress.value) {
+    return phaseInfo.value?.progress ?? 0
+  }
+
+  if (!props.total) {
+    return 0
+  }
+
+  return Math.round((completedChats.value / props.total) * 100)
+})
+
+const progressLabel = computed(() => {
+  if (props.status === 'completed') {
+    return '100%'
+  }
+
+  if (!showChatProgress.value || !props.total) {
+    return null
+  }
+
+  return `${progressPercent.value}%`
+})
 
 const progressSummary = computed(() => {
   if (!showChatProgress.value) {
@@ -63,9 +130,10 @@ const progressSummary = computed(() => {
   }
 
   const currentChat = Math.min(Math.max(props.current, 1), props.total)
-  return locale.value === 'ru'
-    ? `Чат ${formatNumber(currentChat)} из ${formatNumber(props.total)}`
-    : `Chat ${formatNumber(currentChat)} of ${formatNumber(props.total)}`
+  return t('parse.chatSummary', {
+    current: formatNumber(currentChat),
+    total: formatNumber(props.total),
+  })
 })
 
 const estimatedTimeRemaining = computed(() => {
@@ -120,21 +188,7 @@ const scannedLabel = computed(() => {
     return null
   }
 
-  return locale.value === 'ru'
-    ? `${formattedScanned.value} сообщений обработано`
-    : `${formattedScanned.value} messages processed`
-})
-
-const progressPercent = computed(() => {
-  if (props.status === 'completed') {
-    return 100
-  }
-
-  if (!showChatProgress.value || !props.total) {
-    return 0
-  }
-
-  return Math.round((completedChats.value / props.total) * 100)
+  return t('parse.messagesProcessed', { count: formattedScanned.value })
 })
 
 onMounted(() => {
@@ -158,46 +212,29 @@ onBeforeUnmount(() => {
 })
 
 function statusLabel(status: string) {
-  if (status === 'completed') {
-    return t('common.statusCompleted')
-  }
-  if (status === 'failed') {
-    return t('common.statusFailed')
-  }
-  if (status === 'cancelled') {
-    return t('common.statusCancelled')
-  }
-  if (status === 'running') {
-    return t('common.statusRunning')
-  }
-  if (status === 'pending') {
-    return t('common.statusPending')
-  }
-
+  if (status === 'completed') return t('common.statusCompleted')
+  if (status === 'failed') return t('common.statusFailed')
+  if (status === 'cancelled') return t('common.statusCancelled')
+  if (status === 'running') return t('common.statusRunning')
+  if (status === 'pending') return t('common.statusPending')
   return status
 }
 
 function statusVariant(status: string) {
-  if (status === 'completed') {
-    return 'success'
-  }
-  if (status === 'failed') {
-    return 'danger'
-  }
-  if (status === 'cancelled') {
-    return 'warning'
-  }
-  if (status === 'running') {
-    return 'info'
-  }
-
-  return 'default'
+  if (status === 'completed') return 'completed'
+  if (status === 'failed') return 'failed'
+  if (status === 'cancelled') return 'cancelled'
+  if (status === 'running') return 'running'
+  if (status === 'pending') return 'pending'
+  return 'inactive'
 }
 </script>
 
 <template>
-  <section class="progress-card animate-fade-in-down"
-    :class="{ 'progress-card-compact': compact, 'progress-card-mobile-floating': mobileFloating }">
+  <section
+    class="progress-card animate-fade-in-down"
+    :class="{ 'progress-card-compact': compact, 'progress-card-mobile-floating': mobileFloating }"
+  >
     <div class="progress-header">
       <div class="progress-copy">
         <div class="text-label">{{ t('parse.label') }}</div>
@@ -207,6 +244,9 @@ function statusVariant(status: string) {
         </div>
         <p class="text-body-sm progress-message">{{ displayMessage }}</p>
       </div>
+      <button v-if="cancellable" class="cancel-button" type="button" :disabled="cancelling" @click="emit('cancel')">
+        {{ cancelling ? t('dashboard.cancelling') : t('dashboard.cancelParse') }}
+      </button>
     </div>
 
     <div class="progress-bar" :class="{ 'progress-bar-indeterminate': isIndeterminate }">
@@ -216,21 +256,15 @@ function statusVariant(status: string) {
     <div class="progress-meta text-body-sm">
       <div class="meta-left">
         <p v-if="progressSummary" class="mono-value">{{ progressSummary }}</p>
+        <p v-else-if="phaseSummary" class="mono-value">{{ phaseSummary }}</p>
         <p v-if="chatName" class="progress-chat">{{ chatName }}</p>
       </div>
       <div class="meta-right">
+        <p v-if="progressLabel" class="progress-percent t-metric-sm">{{ progressLabel }}</p>
         <p v-if="scannedLabel" class="scanned-count">{{ scannedLabel }}</p>
         <p v-if="estimatedTimeRemaining" class="estimated-time">~{{ estimatedTimeRemaining }}</p>
-        <p v-else-if="elapsedTime" class="estimated-time">
-          {{ locale === 'ru' ? 'Прошло' : 'Elapsed' }} {{ elapsedTime }}
-        </p>
+        <p v-else-if="elapsedTime" class="estimated-time">{{ t('parse.elapsed', { time: elapsedTime }) }}</p>
       </div>
-    </div>
-
-    <div v-if="cancellable" class="progress-actions">
-      <button class="cancel-button" type="button" :disabled="cancelling" @click="emit('cancel')">
-        {{ cancelling ? t('dashboard.cancelling') : t('dashboard.cancelParse') }}
-      </button>
     </div>
   </section>
 </template>
@@ -243,8 +277,7 @@ function statusVariant(status: string) {
   padding: var(--space-5);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
+  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
 }
 
 .progress-card-compact {
@@ -265,12 +298,15 @@ function statusVariant(status: string) {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  min-width: 0;
 }
 
 .progress-title-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .progress-message {
@@ -292,17 +328,17 @@ function statusVariant(status: string) {
 .progress-bar {
   position: relative;
   overflow: hidden;
-  height: 10px;
+  height: 3px;
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--bg-overlay) 88%, var(--border-default));
 }
 
 .progress-bar-fill {
   height: 100%;
-  min-width: 10px;
+  min-width: 12px;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 68%, white) 100%);
-  transition: width 220ms ease;
+  background: var(--status-running);
+  transition: width var(--transition-normal);
 }
 
 .progress-bar-indeterminate .progress-bar-fill {
@@ -326,8 +362,11 @@ function statusVariant(status: string) {
 
 .meta-right {
   text-align: right;
-  font-family: var(--font-mono);
-  font-size: 11px;
+  align-items: flex-end;
+}
+
+.progress-percent {
+  color: var(--text-primary);
 }
 
 .scanned-count {
@@ -347,30 +386,28 @@ function statusVariant(status: string) {
   white-space: nowrap;
 }
 
-.progress-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.progress-card-compact .progress-actions {
-  justify-content: flex-start;
-}
-
 .cancel-button {
-  min-height: 34px;
+  min-height: 44px;
   padding: 0 var(--space-3);
-  border: 1px solid var(--border-default);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
   transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
 .cancel-button:hover {
-  border-color: var(--border-strong);
-  background: var(--bg-overlay);
-  color: var(--text-primary);
+  border-color: rgba(248, 113, 113, 0.2);
+  background: var(--danger-subtle);
+  color: var(--danger);
+}
+
+.cancel-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 3px var(--bg-base);
 }
 
 .cancel-button:disabled {
@@ -390,10 +427,14 @@ function statusVariant(status: string) {
 
 @media (max-width: 640px) {
   .progress-header,
-  .progress-meta,
-  .progress-actions {
+  .progress-meta {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .meta-right {
+    align-items: flex-start;
+    text-align: left;
   }
 
   .progress-card-mobile-floating {
@@ -439,12 +480,9 @@ function statusVariant(status: string) {
     height: 6px;
   }
 
-  .progress-card-mobile-floating .progress-actions {
-    margin-top: 0;
-  }
-
   .progress-card-mobile-floating .cancel-button {
-    min-height: 34px;
+    min-height: 36px;
+    align-self: flex-start;
     padding: 0 12px;
     font-size: 13px;
   }

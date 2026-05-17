@@ -8,6 +8,7 @@ const props = defineProps<{
   theirs: TopItemDto[]
 }>()
 const { t } = useI18n()
+const hasData = computed(() => props.mine.length > 0 || props.theirs.length > 0)
 
 const option = computed(() => {
   const theme = CHART_THEME.base()
@@ -81,7 +82,8 @@ const option = computed(() => {
 </script>
 
 <template>
-  <ClientOnly>
+  <div v-if="!hasData" class="chart-empty t-small">{{ t('heatmap.empty') }}</div>
+  <ClientOnly v-else>
     <VChart class="chart chart-words" :option="option" autoresize />
   </ClientOnly>
 </template>
@@ -95,9 +97,17 @@ const option = computed(() => {
   height: 420px;
 }
 
+.chart-empty {
+  padding: var(--space-8);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
 @media (max-width: 768px) {
   .chart-words {
-    height: 300px;
+    height: 280px;
   }
 }
 </style>

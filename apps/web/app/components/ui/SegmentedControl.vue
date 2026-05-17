@@ -61,17 +61,26 @@ const emit = defineEmits<{
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .segment:hover {
+  background: rgba(255, 255, 255, 0.02);
   color: var(--text-primary);
 }
 
 .segment-active {
-  background: var(--bg-elevated);
+  background: var(--accent-subtle);
   color: var(--text-primary);
   box-shadow: var(--shadow-sm);
+}
+
+.segment:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 3px var(--bg-base);
 }
 
 .segment:disabled {

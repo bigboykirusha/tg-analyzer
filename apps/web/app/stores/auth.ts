@@ -1,9 +1,6 @@
 import type { UserDto } from '@tg-analyzer/shared'
 
 export type AuthHealth = 'ready' | 'degraded' | 'unauthenticated'
-
-const ACCESS_TOKEN_STORAGE_KEY = 'tg-analyzer-access-token'
-const USER_STORAGE_KEY = 'tg-analyzer-user'
 const PARSE_DIALOGS_STORAGE_PREFIX = 'tg-analyzer-parse-dialogs:'
 
 export const useAuthStore = defineStore('auth', {
@@ -27,10 +24,6 @@ export const useAuthStore = defineStore('auth', {
       this.phoneCodeHash = ''
       this.telegramSessionActive = user.telegramSessionActive !== false
       this.authHealth = this.telegramSessionActive ? 'ready' : 'degraded'
-      if (import.meta.client) {
-        localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken)
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
-      }
     },
     setTelegramSessionActive(active: boolean) {
       this.telegramSessionActive = active
@@ -42,46 +35,14 @@ export const useAuthStore = defineStore('auth', {
         ...this.user,
         telegramSessionActive: active,
       }
-      if (import.meta.client) {
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user))
-      }
     },
     setAuthHealth(health: AuthHealth) {
       this.authHealth = health
     },
     loadPersisted() {
-      if (!import.meta.client) {
-        return
-      }
-
       if (this.hydrated) {
         return
       }
-
-      const persistedAccessToken = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) ?? ''
-      const rawUser = localStorage.getItem(USER_STORAGE_KEY)
-
-      this.accessToken = persistedAccessToken
-      try {
-        this.user = rawUser ? JSON.parse(rawUser) as UserDto : null
-      } catch {
-        this.user = null
-        localStorage.removeItem(USER_STORAGE_KEY)
-      }
-
-      if (!this.user || !this.accessToken) {
-        this.user = null
-        this.accessToken = ''
-        this.telegramSessionActive = true
-        this.authHealth = 'unauthenticated'
-        this.hydrated = true
-        localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
-        localStorage.removeItem(USER_STORAGE_KEY)
-        return
-      }
-
-      this.telegramSessionActive = this.user.telegramSessionActive !== false
-      this.authHealth = this.telegramSessionActive ? 'ready' : 'degraded'
       this.hydrated = true
     },
     clear() {
@@ -94,8 +55,6 @@ export const useAuthStore = defineStore('auth', {
       this.hydrated = true
       useStatsStore().reset()
       if (import.meta.client) {
-        localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
-        localStorage.removeItem(USER_STORAGE_KEY)
         for (let index = localStorage.length - 1; index >= 0; index -= 1) {
           const key = localStorage.key(index)
           if (key?.startsWith(PARSE_DIALOGS_STORAGE_PREFIX)) {

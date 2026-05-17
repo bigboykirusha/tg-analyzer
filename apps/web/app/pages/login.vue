@@ -463,6 +463,8 @@ async function handlePassword() {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  width: min(100%, 420px);
+  margin-inline: auto;
 }
 
 .language-switch {
@@ -554,10 +556,12 @@ async function handlePassword() {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: var(--space-8);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  background: var(--panel-translucent);
+  width: 100%;
+  max-width: 400px;
+  padding: 32px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(12px);
 }
@@ -573,35 +577,31 @@ async function handlePassword() {
 }
 
 .login-error {
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-danger-muted);
-  color: var(--color-danger);
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: var(--danger);
 }
 
 .login-trust {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
 }
 
 .trust-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  color: var(--accent);
+  width: 24px;
+  height: 24px;
+  color: var(--text-tertiary);
 }
 
 .trust-icon svg {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
@@ -653,6 +653,7 @@ async function handlePassword() {
   }
 
   .login-card {
+    max-width: none;
     padding: var(--space-6);
   }
 

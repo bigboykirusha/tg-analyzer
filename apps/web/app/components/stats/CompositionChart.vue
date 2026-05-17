@@ -60,10 +60,11 @@ const segments = computed(() => {
 
 .composition-bar {
   display: flex;
-  height: 16px;
+  height: 14px;
   overflow: hidden;
   border-radius: var(--radius-full);
   background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
 }
 
 .composition-segment {
@@ -80,6 +81,7 @@ const segments = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
 }
 
 .composition-marker {
@@ -92,6 +94,14 @@ const segments = computed(() => {
 .composition-copy {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+}
+
+.composition-copy .text-body-sm,
+.composition-copy .text-caption {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .segment-text {

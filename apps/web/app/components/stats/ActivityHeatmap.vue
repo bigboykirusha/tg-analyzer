@@ -90,23 +90,28 @@ function levelClass(level: number) {
 .heatmap-scroll {
   overflow-x: auto;
   padding-bottom: var(--space-2);
+  scrollbar-width: none;
+}
+
+.heatmap-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .heatmap-grid {
   display: flex;
-  gap: var(--space-1);
+  gap: 4px;
   width: max-content;
 }
 
 .heatmap-week {
   display: grid;
   grid-template-rows: repeat(7, 1fr);
-  gap: var(--space-1);
+  gap: 4px;
 }
 
 .heatmap-day {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
 }
@@ -142,5 +147,12 @@ function levelClass(level: number) {
   border: 1px dashed var(--border-default);
   color: var(--text-secondary);
   text-align: center;
+}
+
+@media (max-width: 768px) {
+  .heatmap-day {
+    width: 9px;
+    height: 9px;
+  }
 }
 </style>

@@ -7,6 +7,7 @@ const props = defineProps<{
   received: number
 }>()
 const { t } = useI18n()
+const hasData = computed(() => props.sent + props.received > 0)
 
 const option = computed(() => {
   const theme = CHART_THEME.base()
@@ -45,7 +46,8 @@ const option = computed(() => {
 </script>
 
 <template>
-  <ClientOnly>
+  <div v-if="!hasData" class="chart-empty t-small">{{ t('heatmap.empty') }}</div>
+  <ClientOnly v-else>
     <VChart class="chart chart-sm" :option="option" autoresize />
   </ClientOnly>
 </template>
@@ -59,9 +61,17 @@ const option = computed(() => {
   height: 300px;
 }
 
+.chart-empty {
+  padding: var(--space-8);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
 @media (max-width: 768px) {
   .chart-sm {
-    height: 220px;
+    height: 200px;
   }
 }
 </style>

@@ -10,7 +10,7 @@
 <style scoped>
 .app-layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 220px 1fr;
   min-height: 100vh;
   min-height: 100dvh;
   min-width: 0;
@@ -23,7 +23,7 @@
   overflow-y: auto;
   min-height: 100dvh;
   min-width: 0;
-  padding: var(--space-8) var(--space-10);
+  padding: var(--space-6);
 }
 
 @media (max-width: 1024px) {
@@ -39,7 +39,7 @@
   }
 
   .app-main {
-    padding: var(--space-3);
+    padding: var(--space-4) 0;
   }
 }
 </style>

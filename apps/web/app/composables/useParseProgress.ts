@@ -1,4 +1,4 @@
-import type { ParseProgressDto, ParseProgressWsEvent, ParseStatusResponse } from '@tg-analyzer/shared'
+import type { ParseProgressDto, ParseProgressWsEvent, ParseStatusResponse, WsAuthTokenResponse } from '@tg-analyzer/shared'
 import { refreshAccessToken } from './useApi'
 import { isTokenExpiringSoon, isTokenUsable } from '../utils/auth'
 
@@ -19,10 +19,17 @@ export function useParseProgress() {
   const retryTimeout = useState<number | null>('parse-progress-retry-timeout', () => null)
   const intentionalClose = useState<boolean>('parse-progress-intentional-close', () => false)
   const forceRefresh = useState<boolean>('parse-progress-force-refresh', () => false)
+  const bootstrapped = useState<boolean>('parse-progress-bootstrapped', () => false)
   const auth = useAuthStore()
   const config = useRuntimeConfig()
 
   function applyStatus(status: ParseStatusResponse) {
+    if (status.status === 'idle' || status.progress.status === 'idle' || !status.jobId) {
+      reset()
+      bootstrapped.value = true
+      return
+    }
+
     progress.value = {
       current: status.progress.current ?? 0,
       total: status.progress.total ?? 0,
@@ -33,6 +40,7 @@ export function useParseProgress() {
       scannedMessages: status.progress.scannedMessages ?? 0,
       startTime: status.progress.startTime,
     }
+    bootstrapped.value = true
   }
 
   async function fetchCurrentStatus() {
@@ -62,9 +70,13 @@ export function useParseProgress() {
     return Boolean(auth.accessToken && isTokenUsable(auth.accessToken))
   }
 
+  async function getWebSocketToken() {
+    return useApiFetch<WsAuthTokenResponse>('/api/auth/ws-token')
+  }
+
   function scheduleReconnect() {
     const reconnectable = progress.value.status === 'running' || progress.value.status === 'pending'
-    if (!import.meta.client || retryCount.value >= MAX_RETRIES || !reconnectable || !auth.isAuthorized) {
+    if (!import.meta.client || retryCount.value >= MAX_RETRIES || !reconnectable || !auth.isAuthorized || !bootstrapped.value) {
       return
     }
 
@@ -76,7 +88,7 @@ export function useParseProgress() {
   }
 
   async function connect() {
-    if (!import.meta.client || socketRef.value || !auth.isAuthorized) {
+    if (!import.meta.client || socketRef.value || !auth.isAuthorized || !bootstrapped.value) {
       return
     }
 
@@ -90,7 +102,8 @@ export function useParseProgress() {
       return
     }
 
-    const socket = new WebSocket(`${config.public.wsUrl}/ws/parse-progress?token=${auth.accessToken}`)
+    const { token } = await getWebSocketToken()
+    const socket = new WebSocket(`${config.public.wsUrl}/ws/parse-progress?token=${token}`)
     socketRef.value = socket
     intentionalClose.value = false
 
@@ -191,9 +204,31 @@ export function useParseProgress() {
     }
   }
 
+  async function bootstrapFromServer() {
+    bootstrapped.value = false
+    reset()
+    disconnect()
+
+    try {
+      const status = await useApiFetch<ParseStatusResponse>('/api/parse/status')
+      applyStatus(status)
+      return status
+    } catch (error) {
+      bootstrapped.value = true
+      throw error
+    }
+  }
+
+  function clearBootstrap() {
+    bootstrapped.value = false
+  }
+
   return {
     progress,
+    bootstrapped,
     applyStatus,
+    bootstrapFromServer,
+    clearBootstrap,
     connect,
     disconnect,
     reset,

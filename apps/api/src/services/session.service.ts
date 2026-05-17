@@ -138,6 +138,10 @@ export async function getParseProgress(userId: string) {
   return parseJsonOrNull(raw)
 }
 
+export async function clearParseProgress(userId: string) {
+  await redis.del(`${PROGRESS_PREFIX}:${userId}`)
+}
+
 export async function publishParseProgress(userId: string, payload: unknown) {
   await setParseProgress(userId, payload)
   await redis.publish(`${PROGRESS_PREFIX}:${userId}`, JSON.stringify(payload))
@@ -174,8 +178,25 @@ export async function ensureFullParseCooldown(userId: string) {
   if (exists) {
     throw new Error('Full parse cooldown is still active')
   }
+}
 
-  await redis.set(key, '1', 'EX', config.FULL_PARSE_COOLDOWN_HOURS * 60 * 60)
+export async function getFullParseCooldown(userId: string) {
+  const key = `${FULL_PARSE_COOLDOWN_PREFIX}:${userId}`
+  const exists = await redis.exists(key)
+  if (!exists) {
+    return null
+  }
+
+  return redis.ttl(key)
+}
+
+export async function activateFullParseCooldown(userId: string) {
+  await redis.set(
+    `${FULL_PARSE_COOLDOWN_PREFIX}:${userId}`,
+    '1',
+    'EX',
+    config.FULL_PARSE_COOLDOWN_HOURS * 60 * 60,
+  )
 }
 
 export async function getChatCooldown(userId: string, chatId: string) {

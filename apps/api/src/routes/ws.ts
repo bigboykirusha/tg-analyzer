@@ -12,7 +12,11 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
 
     let userId = ''
     try {
-      const payload = fastify.jwt.verify<{ sub: string }>(token)
+      const payload = fastify.jwt.verify<{ sub: string; kind?: string }>(token)
+      if (payload.kind !== 'ws') {
+        socket.close(1008, 'Unauthorized')
+        return
+      }
       userId = payload.sub
     } catch {
       socket.close(1008, 'Unauthorized')

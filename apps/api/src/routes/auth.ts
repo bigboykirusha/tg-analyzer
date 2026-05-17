@@ -2,6 +2,7 @@ import type { FastifyPluginAsync, FastifyReply } from 'fastify'
 import { Api } from 'telegram'
 import jwt from 'jsonwebtoken'
 import { z } from 'zod'
+import type { WsAuthTokenResponse } from '@tg-analyzer/shared'
 import { and, eq } from 'drizzle-orm'
 import {
   clearRefreshCookie,
@@ -79,7 +80,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         createdAt: new Date().toISOString(),
       })
 
-      telegramPool.rekeyPendingClient(phoneCodeHash, tempToken)
+      await telegramPool.rekeyPendingClient(phoneCodeHash, tempToken)
 
       return reply.send({
         isPasswordRequired: true,
@@ -182,6 +183,16 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     clearRefreshCookie(reply)
     return reply.send({ success: true })
+  })
+
+  fastify.get('/ws-token', { preHandler: requireAuth }, async (request) => {
+    const token = jwt.sign(
+      { sub: request.authUserId!, kind: 'ws' },
+      config.JWT_SECRET,
+      { expiresIn: '2m', issuer: 'tg-analyzer' },
+    )
+
+    return { token } satisfies WsAuthTokenResponse
   })
 
   fastify.post('/terminate-telegram', { preHandler: requireAuth }, async (request, reply) => {

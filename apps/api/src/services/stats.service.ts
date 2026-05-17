@@ -1248,8 +1248,12 @@ function normalizeConversationFacts(value: (typeof schema.chatStats.$inferSelect
   }
 }
 
-function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
-  const legacyTextMessageCount = Math.max(
+function resolveTextMessageCount(row: typeof schema.chatStats.$inferSelect) {
+  if ((row.textMessageCount ?? 0) > 0) {
+    return row.textMessageCount
+  }
+
+  return Math.max(
     (row.totalMessages ?? 0)
       - (row.mediaCount ?? 0)
       - (row.voiceCount ?? 0)
@@ -1257,10 +1261,30 @@ function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
       - (row.fileCount ?? 0),
     0,
   )
+}
+
+function resolveMessageComposition(row: typeof schema.chatStats.$inferSelect, textMessageCount: number): MessageCompositionDto {
   const storedComposition = row.messageComposition ?? null
   const storedCompositionTotal = storedComposition
     ? storedComposition.text + storedComposition.media + storedComposition.voice + storedComposition.sticker + storedComposition.file
     : 0
+
+  if (storedComposition && storedCompositionTotal > 0) {
+    return storedComposition
+  }
+
+  return {
+    text: textMessageCount,
+    media: row.mediaCount ?? 0,
+    voice: row.voiceCount ?? 0,
+    sticker: row.stickerCount ?? 0,
+    file: row.fileCount ?? 0,
+  }
+}
+
+function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
+  const textMessageCount = resolveTextMessageCount(row)
+  const messageComposition = resolveMessageComposition(row, textMessageCount)
 
   return {
     tgChatId: String(row.tgChatId),
@@ -1271,7 +1295,7 @@ function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
     receivedMessages: row.receivedMessages,
     totalChars: row.totalChars,
     totalWords: row.totalWords,
-    textMessageCount: (row.textMessageCount ?? 0) > 0 ? row.textMessageCount : legacyTextMessageCount,
+    textMessageCount,
     mediaCount: row.mediaCount,
     voiceCount: row.voiceCount,
     stickerCount: row.stickerCount,
@@ -1280,7 +1304,7 @@ function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
     lastMessageAt: row.lastMessageAt?.toISOString() ?? null,
     parsedAt: row.parsedAt?.toISOString() ?? null,
     avgResponseSec: row.avgResponseSec,
-    medianMyResponseSec: row.medianMyResponseSec ?? row.avgResponseSec,
+    medianMyResponseSec: row.medianMyResponseSec,
     medianTheirResponseSec: row.medianTheirResponseSec,
     myWordsPerMessage: numberOrNull(row.myWordsPerMessage),
     theirWordsPerMessage: numberOrNull(row.theirWordsPerMessage),
@@ -1296,15 +1320,7 @@ function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
     topEmojiBySender: row.topEmojiBySender,
     uniqueWordsBySender: row.uniqueWordsBySender,
     responseStats: row.responseStats,
-    messageComposition: storedComposition && storedCompositionTotal > 0
-      ? storedComposition
-      : {
-          text: (row.textMessageCount ?? 0) > 0 ? row.textMessageCount : legacyTextMessageCount,
-          media: row.mediaCount ?? 0,
-          voice: row.voiceCount ?? 0,
-          sticker: row.stickerCount ?? 0,
-          file: row.fileCount ?? 0,
-        },
+    messageComposition,
     conversationFacts: normalizeConversationFacts(row.conversationFacts),
     wordsPerMessage: row.wordsPerMessage,
   }

@@ -1,10 +1,74 @@
 <script setup lang="ts">
+import { BarChart2, Globe, LayoutGrid, LogOut } from '../lib/icons'
+import Button from './ui/Button.vue'
+import ConfirmDialog from './ui/ConfirmDialog.vue'
+
 const auth = useAuthStore()
-const { logout } = useAuth()
+const { deleteAccount, logout, terminateTelegramSession } = useAuth()
 const route = useRoute()
 const { locale, setLocale, t } = useI18n()
+const toast = useToast()
 
 const isChatRoute = computed(() => route.path.startsWith('/chat/'))
+const isDashboardRoute = computed(() => route.path.startsWith('/dashboard'))
+const securityPending = ref<'telegram' | 'account' | null>(null)
+const confirmState = ref<{
+  type: 'terminate' | 'delete-account'
+  title: string
+  description: string
+  confirmLabel: string
+  variant: 'default' | 'danger'
+} | null>(null)
+
+function openTerminateConfirm() {
+  confirmState.value = {
+    type: 'terminate',
+    title: t('dashboard.terminateTelegram'),
+    description: t('dashboard.terminateConfirm'),
+    confirmLabel: t('dashboard.terminateTelegram'),
+    variant: 'default',
+  }
+}
+
+function openDeleteAccountConfirm() {
+  confirmState.value = {
+    type: 'delete-account',
+    title: t('dashboard.deleteAccount'),
+    description: t('dashboard.deleteConfirm'),
+    confirmLabel: t('dashboard.deleteAccount'),
+    variant: 'danger',
+  }
+}
+
+async function confirmAction() {
+  if (!confirmState.value) {
+    return
+  }
+
+  if (confirmState.value.type === 'terminate') {
+    securityPending.value = 'telegram'
+    try {
+      await terminateTelegramSession()
+      toast.success(t('dashboard.terminateTelegram'))
+      confirmState.value = null
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('dashboard.terminateError'))
+    } finally {
+      securityPending.value = null
+    }
+    return
+  }
+
+  securityPending.value = 'account'
+  try {
+    await deleteAccount()
+    confirmState.value = null
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('dashboard.deleteError'))
+  } finally {
+    securityPending.value = null
+  }
+}
 </script>
 
 <template>
@@ -22,13 +86,14 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
           <span class="user-handle">@{{ auth.user?.username || t('common.telegram') }}</span>
         </div>
         <button class="logout-button" type="button" @click="logout">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M10 6H6.75A1.75 1.75 0 0 0 5 7.75v8.5C5 17.216 5.784 18 6.75 18H10m4-8h-8m8 0-2.5-2.5M14 10l-2.5 2.5" />
-          </svg>
+          <LogOut :size="18" :stroke-width="1.5" aria-hidden="true" />
         </button>
       </div>
 
       <div class="language-switch" :aria-label="t('nav.language')">
+        <span class="language-icon" aria-hidden="true">
+          <Globe :size="14" :stroke-width="1.5" />
+        </span>
         <button type="button" :class="{ active: locale === 'ru' }" @click="setLocale('ru')">RU</button>
         <button type="button" :class="{ active: locale === 'en' }" @click="setLocale('en')">EN</button>
       </div>
@@ -36,19 +101,39 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 
     <nav class="sidebar-nav">
       <NuxtLink to="/dashboard" class="nav-item" :class="{ 'nav-item-active': route.path.startsWith('/dashboard') }">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 5.75A1.75 1.75 0 0 1 5.75 4h4.5A1.75 1.75 0 0 1 12 5.75v4.5A1.75 1.75 0 0 1 10.25 12h-4.5A1.75 1.75 0 0 1 4 10.25zm8 0A1.75 1.75 0 0 1 13.75 4h4.5A1.75 1.75 0 0 1 20 5.75v4.5A1.75 1.75 0 0 1 18.25 12h-4.5A1.75 1.75 0 0 1 12 10.25zm-8 8A1.75 1.75 0 0 1 5.75 12h4.5A1.75 1.75 0 0 1 12 13.75v4.5A1.75 1.75 0 0 1 10.25 20h-4.5A1.75 1.75 0 0 1 4 18.25zm8 2.25h8" />
-        </svg>
+        <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
         <span>{{ t('common.dashboard') }}</span>
       </NuxtLink>
 
       <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="nav-item" :class="{ 'nav-item-active': isChatRoute }">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 7.75A1.75 1.75 0 0 1 7.75 6h8.5A1.75 1.75 0 0 1 18 7.75v8.5A1.75 1.75 0 0 1 16.25 18h-8.5A1.75 1.75 0 0 1 6 16.25zM9 10h6m-6 4h4" />
-        </svg>
+        <BarChart2 :size="18" :stroke-width="1.5" aria-hidden="true" />
         <span>{{ t('common.report') }}</span>
       </NuxtLink>
     </nav>
+
+    <div v-if="isDashboardRoute" class="desktop-security">
+      <div class="sidebar-security-copy">
+        <span class="text-label">{{ t('dashboard.securityLabel') }}</span>
+        <strong class="security-title">{{ t('dashboard.securityTitle') }}</strong>
+        <p class="security-text">{{ t('dashboard.securityText') }}</p>
+      </div>
+
+      <div v-if="!auth.telegramSessionActive" class="sidebar-security-banner">
+        {{ t('dashboard.sessionInactive') }}
+      </div>
+
+      <div class="sidebar-security-actions">
+        <Button variant="secondary" size="md" block :loading="securityPending === 'telegram'" @click="openTerminateConfirm">
+          {{ securityPending === 'telegram' ? t('dashboard.stopping') : t('dashboard.terminateTelegram') }}
+        </Button>
+        <Button variant="danger" size="md" block :loading="securityPending === 'account'" @click="openDeleteAccountConfirm">
+          {{ securityPending === 'account' ? t('dashboard.deleting') : t('dashboard.deleteAccount') }}
+        </Button>
+        <Button v-if="!auth.telegramSessionActive" variant="primary" size="md" block @click="logout">
+          {{ t('common.relogin') }}
+        </Button>
+      </div>
+    </div>
 
     <div class="sidebar-spacer" />
 
@@ -59,23 +144,32 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
       </div>
       <div class="mobile-actions">
       <NuxtLink to="/dashboard" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': route.path.startsWith('/dashboard') }">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 5.75A1.75 1.75 0 0 1 5.75 4h4.5A1.75 1.75 0 0 1 12 5.75v4.5A1.75 1.75 0 0 1 10.25 12h-4.5A1.75 1.75 0 0 1 4 10.25zm8 0A1.75 1.75 0 0 1 13.75 4h4.5A1.75 1.75 0 0 1 20 5.75v4.5A1.75 1.75 0 0 1 18.25 12h-4.5A1.75 1.75 0 0 1 12 10.25zm-8 8A1.75 1.75 0 0 1 5.75 12h4.5A1.75 1.75 0 0 1 12 13.75v4.5A1.75 1.75 0 0 1 10.25 20h-4.5A1.75 1.75 0 0 1 4 18.25zm8 2.25h8" />
-        </svg>
+        <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
         <span class="screen-reader">{{ t('common.dashboard') }}</span>
       </NuxtLink>
       <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="mobile-nav-item mobile-nav-item-active">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 7.75A1.75 1.75 0 0 1 7.75 6h8.5A1.75 1.75 0 0 1 18 7.75v8.5A1.75 1.75 0 0 1 16.25 18h-8.5A1.75 1.75 0 0 1 6 16.25zM9 10h6m-6 4h4" />
-        </svg>
+        <BarChart2 :size="18" :stroke-width="1.5" aria-hidden="true" />
         <span class="screen-reader">{{ t('common.report') }}</span>
       </NuxtLink>
       <button class="mobile-nav-item mobile-language" type="button" @click="setLocale(locale === 'ru' ? 'en' : 'ru')">
+        <Globe :size="16" :stroke-width="1.5" aria-hidden="true" />
         {{ locale.toUpperCase() }}
         <span class="screen-reader">{{ t('nav.language') }}</span>
       </button>
       </div>
     </div>
+
+    <ConfirmDialog
+      :open="Boolean(confirmState)"
+      :title="confirmState?.title ?? ''"
+      :description="confirmState?.description ?? ''"
+      :confirm-label="confirmState?.confirmLabel ?? ''"
+      :cancel-label="t('common.cancel')"
+      :variant="confirmState?.variant ?? 'default'"
+      :loading="securityPending !== null"
+      @close="confirmState = null"
+      @confirm="confirmAction"
+    />
   </aside>
 </template>
 
@@ -83,11 +177,9 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 .sidebar {
   display: flex;
   flex-direction: column;
-  padding: var(--space-3);
+  padding: var(--space-4);
   border-right: 1px solid var(--border-subtle);
-  background:
-    radial-gradient(circle at top, var(--accent-glow-soft), transparent 24%),
-    var(--bg-base);
+  background: var(--bg-surface);
   overflow-y: auto;
 }
 
@@ -135,36 +227,89 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 }
 
 .nav-item {
-  padding: var(--space-2) var(--space-3);
+  position: relative;
+  min-height: 44px;
+  padding: 0 var(--space-3);
   font-size: 14px;
   font-weight: 500;
   color: var(--text-secondary);
 }
 
 .nav-item:hover {
-  background: var(--bg-overlay);
+  background: var(--bg-elevated);
   color: var(--text-primary);
 }
 
 .nav-item-active {
-  background: var(--accent-muted);
-  color: var(--accent);
+  background: var(--accent-subtle);
+  color: var(--text-primary);
 }
 
-.nav-item svg,
-.mobile-nav-item svg,
-.logout-button svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.nav-item-active::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.nav-item :deep(svg),
+.mobile-nav-item :deep(svg),
+.logout-button :deep(svg),
+.language-icon :deep(svg) {
+  flex: 0 0 auto;
 }
 
 .sidebar-spacer {
   flex: 1;
+}
+
+.desktop-security {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+}
+
+.sidebar-security-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.security-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.security-text {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sidebar-security-banner {
+  padding: var(--space-3);
+  border: 1px solid rgba(251, 191, 36, 0.18);
+  border-radius: var(--radius-md);
+  background: var(--warning-subtle);
+  color: var(--warning);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sidebar-security-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .sidebar-user {
@@ -173,7 +318,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
   gap: var(--space-3);
   padding: var(--space-3);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   background: var(--bg-surface);
 }
 
@@ -182,6 +327,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .user-name {
@@ -196,12 +342,17 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 .user-handle {
   font-size: 12px;
   color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .logout-button {
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  margin-left: auto;
   border: 1px solid var(--border-subtle);
   background: transparent;
   color: var(--text-secondary);
@@ -209,7 +360,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 }
 
 .logout-button:hover {
-  background: var(--bg-overlay);
+  background: var(--bg-elevated);
   color: var(--text-primary);
 }
 
@@ -219,6 +370,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 
 .language-switch {
   display: inline-flex;
+  align-items: center;
   gap: var(--space-1);
   padding: var(--space-1);
   border: 1px solid var(--border-subtle);
@@ -226,8 +378,18 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
   background: var(--bg-surface);
 }
 
+.language-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--text-tertiary);
+}
+
 .language-switch button {
   flex: 1;
+  min-width: 36px;
   height: 30px;
   border: none;
   border-radius: var(--radius-sm);
@@ -241,11 +403,12 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 
 .language-switch button:hover,
 .language-switch button.active {
-  background: var(--accent-muted);
-  color: var(--accent);
+  background: var(--accent-subtle);
+  color: var(--text-primary);
 }
 
 .mobile-language {
+  gap: 6px;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
@@ -257,17 +420,18 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
     top: 0;
     z-index: 40;
     display: block;
-    padding: var(--space-2) var(--space-3);
+    padding: 0 var(--space-4);
     border-right: none;
     border-bottom: 1px solid var(--border-subtle);
-    background: var(--panel-translucent-strong);
-    backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+    backdrop-filter: blur(8px);
     overflow: visible;
   }
 
   .sidebar-top,
   .sidebar-nav,
-  .sidebar-spacer {
+  .sidebar-spacer,
+  .desktop-security {
     display: none;
   }
 
@@ -276,7 +440,7 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    min-height: 44px;
+    min-height: 52px;
     min-width: 0;
   }
 
@@ -294,16 +458,17 @@ const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 
   .mobile-nav-item {
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    min-width: 44px;
+    height: 44px;
     border: none;
+    border-radius: var(--radius-md);
     background: transparent;
     color: var(--text-secondary);
   }
 
   .mobile-nav-item-active {
-    background: var(--accent-muted);
-    color: var(--accent);
+    background: var(--accent-subtle);
+    color: var(--text-primary);
   }
 
   .logo-text {

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
+import type { MessageCompositionDto } from '@tg-analyzer/shared'
 import AppLayout from '../../components/AppLayout.vue'
 import ChatAvatar from '../../components/ChatAvatar.vue'
+import Container from '../../components/layout/Container.vue'
 import ActivityHeatmap from '../../components/stats/ActivityHeatmap.vue'
 import BalanceChart from '../../components/stats/BalanceChart.vue'
 import CompositionChart from '../../components/stats/CompositionChart.vue'
@@ -19,6 +21,9 @@ import MetricCard from '../../components/ui/MetricCard.vue'
 import PopoverMenu from '../../components/ui/PopoverMenu.vue'
 import SegmentedControl from '../../components/ui/SegmentedControl.vue'
 import Skeleton from '../../components/ui/Skeleton.vue'
+import { AlertCircle, BarChart2, Clock, MessageSquare } from '../../lib/icons'
+import { RotateCw, Share2 } from 'lucide-vue-next'
+import type { ApiClientError } from '../../composables/useApi'
 import { useI18n } from '../../composables/useI18n'
 import { useParseProgress } from '../../composables/useParseProgress'
 import { useStats } from '../../composables/useStats'
@@ -33,8 +38,8 @@ definePageMeta({
 
 const route = useRoute()
 const auth = useAuthStore()
-const { fetchChat, fetchParseStatus } = useStats()
-const { progress, applyStatus, connect, disconnect } = useParseProgress()
+const { fetchChat } = useStats()
+const { progress, bootstrapped, bootstrapFromServer, connect, disconnect } = useParseProgress()
 const stats = useStatsStore()
 const { t, formatNumber, formatDate: formatLocaleDate, formatRelative, intlLocale } = useI18n()
 const toast = useToast()
@@ -50,7 +55,6 @@ const reportRefreshing = ref(false)
 const reportExportRef = ref<HTMLElement | null>(null)
 
 const routeChatId = computed(() => String(route.params.id))
-const isRuLocale = computed(() => intlLocale.value.startsWith('ru'))
 const chat = computed(() => stats.selectedChat)
 const parseForCurrentChat = computed(() => progress.value.chatId === routeChatId.value)
 const parseActiveForCurrentChat = computed(() => parseForCurrentChat.value && ['running', 'pending'].includes(progress.value.status))
@@ -58,58 +62,25 @@ const parseTerminalForCurrentChat = computed(() => parseForCurrentChat.value && 
 const reportStale = computed(() => parseActiveForCurrentChat.value || reparsing.value)
 const isPrivateChat = computed(() => chat.value?.chatType === 'private')
 const totalMessages = computed(() => chat.value?.totalMessages ?? 0)
-const sentShare = computed(() => totalMessages.value ? Math.round(((chat.value?.sentMessages ?? 0) / totalMessages.value) * 100) : 0)
-const receivedShare = computed(() => 100 - sentShare.value)
-const balanceLeadLabel = computed(() => sentShare.value >= receivedShare.value ? t('chat.balanceYouLead') : t('chat.balanceTheyLead'))
-const resolvedTextMessageCount = computed(() => {
-  if (!chat.value) {
-    return 0
-  }
-
-  if (chat.value.textMessageCount > 0) {
-    return chat.value.textMessageCount
-  }
-
-  return Math.max(
-    chat.value.totalMessages
-    - chat.value.mediaCount
-    - chat.value.voiceCount
-    - chat.value.stickerCount
-    - chat.value.fileCount,
-    0,
-  )
-})
-const resolvedComposition = computed(() => {
-  if (!chat.value) {
-    return { text: 0, media: 0, voice: 0, sticker: 0, file: 0 }
-  }
-
-  const stored = chat.value.messageComposition
-  const total = stored.text + stored.media + stored.voice + stored.sticker + stored.file
-  if (total > 0) {
-    return stored
-  }
-
-  return {
-    text: resolvedTextMessageCount.value,
-    media: chat.value.mediaCount ?? 0,
-    voice: chat.value.voiceCount ?? 0,
-    sticker: chat.value.stickerCount ?? 0,
-    file: chat.value.fileCount ?? 0,
-  }
-})
+const sentShareValue = computed(() => totalMessages.value ? ((chat.value?.sentMessages ?? 0) / totalMessages.value) * 100 : 0)
+const receivedShareValue = computed(() => Math.max(0, 100 - sentShareValue.value))
+const sentShare = computed(() => formatDecimal(sentShareValue.value))
+const receivedShare = computed(() => formatDecimal(receivedShareValue.value))
+const balanceLeadLabel = computed(() => sentShareValue.value >= receivedShareValue.value ? t('chat.balanceYouLead') : t('chat.balanceTheyLead'))
+const emptyComposition: MessageCompositionDto = { text: 0, media: 0, voice: 0, sticker: 0, file: 0 }
+const messageComposition = computed(() => chat.value?.messageComposition ?? emptyComposition)
 const responseMineVisible = computed(() => isPrivateChat.value && (chat.value?.responseStats.mineSamples ?? 0) >= 3)
 const responseTheirsVisible = computed(() => isPrivateChat.value && (chat.value?.responseStats.theirsSamples ?? 0) >= 3)
 const iWriteFirstVisible = computed(() => isPrivateChat.value && ((chat.value?.responseStats.mineSamples ?? 0) + (chat.value?.responseStats.theirsSamples ?? 0)) >= 3)
 const overallWordsPerTextMessage = computed(() => {
-  if (!chat.value || !resolvedTextMessageCount.value) {
+  if (!chat.value || !chat.value.textMessageCount) {
     return '0.0'
   }
 
   return new Intl.NumberFormat(intlLocale.value, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
-  }).format(chat.value.totalWords / resolvedTextMessageCount.value)
+  }).format(chat.value.totalWords / chat.value.textMessageCount)
 })
 const peakHour = computed(() => {
   const hourly = chat.value?.hourlyActivitySplit ?? {}
@@ -118,14 +89,7 @@ const peakHour = computed(() => {
     const best = [...entries].sort((left, right) => (right[1]?.total ?? 0) - (left[1]?.total ?? 0))[0]
     return best ? `${best[0].padStart(2, '0')}:00` : '--:--'
   }
-
-  const fallback = Object.entries(chat.value?.hourlyActivity ?? {})
-  if (!fallback.length) {
-    return '--:--'
-  }
-
-  const best = [...fallback].sort((left, right) => right[1] - left[1])[0]
-  return best ? `${best[0].padStart(2, '0')}:00` : '--:--'
+  return '--:--'
 })
 const hasWords = computed(() => Boolean(chat.value?.topWordsBySender.mine.length || chat.value?.topWordsBySender.theirs.length))
 const hasEmoji = computed(() => Boolean(chat.value?.topEmojiBySender.mine.length || chat.value?.topEmojiBySender.theirs.length))
@@ -332,11 +296,11 @@ const relationshipLabel = computed(() => {
   }
 
   const labels = {
-    balanced: isRuLocale.value ? 'Ровный баланс' : 'Balanced dynamic',
-    warm: isRuLocale.value ? 'Живой контакт' : 'Warm contact',
-    cooling: isRuLocale.value ? 'Темп снижается' : 'Cooling down',
-    one_sided: isRuLocale.value ? 'Перекос в одну сторону' : 'One-sided pattern',
-    emerging: isRuLocale.value ? 'Контакт формируется' : 'Still forming',
+    balanced: t('chat.relationshipBalanced'),
+    warm: t('chat.relationshipWarm'),
+    cooling: t('chat.relationshipCooling'),
+    one_sided: t('chat.relationshipOneSided'),
+    emerging: t('chat.relationshipEmerging'),
   }
 
   return labels[label]
@@ -375,38 +339,30 @@ const relationshipMetrics = computed(() => {
   return [
     {
       key: 'reciprocity',
-      label: isRuLocale.value ? 'Баланс сообщений' : 'Message balance',
+      label: t('chat.relationshipReciprocity'),
       value: score.reciprocity,
-      detail: isRuLocale.value
-        ? 'Показывает, насколько общий объем сообщений с обеих сторон близок друг к другу.'
-        : 'Shows how close both sides are in total message volume.',
+      detail: t('chat.relationshipReciprocityDetail'),
       tone: scoreTone(score.reciprocity),
     },
     {
       key: 'responsiveness',
-      label: isRuLocale.value ? 'Скорость ответа' : 'Reply speed',
+      label: t('chat.relationshipResponsiveness'),
       value: score.responsiveness,
-      detail: isRuLocale.value
-        ? 'Чем выше значение, тем быстрее вы обычно отвечаете друг другу.'
-        : 'Higher means replies usually come faster on both sides.',
+      detail: t('chat.relationshipResponsivenessDetail'),
       tone: scoreTone(score.responsiveness),
     },
     {
       key: 'stability',
-      label: isRuLocale.value ? 'Регулярность' : 'Regularity',
+      label: t('chat.relationshipStability'),
       value: score.stability,
-      detail: isRuLocale.value
-        ? 'Оценивает, насколько стабильно чат живет без долгих провалов и редких всплесков.'
-        : 'Estimates how steady the chat stays over time without long drop-offs.',
+      detail: t('chat.relationshipStabilityDetail'),
       tone: scoreTone(score.stability),
     },
     {
       key: 'attention',
-      label: isRuLocale.value ? 'Баланс инициативы' : 'Initiative balance',
+      label: t('chat.relationshipAttention'),
       value: score.attentionBalance,
-      detail: isRuLocale.value
-        ? 'Показывает, насколько равномерно обе стороны начинают разговор после пауз.'
-        : 'Shows how evenly both sides tend to restart the conversation after gaps.',
+      detail: t('chat.relationshipAttentionDetail'),
       tone: scoreTone(score.attentionBalance),
     },
   ]
@@ -445,13 +401,11 @@ const sessionFacts = computed(() => {
     },
     {
       key: 'avg-duration',
-      label: isRuLocale.value ? 'Пик в одном окне' : 'Peak in one window',
+      label: t('chat.sessionPeakLabel'),
       value: densestSessionHighlight.value
         ? `${formatNumber(densestSessionHighlight.value.totalMessages)} ${t('common.messages')}`
         : t('common.na'),
-      sub: isRuLocale.value
-        ? 'Максимум сообщений в одном окне без паузы дольше 8 часов'
-        : 'Most messages inside one window without a break longer than 8 hours',
+      sub: t('chat.sessionPeakSub'),
       tone: 'success',
     },
     {
@@ -482,11 +436,12 @@ const insightItems = computed(() => {
       const longestSession = longestSessionHighlight.value
       return {
         ...item,
-        title: isRuLocale.value ? 'Растянутое окно общения' : 'Extended conversation window',
+        title: t('chat.insightLongSessionExtendedTitle'),
         description: longestSession
-          ? (isRuLocale.value
-              ? `Самое длинное окно заняло ${formatDurationFromSec(longestSession.durationSec)} и собрало ${formatNumber(longestSession.totalMessages)} сообщений. Это не непрерывный разговор, а цепочка сообщений без паузы дольше 8 часов.`
-              : `The longest window lasted ${formatDurationFromSec(longestSession.durationSec)} and included ${formatNumber(longestSession.totalMessages)} messages. This is not continuous chatting, but a chain without any gap longer than 8 hours.`)
+          ? t('chat.insightLongSessionExtendedDescription', {
+              duration: formatDurationFromSec(longestSession.durationSec),
+              messages: formatNumber(longestSession.totalMessages),
+            })
           : item.description,
       }
     }
@@ -627,11 +582,11 @@ async function reparseChat() {
       method: 'POST',
       body: { chatIds: [routeChatId.value] },
     })
-    applyStatus(await fetchParseStatus())
-    connect()
+    await bootstrapFromServer()
     toast.success(t('chat.reparseStarted'))
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('chat.reparseError'))
+    const apiError = error as ApiClientError
+    toast.error(apiError.message || t('chat.reparseError'))
   } finally {
     reparsing.value = false
   }
@@ -920,19 +875,19 @@ function closeExpandedChart() {
 
 async function loadInitialReport() {
   try {
-    applyStatus(await fetchParseStatus())
+    await bootstrapFromServer()
   } catch {
     // Keep report loading independent from parse status refresh.
-  }
-
-  if (parseActiveForCurrentChat.value) {
-    connect()
   }
 
   await fetchChat(routeChatId.value)
 }
 
 watch(parseActiveForCurrentChat, (active) => {
+  if (!bootstrapped.value) {
+    return
+  }
+
   if (active) {
     connect()
     return
@@ -946,6 +901,7 @@ watch(parseTerminalForCurrentChat, async (terminal, previous) => {
     return
   }
 
+  disconnect()
   await refreshReport(false)
 })
 
@@ -974,6 +930,7 @@ onBeforeUnmount(() => {
 
 <template>
   <AppLayout>
+    <Container size="default">
     <div v-if="!ready" class="page-stack">
       <section class="card">
         <Skeleton height="220px" radius="var(--radius-lg)" />
@@ -987,11 +944,11 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-else-if="loadError" class="page-stack animate-fade-in">
-      <EmptyState :title="t('chat.loadErrorTitle')" :description="loadError">
+      <EmptyState :icon="AlertCircle" :title="t('chat.loadErrorTitle')" :description="loadError">
         <template #action>
           <div class="error-actions">
-            <Button variant="secondary" @click="navigateTo('/dashboard')">{{ t('common.back') }}</Button>
-            <Button variant="primary" @click="refreshReport">{{ t('common.refresh') }}</Button>
+            <Button variant="secondary" @click="refreshReport">{{ t('common.refresh') }}</Button>
+            <Button variant="ghost" @click="navigateTo('/dashboard')">{{ t('common.back') }}</Button>
           </div>
         </template>
       </EmptyState>
@@ -1023,24 +980,45 @@ onBeforeUnmount(() => {
           </Button>
 
           <div class="toolbar-actions">
-            <Button variant="secondary" size="sm" :loading="reparsing"
+            <Button
+              class="toolbar-icon-button"
+              variant="secondary"
+              size="md"
+              :icon="RotateCw"
+              :loading="reparsing"
+              :aria-label="t('chat.reparse')"
               :disabled="auth.user?.telegramSessionActive === false || parseActiveForCurrentChat"
-              :title="auth.user?.telegramSessionActive === false ? t('dashboard.sessionInactive') : undefined"
-              @click="reparseChat">
-              {{ reparsing ? t('chat.starting') : t('chat.reparse') }}
+              :title="auth.user?.telegramSessionActive === false ? t('dashboard.sessionInactive') : t('chat.reparse')"
+              @click="reparseChat"
+            >
+              <span class="screen-reader">{{ reparsing ? t('chat.starting') : t('chat.reparse') }}</span>
             </Button>
 
-            <Button v-if="isMobileLayout" variant="ghost" size="sm" :aria-label="t('chat.share')" @click="shareOpen = true">
-              <svg class="share-trigger-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 16V4" />
-                <path d="m7 9 5-5 5 5" />
-                <path d="M6 14v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-4" />
-              </svg>
+            <Button
+              v-if="isMobileLayout"
+              class="toolbar-icon-button"
+              variant="ghost"
+              size="md"
+              :icon="Share2"
+              :aria-label="t('chat.share')"
+              :title="t('chat.share')"
+              @click="shareOpen = true"
+            >
               <span class="screen-reader">{{ t('chat.share') }}</span>
             </Button>
             <PopoverMenu v-else v-model:open="shareOpen" align="end">
               <template #trigger>
-                <Button variant="ghost" size="sm" @click="shareOpen = !shareOpen">{{ t('chat.share') }}</Button>
+                <Button
+                  class="toolbar-icon-button"
+                  variant="ghost"
+                  size="md"
+                  :icon="Share2"
+                  :aria-label="t('chat.share')"
+                  :title="t('chat.share')"
+                  @click="shareOpen = !shareOpen"
+                >
+                  <span class="screen-reader">{{ t('chat.share') }}</span>
+                </Button>
               </template>
               <button v-for="item in shareActions" :key="item.key" type="button" class="share-option"
                 @click="item.action">
@@ -1093,7 +1071,7 @@ onBeforeUnmount(() => {
               <h2 class="text-h2">{{ t('chat.sentReceived') }}</h2>
               <p class="text-body-sm section-text">{{ t('chat.balanceText') }}</p>
             </div>
-            <Badge variant="accent">{{ sentShare }}% / {{ receivedShare }}%</Badge>
+            <Badge variant="accent" class="balance-badge">{{ sentShare }}% / {{ receivedShare }}%</Badge>
           </div>
 
           <BalanceChart :sent="chat?.sentMessages ?? 0" :received="chat?.receivedMessages ?? 0" />
@@ -1102,10 +1080,12 @@ onBeforeUnmount(() => {
             <div class="balance-summary-row">
               <span class="balance-summary-label">{{ t('dashboard.sent') }}</span>
               <strong class="mono-value">{{ formatNumber(chat?.sentMessages ?? 0) }}</strong>
+              <span class="balance-summary-share mono-value">{{ sentShare }}%</span>
             </div>
             <div class="balance-summary-row">
               <span class="balance-summary-label">{{ t('dashboard.recv') }}</span>
               <strong class="mono-value">{{ formatNumber(chat?.receivedMessages ?? 0) }}</strong>
+              <span class="balance-summary-share mono-value">{{ receivedShare }}%</span>
             </div>
             <div class="balance-summary-note text-body-sm">
               {{ t('chat.balanceLead') }} <span class="mono-value">{{ balanceLeadLabel }}</span>
@@ -1135,9 +1115,7 @@ onBeforeUnmount(() => {
             <div class="section-copy">
               <span class="text-label">{{ t('chat.relationship') }}</span>
               <h2 class="text-h2">{{ t('chat.relationshipTitle') }}</h2>
-              <p class="text-body-sm section-text">
-                {{ isRuLocale ? 'Сводный блок про баланс сообщений, инициативу, скорость ответов и регулярность общения.' : 'A plain-language view of message balance, initiative, reply speed, and consistency.' }}
-              </p>
+              <p class="text-body-sm section-text">{{ t('chat.relationshipText') }}</p>
             </div>
             <Badge v-if="relationshipScore"
               :variant="relationshipScore.score < 55 ? 'danger' : relationshipScore.score < 75 ? 'warning' : 'accent'">
@@ -1161,7 +1139,7 @@ onBeforeUnmount(() => {
             </div>
           </template>
 
-          <EmptyState v-else :title="t('chat.relationshipEmptyTitle')" :description="t('chat.relationshipEmptyDescription')" />
+          <EmptyState v-else :icon="BarChart2" :title="t('chat.relationshipEmptyTitle')" :description="t('chat.relationshipEmptyDescription')" />
         </article>
 
         <article class="card section-card report-span chart-card" @click="openChart('composition')">
@@ -1171,7 +1149,7 @@ onBeforeUnmount(() => {
             <p class="text-body-sm section-text">{{ t('chat.compositionText') }}</p>
           </div>
 
-          <CompositionChart :composition="resolvedComposition" />
+          <CompositionChart :composition="messageComposition" />
         </article>
       </section>
 
@@ -1220,7 +1198,7 @@ onBeforeUnmount(() => {
       </section>
 
       <section v-if="showWords" class="page-stack">
-        <EmptyState v-if="!hasWords && !hasEmoji" :title="t('chat.noTextTitle')"
+        <EmptyState v-if="!hasWords && !hasEmoji" :icon="MessageSquare" :title="t('chat.noTextTitle')"
           :description="t('chat.noTextDescription')" />
 
         <template v-else>
@@ -1232,7 +1210,7 @@ onBeforeUnmount(() => {
             </div>
 
             <WordsChart v-if="hasWords" :mine="topWords.mine" :theirs="topWords.theirs" />
-            <EmptyState v-else :title="t('chat.noWordsTitle')" :description="t('chat.noWordsDescription')" />
+            <EmptyState v-else :icon="MessageSquare" :title="t('chat.noWordsTitle')" :description="t('chat.noWordsDescription')" />
           </article>
 
           <div class="report-grid">
@@ -1267,7 +1245,7 @@ onBeforeUnmount(() => {
                   {{ item.value }} <span class="mono-value chip-count">{{ formatNumber(item.count) }}</span>
                 </span>
               </div>
-              <EmptyState v-else :title="t('chat.distinctiveMine')" :description="t('chat.noDistinctiveMine')" />
+              <EmptyState v-else :icon="MessageSquare" :title="t('chat.distinctiveMine')" :description="t('chat.noDistinctiveMine')" />
             </article>
 
             <article class="card section-card">
@@ -1281,7 +1259,7 @@ onBeforeUnmount(() => {
                   {{ item.value }} <span class="mono-value chip-count">{{ formatNumber(item.count) }}</span>
                 </span>
               </div>
-              <EmptyState v-else :title="t('chat.distinctiveTheirs')" :description="t('chat.noDistinctiveTheirs')" />
+              <EmptyState v-else :icon="MessageSquare" :title="t('chat.distinctiveTheirs')" :description="t('chat.noDistinctiveTheirs')" />
             </article>
           </div>
         </template>
@@ -1333,12 +1311,12 @@ onBeforeUnmount(() => {
                   densestSessionHighlight
                     && session.startedAt === densestSessionHighlight.startedAt
                     && session.endedAt === densestSessionHighlight.endedAt
-                    ? (isRuLocale ? 'Пик сообщений' : 'Peak message window')
+                    ? t('chat.sessionWindowPeak')
                     : longestSessionHighlight
                       && session.startedAt === longestSessionHighlight.startedAt
                       && session.endedAt === longestSessionHighlight.endedAt
-                      ? (isRuLocale ? 'Самое длинное окно' : 'Longest window')
-                      : (isRuLocale ? 'Окно общения' : 'Conversation window')
+                      ? t('chat.sessionWindowLongest')
+                      : t('chat.sessionWindowDefault')
                 }}
               </span>
               <strong class="gap-value mono-value">{{ formatNumber(session.totalMessages) }} {{ t('common.messages') }}</strong>
@@ -1347,11 +1325,7 @@ onBeforeUnmount(() => {
                 {{ formatDurationFromSec(session.durationSec) }} • {{ formatNumber(session.sentMessages) }} / {{ formatNumber(session.receivedMessages) }}
               </span>
               <span class="text-caption metric-explainer">
-                {{
-                  isRuLocale
-                    ? 'Сессия остается одной, пока между соседними сообщениями нет паузы дольше 8 часов.'
-                    : 'A session stays open until there is a break longer than 8 hours between messages.'
-                }}
+                {{ t('chat.sessionWindowExplainer') }}
               </span>
             </div>
           </div>
@@ -1377,7 +1351,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <EmptyState v-else :title="t('chat.noLongSilenceTitle')" :description="t('chat.noLongSilenceDescription')" />
+          <EmptyState v-else :icon="Clock" :title="t('chat.noLongSilenceTitle')" :description="t('chat.noLongSilenceDescription')" />
         </article>
 
         <article class="card section-card">
@@ -1397,7 +1371,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <EmptyState v-else :title="t('chat.insightsEmptyTitle')" :description="t('chat.insightsEmptyDescription')" />
+          <EmptyState v-else :icon="BarChart2" :title="t('chat.insightsEmptyTitle')" :description="t('chat.insightsEmptyDescription')" />
         </article>
       </section>
 
@@ -1439,7 +1413,7 @@ onBeforeUnmount(() => {
             <div class="chart-overlay-body">
               <BalanceChart v-if="expandedChart === 'balance'" :sent="chat?.sentMessages ?? 0"
                 :received="chat?.receivedMessages ?? 0" />
-              <CompositionChart v-else-if="expandedChart === 'composition'" :composition="resolvedComposition" />
+              <CompositionChart v-else-if="expandedChart === 'composition'" :composition="messageComposition" />
               <ActivityHeatmap v-else-if="expandedChart === 'heatmap'" :points="continuousDailyActivity" />
               <WeekdayChart v-else-if="expandedChart === 'weekday'" :activity="chat?.weekdayActivity ?? {}" />
               <HourlyChart v-else-if="expandedChart === 'hourly'" :activity="chat?.hourlyActivitySplit ?? {}" />
@@ -1449,6 +1423,7 @@ onBeforeUnmount(() => {
         </div>
       </Transition>
     </div>
+    </Container>
   </AppLayout>
 </template>
 
@@ -1523,6 +1498,7 @@ onBeforeUnmount(() => {
   align-items: center;
   flex: 0 1 auto;
   margin-left: auto;
+  gap: var(--space-2);
 }
 
 .toolbar-back {
@@ -1541,6 +1517,12 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
+.toolbar-icon-button {
+  width: 44px;
+  min-width: 44px;
+  padding-inline: 0;
+}
+
 .report-header {
   position: sticky;
   top: 0;
@@ -1549,10 +1531,11 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
-  background: var(--panel-translucent-strong);
-  backdrop-filter: blur(14px);
+  background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-sm);
   min-width: 0;
 }
 
@@ -1623,24 +1606,24 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-4);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
 }
 
 .fact-card-success {
-  border-color: color-mix(in srgb, var(--color-success) 45%, var(--border-subtle));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-success-muted) 55%, var(--bg-elevated)) 0%, var(--bg-elevated) 100%);
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border-default));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--success-subtle) 75%, var(--bg-surface)) 0%, var(--bg-surface) 100%);
 }
 
 .fact-card-warning {
-  border-color: color-mix(in srgb, var(--color-warning) 45%, var(--border-subtle));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-warning-muted) 55%, var(--bg-elevated)) 0%, var(--bg-elevated) 100%);
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--border-default));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--warning-subtle) 75%, var(--bg-surface)) 0%, var(--bg-surface) 100%);
 }
 
 .fact-card-danger {
-  border-color: color-mix(in srgb, var(--color-danger) 45%, var(--border-subtle));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-danger-muted) 55%, var(--bg-elevated)) 0%, var(--bg-elevated) 100%);
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border-default));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--danger-subtle) 75%, var(--bg-surface)) 0%, var(--bg-surface) 100%);
 }
 
 .fact-value,
@@ -1683,8 +1666,8 @@ onBeforeUnmount(() => {
   gap: 6px;
   padding: var(--space-3);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
 }
 
 .balance-summary-label {
@@ -1694,9 +1677,18 @@ onBeforeUnmount(() => {
   color: var(--text-tertiary);
 }
 
+.balance-summary-share {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 .balance-summary-note {
   grid-column: 1 / -1;
   color: var(--text-secondary);
+}
+
+.balance-badge {
+  font-family: var(--font-mono);
 }
 
 .tabs-scroll {
@@ -1740,7 +1732,7 @@ onBeforeUnmount(() => {
 }
 
 .share-option:hover {
-  background: var(--bg-overlay);
+  background: var(--bg-elevated);
 }
 
 .share-sheet-head,
@@ -1760,9 +1752,9 @@ onBeforeUnmount(() => {
 .share-option-card {
   min-height: 52px;
   padding: 0 var(--space-4);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
 }
 
 .error-actions {
@@ -1784,8 +1776,8 @@ onBeforeUnmount(() => {
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
   color: var(--text-primary);
   min-width: 0;
   overflow-wrap: anywhere;
@@ -1878,7 +1870,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   width: min(100%, 860px);
   min-height: 0;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
   background: var(--bg-surface);
   box-shadow: var(--shadow-lg);
@@ -2006,6 +1998,12 @@ onBeforeUnmount(() => {
     min-width: 0;
     padding-inline: var(--space-3);
     font-size: 13px;
+  }
+
+  .toolbar-icon-button {
+    width: 44px;
+    min-width: 44px;
+    padding-inline: 0;
   }
 
   .share-sheet-head {

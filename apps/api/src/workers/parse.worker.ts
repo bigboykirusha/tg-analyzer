@@ -14,12 +14,14 @@ import {
   type TelegramMessageLike,
 } from '../services/telegram.service'
 import {
+  activateFullParseCooldown,
   clearActiveJob,
   clearCancelledJob,
   deactivateTelegramSessions,
   getActiveSessionForUser,
   isCancelledJob,
   publishParseProgress,
+  setChatCooldown,
   updateParseJob,
 } from '../services/session.service'
 import {
@@ -31,6 +33,7 @@ import {
 import { sleep } from '../utils/sleep'
 
 const SCAN_PROGRESS_INTERVAL_MS = 1500
+const CHAT_REPARSE_COOLDOWN_SECONDS = 60 * 60
 
 async function ensureNotCancelled(userId: string, jobId: string) {
   const cancelled = await isCancelledJob(userId, jobId)
@@ -227,6 +230,11 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       totalMessages,
       completedAt: new Date(),
     })
+    if (chatIds?.length === 1) {
+      await setChatCooldown(userId, chatIds[0], CHAT_REPARSE_COOLDOWN_SECONDS)
+    } else if (!chatIds?.length) {
+      await activateFullParseCooldown(userId)
+    }
     await publishParseProgress(userId, {
       type: 'completed',
       chatId: targetDialogs.length === 1 ? String(targetDialogs[0]?.id) : null,

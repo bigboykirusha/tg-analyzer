@@ -33,8 +33,8 @@ const { t, formatNumber } = useI18n()
   min-height: 92px;
   padding: var(--space-4);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
 }
 
 .emoji-value {
@@ -52,5 +52,11 @@ const { t, formatNumber } = useI18n()
   border-radius: var(--radius-md);
   text-align: center;
   color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .emoji-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

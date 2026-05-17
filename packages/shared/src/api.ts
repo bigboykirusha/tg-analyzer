@@ -54,6 +54,10 @@ export interface RefreshResponse {
   user: UserDto
 }
 
+export interface WsAuthTokenResponse {
+  token: string
+}
+
 export interface StartParseBody {
   chatIds?: string[]
 }

@@ -8,6 +8,7 @@
     "dev:worker": "tsx watch src/workers/index.ts",
     "build": "tsup src/index.ts src/workers/index.ts --format esm --out-dir dist --clean --external telegram --external dotenv --external pg --external ioredis --external bullmq --external drizzle-orm --external fastify --external @fastify/cookie --external @fastify/cors --external @fastify/jwt --external @fastify/rate-limit --external @fastify/websocket --external jsonwebtoken --external zod",
     "check": "tsc --project tsconfig.json --noEmit",
+    "test": "node --import tsx --import ./src/test-env.ts --test src/**/*.test.ts",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
     "start": "node --experimental-specifier-resolution=node dist/index.js",

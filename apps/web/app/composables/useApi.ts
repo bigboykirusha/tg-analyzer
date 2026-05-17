@@ -1,4 +1,5 @@
 import type { ApiErrorResponse, AuthSuccessResponse, UserDto } from '@tg-analyzer/shared'
+import type { FetchOptions } from 'ofetch'
 import { isDefinitiveAuthFailureCode, isTokenUsable } from '../utils/auth'
 
 let refreshPromise: Promise<RefreshResult> | null = null
@@ -133,9 +134,11 @@ export async function refreshAccessToken(apiUrl: string) {
   return refreshPromise
 }
 
-export function useApiFetch<T>(path: string, options: Parameters<typeof $fetch<T>>[1] = {}) {
+export function useApiFetch<T>(path: string, options: FetchOptions<'json'> = {}) {
   const config = useRuntimeConfig()
   const auth = useAuthStore()
+  const requestUrl = `${config.public.apiUrl}${path}`
+  const fetcher = $fetch as unknown as (url: string, options?: FetchOptions<'json'>) => Promise<T>
 
   const createHeaders = () => {
     const headers = new Headers(options.headers as HeadersInit | undefined)
@@ -147,7 +150,7 @@ export function useApiFetch<T>(path: string, options: Parameters<typeof $fetch<T
     return headers
   }
 
-  const execute = () => $fetch<T>(`${config.public.apiUrl}${path}`, {
+  const execute = (): Promise<T> => fetcher(requestUrl, {
     credentials: 'include',
     ...options,
     headers: createHeaders(),

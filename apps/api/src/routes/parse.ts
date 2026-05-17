@@ -1,15 +1,17 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
-import type { ParseDialogDto, ParseDialogsResponse } from '@tg-analyzer/shared'
+import type { ParseDialogDto, ParseDialogsResponse, ParseProgressDto } from '@tg-analyzer/shared'
 import { requireAuth } from '../middleware/auth.middleware'
 import { parseDialogsQueue } from '../queues/parse.queue'
 import { sendApiError } from '../services/api-error.service'
+import { normalizeParseStatus } from '../services/parse-status.service'
 import { getActiveSessionForUser, getCachedParseDialogs, getChatCooldown } from '../services/session.service'
 import {
   attachBullJobId,
   cacheParseDialogs,
   clearActiveJob,
   clearCancelledJob,
+  clearParseProgress,
   clearParseHistory,
   createParseJob,
   deactivateTelegramSessions,
@@ -23,7 +25,6 @@ import {
   markCancelledJob,
   markActiveJob,
   publishParseProgress,
-  setChatCooldown,
   updateParseJob,
 } from '../services/session.service'
 import {
@@ -42,7 +43,6 @@ const startSchema = z.object({
   chatIds: z.array(z.string().regex(/^-?\d+$/)).max(500).optional(),
 })
 
-const CHAT_REPARSE_COOLDOWN_SECONDS = 60 * 60
 const PARSE_DIALOGS_LIST_LIMIT = 300
 
 function mapParseDialogs(dialogs: TelegramDialog[]): ParseDialogsResponse {
@@ -89,14 +89,14 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       if (!isAlive) {
-        await updateParseJob(activeJob.id, {
-          status: 'failed',
+        await updateParseJob(activeJob.id, { 
+          status: 'failed', 
           errorMessage: 'Job stalled or disappeared from queue',
           completedAt: new Date()
         })
         await clearActiveJob(userId)
       } else {
-        return reply.status(409).send({
+        return reply.status(409).send({ 
           message: 'A parse job is already running',
           jobId: activeJob.id
         })
@@ -134,9 +134,9 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
         }
         if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
           await telegramPool.disconnectAuthorizedClient(userId)
-          return reply.status(409).send({
+          return reply.status(409).send({ 
             message: 'Telegram session is busy. If you have an active parse running, wait for it or cancel it.',
-            code: 'TELEGRAM_SESSION_BUSY'
+            code: 'TELEGRAM_SESSION_BUSY' 
           })
         }
         throw error
@@ -147,9 +147,9 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       const dialog = dialogs.find((item) => String(item.id) === chatIds[0] && !isSystemTelegramDialog(item))
       targetChat = dialog
         ? {
-          id: Number(dialog.id),
-          title: dialog.title ?? dialog.name ?? String(dialog.id),
-        }
+            id: Number(dialog.id),
+            title: dialog.title ?? dialog.name ?? String(dialog.id),
+          }
         : null
     } else if (!chatIds?.length) {
       try {
@@ -168,48 +168,76 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       chatId: targetChat?.id ?? null,
       chatName: targetChat?.title ?? null,
     })
-    await publishParseProgress(userId, {
-      current: 0,
-      total: chatIds?.length ?? 0,
-      chatId: targetChat ? String(targetChat.id) : null,
-      chatName: targetChat?.title ?? '',
-      status: 'pending',
-      message: chatIds?.length
-        ? `Queued ${chatIds.length} selected chat${chatIds.length === 1 ? '' : 's'}`
-        : 'Queued full parse',
-    })
 
-    const bullJob = await parseDialogsQueue.add('parse-dialogs', {
-      userId,
-      jobId,
-      chatIds,
-    })
+    let bullJobId: string | null = null
+    try {
+      await publishParseProgress(userId, {
+        current: 0,
+        total: chatIds?.length ?? 0,
+        chatId: targetChat ? String(targetChat.id) : null,
+        chatName: targetChat?.title ?? '',
+        status: 'pending',
+        message: chatIds?.length
+          ? `Queued ${chatIds.length} selected chat${chatIds.length === 1 ? '' : 's'}`
+          : 'Queued full parse',
+      })
 
-    await attachBullJobId(jobId, String(bullJob.id))
-    await markActiveJob(userId, jobId)
-    if (chatIds?.length === 1) {
-      await setChatCooldown(userId, chatIds[0], CHAT_REPARSE_COOLDOWN_SECONDS)
+      const bullJob = await parseDialogsQueue.add('parse-dialogs', {
+        userId,
+        jobId,
+        chatIds,
+      })
+      bullJobId = String(bullJob.id)
+
+      await attachBullJobId(jobId, bullJobId)
+      await markActiveJob(userId, jobId)
+      return { jobId }
+    } catch (error) {
+      if (bullJobId) {
+        const queuedJob = await parseDialogsQueue.getJob(bullJobId)
+        if (queuedJob) {
+          await queuedJob.remove().catch(() => undefined)
+        }
+      }
+
+      const errorMessage = error instanceof Error ? error.message : 'Could not queue parse job'
+      await updateParseJob(jobId, {
+        status: 'failed',
+        errorMessage,
+        completedAt: new Date(),
+      })
+      await clearActiveJob(userId)
+      await publishParseProgress(userId, {
+        type: 'failed',
+        chatId: targetChat ? String(targetChat.id) : null,
+        status: 'failed',
+        message: errorMessage,
+      })
+
+      return reply.status(503).send({ message: 'Could not queue parse job' })
     }
-    return { jobId }
   })
 
   fastify.get('/status', { preHandler: requireAuth }, async (request) => {
     const userId = request.authUserId!
     const active = await findCurrentParseJob(userId)
     const progress = await getParseProgress(userId)
+    const normalized = normalizeParseStatus({
+      activeJob: active
+        ? {
+            id: active.id,
+            status: active.status,
+            chatId: active.chatId ?? null,
+          }
+        : null,
+      cachedProgress: progress as Partial<ParseProgressDto> | null,
+    })
 
-    return {
-      jobId: active?.id ?? null,
-      status: active?.status ?? 'idle',
-      progress: progress ?? {
-        current: 0,
-        total: 0,
-        chatId: active?.chatId ? String(active.chatId) : null,
-        chatName: '',
-        status: active?.status ?? 'idle',
-        message: active?.status === 'pending' ? 'Queued parse job' : undefined,
-      },
+    if (!active && progress) {
+      await clearParseProgress(userId)
     }
+
+    return normalized
   })
 
   fastify.get('/dialogs', { preHandler: requireAuth }, async (request, reply) => {
@@ -322,6 +350,7 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       completedAt: new Date(),
     })
     await clearActiveJob(userId)
+    await clearParseProgress(userId)
     await publishParseProgress(userId, {
       type: 'cancelled',
       chatId: targetJob.chatId ? String(targetJob.chatId) : null,

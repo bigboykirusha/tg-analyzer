@@ -13,6 +13,7 @@ let bootstrapPromise: Promise<AuthSuccessResponse | null> | null = null
 export function useAuth() {
   const auth = useAuthStore()
   const config = useRuntimeConfig()
+  const parseProgress = useParseProgress()
 
   function getPersistedSession() {
     if (!auth.isAuthorized || !auth.user || !isTokenUsable(auth.accessToken)) {
@@ -123,6 +124,8 @@ export function useAuth() {
         method: 'POST',
       })
     } finally {
+      parseProgress.disconnect()
+      parseProgress.reset()
       auth.clear()
       await navigateTo('/login', { replace: true })
     }
@@ -132,6 +135,8 @@ export function useAuth() {
     await useApiFetch('/api/auth/terminate-telegram', {
       method: 'POST',
     })
+    parseProgress.disconnect()
+    parseProgress.reset()
     auth.setTelegramSessionActive(false)
   }
 
@@ -139,6 +144,8 @@ export function useAuth() {
     await useApiFetch('/api/auth/account', {
       method: 'DELETE',
     })
+    parseProgress.disconnect()
+    parseProgress.reset()
     auth.clear()
     await navigateTo('/login', { replace: true })
   }

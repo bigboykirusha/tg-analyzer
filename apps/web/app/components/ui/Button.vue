@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
+
 defineOptions({
   inheritAttrs: false,
 })
@@ -6,12 +8,14 @@ defineOptions({
 const props = withDefaults(defineProps<{
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
   size?: 'sm' | 'md' | 'lg'
+  icon?: Component | null
   loading?: boolean
   disabled?: boolean
   block?: boolean
 }>(), {
   variant: 'secondary',
   size: 'md',
+  icon: null,
   loading: false,
   disabled: false,
   block: false,
@@ -35,8 +39,9 @@ const classes = computed(() => [
     :class="classes"
     :disabled="disabled || loading"
   >
-    <span class="btn-icon" aria-hidden="true">
+    <span v-if="loading || icon || $slots.icon" class="btn-icon" aria-hidden="true">
       <span v-if="loading" class="btn-spinner" />
+      <component :is="icon" v-else-if="icon" />
       <slot v-else name="icon" />
     </span>
     <slot />
@@ -50,10 +55,15 @@ const classes = computed(() => [
   justify-content: center;
   gap: var(--space-2);
   font-family: var(--font-sans);
-  font-weight: 500;
-  border: 1px solid transparent;
+  font-weight: 600;
+  border: 1px solid var(--border-default);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
   max-width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -63,82 +73,82 @@ const classes = computed(() => [
   border-radius: var(--radius-md);
 }
 
+.ui-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 3px var(--bg-base);
+}
+
 .btn-block {
   width: 100%;
 }
 
 .btn-sm {
-  min-height: 36px;
+  min-height: 28px;
   padding: 0 var(--space-3);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .btn-md {
-  min-height: 40px;
+  min-height: 36px;
   padding: 0 var(--space-4);
   font-size: 14px;
 }
 
 .btn-lg {
   min-height: 44px;
-  padding: 0 var(--space-6);
-  font-size: 15px;
+  padding: 0 var(--space-5);
+  font-size: 16px;
 }
 
 .btn-primary {
   background: var(--accent);
-  color: var(--text-inverse);
+  border-color: transparent;
+  color: var(--accent-text);
   box-shadow: var(--shadow-accent);
 }
 
 .btn-primary:hover {
-  background: var(--accent-dim);
-}
-
-.btn-primary:active {
-  transform: scale(0.98);
+  background: var(--accent-hover);
+  transform: scale(0.99);
 }
 
 .btn-secondary {
-  background: transparent;
+  background: var(--bg-surface);
   border-color: var(--border-default);
   color: var(--text-primary);
 }
 
 .btn-secondary:hover {
-  background: var(--bg-overlay);
+  background: var(--bg-elevated);
   border-color: var(--border-strong);
 }
 
 .btn-ghost {
   background: transparent;
+  border-color: transparent;
   color: var(--text-secondary);
 }
 
 .btn-ghost:hover {
-  background: var(--bg-overlay);
+  background: var(--bg-elevated);
   color: var(--text-primary);
 }
 
 .btn-danger {
-  background: transparent;
-  border-color: var(--border-default);
-  color: var(--color-danger);
+  background: var(--danger-subtle);
+  border-color: rgba(248, 113, 113, 0.2);
+  color: var(--danger);
 }
 
 .btn-danger:hover {
-  background: var(--color-danger-muted);
-  border-color: var(--color-danger);
+  background: rgba(248, 113, 113, 0.16);
+  border-color: rgba(248, 113, 113, 0.3);
 }
 
 .ui-button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
-}
-
-.btn-icon:empty {
-  display: none;
 }
 
 .btn-icon {
@@ -150,12 +160,22 @@ const classes = computed(() => [
   flex: 0 0 auto;
 }
 
+.btn-sm .btn-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.btn-lg .btn-icon {
+  width: 18px;
+  height: 18px;
+}
+
 .btn-icon :deep(svg) {
-  width: 16px;
-  height: 16px;
+  width: 100%;
+  height: 100%;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -177,6 +197,12 @@ const classes = computed(() => [
 
 @media (max-width: 640px) {
   .ui-button {
+    min-height: 44px;
+  }
+
+  .btn-sm,
+  .btn-md,
+  .btn-lg {
     min-height: 44px;
   }
 }
