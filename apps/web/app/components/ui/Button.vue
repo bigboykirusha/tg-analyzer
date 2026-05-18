@@ -66,7 +66,7 @@ const classes = computed(() => [
     transform var(--transition-fast);
   max-width: 100%;
   min-width: 0;
-  min-height: 44px;
+  min-height: 34px;
   white-space: normal;
   text-align: center;
   line-height: 1.2;
@@ -89,15 +89,15 @@ const classes = computed(() => [
 }
 
 .btn-md {
-  min-height: 36px;
+  min-height: 34px;
   padding: 0 var(--space-4);
   font-size: 14px;
 }
 
 .btn-lg {
-  min-height: 44px;
-  padding: 0 var(--space-5);
-  font-size: 16px;
+  min-height: 34px;
+  padding: 0 var(--space-4);
+  font-size: 14px;
 }
 
 .btn-primary {
@@ -197,13 +197,13 @@ const classes = computed(() => [
 
 @media (max-width: 640px) {
   .ui-button {
-    min-height: 44px;
+    min-height: 34px;
   }
 
   .btn-sm,
   .btn-md,
   .btn-lg {
-    min-height: 44px;
+    min-height: 34px;
   }
 }
 </style>

@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
+import { CustomFile } from 'telegram/client/uploads'
 import type { ParseDialogDto, ParseDialogsResponse, ParseProgressDto } from '@tg-analyzer/shared'
 import { requireAuth } from '../middleware/auth.middleware'
 import { parseDialogsQueue } from '../queues/parse.queue'
@@ -41,6 +42,13 @@ import {
 
 const startSchema = z.object({
   chatIds: z.array(z.string().regex(/^-?\d+$/)).max(500).optional(),
+})
+
+const shareReportSchema = z.object({
+  chatId: z.string().regex(/^-?\d+$/),
+  fileName: z.string().min(1).max(200),
+  mimeType: z.string().min(1).max(100).default('application/pdf'),
+  base64: z.string().min(1).max(30_000_000),
 })
 
 const PARSE_DIALOGS_LIST_LIMIT = 300
@@ -317,6 +325,54 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
     reply.header('Content-Type', 'image/jpeg')
     reply.header('Cache-Control', 'private, max-age=3600')
     return reply.send(avatar)
+  })
+
+  fastify.post('/share-report', {
+    preHandler: requireAuth,
+    bodyLimit: 25 * 1024 * 1024,
+  }, async (request, reply) => {
+    const userId = request.authUserId!
+    const payload = shareReportSchema.parse(request.body ?? {})
+    const session = await getActiveSessionForUser(userId)
+    if (!session) {
+      return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
+    }
+
+    const fileBuffer = Buffer.from(payload.base64, 'base64')
+    if (!fileBuffer.length) {
+      return sendApiError(reply, 400, 'Invalid file payload')
+    }
+
+    try {
+      await withTelegramReconnectRetry(async () => {
+        const client = await telegramPool.connectAuthorizedClient(userId, session)
+        const upload = new CustomFile(payload.fileName, fileBuffer.length, '', fileBuffer)
+
+        await withFloodWaitRetry(() => client.sendFile(payload.chatId, {
+          file: upload,
+          caption: '',
+          forceDocument: true,
+          workers: 1,
+        }))
+      }, async () => {
+        await telegramPool.disconnectAuthorizedClient(userId)
+      })
+
+      return { success: true as const }
+    } catch (error) {
+      if (isTelegramSessionExpiredError(error)) {
+        await deactivateTelegramSessions(userId)
+        await telegramPool.disconnectAuthorizedClient(userId)
+        return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
+      }
+      if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
+        await telegramPool.disconnectAuthorizedClient(userId)
+        return sendApiError(reply, 409, 'Telegram is busy with another operation')
+      }
+      throw error
+    } finally {
+      await telegramPool.disconnectAuthorizedClient(userId)
+    }
   })
 
   fastify.delete('/cancel', { preHandler: requireAuth }, async (request, reply) => {

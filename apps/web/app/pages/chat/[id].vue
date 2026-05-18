@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import html2canvas from 'html2canvas'
-import { jsPDF } from 'jspdf'
 import type { MessageCompositionDto } from '@tg-analyzer/shared'
 import AppLayout from '../../components/AppLayout.vue'
 import ChatAvatar from '../../components/ChatAvatar.vue'
@@ -14,26 +12,25 @@ import HourlyChart from '../../components/stats/HourlyChart.vue'
 import ParseProgress from '../../components/stats/ParseProgress.vue'
 import WeekdayChart from '../../components/stats/WeekdayChart.vue'
 import WordsChart from '../../components/stats/WordsChart.vue'
-import Badge from '../../components/ui/Badge.vue'
 import Button from '../../components/ui/Button.vue'
+import ConfirmDialog from '../../components/ui/ConfirmDialog.vue'
 import EmptyState from '../../components/ui/EmptyState.vue'
 import MetricCard from '../../components/ui/MetricCard.vue'
 import PopoverMenu from '../../components/ui/PopoverMenu.vue'
 import SegmentedControl from '../../components/ui/SegmentedControl.vue'
 import Skeleton from '../../components/ui/Skeleton.vue'
 import { AlertCircle, BarChart2, Clock, MessageSquare } from '../../lib/icons'
-import { RotateCw, Share2 } from 'lucide-vue-next'
+import { ArrowLeft, RotateCw, Share2 } from 'lucide-vue-next'
 import type { ApiClientError } from '../../composables/useApi'
 import { useI18n } from '../../composables/useI18n'
 import { useParseProgress } from '../../composables/useParseProgress'
 import { useStats } from '../../composables/useStats'
 import { useToast } from '../../composables/useToast'
-import authMiddleware from '../../middleware/auth'
 import { useAuthStore } from '../../stores/auth'
 import { useStatsStore } from '../../stores/stats'
 
 definePageMeta({
-  middleware: [authMiddleware],
+  middleware: ['auth'],
 })
 
 const route = useRoute()
@@ -41,13 +38,15 @@ const auth = useAuthStore()
 const { fetchChat } = useStats()
 const { progress, bootstrapped, bootstrapFromServer, connect, disconnect } = useParseProgress()
 const stats = useStatsStore()
-const { t, formatNumber, formatDate: formatLocaleDate, formatRelative, intlLocale } = useI18n()
+const { t, locale, formatNumber, formatDate: formatLocaleDate, formatRelative, intlLocale } = useI18n()
 const toast = useToast()
 
 const ready = ref(false)
 const loadError = ref('')
 const reparsing = ref(false)
 const shareOpen = ref(false)
+const telegramSending = ref(false)
+const reparseConfirmOpen = ref(false)
 const activeView = ref<'overview' | 'rhythm' | 'words' | 'timeline'>('overview')
 const isMobileLayout = ref(false)
 const expandedChart = ref<null | 'balance' | 'composition' | 'heatmap' | 'weekday' | 'hourly' | 'daily' | 'timeline'>(null)
@@ -175,11 +174,71 @@ const reportViews = computed(() => [
   { value: 'words' as const, label: t('chat.words') },
   { value: 'timeline' as const, label: t('chat.timeline') },
 ])
+const reparseConfirmCopy = computed(() => locale.value === 'ru'
+  ? {
+      title: 'Обновить отчет?',
+      description: 'Запустим новый перепарсинг этого чата и заменим текущий отчет свежей аналитикой после завершения.',
+      confirmLabel: 'Обновить',
+    }
+  : {
+      title: 'Refresh this report?',
+      description: 'This will start a new parse for this chat and replace the current report with fresh analytics when it finishes.',
+      confirmLabel: 'Refresh',
+    })
 const showAllSections = computed(() => isMobileLayout.value)
 const showOverview = computed(() => showAllSections.value || activeView.value === 'overview')
 const showRhythm = computed(() => showAllSections.value || activeView.value === 'rhythm')
 const showWords = computed(() => showAllSections.value || activeView.value === 'words')
 const showTimeline = computed(() => showAllSections.value || activeView.value === 'timeline')
+const leadingWord = computed(() => topWords.value.mine[0]?.value || topWords.value.theirs[0]?.value || t('common.na'))
+const reportDateRange = computed(() => formatDateRange(chat.value?.firstMessageAt ?? null, chat.value?.lastMessageAt ?? null))
+const reportHeaderHighlights = computed(() => [
+  {
+    key: 'messages',
+    label: t('chat.messages'),
+    value: formatNumber(totalMessages.value),
+  },
+  {
+    key: 'balance',
+    label: t('chat.balance'),
+    value: `${sentShare.value}%`,
+  },
+  {
+    key: 'peak-hour',
+    label: t('chat.peakHour'),
+    value: peakHour.value,
+  },
+])
+const reportPeekItems = computed(() => [
+  {
+    key: 'overview',
+    view: 'overview' as const,
+    label: t('chat.balance'),
+    value: `${sentShare.value}%`,
+    detail: balanceLeadLabel.value,
+  },
+  {
+    key: 'rhythm',
+    view: 'rhythm' as const,
+    label: t('chat.peakHour'),
+    value: peakHour.value,
+    detail: busiestWeekdayLabel.value,
+  },
+  {
+    key: 'words',
+    view: 'words' as const,
+    label: t('chat.popularWords'),
+    value: leadingWord.value,
+    detail: t('chat.words'),
+  },
+  {
+    key: 'timeline',
+    view: 'timeline' as const,
+    label: t('chat.trend'),
+    value: trendLabel.value,
+    detail: mostActiveMonthLabel.value,
+  },
+])
 
 const overviewFacts = computed(() => {
   const items = [
@@ -504,49 +563,11 @@ const insightItems = computed(() => {
     return item
   })
 })
-const insightToneLabel = (tone: 'positive' | 'neutral' | 'warning') => {
-  const labels = {
-    positive: t('chat.insightPositive'),
-    neutral: t('chat.insightNeutral'),
-    warning: t('chat.insightWarning'),
-  }
-
-  return labels[tone]
-}
-const insightToneVariant = (tone: 'positive' | 'neutral' | 'warning') => {
-  const variants = {
-    positive: 'success',
-    neutral: 'accent',
-    warning: 'warning',
-  } as const
-
-  return variants[tone]
-}
-const canSharePdfFile = computed(() => {
-  if (!import.meta.client || typeof navigator === 'undefined' || typeof navigator.canShare !== 'function') {
-    return false
-  }
-
-  try {
-    return navigator.canShare({
-      files: [new File(['tg analyzer'], 'report.pdf', { type: 'application/pdf' })],
-    })
-  } catch {
-    return false
-  }
-})
 const shareActions = computed(() => {
   const actions: { key: string; label: string; action: () => void | Promise<void> }[] = [
+    { key: 'telegram-direct', label: t('chat.sendTelegramDirect'), action: sendReportPdfToTelegramChat },
     { key: 'download-pdf', label: t('chat.downloadPdf'), action: downloadReportPdf },
   ]
-
-  if (canSharePdfFile.value) {
-    actions.unshift(
-      { key: 'telegram', label: 'Telegram', action: () => sharePdfViaChooser('Telegram') },
-      { key: 'whatsapp', label: 'WhatsApp', action: () => sharePdfViaChooser('WhatsApp') },
-      { key: 'other', label: t('chat.shareOtherApps'), action: () => sharePdfViaChooser() },
-    )
-  }
 
   return actions
 })
@@ -592,6 +613,11 @@ async function reparseChat() {
   }
 }
 
+async function confirmReparseChat() {
+  reparseConfirmOpen.value = false
+  await reparseChat()
+}
+
 function buildSafeExportName() {
   return ((chat.value?.chatName || routeChatId.value)
     .replace(/[<>:"/\\|?*\u0000-\u001F]/g, ' ')
@@ -625,6 +651,11 @@ async function createReportPdfFile() {
   if (!import.meta.client) {
     throw new Error('Client-only action')
   }
+
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+    import('html2canvas'),
+    import('jspdf'),
+  ])
 
   expandedChart.value = null
   shareOpen.value = false
@@ -744,25 +775,48 @@ async function downloadReportPdf() {
   }
 }
 
-async function sharePdfViaChooser(targetApp?: string) {
-  if (!import.meta.client || !navigator.share || !canSharePdfFile.value) {
-    await downloadReportPdf()
+async function fileToBase64(file: File) {
+  const buffer = await file.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  const chunkSize = 0x8000
+  let binary = ''
+
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    const chunk = bytes.subarray(index, index + chunkSize)
+    binary += String.fromCharCode(...chunk)
+  }
+
+  return btoa(binary)
+}
+
+async function sendReportPdfToTelegramChat() {
+  if (auth.user?.telegramSessionActive === false) {
+    toast.warning(t('dashboard.sessionInactive'))
     return
   }
 
+  telegramSending.value = true
+
   try {
     const file = await createReportPdfFile()
-    await navigator.share({
-      title: `${chat.value?.chatName || routeChatId.value} ${t('common.report')}`,
-      files: [file],
-    })
-    toast.success(targetApp ? t('chat.pickAppReady', { app: targetApp }) : t('chat.shared'))
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return
-    }
+    const base64 = await fileToBase64(file)
 
-    toast.error(error instanceof Error ? error.message : t('chat.shared'))
+    await useApiFetch('/api/parse/share-report', {
+      method: 'POST',
+      body: {
+        chatId: routeChatId.value,
+        fileName: file.name,
+        mimeType: file.type,
+        base64,
+      },
+    })
+
+    shareOpen.value = false
+    toast.success(t('chat.sentToTelegram'))
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('chat.sentToTelegram'))
+  } finally {
+    telegramSending.value = false
   }
 }
 
@@ -869,6 +923,21 @@ function openChart(name: typeof expandedChart.value) {
   expandedChart.value = name
 }
 
+async function focusReportSection(view: 'overview' | 'rhythm' | 'words' | 'timeline') {
+  activeView.value = view
+  await nextTick()
+
+  if (!import.meta.client) {
+    return
+  }
+
+  const target = document.getElementById(`report-section-${view}`)
+  target?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+  })
+}
+
 function closeExpandedChart() {
   expandedChart.value = null
 }
@@ -932,14 +1001,88 @@ onBeforeUnmount(() => {
   <AppLayout>
     <Container size="default">
     <div v-if="!ready" class="page-stack">
-      <section class="card">
-        <Skeleton height="220px" radius="var(--radius-lg)" />
+      <section class="card section-card">
+        <div class="stack-md">
+          <div class="page-toolbar page-toolbar-skeleton no-print">
+            <div class="toolbar-skeleton-slot">
+              <Skeleton height="34px" width="34px" radius="var(--radius-md)" />
+            </div>
+            <div class="toolbar-actions">
+              <div class="toolbar-skeleton-slot">
+                <Skeleton height="34px" width="34px" radius="var(--radius-md)" />
+              </div>
+              <div class="toolbar-skeleton-slot">
+                <Skeleton height="34px" width="34px" radius="var(--radius-md)" />
+              </div>
+            </div>
+          </div>
+          <div class="report-heading">
+            <div class="report-identity-row">
+              <div class="report-identity-main">
+                <div class="report-avatar-skeleton">
+                  <Skeleton height="48px" width="48px" radius="999px" />
+                </div>
+                <div class="report-title-block">
+                  <Skeleton height="28px" width="56%" radius="var(--radius-md)" />
+                  <Skeleton height="14px" width="42%" radius="var(--radius-sm)" />
+                </div>
+              </div>
+              <div class="report-highlight-row">
+                <div v-for="item in 3" :key="`heading-highlight-${item}`" class="report-highlight-skeleton">
+                  <Skeleton height="58px" radius="var(--radius-sm)" />
+                </div>
+              </div>
+            </div>
+            <div class="report-meta-list report-skeleton-meta">
+              <div v-for="item in 3" :key="`heading-meta-${item}`" class="report-meta-skeleton">
+                <Skeleton height="52px" radius="var(--radius-sm)" />
+              </div>
+            </div>
+          </div>
+          <div class="grid-kpi chat-kpi-grid">
+            <Skeleton v-for="item in 4" :key="item" height="112px" radius="var(--radius-md)" />
+          </div>
+          <div class="report-peek-grid no-print">
+            <Skeleton v-for="item in 4" :key="`peek-${item}`" height="92px" radius="var(--radius-md)" />
+          </div>
+        </div>
       </section>
-      <div class="grid-kpi">
-        <Skeleton v-for="item in 4" :key="item" height="120px" radius="var(--radius-md)" />
+      <div v-if="!showAllSections" class="tabs-scroll no-print">
+        <Skeleton height="48px" radius="var(--radius-md)" />
       </div>
-      <section class="card">
-        <Skeleton height="420px" radius="var(--radius-lg)" />
+      <section class="report-grid">
+        <article class="card section-card">
+          <div class="stack-md">
+            <Skeleton height="20px" width="96px" />
+            <Skeleton height="28px" width="220px" />
+            <Skeleton height="14px" width="72%" />
+            <Skeleton height="220px" radius="var(--radius-md)" />
+            <div class="balance-summary">
+              <Skeleton v-for="item in 2" :key="`balance-${item}`" height="86px" radius="var(--radius-md)" />
+            </div>
+          </div>
+        </article>
+        <article class="card section-card">
+          <div class="stack-md">
+            <Skeleton height="20px" width="84px" />
+            <Skeleton height="28px" width="200px" />
+            <Skeleton height="14px" width="68%" />
+            <div class="facts-grid">
+              <Skeleton v-for="item in 4" :key="`fact-${item}`" height="112px" radius="var(--radius-md)" />
+            </div>
+          </div>
+        </article>
+        <article class="card section-card report-span">
+          <div class="stack-md">
+            <Skeleton height="20px" width="120px" />
+            <Skeleton height="28px" width="280px" />
+            <Skeleton height="14px" width="62%" />
+            <Skeleton height="88px" width="140px" radius="var(--radius-md)" />
+            <div class="facts-grid">
+              <Skeleton v-for="item in 4" :key="`relationship-${item}`" height="108px" radius="var(--radius-md)" />
+            </div>
+          </div>
+        </article>
       </section>
     </div>
 
@@ -970,13 +1113,8 @@ onBeforeUnmount(() => {
 
       <header class="report-header">
         <div class="page-toolbar no-print">
-          <Button variant="ghost" class="toolbar-back" @click="navigateTo('/dashboard')">
-            <template #icon>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M15 18 9 12l6-6" />
-              </svg>
-            </template>
-            {{ t('common.back') }}
+          <Button variant="ghost" class="toolbar-back" :icon="ArrowLeft" @click="navigateTo('/dashboard')">
+            <span class="toolbar-back-label">{{ t('common.back') }}</span>
           </Button>
 
           <div class="toolbar-actions">
@@ -989,7 +1127,7 @@ onBeforeUnmount(() => {
               :aria-label="t('chat.reparse')"
               :disabled="auth.user?.telegramSessionActive === false || parseActiveForCurrentChat"
               :title="auth.user?.telegramSessionActive === false ? t('dashboard.sessionInactive') : t('chat.reparse')"
-              @click="reparseChat"
+              @click="reparseConfirmOpen = true"
             >
               <span class="screen-reader">{{ reparsing ? t('chat.starting') : t('chat.reparse') }}</span>
             </Button>
@@ -1029,25 +1167,34 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="report-heading">
-          <ChatAvatar :chat-id="chat?.tgChatId || routeChatId" :title="chat?.chatName || chat?.tgChatId" size="lg" />
+          <div class="report-identity-row">
+            <div class="report-identity-main">
+              <ChatAvatar :chat-id="chat?.tgChatId || routeChatId" :title="chat?.chatName || chat?.tgChatId" size="lg" />
 
-          <div class="report-title-block">
-            <div class="title-row">
-              <h1 class="text-h1 report-title">{{ chat?.chatName || chat?.tgChatId }}</h1>
+              <div class="report-title-block">
+                <h1 class="text-h1 report-title">{{ chat?.chatName || chat?.tgChatId }}</h1>
+                <p class="text-body-sm report-subtitle">{{ reportDateRange }}</p>
+              </div>
             </div>
 
-            <div class="report-meta text-body-sm">
-              <span>{{ t('chat.firstMsg') }}: <span class="mono-value">{{ formatDate(chat?.firstMessageAt ?? null)
-                  }}</span></span>
-              <span>{{ t('chat.last') }}: <span class="mono-value">{{ formatDate(chat?.lastMessageAt ?? null)
-                  }}</span></span>
+            <div class="report-highlight-row">
+              <div v-for="item in reportHeaderHighlights" :key="item.key" class="report-highlight-item">
+                <span class="text-label">{{ item.label }}</span>
+                <strong class="mono-value report-highlight-value">{{ item.value }}</strong>
+              </div>
             </div>
+          </div>
 
-            <div class="report-meta text-body-sm">
-              <span>{{ t('chat.lastAnalyzed') }}: <span class="mono-value">{{ formatRelative(chat?.parsedAt ?? null)
-                  }}</span></span>
-              <span v-if="reportStale" class="stale-indicator mono-value">{{ t('chat.refreshing') }}</span>
+          <div class="report-meta-list text-body-sm">
+            <div class="report-meta-row">
+              <span class="report-meta-label">{{ t('chat.firstMsg') }}:</span>
+              <span class="mono-value report-meta-value">{{ formatDate(chat?.firstMessageAt ?? null) }}</span>
             </div>
+            <div class="report-meta-row">
+              <span class="report-meta-label">{{ t('chat.last') }}:</span>
+              <span class="mono-value report-meta-value">{{ formatDate(chat?.lastMessageAt ?? null) }}</span>
+            </div>
+            <span v-if="reportStale" class="stale-indicator mono-value">{{ t('chat.refreshing') }}</span>
           </div>
         </div>
 
@@ -1057,21 +1204,32 @@ onBeforeUnmount(() => {
           <MetricCard :label="t('chat.wordsPerTextMsg')" :value="overallWordsPerTextMessage" />
           <MetricCard :label="t('chat.peakHour')" :value="peakHour" :sub="t('chat.peakHourSub')" />
         </div>
+
+        <div class="report-peek-grid no-print">
+          <button
+            v-for="item in reportPeekItems"
+            :key="item.key"
+            type="button"
+            class="report-peek-card"
+            @click="focusReportSection(item.view)"
+          >
+            <span class="text-label">{{ item.label }}</span>
+            <strong class="mono-value report-peek-value">{{ item.value }}</strong>
+            <span class="text-caption report-peek-detail">{{ item.detail }}</span>
+          </button>
+        </div>
       </header>
 
       <div v-if="!showAllSections" class="tabs-scroll no-print">
         <SegmentedControl v-model="activeView" :options="reportViews" />
       </div>
 
-      <section v-if="showOverview" class="report-grid">
+      <section v-if="showOverview" id="report-section-overview" class="report-grid">
         <article class="card section-card chart-card" @click="openChart('balance')">
-          <div class="section-header">
-            <div class="section-copy">
-              <span class="text-label">{{ t('chat.balance') }}</span>
-              <h2 class="text-h2">{{ t('chat.sentReceived') }}</h2>
-              <p class="text-body-sm section-text">{{ t('chat.balanceText') }}</p>
-            </div>
-            <Badge variant="accent" class="balance-badge">{{ sentShare }}% / {{ receivedShare }}%</Badge>
+          <div class="section-copy">
+            <span class="text-label">{{ t('chat.balance') }}</span>
+            <h2 class="text-h2">{{ t('chat.sentReceived') }}</h2>
+            <p class="text-body-sm section-text">{{ t('chat.balanceText') }}</p>
           </div>
 
           <BalanceChart :sent="chat?.sentMessages ?? 0" :received="chat?.receivedMessages ?? 0" />
@@ -1111,16 +1269,10 @@ onBeforeUnmount(() => {
         </article>
 
         <article class="card section-card report-span">
-          <div class="section-header">
-            <div class="section-copy">
-              <span class="text-label">{{ t('chat.relationship') }}</span>
-              <h2 class="text-h2">{{ t('chat.relationshipTitle') }}</h2>
-              <p class="text-body-sm section-text">{{ t('chat.relationshipText') }}</p>
-            </div>
-            <Badge v-if="relationshipScore"
-              :variant="relationshipScore.score < 55 ? 'danger' : relationshipScore.score < 75 ? 'warning' : 'accent'">
-              {{ relationshipLabel }}
-            </Badge>
+          <div class="section-copy">
+            <span class="text-label">{{ t('chat.relationship') }}</span>
+            <h2 class="text-h2">{{ t('chat.relationshipTitle') }}</h2>
+            <p class="text-body-sm section-text">{{ t('chat.relationshipText') }}</p>
           </div>
 
           <template v-if="relationshipScore">
@@ -1153,7 +1305,7 @@ onBeforeUnmount(() => {
         </article>
       </section>
 
-      <section v-if="showRhythm" class="page-stack">
+      <section v-if="showRhythm" id="report-section-rhythm" class="page-stack">
         <article class="card section-card chart-card" @click="openChart('heatmap')">
           <div class="section-copy">
             <span class="text-label">{{ t('chat.heatmap') }}</span>
@@ -1197,7 +1349,7 @@ onBeforeUnmount(() => {
         </article>
       </section>
 
-      <section v-if="showWords" class="page-stack">
+      <section v-if="showWords" id="report-section-words" class="page-stack">
         <EmptyState v-if="!hasWords && !hasEmoji" :icon="MessageSquare" :title="t('chat.noTextTitle')"
           :description="t('chat.noTextDescription')" />
 
@@ -1265,16 +1417,12 @@ onBeforeUnmount(() => {
         </template>
       </section>
 
-      <section v-if="showTimeline" class="page-stack">
+      <section v-if="showTimeline" id="report-section-timeline" class="page-stack">
         <article class="card section-card chart-card" @click="openChart('timeline')">
-          <div class="section-header">
-            <div class="section-copy">
-              <span class="text-label">{{ t('chat.timeline') }}</span>
-              <h2 class="text-h2">{{ t('chat.dailyArc') }}</h2>
-              <p class="text-body-sm section-text">{{ t('chat.dailyArcText') }}</p>
-            </div>
-
-            <Badge variant="accent">{{ trendLabel }}</Badge>
+          <div class="section-copy">
+            <span class="text-label">{{ t('chat.timeline') }}</span>
+            <h2 class="text-h2">{{ t('chat.dailyArc') }}</h2>
+            <p class="text-body-sm section-text">{{ t('chat.dailyArcText') }}</p>
           </div>
 
           <DailyVolumeChart :items="continuousDailyActivity" />
@@ -1365,7 +1513,6 @@ onBeforeUnmount(() => {
             <div v-for="item in insightItems" :key="item.key" class="insight-card">
               <div class="insight-head">
                 <strong>{{ item.title }}</strong>
-                <Badge :variant="insightToneVariant(item.tone)">{{ insightToneLabel(item.tone) }}</Badge>
               </div>
               <p class="text-body-sm section-text">{{ item.description }}</p>
             </div>
@@ -1422,6 +1569,17 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </Transition>
+
+      <ConfirmDialog
+        :open="reparseConfirmOpen"
+        :title="reparseConfirmCopy.title"
+        :description="reparseConfirmCopy.description"
+        :confirm-label="reparseConfirmCopy.confirmLabel"
+        :cancel-label="t('common.cancel')"
+        :loading="reparsing"
+        @close="reparseConfirmOpen = false"
+        @confirm="confirmReparseChat"
+      />
     </div>
     </Container>
   </AppLayout>
@@ -1455,6 +1613,37 @@ onBeforeUnmount(() => {
 .pdf-export-clone .card,
 .pdf-export-clone .report-header {
   box-shadow: none;
+}
+
+.pdf-export-clone .report-header,
+.pdf-export-clone .section-card,
+.pdf-export-clone .report-identity-row,
+.pdf-export-clone .report-meta-list,
+.pdf-export-clone .report-meta-row,
+.pdf-export-clone .report-highlight-item,
+.pdf-export-clone .report-peek-card,
+.pdf-export-clone .fact-card,
+.pdf-export-clone .gap-card,
+.pdf-export-clone .insight-card,
+.pdf-export-clone .balance-summary-row,
+.pdf-export-clone .word-chip,
+.pdf-export-clone .info-banner,
+.pdf-export-clone .info-banner-tone {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #d9d9d9 !important;
+  color: #111111 !important;
+}
+
+.pdf-export-clone .report-meta-label,
+.pdf-export-clone .text-label,
+.pdf-export-clone .text-caption,
+.pdf-export-clone .section-text,
+.pdf-export-clone .balance-summary-label,
+.pdf-export-clone .balance-summary-note,
+.pdf-export-clone .report-peek-detail,
+.pdf-export-clone .report-subtitle {
+  color: #5f5f5f !important;
 }
 
 .info-banner {
@@ -1505,8 +1694,21 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
 }
 
+.toolbar-back-label {
+  display: inline-flex;
+}
+
 .toolbar-actions>* {
   flex: 0 0 auto;
+}
+
+.toolbar-skeleton-slot {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.page-toolbar-skeleton {
+  margin-bottom: 16px;
 }
 
 .toolbar-actions :deep(.popover-root) {
@@ -1514,36 +1716,73 @@ onBeforeUnmount(() => {
 }
 
 .toolbar-actions :deep(.ui-button) {
+  min-height: 34px;
+  height: 34px;
   white-space: nowrap;
 }
 
 .toolbar-icon-button {
-  width: 44px;
-  min-width: 44px;
+  width: 34px;
+  min-width: 34px;
   padding-inline: 0;
 }
 
 .report-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   padding: var(--space-4);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
   backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-sm);
   min-width: 0;
 }
 
 .report-heading {
-  display: flex;
-  gap: var(--space-4);
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.9fr);
+  gap: var(--space-3);
   min-width: 0;
+}
+
+.report-identity-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent-subtle) 92%, transparent), transparent 58%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 94%, transparent), color-mix(in srgb, var(--bg-surface) 96%, transparent));
+}
+
+.report-identity-main {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.report-identity-main > :deep(.avatar-shell) {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  font-size: 16px;
+}
+
+.chat-kpi-grid {
+  gap: var(--space-3);
+}
+
+#report-section-overview,
+#report-section-rhythm,
+#report-section-words,
+#report-section-timeline {
+  scroll-margin-top: calc(var(--space-6) + 8px);
 }
 
 .report-title-block,
@@ -1554,39 +1793,175 @@ onBeforeUnmount(() => {
 }
 
 .report-title-block {
-  gap: var(--space-2);
+  gap: var(--space-3);
   min-width: 0;
+}
+
+.report-skeleton-meta {
+  width: 100%;
+}
+
+.report-avatar-skeleton,
+.report-highlight-skeleton,
+.report-meta-skeleton {
+  width: 100%;
 }
 
 .section-card {
   gap: var(--space-5);
   min-width: 0;
+  padding: var(--space-5);
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  background: color-mix(in srgb, var(--bg-surface) 96%, transparent);
 }
 
 .section-copy {
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .report-title {
   overflow: hidden;
   text-overflow: ellipsis;
   overflow-wrap: anywhere;
+  font-size: clamp(24px, 2.4vw, 30px);
+  line-height: 1.08;
 }
 
-.report-meta,
+.report-subtitle {
+  max-width: 56ch;
+  color: var(--text-secondary);
+}
+
+.report-highlight-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.report-highlight-item {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-surface) 84%, transparent);
+}
+
+.report-highlight-value {
+  font-size: 16px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.report-meta-list,
 .section-text {
   color: var(--text-secondary);
 }
 
+.report-meta-list {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+  padding: var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 94%, transparent), color-mix(in srgb, var(--bg-surface) 98%, transparent));
+}
+
+.report-meta-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  row-gap: 4px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-surface) 80%, transparent);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.report-meta-label {
+  color: var(--text-tertiary);
+}
+
+.report-meta-value {
+  min-width: 0;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
 .stale-indicator {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border: 1px solid color-mix(in srgb, var(--info) 32%, var(--border-subtle));
+  border-radius: var(--radius-sm);
+  background: var(--info-subtle);
   color: var(--color-info);
+  font-size: 12px;
 }
 
 .report-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-6);
+  gap: var(--space-5);
   min-width: 0;
+}
+
+.report-peek-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.report-peek-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.report-peek-card:hover {
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--accent-subtle) 48%, var(--bg-elevated));
+}
+
+.report-peek-card:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-border);
+}
+
+.report-peek-card:active {
+  transform: translateY(1px);
+}
+
+.report-peek-value {
+  font-size: 18px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.report-peek-detail {
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .report-span {
@@ -1608,22 +1983,33 @@ onBeforeUnmount(() => {
   padding: var(--space-4);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+
+.fact-card .text-label,
+.gap-card .text-label,
+.insight-card .text-label {
+  color: var(--text-tertiary);
+}
+
+.insight-card {
+  gap: var(--space-3);
 }
 
 .fact-card-success {
   border-color: color-mix(in srgb, var(--success) 45%, var(--border-default));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--success-subtle) 75%, var(--bg-surface)) 0%, var(--bg-surface) 100%);
+  background: color-mix(in srgb, var(--success-subtle) 72%, var(--bg-elevated));
 }
 
 .fact-card-warning {
   border-color: color-mix(in srgb, var(--warning) 45%, var(--border-default));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--warning-subtle) 75%, var(--bg-surface)) 0%, var(--bg-surface) 100%);
+  background: color-mix(in srgb, var(--warning-subtle) 72%, var(--bg-elevated));
 }
 
 .fact-card-danger {
   border-color: color-mix(in srgb, var(--danger) 45%, var(--border-default));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--danger-subtle) 75%, var(--bg-surface)) 0%, var(--bg-surface) 100%);
+  background: color-mix(in srgb, var(--danger-subtle) 72%, var(--bg-elevated));
 }
 
 .fact-value,
@@ -1631,6 +2017,7 @@ onBeforeUnmount(() => {
   font-size: 20px;
   color: var(--text-primary);
   overflow-wrap: anywhere;
+  line-height: 1.15;
 }
 
 .metric-explainer {
@@ -1667,7 +2054,11 @@ onBeforeUnmount(() => {
   padding: var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
+}
+
+.balance-summary-row strong {
+  font-size: 20px;
 }
 
 .balance-summary-label {
@@ -1687,12 +2078,9 @@ onBeforeUnmount(() => {
   color: var(--text-secondary);
 }
 
-.balance-badge {
-  font-family: var(--font-mono);
-}
-
 .tabs-scroll {
   overflow-x: auto;
+  width: 100%;
   padding-bottom: var(--space-1);
   scrollbar-width: none;
 }
@@ -1775,9 +2163,9 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
   color: var(--text-primary);
   min-width: 0;
   overflow-wrap: anywhere;
@@ -1808,6 +2196,12 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
+}
+
+.insight-head strong {
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--text-primary);
 }
 
 .chart-overlay {
@@ -1904,12 +2298,15 @@ onBeforeUnmount(() => {
   .report-grid {
     grid-template-columns: 1fr;
   }
+
+  .report-peek-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
 
   .page-toolbar,
-  .report-heading,
   .title-row,
   .section-header {
     flex-direction: column;
@@ -1920,7 +2317,7 @@ onBeforeUnmount(() => {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-2);
+    gap: var(--space-3);
   }
 
   .toolbar-actions {
@@ -1929,18 +2326,76 @@ onBeforeUnmount(() => {
     justify-content: flex-end;
     flex-wrap: nowrap;
     margin-left: auto;
+    gap: var(--space-1);
   }
 
   .report-header {
-    position: static;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .report-heading {
+    grid-template-columns: 1fr;
     gap: var(--space-3);
+  }
+
+  .report-title {
+    font-size: 22px;
+  }
+
+  .section-card {
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+
+  .facts-grid {
+    gap: var(--space-2);
+  }
+
+  .fact-card,
+  .gap-card,
+  .insight-card {
     padding: var(--space-3);
   }
 
-  .report-heading > :deep(.avatar-shell) {
-    width: 48px;
-    height: 48px;
-    font-size: 14px;
+  .report-meta {
+    gap: 6px;
+  }
+
+  .tabs-scroll {
+    margin-inline: calc(var(--space-3) * -1);
+    padding-inline: var(--space-3);
+  }
+
+  .report-identity-row {
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .report-identity-main {
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-2);
+  }
+
+  .report-identity-main > :deep(.avatar-shell) {
+    width: 42px;
+    height: 42px;
+    font-size: 13px;
+    flex: 0 0 42px;
+  }
+
+  .report-highlight-row {
+    grid-template-columns: 1fr;
+  }
+
+  .report-meta-list {
+    padding: var(--space-3);
+  }
+
+  .report-title-block {
+    flex: 1;
+    min-width: 0;
   }
 
   .facts-grid,
@@ -1950,6 +2405,18 @@ onBeforeUnmount(() => {
 
   .balance-summary {
     grid-template-columns: 1fr;
+  }
+
+  .chat-kpi-grid {
+    gap: var(--space-2);
+  }
+
+  .report-peek-grid {
+    gap: var(--space-2);
+  }
+
+  .report-peek-card {
+    padding: var(--space-3);
   }
 
   .chart-card {
@@ -1986,24 +2453,82 @@ onBeforeUnmount(() => {
   }
 
   .page-toolbar {
-    align-items: flex-start;
+    align-items: center;
+    gap: var(--space-2);
   }
 
   .toolbar-actions {
     max-width: calc(100% - 84px);
-    gap: var(--space-2);
+    gap: 6px;
   }
 
   .toolbar-actions :deep(.ui-button) {
+    min-height: 34px;
+    height: 34px;
     min-width: 0;
     padding-inline: var(--space-3);
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .toolbar-icon-button {
-    width: 44px;
-    min-width: 44px;
+    width: 34px;
+    min-width: 34px;
     padding-inline: 0;
+  }
+
+  .toolbar-back {
+    width: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    height: 34px;
+    padding-inline: 0;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-elevated);
+  }
+
+  .toolbar-back-label {
+    display: none;
+  }
+
+  .report-title {
+    font-size: 20px;
+  }
+
+  .report-heading {
+    gap: var(--space-2);
+  }
+
+  .report-title-block {
+    gap: 6px;
+  }
+
+  .report-meta-list {
+    gap: 6px;
+  }
+
+  .report-meta-row {
+    grid-template-columns: 1fr;
+    row-gap: 1px;
+  }
+
+  .stale-indicator {
+    min-height: 24px;
+    padding-inline: 10px;
+    font-size: 12px;
+  }
+
+  .section-copy .text-h2 {
+    font-size: 20px;
+  }
+
+  .section-text {
+    overflow-wrap: anywhere;
+  }
+
+  .fact-value,
+  .gap-value {
+    font-size: 18px;
   }
 
   .share-sheet-head {
@@ -2020,8 +2545,8 @@ onBeforeUnmount(() => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    width: 34px;
+    height: 34px;
     flex: 0 0 auto;
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
@@ -2047,7 +2572,11 @@ onBeforeUnmount(() => {
 
 @media (max-width: 640px) {
   .chat-kpi-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+  }
+
+  .report-peek-grid {
+    grid-template-columns: 1fr;
   }
 
   .timeline-kpi-grid {

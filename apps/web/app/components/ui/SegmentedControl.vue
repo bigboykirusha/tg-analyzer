@@ -35,7 +35,8 @@ const emit = defineEmits<{
 
 <style scoped>
 .segmented {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   max-width: 100%;
   gap: var(--space-1);
   overflow-x: auto;
@@ -51,6 +52,7 @@ const emit = defineEmits<{
 }
 
 .segment {
+  flex: 1 1 0;
   min-height: 38px;
   padding: 0 var(--space-4);
   border: 0;
@@ -95,8 +97,8 @@ const emit = defineEmits<{
   }
 
   .segment {
-    min-height: 44px;
     flex: 0 0 auto;
+    min-height: 44px;
   }
 }
 </style>

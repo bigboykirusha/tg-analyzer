@@ -13,6 +13,7 @@ import { statsRoutes } from './routes/stats'
 import { wsRoutes } from './routes/ws'
 import { isApiError } from './services/api-error.service'
 import { redis } from './services/redis.service'
+import { hasRecentWorkerHeartbeat } from './services/runtime-status.service'
 
 export async function buildServer() {
   const app = Fastify({
@@ -48,7 +49,32 @@ export async function buildServer() {
   })
   await app.register(websocket)
 
-  app.get('/health', async () => ({ ok: true }))
+  app.get('/health', async () => ({ status: 'ok' }))
+  app.get('/ready', async (_request, reply) => {
+    const [dbResult, redisResult, workerResult] = await Promise.allSettled([
+      pool.query('select 1'),
+      redis.ping(),
+      hasRecentWorkerHeartbeat(),
+    ])
+
+    const postgresReady = dbResult.status === 'fulfilled'
+    const redisReady = redisResult.status === 'fulfilled' && redisResult.value === 'PONG'
+    const workerReady = workerResult.status === 'fulfilled' && workerResult.value === true
+    const ready = postgresReady && redisReady && workerReady
+
+    if (!ready) {
+      reply.status(503)
+    }
+
+    return {
+      status: ready ? 'ok' : 'degraded',
+      checks: {
+        postgres: postgresReady ? 'ok' : 'error',
+        redis: redisReady ? 'ok' : 'error',
+        worker: workerReady ? 'ok' : 'error',
+      },
+    }
+  })
   app.setErrorHandler((rawError, request, reply) => {
     const error = rawError as Error & { statusCode?: number; code?: string }
     const statusCode = error.statusCode && error.statusCode >= 400 ? error.statusCode : 500

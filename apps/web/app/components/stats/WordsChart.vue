@@ -9,6 +9,16 @@ const props = defineProps<{
 }>()
 const { t } = useI18n()
 const hasData = computed(() => props.mine.length > 0 || props.theirs.length > 0)
+const isMobile = ref(false)
+
+function syncMobileState() {
+  if (!import.meta.client) {
+    isMobile.value = false
+    return
+  }
+
+  isMobile.value = window.innerWidth <= 640
+}
 
 const option = computed(() => {
   const theme = CHART_THEME.base()
@@ -43,7 +53,9 @@ const option = computed(() => {
     grid: {
       ...theme.grid,
       top: 36,
-      left: 88,
+      left: isMobile.value ? 52 : 88,
+      right: isMobile.value ? 10 : theme.grid.right,
+      bottom: isMobile.value ? 18 : theme.grid.bottom,
     },
     xAxis: {
       ...theme.xAxis,
@@ -79,6 +91,19 @@ const option = computed(() => {
     ],
   }
 })
+
+onMounted(() => {
+  syncMobileState()
+  if (import.meta.client) {
+    window.addEventListener('resize', syncMobileState)
+  }
+})
+
+onBeforeUnmount(() => {
+  if (import.meta.client) {
+    window.removeEventListener('resize', syncMobileState)
+  }
+})
 </script>
 
 <template>
@@ -108,6 +133,13 @@ const option = computed(() => {
 @media (max-width: 768px) {
   .chart-words {
     height: 280px;
+  }
+}
+
+@media (max-width: 640px) {
+  .chart-words {
+    height: 300px;
+    margin-left: calc(var(--space-2) * -1);
   }
 }
 </style>

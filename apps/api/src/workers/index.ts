@@ -3,14 +3,23 @@ import { parseWorker } from './parse.worker'
 import { cleanupWorker, scheduleCleanupJob } from './cleanup.worker'
 import { pool } from '../db'
 import { redis } from '../services/redis.service'
+import { clearWorkerHeartbeat, updateWorkerHeartbeat } from '../services/runtime-status.service'
 
 ;(async () => {
   await scheduleCleanupJob()
+  await updateWorkerHeartbeat()
+
+  const heartbeatInterval = setInterval(() => {
+    void updateWorkerHeartbeat()
+  }, 10_000)
+  heartbeatInterval.unref?.()
 
   const handleShutdown = async () => {
+    clearInterval(heartbeatInterval)
     await Promise.allSettled([
       parseWorker.close(),
       cleanupWorker.close(),
+      clearWorkerHeartbeat(),
       redis.quit(),
       pool.end(),
     ])

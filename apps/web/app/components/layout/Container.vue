@@ -31,7 +31,7 @@ const classes = computed(() => [
 }
 
 .ui-container-default {
-  max-width: 1100px;
+  max-width: none;
 }
 
 .ui-container-full {
@@ -52,7 +52,7 @@ const classes = computed(() => [
 
 @media (max-width: 768px) {
   .ui-container {
-    padding-inline: 0;
+    padding-inline: var(--space-4);
   }
 }
 </style>

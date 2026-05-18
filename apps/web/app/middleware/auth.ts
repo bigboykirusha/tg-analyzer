@@ -1,5 +1,9 @@
 export default defineNuxtRouteMiddleware(async () => {
-  if (!import.meta.client) {
+  if (import.meta.server) {
+    const cookieHeader = useRequestHeaders(['cookie']).cookie ?? ''
+    if (!cookieHeader.includes('tg_analyzer_refresh=')) {
+      return navigateTo('/login', { replace: true })
+    }
     return
   }
 

@@ -3,6 +3,7 @@ import { refreshAccessToken } from './useApi'
 import { isTokenExpiringSoon, isTokenUsable } from '../utils/auth'
 
 const MAX_RETRIES = 5
+let statusRequestPromise: Promise<ParseStatusResponse | null> | null = null
 
 export function useParseProgress() {
   const progress = useState<ParseProgressDto>('parse-progress', () => ({
@@ -44,12 +45,24 @@ export function useParseProgress() {
   }
 
   async function fetchCurrentStatus() {
-    try {
-      const status = await useApiFetch<ParseStatusResponse>('/api/parse/status')
-      applyStatus(status)
-    } catch {
-      // Keep the last known progress if status refresh fails.
+    if (statusRequestPromise) {
+      return statusRequestPromise
     }
+
+    statusRequestPromise = (async () => {
+      try {
+        const status = await useApiFetch<ParseStatusResponse>('/api/parse/status')
+        applyStatus(status)
+        return status
+      } catch {
+        // Keep the last known progress if status refresh fails.
+        return null
+      } finally {
+        statusRequestPromise = null
+      }
+    })()
+
+    return statusRequestPromise
   }
 
   async function ensureSocketAccessToken() {
@@ -106,11 +119,14 @@ export function useParseProgress() {
     const socket = new WebSocket(`${config.public.wsUrl}/ws/parse-progress?token=${token}`)
     socketRef.value = socket
     intentionalClose.value = false
+    const shouldResyncFromServer = retryCount.value > 0
 
     socket.onopen = () => {
       retryCount.value = 0
       forceRefresh.value = false
-      void fetchCurrentStatus()
+      if (shouldResyncFromServer) {
+        void fetchCurrentStatus()
+      }
     }
 
     socket.onmessage = (event) => {
@@ -138,7 +154,6 @@ export function useParseProgress() {
           status: 'completed',
           message: data.message ?? 'Parse completed',
         }
-        void fetchCurrentStatus()
         disconnect()
       }
       if (data.type === 'failed' || data.type === 'error') {
@@ -148,7 +163,6 @@ export function useParseProgress() {
           status: 'failed',
           message: 'message' in data ? data.message : progress.value.message,
         }
-        void fetchCurrentStatus()
         disconnect()
       }
       if (data.type === 'cancelled') {
@@ -158,7 +172,6 @@ export function useParseProgress() {
           status: 'cancelled',
           message: data.message ?? 'Parse cancelled',
         }
-        void fetchCurrentStatus()
         disconnect()
       }
     }

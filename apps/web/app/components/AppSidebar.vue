@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BarChart2, Globe, LayoutGrid, LogOut } from '../lib/icons'
-import Button from './ui/Button.vue'
+import ParseProgress from './stats/ParseProgress.vue'
 import ConfirmDialog from './ui/ConfirmDialog.vue'
 
 const auth = useAuthStore()
@@ -8,9 +8,13 @@ const { deleteAccount, logout, terminateTelegramSession } = useAuth()
 const route = useRoute()
 const { locale, setLocale, t } = useI18n()
 const toast = useToast()
+const { progress, bootstrapFromServer } = useParseProgress()
+const mounted = ref(false)
 
 const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 const isDashboardRoute = computed(() => route.path.startsWith('/dashboard'))
+const isParseActive = computed(() => progress.value.status === 'running' || progress.value.status === 'pending')
+const mobileCancelling = ref(false)
 const securityPending = ref<'telegram' | 'account' | null>(null)
 const confirmState = ref<{
   type: 'terminate' | 'delete-account'
@@ -19,6 +23,26 @@ const confirmState = ref<{
   confirmLabel: string
   variant: 'default' | 'danger'
 } | null>(null)
+
+const displayName = computed(() => {
+  if (!mounted.value) {
+    return t('common.anonymous')
+  }
+
+  return auth.user?.firstName || auth.user?.username || t('common.anonymous')
+})
+
+const displayHandle = computed(() => {
+  if (!mounted.value) {
+    return t('common.telegram')
+  }
+
+  return auth.user?.username || t('common.telegram')
+})
+
+onMounted(() => {
+  mounted.value = true
+})
 
 function openTerminateConfirm() {
   confirmState.value = {
@@ -69,6 +93,19 @@ async function confirmAction() {
     securityPending.value = null
   }
 }
+
+async function cancelActiveParse() {
+  mobileCancelling.value = true
+  try {
+    await useApiFetch('/api/parse/cancel', { method: 'DELETE' })
+    await bootstrapFromServer()
+    toast.success(t('dashboard.cancelled'))
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : t('dashboard.cancelError'))
+  } finally {
+    mobileCancelling.value = false
+  }
+}
 </script>
 
 <template>
@@ -80,14 +117,11 @@ async function confirmAction() {
       </div>
 
       <div class="sidebar-user">
-        <ProfileAvatar :title="auth.user?.firstName || auth.user?.username || t('common.anonymous')" />
+        <ProfileAvatar :title="displayName" />
         <div class="user-info">
-          <span class="user-name">{{ auth.user?.firstName || auth.user?.username || t('common.anonymous') }}</span>
-          <span class="user-handle">@{{ auth.user?.username || t('common.telegram') }}</span>
+          <span class="user-name">{{ displayName }}</span>
+          <span class="user-handle">@{{ displayHandle }}</span>
         </div>
-        <button class="logout-button" type="button" @click="logout">
-          <LogOut :size="18" :stroke-width="1.5" aria-hidden="true" />
-        </button>
       </div>
 
       <div class="language-switch" :aria-label="t('nav.language')">
@@ -111,53 +145,85 @@ async function confirmAction() {
       </NuxtLink>
     </nav>
 
-    <div v-if="isDashboardRoute" class="desktop-security">
-      <div class="sidebar-security-copy">
-        <span class="text-label">{{ t('dashboard.securityLabel') }}</span>
-        <strong class="security-title">{{ t('dashboard.securityTitle') }}</strong>
-        <p class="security-text">{{ t('dashboard.securityText') }}</p>
-      </div>
-
-      <div v-if="!auth.telegramSessionActive" class="sidebar-security-banner">
-        {{ t('dashboard.sessionInactive') }}
-      </div>
-
-      <div class="sidebar-security-actions">
-        <Button variant="secondary" size="md" block :loading="securityPending === 'telegram'" @click="openTerminateConfirm">
-          {{ securityPending === 'telegram' ? t('dashboard.stopping') : t('dashboard.terminateTelegram') }}
-        </Button>
-        <Button variant="danger" size="md" block :loading="securityPending === 'account'" @click="openDeleteAccountConfirm">
-          {{ securityPending === 'account' ? t('dashboard.deleting') : t('dashboard.deleteAccount') }}
-        </Button>
-        <Button v-if="!auth.telegramSessionActive" variant="primary" size="md" block @click="logout">
-          {{ t('common.relogin') }}
-        </Button>
-      </div>
-    </div>
-
     <div class="sidebar-spacer" />
 
-    <div class="mobile-topbar">
-      <div class="mobile-brand">
-        <span class="logo-mark">&lt;T&gt;</span>
-        <span class="logo-text">tg analyzer</span>
+    <div class="sidebar-bottom">
+      <div v-if="isDashboardRoute" class="desktop-security">
+        <div v-if="!auth.telegramSessionActive" class="sidebar-security-banner">
+          {{ t('dashboard.sessionInactive') }}
+        </div>
+
+        <div class="sidebar-utility-list">
+          <button class="utility-item" type="button" :disabled="securityPending !== null" @click="openTerminateConfirm">
+            <span class="utility-copy">
+              <span class="utility-label">{{ t('dashboard.terminateTelegram') }}</span>
+              <span class="utility-subtext">{{ securityPending === 'telegram' ? t('dashboard.stopping') : t('dashboard.terminateConfirm') }}</span>
+            </span>
+          </button>
+          <button class="utility-item utility-item-danger" type="button" :disabled="securityPending !== null" @click="openDeleteAccountConfirm">
+            <span class="utility-copy">
+              <span class="utility-label">{{ t('dashboard.deleteAccount') }}</span>
+              <span class="utility-subtext">{{ securityPending === 'account' ? t('dashboard.deleting') : t('dashboard.deleteConfirm') }}</span>
+            </span>
+          </button>
+          <button v-if="!auth.telegramSessionActive" class="utility-item utility-item-accent" type="button" @click="logout">
+            <span class="utility-copy">
+              <span class="utility-label">{{ t('common.relogin') }}</span>
+              <span class="utility-subtext">{{ t('dashboard.sessionInactive') }}</span>
+            </span>
+          </button>
+        </div>
       </div>
-      <div class="mobile-actions">
-      <NuxtLink to="/dashboard" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': route.path.startsWith('/dashboard') }">
-        <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
-        <span class="screen-reader">{{ t('common.dashboard') }}</span>
-      </NuxtLink>
-      <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="mobile-nav-item mobile-nav-item-active">
-        <BarChart2 :size="18" :stroke-width="1.5" aria-hidden="true" />
-        <span class="screen-reader">{{ t('common.report') }}</span>
-      </NuxtLink>
-      <button class="mobile-nav-item mobile-language" type="button" @click="setLocale(locale === 'ru' ? 'en' : 'ru')">
-        <Globe :size="16" :stroke-width="1.5" aria-hidden="true" />
-        {{ locale.toUpperCase() }}
-        <span class="screen-reader">{{ t('nav.language') }}</span>
+
+      <button class="utility-item" type="button" @click="logout">
+        <LogOut :size="18" :stroke-width="1.5" aria-hidden="true" />
+        <span class="utility-copy">
+          <span class="utility-label">{{ t('common.logout') }}</span>
+        </span>
       </button>
-      </div>
     </div>
+
+    <div class="mobile-topbar" :class="{ 'mobile-topbar-with-progress': isParseActive }">
+      <div class="mobile-topbar-row">
+        <div class="mobile-brand">
+          <span class="logo-mark">&lt;T&gt;</span>
+          <span class="logo-text">tg analyzer</span>
+        </div>
+        <div class="mobile-actions">
+        <NuxtLink to="/dashboard" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': route.path.startsWith('/dashboard') }">
+          <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
+          <span class="screen-reader">{{ t('common.dashboard') }}</span>
+        </NuxtLink>
+        <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="mobile-nav-item mobile-nav-item-active">
+          <BarChart2 :size="18" :stroke-width="1.5" aria-hidden="true" />
+          <span class="screen-reader">{{ t('common.report') }}</span>
+        </NuxtLink>
+        <button class="mobile-nav-item mobile-language" type="button" @click="setLocale(locale === 'ru' ? 'en' : 'ru')">
+          <Globe :size="16" :stroke-width="1.5" aria-hidden="true" />
+          {{ locale.toUpperCase() }}
+          <span class="screen-reader">{{ t('nav.language') }}</span>
+        </button>
+        </div>
+      </div>
+
+      <ParseProgress
+        v-if="isParseActive"
+        class="mobile-topbar-progress"
+        compact
+        :current="progress.current"
+        :total="progress.total"
+        :chat-name="progress.chatName"
+        :status="progress.status"
+        :message="progress.message"
+        :scanned-messages="progress.scannedMessages"
+        :start-time="progress.startTime"
+        cancellable
+        :cancelling="mobileCancelling"
+        @cancel="cancelActiveParse"
+      />
+      
+      
+      </div>
 
     <ConfirmDialog
       :open="Boolean(confirmState)"
@@ -180,7 +246,6 @@ async function confirmAction() {
   padding: var(--space-4);
   border-right: 1px solid var(--border-subtle);
   background: var(--bg-surface);
-  overflow-y: auto;
 }
 
 .sidebar-top {
@@ -217,8 +282,7 @@ async function confirmAction() {
 }
 
 .nav-item,
-.mobile-nav-item,
-.logout-button {
+.mobile-nav-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -258,7 +322,6 @@ async function confirmAction() {
 
 .nav-item :deep(svg),
 .mobile-nav-item :deep(svg),
-.logout-button :deep(svg),
 .language-icon :deep(svg) {
   flex: 0 0 auto;
 }
@@ -267,49 +330,35 @@ async function confirmAction() {
   flex: 1;
 }
 
+.sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
 .desktop-security {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-base);
-}
-
-.sidebar-security-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.security-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.security-text {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 1.5;
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .sidebar-security-banner {
   padding: var(--space-3);
-  border: 1px solid rgba(251, 191, 36, 0.18);
+  border: 1px solid rgba(251, 191, 36, 0.15);
   border-radius: var(--radius-md);
-  background: var(--warning-subtle);
+  background: rgba(251, 191, 36, 0.06);
   color: var(--warning);
   font-size: 12px;
   line-height: 1.5;
 }
 
-.sidebar-security-actions {
+.sidebar-utility-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .sidebar-user {
@@ -347,21 +396,67 @@ async function confirmAction() {
   text-overflow: ellipsis;
 }
 
-.logout-button {
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
-  margin-left: auto;
-  border: 1px solid var(--border-subtle);
+.utility-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-secondary);
+  text-align: left;
   cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-.logout-button:hover {
+.utility-item:hover {
   background: var(--bg-elevated);
   color: var(--text-primary);
+}
+
+.utility-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.utility-item :deep(svg) {
+  flex: 0 0 auto;
+}
+
+.utility-item-danger:hover {
+  background: var(--danger-subtle);
+  color: var(--danger);
+}
+
+.utility-item-accent:hover {
+  background: var(--accent-subtle);
+  color: var(--text-primary);
+}
+
+.utility-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.utility-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: inherit;
+}
+
+.utility-subtext {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mobile-topbar {
@@ -416,10 +511,10 @@ async function confirmAction() {
 
 @media (max-width: 768px) {
   .sidebar {
-    position: sticky;
-    top: 0;
-    z-index: 40;
+    position: relative;
+    z-index: 20;
     display: block;
+    flex-shrink: 0;
     padding: 0 var(--space-4);
     border-right: none;
     border-bottom: 1px solid var(--border-subtle);
@@ -431,16 +526,27 @@ async function confirmAction() {
   .sidebar-top,
   .sidebar-nav,
   .sidebar-spacer,
-  .desktop-security {
+  .desktop-security,
+  .sidebar-bottom {
     display: none;
   }
 
   .mobile-topbar {
     display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 52px;
+    min-width: 0;
+    padding-block: calc(var(--space-2) + env(safe-area-inset-top, 0px)) var(--space-2);
+  }
+
+  .mobile-topbar-row {
+    display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    min-height: 52px;
     min-width: 0;
   }
 
@@ -458,16 +564,17 @@ async function confirmAction() {
 
   .mobile-nav-item {
     justify-content: center;
-    min-width: 44px;
-    height: 44px;
+    min-width: 40px;
+    height: 40px;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text-secondary);
   }
 
   .mobile-nav-item-active {
     background: var(--accent-subtle);
+    box-shadow: inset 0 0 0 1px var(--accent-border);
     color: var(--text-primary);
   }
 
@@ -476,6 +583,10 @@ async function confirmAction() {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .mobile-topbar-progress {
+    margin-bottom: 2px;
   }
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import StatusDot from '../ui/StatusDot.vue'
+import { Square } from '../../lib/icons'
 
 const props = defineProps<{
   current: number
@@ -12,7 +12,6 @@ const props = defineProps<{
   scannedMessages?: number
   startTime?: number
   compact?: boolean
-  mobileFloating?: boolean
 }>()
 
 const emit = defineEmits<{ cancel: [] }>()
@@ -22,7 +21,6 @@ const elapsedSeconds = ref(0)
 let timer: number | null = null
 
 const normalizedMessage = computed(() => props.message?.trim() ?? '')
-const showChatProgress = computed(() => props.total > 1)
 const isScanningMessage = computed(() => /^Scanning\s+[\d,\s]+\s+messages$/i.test(normalizedMessage.value))
 
 const phaseInfo = computed(() => {
@@ -31,7 +29,6 @@ const phaseInfo = computed(() => {
       message: t('parse.waiting'),
       currentStep: 1,
       totalSteps: 4,
-      progress: 8,
     }
   }
 
@@ -41,22 +38,22 @@ const phaseInfo = computed(() => {
   }
 
   if (/^Connecting to Telegram$/i.test(message)) {
-    return { message: t('parse.connecting'), currentStep: 1, totalSteps: 4, progress: 18 }
+    return { message: t('parse.connecting'), currentStep: 1, totalSteps: 4 }
   }
 
   if (/^Loading chat list$/i.test(message)) {
-    return { message: t('parse.loadingChats'), currentStep: 2, totalSteps: 4, progress: 34 }
+    return { message: t('parse.loadingChats'), currentStep: 2, totalSteps: 4 }
   }
 
   if (/^Starting message scan$/i.test(message)) {
-    return { message: t('parse.preparingScan'), currentStep: 3, totalSteps: 4, progress: 52 }
+    return { message: t('parse.preparingScan'), currentStep: 3, totalSteps: 4 }
   }
 
   if (isScanningMessage.value) {
-    return { message: t('parse.scanningMessages'), currentStep: 4, totalSteps: 4, progress: 76 }
+    return { message: t('parse.scanningMessages'), currentStep: 4, totalSteps: 4 }
   }
 
-  return { message, currentStep: 0, totalSteps: 0, progress: 0 }
+  return { message, currentStep: 0, totalSteps: 0 }
 })
 
 const displayMessage = computed(() => phaseInfo.value?.message || normalizedMessage.value || t('parse.waiting'))
@@ -81,8 +78,16 @@ const completedChats = computed(() => {
   return Math.max(0, props.current - (props.status === 'running' ? 1 : 0))
 })
 
+const activeChatIndex = computed(() => {
+  if (!props.total) {
+    return 0
+  }
+
+  return Math.min(Math.max(props.current, 0), props.total)
+})
+
 const phaseSummary = computed(() => {
-  if (showChatProgress.value || !phaseInfo.value?.totalSteps) {
+  if (!phaseInfo.value?.totalSteps) {
     return null
   }
 
@@ -92,20 +97,18 @@ const phaseSummary = computed(() => {
   })
 })
 
-const isIndeterminate = computed(() =>
-  props.status === 'running' && !showChatProgress.value && !(phaseInfo.value?.progress && phaseInfo.value.progress > 0),
-)
+const isIndeterminate = computed(() => props.status === 'running' && props.total <= 1)
 
 const progressPercent = computed(() => {
   if (props.status === 'completed') {
     return 100
   }
 
-  if (!showChatProgress.value) {
-    return phaseInfo.value?.progress ?? 0
+  if (!props.total) {
+    return 0
   }
 
-  if (!props.total) {
+  if (props.total <= 1) {
     return 0
   }
 
@@ -117,7 +120,7 @@ const progressLabel = computed(() => {
     return '100%'
   }
 
-  if (!showChatProgress.value || !props.total) {
+  if (props.total <= 1) {
     return null
   }
 
@@ -125,13 +128,12 @@ const progressLabel = computed(() => {
 })
 
 const progressSummary = computed(() => {
-  if (!showChatProgress.value) {
+  if (!props.total || props.total <= 1) {
     return null
   }
 
-  const currentChat = Math.min(Math.max(props.current, 1), props.total)
   return t('parse.chatSummary', {
-    current: formatNumber(currentChat),
+    current: formatNumber(activeChatIndex.value),
     total: formatNumber(props.total),
   })
 })
@@ -191,6 +193,18 @@ const scannedLabel = computed(() => {
   return t('parse.messagesProcessed', { count: formattedScanned.value })
 })
 
+const isScanningPhase = computed(() => phaseInfo.value?.currentStep === 4 || isScanningMessage.value)
+
+const titleText = computed(() => (isScanningPhase.value ? displayMessage.value : t('parse.title')))
+
+const subtitleText = computed(() => {
+  if (isScanningPhase.value && scannedLabel.value) {
+    return scannedLabel.value
+  }
+
+  return displayMessage.value
+})
+
 onMounted(() => {
   if (props.startTime) {
     elapsedSeconds.value = Math.max(0, Math.floor((Date.now() - props.startTime) / 1000))
@@ -210,42 +224,31 @@ onBeforeUnmount(() => {
     clearInterval(timer)
   }
 })
-
-function statusLabel(status: string) {
-  if (status === 'completed') return t('common.statusCompleted')
-  if (status === 'failed') return t('common.statusFailed')
-  if (status === 'cancelled') return t('common.statusCancelled')
-  if (status === 'running') return t('common.statusRunning')
-  if (status === 'pending') return t('common.statusPending')
-  return status
-}
-
-function statusVariant(status: string) {
-  if (status === 'completed') return 'completed'
-  if (status === 'failed') return 'failed'
-  if (status === 'cancelled') return 'cancelled'
-  if (status === 'running') return 'running'
-  if (status === 'pending') return 'pending'
-  return 'inactive'
-}
 </script>
 
 <template>
   <section
     class="progress-card animate-fade-in-down"
-    :class="{ 'progress-card-compact': compact, 'progress-card-mobile-floating': mobileFloating }"
+    :class="{ 'progress-card-compact': compact }"
   >
     <div class="progress-header">
       <div class="progress-copy">
         <div class="text-label">{{ t('parse.label') }}</div>
         <div class="progress-title-row">
-          <h3 class="text-h3">{{ t('parse.title') }}</h3>
-          <StatusDot :variant="statusVariant(status)" :label="statusLabel(status)" />
+          <h3 class="text-h3">{{ titleText }}</h3>
         </div>
-        <p class="text-body-sm progress-message">{{ displayMessage }}</p>
+        <p class="text-body-sm progress-message">{{ subtitleText }}</p>
       </div>
-      <button v-if="cancellable" class="cancel-button" type="button" :disabled="cancelling" @click="emit('cancel')">
-        {{ cancelling ? t('dashboard.cancelling') : t('dashboard.cancelParse') }}
+      <button
+        v-if="cancellable"
+        class="cancel-button cancel-button-icon"
+        type="button"
+        :disabled="cancelling"
+        :aria-label="cancelling ? t('dashboard.cancelling') : t('dashboard.cancelParse')"
+        :title="cancelling ? t('dashboard.cancelling') : t('dashboard.cancelParse')"
+        @click="emit('cancel')"
+      >
+        <Square />
       </button>
     </div>
 
@@ -256,12 +259,12 @@ function statusVariant(status: string) {
     <div class="progress-meta text-body-sm">
       <div class="meta-left">
         <p v-if="progressSummary" class="mono-value">{{ progressSummary }}</p>
-        <p v-else-if="phaseSummary" class="mono-value">{{ phaseSummary }}</p>
+        <p v-if="phaseSummary" class="progress-phase">{{ phaseSummary }}</p>
         <p v-if="chatName" class="progress-chat">{{ chatName }}</p>
       </div>
       <div class="meta-right">
         <p v-if="progressLabel" class="progress-percent t-metric-sm">{{ progressLabel }}</p>
-        <p v-if="scannedLabel" class="scanned-count">{{ scannedLabel }}</p>
+        <p v-if="scannedLabel && !isScanningPhase" class="scanned-count">{{ scannedLabel }}</p>
         <p v-if="estimatedTimeRemaining" class="estimated-time">~{{ estimatedTimeRemaining }}</p>
         <p v-else-if="elapsedTime" class="estimated-time">{{ t('parse.elapsed', { time: elapsedTime }) }}</p>
       </div>
@@ -273,18 +276,19 @@ function statusVariant(status: string) {
 .progress-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   padding: var(--space-5);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
+  background: var(--bg-surface);
+  box-shadow: none;
 }
 
 .progress-card-compact {
   gap: var(--space-3);
   padding: var(--space-4);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  background: color-mix(in srgb, var(--bg-surface) 92%, var(--bg-elevated));
 }
 
 .progress-header {
@@ -297,20 +301,23 @@ function statusVariant(status: string) {
 .progress-copy {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 4px;
   min-width: 0;
 }
 
 .progress-title-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.text-h3 {
+  min-width: 0;
 }
 
 .progress-message {
   color: var(--text-secondary);
+  line-height: 1.35;
 }
 
 .progress-card-compact .text-label {
@@ -328,7 +335,8 @@ function statusVariant(status: string) {
 .progress-bar {
   position: relative;
   overflow: hidden;
-  height: 3px;
+  height: 4px;
+  margin-block: var(--space-2);
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--bg-overlay) 88%, var(--border-default));
 }
@@ -349,7 +357,7 @@ function statusVariant(status: string) {
 .progress-meta {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: var(--space-4);
 }
 
@@ -363,15 +371,22 @@ function statusVariant(status: string) {
 .meta-right {
   text-align: right;
   align-items: flex-end;
+  min-width: fit-content;
 }
 
 .progress-percent {
   color: var(--text-primary);
 }
 
+.progress-ratio,
+.progress-phase {
+  color: var(--text-secondary);
+}
+
 .scanned-count {
   color: var(--text-primary);
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .estimated-time {
@@ -386,6 +401,10 @@ function statusVariant(status: string) {
   white-space: nowrap;
 }
 
+.progress-card:not(.mobile-topbar-progress) .progress-chat {
+  display: none;
+}
+
 .cancel-button {
   min-height: 44px;
   padding: 0 var(--space-3);
@@ -397,6 +416,25 @@ function statusVariant(status: string) {
   font-weight: 500;
   cursor: pointer;
   transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.cancel-button svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.8;
+}
+
+.cancel-button-icon {
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  display: inline-flex;
+  border-color: var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
 }
 
 .cancel-button:hover {
@@ -437,54 +475,102 @@ function statusVariant(status: string) {
     text-align: left;
   }
 
-  .progress-card-mobile-floating {
-    position: fixed;
-    left: var(--space-3);
-    right: var(--space-3);
-    bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
-    z-index: 30;
-    gap: 8px;
-    padding: 12px;
-    border-radius: 14px;
-    border-color: var(--border-strong);
-    background: var(--panel-translucent-strong);
-    backdrop-filter: blur(16px);
-    box-shadow: var(--shadow-lg);
+  .mobile-topbar-progress .progress-header {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
   }
 
-  .progress-card-mobile-floating .text-label,
-  .progress-card-mobile-floating .progress-meta,
-  .progress-card-mobile-floating .progress-chat {
-    display: none;
+  .mobile-topbar-progress .progress-meta {
+    flex-direction: row;
+    align-items: center;
   }
 
-  .progress-card-mobile-floating .progress-copy {
-    gap: 2px;
-  }
-
-  .progress-card-mobile-floating .progress-title-row {
-    display: none;
-  }
-
-  .progress-card-mobile-floating .text-h3 {
-    font-size: 14px;
-    line-height: 1.2;
-  }
-
-  .progress-card-mobile-floating .progress-message {
-    font-size: 14px;
-    line-height: 1.3;
-  }
-
-  .progress-card-mobile-floating .progress-bar {
-    height: 6px;
-  }
-
-  .progress-card-mobile-floating .cancel-button {
-    min-height: 36px;
+  .mobile-topbar-progress .cancel-button-icon {
     align-self: flex-start;
-    padding: 0 12px;
-    font-size: 13px;
+    margin-left: auto;
   }
+}
+
+.mobile-topbar-progress.progress-card {
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border-color: var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-elevated) 96%, transparent);
+  box-shadow: none;
+}
+
+.mobile-topbar-progress .text-label,
+.mobile-topbar-progress .progress-phase,
+.mobile-topbar-progress .progress-chat,
+.mobile-topbar-progress .estimated-time {
+  display: none;
+}
+
+.mobile-topbar-progress .progress-header {
+  gap: var(--space-2);
+}
+
+.mobile-topbar-progress .progress-copy {
+  gap: 1px;
+}
+
+.mobile-topbar-progress .progress-title-row {
+  gap: var(--space-2);
+  margin-bottom: 2px;
+}
+
+.mobile-topbar-progress .text-h3 {
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.mobile-topbar-progress .progress-message {
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--text-secondary);
+}
+
+.mobile-topbar-progress .progress-bar {
+  height: 4px;
+  margin-block: 2px;
+}
+
+.mobile-topbar-progress .progress-meta {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.mobile-topbar-progress .meta-left,
+.mobile-topbar-progress .meta-right {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mobile-topbar-progress .meta-right {
+  margin-left: auto;
+  text-align: right;
+}
+
+.mobile-topbar-progress .progress-percent,
+.mobile-topbar-progress .scanned-count,
+.mobile-topbar-progress .mono-value {
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.mobile-topbar-progress .cancel-button-icon {
+  width: 28px;
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.mobile-topbar-progress .cancel-button svg {
+  width: 12px;
+  height: 12px;
 }
 </style>

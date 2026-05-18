@@ -34,6 +34,8 @@ import { sleep } from '../utils/sleep'
 
 const SCAN_PROGRESS_INTERVAL_MS = 1500
 const CHAT_REPARSE_COOLDOWN_SECONDS = 60 * 60
+const PROGRESS_PUBLISH_INTERVAL_MS = 5_000
+const PROGRESS_PUBLISH_MESSAGE_STEP = 1_000
 
 async function ensureNotCancelled(userId: string, jobId: string) {
   const cancelled = await isCancelledJob(userId, jobId)
@@ -68,6 +70,8 @@ async function parseDialog(userId: string, session: {
   let offsetId = 0
   let hasMore = true
   let scannedMessages = 0
+  let lastPublishedScannedMessages = 0
+  let lastProgressPublishedAt = 0
   const chatName = dialog.title ?? dialog.name ?? 'Unknown'
 
   while (hasMore) {
@@ -100,21 +104,30 @@ async function parseDialog(userId: string, session: {
     }
     scannedMessages += messages.length
 
-    await context.job.updateProgress({
-      chatId: String(dialog.id),
-      scannedMessages,
-    })
-    await publishParseProgress(userId, {
-      type: 'progress',
-      current: context.chatIndex,
-      total: context.totalChats,
-      chatId: String(dialog.id),
-      chatName,
-      status: 'running',
-      message: `Scanning ${scannedMessages.toLocaleString('en-US')} messages`,
-      scannedMessages,
-      startTime: context.startTime,
-    })
+    const now = Date.now()
+    const shouldPublishProgress = !hasMore
+      || scannedMessages - lastPublishedScannedMessages >= PROGRESS_PUBLISH_MESSAGE_STEP
+      || now - lastProgressPublishedAt >= PROGRESS_PUBLISH_INTERVAL_MS
+
+    if (shouldPublishProgress) {
+      await context.job.updateProgress({
+        chatId: String(dialog.id),
+        scannedMessages,
+      })
+      await publishParseProgress(userId, {
+        type: 'progress',
+        current: context.chatIndex,
+        total: context.totalChats,
+        chatId: String(dialog.id),
+        chatName,
+        status: 'running',
+        message: `Scanning ${scannedMessages.toLocaleString('en-US')} messages`,
+        scannedMessages,
+        startTime: context.startTime,
+      })
+      lastPublishedScannedMessages = scannedMessages
+      lastProgressPublishedAt = now
+    }
 
     await sleep(SCAN_PROGRESS_INTERVAL_MS)
   }

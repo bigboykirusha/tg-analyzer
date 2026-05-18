@@ -7,6 +7,9 @@ export {
   Lock,
   LogOut,
   MessageSquare,
+  RefreshCw,
   Settings,
+  Square,
+  Trash2,
   WifiOff,
 } from 'lucide-vue-next'

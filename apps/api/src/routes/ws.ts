@@ -24,15 +24,26 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const subscriber = createRedisSubscriber()
-    subscriber.subscribe(`parse:progress:${userId}`)
+    const channel = `parse:progress:${userId}`
+    const handleMessage = (_channel: string, message: string) => {
+      if (socket.readyState !== socket.OPEN) {
+        return
+      }
 
-    subscriber.on('message', (_channel, message) => {
       socket.send(message)
+    }
+
+    void subscriber.subscribe(channel).catch(() => {
+      socket.close(1011, 'Subscription failed')
     })
+    subscriber.on('message', handleMessage)
 
     socket.on('close', async () => {
-      await subscriber.unsubscribe(`parse:progress:${userId}`)
-      subscriber.disconnect()
+      subscriber.off('message', handleMessage)
+      await subscriber.unsubscribe(channel).catch(() => undefined)
+      await subscriber.quit().catch(() => {
+        subscriber.disconnect()
+      })
     })
   })
 }

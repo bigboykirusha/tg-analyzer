@@ -191,11 +191,11 @@ const messages: Record<Locale, Messages> = {
     'chat.shared': 'Shared',
     'chat.shareLabel': 'Export report',
     'chat.shareTitle': 'Share the full PDF',
-    'chat.shareText': 'This report is private, so share the PDF file through Telegram, WhatsApp, or another app.',
-    'chat.shareOtherApps': 'Other apps',
+    'chat.shareText': 'Export the private PDF or send it directly into this Telegram chat.',
+    'chat.sendTelegramDirect': 'Send to Telegram chat',
     'chat.downloadPdf': 'Download PDF',
     'chat.pdfReady': 'PDF ready',
-    'chat.pickAppReady': 'Choose {app} in the share sheet',
+    'chat.sentToTelegram': 'PDF sent to Telegram',
     'chat.exportImageSubtitle': 'Private Telegram chat snapshot',
     'chat.exportFooter': 'Messages, rhythm, and balance in one clean snapshot.',
     'chat.exportPdf': 'Save PDF',
@@ -523,7 +523,7 @@ const messages: Record<Locale, Messages> = {
     'dashboard.deleteError': 'Не удалось удалить аккаунт',
     'dashboard.sent': 'Отпр.',
     'dashboard.recv': 'Получ.',
-    'dashboard.lastAnalyzed': 'Последний анализ: {time}',
+    'dashboard.lastAnalyzed': 'Последний: {time}',
     'dashboard.deleteReport': 'Удалить отчет',
     'dashboard.deleteReportConfirm': 'Удалить отчет «{name}»? Сам чат в Telegram не изменится.',
     'dashboard.reportDeleted': 'Отчет удален',
@@ -773,6 +773,15 @@ export function useI18n() {
 
   onMounted(() => {
     const saved = localStorage.getItem(LOCALE_KEY)
+
+    if (import.meta.dev && saved && saved !== locale.value) {
+      console.info('[i18n-debug] locale state differs from localStorage during hydration', {
+        stateLocale: locale.value,
+        storedLocale: saved,
+        hint: 'If hydration mismatch mentions text/lang/head tags, make SSR and client locale come from the same source.',
+      })
+    }
+
     if (saved === 'ru' || saved === 'en') {
       locale.value = saved
     }
