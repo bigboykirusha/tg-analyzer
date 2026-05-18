@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import guestMiddleware from '../middleware/guest'
+
 definePageMeta({
-  middleware: ['guest'],
+  middleware: [guestMiddleware],
 })
 
 const { t } = useI18n()

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { BarChart2, Globe, LayoutGrid, LogOut } from '../lib/icons'
+import { useToast } from '../composables/useToast'
 import ParseProgress from './stats/ParseProgress.vue'
 import ConfirmDialog from './ui/ConfirmDialog.vue'
 
