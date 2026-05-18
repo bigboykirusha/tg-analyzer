@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
-import { CustomFile } from 'telegram/client/uploads'
+import { CustomFile } from 'telegram/client/uploads.js'
 import type { ParseDialogDto, ParseDialogsResponse, ParseProgressDto } from '@tg-analyzer/shared'
 import { requireAuth } from '../middleware/auth.middleware'
 import { parseDialogsQueue } from '../queues/parse.queue'
