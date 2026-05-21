@@ -17,37 +17,33 @@ defineProps<{
 <style scoped>
 .metric {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
   align-content: center;
-  gap: 6px;
-  min-width: 0;
+  gap: var(--space-2);
   min-height: 86px;
   padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 72%, transparent), var(--bg-surface));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 4%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  min-width: 0;
 }
 
 .metric-label {
-  color: var(--text-tertiary);
+  /* inherits t-label: uppercase, tertiary color */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .metric-value {
+  /* inherits t-metric: mono, 28px */
   color: var(--text-primary);
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 
 .metric-sub {
+  /* inherits t-small: 12px */
   color: var(--text-secondary);
-  line-height: 1.25;
   overflow-wrap: anywhere;
 }
 
@@ -58,7 +54,7 @@ defineProps<{
   }
 
   .metric-value {
-    font-size: 21px;
+    font-size: 22px;
   }
 }
 </style>

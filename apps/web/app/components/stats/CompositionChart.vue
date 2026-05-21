@@ -43,8 +43,8 @@ const segments = computed(() => {
       <div v-for="segment in segments" :key="segment.label" class="composition-item">
         <div class="composition-marker" :class="segment.className" />
         <div class="composition-copy">
-          <span class="text-body-sm">{{ segment.label }}</span>
-          <span class="text-caption mono-value">{{ formatNumber(segment.value) }}</span>
+          <span class="t-small">{{ segment.label }}</span>
+          <span class="t-small t-mono">{{ formatNumber(segment.value) }}</span>
         </div>
       </div>
     </div>
@@ -79,7 +79,7 @@ const segments = computed(() => {
 
 .composition-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
   min-width: 0;
 }
@@ -97,8 +97,7 @@ const segments = computed(() => {
   min-width: 0;
 }
 
-.composition-copy .text-body-sm,
-.composition-copy .text-caption {
+.composition-copy .t-small {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

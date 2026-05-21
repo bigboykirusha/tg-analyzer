@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import PhoneStep from '../components/auth/PhoneStep.vue'
 import CodeStep from '../components/auth/CodeStep.vue'
 import PasswordStep from '../components/auth/PasswordStep.vue'
@@ -25,13 +25,13 @@ onMounted(() => {
 })
 
 const seoTitle = computed(() => locale.value === 'ru'
-  ? 'TG Analyzer - РІС…РѕРґ РІ Telegram-Р°РЅР°Р»РёС‚РёРєСѓ'
+  ? 'TG Analyzer - вход в Telegram-аналитику'
   : 'TG Analyzer - Telegram analytics login')
 const seoDescription = computed(() => locale.value === 'ru'
-  ? 'Р’РѕР№РґРёС‚Рµ РІ TG Analyzer Рё Р°РЅР°Р»РёР·РёСЂСѓР№С‚Рµ Telegram-С‡Р°С‚С‹: РґРёРЅР°РјРёРєР° РѕР±С‰РµРЅРёСЏ, Р°РєС‚РёРІРЅРѕСЃС‚СЊ, СЃР»РѕРІР°, СЌРјРѕРґР·Рё Рё РїРѕРґСЂРѕР±РЅС‹Рµ РѕС‚С‡РµС‚С‹.'
+  ? 'Войдите в TG Analyzer и анализируйте Telegram-чаты: динамика общения, активность, слова, эмодзи и подробные отчеты.'
   : 'Sign in to TG Analyzer to explore Telegram chat analytics, activity patterns, vocabulary, emoji usage, and focused reports.')
 const seoKeywords = computed(() => locale.value === 'ru'
-  ? 'telegram analytics, Р°РЅР°Р»РёР· telegram С‡Р°С‚РѕРІ, СЃС‚Р°С‚РёСЃС‚РёРєР° telegram, tg analyzer, Р°РЅР°Р»РёС‚РёРєР° РїРµСЂРµРїРёСЃРѕРє'
+  ? 'telegram analytics, анализ telegram чатов, статистика telegram, tg analyzer, аналитика переписок'
   : 'telegram analytics, telegram chat analysis, telegram stats, tg analyzer, chat insights')
 
 const stepIndex = computed(() => ({
@@ -113,13 +113,13 @@ async function handlePassword() {
           <span class="brand-mark">&lt;T&gt;</span>
           <div class="brand-copy">
             <div class="brand-topline">
-              <h1 class="text-h1">{{ t('login.title') }}</h1>
+              <h1 class="t-h1">{{ t('login.title') }}</h1>
               <div class="language-switch" :aria-label="t('nav.language')">
                 <button type="button" :class="{ active: locale === 'ru' }" @click="setLocale('ru')">RU</button>
                 <button type="button" :class="{ active: locale === 'en' }" @click="setLocale('en')">EN</button>
               </div>
             </div>
-            <p class="text-body login-lead">{{ t('login.lead') }}</p>
+            <p class="t-body login-lead">{{ t('login.lead') }}</p>
           </div>
         </div>
 
@@ -130,13 +130,13 @@ async function handlePassword() {
 
         <div class="login-card">
           <div class="login-copy">
-            <span class="text-label">{{ t('login.secure') }}</span>
-            <h2 class="text-h2">
+            <span class="t-label">{{ t('login.secure') }}</span>
+            <h2 class="t-h2">
               <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
               <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
               <template v-else>{{ t('login.passwordTitle') }}</template>
             </h2>
-            <p class="text-body-sm">
+            <p class="t-small">
               <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
               <template v-else-if="step === 'code'">{{ t('login.codeDescription') }}</template>
               <template v-else>{{ t('login.passwordDescription') }}</template>
@@ -152,7 +152,7 @@ async function handlePassword() {
               @submit="handlePassword" />
           </Transition>
 
-          <p v-if="error" class="login-error text-body-sm">
+          <p v-if="error" class="login-error t-small">
             {{ error }}
           </p>
         </div>
@@ -164,7 +164,7 @@ async function handlePassword() {
                 d="M8 10V7.75A4 4 0 0 1 12 4a4 4 0 0 1 4 3.75V10m-7.25 0h6.5A1.75 1.75 0 0 1 17 11.75v5.5A1.75 1.75 0 0 1 15.25 19h-6.5A1.75 1.75 0 0 1 7 17.25v-5.5A1.75 1.75 0 0 1 8.75 10Z" />
             </svg>
           </span>
-          <p class="text-body-sm">{{ t('login.trust') }}</p>
+          <p class="t-small">{{ t('login.trust') }}</p>
         </div>
       </section>
 
@@ -182,7 +182,7 @@ async function handlePassword() {
   justify-content: center;
   padding: var(--space-6);
   background:
-    radial-gradient(circle at top, var(--accent-glow-soft), transparent 18%),
+    radial-gradient(circle at top, var(--accent-subtle), transparent 18%),
     var(--bg-base);
   overflow: hidden;
 }
@@ -203,13 +203,13 @@ async function handlePassword() {
   left: -6vw;
   background:
     radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 60%),
-    radial-gradient(circle at 65% 65%, color-mix(in srgb, var(--accent-strong) 26%, transparent), transparent 56%);
+    radial-gradient(circle at 65% 65%, color-mix(in srgb, var(--accent-hover) 26%, transparent), transparent 56%);
 }
 
 .login-orbit-right {
   right: -6vw;
   background:
-    radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--accent-glow) 34%, transparent), transparent 58%),
+    radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--accent-border) 34%, transparent), transparent 58%),
     radial-gradient(circle at 40% 70%, color-mix(in srgb, #7dd3fc 18%, transparent), transparent 58%);
 }
 
@@ -292,7 +292,7 @@ async function handlePassword() {
 
 .language-switch button:hover,
 .language-switch button.active {
-  background: var(--accent-muted);
+  background: var(--accent-subtle);
   color: var(--accent);
 }
 
@@ -397,14 +397,18 @@ async function handlePassword() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  color: var(--text-tertiary);
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--accent);
+  flex: 0 0 auto;
 }
 
 .trust-icon svg {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
@@ -412,10 +416,14 @@ async function handlePassword() {
   stroke-linejoin: round;
 }
 
+.login-trust p {
+  max-width: 420px;
+}
+
 
 .auth-step-enter-active,
 .auth-step-leave-active {
-  transition: opacity var(--transition-base), transform var(--transition-base);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
 }
 
 .auth-step-enter-from {

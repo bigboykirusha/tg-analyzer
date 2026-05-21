@@ -19,8 +19,8 @@ defineProps<{
       </slot>
     </div>
     <div class="empty-copy">
-      <h3 class="text-h3 empty-title">{{ title }}</h3>
-      <p class="text-body-sm">{{ description }}</p>
+      <h3 class="t-h3 empty-title">{{ title }}</h3>
+      <p class="t-small">{{ description }}</p>
     </div>
     <div v-if="$slots.action" class="empty-action">
       <slot name="action" />

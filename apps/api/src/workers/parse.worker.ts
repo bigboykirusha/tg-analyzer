@@ -1,5 +1,7 @@
 import { Worker, type Job } from 'bullmq'
+import { eq } from 'drizzle-orm'
 import { parseDialogsQueue, type ParseJobData } from '../queues/parse.queue'
+import { db, schema } from '../db'
 import { redis } from '../services/redis.service'
 import {
   isSystemTelegramDialog,
@@ -65,8 +67,9 @@ async function parseDialog(userId: string, session: {
   totalChats: number
   job: Job<ParseJobData>
   startTime: number
+  timeZone: string
 }) {
-  const accumulator = createChatAccumulator()
+  const accumulator = createChatAccumulator(context.timeZone)
   let offsetId = 0
   let hasMore = true
   let scannedMessages = 0
@@ -166,6 +169,10 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
     if (!session) {
       throw new Error('Active Telegram session not found')
     }
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+    })
+    const timeZone = user?.timezone ?? 'UTC'
 
     await publishParseProgress(userId, {
       type: 'progress',
@@ -227,6 +234,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
         totalChats: targetDialogs.length,
         job,
         startTime,
+        timeZone,
       })
       totalMessages += count
 

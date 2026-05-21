@@ -5,7 +5,7 @@ import ParseProgress from './stats/ParseProgress.vue'
 import ConfirmDialog from './ui/ConfirmDialog.vue'
 
 const auth = useAuthStore()
-const { deleteAccount, logout, terminateTelegramSession } = useAuth()
+const { deleteAccount, logout, terminateTelegramSession, updateProfile } = useAuth()
 const route = useRoute()
 const { locale, setLocale, t } = useI18n()
 const toast = useToast()
@@ -43,6 +43,7 @@ const displayHandle = computed(() => {
 
 onMounted(() => {
   mounted.value = true
+  void syncBrowserTimeZone()
 })
 
 function openTerminateConfirm() {
@@ -105,6 +106,23 @@ async function cancelActiveParse() {
     toast.error(error instanceof Error ? error.message : t('dashboard.cancelError'))
   } finally {
     mobileCancelling.value = false
+  }
+}
+
+async function syncBrowserTimeZone() {
+  if (!import.meta.client || !auth.isAuthorized) {
+    return
+  }
+
+  const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  if (!browserTimeZone || browserTimeZone === auth.user?.timezone) {
+    return
+  }
+
+  try {
+    await updateProfile(browserTimeZone)
+  } catch (error) {
+    console.warn('Could not sync browser timezone', error)
   }
 }
 </script>
@@ -193,16 +211,16 @@ async function cancelActiveParse() {
         <div class="mobile-actions">
         <NuxtLink to="/dashboard" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': route.path.startsWith('/dashboard') }">
           <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
-          <span class="screen-reader">{{ t('common.dashboard') }}</span>
+          <span class="sr-only">{{ t('common.dashboard') }}</span>
         </NuxtLink>
         <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="mobile-nav-item mobile-nav-item-active">
           <BarChart2 :size="18" :stroke-width="1.5" aria-hidden="true" />
-          <span class="screen-reader">{{ t('common.report') }}</span>
+          <span class="sr-only">{{ t('common.report') }}</span>
         </NuxtLink>
         <button class="mobile-nav-item mobile-language" type="button" @click="setLocale(locale === 'ru' ? 'en' : 'ru')">
           <Globe :size="16" :stroke-width="1.5" aria-hidden="true" />
           {{ locale.toUpperCase() }}
-          <span class="screen-reader">{{ t('nav.language') }}</span>
+          <span class="sr-only">{{ t('nav.language') }}</span>
         </button>
         </div>
       </div>

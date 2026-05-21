@@ -17,7 +17,16 @@ export interface UserDto {
   tgUserId: string
   username: string | null
   firstName: string | null
+  timezone: string
   telegramSessionActive?: boolean
+}
+
+export interface UpdateProfileBody {
+  timezone: string
+}
+
+export interface UpdateProfileResponse {
+  user: UserDto
 }
 
 export interface SendCodeBody {
@@ -161,6 +170,12 @@ export interface ResponseStatsDto {
   medianTheirsSec: number | null
   mineSamples: number
   theirsSamples: number
+  mineP25Sec: number | null
+  mineP75Sec: number | null
+  mineP95Sec: number | null
+  theirsP25Sec: number | null
+  theirsP75Sec: number | null
+  theirsP95Sec: number | null
 }
 
 export interface SessionHighlightDto {
@@ -199,11 +214,18 @@ export interface InsightDto {
   tone: 'positive' | 'neutral' | 'warning'
 }
 
+export interface StreakInfoDto {
+  days: number
+  startDate: string | null
+  endDate: string | null
+}
+
 export interface ConversationFactsDto {
   activeDays: number
   longestGap: LongestGapDto | null
   mostActiveDate: MostActiveDateDto | null
   maxStreakDays: number
+  maxStreak: StreakInfoDto | null
   firstMessageAt: string | null
   silencePeriodsOver30Days: LongestGapDto[]
   trend: 'growing' | 'stable' | 'fading' | 'unknown'
@@ -229,6 +251,40 @@ export interface MessageCompositionDto {
   voice: number
   sticker: number
   file: number
+}
+
+export interface ActivityDistributionDto {
+  night: DirectionalCountDto
+  morning: DirectionalCountDto
+  afternoon: DirectionalCountDto
+  evening: DirectionalCountDto
+}
+
+export interface CompositionStatsDto {
+  textSharePct: number | null
+  mediaSharePct: number | null
+  voiceSharePct: number | null
+  stickerSharePct: number | null
+  fileSharePct: number | null
+  avgCharsPerTextMessage: number | null
+}
+
+export interface AvailabilityProfileDto {
+  activeHours: number
+  activeHoursPct: number
+  concentrationIndex: number | null
+  predictability: 'low' | 'medium' | 'high'
+  peakWindow: string | null
+  secondaryWindow: string | null
+}
+
+export interface HealthScoreDto {
+  score: number
+  label: 'strong' | 'steady' | 'fragile' | 'imbalanced'
+  responseRate: number | null
+  fragmentation: number | null
+  initiativeBalance: number | null
+  longTermStability: number | null
 }
 
 export interface ActivityPointDto {
@@ -268,12 +324,13 @@ export interface ChatStatsDto {
   firstMessageAt: string | null
   lastMessageAt: string | null
   parsedAt: string | null
-  avgResponseSec: number | null
+  averageMyResponseSec: number | null
   medianMyResponseSec: number | null
   medianTheirResponseSec: number | null
   myWordsPerMessage: number | null
   theirWordsPerMessage: number | null
   iWriteFirstPct: number | null
+  responseRate: number | null
   topWords: TopItemDto[]
   topEmoji: TopItemDto[]
   hourlyActivity: Record<string, number>
@@ -288,6 +345,10 @@ export interface ChatStatsDto {
   conversationFacts: ConversationFactsDto
   wordsPerMessage: DirectionalAveragesDto
   messageComposition: MessageCompositionDto
+  activityDistribution: ActivityDistributionDto
+  compositionStats: CompositionStatsDto
+  availabilityProfile: AvailabilityProfileDto
+  healthScore: HealthScoreDto | null
 }
 
 export interface ActivityResponse {

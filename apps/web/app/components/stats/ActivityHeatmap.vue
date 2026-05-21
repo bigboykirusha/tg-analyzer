@@ -83,7 +83,7 @@ function levelClass(level: number) {
       </div>
     </div>
   </div>
-  <div v-else class="heatmap-empty text-body-sm">{{ t('heatmap.empty') }}</div>
+  <div v-else class="heatmap-empty t-small">{{ t('heatmap.empty') }}</div>
 </template>
 
 <style scoped>

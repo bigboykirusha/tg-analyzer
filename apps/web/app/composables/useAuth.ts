@@ -2,6 +2,7 @@ import type {
   AuthSuccessResponse,
   PendingPasswordResponse,
   SendCodeResponse,
+  UpdateProfileResponse,
   VerifyCodeBody,
   VerifyPasswordBody,
 } from '@tg-analyzer/shared'
@@ -150,12 +151,22 @@ export function useAuth() {
     await navigateTo('/login', { replace: true })
   }
 
+  async function updateProfile(timezone: string) {
+    const result = await useApiFetch<UpdateProfileResponse>('/api/auth/profile', {
+      method: 'PATCH',
+      body: { timezone },
+    })
+    auth.updateUser(result.user)
+    return result.user
+  }
+
   return {
     bootstrap,
     sendCode,
     verifyCode,
     verifyPassword,
     refresh,
+    updateProfile,
     logout,
     terminateTelegramSession,
     deleteAccount,

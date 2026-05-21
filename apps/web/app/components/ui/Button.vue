@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 
-defineOptions({
-  inheritAttrs: false,
-})
+defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(defineProps<{
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
@@ -24,23 +22,17 @@ const props = withDefaults(defineProps<{
 const attrs = useAttrs()
 
 const classes = computed(() => [
-  'ui-button',
-  `btn-${props.variant}`,
-  `btn-${props.size}`,
-  {
-    'btn-block': props.block,
-  },
+  'btn',
+  `btn--${props.variant}`,
+  `btn--${props.size}`,
+  { 'btn--block': props.block },
 ])
 </script>
 
 <template>
-  <button
-    v-bind="attrs"
-    :class="classes"
-    :disabled="disabled || loading"
-  >
-    <span v-if="loading || icon || $slots.icon" class="btn-icon" aria-hidden="true">
-      <span v-if="loading" class="btn-spinner" />
+  <button v-bind="attrs" :class="classes" :disabled="disabled || loading">
+    <span v-if="loading || icon || $slots.icon" class="btn__icon" aria-hidden="true">
+      <span v-if="loading" class="btn__spinner" />
       <component :is="icon" v-else-if="icon" />
       <slot v-else name="icon" />
     </span>
@@ -49,128 +41,134 @@ const classes = computed(() => [
 </template>
 
 <style scoped>
-.ui-button {
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   font-family: var(--font-sans);
-  font-weight: 600;
-  border: 1px solid var(--border-default);
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+  min-width: 0;
+  max-width: 100%;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast),
     color var(--transition-fast),
     box-shadow var(--transition-fast),
-    transform var(--transition-fast);
-  max-width: 100%;
-  min-width: 0;
-  min-height: 34px;
-  white-space: normal;
-  text-align: center;
-  line-height: 1.2;
-  border-radius: var(--radius-md);
+    opacity var(--transition-fast);
 }
 
-.ui-button:focus-visible {
+.btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--accent), 0 0 0 3px var(--bg-base);
+  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
 }
 
-.btn-block {
-  width: 100%;
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
-.btn-sm {
-  min-height: 28px;
+/* ─── Sizes ────────────────────────────────────────────────────────────────── */
+.btn--sm {
+  height: 28px;
   padding: 0 var(--space-3);
   font-size: 12px;
 }
 
-.btn-md {
-  min-height: 34px;
+.btn--md {
+  height: 34px;
   padding: 0 var(--space-4);
+  font-size: 13px;
+}
+
+.btn--lg {
+  height: 40px;
+  padding: 0 var(--space-5);
   font-size: 14px;
 }
 
-.btn-lg {
-  min-height: 34px;
-  padding: 0 var(--space-4);
-  font-size: 14px;
+.btn--block {
+  width: 100%;
 }
 
-.btn-primary {
+/* ─── Variants ─────────────────────────────────────────────────────────────── */
+.btn--primary {
   background: var(--accent);
   border-color: transparent;
   color: var(--accent-text);
   box-shadow: var(--shadow-accent);
 }
 
-.btn-primary:hover {
+.btn--primary:hover:not(:disabled) {
   background: var(--accent-hover);
-  transform: scale(0.99);
 }
 
-.btn-secondary {
+.btn--secondary {
   background: var(--bg-surface);
   border-color: var(--border-default);
   color: var(--text-primary);
 }
 
-.btn-secondary:hover {
+.btn--secondary:hover:not(:disabled) {
   background: var(--bg-elevated);
   border-color: var(--border-strong);
 }
 
-.btn-ghost {
+.btn--ghost {
   background: transparent;
   border-color: transparent;
   color: var(--text-secondary);
 }
 
-.btn-ghost:hover {
+.btn--ghost:hover:not(:disabled) {
   background: var(--bg-elevated);
   color: var(--text-primary);
 }
 
-.btn-danger {
+.btn--danger {
   background: var(--danger-subtle);
-  border-color: rgba(248, 113, 113, 0.2);
+  border-color: rgba(248, 113, 113, 0.20);
   color: var(--danger);
 }
 
-.btn-danger:hover {
+.btn--danger:hover:not(:disabled) {
   background: rgba(248, 113, 113, 0.16);
-  border-color: rgba(248, 113, 113, 0.3);
+  border-color: rgba(248, 113, 113, 0.30);
 }
 
-.ui-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.btn-icon {
+/* ─── Icon slot ────────────────────────────────────────────────────────────── */
+.btn__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
   flex: 0 0 auto;
 }
 
-.btn-sm .btn-icon {
+/* icon size follows button size */
+.btn--sm .btn__icon {
   width: 14px;
   height: 14px;
 }
 
-.btn-lg .btn-icon {
-  width: 18px;
-  height: 18px;
+.btn--md .btn__icon {
+  width: 15px;
+  height: 15px;
 }
 
-.btn-icon :deep(svg) {
+.btn--lg .btn__icon {
+  width: 16px;
+  height: 16px;
+}
+
+.btn__icon :deep(svg) {
   width: 100%;
   height: 100%;
   fill: none;
@@ -180,30 +178,34 @@ const classes = computed(() => [
   stroke-linejoin: round;
 }
 
-.btn-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid currentColor;
+/* ─── Spinner ──────────────────────────────────────────────────────────────── */
+.btn__spinner {
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  animation: btn-spin 0.6s linear infinite;
 }
 
-@keyframes spin {
+@keyframes btn-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
+/* ─── Mobile ───────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .ui-button {
-    min-height: 34px;
+  .btn--sm {
+    height: 32px;
   }
 
-  .btn-sm,
-  .btn-md,
-  .btn-lg {
-    min-height: 34px;
+  .btn--md {
+    height: 36px;
+  }
+
+  .btn--lg {
+    height: 44px;
   }
 }
 </style>

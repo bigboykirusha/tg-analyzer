@@ -66,7 +66,7 @@
 }
 
 .animate-fade-in {
-  animation: fadeIn var(--transition-base) ease both;
+  animation: fadeIn var(--transition-normal) ease both;
 }
 
 .animate-fade-in-up {

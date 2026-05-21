@@ -2,7 +2,7 @@ import type { FastifyPluginAsync, FastifyReply } from 'fastify'
 import { Api } from 'telegram'
 import jwt from 'jsonwebtoken'
 import { z } from 'zod'
-import type { WsAuthTokenResponse } from '@tg-analyzer/shared'
+import type { UpdateProfileResponse, WsAuthTokenResponse } from '@tg-analyzer/shared'
 import { and, eq } from 'drizzle-orm'
 import {
   clearRefreshCookie,
@@ -49,6 +49,10 @@ const verifyCodeSchema = z.object({
 
 const verifyPasswordSchema = z.object({
   password: z.string().min(1),
+})
+
+const updateProfileSchema = z.object({
+  timezone: z.string().min(1).max(64),
 })
 
 const authRateLimitConfig = {
@@ -195,6 +199,36 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     return { token } satisfies WsAuthTokenResponse
   })
 
+  fastify.patch('/profile', { preHandler: requireAuth }, async (request, reply) => {
+    const userId = request.authUserId!
+    const payload = updateProfileSchema.parse(request.body ?? {})
+    const timezone = validateTimeZone(payload.timezone)
+    const telegramSession = await db.query.telegramSessions.findFirst({
+      where: and(eq(schema.telegramSessions.userId, userId), eq(schema.telegramSessions.isActive, true)),
+    })
+
+    const [user] = await db
+      .update(schema.users)
+      .set({ timezone })
+      .where(eq(schema.users.id, userId))
+      .returning()
+
+    if (!user) {
+      return sendApiError(reply, 404, 'User not found')
+    }
+
+    return reply.send({
+      user: {
+        id: user.id,
+        tgUserId: String(user.tgUserId),
+        username: user.username,
+        firstName: user.firstName,
+        timezone: user.timezone,
+        telegramSessionActive: telegramSession?.isActive ?? false,
+      },
+    } satisfies UpdateProfileResponse)
+  })
+
   fastify.post('/terminate-telegram', { preHandler: requireAuth }, async (request, reply) => {
     const userId = request.authUserId!
     const session = await db.query.telegramSessions.findFirst({
@@ -301,6 +335,7 @@ async function finalizeTelegramAuth(phoneCodeHash: string, reply: FastifyReply) 
           tgPhone: pending.phone,
           username: me.username ?? null,
           firstName: me.firstName ?? null,
+          timezone: 'UTC',
           lastLogin: new Date(),
         })
         .returning()
@@ -338,4 +373,12 @@ function throwAuthError(error: unknown, fallbackMessage: string): never {
   const message = error instanceof Error ? error.message : String(error)
   const statusCode = /expired|not found/i.test(message) ? 401 : 400
   throw createApiError(statusCode, fallbackMessage)
+}
+
+function validateTimeZone(value: string) {
+  try {
+    return Intl.DateTimeFormat('en-US', { timeZone: value }).resolvedOptions().timeZone
+  } catch {
+    throw createApiError(400, 'Invalid timezone')
+  }
 }

@@ -1,15 +1,20 @@
 import type {
+  ActivityDistributionDto,
+  AvailabilityProfileDto,
   ChatStatsDto,
+  CompositionStatsDto,
   ConversationFactsDto,
   DirectionalCountDto,
   DirectionalTopItemsDto,
   GlobalStatsDto,
+  HealthScoreDto,
   InsightDto,
   MessageCompositionDto,
   MonthlyActivityDto,
   RelationshipScoreDto,
   ResponseStatsDto,
   SessionStatsDto,
+  StreakInfoDto,
   TopItemDto,
 } from '@tg-analyzer/shared'
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm'
@@ -77,10 +82,15 @@ export interface AggregatedChatStats {
   messageComposition: MessageCompositionDto
   conversationFacts: ConversationFactsDto
   wordsPerMessage: { mine: number | null; theirs: number | null }
-  avgResponseSec: number | null
+  averageMyResponseSec: number | null
   medianMyResponseSec: number | null
   medianTheirResponseSec: number | null
   iWriteFirstPct: number | null
+  responseRate: number | null
+  activityDistribution: ActivityDistributionDto
+  compositionStats: CompositionStatsDto
+  availabilityProfile: AvailabilityProfileDto
+  healthScore: HealthScoreDto | null
 }
 
 export interface AggregationMessageInput {
@@ -93,7 +103,8 @@ export interface AggregationMessageInput {
   file?: boolean
 }
 
-export function createChatAccumulator(): AggregatedChatStats & {
+export function createChatAccumulator(timeZone = 'UTC'): AggregatedChatStats & {
+  timeZone: string
   wordCounts: Map<string, number>
   mineWordCounts: Map<string, number>
   theirsWordCounts: Map<string, number>
@@ -130,13 +141,25 @@ export function createChatAccumulator(): AggregatedChatStats & {
     topWordsBySender: { mine: [], theirs: [] },
     topEmojiBySender: { mine: [], theirs: [] },
     uniqueWordsBySender: { mine: [], theirs: [] },
-    responseStats: { medianMineSec: null, medianTheirsSec: null, mineSamples: 0, theirsSamples: 0 },
+    responseStats: {
+      medianMineSec: null,
+      medianTheirsSec: null,
+      mineSamples: 0,
+      theirsSamples: 0,
+      mineP25Sec: null,
+      mineP75Sec: null,
+      mineP95Sec: null,
+      theirsP25Sec: null,
+      theirsP75Sec: null,
+      theirsP95Sec: null,
+    },
     messageComposition: { text: 0, media: 0, voice: 0, sticker: 0, file: 0 },
     conversationFacts: {
       activeDays: 0,
       longestGap: null,
       mostActiveDate: null,
       maxStreakDays: 0,
+      maxStreak: null,
       firstMessageAt: null,
       silencePeriodsOver30Days: [],
       trend: 'unknown',
@@ -146,10 +169,16 @@ export function createChatAccumulator(): AggregatedChatStats & {
       insights: [],
     },
     wordsPerMessage: { mine: null, theirs: null },
-    avgResponseSec: null,
+    averageMyResponseSec: null,
     medianMyResponseSec: null,
     medianTheirResponseSec: null,
     iWriteFirstPct: null,
+    responseRate: null,
+    activityDistribution: createEmptyActivityDistribution(),
+    compositionStats: createEmptyCompositionStats(),
+    availabilityProfile: createEmptyAvailabilityProfile(),
+    healthScore: null,
+    timeZone,
     wordCounts: new Map(),
     mineWordCounts: new Map(),
     theirsWordCounts: new Map(),
@@ -182,6 +211,37 @@ function createEmptySessionStats(): SessionStatsDto {
   }
 }
 
+function createEmptyActivityDistribution(): ActivityDistributionDto {
+  return {
+    night: createDirectionalCount(),
+    morning: createDirectionalCount(),
+    afternoon: createDirectionalCount(),
+    evening: createDirectionalCount(),
+  }
+}
+
+function createEmptyCompositionStats(): CompositionStatsDto {
+  return {
+    textSharePct: null,
+    mediaSharePct: null,
+    voiceSharePct: null,
+    stickerSharePct: null,
+    fileSharePct: null,
+    avgCharsPerTextMessage: null,
+  }
+}
+
+function createEmptyAvailabilityProfile(): AvailabilityProfileDto {
+  return {
+    activeHours: 0,
+    activeHoursPct: 0,
+    concentrationIndex: null,
+    predictability: 'low',
+    peakWindow: null,
+    secondaryWindow: null,
+  }
+}
+
 function incrementDirectional(count: DirectionalCountDto, outgoing: boolean) {
   count.total += 1
   if (outgoing) {
@@ -195,12 +255,63 @@ function padNumber(value: number) {
   return String(value).padStart(2, '0')
 }
 
-function toLocalDayKey(date: Date) {
-  return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(date.getDate())}`
+function normalizeTimeZone(timeZone: string) {
+  try {
+    return Intl.DateTimeFormat('en-US', { timeZone }).resolvedOptions().timeZone
+  } catch {
+    return 'UTC'
+  }
 }
 
-function toLocalMonthKey(date: Date) {
-  return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}`
+function getZonedDateParts(date: Date, timeZone: string) {
+  const normalized = normalizeTimeZone(timeZone)
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: normalized,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hourCycle: 'h23',
+    weekday: 'short',
+  }).formatToParts(date)
+
+  const read = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? ''
+  const weekdayLabel = read('weekday')
+  const weekdayMap: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  }
+
+  return {
+    year: read('year'),
+    month: read('month'),
+    day: read('day'),
+    hour: Number(read('hour') || '0'),
+    weekday: weekdayMap[weekdayLabel] ?? 0,
+  }
+}
+
+function toLocalDayKey(date: Date, timeZone: string) {
+  const parts = getZonedDateParts(date, timeZone)
+  return `${parts.year}-${parts.month}-${parts.day}`
+}
+
+function toLocalMonthKey(date: Date, timeZone: string) {
+  const parts = getZonedDateParts(date, timeZone)
+  return `${parts.year}-${parts.month}`
+}
+
+function getLocalHour(date: Date, timeZone: string) {
+  return getZonedDateParts(date, timeZone).hour
+}
+
+function getLocalWeekday(date: Date, timeZone: string) {
+  return getZonedDateParts(date, timeZone).weekday
 }
 
 function normalizeWordToken(word: string) {
@@ -248,12 +359,12 @@ export function aggregateMessage(
   }
 
   const timestamp = normalizeMessageDate(message.date) ?? new Date()
-  const hour = String(timestamp.getHours())
+  const hour = String(getLocalHour(timestamp, acc.timeZone))
   acc.hourlyActivity[hour] = (acc.hourlyActivity[hour] ?? 0) + 1
   incrementDirectional(acc.hourlyActivitySplit[hour] ?? createDirectionalCount(), Boolean(message.outgoing))
   acc.hourlyActivitySplit[hour] = acc.hourlyActivitySplit[hour] ?? createDirectionalCount()
 
-  const day = toLocalDayKey(timestamp)
+  const day = toLocalDayKey(timestamp, acc.timeZone)
   const daily = acc.dailyActivity.get(day) ?? { sent: 0, received: 0 }
   if (!acc.dayFirstMessageDirection.has(day)) {
     acc.dayFirstMessageDirection.set(day, Boolean(message.outgoing))
@@ -265,10 +376,10 @@ export function aggregateMessage(
   }
   acc.dailyActivity.set(day, daily)
 
-  const weekday = String(timestamp.getDay())
+  const weekday = String(getLocalWeekday(timestamp, acc.timeZone))
   incrementDirectional(acc.weekdayActivity[weekday], Boolean(message.outgoing))
 
-  const month = toLocalMonthKey(timestamp)
+  const month = toLocalMonthKey(timestamp, acc.timeZone)
   const monthly = acc.monthlyActivity.get(month) ?? createDirectionalCount()
   incrementDirectional(monthly, Boolean(message.outgoing))
   acc.monthlyActivity.set(month, monthly)
@@ -445,21 +556,40 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
       medianTheirsSec,
       mineSamples: mineResponseSeconds.length,
       theirsSamples: theirsResponseSeconds.length,
+      mineP25Sec: percentile(mineResponseSeconds, 25),
+      mineP75Sec: percentile(mineResponseSeconds, 75),
+      mineP95Sec: percentile(mineResponseSeconds, 95),
+      theirsP25Sec: percentile(theirsResponseSeconds, 25),
+      theirsP75Sec: percentile(theirsResponseSeconds, 75),
+      theirsP95Sec: percentile(theirsResponseSeconds, 95),
     }
-    acc.avgResponseSec = averageMineSec
+    acc.averageMyResponseSec = averageMineSec
     acc.medianMyResponseSec = medianMineSec
     acc.medianTheirResponseSec = medianTheirsSec
+    acc.responseRate = computeResponseRate(timeline)
 
     if (sessionStarts.length > 0) {
       const outgoingStarts = sessionStarts.filter(Boolean).length
       acc.iWriteFirstPct = Math.round((outgoingStarts / sessionStarts.length) * 100)
     }
   } else {
-    acc.responseStats = { medianMineSec: null, medianTheirsSec: null, mineSamples: 0, theirsSamples: 0 }
-    acc.avgResponseSec = null
+    acc.responseStats = {
+      medianMineSec: null,
+      medianTheirsSec: null,
+      mineSamples: 0,
+      theirsSamples: 0,
+      mineP25Sec: null,
+      mineP75Sec: null,
+      mineP95Sec: null,
+      theirsP25Sec: null,
+      theirsP75Sec: null,
+      theirsP95Sec: null,
+    }
+    acc.averageMyResponseSec = null
     acc.medianMyResponseSec = null
     acc.medianTheirResponseSec = null
     acc.iWriteFirstPct = null
+    acc.responseRate = null
   }
 
   const dailyRows = mapDailyActivity(acc.dailyActivity)
@@ -471,9 +601,17 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
     ? [...monthlyRows].sort((left, right) => right.total - left.total)[0]?.month ?? null
     : null
   const activeDays = dailyRows.length
-  const maxStreakDays = computeMaxStreak(Array.from(acc.dailyActivity.keys()))
+  const maxStreak = computeMaxStreak(Array.from(acc.dailyActivity.keys()))
   const trend = computeTrend(monthlyRows)
-  const sessionStats = buildSessionStats(timeline, activeDays)
+  const sessionStats = buildSessionStats(timeline, activeDays, acc.timeZone)
+  acc.activityDistribution = computeActivityDistribution(acc.hourlyActivitySplit)
+  acc.compositionStats = computeCompositionStats({
+    totalMessages: acc.totalMessages,
+    totalChars: acc.totalChars,
+    textMessageCount: acc.textMessageCount,
+    messageComposition: acc.messageComposition,
+  })
+  acc.availabilityProfile = computeAvailabilityProfile(acc.hourlyActivity)
   const relationshipScore = computeRelationshipScore({
     privateLike,
     sentMessages: acc.sentMessages,
@@ -481,7 +619,14 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
     iWriteFirstPct: acc.iWriteFirstPct,
     responseStats: acc.responseStats,
     activeDays,
-    maxStreakDays,
+    maxStreakDays: maxStreak.days,
+    trend,
+  })
+  acc.healthScore = computeHealthScore({
+    responseRate: acc.responseRate,
+    sessionStats,
+    activeDays,
+    relationshipScore,
     trend,
   })
   const insights = generateInsights({
@@ -495,7 +640,8 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
     activeDays,
     longestGap,
     mostActiveDate: mostActiveDate ? { date: mostActiveDate.date, total: mostActiveDate.total } : null,
-    maxStreakDays,
+    maxStreakDays: maxStreak.days,
+    maxStreak,
     firstMessageAt: acc.firstMessageAt?.toISOString() ?? null,
     silencePeriodsOver30Days: silencePeriodsOver30Days.sort((left, right) => right.seconds - left.seconds).slice(0, 8),
     trend,
@@ -528,6 +674,15 @@ function median(values: number[]) {
   return sorted.length % 2
     ? sorted[middle]
     : Math.round((sorted[middle - 1] + sorted[middle]) / 2)
+}
+
+function percentile(values: number[], p: number) {
+  if (!values.length) {
+    return null
+  }
+  const sorted = [...values].sort((left, right) => left - right)
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil((p / 100) * sorted.length) - 1))
+  return sorted[index] ?? null
 }
 
 function clamp(value: number, min = 0, max = 100) {
@@ -572,19 +727,34 @@ function computeMaxStreak(days: string[]) {
   let max = 0
   let current = 0
   let previousTime = 0
+  let currentStart: string | null = null
+  let bestStart: string | null = null
+  let bestEnd: string | null = null
 
   for (const day of sorted) {
     const time = new Date(`${day}T00:00:00`).getTime()
     if (!previousTime || time - previousTime === 24 * 60 * 60 * 1000) {
+      if (!current) {
+        currentStart = day
+      }
       current += 1
     } else {
       current = 1
+      currentStart = day
     }
-    max = Math.max(max, current)
+    if (current > max) {
+      max = current
+      bestStart = currentStart
+      bestEnd = day
+    }
     previousTime = time
   }
 
-  return max
+  return {
+    days: max,
+    startDate: bestStart,
+    endDate: bestEnd,
+  } satisfies StreakInfoDto
 }
 
 function computeTrend(months: MonthlyActivityDto[]): ConversationFactsDto['trend'] {
@@ -618,7 +788,7 @@ function buildMonthWindow(lastMonth: string, count: number) {
   cursor.setMonth(cursor.getMonth() - count + 1)
 
   return Array.from({ length: count }, () => {
-    const value = toLocalMonthKey(cursor)
+    const value = `${cursor.getFullYear()}-${padNumber(cursor.getMonth() + 1)}`
     cursor.setMonth(cursor.getMonth() + 1)
     return value
   })
@@ -627,6 +797,7 @@ function buildMonthWindow(lastMonth: string, count: number) {
 function buildSessionStats(
   timeline: Array<{ outgoing: boolean; timestamp: Date }>,
   activeDays: number,
+  timeZone: string,
 ): SessionStatsDto {
   if (!timeline.length) {
     return createEmptySessionStats()
@@ -687,7 +858,7 @@ function buildSessionStats(
   const durations = sessions.map((session) => session.durationSec)
   const messageCounts = sessions.map((session) => session.totalMessages)
   const nightSessions = sessions.filter((session) => {
-    const hour = new Date(session.startedAt).getHours()
+    const hour = getLocalHour(new Date(session.startedAt), timeZone)
     return hour >= 23 || hour <= 5
   }).length
   const activeWeeks = Math.max(activeDays / 7, 1)
@@ -706,6 +877,166 @@ function buildSessionStats(
     sessionsPerActiveWeek: Number((sessions.length / activeWeeks).toFixed(1)),
     nightSessionsPct: sessions.length ? Math.round((nightSessions / sessions.length) * 100) : null,
     highlights,
+  }
+}
+
+function computeResponseRate(timeline: Array<{ outgoing: boolean; timestamp: Date }>) {
+  if (timeline.length < 2) {
+    return null
+  }
+
+  let totalTurns = 0
+  let repliedTurns = 0
+  let turnOutgoing = timeline[0].outgoing
+
+  for (let index = 1; index < timeline.length; index += 1) {
+    const current = timeline[index]
+    const previous = timeline[index - 1]
+    const gapMs = current.timestamp.getTime() - previous.timestamp.getTime()
+
+    if (gapMs > SESSION_BOUNDARY_MS) {
+      totalTurns += 1
+      turnOutgoing = current.outgoing
+      continue
+    }
+
+    if (current.outgoing !== turnOutgoing) {
+      totalTurns += 1
+      repliedTurns += 1
+      turnOutgoing = current.outgoing
+      continue
+    }
+  }
+
+  totalTurns += 1
+
+  return totalTurns ? Number(((repliedTurns / totalTurns) * 100).toFixed(2)) : null
+}
+
+function bucketForHour(hour: number): keyof ActivityDistributionDto {
+  if (hour <= 5) {
+    return 'night'
+  }
+  if (hour <= 11) {
+    return 'morning'
+  }
+  if (hour <= 17) {
+    return 'afternoon'
+  }
+  return 'evening'
+}
+
+function computeActivityDistribution(activity: Record<string, DirectionalCountDto>) {
+  const result = createEmptyActivityDistribution()
+  for (const [hourLabel, counts] of Object.entries(activity)) {
+    const hour = Number(hourLabel)
+    const bucket = bucketForHour(hour)
+    result[bucket].sent += counts?.sent ?? 0
+    result[bucket].received += counts?.received ?? 0
+    result[bucket].total += counts?.total ?? 0
+  }
+  return result
+}
+
+function computeCompositionStats(params: {
+  totalMessages: number
+  totalChars: number
+  textMessageCount: number
+  messageComposition: MessageCompositionDto
+}): CompositionStatsDto {
+  if (!params.totalMessages) {
+    return createEmptyCompositionStats()
+  }
+
+  return {
+    textSharePct: Number(((params.messageComposition.text / params.totalMessages) * 100).toFixed(2)),
+    mediaSharePct: Number(((params.messageComposition.media / params.totalMessages) * 100).toFixed(2)),
+    voiceSharePct: Number(((params.messageComposition.voice / params.totalMessages) * 100).toFixed(2)),
+    stickerSharePct: Number(((params.messageComposition.sticker / params.totalMessages) * 100).toFixed(2)),
+    fileSharePct: Number(((params.messageComposition.file / params.totalMessages) * 100).toFixed(2)),
+    avgCharsPerTextMessage: params.textMessageCount ? Number((params.totalChars / params.textMessageCount).toFixed(2)) : null,
+  }
+}
+
+function buildWindowLabel(hours: number[]) {
+  if (!hours.length) {
+    return null
+  }
+  const sorted = [...hours].sort((left, right) => right - left)
+  const start = sorted[sorted.length - 1]
+  const end = sorted[0]
+  return `${padNumber(start)}:00-${padNumber((end + 1) % 24)}:00`
+}
+
+function computeAvailabilityProfile(hourlyActivity: Record<string, number>): AvailabilityProfileDto {
+  const entries = Object.entries(hourlyActivity).map(([hour, total]) => ({ hour: Number(hour), total }))
+  const activeHours = entries.filter((entry) => entry.total > 0)
+  const totalMessages = entries.reduce((sum, entry) => sum + entry.total, 0)
+  const peakHours = [...entries].sort((left, right) => right.total - left.total).slice(0, 3)
+  const peakWindow = buildWindowLabel(peakHours.map((entry) => entry.hour))
+  const secondaryWindow = peakHours.length >= 2 ? buildWindowLabel(peakHours.slice(1).map((entry) => entry.hour)) : null
+  const averageHourly = entries.length ? totalMessages / entries.length : 0
+  const maxHourly = peakHours[0]?.total ?? 0
+  const concentrationIndex = averageHourly > 0 ? Number((maxHourly / averageHourly).toFixed(2)) : null
+  const predictability = concentrationIndex === null || concentrationIndex < 2
+    ? 'low'
+    : concentrationIndex < 3.5
+      ? 'medium'
+      : 'high'
+
+  return {
+    activeHours: activeHours.length,
+    activeHoursPct: Number(((activeHours.length / 24) * 100).toFixed(2)),
+    concentrationIndex,
+    predictability,
+    peakWindow,
+    secondaryWindow,
+  }
+}
+
+function computeHealthScore(params: {
+  responseRate: number | null
+  sessionStats: SessionStatsDto
+  activeDays: number
+  relationshipScore: RelationshipScoreDto | null
+  trend: ConversationFactsDto['trend']
+}): HealthScoreDto | null {
+  if (!params.relationshipScore) {
+    return null
+  }
+
+  const fragmentation = params.activeDays
+    ? Math.min(1, params.sessionStats.totalSessions / Math.max(params.activeDays, 1))
+    : 1
+  const initiativeBalance = params.relationshipScore.attentionBalance
+  const longTermStability = clamp(Math.round(
+    (params.relationshipScore.stability ?? 50) * 0.7
+    + (params.trend === 'growing' ? 90 : params.trend === 'stable' ? 75 : params.trend === 'fading' ? 35 : 55) * 0.3,
+  ))
+  const responseRateScore = params.responseRate ?? 55
+  const score = clamp(Math.round(
+    responseRateScore * 0.3
+    + (100 - fragmentation * 50) * 0.2
+    + (initiativeBalance ?? 50) * 0.2
+    + longTermStability * 0.3,
+  ))
+
+  let label: HealthScoreDto['label'] = 'steady'
+  if (score >= 80) {
+    label = 'strong'
+  } else if (score < 45) {
+    label = 'fragile'
+  } else if ((initiativeBalance ?? 100) < 40) {
+    label = 'imbalanced'
+  }
+
+  return {
+    score,
+    label,
+    responseRate: params.responseRate,
+    fragmentation: Number((fragmentation * 100).toFixed(2)),
+    initiativeBalance,
+    longTermStability,
   }
 }
 
@@ -912,10 +1243,11 @@ export async function saveAggregates(params: {
       fileCount: finalStats.fileCount,
       firstMessageAt: finalStats.firstMessageAt,
       lastMessageAt: finalStats.lastMessageAt,
-      avgResponseSec: finalStats.avgResponseSec,
+      averageMyResponseSec: finalStats.averageMyResponseSec,
       medianMyResponseSec: finalStats.medianMyResponseSec,
       medianTheirResponseSec: finalStats.medianTheirResponseSec,
       iWriteFirstPct: finalStats.iWriteFirstPct,
+      responseRate: decimalOrNull(finalStats.responseRate),
       parsedAt: new Date(),
       myWordsPerMessage: decimalOrNull(finalStats.wordsPerMessage.mine),
       theirWordsPerMessage: decimalOrNull(finalStats.wordsPerMessage.theirs),
@@ -931,6 +1263,10 @@ export async function saveAggregates(params: {
       uniqueWordsBySender: finalStats.uniqueWordsBySender,
       responseStats: finalStats.responseStats,
       messageComposition: finalStats.messageComposition,
+      activityDistribution: finalStats.activityDistribution,
+      compositionStats: finalStats.compositionStats,
+      availabilityProfile: finalStats.availabilityProfile,
+      healthScore: finalStats.healthScore,
       conversationFacts: finalStats.conversationFacts,
       wordsPerMessage: finalStats.wordsPerMessage,
       updatedAt: new Date(),
@@ -952,10 +1288,11 @@ export async function saveAggregates(params: {
         fileCount: finalStats.fileCount,
         firstMessageAt: finalStats.firstMessageAt,
         lastMessageAt: finalStats.lastMessageAt,
-        avgResponseSec: finalStats.avgResponseSec,
+        averageMyResponseSec: finalStats.averageMyResponseSec,
         medianMyResponseSec: finalStats.medianMyResponseSec,
         medianTheirResponseSec: finalStats.medianTheirResponseSec,
         iWriteFirstPct: finalStats.iWriteFirstPct,
+        responseRate: decimalOrNull(finalStats.responseRate),
         parsedAt: new Date(),
         myWordsPerMessage: decimalOrNull(finalStats.wordsPerMessage.mine),
         theirWordsPerMessage: decimalOrNull(finalStats.wordsPerMessage.theirs),
@@ -971,6 +1308,10 @@ export async function saveAggregates(params: {
         uniqueWordsBySender: finalStats.uniqueWordsBySender,
         responseStats: finalStats.responseStats,
         messageComposition: finalStats.messageComposition,
+        activityDistribution: finalStats.activityDistribution,
+        compositionStats: finalStats.compositionStats,
+        availabilityProfile: finalStats.availabilityProfile,
+        healthScore: finalStats.healthScore,
         conversationFacts: finalStats.conversationFacts,
         wordsPerMessage: finalStats.wordsPerMessage,
         updatedAt: new Date(),
@@ -1220,6 +1561,7 @@ function normalizeConversationFacts(value: (typeof schema.chatStats.$inferSelect
     longestGap: value?.longestGap ?? null,
     mostActiveDate: value?.mostActiveDate ?? null,
     maxStreakDays: value?.maxStreakDays ?? 0,
+    maxStreak: value?.maxStreak ?? null,
     firstMessageAt: value?.firstMessageAt ?? null,
     silencePeriodsOver30Days: Array.isArray(value?.silencePeriodsOver30Days) ? value.silencePeriodsOver30Days : [],
     trend: value?.trend ?? 'unknown',
@@ -1245,6 +1587,86 @@ function normalizeConversationFacts(value: (typeof schema.chatStats.$inferSelect
         }
       : null,
     insights: Array.isArray(value?.insights) ? value.insights : [],
+  }
+}
+
+function normalizeResponseStats(value: (typeof schema.chatStats.$inferSelect)['responseStats']): ResponseStatsDto {
+  return {
+    medianMineSec: value?.medianMineSec ?? null,
+    medianTheirsSec: value?.medianTheirsSec ?? null,
+    mineSamples: value?.mineSamples ?? 0,
+    theirsSamples: value?.theirsSamples ?? 0,
+    mineP25Sec: value?.mineP25Sec ?? null,
+    mineP75Sec: value?.mineP75Sec ?? null,
+    mineP95Sec: value?.mineP95Sec ?? null,
+    theirsP25Sec: value?.theirsP25Sec ?? null,
+    theirsP75Sec: value?.theirsP75Sec ?? null,
+    theirsP95Sec: value?.theirsP95Sec ?? null,
+  }
+}
+
+function resolveActivityDistribution(row: typeof schema.chatStats.$inferSelect): ActivityDistributionDto {
+  const value = row.activityDistribution ?? null
+  if (value?.night && value?.morning && value?.afternoon && value?.evening) {
+    return value
+  }
+
+  return computeActivityDistribution(row.hourlyActivitySplit as Record<string, DirectionalCountDto>)
+}
+
+function resolveCompositionStats(
+  row: typeof schema.chatStats.$inferSelect,
+  messageComposition: MessageCompositionDto,
+  textMessageCount: number,
+): CompositionStatsDto {
+  const value = row.compositionStats ?? null
+  if (value) {
+    return {
+      textSharePct: value.textSharePct ?? null,
+      mediaSharePct: value.mediaSharePct ?? null,
+      voiceSharePct: value.voiceSharePct ?? null,
+      stickerSharePct: value.stickerSharePct ?? null,
+      fileSharePct: value.fileSharePct ?? null,
+      avgCharsPerTextMessage: value.avgCharsPerTextMessage ?? null,
+    }
+  }
+
+  return computeCompositionStats({
+    totalMessages: row.totalMessages ?? 0,
+    totalChars: row.totalChars ?? 0,
+    textMessageCount,
+    messageComposition,
+  })
+}
+
+function resolveAvailabilityProfile(row: typeof schema.chatStats.$inferSelect): AvailabilityProfileDto {
+  const value = row.availabilityProfile ?? null
+  if (value) {
+    return {
+      activeHours: value.activeHours ?? 0,
+      activeHoursPct: value.activeHoursPct ?? 0,
+      concentrationIndex: value.concentrationIndex ?? null,
+      predictability: value.predictability ?? 'low',
+      peakWindow: value.peakWindow ?? null,
+      secondaryWindow: value.secondaryWindow ?? null,
+    }
+  }
+
+  return computeAvailabilityProfile(row.hourlyActivity as Record<string, number>)
+}
+
+function normalizeHealthScore(value: (typeof schema.chatStats.$inferSelect)['healthScore']): HealthScoreDto | null {
+  if (!value) {
+    return null
+  }
+
+  return {
+    score: value.score ?? 0,
+    label: value.label ?? 'steady',
+    responseRate: value.responseRate ?? null,
+    fragmentation: value.fragmentation ?? null,
+    initiativeBalance: value.initiativeBalance ?? null,
+    longTermStability: value.longTermStability ?? null,
   }
 }
 
@@ -1285,6 +1707,7 @@ function resolveMessageComposition(row: typeof schema.chatStats.$inferSelect, te
 function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
   const textMessageCount = resolveTextMessageCount(row)
   const messageComposition = resolveMessageComposition(row, textMessageCount)
+  const responseStats = normalizeResponseStats(row.responseStats)
 
   return {
     tgChatId: String(row.tgChatId),
@@ -1303,12 +1726,13 @@ function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
     firstMessageAt: row.firstMessageAt?.toISOString() ?? null,
     lastMessageAt: row.lastMessageAt?.toISOString() ?? null,
     parsedAt: row.parsedAt?.toISOString() ?? null,
-    avgResponseSec: row.avgResponseSec,
+    averageMyResponseSec: row.averageMyResponseSec,
     medianMyResponseSec: row.medianMyResponseSec,
     medianTheirResponseSec: row.medianTheirResponseSec,
     myWordsPerMessage: numberOrNull(row.myWordsPerMessage),
     theirWordsPerMessage: numberOrNull(row.theirWordsPerMessage),
     iWriteFirstPct: row.iWriteFirstPct,
+    responseRate: numberOrNull(row.responseRate),
     topWords: row.topWords as TopItemDto[],
     topEmoji: row.topEmoji as TopItemDto[],
     hourlyActivity: row.hourlyActivity as Record<string, number>,
@@ -1319,8 +1743,12 @@ function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
     topWordsBySender: row.topWordsBySender,
     topEmojiBySender: row.topEmojiBySender,
     uniqueWordsBySender: row.uniqueWordsBySender,
-    responseStats: row.responseStats,
+    responseStats,
     messageComposition,
+    activityDistribution: resolveActivityDistribution(row),
+    compositionStats: resolveCompositionStats(row, messageComposition, textMessageCount),
+    availabilityProfile: resolveAvailabilityProfile(row),
+    healthScore: normalizeHealthScore(row.healthScore),
     conversationFacts: normalizeConversationFacts(row.conversationFacts),
     wordsPerMessage: row.wordsPerMessage,
   }

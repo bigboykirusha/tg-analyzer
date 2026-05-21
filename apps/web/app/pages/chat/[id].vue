@@ -3,6 +3,7 @@ import type { MessageCompositionDto } from '@tg-analyzer/shared'
 import AppLayout from '../../components/AppLayout.vue'
 import ChatAvatar from '../../components/ChatAvatar.vue'
 import Container from '../../components/layout/Container.vue'
+import ActivityDistributionCard from '../../components/stats/ActivityDistributionCard.vue'
 import ActivityHeatmap from '../../components/stats/ActivityHeatmap.vue'
 import BalanceChart from '../../components/stats/BalanceChart.vue'
 import CompositionChart from '../../components/stats/CompositionChart.vue'
@@ -101,10 +102,57 @@ const topEmoji = computed(() => ({
   mine: chat.value?.topEmojiBySender.mine.slice(0, 8) ?? [],
   theirs: chat.value?.topEmojiBySender.theirs.slice(0, 8) ?? [],
 }))
+const responsePercentileCards = computed(() => {
+  const stats = chat.value?.responseStats
+  if (!stats || !isPrivateChat.value) {
+    return []
+  }
+
+  return [
+    {
+      key: 'mine',
+      label: t('chat.yourResponseSpread'),
+      visible: responseMineVisible.value,
+      items: [
+        { key: 'p25', label: 'P25', value: formatDurationFromSec(stats.mineP25Sec) },
+        { key: 'p50', label: 'P50', value: formatDurationFromSec(stats.medianMineSec) },
+        { key: 'p75', label: 'P75', value: formatDurationFromSec(stats.mineP75Sec) },
+        { key: 'p95', label: 'P95', value: formatDurationFromSec(stats.mineP95Sec) },
+      ],
+    },
+    {
+      key: 'theirs',
+      label: t('chat.theirResponseSpread'),
+      visible: responseTheirsVisible.value,
+      items: [
+        { key: 'p25', label: 'P25', value: formatDurationFromSec(stats.theirsP25Sec) },
+        { key: 'p50', label: 'P50', value: formatDurationFromSec(stats.medianTheirsSec) },
+        { key: 'p75', label: 'P75', value: formatDurationFromSec(stats.theirsP75Sec) },
+        { key: 'p95', label: 'P95', value: formatDurationFromSec(stats.theirsP95Sec) },
+      ],
+    },
+  ].filter((item) => item.visible)
+})
 const distinctiveWords = computed(() => ({
   mine: chat.value?.uniqueWordsBySender.mine.slice(0, 12) ?? [],
   theirs: chat.value?.uniqueWordsBySender.theirs.slice(0, 12) ?? [],
 }))
+const compositionShareFacts = computed(() => {
+  const stats = chat.value?.compositionStats
+  const composition = chat.value?.messageComposition
+  if (!stats || !composition) {
+    return []
+  }
+
+  return [
+    { key: 'text', label: t('chart.text'), value: `${formatDecimal(stats.textSharePct)}%`, sub: `${formatNumber(composition.text)} ${t('common.messages')}` },
+    { key: 'media', label: t('chart.media'), value: `${formatDecimal(stats.mediaSharePct)}%`, sub: `${formatNumber(composition.media)} ${t('common.messages')}` },
+    { key: 'voice', label: t('chart.voice'), value: `${formatDecimal(stats.voiceSharePct)}%`, sub: `${formatNumber(composition.voice)} ${t('common.messages')}` },
+    { key: 'sticker', label: t('chart.sticker'), value: `${formatDecimal(stats.stickerSharePct)}%`, sub: `${formatNumber(composition.sticker)} ${t('common.messages')}` },
+    { key: 'files', label: t('chart.files'), value: `${formatDecimal(stats.fileSharePct)}%`, sub: `${formatNumber(composition.file)} ${t('common.messages')}` },
+    { key: 'chars', label: t('chat.avgCharsPerTextMessage'), value: formatDecimal(stats.avgCharsPerTextMessage), sub: t('chat.textMessagesOnly') },
+  ]
+})
 const avgMessagesPerActiveDay = computed(() => {
   const activeDays = chat.value?.conversationFacts.activeDays ?? 0
   if (!activeDays || !totalMessages.value) {
@@ -140,6 +188,41 @@ const weekendShare = computed(() => {
 const totalLongSilenceDays = computed(() => {
   const totalSeconds = (chat.value?.conversationFacts.silencePeriodsOver30Days ?? []).reduce((sum, gap) => sum + gap.seconds, 0)
   return Math.round(totalSeconds / 86400)
+})
+const trendConfidenceLabel = computed(() => (chat.value?.monthlyActivity.length ?? 0) >= 6
+  ? t('chat.confidenceHigh')
+  : t('chat.confidenceLow'))
+const streakConfidenceLabel = computed(() => (chat.value?.conversationFacts.activeDays ?? 0) >= 7
+  ? t('chat.confidenceHigh')
+  : t('chat.confidenceLow'))
+const availabilityFacts = computed(() => {
+  const profile = chat.value?.availabilityProfile
+  if (!profile) {
+    return []
+  }
+
+  return [
+    {
+      key: 'active-hours',
+      label: t('chat.activeHours'),
+      value: formatNumber(profile.activeHours),
+      sub: `${formatDecimal(profile.activeHoursPct)}% ${t('chat.ofDay')}`,
+    },
+    {
+      key: 'predictability',
+      label: t('chat.predictability'),
+      value: predictabilityLabel(profile.predictability),
+      sub: profile.concentrationIndex !== null
+        ? `${t('chat.concentrationIndex')} ${formatDecimal(profile.concentrationIndex)}`
+        : t('common.na'),
+    },
+    {
+      key: 'peak-window',
+      label: t('chat.peakWindow'),
+      value: profile.peakWindow ?? t('common.na'),
+      sub: profile.secondaryWindow ?? t('chat.noSecondaryWindow'),
+    },
+  ]
 })
 const dailyMomentum = computed(() => {
   const points = continuousDailyActivity.value
@@ -254,14 +337,14 @@ const overviewFacts = computed(() => {
       key: 'mine-response',
       label: t('chat.yourMedianResponse'),
       value: formatDurationFromSec(chat.value?.medianMyResponseSec),
-      sub: t('chat.responseSampleHint', { count: formatNumber(chat.value?.responseStats.mineSamples ?? 0) }),
+      sub: `${t('chat.responseSampleHint', { count: formatNumber(chat.value?.responseStats.mineSamples ?? 0) })} В· ${confidenceLabel(chat.value?.responseStats.mineSamples ?? 0)}`,
       visible: responseMineVisible.value,
     },
     {
       key: 'their-response',
       label: t('chat.theirMedianResponse'),
       value: formatDurationFromSec(chat.value?.medianTheirResponseSec),
-      sub: t('chat.responseSampleHint', { count: formatNumber(chat.value?.responseStats.theirsSamples ?? 0) }),
+      sub: `${t('chat.responseSampleHint', { count: formatNumber(chat.value?.responseStats.theirsSamples ?? 0) })} В· ${confidenceLabel(chat.value?.responseStats.theirsSamples ?? 0)}`,
       visible: responseTheirsVisible.value,
     },
     {
@@ -307,7 +390,9 @@ const overviewFacts = computed(() => {
       key: 'streak',
       label: t('chat.maxStreak'),
       value: formatNumber(chat.value?.conversationFacts.maxStreakDays ?? 0),
-      sub: t('chat.streakDaysSub'),
+      sub: chat.value?.conversationFacts.maxStreak?.startDate && chat.value?.conversationFacts.maxStreak?.endDate
+        ? `${formatDateRange(chat.value.conversationFacts.maxStreak.startDate, chat.value.conversationFacts.maxStreak.endDate)} В· ${streakConfidenceLabel.value}`
+        : `${t('chat.streakDaysSub')} В· ${streakConfidenceLabel.value}`,
       visible: true,
     },
     {
@@ -349,6 +434,35 @@ const trendLabel = computed(() => {
   return labels[trend]
 })
 const relationshipScore = computed(() => chat.value?.conversationFacts.relationshipScore ?? null)
+const healthScore = computed(() => chat.value?.healthScore ?? null)
+const healthScoreLabel = computed(() => {
+  const value = healthScore.value?.label
+  if (!value) {
+    return t('common.na')
+  }
+
+  const labels = {
+    strong: t('chat.healthStrong'),
+    steady: t('chat.healthSteady'),
+    fragile: t('chat.healthFragile'),
+    imbalanced: t('chat.healthImbalanced'),
+  }
+
+  return labels[value]
+})
+const healthScoreFacts = computed(() => {
+  const value = healthScore.value
+  if (!value) {
+    return []
+  }
+
+  return [
+    { key: 'response-rate', label: t('chat.responseRate'), value: value.responseRate !== null ? `${formatDecimal(value.responseRate)}%` : t('common.na') },
+    { key: 'fragmentation', label: t('chat.fragmentation'), value: value.fragmentation !== null ? `${formatDecimal(value.fragmentation)}%` : t('common.na') },
+    { key: 'initiative', label: t('chat.initiativeBalance'), value: value.initiativeBalance !== null ? `${formatNumber(value.initiativeBalance)}%` : t('common.na') },
+    { key: 'stability', label: t('chat.longTermStability'), value: value.longTermStability !== null ? `${formatNumber(value.longTermStability)}%` : t('common.na') },
+  ]
+})
 const relationshipLabel = computed(() => {
   const label = relationshipScore.value?.label
   if (!label) {
@@ -884,13 +998,33 @@ function formatDecimal(value: number | null | undefined) {
   }).format(value)
 }
 
+function confidenceLabel(sampleCount: number) {
+  if (sampleCount >= 12) {
+    return t('chat.confidenceHigh')
+  }
+  if (sampleCount >= 6) {
+    return t('chat.confidenceMedium')
+  }
+  return t('chat.confidenceLow')
+}
+
+function predictabilityLabel(value: 'low' | 'medium' | 'high') {
+  const labels = {
+    low: t('chat.predictabilityLow'),
+    medium: t('chat.predictabilityMedium'),
+    high: t('chat.predictabilityHigh'),
+  }
+
+  return labels[value]
+}
+
 function fillDailyGaps(items: Array<{ date: string; sent: number; received: number; total: number }>, firstMessageAt: string | null, lastMessageAt: string | null) {
   if (!items.length) {
     return items
   }
 
-  const startDate = firstMessageAt?.slice(0, 10) ?? items[0]?.date
-  const endDate = lastMessageAt?.slice(0, 10) ?? items[items.length - 1]?.date
+  const startDate = items[0]?.date ?? firstMessageAt?.slice(0, 10)
+  const endDate = items[items.length - 1]?.date ?? lastMessageAt?.slice(0, 10)
   if (!startDate || !endDate) {
     return items
   }
@@ -1030,21 +1164,30 @@ onBeforeUnmount(() => {
               </div>
               <div class="report-highlight-row">
                 <div v-for="item in 3" :key="`heading-highlight-${item}`" class="report-highlight-skeleton">
-                  <Skeleton height="58px" radius="var(--radius-sm)" />
+                  <Skeleton height="12px" width="42%" />
+                  <Skeleton height="18px" width="68%" />
                 </div>
               </div>
             </div>
             <div class="report-meta-list report-skeleton-meta">
               <div v-for="item in 3" :key="`heading-meta-${item}`" class="report-meta-skeleton">
-                <Skeleton height="52px" radius="var(--radius-sm)" />
+                <Skeleton height="10px" width="38%" />
+                <Skeleton height="14px" width="74%" />
               </div>
             </div>
           </div>
           <div class="grid-kpi chat-kpi-grid">
-            <Skeleton v-for="item in 4" :key="item" height="112px" radius="var(--radius-md)" />
+            <div v-for="item in 4" :key="item" class="metric-skeleton-card">
+              <Skeleton height="12px" width="44%" />
+              <Skeleton height="30px" width="66%" />
+            </div>
           </div>
           <div class="report-peek-grid no-print">
-            <Skeleton v-for="item in 4" :key="`peek-${item}`" height="92px" radius="var(--radius-md)" />
+            <div v-for="item in 4" :key="`peek-${item}`" class="peek-skeleton-card">
+              <Skeleton height="12px" width="36%" />
+              <Skeleton height="18px" width="54%" />
+              <Skeleton height="12px" width="72%" />
+            </div>
           </div>
         </div>
       </section>
@@ -1069,7 +1212,11 @@ onBeforeUnmount(() => {
             <Skeleton height="28px" width="200px" />
             <Skeleton height="14px" width="68%" />
             <div class="facts-grid">
-              <Skeleton v-for="item in 4" :key="`fact-${item}`" height="112px" radius="var(--radius-md)" />
+              <div v-for="item in 4" :key="`fact-${item}`" class="fact-skeleton-card">
+                <Skeleton height="12px" width="40%" />
+                <Skeleton height="22px" width="58%" />
+                <Skeleton height="12px" width="74%" />
+              </div>
             </div>
           </div>
         </article>
@@ -1078,9 +1225,17 @@ onBeforeUnmount(() => {
             <Skeleton height="20px" width="120px" />
             <Skeleton height="28px" width="280px" />
             <Skeleton height="14px" width="62%" />
-            <Skeleton height="88px" width="140px" radius="var(--radius-md)" />
+            <div class="score-skeleton-card">
+              <Skeleton height="12px" width="42%" />
+              <Skeleton height="32px" width="88px" />
+              <Skeleton height="12px" width="64%" />
+            </div>
             <div class="facts-grid">
-              <Skeleton v-for="item in 4" :key="`relationship-${item}`" height="108px" radius="var(--radius-md)" />
+              <div v-for="item in 4" :key="`relationship-${item}`" class="fact-skeleton-card">
+                <Skeleton height="12px" width="38%" />
+                <Skeleton height="22px" width="54%" />
+                <Skeleton height="12px" width="70%" />
+              </div>
             </div>
           </div>
         </article>
@@ -1092,7 +1247,9 @@ onBeforeUnmount(() => {
         <template #action>
           <div class="error-actions">
             <Button variant="secondary" @click="refreshReport">{{ t('common.refresh') }}</Button>
-            <Button variant="ghost" @click="navigateTo('/dashboard')">{{ t('common.back') }}</Button>
+            <Button variant="secondary" class="toolbar-icon-button" :icon="ArrowLeft" :aria-label="t('common.back')" @click="navigateTo('/dashboard')">
+              <span class="sr-only">{{ t('common.back') }}</span>
+            </Button>
           </div>
         </template>
       </EmptyState>
@@ -1114,8 +1271,8 @@ onBeforeUnmount(() => {
 
       <header class="report-header">
         <div class="page-toolbar no-print">
-          <Button variant="ghost" class="toolbar-back" :icon="ArrowLeft" @click="navigateTo('/dashboard')">
-            <span class="toolbar-back-label">{{ t('common.back') }}</span>
+          <Button variant="secondary" class="toolbar-icon-button toolbar-back" :icon="ArrowLeft" :aria-label="t('common.back')" @click="navigateTo('/dashboard')">
+            <span class="sr-only">{{ t('common.back') }}</span>
           </Button>
 
           <div class="toolbar-actions">
@@ -1130,7 +1287,7 @@ onBeforeUnmount(() => {
               :title="auth.user?.telegramSessionActive === false ? t('dashboard.sessionInactive') : t('chat.reparse')"
               @click="reparseConfirmOpen = true"
             >
-              <span class="screen-reader">{{ reparsing ? t('chat.starting') : t('chat.reparse') }}</span>
+              <span class="sr-only">{{ reparsing ? t('chat.starting') : t('chat.reparse') }}</span>
             </Button>
 
             <Button
@@ -1143,7 +1300,7 @@ onBeforeUnmount(() => {
               :title="t('chat.share')"
               @click="shareOpen = true"
             >
-              <span class="screen-reader">{{ t('chat.share') }}</span>
+              <span class="sr-only">{{ t('chat.share') }}</span>
             </Button>
             <PopoverMenu v-else v-model:open="shareOpen" align="end">
               <template #trigger>
@@ -1156,7 +1313,7 @@ onBeforeUnmount(() => {
                   :title="t('chat.share')"
                   @click="shareOpen = !shareOpen"
                 >
-                  <span class="screen-reader">{{ t('chat.share') }}</span>
+                  <span class="sr-only">{{ t('chat.share') }}</span>
                 </Button>
               </template>
               <button v-for="item in shareActions" :key="item.key" type="button" class="share-option"
@@ -1173,29 +1330,29 @@ onBeforeUnmount(() => {
               <ChatAvatar :chat-id="chat?.tgChatId || routeChatId" :title="chat?.chatName || chat?.tgChatId" size="lg" />
 
               <div class="report-title-block">
-                <h1 class="text-h1 report-title">{{ chat?.chatName || chat?.tgChatId }}</h1>
-                <p class="text-body-sm report-subtitle">{{ reportDateRange }}</p>
+                <h1 class="t-h1 report-title">{{ chat?.chatName || chat?.tgChatId }}</h1>
+                <p class="t-small report-subtitle">{{ reportDateRange }}</p>
               </div>
             </div>
 
             <div class="report-highlight-row">
               <div v-for="item in reportHeaderHighlights" :key="item.key" class="report-highlight-item">
-                <span class="text-label">{{ item.label }}</span>
-                <strong class="mono-value report-highlight-value">{{ item.value }}</strong>
+                <span class="t-label">{{ item.label }}</span>
+                <strong class="t-metric-md report-highlight-value">{{ item.value }}</strong>
               </div>
             </div>
           </div>
 
-          <div class="report-meta-list text-body-sm">
+          <div class="report-meta-list t-small">
             <div class="report-meta-row">
               <span class="report-meta-label">{{ t('chat.firstMsg') }}:</span>
-              <span class="mono-value report-meta-value">{{ formatDate(chat?.firstMessageAt ?? null) }}</span>
+              <span class="t-mono report-meta-value">{{ formatDate(chat?.firstMessageAt ?? null) }}</span>
             </div>
             <div class="report-meta-row">
               <span class="report-meta-label">{{ t('chat.last') }}:</span>
-              <span class="mono-value report-meta-value">{{ formatDate(chat?.lastMessageAt ?? null) }}</span>
+              <span class="t-mono report-meta-value">{{ formatDate(chat?.lastMessageAt ?? null) }}</span>
             </div>
-            <span v-if="reportStale" class="stale-indicator mono-value">{{ t('chat.refreshing') }}</span>
+            <span v-if="reportStale" class="stale-indicator t-mono">{{ t('chat.refreshing') }}</span>
           </div>
         </div>
 
@@ -1203,7 +1360,7 @@ onBeforeUnmount(() => {
           <MetricCard :label="t('chat.messages')" :value="formatNumber(totalMessages)" />
           <MetricCard :label="t('chat.yourShare')" :value="`${sentShare}%`" />
           <MetricCard :label="t('chat.wordsPerTextMsg')" :value="overallWordsPerTextMessage" />
-          <MetricCard :label="t('chat.peakHour')" :value="peakHour" :sub="t('chat.peakHourSub')" />
+          <MetricCard :label="t('chat.peakHour')" :value="peakHour" />
         </div>
 
         <div class="report-peek-grid no-print">
@@ -1214,9 +1371,9 @@ onBeforeUnmount(() => {
             class="report-peek-card"
             @click="focusReportSection(item.view)"
           >
-            <span class="text-label">{{ item.label }}</span>
-            <strong class="mono-value report-peek-value">{{ item.value }}</strong>
-            <span class="text-caption report-peek-detail">{{ item.detail }}</span>
+            <span class="t-label">{{ item.label }}</span>
+            <strong class="t-metric-md report-peek-value">{{ item.value }}</strong>
+            <span class="t-small report-peek-detail">{{ item.detail }}</span>
           </button>
         </div>
       </header>
@@ -1228,9 +1385,9 @@ onBeforeUnmount(() => {
       <section v-if="showOverview" id="report-section-overview" class="report-grid">
         <article class="card section-card chart-card" @click="openChart('balance')">
           <div class="section-copy">
-            <span class="text-label">{{ t('chat.balance') }}</span>
-            <h2 class="text-h2">{{ t('chat.sentReceived') }}</h2>
-            <p class="text-body-sm section-text">{{ t('chat.balanceText') }}</p>
+            <span class="t-label">{{ t('chat.balance') }}</span>
+            <h2 class="t-h2">{{ t('chat.sentReceived') }}</h2>
+            <p class="t-small section-text">{{ t('chat.balanceText') }}</p>
           </div>
 
           <BalanceChart :sent="chat?.sentMessages ?? 0" :received="chat?.receivedMessages ?? 0" />
@@ -1238,56 +1395,106 @@ onBeforeUnmount(() => {
           <div class="balance-summary">
             <div class="balance-summary-row">
               <span class="balance-summary-label">{{ t('dashboard.sent') }}</span>
-              <strong class="mono-value">{{ formatNumber(chat?.sentMessages ?? 0) }}</strong>
-              <span class="balance-summary-share mono-value">{{ sentShare }}%</span>
+              <strong class="t-mono">{{ formatNumber(chat?.sentMessages ?? 0) }}</strong>
+              <span class="balance-summary-share t-mono">{{ sentShare }}%</span>
             </div>
             <div class="balance-summary-row">
               <span class="balance-summary-label">{{ t('dashboard.recv') }}</span>
-              <strong class="mono-value">{{ formatNumber(chat?.receivedMessages ?? 0) }}</strong>
-              <span class="balance-summary-share mono-value">{{ receivedShare }}%</span>
+              <strong class="t-mono">{{ formatNumber(chat?.receivedMessages ?? 0) }}</strong>
+              <span class="balance-summary-share t-mono">{{ receivedShare }}%</span>
             </div>
-            <div class="balance-summary-note text-body-sm">
-              {{ t('chat.balanceLead') }} <span class="mono-value">{{ balanceLeadLabel }}</span>
+            <div class="balance-summary-note t-small">
+              {{ t('chat.balanceLead') }} <span class="t-mono">{{ balanceLeadLabel }}</span>
             </div>
           </div>
         </article>
 
         <article class="card section-card">
           <div class="section-copy">
-            <span class="text-label">{{ t('chat.facts') }}</span>
-            <h2 class="text-h2">{{ t('chat.snapshot') }}</h2>
-            <p class="text-body-sm section-text">{{ t('chat.snapshotText') }}</p>
+            <span class="t-label">{{ t('chat.facts') }}</span>
+            <h2 class="t-h2">{{ t('chat.snapshot') }}</h2>
+            <p class="t-small section-text">{{ t('chat.snapshotText') }}</p>
           </div>
 
           <div class="facts-grid">
             <div v-for="(fact, index) in overviewFacts" :key="fact.key" class="fact-card stagger-item"
               :style="{ '--delay': `${index * 40}ms` }">
-              <span class="text-label">{{ fact.label }}</span>
-              <strong class="fact-value mono-value">{{ fact.value }}</strong>
-              <span class="text-caption">{{ fact.sub }}</span>
+              <span class="t-label">{{ fact.label }}</span>
+              <strong class="fact-value t-mono">{{ fact.value }}</strong>
+              <span class="t-small">{{ fact.sub }}</span>
             </div>
           </div>
         </article>
 
         <article class="card section-card report-span">
           <div class="section-copy">
-            <span class="text-label">{{ t('chat.relationship') }}</span>
-            <h2 class="text-h2">{{ t('chat.relationshipTitle') }}</h2>
-            <p class="text-body-sm section-text">{{ t('chat.relationshipText') }}</p>
+            <span class="t-label">{{ t('chat.replyDelay') }}</span>
+            <h2 class="t-h2">{{ t('chat.responsePatternsTitle') }}</h2>
+            <p class="t-small section-text">{{ t('chat.responsePatternsText') }}</p>
+          </div>
+
+          <div class="grid-kpi">
+            <MetricCard :label="t('chat.responseRate')"
+              :value="chat?.responseRate !== null && chat?.responseRate !== undefined ? `${formatDecimal(chat.responseRate)}%` : t('common.na')"
+              :sub="isPrivateChat ? confidenceLabel((chat?.responseStats.mineSamples ?? 0) + (chat?.responseStats.theirsSamples ?? 0)) : t('chat.privateOnlyMetric')" />
+          </div>
+
+          <div v-if="responsePercentileCards.length" class="report-grid">
+            <article v-for="card in responsePercentileCards" :key="card.key" class="subcard">
+              <span class="t-label">{{ card.label }}</span>
+              <div class="facts-grid compact-facts-grid">
+                <div v-for="item in card.items" :key="item.key" class="fact-card">
+                  <span class="t-label">{{ item.label }}</span>
+                  <strong class="fact-value t-mono">{{ item.value }}</strong>
+                </div>
+              </div>
+            </article>
+          </div>
+        </article>
+
+        <article class="card section-card report-span">
+          <div class="section-copy">
+            <span class="t-label">{{ t('chat.healthLabel') }}</span>
+            <h2 class="t-h2">{{ t('chat.healthTitle') }}</h2>
+            <p class="t-small section-text">{{ t('chat.healthText') }}</p>
+          </div>
+
+          <template v-if="healthScore">
+            <div class="relationship-score">
+              <strong class="t-metric relationship-score-value">{{ healthScore.score }}/100</strong>
+              <span class="t-small">{{ healthScoreLabel }}</span>
+            </div>
+
+            <div class="facts-grid">
+              <div v-for="fact in healthScoreFacts" :key="fact.key" class="fact-card">
+                <span class="t-label">{{ fact.label }}</span>
+                <strong class="fact-value t-mono">{{ fact.value }}</strong>
+              </div>
+            </div>
+          </template>
+
+          <EmptyState v-else :icon="BarChart2" :title="t('chat.healthEmptyTitle')" :description="t('chat.healthEmptyDescription')" />
+        </article>
+
+        <article class="card section-card report-span">
+          <div class="section-copy">
+            <span class="t-label">{{ t('chat.relationship') }}</span>
+            <h2 class="t-h2">{{ t('chat.relationshipTitle') }}</h2>
+            <p class="t-small section-text">{{ t('chat.relationshipText') }}</p>
           </div>
 
           <template v-if="relationshipScore">
             <div class="relationship-score">
-              <strong class="mono-value relationship-score-value">{{ relationshipScore.score }}/100</strong>
-              <span class="text-body-sm">{{ relationshipLabel }}</span>
+              <strong class="t-metric relationship-score-value">{{ relationshipScore.score }}/100</strong>
+              <span class="t-small">{{ relationshipLabel }}</span>
             </div>
 
             <div class="facts-grid">
               <div v-for="metric in relationshipMetrics" :key="metric.key" class="fact-card"
                 :class="metricCardToneClass(metric.tone)">
-                <span class="text-label">{{ metric.label }}</span>
-                <strong class="fact-value mono-value">{{ metric.value !== null ? `${metric.value}%` : t('common.na') }}</strong>
-                <span class="text-caption metric-explainer">{{ metric.detail }}</span>
+                <span class="t-label">{{ metric.label }}</span>
+                <strong class="fact-value t-mono">{{ metric.value !== null && metric.value !== undefined ? `${metric.value}%` : t('common.na') }}</strong>
+                <span class="t-small metric-explainer">{{ metric.detail }}</span>
               </div>
             </div>
           </template>
@@ -1297,21 +1504,29 @@ onBeforeUnmount(() => {
 
         <article class="card section-card report-span chart-card" @click="openChart('composition')">
           <div class="section-copy">
-            <span class="text-label">{{ t('chat.messageComposition') }}</span>
-            <h2 class="text-h2">{{ t('chat.compositionTitle') }}</h2>
-            <p class="text-body-sm section-text">{{ t('chat.compositionText') }}</p>
+            <span class="t-label">{{ t('chat.messageComposition') }}</span>
+            <h2 class="t-h2">{{ t('chat.compositionTitle') }}</h2>
+            <p class="t-small section-text">{{ t('chat.compositionText') }}</p>
           </div>
 
           <CompositionChart :composition="messageComposition" />
+
+          <div class="facts-grid compact-facts-grid">
+            <div v-for="fact in compositionShareFacts" :key="fact.key" class="fact-card">
+              <span class="t-label">{{ fact.label }}</span>
+              <strong class="fact-value t-mono">{{ fact.value }}</strong>
+              <span class="t-small">{{ fact.sub }}</span>
+            </div>
+          </div>
         </article>
       </section>
 
       <section v-if="showRhythm" id="report-section-rhythm" class="page-stack">
         <article class="card section-card chart-card" @click="openChart('heatmap')">
           <div class="section-copy">
-            <span class="text-label">{{ t('chat.heatmap') }}</span>
-            <h2 class="text-h2">{{ t('chat.dailyActivity') }}</h2>
-            <p class="text-body-sm section-text">{{ t('chat.heatmapText') }}</p>
+            <span class="t-label">{{ t('chat.heatmap') }}</span>
+            <h2 class="t-h2">{{ t('chat.dailyActivity') }}</h2>
+            <p class="t-small section-text">{{ t('chat.heatmapText') }}</p>
           </div>
 
           <ActivityHeatmap :points="continuousDailyActivity" />
@@ -1320,9 +1535,9 @@ onBeforeUnmount(() => {
         <div class="report-grid">
           <article class="card section-card chart-card" @click="openChart('weekday')">
             <div class="section-copy">
-              <span class="text-label">{{ t('chat.weekdays') }}</span>
-              <h2 class="text-h2">{{ t('chat.weekdayPattern') }}</h2>
-              <p class="text-body-sm section-text">{{ t('chat.weekdayTotalText') }}</p>
+              <span class="t-label">{{ t('chat.weekdays') }}</span>
+              <h2 class="t-h2">{{ t('chat.weekdayPattern') }}</h2>
+              <p class="t-small section-text">{{ t('chat.weekdayTotalText') }}</p>
             </div>
 
             <WeekdayChart :activity="chat?.weekdayActivity ?? {}" />
@@ -1330,9 +1545,9 @@ onBeforeUnmount(() => {
 
           <article class="card section-card chart-card" @click="openChart('hourly')">
             <div class="section-copy">
-              <span class="text-label">{{ t('chat.hours') }}</span>
-              <h2 class="text-h2">{{ t('chat.hourlySentReceived') }}</h2>
-              <p class="text-body-sm section-text">{{ t('chat.hourlyText') }}</p>
+              <span class="t-label">{{ t('chat.hours') }}</span>
+              <h2 class="t-h2">{{ t('chat.hourlySentReceived') }}</h2>
+              <p class="t-small section-text">{{ t('chat.hourlyText') }}</p>
             </div>
 
             <HourlyChart :activity="chat?.hourlyActivitySplit ?? {}" />
@@ -1341,12 +1556,30 @@ onBeforeUnmount(() => {
 
         <article class="card section-card chart-card" @click="openChart('daily')">
           <div class="section-copy">
-            <span class="text-label">{{ t('chat.dailyDynamics') }}</span>
-            <h2 class="text-h2">{{ t('chat.dailyDynamics') }}</h2>
-            <p class="text-body-sm section-text">{{ t('chat.dailyArcText') }}</p>
+            <span class="t-label">{{ t('chat.dailyDynamics') }}</span>
+            <h2 class="t-h2">{{ t('chat.dailyDynamics') }}</h2>
+            <p class="t-small section-text">{{ t('chat.dailyArcText') }}</p>
           </div>
 
           <DailyVolumeChart :items="continuousDailyActivity" />
+        </article>
+
+        <article class="card section-card">
+          <div class="section-copy">
+            <span class="t-label">{{ t('chat.activityDistribution') }}</span>
+            <h2 class="t-h2">{{ t('chat.activityDistributionTitle') }}</h2>
+            <p class="t-small section-text">{{ t('chat.activityDistributionText') }}</p>
+          </div>
+
+          <ActivityDistributionCard :distribution="chat?.activityDistribution ?? { night: { sent: 0, received: 0, total: 0 }, morning: { sent: 0, received: 0, total: 0 }, afternoon: { sent: 0, received: 0, total: 0 }, evening: { sent: 0, received: 0, total: 0 } }" :total-messages="totalMessages" />
+
+          <div class="facts-grid compact-facts-grid">
+            <div v-for="fact in availabilityFacts" :key="fact.key" class="fact-card">
+              <span class="t-label">{{ fact.label }}</span>
+              <strong class="fact-value t-mono">{{ fact.value }}</strong>
+              <span class="t-small">{{ fact.sub }}</span>
+            </div>
+          </div>
         </article>
       </section>
 
@@ -1357,9 +1590,9 @@ onBeforeUnmount(() => {
         <template v-else>
           <article class="card section-card">
             <div class="section-copy">
-              <span class="text-label">{{ t('chat.words') }}</span>
-              <h2 class="text-h2">{{ t('chat.popularWords') }}</h2>
-              <p class="text-body-sm section-text">{{ t('chat.wordsText') }}</p>
+              <span class="t-label">{{ t('chat.words') }}</span>
+              <h2 class="t-h2">{{ t('chat.popularWords') }}</h2>
+              <p class="t-small section-text">{{ t('chat.wordsText') }}</p>
             </div>
 
             <WordsChart v-if="hasWords" :mine="topWords.mine" :theirs="topWords.theirs" />
@@ -1369,8 +1602,8 @@ onBeforeUnmount(() => {
           <div class="report-grid">
             <article class="card section-card">
               <div class="section-copy">
-                <span class="text-label">{{ t('chat.emojiLabel') }}</span>
-                <h2 class="text-h2">{{ t('chat.emojiMine') }}</h2>
+                <span class="t-label">{{ t('chat.emojiLabel') }}</span>
+                <h2 class="t-h2">{{ t('chat.emojiMine') }}</h2>
               </div>
 
               <EmojiGrid :items="topEmoji.mine" />
@@ -1378,8 +1611,8 @@ onBeforeUnmount(() => {
 
             <article class="card section-card">
               <div class="section-copy">
-                <span class="text-label">{{ t('chat.emojiLabel') }}</span>
-                <h2 class="text-h2">{{ t('chat.emojiTheirs') }}</h2>
+                <span class="t-label">{{ t('chat.emojiLabel') }}</span>
+                <h2 class="t-h2">{{ t('chat.emojiTheirs') }}</h2>
               </div>
 
               <EmojiGrid :items="topEmoji.theirs" />
@@ -1389,13 +1622,13 @@ onBeforeUnmount(() => {
           <div class="report-grid">
             <article class="card section-card">
               <div class="section-copy">
-                <span class="text-label">{{ t('chat.distinctiveWords') }}</span>
-                <h2 class="text-h2">{{ t('chat.distinctiveMine') }}</h2>
+                <span class="t-label">{{ t('chat.distinctiveWords') }}</span>
+                <h2 class="t-h2">{{ t('chat.distinctiveMine') }}</h2>
               </div>
 
               <div v-if="distinctiveWords.mine.length" class="chip-wrap">
                 <span v-for="item in distinctiveWords.mine" :key="item.value" class="word-chip">
-                  {{ item.value }} <span class="mono-value chip-count">{{ formatNumber(item.count) }}</span>
+                  {{ item.value }} <span class="t-mono chip-count">{{ formatNumber(item.count) }}</span>
                 </span>
               </div>
               <EmptyState v-else :icon="MessageSquare" :title="t('chat.distinctiveMine')" :description="t('chat.noDistinctiveMine')" />
@@ -1403,13 +1636,13 @@ onBeforeUnmount(() => {
 
             <article class="card section-card">
               <div class="section-copy">
-                <span class="text-label">{{ t('chat.distinctiveWords') }}</span>
-                <h2 class="text-h2">{{ t('chat.distinctiveTheirs') }}</h2>
+                <span class="t-label">{{ t('chat.distinctiveWords') }}</span>
+                <h2 class="t-h2">{{ t('chat.distinctiveTheirs') }}</h2>
               </div>
 
               <div v-if="distinctiveWords.theirs.length" class="chip-wrap">
                 <span v-for="item in distinctiveWords.theirs" :key="item.value" class="word-chip">
-                  {{ item.value }} <span class="mono-value chip-count">{{ formatNumber(item.count) }}</span>
+                  {{ item.value }} <span class="t-mono chip-count">{{ formatNumber(item.count) }}</span>
                 </span>
               </div>
               <EmptyState v-else :icon="MessageSquare" :title="t('chat.distinctiveTheirs')" :description="t('chat.noDistinctiveTheirs')" />
@@ -1421,9 +1654,9 @@ onBeforeUnmount(() => {
       <section v-if="showTimeline" id="report-section-timeline" class="page-stack">
         <article class="card section-card chart-card" @click="openChart('timeline')">
           <div class="section-copy">
-            <span class="text-label">{{ t('chat.timeline') }}</span>
-            <h2 class="text-h2">{{ t('chat.dailyArc') }}</h2>
-            <p class="text-body-sm section-text">{{ t('chat.dailyArcText') }}</p>
+            <span class="t-label">{{ t('chat.timeline') }}</span>
+            <h2 class="t-h2">{{ t('chat.dailyArc') }}</h2>
+            <p class="t-small section-text">{{ t('chat.dailyArcText') }}</p>
           </div>
 
           <DailyVolumeChart :items="continuousDailyActivity" />
@@ -1431,7 +1664,7 @@ onBeforeUnmount(() => {
 
         <div class="grid-kpi timeline-kpi-grid">
           <MetricCard :label="t('chat.mostActiveMonth')" :value="mostActiveMonthLabel" />
-          <MetricCard :label="t('chat.trend')" :value="trendLabel" />
+          <MetricCard :label="t('chat.trend')" :value="trendLabel" :sub="trendConfidenceLabel" />
           <MetricCard :label="t('chat.silences')"
             :value="formatNumber(chat?.conversationFacts.silencePeriodsOver30Days.length ?? 0)" />
           <MetricCard :label="t('chat.silenceDays')" :value="formatNumber(totalLongSilenceDays)" />
@@ -1439,23 +1672,23 @@ onBeforeUnmount(() => {
 
         <article class="card section-card">
           <div class="section-copy">
-            <span class="text-label">{{ t('chat.sessions') }}</span>
-            <h2 class="text-h2">{{ t('chat.sessionsTitle') }}</h2>
-            <p class="text-body-sm section-text">{{ t('chat.sessionsText') }}</p>
+            <span class="t-label">{{ t('chat.sessions') }}</span>
+            <h2 class="t-h2">{{ t('chat.sessionsTitle') }}</h2>
+            <p class="t-small section-text">{{ t('chat.sessionsText') }}</p>
           </div>
 
           <div class="facts-grid">
             <div v-for="fact in sessionFacts" :key="fact.key" class="fact-card"
               :class="metricCardToneClass(fact.tone ?? 'default')">
-              <span class="text-label">{{ fact.label }}</span>
-              <strong class="fact-value mono-value">{{ fact.value }}</strong>
-              <span class="text-caption">{{ fact.sub }}</span>
+              <span class="t-label">{{ fact.label }}</span>
+              <strong class="fact-value t-mono">{{ fact.value }}</strong>
+              <span class="t-small">{{ fact.sub }}</span>
             </div>
           </div>
 
           <div v-if="sessionStats?.highlights.length" class="timeline-gap-grid">
             <div v-for="session in sessionStats.highlights" :key="session.startedAt" class="gap-card">
-              <span class="text-label">
+              <span class="t-label">
                 {{
                   densestSessionHighlight
                     && session.startedAt === densestSessionHighlight.startedAt
@@ -1468,12 +1701,12 @@ onBeforeUnmount(() => {
                       : t('chat.sessionWindowDefault')
                 }}
               </span>
-              <strong class="gap-value mono-value">{{ formatNumber(session.totalMessages) }} {{ t('common.messages') }}</strong>
-              <span class="text-body-sm">{{ formatDateRange(session.startedAt, session.endedAt) }}</span>
-              <span class="text-caption">
-                {{ formatDurationFromSec(session.durationSec) }} • {{ formatNumber(session.sentMessages) }} / {{ formatNumber(session.receivedMessages) }}
+              <strong class="gap-value t-mono">{{ formatNumber(session.totalMessages) }} {{ t('common.messages') }}</strong>
+              <span class="t-small">{{ formatDateRange(session.startedAt, session.endedAt) }}</span>
+              <span class="t-small">
+                {{ formatDurationFromSec(session.durationSec) }} · {{ formatNumber(session.sentMessages) }} / {{ formatNumber(session.receivedMessages) }}
               </span>
-              <span class="text-caption metric-explainer">
+              <span class="t-small metric-explainer">
                 {{ t('chat.sessionWindowExplainer') }}
               </span>
             </div>
@@ -1482,9 +1715,9 @@ onBeforeUnmount(() => {
 
         <article class="card section-card">
           <div class="section-copy">
-            <span class="text-label">{{ t('chat.longSilences') }}</span>
-            <h2 class="text-h2">{{ t('chat.breaks') }}</h2>
-            <p class="text-body-sm section-text">
+            <span class="t-label">{{ t('chat.longSilences') }}</span>
+            <h2 class="t-h2">{{ t('chat.breaks') }}</h2>
+            <p class="t-small section-text">
               {{ t('chat.silenceSummary', {
                 count: formatNumber(chat?.conversationFacts.silencePeriodsOver30Days.length ?? 0),
                 days: formatNumber(totalLongSilenceDays),
@@ -1495,8 +1728,8 @@ onBeforeUnmount(() => {
           <div v-if="chat?.conversationFacts.silencePeriodsOver30Days.length" class="timeline-gap-grid">
             <div v-for="(gap, index) in chat.conversationFacts.silencePeriodsOver30Days" :key="`${gap.from}-${gap.to}`"
               class="gap-card stagger-item" :style="{ '--delay': `${index * 40}ms` }">
-              <strong class="gap-value mono-value">{{ formatDurationFromSec(gap.seconds) }}</strong>
-              <span class="text-body-sm">{{ formatDateRange(gap.from, gap.to) }}</span>
+              <strong class="gap-value t-mono">{{ formatDurationFromSec(gap.seconds) }}</strong>
+              <span class="t-small">{{ formatDateRange(gap.from, gap.to) }}</span>
             </div>
           </div>
 
@@ -1505,9 +1738,9 @@ onBeforeUnmount(() => {
 
         <article class="card section-card">
           <div class="section-copy">
-            <span class="text-label">{{ t('chat.insights') }}</span>
-            <h2 class="text-h2">{{ t('chat.insightsTitle') }}</h2>
-            <p class="text-body-sm section-text">{{ t('chat.insightsText') }}</p>
+            <span class="t-label">{{ t('chat.insights') }}</span>
+            <h2 class="t-h2">{{ t('chat.insightsTitle') }}</h2>
+            <p class="t-small section-text">{{ t('chat.insightsText') }}</p>
           </div>
 
           <div v-if="insightItems.length" class="insights-list">
@@ -1515,7 +1748,7 @@ onBeforeUnmount(() => {
               <div class="insight-head">
                 <strong>{{ item.title }}</strong>
               </div>
-              <p class="text-body-sm section-text">{{ item.description }}</p>
+              <p class="t-small section-text">{{ item.description }}</p>
             </div>
           </div>
 
@@ -1529,9 +1762,9 @@ onBeforeUnmount(() => {
             <section class="dialog-panel share-dialog-panel" role="dialog" aria-modal="true" :aria-labelledby="`share-title-${routeChatId}`">
               <div class="share-sheet-head">
                 <div class="section-copy">
-                  <span class="text-label">{{ t('chat.shareLabel') }}</span>
-                  <h2 :id="`share-title-${routeChatId}`" class="text-h3">{{ t('chat.shareTitle') }}</h2>
-                  <p class="text-body-sm section-text">{{ t('chat.shareText') }}</p>
+                  <span class="t-label">{{ t('chat.shareLabel') }}</span>
+                  <h2 :id="`share-title-${routeChatId}`" class="t-h3">{{ t('chat.shareTitle') }}</h2>
+                  <p class="t-small section-text">{{ t('chat.shareText') }}</p>
                 </div>
                 <button class="share-sheet-close" type="button" :aria-label="t('common.close')" @click="shareOpen = false">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1637,8 +1870,8 @@ onBeforeUnmount(() => {
 }
 
 .pdf-export-clone .report-meta-label,
-.pdf-export-clone .text-label,
-.pdf-export-clone .text-caption,
+.pdf-export-clone .t-label,
+.pdf-export-clone .t-small,
 .pdf-export-clone .section-text,
 .pdf-export-clone .balance-summary-label,
 .pdf-export-clone .balance-summary-note,
@@ -1656,9 +1889,9 @@ onBeforeUnmount(() => {
 }
 
 .info-banner-tone {
-  border-color: var(--color-info);
-  background: var(--color-info-muted);
-  color: var(--color-info);
+  border-color: var(--info);
+  background: var(--info-subtle);
+  color: var(--info);
 }
 
 .page-toolbar,
@@ -1674,6 +1907,20 @@ onBeforeUnmount(() => {
 .page-toolbar,
 .section-header {
   justify-content: space-between;
+}
+
+.stack-md,
+.stack-lg {
+  display: flex;
+  flex-direction: column;
+}
+
+.stack-md {
+  gap: var(--space-4);
+}
+
+.stack-lg {
+  gap: var(--space-6);
 }
 
 .toolbar-actions,
@@ -1695,10 +1942,6 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
 }
 
-.toolbar-back-label {
-  display: inline-flex;
-}
-
 .toolbar-actions>* {
   flex: 0 0 auto;
 }
@@ -1708,15 +1951,11 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
 }
 
-.page-toolbar-skeleton {
-  margin-bottom: 16px;
-}
-
 .toolbar-actions :deep(.popover-root) {
   flex: 0 0 auto;
 }
 
-.toolbar-actions :deep(.ui-button) {
+.toolbar-actions :deep(.btn) {
   min-height: 34px;
   height: 34px;
   white-space: nowrap;
@@ -1808,6 +2047,57 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
+.metric-skeleton-card,
+.peek-skeleton-card,
+.fact-skeleton-card,
+.score-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.metric-skeleton-card,
+.peek-skeleton-card,
+.fact-skeleton-card {
+  padding: var(--space-4);
+}
+
+.metric-skeleton-card {
+  min-height: 112px;
+  justify-content: center;
+}
+
+.peek-skeleton-card {
+  min-height: 92px;
+}
+
+.fact-skeleton-card {
+  min-height: 112px;
+}
+
+.score-skeleton-card {
+  width: 140px;
+  min-height: 88px;
+  padding: var(--space-3);
+  justify-content: center;
+}
+
+.report-highlight-skeleton,
+.report-meta-skeleton {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-surface) 84%, transparent);
+}
+
 .section-card {
   gap: var(--space-5);
   min-width: 0;
@@ -1842,7 +2132,7 @@ onBeforeUnmount(() => {
 
 .report-highlight-item {
   display: grid;
-  gap: 6px;
+  gap: var(--space-2);
   min-width: 0;
   padding: 10px 12px;
   border: 1px solid var(--border-subtle);
@@ -1875,7 +2165,7 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: 1fr;
   align-items: center;
-  row-gap: 4px;
+  row-gap: var(--space-1);
   max-width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border-subtle);
@@ -1903,7 +2193,7 @@ onBeforeUnmount(() => {
   border: 1px solid color-mix(in srgb, var(--info) 32%, var(--border-subtle));
   border-radius: var(--radius-sm);
   background: var(--info-subtle);
-  color: var(--color-info);
+  color: var(--info);
   font-size: 12px;
 }
 
@@ -1925,7 +2215,7 @@ onBeforeUnmount(() => {
   min-width: 0;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
   padding: var(--space-3);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
@@ -1975,6 +2265,20 @@ onBeforeUnmount(() => {
   gap: var(--space-3);
 }
 
+.compact-facts-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.subcard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-elevated) 82%, transparent);
+}
+
 .fact-card,
 .gap-card,
 .insight-card {
@@ -1988,9 +2292,9 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.fact-card .text-label,
-.gap-card .text-label,
-.insight-card .text-label {
+.fact-card .t-label,
+.gap-card .t-label,
+.insight-card .t-label {
   color: var(--text-tertiary);
 }
 
@@ -2242,12 +2546,12 @@ onBeforeUnmount(() => {
 
 .dialog-enter-active,
 .dialog-leave-active {
-  transition: opacity var(--transition-base);
+  transition: opacity var(--transition-normal);
 }
 
 .dialog-enter-active .dialog-panel,
 .dialog-leave-active .dialog-panel {
-  transition: transform var(--transition-base);
+  transition: transform var(--transition-normal);
 }
 
 .dialog-enter-from,
@@ -2298,6 +2602,7 @@ onBeforeUnmount(() => {
 @media (max-width: 1024px) {
   .report-grid {
     grid-template-columns: 1fr;
+    gap: var(--space-4);
   }
 
   .report-peek-grid {
@@ -2400,6 +2705,7 @@ onBeforeUnmount(() => {
   }
 
   .facts-grid,
+  .compact-facts-grid,
   .timeline-gap-grid {
     grid-template-columns: 1fr;
   }
@@ -2417,6 +2723,12 @@ onBeforeUnmount(() => {
   }
 
   .report-peek-card {
+    padding: var(--space-3);
+  }
+
+  .metric-skeleton-card,
+  .peek-skeleton-card,
+  .fact-skeleton-card {
     padding: var(--space-3);
   }
 
@@ -2463,7 +2775,7 @@ onBeforeUnmount(() => {
     gap: 6px;
   }
 
-  .toolbar-actions :deep(.ui-button) {
+  .toolbar-actions :deep(.btn) {
     min-height: 34px;
     height: 34px;
     min-width: 0;
@@ -2486,10 +2798,6 @@ onBeforeUnmount(() => {
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     background: var(--bg-elevated);
-  }
-
-  .toolbar-back-label {
-    display: none;
   }
 
   .report-title {
@@ -2519,7 +2827,7 @@ onBeforeUnmount(() => {
     font-size: 12px;
   }
 
-  .section-copy .text-h2 {
+  .section-copy .t-h2 {
     font-size: 20px;
   }
 
@@ -2619,7 +2927,7 @@ onBeforeUnmount(() => {
   .section-text,
   .report-meta,
   .balance-summary-note,
-  .text-caption,
+  .t-small,
   .balance-summary-label {
     color: #555 !important;
   }

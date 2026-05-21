@@ -66,11 +66,11 @@ function submit() {
 <template>
   <form class="auth-form" @submit.prevent="submit">
     <label class="auth-field">
-      <span class="text-label">{{ t('login.phoneLabel') }}</span>
+      <span class="t-label">{{ t('login.phoneLabel') }}</span>
       <div class="phone-row">
         <PopoverMenu v-model:open="countryOpen" align="start" match-trigger-width mobile-fullscreen>
           <template #trigger>
-            <button class="dial-code mono-value" type="button" :aria-label="t('login.countryLabel')"
+            <button class="dial-code t-mono" type="button" :aria-label="t('login.countryLabel')"
               :aria-expanded="countryOpen" @click="countryOpen = !countryOpen">
               <img class="country-flag-img" :src="flagSrc(phoneInput.country.value.code)"
                 :srcset="flagSrcset(phoneInput.country.value.code)" width="20" height="14" alt="" loading="eager"
@@ -84,8 +84,8 @@ function submit() {
 
           <div class="country-sheet-head">
             <div>
-              <span class="text-label">{{ t('login.countryLabel') }}</span>
-              <h2 class="text-h3">{{ t('login.selectCountry') }}</h2>
+              <span class="t-label">{{ t('login.countryLabel') }}</span>
+              <h2 class="t-h3">{{ t('login.selectCountry') }}</h2>
             </div>
             <button class="country-sheet-close" type="button" :aria-label="t('common.close')"
               @click="countryOpen = false">
@@ -101,7 +101,7 @@ function submit() {
               <img class="country-flag-img" :src="flagSrc(country.code)" :srcset="flagSrcset(country.code)" width="20"
                 height="14" alt="" loading="lazy" decoding="async">
               <span class="country-code">{{ country.code }}</span>
-              <span class="mono-value">{{ country.dialCode }}</span>
+              <span class="t-mono">{{ country.dialCode }}</span>
             </button>
           </div>
         </PopoverMenu>
@@ -205,7 +205,7 @@ function submit() {
 
 .country-option:hover,
 .country-option.active {
-  background: var(--accent-muted);
+  background: var(--accent-subtle);
   color: var(--accent);
 }
 

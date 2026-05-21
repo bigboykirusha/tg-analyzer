@@ -233,11 +233,11 @@ onBeforeUnmount(() => {
   >
     <div class="progress-header">
       <div class="progress-copy">
-        <div class="text-label">{{ t('parse.label') }}</div>
+        <div class="t-label">{{ t('parse.label') }}</div>
         <div class="progress-title-row">
-          <h3 class="text-h3">{{ titleText }}</h3>
+          <h3 class="t-h3">{{ titleText }}</h3>
         </div>
-        <p class="text-body-sm progress-message">{{ subtitleText }}</p>
+        <p class="t-small progress-message">{{ subtitleText }}</p>
       </div>
       <button
         v-if="cancellable"
@@ -256,9 +256,9 @@ onBeforeUnmount(() => {
       <div class="progress-bar-fill" :style="{ width: `${progressPercent}%` }" />
     </div>
 
-    <div class="progress-meta text-body-sm">
+    <div class="progress-meta t-small">
       <div class="meta-left">
-        <p v-if="progressSummary" class="mono-value">{{ progressSummary }}</p>
+        <p v-if="progressSummary" class="t-mono">{{ progressSummary }}</p>
         <p v-if="phaseSummary" class="progress-phase">{{ phaseSummary }}</p>
         <p v-if="chatName" class="progress-chat">{{ chatName }}</p>
       </div>
@@ -301,7 +301,7 @@ onBeforeUnmount(() => {
 .progress-copy {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -311,7 +311,7 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
-.text-h3 {
+.t-h3 {
   min-width: 0;
 }
 
@@ -320,11 +320,11 @@ onBeforeUnmount(() => {
   line-height: 1.35;
 }
 
-.progress-card-compact .text-label {
+.progress-card-compact .t-label {
   display: none;
 }
 
-.progress-card-compact .text-h3 {
+.progress-card-compact .t-h3 {
   font-size: 15px;
 }
 
@@ -437,7 +437,7 @@ onBeforeUnmount(() => {
   color: var(--text-secondary);
 }
 
-.cancel-button:hover {
+.cancel-button:hover:not(:disabled) {
   border-color: rgba(248, 113, 113, 0.2);
   background: var(--danger-subtle);
   color: var(--danger);
@@ -449,8 +449,9 @@ onBeforeUnmount(() => {
 }
 
 .cancel-button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 @keyframes progress-indeterminate {
@@ -501,7 +502,7 @@ onBeforeUnmount(() => {
   box-shadow: none;
 }
 
-.mobile-topbar-progress .text-label,
+.mobile-topbar-progress .t-label,
 .mobile-topbar-progress .progress-phase,
 .mobile-topbar-progress .progress-chat,
 .mobile-topbar-progress .estimated-time {
@@ -521,7 +522,7 @@ onBeforeUnmount(() => {
   margin-bottom: 2px;
 }
 
-.mobile-topbar-progress .text-h3 {
+.mobile-topbar-progress .t-h3 {
   font-size: 12px;
   line-height: 1.15;
 }
@@ -558,7 +559,7 @@ onBeforeUnmount(() => {
 
 .mobile-topbar-progress .progress-percent,
 .mobile-topbar-progress .scanned-count,
-.mobile-topbar-progress .mono-value {
+.mobile-topbar-progress .t-mono {
   font-size: 11px;
   line-height: 1.1;
 }

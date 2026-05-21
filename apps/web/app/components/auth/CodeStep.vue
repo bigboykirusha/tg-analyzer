@@ -83,7 +83,7 @@ function submit() {
 <template>
   <form class="auth-form" @submit.prevent="submit">
     <label class="auth-field">
-      <span class="text-label">{{ t('login.codeLabel') }}</span>
+      <span class="t-label">{{ t('login.codeLabel') }}</span>
       <div class="otp-row" @paste="handlePaste">
         <input
           v-for="(_, index) in digits"
@@ -104,7 +104,7 @@ function submit() {
           @keydown="handleKeydown($event, index)"
         >
       </div>
-      <span class="text-caption">{{ t('login.codeHelp') }}</span>
+      <span class="t-small">{{ t('login.codeHelp') }}</span>
     </label>
     <Button variant="primary" size="lg" :loading="loading" :disabled="code.length !== 5" block>
       {{ loading ? t('login.checkingCode') : t('login.confirmCode') }}
@@ -147,7 +147,7 @@ function submit() {
 
 .otp-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-muted);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
 }
 
 .otp-input:hover {

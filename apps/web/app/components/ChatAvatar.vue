@@ -142,7 +142,7 @@ watch(() => [props.chatId, props.hasAvatar, auth.accessToken], () => {
   border-radius: var(--radius-full);
   border: 1px solid var(--border-subtle);
   background:
-    radial-gradient(circle at 30% 30%, var(--accent-muted-hover), transparent 60%),
+    radial-gradient(circle at 30% 30%, var(--accent-border), transparent 60%),
     var(--bg-elevated);
   color: var(--text-primary);
   font-weight: 600;

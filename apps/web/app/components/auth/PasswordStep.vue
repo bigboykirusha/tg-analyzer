@@ -10,7 +10,7 @@ const { t } = useI18n()
 <template>
   <form class="auth-form" @submit.prevent="emit('submit')">
     <label class="auth-field">
-      <span class="text-label">{{ t('login.passwordLabel') }}</span>
+      <span class="t-label">{{ t('login.passwordLabel') }}</span>
       <input
         v-model="password"
         type="password"
@@ -22,7 +22,7 @@ const { t } = useI18n()
         autocorrect="off"
         spellcheck="false"
       >
-      <span class="text-caption">{{ t('login.passwordHelp') }}</span>
+      <span class="t-small">{{ t('login.passwordHelp') }}</span>
     </label>
     <Button variant="primary" size="lg" :loading="loading" block>
       {{ loading ? t('login.signingIn') : t('login.signIn') }}

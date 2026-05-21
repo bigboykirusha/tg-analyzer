@@ -13,8 +13,8 @@ const { t } = useI18n()
     <div class="redirect-shell">
       <span class="redirect-mark">&lt;T&gt;</span>
       <div class="redirect-copy">
-        <span class="text-label">tg analyzer</span>
-        <span class="text-body-sm">{{ t('common.redirecting') }}</span>
+        <span class="t-label">tg analyzer</span>
+        <span class="t-small">{{ t('common.redirecting') }}</span>
       </div>
       <span class="redirect-line" aria-hidden="true" />
     </div>

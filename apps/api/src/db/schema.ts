@@ -20,6 +20,7 @@ export const users = pgTable('users', {
   tgPhone: varchar('tg_phone', { length: 20 }),
   username: varchar('username', { length: 255 }),
   firstName: varchar('first_name', { length: 255 }),
+  timezone: varchar('timezone', { length: 64 }).default('UTC').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   lastLogin: timestamp('last_login', { withTimezone: true }),
 })
@@ -71,10 +72,11 @@ export const chatStats = pgTable('chat_stats', {
   fileCount: integer('file_count').default(0).notNull(),
   firstMessageAt: timestamp('first_message_at', { withTimezone: true }),
   lastMessageAt: timestamp('last_message_at', { withTimezone: true }),
-  avgResponseSec: integer('avg_response_sec'),
+  averageMyResponseSec: integer('average_my_response_sec'),
   medianMyResponseSec: integer('median_my_response_sec'),
   medianTheirResponseSec: integer('median_their_response_sec'),
   iWriteFirstPct: integer('i_write_first_pct'),
+  responseRate: numeric('response_rate', { precision: 5, scale: 2 }),
   parsedAt: timestamp('parsed_at', { withTimezone: true }).defaultNow(),
   myWordsPerMessage: numeric('my_words_per_message', { precision: 6, scale: 2 }),
   theirWordsPerMessage: numeric('their_words_per_message', { precision: 6, scale: 2 }),
@@ -88,7 +90,29 @@ export const chatStats = pgTable('chat_stats', {
   topWordsBySender: jsonb('top_words_by_sender').$type<{ mine: Array<{ value: string; count: number }>; theirs: Array<{ value: string; count: number }> }>().default({ mine: [], theirs: [] }).notNull(),
   topEmojiBySender: jsonb('top_emoji_by_sender').$type<{ mine: Array<{ value: string; count: number }>; theirs: Array<{ value: string; count: number }> }>().default({ mine: [], theirs: [] }).notNull(),
   uniqueWordsBySender: jsonb('unique_words_by_sender').$type<{ mine: Array<{ value: string; count: number }>; theirs: Array<{ value: string; count: number }> }>().default({ mine: [], theirs: [] }).notNull(),
-  responseStats: jsonb('response_stats').$type<{ medianMineSec: number | null; medianTheirsSec: number | null; mineSamples: number; theirsSamples: number }>().default({ medianMineSec: null, medianTheirsSec: null, mineSamples: 0, theirsSamples: 0 }).notNull(),
+  responseStats: jsonb('response_stats').$type<{
+    medianMineSec: number | null
+    medianTheirsSec: number | null
+    mineSamples: number
+    theirsSamples: number
+    mineP25Sec: number | null
+    mineP75Sec: number | null
+    mineP95Sec: number | null
+    theirsP25Sec: number | null
+    theirsP75Sec: number | null
+    theirsP95Sec: number | null
+  }>().default({
+    medianMineSec: null,
+    medianTheirsSec: null,
+    mineSamples: 0,
+    theirsSamples: 0,
+    mineP25Sec: null,
+    mineP75Sec: null,
+    mineP95Sec: null,
+    theirsP25Sec: null,
+    theirsP75Sec: null,
+    theirsP95Sec: null,
+  }).notNull(),
   messageComposition: jsonb('message_composition').$type<{
     text: number
     media: number
@@ -102,11 +126,61 @@ export const chatStats = pgTable('chat_stats', {
     sticker: 0,
     file: 0,
   }).notNull(),
+  activityDistribution: jsonb('activity_distribution').$type<{
+    night: { sent: number; received: number; total: number }
+    morning: { sent: number; received: number; total: number }
+    afternoon: { sent: number; received: number; total: number }
+    evening: { sent: number; received: number; total: number }
+  }>().default({
+    night: { sent: 0, received: 0, total: 0 },
+    morning: { sent: 0, received: 0, total: 0 },
+    afternoon: { sent: 0, received: 0, total: 0 },
+    evening: { sent: 0, received: 0, total: 0 },
+  }).notNull(),
+  compositionStats: jsonb('composition_stats').$type<{
+    textSharePct: number | null
+    mediaSharePct: number | null
+    voiceSharePct: number | null
+    stickerSharePct: number | null
+    fileSharePct: number | null
+    avgCharsPerTextMessage: number | null
+  }>().default({
+    textSharePct: null,
+    mediaSharePct: null,
+    voiceSharePct: null,
+    stickerSharePct: null,
+    fileSharePct: null,
+    avgCharsPerTextMessage: null,
+  }).notNull(),
+  availabilityProfile: jsonb('availability_profile').$type<{
+    activeHours: number
+    activeHoursPct: number
+    concentrationIndex: number | null
+    predictability: 'low' | 'medium' | 'high'
+    peakWindow: string | null
+    secondaryWindow: string | null
+  }>().default({
+    activeHours: 0,
+    activeHoursPct: 0,
+    concentrationIndex: null,
+    predictability: 'low',
+    peakWindow: null,
+    secondaryWindow: null,
+  }).notNull(),
+  healthScore: jsonb('health_score').$type<{
+    score: number
+    label: 'strong' | 'steady' | 'fragile' | 'imbalanced'
+    responseRate: number | null
+    fragmentation: number | null
+    initiativeBalance: number | null
+    longTermStability: number | null
+  }>(),
   conversationFacts: jsonb('conversation_facts').$type<{
     activeDays: number
     longestGap: { seconds: number; from: string | null; to: string | null } | null
     mostActiveDate: { date: string | null; total: number } | null
     maxStreakDays: number
+    maxStreak: { days: number; startDate: string | null; endDate: string | null } | null
     firstMessageAt: string | null
     silencePeriodsOver30Days: Array<{ seconds: number; from: string | null; to: string | null }>
     trend: 'growing' | 'stable' | 'fading' | 'unknown'
@@ -147,6 +221,7 @@ export const chatStats = pgTable('chat_stats', {
     longestGap: null,
     mostActiveDate: null,
     maxStreakDays: 0,
+    maxStreak: null,
     firstMessageAt: null,
     silencePeriodsOver30Days: [],
     trend: 'unknown',

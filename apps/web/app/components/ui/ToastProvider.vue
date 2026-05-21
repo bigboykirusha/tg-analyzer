@@ -21,7 +21,7 @@ function variantLabel(variant: string) {
         <article v-for="toast in toasts" :key="toast.id" class="toast" :class="`toast-${toast.variant}`" role="status">
           <div class="toast-indicator" aria-hidden="true" />
           <div class="toast-copy">
-            <span class="screen-reader">{{ variantLabel(toast.variant) }}</span>
+            <span class="sr-only">{{ variantLabel(toast.variant) }}</span>
             <strong>{{ toast.title }}</strong>
             <p v-if="toast.description">{{ toast.description }}</p>
           </div>
@@ -111,6 +111,11 @@ function variantLabel(variant: string) {
   color: var(--text-primary);
 }
 
+.toast-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+}
+
 .toast-close svg {
   width: 16px;
   height: 16px;
@@ -121,24 +126,24 @@ function variantLabel(variant: string) {
 }
 
 .toast-success {
-  color: var(--color-success);
+  color: var(--success);
 }
 
 .toast-error {
-  color: var(--color-danger);
+  color: var(--danger);
 }
 
 .toast-info {
-  color: var(--color-info);
+  color: var(--info);
 }
 
 .toast-warning {
-  color: var(--color-warning);
+  color: var(--warning);
 }
 
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity var(--transition-base), transform var(--transition-base);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
 }
 
 .toast-enter-from,

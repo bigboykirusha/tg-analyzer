@@ -702,3 +702,323 @@ Dashboard не должен превращаться в “таблицу все
 - держит в центре один качественный отчет по одному чату.
 
 Если понадобится, следующим шагом можно подготовить еще и **экран-by-экран дизайн-бриф в формате задач для Figma**: отдельно для `Login`, `Dashboard`, `Report`, `Components`, `States`, `Mobile`.
+
+## 22. Метрики отчета: формулы и источники данных
+
+Ниже — практический reference по метрикам, которые уже есть в продукте.
+Цель: чтобы дизайн, продукт и разработка опирались на одну и ту же математику.
+
+### 22.1 Источник сырых данных
+
+Базовый источник — сообщения Telegram (по выбранному чату):
+
+- `date` (время сообщения)
+- `outgoing` (наше/чужое)
+- `message` (текст)
+- флаги типа контента: `media`, `voice`, `sticker`, `file`
+
+Все временные метрики теперь должны интерпретироваться в выбранном пользователем `timezone`, а не в абстрактном UTC-срезе интерфейса.
+
+Далее данные агрегируются в `chat_stats` (PostgreSQL), включая числовые поля и `jsonb`-структуры:
+
+- простые счетчики: `total_messages`, `sent_messages`, `received_messages`, ...
+- временные ряды: `daily_activity_json`, `monthly_activity`, `hourly_activity_split`
+- вычисленные факты: `conversation_facts`, `response_stats`, `words_per_message`
+- расширенные агрегаты: `response_rate`, `activity_distribution`, `composition_stats`, `availability_profile`, `health_score`
+
+### 22.2 Объем и баланс
+
+1. `totalMessages`
+- Данные: все сообщения чата.
+- Формула: `totalMessages = count(all_messages)`.
+
+2. `sentMessages`, `receivedMessages`
+- Данные: `outgoing`.
+- Формула:
+  - `sentMessages = count(messages where outgoing = true)`
+  - `receivedMessages = count(messages where outgoing = false)`
+
+3. Доля отправленных/полученных (UI)
+- Данные: `sentMessages`, `totalMessages`.
+- Формула:
+  - `sentSharePct = sentMessages / totalMessages * 100`
+  - `receivedSharePct = 100 - sentSharePct`
+
+### 22.3 Текст и словарь
+
+1. `totalChars`
+- Данные: поле `message`.
+- Формула: `totalChars = sum(length(message_text))`.
+
+2. `totalWords`
+- Данные: токены текста по regex `[\p{L}\p{N}_-]{2,}`.
+- Формула: `totalWords = sum(words_in_message)`.
+
+3. `textMessageCount`
+- Данные: тип сообщения.
+- Формула: `textMessageCount = count(messages classified as text)`.
+
+4. `wordsPerMessage.mine/theirs`
+- Данные: слова и число текстовых сообщений по сторонам.
+- Формула:
+  - `mine = mineWords / mineTextMessages`
+  - `theirs = theirsWords / theirsTextMessages`
+- Примечание: округление до 2 знаков.
+
+5. `topWords`, `topWordsBySender`
+- Данные: нормализованные токены (lowercase, очистка краев), после исключения stop-слов RU/EN.
+- Формула: сортировка по частоте `count(word)` по убыванию, top N.
+
+6. `uniqueWordsBySender`
+- Данные: словари сторон.
+- Формула:
+  - `uniqueMine = words(mine) - words(theirs)`
+  - `uniqueTheirs = words(theirs) - words(mine)`
+  - затем top N по частоте.
+
+### 22.4 Эмодзи
+
+1. `topEmoji`, `topEmojiBySender`
+- Данные: символы по regex `\p{Extended_Pictographic}`.
+- Формула: `count(emoji)` по всем сообщениям и отдельно по каждой стороне.
+
+### 22.5 Композиция сообщений
+
+1. `messageComposition` (`text/media/voice/sticker/file`)
+- Данные: флаги типа сообщения.
+- Логика классификации: `voice > sticker > file > media > text`.
+- Формула: инкремент счетчика соответствующего типа на каждое сообщение.
+
+2. `mediaCount`, `voiceCount`, `stickerCount`, `fileCount`
+- Данные: тот же классификатор.
+- Формула: количество сообщений каждого типа.
+
+### 22.6 Временные метрики
+
+1. `hourlyActivity`
+- Данные: `date`.
+- Формула: `count(messages by local hour 0..23)`.
+
+2. `hourlyActivitySplit`
+- Данные: `date`, `outgoing`.
+- Формула: по каждому часу считаются `sent`, `received`, `total`.
+
+3. `dailyActivity`
+- Данные: `date`, `outgoing`.
+- Формула: по каждому дню `YYYY-MM-DD` считаются `sent`, `received`, `total`.
+
+4. `weekdayActivity`
+- Данные: `date.getDay()`.
+- Формула: агрегация по дням недели `0..6` с разбивкой `sent/received/total`.
+
+5. `monthlyActivity`
+- Данные: `date`.
+- Формула: агрегация по месяцам `YYYY-MM` с разбивкой `sent/received/total`.
+
+### 22.7 Ответы и инициатива (только private chats)
+
+Порог “одной сессии”: `8 часов`.
+
+1. `medianMyResponseSec`, `medianTheirResponseSec`
+- Данные: соседние сообщения в отсортированном timeline.
+- Условие попадания в выборку:
+  - смена стороны (`previous.outgoing != current.outgoing`)
+  - `0 <= gap <= 8h`
+- Формула:
+  - если `current.outgoing = true`, gap идет в выборку `mine`
+  - иначе в `theirs`
+  - далее медиана каждой выборки.
+
+2. `averageMyResponseSec`
+- Данные: выборка `mineResponseSeconds`.
+- Формула: среднее по `mineResponseSeconds`, округление до секунд.
+
+3. `responseStats.mineSamples/theirsSamples`
+- Данные: размеры соответствующих выборок.
+- Формула: `count(gaps in sample)`.
+
+4. Percentiles в `responseStats`
+- Данные: те же выборки `mineResponseSeconds` и `theirsResponseSeconds`.
+- Поля:
+  - `mineP25Sec`, `mineP75Sec`, `mineP95Sec`
+  - `theirsP25Sec`, `theirsP75Sec`, `theirsP95Sec`
+- Формула: соответствующий percentile по отсортированной выборке задержек ответа.
+
+5. `responseRate`
+- Данные: последовательность сообщений внутри timeline.
+- Идея: какой процент “ходов” в диалоге действительно получает ответ в пределах активного окна.
+- Формула: доля turn-ок, где после сообщения одной стороны последовал ответ другой стороны без разрыва длиннее `8h`.
+
+6. `iWriteFirstPct`
+- Данные: старты сессий.
+- Когда фиксируется старт:
+  - первое сообщение timeline;
+  - любое сообщение после разрыва `gap > 8h`.
+- Формула:
+  - `iWriteFirstPct = outgoingSessionStarts / totalSessionStarts * 100`.
+
+### 22.8 Conversation Facts
+
+1. `activeDays`
+- Формула: число уникальных дат с сообщениями.
+
+2. `longestGap`
+- Формула: максимальный интервал между соседними сообщениями timeline.
+
+3. `silencePeriodsOver30Days`
+- Условие: `gap > 30 дней`.
+- Формула: список таких gap, отсортированный по длине, top 8.
+
+4. `mostActiveDate`
+- Формула: день с максимальным `daily.total`.
+
+5. `maxStreakDays`
+- Формула: максимальная длина непрерывной последовательности активных дней.
+
+Дополнительно:
+- `maxStreak`
+- Формат: `{ days, startDate, endDate }`
+- Смысл: тот же longest streak, но уже с границами периода для UI и интерпретации.
+
+6. `mostActiveMonth`
+- Формула: месяц с максимальным `monthly.total`.
+
+7. `trend` (backend)
+- Требование: минимум 6 месяцев данных.
+- Формула:
+  - берем окно из 6 последних месяцев;
+  - `previousThree = sum(month 1..3)`,
+  - `lastThree = sum(month 4..6)`.
+- Правила:
+  - `lastThree > previousThree * 1.15` -> `growing`
+  - `lastThree < previousThree * 0.85` -> `fading`
+  - иначе `stable`
+  - при недостатке данных -> `unknown`.
+
+### 22.9 Session Stats
+
+Сессия разбивается по тому же порогу `8 часов`.
+
+1. `totalSessions`
+- Формула: количество сессий после сегментации timeline.
+
+2. `averageSessionMessages`
+- Формула: среднее `totalMessages` по сессиям.
+
+3. `averageSessionDurationSec`
+- Формула: среднее длительностей сессий (`endedAt - startedAt`).
+
+4. `longestSessionMessages`
+- Формула: `max(totalMessages per session)`.
+
+5. `longestSessionDurationSec`
+- Формула: `max(durationSec per session)`.
+
+6. `sessionsPerActiveWeek`
+- Формула: `totalSessions / max(activeDays / 7, 1)`.
+
+7. `nightSessionsPct`
+- Условие “ночной” сессии: стартовый час `23..5`.
+- Формула: `nightSessions / totalSessions * 100`.
+
+8. `highlights`
+- Данные: список сессий.
+- Формируется из наиболее плотной (по сообщениям) и наиболее длинной (по времени) сессий.
+
+### 22.10 Дополнительные persisted-метрики
+
+1. `activityDistribution`
+- Бакеты:
+  - `night` = `00:00-05:59`
+  - `morning` = `06:00-11:59`
+  - `afternoon` = `12:00-17:59`
+  - `evening` = `18:00-23:59`
+- Формула: сумма `sent/received/total` по каждому часовому бакету.
+
+2. `compositionStats`
+- Поля:
+  - `textSharePct`
+  - `mediaSharePct`
+  - `voiceSharePct`
+  - `stickerSharePct`
+  - `fileSharePct`
+  - `avgCharsPerTextMessage`
+- Формулы:
+  - `typeSharePct = typeCount / totalMessages * 100`
+  - `avgCharsPerTextMessage = totalChars / textMessageCount`
+
+3. `availabilityProfile`
+- Поля:
+  - `activeHours`
+  - `activeHoursPct`
+  - `concentrationIndex`
+  - `predictability`
+  - `peakWindow`
+  - `secondaryWindow`
+- Формулы:
+  - `activeHours = count(hours where hourlyActivity[hour] > 0)`
+  - `activeHoursPct = activeHours / 24 * 100`
+  - `concentrationIndex = max(hourlyActivity) / avg(hourlyActivity)`
+- Интерпретация:
+  - чем выше `concentrationIndex`, тем сильнее общение сжато в узкие окна дня.
+
+4. `healthScore`
+- Это интегральный persisted score поверх уже посчитанных метрик, а не отдельная первичная метрика сообщения.
+- Использует:
+  - `responseRate`
+  - session fragmentation
+  - initiative balance
+  - long-term stability
+
+### 22.11 Relationship Score (private chats)
+
+Итоговый скоринг `0..100` собирается из 4 компонентов.
+
+1. `reciprocity`
+- Формула:
+  - `shareDelta = abs(sent - received) / (sent + received)`
+  - `reciprocity = clamp((1 - shareDelta) * 100)`.
+
+2. `attentionBalance`
+- Формула:
+  - если нет `iWriteFirstPct`, берется `reciprocity`;
+  - иначе `attentionBalance = clamp(100 - abs(iWriteFirstPct - 50) * 2)`.
+
+3. `responsiveness`
+- Данные: медианы ответов сторон.
+- Каждая медиана переводится в score:
+  - `<= 15m -> 100`
+  - `<= 1h -> 85`
+  - `<= 4h -> 65`
+  - `<= 24h -> 40`
+  - `> 24h -> 20`
+- Затем берется среднее по доступным сторонам.
+
+4. `stability`
+- Формула (ограниченная `0..100`):
+  - вклад `activeDays` до 45 баллов;
+  - вклад `maxStreakDays` до 35 баллов;
+  - вклад `trend`: `fading=5`, `unknown=10`, `stable=15`, `growing=20`.
+
+5. Финальный `score`
+- Формула:
+  - `score = reciprocity*0.30 + responsiveness*0.25 + stability*0.25 + attentionBalance*0.20`.
+- Лейбл:
+  - `warm`, `balanced`, `cooling`, `one_sided`, `emerging` по порогам и условиям тренда/устойчивости.
+
+### 22.12 Insights
+
+`insights` генерируются rule-based на базе:
+
+- `trend`
+- `longestGap`
+- `sessionStats`
+- `relationshipScore`
+- `responseStats`
+
+Это интерпретационный слой (короткие выводы), а не отдельные первичные метрики.
+
+### 22.13 Важное замечание для дизайна и UX
+
+В текущем UI есть локальный расчет `dailyMomentum` (14-дневные окна) для части визуальных подписей тренда, а в backend-поле `conversationFacts.trend` используется 6-месячная логика.
+То есть в интерфейсе могут существовать две разные “оптики тренда”, и это лучше явно учитывать в копирайтинге и подсказках.

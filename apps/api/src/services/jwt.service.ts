@@ -35,12 +35,14 @@ export function toUserDto(user: {
   tgUserId: number
   username: string | null
   firstName: string | null
+  timezone: string
 }, telegramSessionActive?: boolean): UserDto {
   return {
     id: user.id,
     tgUserId: String(user.tgUserId),
     username: user.username,
     firstName: user.firstName,
+    timezone: user.timezone,
     telegramSessionActive,
   }
 }
@@ -50,6 +52,7 @@ export async function issueAuthTokens(reply: FastifyReply, user: {
   tgUserId: number
   username: string | null
   firstName: string | null
+  timezone: string
 }, telegramSessionActiveOverride?: boolean) {
   const refreshSession = await createRefreshSession(user.id)
   setRefreshCookie(reply, refreshSession.tokenId, user.id)
@@ -61,6 +64,7 @@ export async function issueAccessToken(reply: FastifyReply, user: {
   tgUserId: number
   username: string | null
   firstName: string | null
+  timezone: string
 }, telegramSessionActiveOverride?: boolean) {
   const telegramSession = await db.query.telegramSessions.findFirst({
     where: eq(schema.telegramSessions.userId, user.id),

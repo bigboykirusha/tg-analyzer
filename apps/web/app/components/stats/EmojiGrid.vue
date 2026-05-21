@@ -11,10 +11,10 @@ const { t, formatNumber } = useI18n()
   <div v-if="items.length" class="emoji-grid">
     <div v-for="item in items" :key="item.value" class="emoji-card">
       <span class="emoji-value">{{ item.value }}</span>
-      <span class="emoji-count mono-value">{{ formatNumber(item.count) }}</span>
+      <span class="emoji-count t-mono">{{ formatNumber(item.count) }}</span>
     </div>
   </div>
-  <div v-else class="emoji-empty text-body-sm">{{ t('chat.noEmoji') }}</div>
+  <div v-else class="emoji-empty t-small">{{ t('chat.noEmoji') }}</div>
 </template>
 
 <style scoped>

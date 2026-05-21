@@ -11,6 +11,7 @@
     "test": "node --import tsx --import ./src/test-env.ts --test src/**/*.test.ts",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
+    "backfill:timezone": "tsx src/scripts/enqueue-timezone-reparse.ts",
     "start": "node --experimental-specifier-resolution=node dist/index.js",
     "worker": "node --experimental-specifier-resolution=node dist/workers/index.js"
   },
