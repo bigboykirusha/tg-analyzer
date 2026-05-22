@@ -75,7 +75,7 @@ async function parseDialog(userId: string, session: {
   let scannedMessages = 0
   let lastPublishedScannedMessages = 0
   let lastProgressPublishedAt = 0
-  const chatName = dialog.title ?? dialog.name ?? 'Unknown'
+  const chatName = dialog.title ?? dialog.name ?? 'Untitled chat'
 
   while (hasMore) {
     await ensureNotCancelled(userId, jobId)
@@ -223,7 +223,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
         current: index + 1,
         total: targetDialogs.length,
         chatId: String(dialog.id),
-        chatName: dialog.title ?? dialog.name ?? 'Unknown',
+        chatName: dialog.title ?? dialog.name ?? 'Untitled chat',
         status: 'running',
         message: `Parsing chat ${index + 1} of ${targetDialogs.length}`,
         startTime,

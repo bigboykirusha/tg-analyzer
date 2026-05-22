@@ -23,6 +23,7 @@ const messages: Record<Locale, Messages> = {
     'common.relogin': 'Re-login',
     'common.dashboard': 'Dashboard',
     'common.report': 'Report',
+    'common.history': 'History',
     'common.userFallback': 'User',
     'common.anonymous': 'Anonymous',
     'common.telegram': 'telegram',
@@ -128,6 +129,15 @@ const messages: Record<Locale, Messages> = {
     'dashboard.securityLabel': 'Security',
     'dashboard.securityTitle': 'Session controls',
     'dashboard.securityText': 'Terminate your Telegram session or delete your account without leaving the workspace.',
+    'dashboard.historyPageTitle': 'Run history',
+    'dashboard.historyPageText': 'Worker jobs, durations, parse progress, and failures collected in one place.',
+    'dashboard.openSecurityInfo': 'How it works',
+    'dashboard.securityInfoTitle': 'How Telegram access and security work',
+    'dashboard.securityInfoIntro': 'Telegram is used only to authenticate you and to scan the chats you explicitly choose for analysis.',
+    'dashboard.securityInfoSessions': 'Your Telegram session string is encrypted on the backend. Access to the app itself uses a short-lived JWT and an HttpOnly refresh cookie.',
+    'dashboard.securityInfoMessages': 'The app does not store original chat messages or media files as product data. It keeps aggregated statistics and report metrics.',
+    'dashboard.securityInfoWorkers': 'Parsing runs asynchronously in a worker. During parsing we use lightweight message metadata to compute aggregates and then keep only the report snapshot.',
+    'dashboard.securityInfoAccess': 'Other users do not get direct access to your chats. The interface works only with your authorized account and your stored aggregates.',
     'profile.timezone': 'Timezone',
     'profile.timezoneHelp': 'Controls how hours, days, and months are grouped in new reports.',
     'profile.timezoneSaved': 'Timezone updated',
@@ -442,6 +452,7 @@ const messages: Record<Locale, Messages> = {
     'common.relogin': 'Войти заново',
     'common.dashboard': 'Дашборд',
     'common.report': 'Отчет',
+    'common.history': 'История',
     'common.userFallback': 'Пользователь',
     'common.anonymous': 'Аноним',
     'common.telegram': 'telegram',
@@ -547,6 +558,15 @@ const messages: Record<Locale, Messages> = {
     'dashboard.securityLabel': 'Безопасность',
     'dashboard.securityTitle': 'Управление сессией',
     'dashboard.securityText': 'Завершите сессию Telegram или удалите аккаунт прямо из рабочей области.',
+    'dashboard.historyPageTitle': 'История запусков',
+    'dashboard.historyPageText': 'Здесь собраны задачи воркера, длительность, прогресс по чатам и ошибки парсинга.',
+    'dashboard.openSecurityInfo': 'Как это работает',
+    'dashboard.securityInfoTitle': 'Как устроены Telegram и безопасность',
+    'dashboard.securityInfoIntro': 'Telegram используется только для авторизации и для чтения тех чатов, которые вы сами выбираете для анализа.',
+    'dashboard.securityInfoSessions': 'Строка Telegram-сессии хранится на backend в зашифрованном виде. Доступ в само приложение работает через короткий JWT и HttpOnly refresh-cookie.',
+    'dashboard.securityInfoMessages': 'Приложение не хранит исходные сообщения и медиа как продуктовые данные. В базе остаются только агрегированная статистика и метрики отчета.',
+    'dashboard.securityInfoWorkers': 'Парсинг выполняется асинхронно в воркере. Во время прохода используются только легкие метаданные сообщения, а после сохраняется готовый снимок отчета.',
+    'dashboard.securityInfoAccess': 'Другие пользователи не получают прямой доступ к вашим чатам. Интерфейс работает только с вашим авторизованным аккаунтом и вашими агрегатами.',
     'profile.timezone': 'Часовой пояс',
     'profile.timezoneHelp': 'Влияет на группировку часов, дней и месяцев в новых отчетах.',
     'profile.timezoneSaved': 'Часовой пояс обновлен',
@@ -857,14 +877,6 @@ export function useI18n() {
 
   onMounted(() => {
     const saved = localStorage.getItem(LOCALE_KEY)
-
-    if (import.meta.dev && saved && saved !== locale.value) {
-      console.info('[i18n-debug] locale state differs from localStorage during hydration', {
-        stateLocale: locale.value,
-        storedLocale: saved,
-        hint: 'If hydration mismatch mentions text/lang/head tags, make SSR and client locale come from the same source.',
-      })
-    }
 
     if (saved === 'ru' || saved === 'en') {
       locale.value = saved

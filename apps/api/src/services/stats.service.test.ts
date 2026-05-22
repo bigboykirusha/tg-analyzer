@@ -1,10 +1,45 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { resolveProductGroupRole } from '@tg-analyzer/shared'
 import {
   aggregateMessage,
   createChatAccumulator,
   finalizeAccumulator,
 } from './stats.service'
+
+test('resolveProductGroupRole keeps recently active top members out of inactive roles', () => {
+  const now = new Date('2026-05-22T00:00:00.000Z')
+
+  assert.equal(resolveProductGroupRole({
+    role: 'lurker',
+    messageShare: 28.4,
+    consistencyScore: 12,
+    starterShare: 28.9,
+    firstSeen: '2025-01-01T00:00:00.000Z',
+    lastSeen: '2026-05-21T00:00:00.000Z',
+    messageCount: 1532,
+  }, now), 'anchor')
+
+  assert.equal(resolveProductGroupRole({
+    role: 'contributor',
+    messageShare: 0.1,
+    consistencyScore: 0.1,
+    starterShare: 0,
+    firstSeen: '2026-05-15T00:00:00.000Z',
+    lastSeen: '2026-05-21T00:00:00.000Z',
+    messageCount: 6,
+  }, now), 'newcomer')
+
+  assert.equal(resolveProductGroupRole({
+    role: 'anchor',
+    messageShare: 28.4,
+    consistencyScore: 20,
+    starterShare: 30,
+    firstSeen: '2025-01-01T00:00:00.000Z',
+    lastSeen: '2026-01-01T00:00:00.000Z',
+    messageCount: 1532,
+  }, now), 'inactive')
+})
 
 test('finalizeAccumulator computes private chat response metrics and session starts', () => {
   const acc = createChatAccumulator()
@@ -78,4 +113,28 @@ test('finalizeAccumulator computes response percentiles for uneven samples', () 
   assert.equal(result.responseStats.medianMineSec, 1800)
   assert.equal(result.responseStats.mineP75Sec, 12600)
   assert.equal(result.responseStats.mineP95Sec, 12600)
+})
+
+test('finalizeAccumulator builds group participant and interaction analytics', () => {
+  const acc = createChatAccumulator()
+  const base = new Date(Date.now() - (5 * 24 * 60 * 60 * 1000))
+
+  aggregateMessage({ id: 1, senderId: 'self', senderName: 'You', message: 'launch plan alpha', date: base, outgoing: true }, acc)
+  aggregateMessage({ id: 2, senderId: 'u2', senderName: 'Nina', message: 'alpha sounds good 👍', date: new Date(base.getTime() + 5 * 60 * 1000), outgoing: false, replyToMessageId: 1 }, acc)
+  aggregateMessage({ id: 3, senderId: 'u3', senderName: 'Max', message: 'i can help with launch', date: new Date(base.getTime() + 8 * 60 * 1000), outgoing: false }, acc)
+  aggregateMessage({ id: 4, senderId: 'self', senderName: 'You', message: 'great, take the landing page', date: new Date(base.getTime() + 12 * 60 * 1000), outgoing: true, replyToMessageId: 3 }, acc)
+  aggregateMessage({ id: 5, senderId: 'u2', senderName: 'Nina', message: 'i will prepare visuals', date: new Date(base.getTime() + 5 * 60 * 60 * 1000), outgoing: false }, acc)
+
+  const result = finalizeAccumulator(acc, 'group')
+
+  assert.ok(result.groupReport)
+  assert.equal(result.groupReport?.participants.length, 3)
+  assert.equal(result.groupReport?.participants[0]?.name, 'You')
+  assert.equal(result.groupReport?.participants[0]?.role, 'anchor')
+  assert.equal(result.groupReport?.participants[0]?.messageCount, 2)
+  assert.ok(result.groupReport?.topPairs.some((pair) =>
+    ['You', 'Max'].every((name) => [pair.leftParticipantName, pair.rightParticipantName].includes(name))))
+  assert.equal(result.groupReport?.health?.activeMembers, 3)
+  assert.equal(result.groupReport?.health?.activeMembersLast30Days, 3)
+  assert.ok((result.groupReport?.sharedVocabulary.length ?? 0) >= 0)
 })

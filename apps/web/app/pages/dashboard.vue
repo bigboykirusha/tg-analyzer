@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ParseDialogDto, ParseHistoryItem } from '@tg-analyzer/shared'
+import type { ParseDialogDto } from '@tg-analyzer/shared'
 import type { ApiClientError } from '../composables/useApi'
 import AppLayout from '../components/AppLayout.vue'
 import ChatAvatar from '../components/ChatAvatar.vue'
@@ -11,7 +11,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import Skeleton from '../components/ui/Skeleton.vue'
 import StatusDot from '../components/ui/StatusDot.vue'
-import { AlertCircle, BarChart2, Clock, MessageSquare, RefreshCw, Trash2, WifiOff, X } from '../lib/icons'
+import { AlertCircle, BarChart2, MessageSquare, RefreshCw, Trash2, WifiOff, X } from '../lib/icons'
 import { useAuth } from '../composables/useAuth'
 import { useI18n } from '../composables/useI18n'
 import { useParseProgress } from '../composables/useParseProgress'
@@ -27,7 +27,7 @@ definePageMeta({
 
 const auth = useAuthStore()
 const { deleteAccount, logout, terminateTelegramSession } = useAuth()
-const { clearHistory, deleteChat, deleteHistoryItem, fetchChats, fetchHistory, fetchParseDialogs } = useStats()
+const { deleteChat, fetchChats, fetchHistory, fetchParseDialogs } = useStats()
 const stats = useStatsStore()
 const { progress, bootstrapped, bootstrapFromServer, connect, disconnect, reset } = useParseProgress()
 const { t, formatNumber, formatDate: formatLocaleDate, formatRelative } = useI18n()
@@ -37,42 +37,37 @@ const pending = ref(false)
 const cancelling = ref(false)
 const securityPending = ref<'telegram' | 'account' | null>(null)
 const deletingChatId = ref<string | null>(null)
-const deletingHistoryJobId = ref<string | null>(null)
-const clearingHistory = ref(false)
 const ready = ref(false)
 const parseDialogsLoading = ref(false)
 const parseDialogsError = ref('')
 const parseDialogsBusy = ref(false)
+const securityInfoOpen = ref(false)
 const dialogSearch = ref('')
 const visibleDialogsCount = ref(18)
 const pendingChatId = ref<string | null>(null)
 const confirmState = ref<{
-  type: 'terminate' | 'delete-account' | 'delete-report' | 'clear-history' | 'delete-history-item'
+  type: 'terminate' | 'delete-account' | 'delete-report'
   title: string
   description: string
   confirmLabel: string
   variant: 'default' | 'danger'
   chatId?: string
-  jobId?: string
 } | null>(null)
-const selectedHistoryItem = ref<ParseHistoryItem | null>(null)
 
 const analyzedChats = computed(() =>
   [...stats.chats]
-    .filter((chat) => chat.chatType === 'private')
+    .filter((chat) => ['private', 'group'].includes(chat.chatType ?? ''))
     .sort((left, right) => new Date(right.parsedAt ?? 0).getTime() - new Date(left.parsedAt ?? 0).getTime()),
 )
 const analyzedChatIds = computed(() => new Set(analyzedChats.value.map((chat) => chat.tgChatId)))
 const telegramSessionActive = computed(() => auth.telegramSessionActive)
 const isParseActive = computed(() => progress.value.status === 'running' || progress.value.status === 'pending')
 const isParseTerminal = computed(() => ['completed', 'failed', 'cancelled'].includes(progress.value.status))
-const latestHistoryItems = computed(() => stats.history.slice(0, 8))
-
 const filteredDialogs = computed(() => {
   const query = dialogSearch.value.trim().toLowerCase()
 
   return stats.parseDialogs
-    .filter((dialog) => dialog.type === 'private')
+    .filter((dialog) => ['private', 'group'].includes(dialog.type))
     .filter((dialog) => {
       if (!query) {
         return true
@@ -206,29 +201,6 @@ function formatShortDate(value: string | null) {
   })
 }
 
-function formatHistoryDates(item: ParseHistoryItem) {
-  return formatShortDate(item.createdAt)
-}
-
-function formatCompletedDate(value: string | null) {
-  if (!value) {
-    return t('common.na')
-  }
-
-  return formatShortDate(value)
-}
-
-function historyDuration(item: ParseHistoryItem) {
-  const startedAt = new Date(item.createdAt).getTime()
-  const finishedAt = item.completedAt ? new Date(item.completedAt).getTime() : Date.now()
-
-  if (Number.isNaN(startedAt) || Number.isNaN(finishedAt) || finishedAt <= startedAt) {
-    return t('common.na')
-  }
-
-  return formatCooldown(Math.round((finishedAt - startedAt) / 1000))
-}
-
 function formatCooldown(seconds: number) {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
@@ -241,50 +213,6 @@ function formatCooldown(seconds: number) {
     return t('common.durationMinutes', { minutes, seconds: remainingSeconds })
   }
   return t('common.durationSeconds', { seconds: remainingSeconds })
-}
-
-function historyProgress(item: ParseHistoryItem) {
-  if (item.status === 'completed') {
-    return 100
-  }
-
-  if (item.totalChats > 0) {
-    return Math.round((item.parsedChats / item.totalChats) * 100)
-  }
-
-  if (item.status === 'running') {
-    return item.totalMessages ? 55 : 12
-  }
-
-  if (item.status === 'pending') {
-    return 6
-  }
-
-  if (item.status === 'failed' || item.status === 'cancelled') {
-    return item.totalMessages ? 100 : 18
-  }
-
-  return 0
-}
-
-function statusVariant(status: string) {
-  if (status === 'completed') {
-    return 'success'
-  }
-
-  if (status === 'failed') {
-    return 'danger'
-  }
-
-  if (status === 'cancelled') {
-    return 'warning'
-  }
-
-  if (status === 'running') {
-    return 'info'
-  }
-
-  return 'default'
 }
 
 function statusLabel(status: string) {
@@ -387,26 +315,6 @@ function dialogHint(dialog: ParseDialogDto) {
   return t('dashboard.firstReportHint')
 }
 
-function formatHistoryScope(item: ParseHistoryItem) {
-  if (item.totalChats > 1) {
-    return `${formatNumber(item.parsedChats)} / ${formatNumber(item.totalChats)}`
-  }
-
-  if (item.chatName) {
-    return item.chatName
-  }
-
-  return item.jobId
-}
-
-function shouldRenderHistoryError(item: ParseHistoryItem) {
-  if (!item.errorMessage) {
-    return false
-  }
-
-  return !/busy with another operation|transient duplicate-auth conflict/i.test(item.errorMessage)
-}
-
 async function handleTerminateTelegramSession() {
   securityPending.value = 'telegram'
 
@@ -449,36 +357,6 @@ async function handleDeleteReport(chatId: string) {
   }
 }
 
-async function handleClearHistory() {
-  clearingHistory.value = true
-
-  try {
-    await clearHistory()
-    await fetchHistory()
-    toast.success(t('dashboard.historyCleared'))
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('dashboard.clearHistoryError'))
-  } finally {
-    clearingHistory.value = false
-    confirmState.value = null
-  }
-}
-
-async function handleDeleteHistoryItem(jobId: string) {
-  deletingHistoryJobId.value = jobId
-
-  try {
-    await deleteHistoryItem(jobId)
-    await fetchHistory()
-    toast.success(t('dashboard.historyItemDeleted'))
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('dashboard.deleteHistoryItemError'))
-  } finally {
-    deletingHistoryJobId.value = null
-    confirmState.value = null
-  }
-}
-
 function openTerminateConfirm() {
   confirmState.value = {
     type: 'terminate',
@@ -510,35 +388,6 @@ function openDeleteReportConfirm(chatId: string, title: string) {
   }
 }
 
-function openClearHistoryConfirm() {
-  confirmState.value = {
-    type: 'clear-history',
-    title: t('dashboard.clearHistory'),
-    description: t('dashboard.clearHistoryConfirm'),
-    confirmLabel: t('dashboard.clearHistory'),
-    variant: 'danger',
-  }
-}
-
-function openDeleteHistoryItemConfirm(jobId: string) {
-  confirmState.value = {
-    type: 'delete-history-item',
-    title: t('dashboard.deleteHistoryItem'),
-    description: t('dashboard.deleteHistoryItemConfirm'),
-    confirmLabel: t('dashboard.deleteHistoryItem'),
-    variant: 'danger',
-    jobId,
-  }
-}
-
-function openHistoryDetails(item: ParseHistoryItem) {
-  selectedHistoryItem.value = item
-}
-
-function closeHistoryDetails() {
-  selectedHistoryItem.value = null
-}
-
 async function confirmAction() {
   if (!confirmState.value) {
     return
@@ -550,10 +399,6 @@ async function confirmAction() {
     await handleDeleteAccount()
   } else if (confirmState.value.type === 'delete-report' && confirmState.value.chatId) {
     await handleDeleteReport(confirmState.value.chatId)
-  } else if (confirmState.value.type === 'clear-history') {
-    await handleClearHistory()
-  } else if (confirmState.value.type === 'delete-history-item' && confirmState.value.jobId) {
-    await handleDeleteHistoryItem(confirmState.value.jobId)
   }
 }
 
@@ -570,10 +415,7 @@ const confirmLoading = computed(() => {
   if (confirmState.value.type === 'delete-report') {
     return deletingChatId.value === confirmState.value.chatId
   }
-  if (confirmState.value.type === 'delete-history-item') {
-    return deletingHistoryJobId.value === confirmState.value.jobId
-  }
-  return clearingHistory.value
+  return false
 })
 
 watch(dialogSearch, () => {
@@ -674,14 +516,6 @@ onMounted(async () => {
             <Skeleton height="24px" width="140px" />
             <div class="list-grid">
               <Skeleton v-for="item in 4" :key="item" height="96px" radius="var(--radius-md)" />
-            </div>
-          </div>
-        </section>
-        <section class="card workspace-card">
-          <div class="stack-md">
-            <Skeleton height="24px" width="180px" />
-            <div class="list-grid">
-              <Skeleton v-for="item in 4" :key="`history-${item}`" height="96px" radius="var(--radius-md)" />
             </div>
           </div>
         </section>
@@ -843,69 +677,15 @@ onMounted(async () => {
         </section>
 
         <section class="stack-lg dashboard-side-column">
-          <section class="card section-card workspace-card">
-            <div class="section-header">
-              <div class="section-copy">
-                <span class="t-label">{{ t('dashboard.runHistoryLabel') }}</span>
-                <div class="section-title-row">
-                  <h2 class="t-h2">{{ t('dashboard.runHistoryTitle') }}</h2>
-                  <Badge variant="accent">{{ t('dashboard.jobsCount', { count: formatNumber(stats.history.length) }) }}</Badge>
-                </div>
-                <p class="t-small section-text">{{ t('dashboard.runHistoryText') }}</p>
-              </div>
-            </div>
-
-            <div v-if="stats.history.length" class="history-layout">
-              <div class="history-list">
-                <div v-for="(item, index) in latestHistoryItems" :key="item.jobId" class="history-row stagger-item"
-                  :style="{ '--delay': `${index * 40}ms` }"
-                  role="button"
-                  tabindex="0"
-                  @click="openHistoryDetails(item)"
-                  @keydown.enter.prevent="openHistoryDetails(item)"
-                  @keydown.space.prevent="openHistoryDetails(item)">
-                  <div class="history-main">
-                    <div class="dialog-copy">
-                      <div class="dialog-title-row">
-                        <span class="history-title">{{ formatHistoryScope(item) }}</span>
-                        <StatusDot :variant="statusVariant(item.status)" :label="statusLabel(item.status)" />
-                      </div>
-                      <div class="history-meta t-small">
-                        <span class="selection-subline">{{ formatHistoryDates(item) }}</span>
-                      </div>
-                    </div>
-                    <Button v-if="item.status !== 'running' && item.status !== 'pending'" variant="ghost" size="sm" class="delete-btn" :icon="Trash2" aria-label="Delete" :loading="deletingHistoryJobId === item.jobId" @click.stop="openDeleteHistoryItemConfirm(item.jobId)" />
-                  </div>
-                  <div v-if="shouldRenderHistoryError(item)" class="detail-error t-small">
-                    {{ item.errorMessage }}
-                  </div>
-                  <div v-else-if="item.status === 'running' || item.status === 'pending'" class="history-progress progress-bar">
-                    <div class="progress-bar-fill" :style="{ width: `${historyProgress(item)}%` }" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <EmptyState
-              v-else
-              :icon="Clock"
-              :title="t('dashboard.noJobsTitle')"
-              :description="t('dashboard.noJobsDescription')"
-            />
-            <div v-if="stats.history.length" class="history-actions-footer">
-              <Button variant="secondary" size="md" class="history-clear-button" :loading="clearingHistory"
-                @click="openClearHistoryConfirm">
-                {{ t('dashboard.clearHistory') }}
-              </Button>
-            </div>
-          </section>
-
           <section class="card section-card workspace-card mobile-security-section">
-            <div class="section-copy">
-              <span class="t-label">{{ t('dashboard.securityLabel') }}</span>
-              <h2 class="t-h2">{{ t('dashboard.securityTitle') }}</h2>
-              <p class="t-small section-text">{{ t('dashboard.securityText') }}</p>
-            </div>
+            <button type="button" class="security-explainer" @click="securityInfoOpen = true">
+              <div class="section-copy">
+                <span class="t-label">{{ t('dashboard.securityLabel') }}</span>
+                <h2 class="t-h2">{{ t('dashboard.securityTitle') }}</h2>
+                <p class="t-small section-text">{{ t('dashboard.securityText') }}</p>
+              </div>
+              <Badge variant="accent">{{ t('dashboard.openSecurityInfo') }}</Badge>
+            </button>
 
             <div class="stack-md">
               <div v-if="!telegramSessionActive" class="info-banner warning-banner">
@@ -935,48 +715,24 @@ onMounted(async () => {
 
       <Teleport to="body">
         <Transition name="dialog">
-          <div v-if="selectedHistoryItem" class="dialog-backdrop" @click.self="closeHistoryDetails">
-            <section class="dialog-panel history-dialog-panel" role="dialog" aria-modal="true">
-              <button type="button" class="dialog-close" :aria-label="t('common.close')" @click="closeHistoryDetails">
+          <div v-if="securityInfoOpen" class="dialog-backdrop" @click.self="securityInfoOpen = false">
+            <section class="dialog-panel security-dialog-panel" role="dialog" aria-modal="true">
+              <button type="button" class="dialog-close" :aria-label="t('common.close')" @click="securityInfoOpen = false">
                 <X :size="18" :stroke-width="1.5" aria-hidden="true" />
               </button>
-              <div class="history-dialog-copy">
+              <div class="security-dialog-copy">
                 <div class="section-title-row">
-                  <h2 class="t-h3">{{ formatHistoryScope(selectedHistoryItem) }}</h2>
-                  <Badge :variant="statusVariant(selectedHistoryItem.status)">{{ statusLabel(selectedHistoryItem.status) }}</Badge>
-                </div>
-                <p class="t-small">{{ selectedHistoryItem.chatName || selectedHistoryItem.chatId || selectedHistoryItem.jobId }}</p>
-              </div>
-
-              <div class="history-dialog-grid">
-                <div class="history-dialog-item">
-                  <span class="t-label">{{ t('dashboard.started') }}</span>
-                  <span class="t-mono">{{ formatShortDate(selectedHistoryItem.createdAt) }}</span>
-                </div>
-                <div class="history-dialog-item">
-                  <span class="t-label">{{ t('dashboard.finished') }}</span>
-                  <span class="t-mono">{{ formatCompletedDate(selectedHistoryItem.completedAt) }}</span>
-                </div>
-                <div class="history-dialog-item">
-                  <span class="t-label">{{ t('dashboard.duration') }}</span>
-                  <span class="t-mono">{{ historyDuration(selectedHistoryItem) }}</span>
-                </div>
-                <div class="history-dialog-item">
-                  <span class="t-label">{{ t('dashboard.progress') }}</span>
-                  <span class="t-mono">{{ t('dashboard.historyChatsCount', { parsed: formatNumber(selectedHistoryItem.parsedChats), total: formatNumber(selectedHistoryItem.totalChats) }) }}</span>
-                </div>
-                <div class="history-dialog-item">
-                  <span class="t-label">{{ t('common.messages') }}</span>
-                  <span class="t-mono">{{ formatNumber(selectedHistoryItem.totalMessages) }}</span>
-                </div>
-                <div class="history-dialog-item">
-                  <span class="t-label">Job ID</span>
-                  <span class="t-mono history-dialog-jobid">{{ selectedHistoryItem.jobId }}</span>
+                  <h2 class="t-h3">{{ t('dashboard.securityInfoTitle') }}</h2>
+                  <Badge variant="accent">{{ t('dashboard.securityLabel') }}</Badge>
                 </div>
               </div>
 
-              <div v-if="selectedHistoryItem.errorMessage" class="detail-error t-small">
-                {{ selectedHistoryItem.errorMessage }}
+              <div class="security-dialog-stack">
+                <p class="t-small section-text">{{ t('dashboard.securityInfoIntro') }}</p>
+                <p class="t-small section-text">{{ t('dashboard.securityInfoSessions') }}</p>
+                <p class="t-small section-text">{{ t('dashboard.securityInfoMessages') }}</p>
+                <p class="t-small section-text">{{ t('dashboard.securityInfoWorkers') }}</p>
+                <p class="t-small section-text">{{ t('dashboard.securityInfoAccess') }}</p>
               </div>
             </section>
           </div>
@@ -1029,6 +785,34 @@ onMounted(async () => {
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
   box-shadow: var(--shadow-sm);
+}
+
+.security-explainer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.security-explainer:hover .section-copy .t-h2 {
+  color: var(--accent);
+}
+
+.security-dialog-panel {
+  width: min(720px, 100%);
+}
+
+.security-dialog-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
 }
 
 .hero-copy {
@@ -1097,8 +881,7 @@ onMounted(async () => {
 
 .dialog-list,
 .analyzed-list,
-.list-grid,
-.history-list {
+.list-grid {
   display: grid;
   gap: var(--space-2);
 }
@@ -1137,8 +920,7 @@ onMounted(async () => {
 }
 
 .dialog-item,
-.analyzed-card,
-.history-row {
+.analyzed-card {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   background: var(--bg-surface);
@@ -1170,8 +952,7 @@ onMounted(async () => {
 
 .dialog-item:hover,
 .dialog-item-active,
-.analyzed-card:hover,
-.history-row:hover {
+.analyzed-card:hover {
   border-color: var(--border-strong);
   background: var(--bg-elevated);
 }
@@ -1304,8 +1085,7 @@ onMounted(async () => {
   padding: 0;
 }
 
-.dialog-title,
-.history-title {
+.dialog-title {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
@@ -1346,9 +1126,6 @@ onMounted(async () => {
 
 .analyzed-head,
 .analyzed-foot,
-.history-row-head,
-.history-meta,
-.history-actions,
 .section-actions,
 .analyzed-actions,
 .section-header {
@@ -1359,7 +1136,6 @@ onMounted(async () => {
 }
 
 .section-actions,
-.history-actions,
 .analyzed-actions {
   justify-content: flex-end;
   flex-wrap: wrap;
@@ -1386,74 +1162,15 @@ onMounted(async () => {
   color: var(--text-tertiary);
 }
 
-.history-layout {
-  min-width: 0;
-}
-
 .dashboard-side-column {
   min-width: 0;
 }
 
-.history-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1.5);
-  padding: var(--space-3) var(--space-4);
-  min-width: 0;
-  cursor: pointer;
-}
-
-.history-main {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.history-progress {
-  height: 4px;
-}
-
 .analyzed-foot,
-.history-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  max-width: 100%;
-  color: var(--text-secondary);
-  line-height: 1.25;
-}
-
-.analyzed-foot .selection-subline,
-.history-meta .selection-subline {
+.analyzed-foot .selection-subline {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.history-separator {
-  width: 4px;
-  height: 4px;
-  border-radius: var(--radius-full);
-  background: var(--text-tertiary);
-  flex: 0 0 auto;
-}
-
-.history-actions-footer {
-  display: flex;
-  justify-content: flex-start;
-  margin-top: var(--space-4);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.history-clear-button {
-  width: auto;
-  min-width: 180px;
-  justify-content: center;
-  min-height: 40px;
 }
 
 .dialog-backdrop {
@@ -1510,40 +1227,15 @@ onMounted(async () => {
   box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
 }
 
-.history-dialog-copy {
+.security-dialog-copy {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   padding-right: calc(var(--space-6) + var(--space-2));
 }
 
-.history-dialog-copy p {
+.security-dialog-copy p {
   color: var(--text-secondary);
-}
-
-.history-dialog-panel {
-  width: min(100%, 560px);
-}
-
-.history-dialog-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
-.history-dialog-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  min-width: 0;
-}
-
-.history-dialog-jobid {
-  overflow-wrap: anywhere;
 }
 
 .dialog-enter-active,
@@ -1624,8 +1316,7 @@ onMounted(async () => {
   }
 
   .section-card,
-  .analyzed-card,
-  .history-row {
+  .analyzed-card {
     padding: var(--space-4);
   }
 
@@ -1681,8 +1372,7 @@ onMounted(async () => {
   }
 
   .selection-subline,
-  .analyzed-foot,
-  .history-meta {
+  .analyzed-foot {
     font-size: 12px;
   }
 
@@ -1739,39 +1429,8 @@ onMounted(async () => {
     gap: var(--space-1);
   }
 
-  .history-row {
-    gap: var(--space-2);
-    padding: var(--space-3);
-  }
-
-  .history-main {
-    align-items: flex-start;
-  }
-
-  .history-main .dialog-copy {
-    width: 100%;
-  }
-
-  .history-main .dialog-title-row {
-    justify-content: flex-start;
-    gap: var(--space-2);
-  }
-
-  .history-row-head {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .history-progress {
-    height: 3px;
-  }
-
-  .history-meta {
-    gap: var(--space-1);
-  }
-
   .analyzed-foot .selection-subline,
-  .history-meta .selection-subline {
+  .analyzed-foot .selection-subline {
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
@@ -1782,11 +1441,6 @@ onMounted(async () => {
     font-size: 12px;
   }
 
-  .history-actions-footer {
-    margin-top: var(--space-3);
-    padding-top: var(--space-2);
-  }
-
   .dialog-backdrop {
     align-items: flex-end;
     padding: var(--space-3);
@@ -1795,14 +1449,6 @@ onMounted(async () => {
   .dialog-panel {
     width: 100%;
     padding: var(--space-4);
-  }
-
-  .history-dialog-actions {
-    flex-direction: column-reverse;
-  }
-
-  .history-dialog-grid {
-    grid-template-columns: 1fr;
   }
 }
 

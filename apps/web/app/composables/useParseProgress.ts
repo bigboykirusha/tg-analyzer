@@ -21,6 +21,7 @@ export function useParseProgress() {
   const intentionalClose = useState<boolean>('parse-progress-intentional-close', () => false)
   const forceRefresh = useState<boolean>('parse-progress-force-refresh', () => false)
   const bootstrapped = useState<boolean>('parse-progress-bootstrapped', () => false)
+  const connecting = useState<boolean>('parse-progress-connecting', () => false)
   const auth = useAuthStore()
   const config = useRuntimeConfig()
 
@@ -101,7 +102,7 @@ export function useParseProgress() {
   }
 
   async function connect() {
-    if (!import.meta.client || socketRef.value || !auth.isAuthorized || !bootstrapped.value) {
+    if (!import.meta.client || socketRef.value || connecting.value || !auth.isAuthorized || !bootstrapped.value) {
       return
     }
 
@@ -110,16 +111,26 @@ export function useParseProgress() {
       retryTimeout.value = null
     }
 
-    const hasAccessToken = await ensureSocketAccessToken()
-    if (!hasAccessToken || !auth.accessToken) {
+    connecting.value = true
+    const shouldResyncFromServer = retryCount.value > 0
+    let socket: WebSocket
+    try {
+      const hasAccessToken = await ensureSocketAccessToken()
+      if (!hasAccessToken || !auth.accessToken) {
+        return
+      }
+
+      const { token } = await getWebSocketToken()
+      socket = new WebSocket(`${config.public.wsUrl}/ws/parse-progress?token=${token}`)
+    } catch {
+      scheduleReconnect()
       return
+    } finally {
+      connecting.value = false
     }
 
-    const { token } = await getWebSocketToken()
-    const socket = new WebSocket(`${config.public.wsUrl}/ws/parse-progress?token=${token}`)
     socketRef.value = socket
     intentionalClose.value = false
-    const shouldResyncFromServer = retryCount.value > 0
 
     socket.onopen = () => {
       retryCount.value = 0
@@ -199,6 +210,7 @@ export function useParseProgress() {
       retryTimeout.value = null
     }
     intentionalClose.value = true
+    connecting.value = false
     socketRef.value?.close()
     socketRef.value = null
   }
@@ -206,6 +218,7 @@ export function useParseProgress() {
   function reset() {
     retryCount.value = 0
     forceRefresh.value = false
+    connecting.value = false
     progress.value = {
       current: 0,
       total: 0,

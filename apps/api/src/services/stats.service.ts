@@ -7,6 +7,10 @@ import type {
   DirectionalCountDto,
   DirectionalTopItemsDto,
   GlobalStatsDto,
+  GroupHealthDto,
+  GroupPairDto,
+  GroupParticipantDto,
+  GroupReportDto,
   HealthScoreDto,
   InsightDto,
   MessageCompositionDto,
@@ -17,6 +21,7 @@ import type {
   StreakInfoDto,
   TopItemDto,
 } from '@tg-analyzer/shared'
+import { resolveProductGroupRole } from '@tg-analyzer/shared'
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm'
 import { db, schema } from '../db'
 import type { TelegramMessageLike } from './telegram.service'
@@ -24,7 +29,10 @@ import type { TelegramMessageLike } from './telegram.service'
 const emojiRegex = /\p{Extended_Pictographic}/gu
 const wordRegex = /[\p{L}\p{N}_-]{2,}/gu
 const SESSION_BOUNDARY_MS = 8 * 60 * 60 * 1000
+const GROUP_SESSION_BOUNDARY_MS = 4 * 60 * 60 * 1000
 const LONG_SILENCE_MS = 30 * 24 * 60 * 60 * 1000
+const IMPLIED_REPLY_WINDOW_MS = 10 * 60 * 1000
+const RESPONSE_COVERAGE_WINDOW_MS = 30 * 60 * 1000
 const STOP_WORDS_RU = new Set([
   '\u0438', '\u0432', '\u043d\u0435', '\u043d\u0430', '\u044f', '\u0447\u0442\u043e', '\u0442\u043e\u0442', '\u044d\u0442\u043e', '\u0441', '\u043e\u043d',
   '\u043a\u0430\u043a', '\u043f\u043e', '\u043d\u043e', '\u043e\u043d\u0438', '\u043a', '\u0438\u0437', '\u0443', '\u0437\u0430', '\u0442\u043e', '\u0436\u0435',
@@ -91,16 +99,48 @@ export interface AggregatedChatStats {
   compositionStats: CompositionStatsDto
   availabilityProfile: AvailabilityProfileDto
   healthScore: HealthScoreDto | null
+  groupReport: GroupReportDto | null
 }
 
 export interface AggregationMessageInput {
+  id?: number | string
   message?: string
   date?: Date
   outgoing?: boolean
+  senderId?: string | null
+  senderName?: string | null
+  replyToMessageId?: number | string | null
   media?: boolean
   voice?: boolean
   sticker?: boolean
   file?: boolean
+}
+
+type ParticipantAccumulator = {
+  id: string
+  name: string
+  isSelf: boolean
+  messageCount: number
+  wordCount: number
+  mediaCount: number
+  emojiCount: number
+  firstSeen: Date | null
+  lastSeen: Date | null
+  activeDays: Set<string>
+  starterCount: number
+  replyCount: number
+  repliesReceived: number
+  wordCounts: Map<string, number>
+  emojiCounts: Map<string, number>
+}
+
+type TimelineEntry = {
+  messageId: string
+  outgoing: boolean
+  timestamp: Date
+  senderId: string
+  senderName: string
+  replyToMessageId: string | null
 }
 
 export function createChatAccumulator(timeZone = 'UTC'): AggregatedChatStats & {
@@ -112,11 +152,14 @@ export function createChatAccumulator(timeZone = 'UTC'): AggregatedChatStats & {
   mineEmojiCounts: Map<string, number>
   theirsEmojiCounts: Map<string, number>
   dayFirstMessageDirection: Map<string, boolean>
-  timeline: Array<{ outgoing: boolean; timestamp: Date }>
+  timeline: TimelineEntry[]
   mineWords: number
   theirsWords: number
   mineTextMessages: number
   theirsTextMessages: number
+  participants: Map<string, ParticipantAccumulator>
+  messageIndex: Map<string, { senderId: string; senderName: string }>
+  totalEmojiCount: number
 } {
   return {
     totalMessages: 0,
@@ -178,6 +221,7 @@ export function createChatAccumulator(timeZone = 'UTC'): AggregatedChatStats & {
     compositionStats: createEmptyCompositionStats(),
     availabilityProfile: createEmptyAvailabilityProfile(),
     healthScore: null,
+    groupReport: null,
     timeZone,
     wordCounts: new Map(),
     mineWordCounts: new Map(),
@@ -191,6 +235,9 @@ export function createChatAccumulator(timeZone = 'UTC'): AggregatedChatStats & {
     theirsWords: 0,
     mineTextMessages: 0,
     theirsTextMessages: 0,
+    participants: new Map(),
+    messageIndex: new Map(),
+    totalEmojiCount: 0,
   }
 }
 
@@ -347,12 +394,77 @@ function primaryMessageType(message: AggregationMessageInput): keyof MessageComp
   return 'text'
 }
 
+function toMessageKey(value: number | string | null | undefined) {
+  if (value === null || value === undefined) {
+    return null
+  }
+
+  return String(value)
+}
+
+function fallbackParticipantName(senderId: string, outgoing: boolean) {
+  return outgoing ? 'You' : senderId === 'unknown' ? 'Name unavailable' : `Profile ${senderId}`
+}
+
+function ensureParticipant(
+  acc: ReturnType<typeof createChatAccumulator>,
+  senderId: string,
+  senderName: string | null | undefined,
+  outgoing: boolean,
+) {
+  const existing = acc.participants.get(senderId)
+  if (existing) {
+    if (senderName && senderName.trim()) {
+      existing.name = senderName.trim()
+    }
+    if (outgoing) {
+      existing.isSelf = true
+    }
+    return existing
+  }
+
+  const resolvedName = normalizeParticipantName(senderName?.trim() || fallbackParticipantName(senderId, outgoing))
+  const next: ParticipantAccumulator = {
+    id: senderId,
+    name: resolvedName,
+    isSelf: outgoing,
+    messageCount: 0,
+    wordCount: 0,
+    mediaCount: 0,
+    emojiCount: 0,
+    firstSeen: null,
+    lastSeen: null,
+    activeDays: new Set(),
+    starterCount: 0,
+    replyCount: 0,
+    repliesReceived: 0,
+    wordCounts: new Map(),
+    emojiCounts: new Map(),
+  }
+  acc.participants.set(senderId, next)
+  return next
+}
+
+function normalizeParticipantName(name: string) {
+  const normalized = name.trim()
+  if (!normalized) {
+    return 'Name unavailable'
+  }
+  if (/^user unknown$/i.test(normalized) || /^unknown$/i.test(normalized) || /^unknown participant$/i.test(normalized)) {
+    return 'Name unavailable'
+  }
+  return normalized
+}
+
 export function aggregateMessage(
   message: AggregationMessageInput,
   acc: ReturnType<typeof createChatAccumulator>,
 ) {
+  const outgoing = Boolean(message.outgoing)
+  const senderId = message.senderId?.trim() || (outgoing ? 'self' : 'unknown')
+  const participant = ensureParticipant(acc, senderId, message.senderName, outgoing)
   acc.totalMessages += 1
-  if (message.outgoing) {
+  if (outgoing) {
     acc.sentMessages += 1
   } else {
     acc.receivedMessages += 1
@@ -361,27 +473,28 @@ export function aggregateMessage(
   const timestamp = normalizeMessageDate(message.date) ?? new Date()
   const hour = String(getLocalHour(timestamp, acc.timeZone))
   acc.hourlyActivity[hour] = (acc.hourlyActivity[hour] ?? 0) + 1
-  incrementDirectional(acc.hourlyActivitySplit[hour] ?? createDirectionalCount(), Boolean(message.outgoing))
+  incrementDirectional(acc.hourlyActivitySplit[hour] ?? createDirectionalCount(), outgoing)
   acc.hourlyActivitySplit[hour] = acc.hourlyActivitySplit[hour] ?? createDirectionalCount()
 
   const day = toLocalDayKey(timestamp, acc.timeZone)
   const daily = acc.dailyActivity.get(day) ?? { sent: 0, received: 0 }
   if (!acc.dayFirstMessageDirection.has(day)) {
-    acc.dayFirstMessageDirection.set(day, Boolean(message.outgoing))
+    acc.dayFirstMessageDirection.set(day, outgoing)
   }
-  if (message.outgoing) {
+  if (outgoing) {
     daily.sent += 1
   } else {
     daily.received += 1
   }
   acc.dailyActivity.set(day, daily)
+  participant.activeDays.add(day)
 
   const weekday = String(getLocalWeekday(timestamp, acc.timeZone))
-  incrementDirectional(acc.weekdayActivity[weekday], Boolean(message.outgoing))
+  incrementDirectional(acc.weekdayActivity[weekday], outgoing)
 
   const month = toLocalMonthKey(timestamp, acc.timeZone)
   const monthly = acc.monthlyActivity.get(month) ?? createDirectionalCount()
-  incrementDirectional(monthly, Boolean(message.outgoing))
+  incrementDirectional(monthly, outgoing)
   acc.monthlyActivity.set(month, monthly)
 
   if (!acc.firstMessageAt || timestamp < acc.firstMessageAt) {
@@ -391,7 +504,17 @@ export function aggregateMessage(
     acc.lastMessageAt = timestamp
   }
 
-  acc.timeline.push({ outgoing: Boolean(message.outgoing), timestamp })
+  const messageId = toMessageKey(message.id) ?? `${timestamp.getTime()}:${acc.totalMessages}`
+  const replyToMessageId = toMessageKey(message.replyToMessageId)
+  acc.timeline.push({
+    messageId,
+    outgoing,
+    timestamp,
+    senderId,
+    senderName: participant.name,
+    replyToMessageId,
+  })
+  acc.messageIndex.set(messageId, { senderId, senderName: participant.name })
 
   const text = message.message ?? ''
   acc.totalChars += text.length
@@ -399,7 +522,7 @@ export function aggregateMessage(
   acc.messageComposition[messageType] += 1
   if (messageType === 'text') {
     acc.textMessageCount += 1
-    if (message.outgoing) {
+    if (outgoing) {
       acc.mineTextMessages += 1
     } else {
       acc.theirsTextMessages += 1
@@ -408,10 +531,18 @@ export function aggregateMessage(
 
   const words = text.match(wordRegex) ?? []
   acc.totalWords += words.length
-  if (message.outgoing) {
+  if (outgoing) {
     acc.mineWords += words.length
   } else {
     acc.theirsWords += words.length
+  }
+  participant.messageCount += 1
+  participant.wordCount += words.length
+  if (!participant.firstSeen || timestamp < participant.firstSeen) {
+    participant.firstSeen = timestamp
+  }
+  if (!participant.lastSeen || timestamp > participant.lastSeen) {
+    participant.lastSeen = timestamp
   }
   for (const word of words) {
     const normalized = normalizeWordToken(word)
@@ -422,14 +553,18 @@ export function aggregateMessage(
       continue
     }
     acc.wordCounts.set(normalized, (acc.wordCounts.get(normalized) ?? 0) + 1)
-    const directionalWords = message.outgoing ? acc.mineWordCounts : acc.theirsWordCounts
+    participant.wordCounts.set(normalized, (participant.wordCounts.get(normalized) ?? 0) + 1)
+    const directionalWords = outgoing ? acc.mineWordCounts : acc.theirsWordCounts
     directionalWords.set(normalized, (directionalWords.get(normalized) ?? 0) + 1)
   }
 
   const emoji = text.match(emojiRegex) ?? []
   for (const item of emoji) {
+    acc.totalEmojiCount += 1
+    participant.emojiCount += 1
     acc.emojiCounts.set(item, (acc.emojiCounts.get(item) ?? 0) + 1)
-    const directionalEmoji = message.outgoing ? acc.mineEmojiCounts : acc.theirsEmojiCounts
+    participant.emojiCounts.set(item, (participant.emojiCounts.get(item) ?? 0) + 1)
+    const directionalEmoji = outgoing ? acc.mineEmojiCounts : acc.theirsEmojiCounts
     directionalEmoji.set(item, (directionalEmoji.get(item) ?? 0) + 1)
   }
 
@@ -437,18 +572,87 @@ export function aggregateMessage(
   acc.voiceCount += Number(messageType === 'voice')
   acc.stickerCount += Number(messageType === 'sticker')
   acc.fileCount += Number(messageType === 'file')
+  participant.mediaCount += Number(messageType !== 'text')
 }
 
 export function projectTelegramMessageMetadata(message: TelegramMessageLike): AggregationMessageInput {
   return {
+    id: message?.id,
     message: typeof message?.message === 'string' ? message.message : '',
     date: normalizeMessageDate(message?.date),
     outgoing: Boolean(message?.outgoing ?? message?.out),
+    senderId: extractSenderId(message),
+    senderName: extractSenderName(message),
+    replyToMessageId: extractReplyToMessageId(message),
     media: Boolean(message?.media),
     voice: Boolean(message?.voice),
     sticker: Boolean(message?.sticker),
     file: Boolean(message?.file),
   }
+}
+
+function extractSenderId(message: TelegramMessageLike) {
+  const candidate =
+    readNestedValue(message, ['senderId', 'value'])
+    ?? readNestedValue(message, ['senderId', 'userId'])
+    ?? readNestedValue(message, ['senderId', 'channelId'])
+    ?? readNestedValue(message, ['senderId', 'chatId'])
+    ?? readNestedValue(message, ['fromId', 'value'])
+    ?? readNestedValue(message, ['fromId', 'userId'])
+    ?? readNestedValue(message, ['fromId', 'channelId'])
+    ?? readNestedValue(message, ['fromId', 'chatId'])
+    ?? readNestedValue(message, ['sender', 'id'])
+    ?? readNestedValue(message, ['sender', 'userId'])
+
+  return candidate !== null && candidate !== undefined ? String(candidate) : null
+}
+
+function extractSenderName(message: TelegramMessageLike) {
+  const sender = readNestedValue(message, ['sender'])
+  if (sender && typeof sender === 'object') {
+    const senderRecord = sender as Record<string, unknown>
+    const firstName = typeof senderRecord.firstName === 'string' ? senderRecord.firstName : ''
+    const lastName = typeof senderRecord.lastName === 'string' ? senderRecord.lastName : ''
+    const title = typeof senderRecord.title === 'string' ? senderRecord.title : ''
+    const username = typeof senderRecord.username === 'string' ? senderRecord.username : ''
+    const combined = [firstName, lastName].filter(Boolean).join(' ').trim()
+    if (combined) {
+      return combined
+    }
+    if (title) {
+      return title
+    }
+    if (username) {
+      return username
+    }
+  }
+
+  const directName = typeof readNestedValue(message, ['senderName']) === 'string'
+    ? String(readNestedValue(message, ['senderName']))
+    : null
+
+  return directName
+}
+
+function extractReplyToMessageId(message: TelegramMessageLike) {
+  const candidate =
+    readNestedValue(message, ['replyTo', 'replyToMsgId'])
+    ?? readNestedValue(message, ['replyTo', 'replyToMsgIds', 0])
+    ?? readNestedValue(message, ['replyToMessageId'])
+    ?? readNestedValue(message, ['replyToMsgId'])
+
+  return candidate !== null && candidate !== undefined ? String(candidate) : null
+}
+
+function readNestedValue(source: unknown, path: Array<string | number>) {
+  let current = source
+  for (const segment of path) {
+    if (!current || typeof current !== 'object') {
+      return null
+    }
+    current = (current as Record<string | number, unknown>)[segment]
+  }
+  return current ?? null
 }
 
 function normalizeMessageDate(value: unknown): Date | undefined {
@@ -506,6 +710,7 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
   }
 
   const privateLike = chatType === 'private'
+  const groupLike = chatType === 'group'
   const timeline = [...acc.timeline].sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
   const mineResponseSeconds: number[] = []
   const theirsResponseSeconds: number[] = []
@@ -636,6 +841,13 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
     relationshipScore,
     responseStats: acc.responseStats,
   })
+  acc.groupReport = groupLike
+    ? computeGroupReport({
+        acc,
+        timeline,
+        activeDays,
+      })
+    : null
   acc.conversationFacts = {
     activeDays,
     longestGap,
@@ -663,6 +875,329 @@ export function mapToTopItems(map: Map<string, number>, limit = 20): TopItemDto[
 
 function uniqueTopItems(source: Map<string, number>, other: Map<string, number>, limit = 20): TopItemDto[] {
   return mapToTopItems(new Map(Array.from(source.entries()).filter(([word]) => !other.has(word))), limit)
+}
+
+function computeGroupReport(params: {
+  acc: ReturnType<typeof createChatAccumulator>
+  timeline: TimelineEntry[]
+  activeDays: number
+}): GroupReportDto {
+  const { acc, timeline, activeDays } = params
+  const totalMessages = acc.totalMessages
+  const totalMedia = acc.mediaCount + acc.voiceCount + acc.stickerCount + acc.fileCount
+  const participants = Array.from(acc.participants.values())
+  const activeMembers = participants.length
+  const lastMessageAt = acc.lastMessageAt ?? new Date()
+  const firstMessageAt = acc.firstMessageAt ?? lastMessageAt
+  const durationDays = Math.max(
+    1,
+    Math.ceil((lastMessageAt.getTime() - firstMessageAt.getTime()) / (24 * 60 * 60 * 1000)) + 1,
+  )
+  const now = new Date()
+
+  const directPairCounts = new Map<string, number>()
+  const impliedPairCounts = new Map<string, number>()
+  const participantById = new Map(participants.map((participant) => [participant.id, participant]))
+
+  let totalSessions = 0
+  let respondedMessages = 0
+  const hourlyParticipants = new Map<string, Set<string>>()
+
+  for (let index = 0; index < timeline.length; index += 1) {
+    const current = timeline[index]
+    const currentParticipant = participantById.get(current.senderId)
+    if (!currentParticipant) {
+      continue
+    }
+
+    const hourKey = `${toLocalDayKey(current.timestamp, acc.timeZone)}:${String(getLocalHour(current.timestamp, acc.timeZone)).padStart(2, '0')}`
+    const hourParticipants = hourlyParticipants.get(hourKey) ?? new Set<string>()
+    hourParticipants.add(current.senderId)
+    hourlyParticipants.set(hourKey, hourParticipants)
+
+    const previous = timeline[index - 1]
+    if (!previous || (current.timestamp.getTime() - previous.timestamp.getTime()) > GROUP_SESSION_BOUNDARY_MS) {
+      currentParticipant.starterCount += 1
+      totalSessions += 1
+    }
+
+    if (current.replyToMessageId) {
+      const repliedTo = acc.messageIndex.get(current.replyToMessageId)
+      if (repliedTo && repliedTo.senderId !== current.senderId) {
+        currentParticipant.replyCount += 1
+        const recipient = participantById.get(repliedTo.senderId)
+        if (recipient) {
+          recipient.repliesReceived += 1
+        }
+        const pairKey = `${repliedTo.senderId}|${current.senderId}`
+        directPairCounts.set(pairKey, (directPairCounts.get(pairKey) ?? 0) + 1)
+      }
+    } else if (previous && previous.senderId !== current.senderId) {
+      const gapMs = current.timestamp.getTime() - previous.timestamp.getTime()
+      if (gapMs >= 0 && gapMs <= IMPLIED_REPLY_WINDOW_MS) {
+        const pairKey = `${previous.senderId}|${current.senderId}`
+        impliedPairCounts.set(pairKey, (impliedPairCounts.get(pairKey) ?? 0) + 1)
+      }
+    }
+
+    let covered = false
+    for (let lookahead = index + 1; lookahead < timeline.length; lookahead += 1) {
+      const next = timeline[lookahead]
+      const gapMs = next.timestamp.getTime() - current.timestamp.getTime()
+      if (gapMs > RESPONSE_COVERAGE_WINDOW_MS) {
+        break
+      }
+      if (next.senderId !== current.senderId) {
+        covered = true
+        break
+      }
+    }
+    if (covered) {
+      respondedMessages += 1
+    }
+  }
+
+  const participantWordPresence = new Map<string, number>()
+  for (const participant of participants) {
+    for (const word of participant.wordCounts.keys()) {
+      participantWordPresence.set(word, (participantWordPresence.get(word) ?? 0) + 1)
+    }
+  }
+
+  const sharedVocabularyThreshold = Math.max(1, Math.ceil(activeMembers * 0.5))
+  const sharedVocabulary = mapToTopItems(
+    new Map(
+      Array.from(acc.wordCounts.entries()).filter(([word]) => (participantWordPresence.get(word) ?? 0) >= sharedVocabularyThreshold),
+    ),
+    15,
+  )
+  const uniqueGroupWords = mapToTopItems(
+    new Map(
+      Array.from(acc.wordCounts.entries()).filter(([word, count]) => {
+        const presence = participantWordPresence.get(word) ?? 0
+        return count >= 3 && presence <= Math.max(1, Math.floor(activeMembers * 0.3))
+      }),
+    ),
+    15,
+  )
+
+  const activeMembersLast30Days = participants.filter((participant) => participant.lastSeen && (now.getTime() - participant.lastSeen.getTime()) <= (30 * 24 * 60 * 60 * 1000)).length
+  const previousWindowStart = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000))
+  const previousWindowEnd = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000))
+  const previousActiveMembers = participants.filter((participant) => participant.lastSeen && participant.lastSeen >= previousWindowStart && participant.lastSeen < previousWindowEnd).length
+  const momentum: GroupHealthDto['momentum'] = previousActiveMembers > 0
+    ? activeMembersLast30Days > previousActiveMembers * 1.15
+      ? 'growing'
+      : activeMembersLast30Days < previousActiveMembers * 0.85
+        ? 'shrinking'
+        : 'stable'
+    : activeMembersLast30Days > 0
+      ? 'growing'
+      : 'stable'
+
+  const earlyWindowEnd = new Date(firstMessageAt.getTime() + (90 * 24 * 60 * 60 * 1000))
+  const recentWindowStart = new Date(lastMessageAt.getTime() - (90 * 24 * 60 * 60 * 1000))
+  const earlyActive = new Set(
+    participants
+      .filter((participant) => participant.firstSeen && participant.firstSeen <= earlyWindowEnd)
+      .map((participant) => participant.id),
+  )
+  const recentActive = new Set(
+    participants
+      .filter((participant) => participant.lastSeen && participant.lastSeen >= recentWindowStart)
+      .map((participant) => participant.id),
+  )
+  const retained = Array.from(earlyActive).filter((participantId) => recentActive.has(participantId)).length
+  const retentionRate = earlyActive.size ? Number(((retained / earlyActive.size) * 100).toFixed(1)) : 100
+
+  const firstHalfBoundary = new Date(firstMessageAt.getTime() + ((lastMessageAt.getTime() - firstMessageAt.getTime()) / 2))
+  const churnedMembers = participants.filter((participant) =>
+    participant.lastSeen
+    && participant.lastSeen < new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000))
+    && participant.firstSeen
+    && participant.firstSeen < firstHalfBoundary)
+
+  const shares = participants.map((participant) => totalMessages ? participant.messageCount / totalMessages : 0).sort((left, right) => left - right)
+  const meanShare = shares.length ? average(shares) : 0
+  const giniCoefficient = shares.length && meanShare
+    ? Number((shares.reduce((sum, share, index) => sum + ((2 * (index + 1)) - shares.length - 1) * share, 0) / (shares.length * shares.length * meanShare)).toFixed(3))
+    : 0
+  const lurkerRatio = activeMembers
+    ? Number(((participants.filter((participant) => totalMessages ? ((participant.messageCount / totalMessages) * 100) < 0.5 : true).length / activeMembers) * 100).toFixed(1))
+    : 0
+  const responseCoverage = totalMessages ? Number(((respondedMessages / totalMessages) * 100).toFixed(1)) : 0
+  const consistency = Number(((activeDays / durationDays) * 100).toFixed(1))
+  const peakSimultaneity = Array.from(hourlyParticipants.values()).reduce((max, set) => Math.max(max, set.size), 0)
+  const healthScore = Number((
+    ((1 - giniCoefficient) * 100 * 0.30)
+    + (retentionRate * 0.25)
+    + (consistency * 0.25)
+    + (responseCoverage * 0.20)
+  ).toFixed(1))
+
+  const participantsDto: GroupParticipantDto[] = participants
+    .map((participant) => {
+      const messageShare = totalMessages ? Number(((participant.messageCount / totalMessages) * 100).toFixed(1)) : 0
+      const mediaShare = totalMedia ? Number(((participant.mediaCount / totalMedia) * 100).toFixed(1)) : 0
+      const avgWordsPerMessage = participant.messageCount ? Number((participant.wordCount / participant.messageCount).toFixed(2)) : null
+      const starterShare = totalSessions ? Number(((participant.starterCount / totalSessions) * 100).toFixed(1)) : 0
+      const consistencyScore = Number(((participant.activeDays.size / durationDays) * 100).toFixed(1))
+      const magnetScore = participant.messageCount ? Number((participant.repliesReceived / participant.messageCount).toFixed(2)) : null
+      const replyRatio = participant.messageCount ? Number((participant.replyCount / participant.messageCount).toFixed(2)) : null
+      const emojiShare = acc.totalEmojiCount ? (participant.emojiCount / acc.totalEmojiCount) * 100 : 0
+      const role = resolveGroupRole({
+        messageShare,
+        consistencyScore,
+        starterShare,
+        firstSeen: participant.firstSeen,
+        lastSeen: participant.lastSeen,
+        messageCount: participant.messageCount,
+        now,
+      })
+      const topicSignature = computeTopicSignature(participant.wordCounts, acc.wordCounts)
+
+      return {
+        id: participant.id,
+        name: participant.name,
+        isSelf: participant.isSelf,
+        role,
+        messageCount: participant.messageCount,
+        messageShare,
+        wordCount: participant.wordCount,
+        avgWordsPerMessage,
+        mediaCount: participant.mediaCount,
+        mediaShare,
+        firstSeen: participant.firstSeen?.toISOString() ?? null,
+        lastSeen: participant.lastSeen?.toISOString() ?? null,
+        activeDays: participant.activeDays.size,
+        consistencyScore,
+        starterCount: participant.starterCount,
+        starterShare,
+        replyCount: participant.replyCount,
+        repliesReceived: participant.repliesReceived,
+        magnetScore,
+        replyRatio,
+        topWords: mapToTopItems(participant.wordCounts, 5),
+        topEmoji: mapToTopItems(participant.emojiCounts, 5),
+        topicSignature,
+      }
+    })
+    .sort((left, right) => right.messageCount - left.messageCount)
+
+  const topPairs = buildGroupTopPairs({
+    participantsById: new Map(participantsDto.map((participant) => [participant.id, participant])),
+    directPairCounts,
+    impliedPairCounts,
+  })
+
+  return {
+    participants: participantsDto,
+    topPairs,
+    health: {
+      score: healthScore,
+      giniCoefficient,
+      lurkerRatio,
+      retentionRate,
+      responseCoverage,
+      consistency,
+      momentum,
+      activeMembers,
+      activeMembersLast30Days,
+      churnedMembers: churnedMembers.length,
+      peakSimultaneity,
+    },
+    sharedVocabulary,
+    uniqueGroupWords,
+  }
+}
+
+function resolveGroupRole(params: {
+  messageShare: number
+  consistencyScore: number
+  starterShare: number
+  firstSeen: Date | string | null
+  lastSeen: Date | string | null
+  messageCount: number
+  now: Date
+}): GroupParticipantDto['role'] {
+  return resolveProductGroupRole(params, params.now)
+}
+
+function normalizeStoredGroupRole(
+  participant: Omit<GroupParticipantDto, 'role'> & { role?: string | null },
+  now = new Date(),
+): GroupParticipantDto['role'] {
+  return resolveGroupRole({ ...participant, now })
+}
+
+function computeTopicSignature(source: Map<string, number>, total: Map<string, number>) {
+  const sourceTotal = Array.from(source.values()).reduce((sum, value) => sum + value, 0)
+  const totalWords = Array.from(total.values()).reduce((sum, value) => sum + value, 0)
+  if (!sourceTotal || !totalWords) {
+    return [] as TopItemDto[]
+  }
+
+  return Array.from(source.entries())
+    .map(([word, count]) => {
+      const localShare = count / sourceTotal
+      const globalShare = (total.get(word) ?? count) / totalWords
+      return {
+        value: word,
+        count: Number((localShare / Math.max(globalShare, 1 / totalWords)).toFixed(2)),
+      }
+    })
+    .sort((left, right) => right.count - left.count)
+    .slice(0, 5)
+}
+
+function buildGroupTopPairs(params: {
+  participantsById: Map<string, GroupParticipantDto>
+  directPairCounts: Map<string, number>
+  impliedPairCounts: Map<string, number>
+}): GroupPairDto[] {
+  const pairKeys = new Set<string>()
+  for (const key of params.directPairCounts.keys()) {
+    pairKeys.add(key)
+  }
+  for (const key of params.impliedPairCounts.keys()) {
+    pairKeys.add(key)
+  }
+
+  const combined = new Map<string, GroupPairDto>()
+  for (const key of pairKeys) {
+    const [leftId, rightId] = key.split('|')
+    if (!leftId || !rightId || leftId === rightId) {
+      continue
+    }
+    const normalizedKey = [leftId, rightId].sort().join('|')
+    if (combined.has(normalizedKey)) {
+      continue
+    }
+    const directReplies = (params.directPairCounts.get(`${leftId}|${rightId}`) ?? 0) + (params.directPairCounts.get(`${rightId}|${leftId}`) ?? 0)
+    const impliedReplies = (params.impliedPairCounts.get(`${leftId}|${rightId}`) ?? 0) + (params.impliedPairCounts.get(`${rightId}|${leftId}`) ?? 0)
+    const symmetricScore = (directReplies * 2) + impliedReplies
+    if (!symmetricScore) {
+      continue
+    }
+    const left = params.participantsById.get(leftId)
+    const right = params.participantsById.get(rightId)
+    if (!left || !right) {
+      continue
+    }
+    combined.set(normalizedKey, {
+      leftParticipantId: left.id,
+      leftParticipantName: left.name,
+      rightParticipantId: right.id,
+      rightParticipantName: right.name,
+      symmetricScore,
+      directReplies,
+      impliedReplies,
+    })
+  }
+
+  return Array.from(combined.values())
+    .sort((left, right) => right.symmetricScore - left.symmetricScore)
+    .slice(0, 5)
 }
 
 function median(values: number[]) {
@@ -1269,6 +1804,11 @@ export async function saveAggregates(params: {
       healthScore: finalStats.healthScore,
       conversationFacts: finalStats.conversationFacts,
       wordsPerMessage: finalStats.wordsPerMessage,
+      groupParticipants: finalStats.groupReport?.participants ?? [],
+      groupTopPairs: finalStats.groupReport?.topPairs ?? [],
+      groupHealth: finalStats.groupReport?.health ?? null,
+      sharedVocabulary: finalStats.groupReport?.sharedVocabulary ?? [],
+      uniqueGroupWords: finalStats.groupReport?.uniqueGroupWords ?? [],
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
@@ -1314,6 +1854,11 @@ export async function saveAggregates(params: {
         healthScore: finalStats.healthScore,
         conversationFacts: finalStats.conversationFacts,
         wordsPerMessage: finalStats.wordsPerMessage,
+        groupParticipants: finalStats.groupReport?.participants ?? [],
+        groupTopPairs: finalStats.groupReport?.topPairs ?? [],
+        groupHealth: finalStats.groupReport?.health ?? null,
+        sharedVocabulary: finalStats.groupReport?.sharedVocabulary ?? [],
+        uniqueGroupWords: finalStats.groupReport?.uniqueGroupWords ?? [],
         updatedAt: new Date(),
       },
     })
@@ -1371,13 +1916,14 @@ export async function recomputeGlobalStats(userId: string) {
   })
 
   await db.delete(schema.dailyActivity).where(eq(schema.dailyActivity.userId, userId))
-  for (const [dateValue, counts] of dailyTotals.entries()) {
-    await db.insert(schema.dailyActivity).values({
-      userId,
-      date: dateValue,
-      sent: counts.sent,
-      received: counts.received,
-    })
+  const dailyRows = Array.from(dailyTotals.entries()).map(([dateValue, counts]) => ({
+    userId,
+    date: dateValue,
+    sent: counts.sent,
+    received: counts.received,
+  }))
+  if (dailyRows.length) {
+    await db.insert(schema.dailyActivity).values(dailyRows)
   }
 
   const mostActiveHour = Array.from(totals.hours.entries()).sort((a, b) => b[1] - a[1])[0]?.[0]
@@ -1670,6 +2216,45 @@ function normalizeHealthScore(value: (typeof schema.chatStats.$inferSelect)['hea
   }
 }
 
+function normalizeGroupReport(row: typeof schema.chatStats.$inferSelect): GroupReportDto | null {
+  const participants = Array.isArray(row.groupParticipants)
+    ? row.groupParticipants.map((participant) => ({
+        ...participant,
+        role: normalizeStoredGroupRole(participant),
+      }))
+    : []
+  const topPairs = Array.isArray(row.groupTopPairs) ? row.groupTopPairs : []
+  const sharedVocabulary = Array.isArray(row.sharedVocabulary) ? row.sharedVocabulary : []
+  const uniqueGroupWords = Array.isArray(row.uniqueGroupWords) ? row.uniqueGroupWords : []
+  const health = row.groupHealth
+
+  if (!participants.length && !topPairs.length && !sharedVocabulary.length && !uniqueGroupWords.length && !health) {
+    return null
+  }
+
+  return {
+    participants,
+    topPairs,
+    health: health
+      ? {
+          score: health.score ?? 0,
+          giniCoefficient: health.giniCoefficient ?? 0,
+          lurkerRatio: health.lurkerRatio ?? 0,
+          retentionRate: health.retentionRate ?? 0,
+          responseCoverage: health.responseCoverage ?? 0,
+          consistency: health.consistency ?? 0,
+          momentum: health.momentum ?? 'stable',
+          activeMembers: health.activeMembers ?? participants.length,
+          activeMembersLast30Days: health.activeMembersLast30Days ?? 0,
+          churnedMembers: health.churnedMembers ?? 0,
+          peakSimultaneity: health.peakSimultaneity ?? 0,
+        }
+      : null,
+    sharedVocabulary,
+    uniqueGroupWords,
+  }
+}
+
 function resolveTextMessageCount(row: typeof schema.chatStats.$inferSelect) {
   if ((row.textMessageCount ?? 0) > 0) {
     return row.textMessageCount
@@ -1749,6 +2334,7 @@ function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
     compositionStats: resolveCompositionStats(row, messageComposition, textMessageCount),
     availabilityProfile: resolveAvailabilityProfile(row),
     healthScore: normalizeHealthScore(row.healthScore),
+    groupReport: normalizeGroupReport(row),
     conversationFacts: normalizeConversationFacts(row.conversationFacts),
     wordsPerMessage: row.wordsPerMessage,
   }

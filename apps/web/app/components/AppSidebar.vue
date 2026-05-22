@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BarChart2, Globe, LayoutGrid, LogOut } from '../lib/icons'
+import { BarChart2, Clock, Globe, LayoutGrid, LogOut } from '../lib/icons'
 import { useToast } from '../composables/useToast'
 import ParseProgress from './stats/ParseProgress.vue'
 import ConfirmDialog from './ui/ConfirmDialog.vue'
@@ -14,6 +14,7 @@ const mounted = ref(false)
 
 const isChatRoute = computed(() => route.path.startsWith('/chat/'))
 const isDashboardRoute = computed(() => route.path.startsWith('/dashboard'))
+const isHistoryRoute = computed(() => route.path.startsWith('/history'))
 const isParseActive = computed(() => progress.value.status === 'running' || progress.value.status === 'pending')
 const mobileCancelling = ref(false)
 const securityPending = ref<'telegram' | 'account' | null>(null)
@@ -35,10 +36,10 @@ const displayName = computed(() => {
 
 const displayHandle = computed(() => {
   if (!mounted.value) {
-    return t('common.telegram')
+    return ''
   }
 
-  return auth.user?.username || t('common.telegram')
+  return auth.user?.username ? `@${auth.user.username}` : ''
 })
 
 onMounted(() => {
@@ -121,8 +122,8 @@ async function syncBrowserTimeZone() {
 
   try {
     await updateProfile(browserTimeZone)
-  } catch (error) {
-    console.warn('Could not sync browser timezone', error)
+  } catch {
+    // Timezone sync is opportunistic; the next profile update can retry it.
   }
 }
 </script>
@@ -139,7 +140,7 @@ async function syncBrowserTimeZone() {
         <ProfileAvatar :title="displayName" />
         <div class="user-info">
           <span class="user-name">{{ displayName }}</span>
-          <span class="user-handle">@{{ displayHandle }}</span>
+          <span v-if="displayHandle" class="user-handle">{{ displayHandle }}</span>
         </div>
       </div>
 
@@ -156,6 +157,11 @@ async function syncBrowserTimeZone() {
       <NuxtLink to="/dashboard" class="nav-item" :class="{ 'nav-item-active': route.path.startsWith('/dashboard') }">
         <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
         <span>{{ t('common.dashboard') }}</span>
+      </NuxtLink>
+
+      <NuxtLink to="/history" class="nav-item" :class="{ 'nav-item-active': isHistoryRoute }">
+        <Clock :size="18" :stroke-width="1.5" aria-hidden="true" />
+        <span>{{ t('common.history') }}</span>
       </NuxtLink>
 
       <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="nav-item" :class="{ 'nav-item-active': isChatRoute }">
@@ -212,6 +218,10 @@ async function syncBrowserTimeZone() {
         <NuxtLink to="/dashboard" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': route.path.startsWith('/dashboard') }">
           <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
           <span class="sr-only">{{ t('common.dashboard') }}</span>
+        </NuxtLink>
+        <NuxtLink to="/history" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': isHistoryRoute }">
+          <Clock :size="18" :stroke-width="1.5" aria-hidden="true" />
+          <span class="sr-only">{{ t('common.history') }}</span>
         </NuxtLink>
         <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="mobile-nav-item mobile-nav-item-active">
           <BarChart2 :size="18" :stroke-width="1.5" aria-hidden="true" />

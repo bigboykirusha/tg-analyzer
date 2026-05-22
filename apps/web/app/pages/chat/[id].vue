@@ -35,6 +35,7 @@ definePageMeta({
   middleware: [authMiddleware],
 })
 
+const GroupReport = defineAsyncComponent(() => import('../../components/stats/GroupReport.vue'))
 const route = useRoute()
 const auth = useAuthStore()
 const { fetchChat } = useStats()
@@ -62,6 +63,7 @@ const parseActiveForCurrentChat = computed(() => parseForCurrentChat.value && ['
 const parseTerminalForCurrentChat = computed(() => parseForCurrentChat.value && ['completed', 'failed', 'cancelled'].includes(progress.value.status))
 const reportStale = computed(() => parseActiveForCurrentChat.value || reparsing.value)
 const isPrivateChat = computed(() => chat.value?.chatType === 'private')
+const isGroupChat = computed(() => chat.value?.chatType === 'group')
 const totalMessages = computed(() => chat.value?.totalMessages ?? 0)
 const sentShareValue = computed(() => totalMessages.value ? ((chat.value?.sentMessages ?? 0) / totalMessages.value) * 100 : 0)
 const receivedShareValue = computed(() => Math.max(0, 100 - sentShareValue.value))
@@ -277,52 +279,74 @@ const showTimeline = computed(() => showAllSections.value || activeView.value ==
 const leadingWord = computed(() => topWords.value.mine[0]?.value || topWords.value.theirs[0]?.value || t('common.na'))
 const reportDateRange = computed(() => formatDateRange(chat.value?.firstMessageAt ?? null, chat.value?.lastMessageAt ?? null))
 const reportHeaderHighlights = computed(() => [
-  {
-    key: 'messages',
-    label: t('chat.messages'),
-    value: formatNumber(totalMessages.value),
-  },
-  {
-    key: 'balance',
-    label: t('chat.balance'),
-    value: `${sentShare.value}%`,
-  },
-  {
-    key: 'peak-hour',
-    label: t('chat.peakHour'),
-    value: peakHour.value,
-  },
+  ...(isGroupChat.value
+    ? [
+        {
+          key: 'messages',
+          label: t('chat.messages'),
+          value: formatNumber(totalMessages.value),
+        },
+        {
+          key: 'members',
+          label: locale.value === 'ru' ? 'Наблюдаемые участники' : 'Observed members',
+          value: formatNumber(chat.value?.groupReport?.health?.activeMembers ?? chat.value?.groupReport?.participants.length ?? 0),
+        },
+        {
+          key: 'health',
+          label: locale.value === 'ru' ? 'Здоровье группы' : 'Group health',
+          value: chat.value?.groupReport?.health ? `${formatNumber(Math.round(chat.value.groupReport.health.score))}/100` : t('common.na'),
+        },
+      ]
+    : [
+        {
+          key: 'messages',
+          label: t('chat.messages'),
+          value: formatNumber(totalMessages.value),
+        },
+        {
+          key: 'balance',
+          label: t('chat.balance'),
+          value: `${sentShare.value}%`,
+        },
+        {
+          key: 'peak-hour',
+          label: t('chat.peakHour'),
+          value: peakHour.value,
+        },
+      ]),
 ])
-const reportPeekItems = computed(() => [
-  {
-    key: 'overview',
-    view: 'overview' as const,
-    label: t('chat.balance'),
-    value: `${sentShare.value}%`,
-    detail: balanceLeadLabel.value,
-  },
-  {
-    key: 'rhythm',
-    view: 'rhythm' as const,
-    label: t('chat.peakHour'),
-    value: peakHour.value,
-    detail: busiestWeekdayLabel.value,
-  },
-  {
-    key: 'words',
-    view: 'words' as const,
-    label: t('chat.popularWords'),
-    value: leadingWord.value,
-    detail: t('chat.words'),
-  },
-  {
-    key: 'timeline',
-    view: 'timeline' as const,
-    label: t('chat.trend'),
-    value: trendLabel.value,
-    detail: mostActiveMonthLabel.value,
-  },
-])
+const reportPeekItems = computed(() => isGroupChat.value
+  ? []
+  : [
+      {
+        key: 'overview',
+        view: 'overview' as const,
+        label: t('chat.balance'),
+        value: `${sentShare.value}%`,
+        detail: balanceLeadLabel.value,
+      },
+      {
+        key: 'rhythm',
+        view: 'rhythm' as const,
+        label: t('chat.peakHour'),
+        value: peakHour.value,
+        detail: busiestWeekdayLabel.value,
+      },
+      {
+        key: 'words',
+        view: 'words' as const,
+        label: t('chat.popularWords'),
+        value: leadingWord.value,
+        detail: t('chat.words'),
+      },
+      {
+        key: 'timeline',
+        view: 'timeline' as const,
+        label: t('chat.trend'),
+        value: trendLabel.value,
+        detail: mostActiveMonthLabel.value,
+      },
+    ])
 
 const overviewFacts = computed(() => {
   const items = [
@@ -1169,12 +1193,6 @@ onBeforeUnmount(() => {
                 </div>
               </div>
             </div>
-            <div class="report-meta-list report-skeleton-meta">
-              <div v-for="item in 3" :key="`heading-meta-${item}`" class="report-meta-skeleton">
-                <Skeleton height="10px" width="38%" />
-                <Skeleton height="14px" width="74%" />
-              </div>
-            </div>
           </div>
           <div class="grid-kpi chat-kpi-grid">
             <div v-for="item in 4" :key="item" class="metric-skeleton-card">
@@ -1324,7 +1342,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div class="report-heading">
+        <div class="report-heading" :class="{ 'report-heading-group': isGroupChat }">
           <div class="report-identity-row">
             <div class="report-identity-main">
               <ChatAvatar :chat-id="chat?.tgChatId || routeChatId" :title="chat?.chatName || chat?.tgChatId" size="lg" />
@@ -1343,27 +1361,18 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div class="report-meta-list t-small">
-            <div class="report-meta-row">
-              <span class="report-meta-label">{{ t('chat.firstMsg') }}:</span>
-              <span class="t-mono report-meta-value">{{ formatDate(chat?.firstMessageAt ?? null) }}</span>
-            </div>
-            <div class="report-meta-row">
-              <span class="report-meta-label">{{ t('chat.last') }}:</span>
-              <span class="t-mono report-meta-value">{{ formatDate(chat?.lastMessageAt ?? null) }}</span>
-            </div>
-            <span v-if="reportStale" class="stale-indicator t-mono">{{ t('chat.refreshing') }}</span>
-          </div>
         </div>
 
-        <div class="grid-kpi chat-kpi-grid">
-          <MetricCard :label="t('chat.messages')" :value="formatNumber(totalMessages)" />
-          <MetricCard :label="t('chat.yourShare')" :value="`${sentShare}%`" />
-          <MetricCard :label="t('chat.wordsPerTextMsg')" :value="overallWordsPerTextMessage" />
-          <MetricCard :label="t('chat.peakHour')" :value="peakHour" />
+        <div v-if="!isGroupChat" class="grid-kpi chat-kpi-grid">
+          <template v-if="!isGroupChat">
+            <MetricCard :label="t('chat.messages')" :value="formatNumber(totalMessages)" />
+            <MetricCard :label="t('chat.yourShare')" :value="`${sentShare}%`" />
+            <MetricCard :label="t('chat.wordsPerTextMsg')" :value="overallWordsPerTextMessage" />
+            <MetricCard :label="t('chat.peakHour')" :value="peakHour" />
+          </template>
         </div>
 
-        <div class="report-peek-grid no-print">
+        <div v-if="reportPeekItems.length" class="report-peek-grid no-print">
           <button
             v-for="item in reportPeekItems"
             :key="item.key"
@@ -1378,11 +1387,13 @@ onBeforeUnmount(() => {
         </div>
       </header>
 
-      <div v-if="!showAllSections" class="tabs-scroll no-print">
+      <div v-if="!isGroupChat && !showAllSections" class="tabs-scroll no-print">
         <SegmentedControl v-model="activeView" :options="reportViews" />
       </div>
 
-      <section v-if="showOverview" id="report-section-overview" class="report-grid">
+      <GroupReport v-if="isGroupChat && chat" :chat="chat" />
+
+      <section v-if="!isGroupChat && showOverview" id="report-section-overview" class="report-grid">
         <article class="card section-card chart-card" @click="openChart('balance')">
           <div class="section-copy">
             <span class="t-label">{{ t('chat.balance') }}</span>
@@ -1521,7 +1532,7 @@ onBeforeUnmount(() => {
         </article>
       </section>
 
-      <section v-if="showRhythm" id="report-section-rhythm" class="page-stack">
+      <section v-if="!isGroupChat && showRhythm" id="report-section-rhythm" class="page-stack">
         <article class="card section-card chart-card" @click="openChart('heatmap')">
           <div class="section-copy">
             <span class="t-label">{{ t('chat.heatmap') }}</span>
@@ -1583,7 +1594,7 @@ onBeforeUnmount(() => {
         </article>
       </section>
 
-      <section v-if="showWords" id="report-section-words" class="page-stack">
+      <section v-if="!isGroupChat && showWords" id="report-section-words" class="page-stack">
         <EmptyState v-if="!hasWords && !hasEmoji" :icon="MessageSquare" :title="t('chat.noTextTitle')"
           :description="t('chat.noTextDescription')" />
 
@@ -1651,7 +1662,7 @@ onBeforeUnmount(() => {
         </template>
       </section>
 
-      <section v-if="showTimeline" id="report-section-timeline" class="page-stack">
+      <section v-if="!isGroupChat && showTimeline" id="report-section-timeline" class="page-stack">
         <article class="card section-card chart-card" @click="openChart('timeline')">
           <div class="section-copy">
             <span class="t-label">{{ t('chat.timeline') }}</span>
@@ -1852,8 +1863,6 @@ onBeforeUnmount(() => {
 .pdf-export-clone .report-header,
 .pdf-export-clone .section-card,
 .pdf-export-clone .report-identity-row,
-.pdf-export-clone .report-meta-list,
-.pdf-export-clone .report-meta-row,
 .pdf-export-clone .report-highlight-item,
 .pdf-export-clone .report-peek-card,
 .pdf-export-clone .fact-card,
@@ -1869,7 +1878,6 @@ onBeforeUnmount(() => {
   color: #111111 !important;
 }
 
-.pdf-export-clone .report-meta-label,
 .pdf-export-clone .t-label,
 .pdf-export-clone .t-small,
 .pdf-export-clone .section-text,
@@ -1986,11 +1994,16 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
+.report-heading-group {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .report-identity-row {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
+  width: 100%;
   padding: var(--space-4);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
@@ -2037,13 +2050,8 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
-.report-skeleton-meta {
-  width: 100%;
-}
-
 .report-avatar-skeleton,
-.report-highlight-skeleton,
-.report-meta-skeleton {
+.report-highlight-skeleton {
   width: 100%;
 }
 
@@ -2086,8 +2094,7 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-.report-highlight-skeleton,
-.report-meta-skeleton {
+.report-highlight-skeleton {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -2146,55 +2153,8 @@ onBeforeUnmount(() => {
   overflow-wrap: anywhere;
 }
 
-.report-meta-list,
 .section-text {
   color: var(--text-secondary);
-}
-
-.report-meta-list {
-  display: grid;
-  gap: var(--space-2);
-  align-content: start;
-  padding: var(--space-3);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 94%, transparent), color-mix(in srgb, var(--bg-surface) 98%, transparent));
-}
-
-.report-meta-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  align-items: center;
-  row-gap: var(--space-1);
-  max-width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--bg-surface) 80%, transparent);
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.report-meta-label {
-  color: var(--text-tertiary);
-}
-
-.report-meta-value {
-  min-width: 0;
-  color: var(--text-secondary);
-  overflow-wrap: anywhere;
-}
-
-.stale-indicator {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 var(--space-2);
-  border: 1px solid color-mix(in srgb, var(--info) 32%, var(--border-subtle));
-  border-radius: var(--radius-sm);
-  background: var(--info-subtle);
-  color: var(--info);
-  font-size: 12px;
 }
 
 .report-grid {
@@ -2695,10 +2655,6 @@ onBeforeUnmount(() => {
     grid-template-columns: 1fr;
   }
 
-  .report-meta-list {
-    padding: var(--space-3);
-  }
-
   .report-title-block {
     flex: 1;
     min-width: 0;
@@ -2810,21 +2766,6 @@ onBeforeUnmount(() => {
 
   .report-title-block {
     gap: 6px;
-  }
-
-  .report-meta-list {
-    gap: 6px;
-  }
-
-  .report-meta-row {
-    grid-template-columns: 1fr;
-    row-gap: 1px;
-  }
-
-  .stale-indicator {
-    min-height: 24px;
-    padding-inline: 10px;
-    font-size: 12px;
   }
 
   .section-copy .t-h2 {

@@ -240,6 +240,55 @@ export const chatStats = pgTable('chat_stats', {
     insights: [],
   }).notNull(),
   wordsPerMessage: jsonb('words_per_message').$type<{ mine: number | null; theirs: number | null }>().default({ mine: null, theirs: null }).notNull(),
+  groupParticipants: jsonb('group_participants').$type<Array<{
+    id: string
+    name: string
+    isSelf: boolean
+    role: 'anchor' | 'contributor' | 'newcomer' | 'inactive' | 'reactor' | 'lurker' | 'ghost' | 'catalyst'
+    messageCount: number
+    messageShare: number
+    wordCount: number
+    avgWordsPerMessage: number | null
+    mediaCount: number
+    mediaShare: number
+    firstSeen: string | null
+    lastSeen: string | null
+    activeDays: number
+    consistencyScore: number
+    starterCount: number
+    starterShare: number
+    replyCount: number
+    repliesReceived: number
+    magnetScore: number | null
+    replyRatio: number | null
+    topWords: Array<{ value: string; count: number }>
+    topEmoji: Array<{ value: string; count: number }>
+    topicSignature: Array<{ value: string; count: number }>
+  }>>().default([]).notNull(),
+  groupTopPairs: jsonb('group_top_pairs').$type<Array<{
+    leftParticipantId: string
+    leftParticipantName: string
+    rightParticipantId: string
+    rightParticipantName: string
+    symmetricScore: number
+    directReplies: number
+    impliedReplies: number
+  }>>().default([]).notNull(),
+  groupHealth: jsonb('group_health').$type<{
+    score: number
+    giniCoefficient: number
+    lurkerRatio: number
+    retentionRate: number
+    responseCoverage: number
+    consistency: number
+    momentum: 'growing' | 'stable' | 'shrinking'
+    activeMembers: number
+    activeMembersLast30Days: number
+    churnedMembers: number
+    peakSimultaneity: number
+  }>(),
+  sharedVocabulary: jsonb('shared_vocabulary').$type<Array<{ value: string; count: number }>>().default([]).notNull(),
+  uniqueGroupWords: jsonb('unique_group_words').$type<Array<{ value: string; count: number }>>().default([]).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   chatStatsUnique: uniqueIndex('chat_stats_user_chat_idx').on(table.userId, table.tgChatId),

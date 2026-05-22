@@ -287,6 +287,70 @@ export interface HealthScoreDto {
   longTermStability: number | null
 }
 
+export type GroupMemberRole =
+  | 'anchor'
+  | 'contributor'
+  | 'newcomer'
+  | 'inactive'
+
+export interface GroupParticipantDto {
+  id: string
+  name: string
+  isSelf: boolean
+  role: GroupMemberRole
+  messageCount: number
+  messageShare: number
+  wordCount: number
+  avgWordsPerMessage: number | null
+  mediaCount: number
+  mediaShare: number
+  firstSeen: string | null
+  lastSeen: string | null
+  activeDays: number
+  consistencyScore: number
+  starterCount: number
+  starterShare: number
+  replyCount: number
+  repliesReceived: number
+  magnetScore: number | null
+  replyRatio: number | null
+  topWords: TopItemDto[]
+  topEmoji: TopItemDto[]
+  topicSignature: TopItemDto[]
+}
+
+export interface GroupPairDto {
+  leftParticipantId: string
+  leftParticipantName: string
+  rightParticipantId: string
+  rightParticipantName: string
+  symmetricScore: number
+  directReplies: number
+  impliedReplies: number
+}
+
+export interface GroupHealthDto {
+  score: number
+  giniCoefficient: number
+  lurkerRatio: number
+  retentionRate: number
+  responseCoverage: number
+  consistency: number
+  momentum: 'growing' | 'stable' | 'shrinking'
+  activeMembers: number
+  activeMembersLast30Days: number
+  churnedMembers: number
+  peakSimultaneity: number
+}
+
+export interface GroupReportDto {
+  participants: GroupParticipantDto[]
+  topPairs: GroupPairDto[]
+  health: GroupHealthDto | null
+  sharedVocabulary: TopItemDto[]
+  uniqueGroupWords: TopItemDto[]
+}
+
 export interface ActivityPointDto {
   date: string
   sent: number
@@ -349,6 +413,7 @@ export interface ChatStatsDto {
   compositionStats: CompositionStatsDto
   availabilityProfile: AvailabilityProfileDto
   healthScore: HealthScoreDto | null
+  groupReport: GroupReportDto | null
 }
 
 export interface ActivityResponse {

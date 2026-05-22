@@ -42,6 +42,13 @@ export type TelegramMessageLike = {
   date?: unknown
   outgoing?: boolean
   out?: boolean
+  fromId?: unknown
+  senderId?: unknown
+  sender?: unknown
+  senderName?: string
+  replyTo?: unknown
+  replyToMessageId?: number | string | null
+  replyToMsgId?: number | string | null
   media?: unknown
   voice?: unknown
   sticker?: unknown
