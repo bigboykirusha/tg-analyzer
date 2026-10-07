@@ -29,8 +29,8 @@
 - [x] `noUncheckedIndexedAccess` для API/shared/web без подавления ошибок; shared получил отдельный tsconfig и check.
 - [x] ESLint для TypeScript/Vue и Prettier; команды `lint` и `format:check`.
 - [x] API и web получают CSP, anti-framing и Permissions-Policy. Web CSP ограничивает источники текущими API/WS origins и Google Fonts; production Nitro smoke-проверка `/login` подтвердила выдачу всех заголовков.
-- [ ] Аудит зависимостей выполнен: устранены все 9 critical и 56 high уязвимостей обновлениями Fastify, Drizzle, Nuxt 4.5.1 и точечными lockfile overrides; остаются 2 high, 15 moderate и 8 low без доступного исправления в используемой ветке. Удаление неиспользуемых пакетов требует отдельного подтверждённого анализа.
-- [ ] `lint`, `format:check`, `check`, 23 unit-теста и build проходят; повторить integration после Docker Engine. 1c остаётся открытой до оценки 20 high dependency advisory и замены deprecated `lucide-vue-next`.
+- [x] Аудит зависимостей выполнен: устранены все 9 critical и 56 high уязвимостей обновлениями Fastify, Drizzle, Nuxt 4.5.1 и точечными lockfile overrides. В API production-графе advisory нет; два оставшихся high находятся в web build/CI-графе без upstream-патча. Deprecated `lucide-vue-next` заменён совместимым alias на `@lucide/vue`.
+- [ ] `lint`, `format:check`, `check`, 23 unit-теста и build проходят; Docker integration/migration-проверки 1b–1c нужно повторить после восстановления Docker Engine.
 
 ## Журнал выполнения
 
