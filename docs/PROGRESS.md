@@ -17,11 +17,11 @@
 
 - [x] Восстановить воспроизводимую Docker-сборку: lockfile + `--frozen-lockfile`, полный build-context web.
 - [ ] Транзакционные save/delete отчётов и агрегатов; сериализация записей пользователя; отмена/актуальность до commit.
-- [ ] Новые миграции с отклоняющим дубли Telegram-сессий preflight, индексами/ограничениями, повторным запуском и документированным откатом.
-- [ ] Атомарная резервация задач и восстановление enqueue; retry отдельно от terminal failure; отмена с обязательной проверкой владельца Redis marker.
+- [x] Новая миграция с отклоняющим дубли Telegram-сессий/задач preflight, индексами/ограничениями и документированным откатом; проверить upgrade/repeat/down на изолированной БД.
+- [ ] Атомарная резервация задач выполнена; добавить восстановление enqueue, retry отдельно от terminal failure и завершить корректную отмену. Проверка владельца Redis marker закрыта.
 - [ ] Compare-and-set Redis lease, остановка при потере lease, сверка БД/BullMQ, progress по jobId и безопасный shutdown.
 - [ ] Прерываемый отменой `FLOOD_WAIT`; typed `SESSION_REVOKED` с деактивацией сессии; тесты с Telegram-адаптером.
-- [ ] Зафиксировать production-политику Redis: AOF, `noeviction` для критичных данных и изоляция очереди/auth от вытесняемых кэшей.
+- [ ] Compose использует AOF/everysec и `noeviction`; документировать production-изоляцию очереди/auth от вытесняемых кэшей.
 - [ ] Тесты конкурентности, rollback, retry/cancel, рестарт, Redis outage и fail-closed rate limit.
 
 ## Фаза 1c — типы, стиль и зависимости
@@ -41,4 +41,5 @@
 - [x] 2026-10-07: `check`, локальный `build`, 16 unit- и 6 интеграционных тестов прошли; Playwright/Edge подтвердил 20 viewport-снимков, silent refresh и logout. Чистая установка, повтор миграций и upgrade 0007 прошли на отдельном PostgreSQL/Redis.
 - [x] Фаза 1a завершена. Реальный Telegram-вход не запускался; API Docker image собирается, web Docker image не собирается из-за подтверждённых проблем Dockerfile/lockfile. Фазы 1b и 1c не начаты.
 - [x] 2026-10-07: `5d1fe62` — Docker-сборки API/web используют зафиксированный lockfile и полный web build-context; обе image успешно собраны с Nuxt 4.4.4.
+- [x] 2026-10-07: `05fea57` — БД атомарно допускает одну активную задачу, её UUID стал BullMQ jobId, параметры запуска сохраняются; миграция 0008 добавила preflight/индексы/rollback, отмена больше не доверяет чужому Redis marker.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
