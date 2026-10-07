@@ -152,3 +152,13 @@ G1 закрыт для объёма 1a: 16 unit- и 6 интеграционны
 ## Статус проверок первого этапа и начало фазы 2
 
 Повторный полный прогон подтвердил phase 1: integration — 13/13, unit — 23/23, `check`, `lint`, `build`, Docker API/web images и migration 0008 apply/repeat/rollback прошли. В фазе 2 уже добавлена версия `/api/v1` с временно сохранёнными legacy path, Swagger/OpenAPI, shared endpoint map и пагинация v1 parse history. Известный остаток фазы 1 — upstream dependency advisory в web build graph и реальные Telegram/Redis outage проверки.
+
+## Текущее состояние проверки (2026-10-07)
+
+Фазы 1a–1c реализованы; повторные `test` (52/52), Docker-backed `test:integration` (17/17), `lint`, `check` и `build` успешны. Повторный `docker compose build api worker web` успешно собрал все три образа на Docker Engine с frozen lockfile. Nuxt оставил предупреждения о клиентском чанке 687 kB, ineffective dynamic imports и длительных plugin callbacks. Исходная проблема Docker web-сборки из-за дрейфа Nuxt/lockfile закрыта.
+
+Новый `pnpm audit --prod` подтверждает 2 high, 14 moderate и 6 low в совокупном workspace dependency graph (цифры зависят от текущей базы advisories): `node-forge@1.4.0` через `@nuxt/cli → listhen` и `braces@3.0.3` через `@nuxt/nitro-server → nitropack → globby → micromatch`. Для текущих advisories upstream не публикует исправленные версии (`patched_versions: <0.0.0`). Отдельный API production-граф advisory не имеет; оба high расположены в web build/CI-графе, поэтому это оставшийся supply-chain риск, а не основание считать `audit` зелёным.
+
+Фаза 2 частично выполнена: API доступен под `/api/v1` с legacy переходом и OpenAPI; общие endpoint/request схемы и типизированный клиент используются в web; history пагинирована; набор чистых метрик и расчётов вынесен в `packages/shared`; прогресс WebSocket обрабатывается shared reducer-ом. API inject-тест с fake Telegram adapter покрывает sign-in → выбор чата → очередь/progress → отчёт/удаление → logout. Потоковый accumulator/API DTO и широкое разделение composables остаются в работе. Реальный браузерный сценарий на production sibling-доменах и Telegram credentials не выполнялся.
+
+Общий `format:check` не может считаться пройденным для текущей рабочей копии: Prettier указывает на пользовательский незакоммиченный `docs/DESIGN_TASK.md`, который оставлен без изменений. Отслеживаемые файлы проекта, затронутые этой работой, проходили selective Prettier check. Изменённые пользователем Vue-страницы и `docs/TASK.md` не включены в наши коммиты.

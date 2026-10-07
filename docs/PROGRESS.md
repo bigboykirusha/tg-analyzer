@@ -34,13 +34,13 @@
 
 ## Фаза 2 — архитектура API и аналитики
 
-- [ ] Вынести чистые расчёты аналитики из API/DB service в `packages/shared` и закрепить граничные случаи unit-тестами.
-- [ ] Добавить `/api/v1`, OpenAPI и единые схемы запросов/ответов из `packages/shared`; сохранить legacy routes с переходным сроком.
+- [x] Вынести чистые расчёты метрик (временные ряды, текст/emoji, оценки групп, сессии, insights, групповой отчёт и timeline) в `packages/shared` с граничными unit-тестами. Потоковый накопитель и сборка части DTO остаются в API.
+- [x] Добавить `/api/v1`, OpenAPI и общие endpoint/request-схемы из `packages/shared`; сохранить legacy routes с переходным сроком. Ответы OpenAPI типизированы DTO, но runtime Zod-валидация каждого response пока не включена.
 - [x] Ввести типобезопасный web API client на shared DTO/schema; все page calls к JSON API используют endpoint map без локальных generic/cast.
 - [x] Добавить пагинацию для parse history и согласовать формат `items/page/limit/total` с web; UI поддерживает переходы и сохраняет текущую страницу при refresh/удалении.
-- [ ] Упростить web composables и разделить доменную логику от компонентов, не переносить состояние в Pinia без необходимости.
-- [ ] Проверить пользовательский сценарий auth → выбор чата → анализ/progress → просмотр/удаление → logout на API/browser тестовом адаптере.
-- [ ] После фазы выполнить `lint`, `format:check`, `check`, unit/integration и `build`; обновить AUDIT/REPORT.
+- [x] Извлечь переходы WebSocket progress-состояния в pure shared reducer; composable оставляет transport/retry. Более широкое упрощение остальных composables остаётся.
+- [x] Проверить сквозной auth → выбор чата → очередь/progress → результат/удаление → logout на API inject с fake Telegram adapter. Браузерный полный сценарий на production-домене не запускался.
+- [ ] После завершения всей фазы выполнить `lint`, `format:check`, `check`, unit/integration и `build`; обновить AUDIT/REPORT. Текущий срез проверен, но общий `format:check` блокируется пользовательским незакоммиченным `docs/DESIGN_TASK.md`.
 
 ## Журнал выполнения
 
@@ -99,3 +99,5 @@
 - [x] 2026-10-07: `bdb84d7 refactor(web): extract parse progress state transitions` — переходы WebSocket-событий progress/completed/failed/error/cancelled перенесены из composable в pure shared reducer; transport composable оставляет подключение, retry и синхронизацию. Unit 50/50, Docker integration 17/17, `lint`, `check`, `build` прошли.
 
 - [x] 2026-10-07: `07bcfd2 refactor(api): centralize shared request contracts` — auth/profile/report/top query/route parameter validation теперь использует runtime Zod-схемы из `packages/shared`; endpoint map дополнен `/stats/top`. Добавлен integration-путь через fake Telegram adapter: send-code → verify → выбор чата → queue/progress → результат → удаление → logout/revocation. `test` 52/52, Docker-backed integration 17/17, `lint`, `check`, selective Prettier и `build` прошли.
+- [x] 2026-10-07: повторно проверен dependency audit: API production-граф без advisory; web build-граф сохраняет 2 high (`node-forge@1.4.0`, `braces@3.0.3`), у текущих advisories нет upstream patched version. `pnpm audit --prod` не зелёный и supply-chain риск остаётся открытым.
+- [x] 2026-10-07: повторная `docker compose build api worker web` после запуска Docker Engine успешно собрала все три образа с frozen lockfile. Nuxt сообщает о чанке 687 kB, ineffective dynamic imports и длительных plugin callbacks; сборка завершилась. Реальный Telegram и браузер с production sibling-доменами требуют ручной проверки.
