@@ -171,11 +171,20 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(404).send({ message: 'Chat not found or unavailable for parsing' })
     }
 
-    const jobId = await createParseJob({
-      userId,
-      chatId: targetChat?.id ?? null,
-      chatName: targetChat?.title ?? null,
-    })
+    let jobId: string
+    try {
+      jobId = await createParseJob({
+        userId,
+        chatId: targetChat?.id ?? null,
+        chatName: targetChat?.title ?? null,
+        chatIds,
+      })
+    } catch (error) {
+      if ((error as { code?: string }).code === '23505') {
+        return sendApiError(reply, 409, 'A parse job is already running', 'PARSE_JOB_ACTIVE')
+      }
+      throw error
+    }
 
     let bullJobId: string | null = null
     try {
@@ -194,7 +203,7 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
         userId,
         jobId,
         chatIds,
-      })
+      }, { jobId })
       bullJobId = String(bullJob.id)
 
       await attachBullJobId(jobId, bullJobId)
@@ -379,9 +388,10 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
     const userId = request.authUserId!
     const activeMarker = await getActiveJobId(userId)
     const active = await findCurrentParseJob(userId)
-    const targetJob = active ?? (activeMarker ? await findParseJobById(activeMarker) : null)
+    const markerJob = activeMarker ? await findParseJobById(activeMarker) : null
+    const targetJob = active ?? (markerJob?.userId === userId ? markerJob : null)
 
-    if (!targetJob && activeMarker) {
+    if ((!targetJob || markerJob?.userId !== userId) && activeMarker) {
       await clearActiveJob(userId)
     }
 

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, desc, eq, gt, inArray, isNull, lt, notInArray } from 'drizzle-orm'
+import { and, desc, eq, gt, inArray, isNull, lt, notInArray, sql } from 'drizzle-orm'
 import { db, schema } from '../db'
 import { redis } from './redis.service'
 import { config } from '../config'
@@ -91,24 +91,6 @@ export async function upsertTelegramSession(input: {
   authTag: string
   dcId?: number | null
 }) {
-  const existing = await db.query.telegramSessions.findFirst({
-    where: eq(schema.telegramSessions.userId, input.userId),
-  })
-
-  if (existing) {
-    await db
-      .update(schema.telegramSessions)
-      .set({
-        sessionString: input.encrypted,
-        sessionIv: input.iv,
-        authTag: input.authTag,
-        dcId: input.dcId ?? null,
-        isActive: true,
-      })
-      .where(eq(schema.telegramSessions.id, existing.id))
-    return existing.id
-  }
-
   const [created] = await db
     .insert(schema.telegramSessions)
     .values({
@@ -119,8 +101,19 @@ export async function upsertTelegramSession(input: {
       dcId: input.dcId ?? null,
       isActive: true,
     })
+    .onConflictDoUpdate({
+      target: schema.telegramSessions.userId,
+      set: {
+        sessionString: input.encrypted,
+        sessionIv: input.iv,
+        authTag: input.authTag,
+        dcId: input.dcId ?? null,
+        isActive: true,
+      },
+    })
     .returning({ id: schema.telegramSessions.id })
 
+  if (!created) throw new Error('Telegram session persistence failed')
   return created.id
 }
 
@@ -234,17 +227,26 @@ export async function createParseJob(input: {
   userId: string
   chatId?: number | null
   chatName?: string | null
+  chatIds?: string[]
 }) {
+  const id = randomUUID()
+  const requestedChatIds = input.chatIds ?? (input.chatId === null || input.chatId === undefined
+    ? []
+    : [String(input.chatId)])
   const [job] = await db
     .insert(schema.parseJobs)
     .values({
+      id,
       userId: input.userId,
+      bullJobId: id,
       chatId: input.chatId ?? null,
       chatName: input.chatName ?? null,
+      requestedChatIds,
       status: 'pending',
     })
     .returning({ id: schema.parseJobs.id })
 
+  if (!job) throw new Error('Parse job reservation failed')
   return job.id
 }
 
@@ -253,8 +255,8 @@ export async function attachBullJobId(jobId: string, bullJobId: string) {
     .update(schema.parseJobs)
     .set({
       bullJobId,
-      startedAt: new Date(),
-      status: 'running',
+      enqueueAttempts: sql`${schema.parseJobs.enqueueAttempts} + 1`,
+      enqueuedAt: new Date(),
     })
     .where(eq(schema.parseJobs.id, jobId))
 }

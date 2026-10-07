@@ -2,6 +2,7 @@ import {
   bigint,
   boolean,
   date,
+  index,
   integer,
   jsonb,
   numeric,
@@ -13,6 +14,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -35,7 +37,9 @@ export const telegramSessions = pgTable('telegram_sessions', {
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true }),
-})
+}, (table) => ({
+  userUnique: uniqueIndex('telegram_sessions_user_id_idx').on(table.userId),
+}))
 
 export const parseJobs = pgTable('parse_jobs', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -43,6 +47,9 @@ export const parseJobs = pgTable('parse_jobs', {
   bullJobId: varchar('bull_job_id', { length: 255 }),
   chatId: bigint('chat_id', { mode: 'number' }),
   chatName: varchar('chat_name', { length: 500 }),
+  requestedChatIds: jsonb('requested_chat_ids').$type<string[]>().default([]).notNull(),
+  enqueueAttempts: integer('enqueue_attempts').default(0).notNull(),
+  enqueuedAt: timestamp('enqueued_at', { withTimezone: true }),
   status: varchar('status', { length: 20 }).default('pending').notNull(),
   totalChats: integer('total_chats').default(0).notNull(),
   parsedChats: integer('parsed_chats').default(0).notNull(),
@@ -51,7 +58,16 @@ export const parseJobs = pgTable('parse_jobs', {
   startedAt: timestamp('started_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-})
+}, (table) => ({
+  oneActivePerUser: uniqueIndex('parse_jobs_one_active_user_idx')
+    .on(table.userId)
+    .where(sql`${table.status} IN ('pending', 'running')`),
+  bullJobUnique: uniqueIndex('parse_jobs_bull_job_id_idx')
+    .on(table.bullJobId)
+    .where(sql`${table.bullJobId} IS NOT NULL`),
+  userHistory: index('parse_jobs_user_created_idx').on(table.userId, table.createdAt),
+  statusCreated: index('parse_jobs_status_created_idx').on(table.status, table.createdAt),
+}))
 
 export const chatStats = pgTable('chat_stats', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -332,4 +348,7 @@ export const refreshSessions = pgTable('refresh_sessions', {
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-})
+}, (table) => ({
+  userFamily: index('refresh_sessions_user_family_idx').on(table.userId, table.familyId),
+  expiresAtIndex: index('refresh_sessions_expires_at_idx').on(table.expiresAt),
+}))

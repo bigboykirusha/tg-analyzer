@@ -57,6 +57,13 @@
       "when": 1791316800000,
       "tag": "0007_security_token_cutover",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791337000000,
+      "tag": "0008_parse_job_integrity",
+      "breakpoints": true
     }
   ]
 }

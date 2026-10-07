@@ -225,3 +225,43 @@ test('validation errors preserve message, code and requestId', async () => {
   assert.equal(body.code, 'INVALID_REQUEST')
   assert.ok(body.requestId)
 })
+
+test('only one active parse job can be reserved for a user', async () => {
+  const userId = await createUser()
+  const reservations = await Promise.allSettled([
+    sessions.createParseJob({ userId, chatId: 101, chatName: 'First' }),
+    sessions.createParseJob({ userId, chatId: 202, chatName: 'Second' }),
+  ])
+
+  assert.equal(reservations.filter(result => result.status === 'fulfilled').length, 1)
+  assert.equal(reservations.filter(result => result.status === 'rejected').length, 1)
+
+  const jobs = await pool.query(
+    `SELECT id, bull_job_id, chat_id, requested_chat_ids
+       FROM parse_jobs
+      WHERE user_id = $1 AND status IN ('pending', 'running')`,
+    [userId],
+  )
+  assert.equal(jobs.rowCount, 1)
+  assert.equal(jobs.rows[0]?.bull_job_id, jobs.rows[0]?.id)
+  assert.deepEqual(jobs.rows[0]?.requested_chat_ids, [String(jobs.rows[0]?.chat_id)])
+})
+
+test('a forged Redis active marker cannot cancel another user job', async () => {
+  const ownerId = await createUser()
+  const attackerId = await createUser()
+  const attackerAuth = await createAuth(attackerId)
+  const jobId = await sessions.createParseJob({ userId: ownerId, chatId: 303, chatName: 'Owner chat' })
+  await redis.set(`parse:active:${attackerId}`, jobId)
+
+  const response = await app.inject({
+    method: 'DELETE',
+    url: '/api/parse/cancel',
+    headers: { ...bearer(attackerAuth.access), origin: 'http://localhost:3000' },
+  })
+
+  assert.equal(response.statusCode, 404)
+  const job = await sessions.findParseJobById(jobId)
+  assert.equal(job?.status, 'pending')
+  assert.equal(await redis.get(`parse:active:${attackerId}`), null)
+})
