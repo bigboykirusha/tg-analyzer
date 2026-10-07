@@ -34,12 +34,12 @@
 
 ## Фаза 2 — архитектура API и аналитики
 
-- [x] Вынести чистые расчёты метрик (временные ряды, текст/emoji, оценки групп, сессии, insights, групповой отчёт и timeline) в `packages/shared` с граничными unit-тестами. Потоковый накопитель и сборка части DTO остаются в API.
+- [x] Вынести потоковый message accumulator и чистые метрики в `packages/shared` с граничными unit-тестами; DB-specific DTO mapping отделён в API mapper.
 - [x] Добавить `/api/v1`, OpenAPI и общие endpoint/request-схемы из `packages/shared`; сохранить legacy routes с переходным сроком. Ответы OpenAPI типизированы DTO, но runtime Zod-валидация каждого response пока не включена.
 - [x] Ввести типобезопасный web API client на shared DTO/schema; все page calls к JSON API используют endpoint map без локальных generic/cast.
 - [x] Добавить пагинацию для parse history и согласовать формат `items/page/limit/total` с web; UI поддерживает переходы и сохраняет текущую страницу при refresh/удалении.
-- [x] Извлечь переходы WebSocket progress-состояния в pure shared reducer; composable оставляет transport/retry. Более широкое упрощение остальных composables остаётся.
-- [x] Проверить сквозной auth → выбор чата → очередь/progress → результат/удаление → logout на API inject с fake Telegram adapter. Браузерный полный сценарий на production-домене не запускался.
+- [x] Извлечь переходы WebSocket progress-состояния в pure shared reducer; composables разделяют auth workflow, typed API orchestration и WebSocket transport/retry.
+- [x] Проверить сквозной auth → выбор чата → очередь/progress → результат/удаление → logout на API inject с fake Telegram adapter. Production-domain browser E2E оставлен фазе 5.
 - [x] Финальный прогон Phase 1/2 foundation выполнен 2026-10-07: `lint`, `check`, `test` (54/54), `test:integration` (18/18), `build`, runtime smoke API/web и Docker build всех трёх образов. Общий `format:check` отдельно сообщает только о форматировании пользовательского незакоммиченного `docs/DESIGN_TASK.md`; файл не менялся.
 
 ## Журнал выполнения
@@ -104,3 +104,4 @@
 - [x] 2026-10-07: перед закрытием обнаружены и устранены два release-дефекта: API production bundle оставлял `@tg-analyzer/shared` как runtime import при export на TypeScript source; shared теперь bundled, а Docker build копирует `tsup.config.ts`. OpenAPI schemas использовали невалидный Zod target `draft-07`; исправлено на `draft-7`. Zod закреплён на SSR-совместимом 4.1.5 после ошибки Nitro `Identifier 'process' has already been declared` на 4.4.3. Production API запущен из dist (`/health` и OpenAPI 200); production Nitro web вернул `/login` 200 с CSP и SSR-разметкой.
 - [x] Итоговый прогон: unit 54/54, Docker PostgreSQL/Redis integration 18/18, `lint`, `check`, `build` успешны. Docker build `api`, `worker`, `web` повторно проходит на frozen lockfile. `pnpm audit --prod`: 0 critical, 2 high в web build graph без upstream patched version. Nuxt build: client chunk 696 kB; остаются warnings dynamic middleware imports, long plugin callbacks и deprecated Vue shared export mapping.
 - [x] `f48f2a4 fix(build): make API bundle and Nuxt SSR production-safe` — production API bundling и Docker context, Zod JSON Schema target и SSR-compatible Zod version исправлены; документация дополнена результатами runtime smoke и итогового прогона.
+- [x] 2026-10-07: потоковый accumulator уже был вынесен в `packages/shared` (это пропустил предыдущий отчёт); DB row → `ChatStatsDto` нормализация выделена в `chat-stats.mapper.ts`, чтобы отделить адаптацию Drizzle-модели от stats service. `test` 54/54, `test:integration` 18/18, API check/build и lint прошли.

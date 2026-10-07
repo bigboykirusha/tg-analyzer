@@ -148,14 +148,14 @@ G1 закрыт для объёма 1a: 16 unit- и 6 интеграционны
 
 Во время smoke-проверки найдены release-дефекты: API bundle оставлял workspace shared import, хотя package export указывает на `.ts`; API build теперь встраивает `@tg-analyzer/shared`, Dockerfile копирует `tsup.config.ts`. OpenAPI использовал неподдерживаемый Zod target `draft-07`, исправлен на `draft-7`. Zod 4.4.x конфликтовал в Nitro SSR с идентификатором `process`; версия закреплена на 4.1.5 и production SSR проверен.
 
-Остаток: `pnpm audit --prod` сообщает 2 high (`node-forge`, `braces`) без upstream patched version; общий `format:check` сообщает только о пользовательском незакоммиченном `docs/DESIGN_TASK.md`; Nuxt client chunk 696 kB и build warnings требуют оптимизации. Реальный Telegram, Redis outage, production-domain/browser refresh остаются ручной проверкой. Фаза 2 закрыта как API/analytics foundation, но не как полный redesign: потоковый accumulator, часть DTO, декомпозиция composables и browser E2E остаются roadmap.
+Остаток: `pnpm audit --prod` сообщает 2 high (`node-forge`, `braces`) без upstream patched version; общий `format:check` сообщает только о пользовательском незакоммиченном `docs/DESIGN_TASK.md`; Nuxt client chunk 696 kB и build warnings требуют оптимизации. Реальный Telegram, Redis outage и production-domain/browser refresh остаются ручной проверкой. Фаза 2 закрыта по основным контрактам и разделению слоёв; browser E2E остаётся фазе 5.
 
-## Приоритет следующего этапа: фаза 2
+## Приоритет следующего этапа: фаза 3
 
-1. Вынести чистые вычисления метрик из API/DB service в `packages/shared`, чтобы расчёты можно было проверять без Fastify, PostgreSQL и Telegram.
-2. Добавить `/api/v1`, OpenAPI и общие схемы DTO, сохраняя legacy `/api/*` маршруты до согласованного срока удаления.
-3. Перевести web на типобезопасный общий API-клиент, затем унифицировать пагинацию истории и ответов списков.
-4. Разделить composables и UI-слой и проверить основной путь пользователя автоматическими тестами с Telegram adapter mock.
+1. Выполнить дизайн-систему, адаптив и доступность по `docs/DESIGN_TASK.md`.
+2. Добавить browser E2E в изолированном окружении с Telegram adapter mock; production-domain refresh проверить после выбора домена.
+3. Держать DB-specific Drizzle mapping на API persistence boundary, не переносить его в shared.
+4. В фазе 5 повторить полный CI и нагрузочный прогон; пересмотреть advisory после upstream fixes.
 
 ## Статус проверок первого этапа и начало фазы 2
 
@@ -167,6 +167,6 @@ G1 закрыт для объёма 1a: 16 unit- и 6 интеграционны
 
 Новый `pnpm audit --prod` подтверждает 2 high, 14 moderate и 6 low в совокупном workspace dependency graph (цифры зависят от текущей базы advisories): `node-forge@1.4.0` через `@nuxt/cli → listhen` и `braces@3.0.3` через `@nuxt/nitro-server → nitropack → globby → micromatch`. Для текущих advisories upstream не публикует исправленные версии (`patched_versions: <0.0.0`). Отдельный API production-граф advisory не имеет; оба high расположены в web build/CI-графе, поэтому это оставшийся supply-chain риск, а не основание считать `audit` зелёным.
 
-Фаза 2 частично выполнена: API доступен под `/api/v1` с legacy переходом и OpenAPI; общие endpoint/request схемы и типизированный клиент используются в web; history пагинирована; набор чистых метрик и расчётов вынесен в `packages/shared`; прогресс WebSocket обрабатывается shared reducer-ом. API inject-тест с fake Telegram adapter покрывает sign-in → выбор чата → очередь/progress → отчёт/удаление → logout. Потоковый accumulator/API DTO и широкое разделение composables остаются в работе. Реальный браузерный сценарий на production sibling-доменах и Telegram credentials не выполнялся.
+Фаза 2 завершена как фундамент: чистые метрики и потоковый accumulator находятся в `packages/shared`; DB row → response DTO adapter выделен в `apps/api/src/services/chat-stats.mapper.ts`; web composables разделяют auth, typed API и WebSocket transport; API inject покрывает основной сценарий с Telegram adapter mock. Browser E2E с production domain и real Telegram не выполнялся и остаётся пунктом фазы 5.
 
 Общий `format:check` не может считаться пройденным для текущей рабочей копии: Prettier указывает на пользовательский незакоммиченный `docs/DESIGN_TASK.md`, который оставлен без изменений. Отслеживаемые файлы проекта, затронутые этой работой, проходили selective Prettier check. Изменённые пользователем Vue-страницы и `docs/TASK.md` не включены в наши коммиты.
