@@ -14,6 +14,7 @@ import { isApiError } from './services/api-error.service'
 import { loggerOptions } from './services/logger.service'
 import { redis } from './services/redis.service'
 import { hasRecentWorkerHeartbeat } from './services/runtime-status.service'
+import { authRateLimitFailurePolicy } from './services/auth-rate-limit.service'
 
 export async function buildServer() {
   const app = Fastify({
@@ -42,7 +43,7 @@ export async function buildServer() {
     global: false,
     redis,
     nameSpace: 'rate:auth:',
-    skipOnError: false,
+    ...authRateLimitFailurePolicy,
     keyGenerator: request => request.ip,
     errorResponseBuilder: request => ({ statusCode: 429, message: 'Too many requests', code: 'RATE_LIMITED', requestId: request.id }),
     max: config.AUTH_RATE_LIMIT_MAX,

@@ -129,3 +129,11 @@ Playwright/Edge проверил `/login`, `/dashboard`, `/history` и `/chat/sa
 Контракт ошибок теперь содержит `message`, `code` и `requestId`; validation/internal ответы нормализованы, request logger удаляет query string и секретные поля, worker пишет структурированные события с job id. Config отклоняет неверные boolean/URL/port/origin/cookie/secret значения и небезопасный production-режим. Fastify builder отделён от `listen`, что позволило выполнить inject-интеграцию.
 
 G1 закрыт для объёма 1a: 16 unit- и 6 интеграционных тестов проходят на отдельном PostgreSQL/Redis; browser-проверка silent refresh/logout и 20 viewport-состояний проходит. Полный production Docker запуск не пройден из-за ошибки сборки web image, реальный Telegram не проверялся. A1–A4, D1–D3 и F3 остаются открытыми до 1b; C2 и зависимости — до 1c. Детали проверки приведены в [`REPORT.md`](REPORT.md).
+
+## Статус 1b (2026-10-07)
+
+`05fea57`, `6d58561` и `6da4144` закрыли подтверждённые A1–A4, D1–D3 и F3: миграция 0008 отклоняет неоднозначные существующие данные, сохраняет параметры задачи и гарантирует одну active задачу; save/delete отчётов и агрегатов сериализуются блокировкой пользователя и выполняются в одной транзакции; worker восстанавливает отсутствующую BullMQ-задачу по сохранённому UUID. Redis lease использует compare-and-set Lua, `FLOOD_WAIT` прерывается отменой, `SESSION_REVOKED` является terminal typed error, а shutdown останавливает workers до Telegram, queues, Redis и PostgreSQL.
+
+Производственный Redis в compose теперь имеет AOF/everysec и `noeviction`; изоляция очереди/auth от кэшей остаётся обязательной задачей deployment. Требования к sibling-доменам, запрету query в proxy-логах, Redis outage и миграционному response описаны в [`SECURITY.md`](SECURITY.md) и [`RUNBOOK.md`](RUNBOOK.md). Security headers/CSP, API versioning, Sentry, key rotation и backup/restore остаются открытыми для 1c/фазы 4.
+
+Транзакционные integration-тесты 1b и проверка 0008 на fresh/upgrade/down были успешны до последнего перезапуска Docker Engine. Новый integration-тест reconciliation, добавленный в `6da4144`, и повторная проверка после этого commit сейчас недоступны: Docker Desktop Engine отсутствует. Это ограничение не считается успешной проверкой.
