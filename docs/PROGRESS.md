@@ -95,3 +95,5 @@
 - [x] 2026-10-07: `2856967 docs: define first-party production deployment` — добавлен `docs/DEPLOY.md` с production-топологией `app.<домен>`/`api.<домен>`, настройками credentialed CORS и host-only refresh-cookie, требованиями к маскированию query в логах всех proxy/CDN и порядком релиза. Домен владельцем пока не выбран; перед реальным production deployment это остаётся обязательным решением и браузерной проверкой.
 
 - [x] 2026-10-07: `01d9a2e refactor(analytics): extract conversation timeline metrics` — response samples/percentiles, response rate, session starts, longest gap и 30-дневные паузы перенесены в чистую функцию `packages/shared`; добавлены тесты пустого/группового timeline, точной границы 8 часов и отсутствия мутаций. Проверки: unit 48/48, Docker-backed integration 16/16, `lint`, `check`, `build` прошли.
+
+- [x] 2026-10-07: `bdb84d7 refactor(web): extract parse progress state transitions` — переходы WebSocket-событий progress/completed/failed/error/cancelled перенесены из composable в pure shared reducer; transport composable оставляет подключение, retry и синхронизацию. Unit 50/50, Docker integration 17/17, `lint`, `check`, `build` прошли.
