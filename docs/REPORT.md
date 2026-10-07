@@ -30,3 +30,11 @@ WebSocket использует одноразовый Redis ticket с TTL 30 с�
 Реальная интеграция Telegram не запускалась: browser-тест использует синтетического пользователя и тестовую зашифрованную сессию. Не выполнена ручная проверка реального отказа Redis и production deployment с reverse proxy; эти случаи требуют отдельной инфраструктуры.
 
 Остаются 2 high, 15 moderate и 8 low dependency advisory в web build-графе; production audit API чист. Nuxt 4.6, который может изменить этот граф, требует Node ≥22.21, тогда как доступен 22.14. Web CSP и standalone runtime artifact проверены локально, Docker build и Docker-зависимые integration-проверки прошли. Пользовательские изменения в `chat/[id].vue`, `dashboard.vue`, `history.vue` и `docs/TASK.md` не включены в коммиты.
+
+## Фаза 2 — текущий прогресс
+
+Проверенная основа фазы 1 сохранена. Начата миграция API: ресурсы доступны под `/api/v1`, старые `/api/*` маршруты оставлены для совместимости; web client автоматически направляет legacy path callers в v1. OpenAPI и Swagger UI доступны по `/documentation`, статистические endpoints и paginated parse history описаны query/response схемами. История v1 принимает `page`/`limit` и возвращает `items`, `total`, `page`, `limit`, а legacy history сохраняет прежнюю форму массива.
+
+Общие типы и валидируемые query-схемы начали жить в `packages/shared`; endpoint map задаёт пары method/path, request и response, а auth/progress/stats composables используют `useApiEndpoint`. Текущая UI страница истории всё ещё читает первую страницу из 20 записей; управление страницами и миграция всех generic call sites предстоят.
+
+Добавлены `@fastify/swagger` и `@fastify/swagger-ui` для контрактной документации API; `zod` добавлен в shared как runtime-схема запросов. Новые зависимости оправданы требованиями фазы 2 и уже используемым Zod runtime. Проверки текущего среза: `check`, `lint`, unit 23/23, integration 15/15 и `build` прошли. Изменённые файлы отформатированы. Общий `format:check` сейчас находит форматирование в незакоммиченном `docs/DESIGN_TASK.md`; файл оставлен без изменений. Фаза 2 остаётся незавершённой: чистая аналитика пока находится преимущественно в `apps/api/src/services/stats.service.ts`, а OpenAPI и общие схемы нужно расширить на оставшиеся auth/parse endpoints.

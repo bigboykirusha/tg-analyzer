@@ -1,12 +1,5 @@
-import type {
-  AuthSuccessResponse,
-  PendingPasswordResponse,
-  SendCodeResponse,
-  UpdateProfileResponse,
-  VerifyCodeBody,
-  VerifyPasswordBody,
-} from '@tg-analyzer/shared'
-import { refreshAccessToken } from './useApi'
+import type { AuthSuccessResponse, VerifyCodeBody, VerifyPasswordBody } from '@tg-analyzer/shared'
+import { refreshAccessToken, useApiEndpoint } from './useApi'
 import { isDefinitiveAuthFailureCode, isTokenExpiringSoon, isTokenUsable } from '../utils/auth'
 
 let bootstrapPromise: Promise<AuthSuccessResponse | null> | null = null
@@ -78,8 +71,7 @@ export function useAuth() {
   }
 
   async function sendCode(phone: string) {
-    const result = await useApiFetch<SendCodeResponse>('/api/auth/send-code', {
-      method: 'POST',
+    const result = await useApiEndpoint('POST /api/v1/auth/send-code', {
       body: { phone },
     })
     auth.phoneCodeHash = result.phoneCodeHash
@@ -87,8 +79,7 @@ export function useAuth() {
   }
 
   async function verifyCode(payload: VerifyCodeBody) {
-    const result = await useApiFetch<AuthSuccessResponse | PendingPasswordResponse>('/api/auth/verify-code', {
-      method: 'POST',
+    const result = await useApiEndpoint('POST /api/v1/auth/verify-code', {
       body: payload,
     })
 
@@ -97,14 +88,16 @@ export function useAuth() {
       return result
     }
 
-    const success = result as AuthSuccessResponse
-    auth.setAccess(success.accessToken, success.user)
-    return success
+    if (!('accessToken' in result)) {
+      throw new Error('Unexpected Telegram authentication response')
+    }
+
+    auth.setAccess(result.accessToken, result.user)
+    return result
   }
 
   async function verifyPassword(payload: VerifyPasswordBody) {
-    const result = await useApiFetch<AuthSuccessResponse>('/api/auth/verify-password', {
-      method: 'POST',
+    const result = await useApiEndpoint('POST /api/v1/auth/verify-password', {
       body: payload,
       headers: {
         Authorization: `Bearer ${auth.tempToken}`,
@@ -121,9 +114,7 @@ export function useAuth() {
 
   async function logout() {
     try {
-      await useApiFetch('/api/auth/logout', {
-        method: 'POST',
-      })
+      await useApiEndpoint('POST /api/v1/auth/logout')
     } finally {
       parseProgress.disconnect()
       parseProgress.reset()
@@ -133,18 +124,14 @@ export function useAuth() {
   }
 
   async function terminateTelegramSession() {
-    await useApiFetch('/api/auth/terminate-telegram', {
-      method: 'POST',
-    })
+    await useApiEndpoint('POST /api/v1/auth/terminate-telegram')
     parseProgress.disconnect()
     parseProgress.reset()
     auth.setTelegramSessionActive(false)
   }
 
   async function deleteAccount() {
-    await useApiFetch('/api/auth/account', {
-      method: 'DELETE',
-    })
+    await useApiEndpoint('DELETE /api/v1/auth/account')
     parseProgress.disconnect()
     parseProgress.reset()
     auth.clear()
@@ -152,8 +139,7 @@ export function useAuth() {
   }
 
   async function updateProfile(timezone: string) {
-    const result = await useApiFetch<UpdateProfileResponse>('/api/auth/profile', {
-      method: 'PATCH',
+    const result = await useApiEndpoint('PATCH /api/v1/auth/profile', {
       body: { timezone },
     })
     auth.updateUser(result.user)

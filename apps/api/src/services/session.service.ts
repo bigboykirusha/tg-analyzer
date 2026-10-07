@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, asc, desc, eq, gt, inArray, isNull, lt, notInArray, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt, notInArray, sql } from 'drizzle-orm'
 import { db, schema } from '../db'
 import { redis } from './redis.service'
 import { config } from '../config'
@@ -314,6 +314,21 @@ export async function listParseHistory(userId: string) {
     orderBy: [desc(schema.parseJobs.createdAt)],
     limit: 20,
   })
+}
+
+export async function listParseHistoryPage(userId: string, page: number, limit: number) {
+  const offset = (page - 1) * limit
+  const [items, countRows] = await Promise.all([
+    db.query.parseJobs.findMany({
+      where: eq(schema.parseJobs.userId, userId),
+      orderBy: [desc(schema.parseJobs.createdAt)],
+      limit,
+      offset,
+    }),
+    db.select({ total: count() }).from(schema.parseJobs).where(eq(schema.parseJobs.userId, userId)),
+  ])
+
+  return { items, total: countRows[0]?.total ?? 0 }
 }
 
 export async function clearParseHistory(userId: string) {

@@ -99,6 +99,62 @@ test('HTTP auth accepts only a live access token and keeps users isolated', asyn
   assert.equal(rows.rows.find((row) => row.id === second)?.timezone, 'UTC')
 })
 
+test('versioned API exposes an OpenAPI document and keeps legacy routes available', async () => {
+  const userId = await createUser()
+  const auth = await createAuth(userId)
+  const headers = bearer(auth.access)
+
+  assert.equal((await app.inject({ url: '/api/v1/stats/global', headers })).statusCode, 200)
+  assert.equal((await app.inject({ url: '/api/stats/global', headers })).statusCode, 200)
+
+  const openApi = await app.inject({ url: '/documentation/json' })
+  assert.equal(openApi.statusCode, 200)
+  const document = openApi.json<{
+    paths: Record<string, { get?: { responses?: Record<string, unknown>; parameters?: unknown[] } }>
+  }>()
+  assert.ok(document.paths['/api/v1/stats/global']?.get?.responses?.['200'])
+  assert.ok(document.paths['/api/v1/stats/chats']?.get?.parameters?.length)
+
+  const missingChat = await app.inject({ url: '/api/v1/stats/chats/123', headers })
+  assert.equal(missingChat.statusCode, 404)
+  assert.deepEqual(Object.keys(missingChat.json()).sort(), ['code', 'message', 'requestId'])
+})
+
+test('versioned parse history returns an isolated page with a total count', async () => {
+  const userId = await createUser()
+  const otherUserId = await createUser()
+  const auth = await createAuth(userId)
+  const jobIds: string[] = []
+
+  for (let index = 0; index < 3; index += 1) {
+    const jobId = await sessions.createParseJob({ userId, chatId: 900 + index, chatName: `Page ${index}` })
+    await sessions.updateParseJob(jobId, { status: 'completed', completedAt: new Date() })
+    jobIds.push(jobId)
+  }
+  const otherJobId = await sessions.createParseJob({ userId: otherUserId, chatId: 999, chatName: 'Other user' })
+  await sessions.updateParseJob(otherJobId, { status: 'completed', completedAt: new Date() })
+
+  const firstPage = await app.inject({
+    url: '/api/v1/parse/history?page=1&limit=2',
+    headers: bearer(auth.access),
+  })
+  const secondPage = await app.inject({
+    url: '/api/v1/parse/history?page=2&limit=2',
+    headers: bearer(auth.access),
+  })
+  const first = firstPage.json<{ items: Array<{ jobId: string }>; total: number; page: number; limit: number }>()
+  const second = secondPage.json<{ items: Array<{ jobId: string }>; total: number; page: number; limit: number }>()
+
+  assert.equal(firstPage.statusCode, 200)
+  assert.equal(secondPage.statusCode, 200)
+  assert.equal(first.total, 3)
+  assert.equal(first.items.length, 2)
+  assert.equal(second.items.length, 1)
+  assert.equal(second.page, 2)
+  assert.equal(new Set([...first.items, ...second.items].map((item) => item.jobId)).size, 3)
+  assert.ok([...first.items, ...second.items].every((item) => jobIds.includes(item.jobId)))
+})
+
 test('refresh races share one successor and logout revokes the whole family', async () => {
   const userId = await createUser()
   const auth = await createAuth(userId)

@@ -1,39 +1,22 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
+import {
+  activityQuerySchema,
+  apiErrorResponseSchema,
+  chatListQuerySchema,
+  numericChatIdParamsSchema,
+} from '@tg-analyzer/shared'
 import { requireAuth } from '../middleware/auth.middleware'
+import { sendApiError } from '../services/api-error.service'
 import { deleteChatReport, getActivity, getChat, getChats, getGlobalStats, getTop } from '../services/stats.service'
 
-const chatsQuerySchema = z.object({
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(20),
-  sort: z
-    .enum([
-      'total_messages',
-      'sent_messages',
-      'received_messages',
-      'last_message_at',
-      'first_message_at',
-      'chat_name',
-      'parsed_at',
-    ])
-    .default('total_messages'),
-  order: z.enum(['asc', 'desc']).default('desc'),
-})
-
-const activityQuerySchema = z.object({
-  from: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  to: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-})
-
-const chatParamsSchema = z.object({
-  chatId: z.string().regex(/^-?\d+$/),
-})
+const chatParamsSchema = numericChatIdParamsSchema
+const errorJsonSchema = z.toJSONSchema(apiErrorResponseSchema, { target: 'draft-07' })
+const chatParamsJsonSchema = {
+  type: 'object',
+  required: ['chatId'],
+  properties: { chatId: { type: 'string', pattern: '^-?\\d+$' } },
+}
 
 const topQuerySchema = z.object({
   type: z.enum(['emoji', 'words', 'chats']).default('emoji'),
@@ -41,41 +24,174 @@ const topQuerySchema = z.object({
 })
 
 export const statsRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/global', { preHandler: requireAuth }, async (request) => {
-    return getGlobalStats(request.authUserId!)
+  const endpointDocs = (summary: string, response: Record<string, unknown>) => ({
+    tags: ['Statistics'],
+    summary,
+    security: [{ bearerAuth: [] }],
+    response: {
+      200: response,
+      400: errorJsonSchema,
+      401: errorJsonSchema,
+    },
   })
 
-  fastify.get('/chats', { preHandler: requireAuth }, async (request) => {
-    const { page, limit, sort, order } = chatsQuerySchema.parse(request.query)
-    return getChats(request.authUserId!, page, limit, sort, order)
-  })
+  fastify.get(
+    '/global',
+    {
+      preHandler: requireAuth,
+      schema: endpointDocs('Read aggregated user statistics', { type: 'object', additionalProperties: true }),
+    },
+    async (request) => {
+      return getGlobalStats(request.authUserId!)
+    },
+  )
 
-  fastify.get('/chats/:chatId', { preHandler: requireAuth }, async (request, reply) => {
-    const params = chatParamsSchema.parse(request.params)
-    const chat = await getChat(request.authUserId!, params.chatId)
-    if (!chat) {
-      return reply.status(404).send({ message: 'Chat not found' })
-    }
-    return chat
-  })
+  fastify.get(
+    '/chats',
+    {
+      preHandler: requireAuth,
+      schema: {
+        ...endpointDocs('List analyzed chats', {
+          type: 'object',
+          required: ['chats', 'total', 'page', 'limit'],
+          properties: {
+            chats: { type: 'array', items: { type: 'object', additionalProperties: true } },
+            total: { type: 'integer' },
+            page: { type: 'integer' },
+            limit: { type: 'integer' },
+          },
+        }),
+        querystring: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            page: { type: 'integer', minimum: 1, default: 1 },
+            limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+            sort: {
+              type: 'string',
+              enum: [
+                'total_messages',
+                'sent_messages',
+                'received_messages',
+                'last_message_at',
+                'first_message_at',
+                'chat_name',
+                'parsed_at',
+              ],
+              default: 'total_messages',
+            },
+            order: { type: 'string', enum: ['asc', 'desc'], default: 'desc' },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const { page, limit, sort, order } = chatListQuerySchema.parse(request.query)
+      return getChats(request.authUserId!, page, limit, sort, order)
+    },
+  )
 
-  fastify.delete('/chats/:chatId', { preHandler: requireAuth }, async (request, reply) => {
-    const params = chatParamsSchema.parse(request.params)
-    const deleted = await deleteChatReport(request.authUserId!, params.chatId)
-    if (!deleted) {
-      return reply.status(404).send({ message: 'Chat report not found' })
-    }
+  fastify.get(
+    '/chats/:chatId',
+    {
+      preHandler: requireAuth,
+      schema: {
+        ...endpointDocs('Read one analyzed chat', { type: 'object', additionalProperties: true }),
+        params: chatParamsJsonSchema,
+      },
+    },
+    async (request, reply) => {
+      const params = chatParamsSchema.parse(request.params)
+      const chat = await getChat(request.authUserId!, params.chatId)
+      if (!chat) {
+        return sendApiError(reply, 404, 'Chat not found', 'CHAT_NOT_FOUND')
+      }
+      return chat
+    },
+  )
 
-    return { success: true }
-  })
+  fastify.delete(
+    '/chats/:chatId',
+    {
+      preHandler: requireAuth,
+      schema: {
+        ...endpointDocs('Delete a chat report', {
+          type: 'object',
+          required: ['success'],
+          properties: { success: { const: true } },
+        }),
+        params: chatParamsJsonSchema,
+      },
+    },
+    async (request, reply) => {
+      const params = chatParamsSchema.parse(request.params)
+      const deleted = await deleteChatReport(request.authUserId!, params.chatId)
+      if (!deleted) {
+        return sendApiError(reply, 404, 'Chat report not found', 'CHAT_REPORT_NOT_FOUND')
+      }
 
-  fastify.get('/activity', { preHandler: requireAuth }, async (request) => {
-    const { from, to } = activityQuerySchema.parse(request.query)
-    return getActivity(request.authUserId!, from, to)
-  })
+      return { success: true }
+    },
+  )
 
-  fastify.get('/top', { preHandler: requireAuth }, async (request) => {
-    const { type, limit } = topQuerySchema.parse(request.query)
-    return getTop(request.authUserId!, type, limit)
-  })
+  fastify.get(
+    '/activity',
+    {
+      preHandler: requireAuth,
+      schema: {
+        ...endpointDocs('Read daily activity', {
+          type: 'object',
+          required: ['daily'],
+          properties: { daily: { type: 'array', items: { type: 'object', additionalProperties: true } } },
+        }),
+        querystring: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            from: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+            to: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const { from, to } = activityQuerySchema.parse(request.query)
+      return getActivity(request.authUserId!, from, to)
+    },
+  )
+
+  fastify.get(
+    '/top',
+    {
+      preHandler: requireAuth,
+      schema: {
+        ...endpointDocs('Read top words, emoji or chats', {
+          type: 'object',
+          required: ['items'],
+          properties: {
+            items: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['value', 'count'],
+                properties: { value: { type: 'string' }, count: { type: 'number' } },
+              },
+            },
+          },
+        }),
+        querystring: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            type: { type: 'string', enum: ['emoji', 'words', 'chats'], default: 'emoji' },
+            limit: { type: 'integer', minimum: 1, maximum: 50, default: 10 },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const { type, limit } = topQuerySchema.parse(request.query)
+      return getTop(request.authUserId!, type, limit)
+    },
+  )
 }

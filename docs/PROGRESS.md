@@ -32,6 +32,16 @@
 - [x] Аудит зависимостей выполнен: устранены все 9 critical и 56 high уязвимостей обновлениями Fastify, Drizzle, Nuxt 4.5.1 и точечными lockfile overrides. В API production-графе advisory нет; два оставшихся high находятся в web build/CI-графе без upstream-патча. Deprecated `lucide-vue-next` заменён совместимым alias на `@lucide/vue`.
 - [x] `lint`, `format:check`, `check`, 23 unit-теста и build проходят; Docker integration, чистая миграция 0008, повторный запуск и rollback подтверждены.
 
+## Фаза 2 — архитектура API и аналитики
+
+- [ ] Вынести чистые расчёты аналитики из API/DB service в `packages/shared` и закрепить граничные случаи unit-тестами.
+- [ ] Добавить `/api/v1`, OpenAPI и единые схемы запросов/ответов из `packages/shared`; сохранить legacy routes с переходным сроком.
+- [ ] Ввести типобезопасный web API client на shared DTO/schema, убрать ручные generic/cast по страницам.
+- [ ] Добавить пагинацию для parse history и согласовать формат `items/page/limit/total` с web.
+- [ ] Упростить web composables и разделить доменную логику от компонентов, не переносить состояние в Pinia без необходимости.
+- [ ] Проверить пользовательский сценарий auth → выбор чата → анализ/progress → просмотр/удаление → logout на API/browser тестовом адаптере.
+- [ ] После фазы выполнить `lint`, `format:check`, `check`, unit/integration и `build`; обновить AUDIT/REPORT.
+
 ## Журнал выполнения
 
 - [x] 2026-10-06: опубликован первичный аудит — commit `c074076`.
@@ -62,4 +72,8 @@
 - [x] 2026-10-07: web Dockerfile разделён на builder/non-root runner; Nuxt build-модули перенесены в devDependencies, runner запускает только `.output/server/index.mjs`. Локальный `pnpm start` подтвердил HTTP 200 и CSP на готовом artifact; Docker build ожидает Docker Engine.
 - [x] 2026-10-07: production audit API не нашёл advisory. Два оставшихся high относятся только к web build-графу и не попадают в non-root runtime artifact; риск build/CI остаётся открытым до обновления Node/Nuxt либо замены upstream-инструментов.
 - [x] 2026-10-07: после восстановления Docker Engine изолированные PostgreSQL 16/Redis 7 подняты через `docker-compose.test.yml`; `test:integration` прошёл 13/13. Тестовая изоляция очищает БД и Redis перед каждым случаем, поэтому reconciliation не видит задания соседних тестов. На отдельной чистой БД миграции применены, повторный `db:migrate` успешен, а `0008-down.sql` удалил все три поля и семь индексов. `docker compose build api web` успешно собрал оба образа с frozen lockfile.
+- [x] 2026-10-07: повторная проверка перед фазой 2: `test:integration` 13/13, `test` 23/23, `check`, `lint`, `format:check`, `build`, Docker images и 0008 apply/repeat/down успешны.
+- [x] 2026-10-07: начата фаза 2 — добавлены `/api/v1` aliases, OpenAPI + Swagger UI, shared endpoint map и типизированный `useApiEndpoint`; web composables переведены на общие response-типы. `GET /api/v1/parse/history` теперь принимает page/limit и возвращает items/total, legacy path сохраняет старый массив. Integration проверяет версионирование, docs, ошибки статистики и страницы истории с изоляцией пользователя.
+- [ ] `format:check` для всего workspace сейчас сообщает о незакоммиченном `docs/DESIGN_TASK.md`; файл не менялся. Изменённые файлы проверяются Prettier отдельно.
+- [ ] Следом вынести вычислительную аналитику в shared и покрыть её чистыми unit-тестами; дополнить OpenAPI схемами auth/parse и перевести оставшиеся generic-вызовы web.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.

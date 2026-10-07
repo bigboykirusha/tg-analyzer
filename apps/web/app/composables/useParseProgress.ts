@@ -1,10 +1,5 @@
-import type {
-  ParseProgressDto,
-  ParseProgressWsEvent,
-  ParseStatusResponse,
-  WsAuthTicketResponse,
-} from '@tg-analyzer/shared'
-import { refreshAccessToken } from './useApi'
+import type { ParseProgressDto, ParseProgressWsEvent, ParseStatusResponse } from '@tg-analyzer/shared'
+import { refreshAccessToken, useApiEndpoint } from './useApi'
 import { isTokenExpiringSoon, isTokenUsable } from '../utils/auth'
 
 const MAX_RETRIES = 5
@@ -57,7 +52,7 @@ export function useParseProgress() {
 
     statusRequestPromise = (async () => {
       try {
-        const status = await useApiFetch<ParseStatusResponse>('/api/parse/status')
+        const status = await useApiEndpoint('GET /api/v1/parse/status')
         applyStatus(status)
         return status
       } catch {
@@ -90,7 +85,7 @@ export function useParseProgress() {
   }
 
   async function getWebSocketTicket() {
-    return useApiFetch<WsAuthTicketResponse>('/api/auth/ws-ticket', { method: 'POST' })
+    return useApiEndpoint('POST /api/v1/auth/ws-ticket')
   }
 
   function scheduleReconnect() {
@@ -247,7 +242,7 @@ export function useParseProgress() {
     disconnect()
 
     try {
-      const status = await useApiFetch<ParseStatusResponse>('/api/parse/status')
+      const status = await useApiEndpoint('GET /api/v1/parse/status')
       applyStatus(status)
       return status
     } catch (error) {

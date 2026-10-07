@@ -140,4 +140,15 @@ G1 закрыт для объёма 1a: 16 unit- и 6 интеграционны
 
 Отдельный `pnpm --filter @tg-analyzer/api audit --prod` не нашёл advisory. Оставшиеся два high принадлежат web build-графу: production runner образа не содержит `node_modules` и запускает собранный `.output/server/index.mjs`. Это снижает риск рантайма, но не закрывает риск supply-chain на стадии build/CI.
 
-Транзакционные integration-тесты 1b и проверка 0008 на fresh/upgrade/down были успешны до последнего перезапуска Docker Engine. Новый integration-тест reconciliation, добавленный в `6da4144`, и повторная проверка после этого commit сейчас недоступны: Docker Desktop Engine отсутствует. Это ограничение не считается успешной проверкой.
+После запуска Docker Engine повторная проверка завершена: `test:integration` — 13/13; миграция 0008 на чистой отдельной БД применена, повторно применена без изменений и отменена документированным `0008-down.sql`. `docker compose build api web` успешно собрал оба образа с frozen lockfile. Исторические абзацы выше описывают состояние на момент фазы 1, а текущие проверки перечислены в `docs/PROGRESS.md` и `docs/REPORT.md`.
+
+## Приоритет следующего этапа: фаза 2
+
+1. Вынести чистые вычисления метрик из API/DB service в `packages/shared`, чтобы расчёты можно было проверять без Fastify, PostgreSQL и Telegram.
+2. Добавить `/api/v1`, OpenAPI и общие схемы DTO, сохраняя legacy `/api/*` маршруты до согласованного срока удаления.
+3. Перевести web на типобезопасный общий API-клиент, затем унифицировать пагинацию истории и ответов списков.
+4. Разделить composables и UI-слой и проверить основной путь пользователя автоматическими тестами с Telegram adapter mock.
+
+## Статус проверок первого этапа и начало фазы 2
+
+Повторный полный прогон подтвердил phase 1: integration — 13/13, unit — 23/23, `check`, `lint`, `build`, Docker API/web images и migration 0008 apply/repeat/rollback прошли. В фазе 2 уже добавлена версия `/api/v1` с временно сохранёнными legacy path, Swagger/OpenAPI, shared endpoint map и пагинация v1 parse history. Известный остаток фазы 1 — upstream dependency advisory в web build graph и реальные Telegram/Redis outage проверки.

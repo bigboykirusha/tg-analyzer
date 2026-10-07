@@ -4,6 +4,8 @@ import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
 import websocket from '@fastify/websocket'
+import swagger from '@fastify/swagger'
+import swaggerUi from '@fastify/swagger-ui'
 import { config, cookieName } from './config'
 import { pool } from './db'
 import { authRoutes } from './routes/auth'
@@ -59,6 +61,26 @@ export async function buildServer() {
     timeWindow: config.AUTH_RATE_LIMIT_WINDOW,
   })
   await app.register(websocket)
+  await app.register(swagger, {
+    openapi: {
+      info: {
+        title: 'TG Analyzer API',
+        description: 'Versioned HTTP API for Telegram chat analytics.',
+        version: '1.0.0',
+      },
+      servers: [{ url: '/' }],
+      components: {
+        securitySchemes: {
+          bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+        },
+      },
+    },
+  })
+  await app.register(swaggerUi, {
+    routePrefix: '/documentation',
+    staticCSP: true,
+    uiConfig: { docExpansion: 'list', deepLinking: false },
+  })
   app.addHook('onRequest', async (request, reply) => {
     for (const [name, value] of Object.entries(apiSecurityHeaders)) {
       reply.header(name, value)
@@ -130,8 +152,12 @@ export async function buildServer() {
     reply.status(responseStatus).send({ message, code, requestId: request.id })
   })
 
+  await app.register(authRoutes, { prefix: '/api/v1/auth' })
+  await app.register(parseRoutes, { prefix: '/api/v1/parse', apiVersion: 1 })
+  await app.register(statsRoutes, { prefix: '/api/v1/stats' })
+  // Keep the original paths available while external clients migrate to v1.
   await app.register(authRoutes, { prefix: '/api/auth' })
-  await app.register(parseRoutes, { prefix: '/api/parse' })
+  await app.register(parseRoutes, { prefix: '/api/parse', apiVersion: 0 })
   await app.register(statsRoutes, { prefix: '/api/stats' })
   await app.register(wsRoutes, { prefix: '/ws' })
 

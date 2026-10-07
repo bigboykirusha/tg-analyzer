@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
 import { CustomFile } from 'telegram/client/uploads.js'
+import { paginationQuerySchema } from '@tg-analyzer/shared'
 import type { ParseDialogDto, ParseDialogsResponse, ParseProgressDto } from '@tg-analyzer/shared'
 import { requireAuth } from '../middleware/auth.middleware'
 import { parseDialogsQueue } from '../queues/parse.queue'
@@ -24,6 +25,7 @@ import {
   getActiveJobId,
   getParseProgress,
   listParseHistory,
+  listParseHistoryPage,
   markCancelledJob,
   markActiveJob,
   publishParseProgress,
@@ -73,7 +75,7 @@ function mapParseDialogs(dialogs: TelegramDialog[]): ParseDialogsResponse {
   }
 }
 
-export const parseRoutes: FastifyPluginAsync = async (fastify) => {
+export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fastify, options) => {
   fastify.post('/start', { preHandler: requireAuth }, async (request, reply) => {
     const userId = request.authUserId!
     const { chatIds } = startSchema.parse(request.body ?? {})
@@ -465,22 +467,61 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
     return { success: true }
   })
 
-  fastify.get('/history', { preHandler: requireAuth }, async (request) => {
-    const userId = request.authUserId!
-    const history = await listParseHistory(userId)
-    return history.map((item) => ({
-      jobId: item.id,
-      chatId: item.chatId ? String(item.chatId) : null,
-      chatName: item.chatName ?? null,
-      status: item.status,
-      totalChats: item.totalChats,
-      parsedChats: item.parsedChats,
-      totalMessages: item.totalMessages,
-      createdAt: item.createdAt.toISOString(),
-      completedAt: item.completedAt?.toISOString() ?? null,
-      errorMessage: item.errorMessage ?? null,
-    }))
-  })
+  fastify.get(
+    '/history',
+    {
+      preHandler: requireAuth,
+      schema:
+        options.apiVersion === 1
+          ? {
+              tags: ['Parse jobs'],
+              summary: 'List parse history',
+              security: [{ bearerAuth: [] }],
+              querystring: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  page: { type: 'integer', minimum: 1, default: 1 },
+                  limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+                },
+              },
+              response: {
+                200: {
+                  type: 'object',
+                  required: ['items', 'total', 'page', 'limit'],
+                  properties: {
+                    items: { type: 'array', items: { type: 'object', additionalProperties: true } },
+                    total: { type: 'integer' },
+                    page: { type: 'integer' },
+                    limit: { type: 'integer' },
+                  },
+                },
+              },
+            }
+          : undefined,
+    },
+    async (request) => {
+      const userId = request.authUserId!
+      const { page, limit } = paginationQuerySchema.parse(request.query)
+      const historyPage =
+        options.apiVersion === 1
+          ? await listParseHistoryPage(userId, page, limit)
+          : { items: await listParseHistory(userId), total: 0 }
+      const items = historyPage.items.map((item) => ({
+        jobId: item.id,
+        chatId: item.chatId ? String(item.chatId) : null,
+        chatName: item.chatName ?? null,
+        status: item.status,
+        totalChats: item.totalChats,
+        parsedChats: item.parsedChats,
+        totalMessages: item.totalMessages,
+        createdAt: item.createdAt.toISOString(),
+        completedAt: item.completedAt?.toISOString() ?? null,
+        errorMessage: item.errorMessage ?? null,
+      }))
+      return options.apiVersion === 1 ? { items, total: historyPage.total, page, limit } : items
+    },
+  )
 
   fastify.delete('/history', { preHandler: requireAuth }, async (request) => {
     const userId = request.authUserId!
