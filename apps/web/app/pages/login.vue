@@ -50,11 +50,19 @@ const stepIndex = computed(
 useSeoMeta({
   title: () => seoTitle.value,
   description: () => seoDescription.value,
-  keywords: () => seoKeywords.value,
   ogTitle: () => seoTitle.value,
   ogDescription: () => seoDescription.value,
   twitterTitle: () => seoTitle.value,
   twitterDescription: () => seoDescription.value,
+})
+
+useHead({
+  meta: [
+    {
+      name: 'keywords',
+      content: () => seoKeywords.value,
+    },
+  ],
 })
 
 async function handlePhone() {
