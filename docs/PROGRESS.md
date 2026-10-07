@@ -26,7 +26,7 @@
 
 ## Фаза 1c — типы, стиль и зависимости
 
-- [ ] `noUncheckedIndexedAccess` для API/shared/web без подавления ошибок.
+- [x] `noUncheckedIndexedAccess` для API/shared/web без подавления ошибок; shared получил отдельный tsconfig и check.
 - [ ] ESLint для TypeScript/Vue и Prettier; команды `lint` и `format:check`.
 - [ ] Добавить и проверить security headers/CSP (с production-safe политикой для Nuxt/API).
 - [ ] Аудит зависимостей, удаление неиспользуемого кода и пакетов; новые инструменты только в devDependencies.
@@ -45,4 +45,5 @@
 - [x] 2026-10-07: `6d58561` — chat report, daily/global aggregates сохраняются и удаляются одной транзакцией под user row lock; повторная обработка не удваивает итоги, отменённая/удалённая задача не может записать результат. Добавлены rollback/concurrency/cancellation integration-тесты.
 - [x] 2026-10-07: `6da4144` — worker восстанавливает зарезервированные, но не поставленные задачи по UUID и сохранённым параметрам; retry сохраняет активность, terminal cases не перезапускаются. Lease Redis стал compare-and-set, FLOOD_WAIT прерывается отменой, SESSION_REVOKED типизирован, shutdown закрывает обработчики до инфраструктуры.
 - [x] 2026-10-07: `5265c2d` — зафиксированы fail-closed Redis rate limit, требования к first-party refresh-cookie, proxy logging WS-ticket, AOF/noeviction и migration/Redis runbook.
+- [x] 2026-10-07: `02eaf40` — включён `noUncheckedIndexedAccess`; проверки индексов и массивов добавлены в API analytics/worker/routes, shared теперь typecheck-ится самостоятельно.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
