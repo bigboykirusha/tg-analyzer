@@ -1,4 +1,6 @@
 export * from './api'
 export * from './api-contract'
+export * from './activity-analytics'
+export * from './analytics-primitives'
 export * from './group-report'
 export * from './stats'

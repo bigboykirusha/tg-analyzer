@@ -14,14 +14,22 @@ import type {
   HealthScoreDto,
   InsightDto,
   MessageCompositionDto,
-  MonthlyActivityDto,
   RelationshipScoreDto,
   ResponseStatsDto,
   SessionStatsDto,
-  StreakInfoDto,
   TopItemDto,
 } from '@tg-analyzer/shared'
-import { resolveProductGroupRole } from '@tg-analyzer/shared'
+import {
+  calculateAverage,
+  calculateMedian,
+  calculatePercentile,
+  clampNumber,
+  computeMaxStreak,
+  computeTrend,
+  mapDailyActivity,
+  mapMonthlyActivity,
+  resolveProductGroupRole,
+} from '@tg-analyzer/shared'
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm'
 import { db, schema } from '../db'
 import type { TelegramMessageLike } from './telegram.service'
@@ -956,19 +964,19 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
     const averageMineSec = mineResponseSeconds.length
       ? Math.round(mineResponseSeconds.reduce((sum, value) => sum + value, 0) / mineResponseSeconds.length)
       : null
-    const medianMineSec = median(mineResponseSeconds)
-    const medianTheirsSec = median(theirsResponseSeconds)
+    const medianMineSec = calculateMedian(mineResponseSeconds)
+    const medianTheirsSec = calculateMedian(theirsResponseSeconds)
     acc.responseStats = {
       medianMineSec,
       medianTheirsSec,
       mineSamples: mineResponseSeconds.length,
       theirsSamples: theirsResponseSeconds.length,
-      mineP25Sec: percentile(mineResponseSeconds, 25),
-      mineP75Sec: percentile(mineResponseSeconds, 75),
-      mineP95Sec: percentile(mineResponseSeconds, 95),
-      theirsP25Sec: percentile(theirsResponseSeconds, 25),
-      theirsP75Sec: percentile(theirsResponseSeconds, 75),
-      theirsP95Sec: percentile(theirsResponseSeconds, 95),
+      mineP25Sec: calculatePercentile(mineResponseSeconds, 25),
+      mineP75Sec: calculatePercentile(mineResponseSeconds, 75),
+      mineP95Sec: calculatePercentile(mineResponseSeconds, 95),
+      theirsP25Sec: calculatePercentile(theirsResponseSeconds, 25),
+      theirsP75Sec: calculatePercentile(theirsResponseSeconds, 75),
+      theirsP95Sec: calculatePercentile(theirsResponseSeconds, 95),
     }
     acc.averageMyResponseSec = averageMineSec
     acc.medianMyResponseSec = medianMineSec
@@ -1234,7 +1242,7 @@ function computeGroupReport(params: {
   const shares = participants
     .map((participant) => (totalMessages ? participant.messageCount / totalMessages : 0))
     .sort((left, right) => left - right)
-  const meanShare = shares.length ? average(shares) : 0
+  const meanShare = shares.length ? calculateAverage(shares) : 0
   const giniCoefficient =
     shares.length && meanShare
       ? Number(
@@ -1436,137 +1444,12 @@ function buildGroupTopPairs(params: {
     .slice(0, 5)
 }
 
-function median(values: number[]) {
-  if (!values.length) {
-    return null
-  }
-  const sorted = [...values].sort((left, right) => left - right)
-  const middle = Math.floor(sorted.length / 2)
-  const middleValue = sorted[middle]
-  if (middleValue === undefined) return null
-  if (sorted.length % 2) return middleValue
-  const previousValue = sorted[middle - 1]
-  return previousValue === undefined ? null : Math.round((previousValue + middleValue) / 2)
-}
-
-function percentile(values: number[], p: number) {
-  if (!values.length) {
-    return null
-  }
-  const sorted = [...values].sort((left, right) => left - right)
-  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil((p / 100) * sorted.length) - 1))
-  return sorted[index] ?? null
-}
-
-function clamp(value: number, min = 0, max = 100) {
-  return Math.min(max, Math.max(min, value))
-}
-
-function average(values: number[]) {
-  if (!values.length) {
-    return 0
-  }
-
-  return values.reduce((sum, value) => sum + value, 0) / values.length
-}
-
 function averageOrNull(values: number[]) {
   if (!values.length) {
     return null
   }
 
-  return Math.round(average(values))
-}
-
-function mapDailyActivity(map: Map<string, { sent: number; received: number }>) {
-  return Array.from(map.entries())
-    .map(([date, counts]) => ({
-      date,
-      sent: counts.sent,
-      received: counts.received,
-      total: counts.sent + counts.received,
-    }))
-    .sort((left, right) => left.date.localeCompare(right.date))
-}
-
-function mapMonthlyActivity(map: Map<string, DirectionalCountDto>): MonthlyActivityDto[] {
-  return Array.from(map.entries())
-    .map(([month, counts]) => ({ month, ...counts }))
-    .sort((left, right) => left.month.localeCompare(right.month))
-}
-
-function computeMaxStreak(days: string[]) {
-  const sorted = [...new Set(days)].sort()
-  let max = 0
-  let current = 0
-  let previousTime = 0
-  let currentStart: string | null = null
-  let bestStart: string | null = null
-  let bestEnd: string | null = null
-
-  for (const day of sorted) {
-    const time = new Date(`${day}T00:00:00`).getTime()
-    if (!previousTime || time - previousTime === 24 * 60 * 60 * 1000) {
-      if (!current) {
-        currentStart = day
-      }
-      current += 1
-    } else {
-      current = 1
-      currentStart = day
-    }
-    if (current > max) {
-      max = current
-      bestStart = currentStart
-      bestEnd = day
-    }
-    previousTime = time
-  }
-
-  return {
-    days: max,
-    startDate: bestStart,
-    endDate: bestEnd,
-  } satisfies StreakInfoDto
-}
-
-function computeTrend(months: MonthlyActivityDto[]): ConversationFactsDto['trend'] {
-  if (months.length < 6) {
-    return 'unknown'
-  }
-  const totalsByMonth = new Map(months.map((item) => [item.month, item.total]))
-  const lastMonth = months[months.length - 1]?.month
-  if (!lastMonth) {
-    return 'unknown'
-  }
-
-  const monthWindow = buildMonthWindow(lastMonth, 6)
-  const previousThree = monthWindow.slice(0, 3).reduce((sum, month) => sum + (totalsByMonth.get(month) ?? 0), 0)
-  const lastThree = monthWindow.slice(3).reduce((sum, month) => sum + (totalsByMonth.get(month) ?? 0), 0)
-  if (!previousThree && !lastThree) {
-    return 'unknown'
-  }
-  if (lastThree > previousThree * 1.15) {
-    return 'growing'
-  }
-  if (lastThree < previousThree * 0.85) {
-    return 'fading'
-  }
-  return 'stable'
-}
-
-function buildMonthWindow(lastMonth: string, count: number) {
-  const [yearText, monthText] = lastMonth.split('-')
-  const year = Number(yearText)
-  const month = Number(monthText)
-  const cursor = new Date(year, month - 1, 1)
-  cursor.setMonth(cursor.getMonth() - count + 1)
-
-  return Array.from({ length: count }, () => {
-    const value = `${cursor.getFullYear()}-${padNumber(cursor.getMonth() + 1)}`
-    cursor.setMonth(cursor.getMonth() + 1)
-    return value
-  })
+  return Math.round(calculateAverage(values))
 }
 
 function buildSessionStats(
@@ -1656,7 +1539,7 @@ function buildSessionStats(
 
   return {
     totalSessions: sessions.length,
-    averageSessionMessages: Math.round(average(messageCounts)),
+    averageSessionMessages: Math.round(calculateAverage(messageCounts)),
     averageSessionDurationSec: averageOrNull(durations),
     longestSessionMessages: Math.max(...messageCounts),
     longestSessionDurationSec: durations.length ? Math.max(...durations) : null,
@@ -1798,14 +1681,14 @@ function computeHealthScore(params: {
     ? Math.min(1, params.sessionStats.totalSessions / Math.max(params.activeDays, 1))
     : 1
   const initiativeBalance = params.relationshipScore.attentionBalance
-  const longTermStability = clamp(
+  const longTermStability = clampNumber(
     Math.round(
       (params.relationshipScore.stability ?? 50) * 0.7 +
         (params.trend === 'growing' ? 90 : params.trend === 'stable' ? 75 : params.trend === 'fading' ? 35 : 55) * 0.3,
     ),
   )
   const responseRateScore = params.responseRate ?? 55
-  const score = clamp(
+  const score = clampNumber(
     Math.round(
       responseRateScore * 0.3 +
         (100 - fragmentation * 50) * 0.2 +
@@ -1873,9 +1756,9 @@ function computeRelationshipScore(params: {
   }
 
   const shareDelta = Math.abs(params.sentMessages - params.receivedMessages) / totalMessages
-  const reciprocity = clamp(Math.round((1 - shareDelta) * 100))
+  const reciprocity = clampNumber(Math.round((1 - shareDelta) * 100))
   const attentionBalance =
-    params.iWriteFirstPct === null ? reciprocity : clamp(100 - Math.abs(params.iWriteFirstPct - 50) * 2)
+    params.iWriteFirstPct === null ? reciprocity : clampNumber(100 - Math.abs(params.iWriteFirstPct - 50) * 2)
   const responsivenessSamples = [params.responseStats.medianMineSec, params.responseStats.medianTheirsSec].reduce<
     number[]
   >((acc, value) => {
@@ -1885,15 +1768,15 @@ function computeRelationshipScore(params: {
     }
     return acc
   }, [])
-  const responsiveness = responsivenessSamples.length ? Math.round(average(responsivenessSamples)) : null
-  const stability = clamp(
+  const responsiveness = responsivenessSamples.length ? Math.round(calculateAverage(responsivenessSamples)) : null
+  const stability = clampNumber(
     Math.round(
       Math.min(1, params.activeDays / 60) * 45 +
         Math.min(1, params.maxStreakDays / 21) * 35 +
         (params.trend === 'fading' ? 5 : params.trend === 'growing' ? 20 : params.trend === 'stable' ? 15 : 10),
     ),
   )
-  const score = clamp(
+  const score = clampNumber(
     Math.round(reciprocity * 0.3 + (responsiveness ?? 55) * 0.25 + stability * 0.25 + attentionBalance * 0.2),
   )
 
