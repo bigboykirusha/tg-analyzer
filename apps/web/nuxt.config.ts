@@ -41,18 +41,21 @@ export default defineNuxtConfig({
       meta: [
         {
           name: 'viewport',
-          content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover',
+          content: 'width=device-width, initial-scale=1, viewport-fit=cover',
         },
       ],
-      link: [
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap',
-        },
-      ],
+      link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
     },
   },
   modules: ['@pinia/nuxt', '@nuxtjs/tailwindcss'],
+  hooks: {
+    'pages:extend'(pages) {
+      if (process.env.NODE_ENV === 'production') {
+        const index = pages.findIndex((page) => page.path === '/design')
+        if (index >= 0) pages.splice(index, 1)
+      }
+    },
+  },
   runtimeConfig: {
     public: {
       apiUrl,

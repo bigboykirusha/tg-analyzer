@@ -37,15 +37,6 @@ function handleInput(event: Event) {
   target.value = phoneInput.displayValue.value
 }
 
-function flagSrc(code: string) {
-  return `https://flagcdn.com/w40/${code.toLowerCase()}.png`
-}
-
-function flagSrcset(code: string) {
-  const normalized = code.toLowerCase()
-  return `https://flagcdn.com/w40/${normalized}.png 1x, https://flagcdn.com/w80/${normalized}.png 2x`
-}
-
 // Sync with parent phone model
 watch(
   phoneInput.normalizedPhone,
@@ -82,16 +73,7 @@ function submit() {
               :aria-expanded="countryOpen"
               @click="countryOpen = !countryOpen"
             >
-              <img
-                class="country-flag-img"
-                :src="flagSrc(phoneInput.country.value.code)"
-                :srcset="flagSrcset(phoneInput.country.value.code)"
-                width="20"
-                height="14"
-                alt=""
-                loading="eager"
-                decoding="async"
-              />
+              <span class="country-flag" aria-hidden="true">{{ phoneInput.country.value.flag }}</span>
               <span>{{ selectedCountryLabel }}</span>
               <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="m7 10 5 5 5-5" />
@@ -125,16 +107,7 @@ function submit() {
               :class="{ active: country.code === phoneInput.countryCode.value }"
               @click="selectCountry(country.code)"
             >
-              <img
-                class="country-flag-img"
-                :src="flagSrc(country.code)"
-                :srcset="flagSrcset(country.code)"
-                width="20"
-                height="14"
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
+              <span class="country-flag" aria-hidden="true">{{ country.flag }}</span>
               <span class="country-code">{{ country.code }}</span>
               <span class="t-mono">{{ country.dialCode }}</span>
             </button>
@@ -256,13 +229,14 @@ function submit() {
   color: var(--accent);
 }
 
-.country-flag-img {
-  width: 20px;
-  height: 14px;
+.country-flag {
+  display: inline-grid;
+  width: 22px;
+  height: 18px;
   flex: 0 0 auto;
-  border-radius: 2px;
-  object-fit: cover;
-  box-shadow: 0 0 0 1px var(--border-subtle);
+  place-items: center;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .country-code {
@@ -270,10 +244,6 @@ function submit() {
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: 12px;
-}
-
-.phone-input {
-  font-family: var(--font-mono);
 }
 
 @media (max-width: 420px) {

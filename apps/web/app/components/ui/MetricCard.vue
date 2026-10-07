@@ -21,10 +21,10 @@ defineProps<{
   gap: var(--space-2);
   min-height: 86px;
   padding: var(--space-3) var(--space-4);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-elevated) 86%, transparent);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: var(--shadow-sm);
   min-width: 0;
 }
 

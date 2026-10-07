@@ -56,10 +56,7 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   min-width: 0;
   max-width: 100%;
   transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    box-shadow var(--transition-fast),
+    transform var(--transition-fast),
     opacity var(--transition-fast);
 }
 
@@ -76,21 +73,25 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   pointer-events: none;
 }
 
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 /* ─── Sizes ────────────────────────────────────────────────────────────────── */
 .btn--sm {
-  height: 28px;
+  min-height: 36px;
   padding: 0 var(--space-3);
   font-size: 12px;
 }
 
 .btn--md {
-  height: 34px;
+  min-height: 44px;
   padding: 0 var(--space-4);
   font-size: 13px;
 }
 
 .btn--lg {
-  height: 40px;
+  min-height: 48px;
   padding: 0 var(--space-5);
   font-size: 14px;
 }
@@ -197,15 +198,15 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
 /* ─── Mobile ───────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .btn--sm {
-    height: 32px;
+    min-height: 40px;
   }
 
   .btn--md {
-    height: 36px;
+    min-height: 44px;
   }
 
   .btn--lg {
-    height: 44px;
+    min-height: 48px;
   }
 }
 </style>

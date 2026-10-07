@@ -3,16 +3,8 @@ import type { MessageCompositionDto } from '@tg-analyzer/shared'
 import AppLayout from '../../components/AppLayout.vue'
 import ChatAvatar from '../../components/ChatAvatar.vue'
 import Container from '../../components/layout/Container.vue'
-import ActivityDistributionCard from '../../components/stats/ActivityDistributionCard.vue'
-import ActivityHeatmap from '../../components/stats/ActivityHeatmap.vue'
-import BalanceChart from '../../components/stats/BalanceChart.vue'
-import CompositionChart from '../../components/stats/CompositionChart.vue'
-import DailyVolumeChart from '../../components/stats/DailyVolumeChart.vue'
 import EmojiGrid from '../../components/stats/EmojiGrid.vue'
-import HourlyChart from '../../components/stats/HourlyChart.vue'
 import ParseProgress from '../../components/stats/ParseProgress.vue'
-import WeekdayChart from '../../components/stats/WeekdayChart.vue'
-import WordsChart from '../../components/stats/WordsChart.vue'
 import Button from '../../components/ui/Button.vue'
 import ConfirmDialog from '../../components/ui/ConfirmDialog.vue'
 import EmptyState from '../../components/ui/EmptyState.vue'
@@ -36,6 +28,14 @@ definePageMeta({
 })
 
 const GroupReport = defineAsyncComponent(() => import('../../components/stats/GroupReport.vue'))
+const ActivityDistributionCard = defineAsyncComponent(() => import('../../components/stats/ActivityDistributionCard.vue'))
+const ActivityHeatmap = defineAsyncComponent(() => import('../../components/stats/ActivityHeatmap.vue'))
+const BalanceChart = defineAsyncComponent(() => import('../../components/stats/BalanceChart.vue'))
+const CompositionChart = defineAsyncComponent(() => import('../../components/stats/CompositionChart.vue'))
+const DailyVolumeChart = defineAsyncComponent(() => import('../../components/stats/DailyVolumeChart.vue'))
+const HourlyChart = defineAsyncComponent(() => import('../../components/stats/HourlyChart.vue'))
+const WeekdayChart = defineAsyncComponent(() => import('../../components/stats/WeekdayChart.vue'))
+const WordsChart = defineAsyncComponent(() => import('../../components/stats/WordsChart.vue'))
 const route = useRoute()
 const auth = useAuthStore()
 const { fetchChat } = useStats()

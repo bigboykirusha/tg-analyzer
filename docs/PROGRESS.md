@@ -105,3 +105,11 @@
 - [x] Итоговый прогон: unit 54/54, Docker PostgreSQL/Redis integration 18/18, `lint`, `check`, `build` успешны. Docker build `api`, `worker`, `web` повторно проходит на frozen lockfile. `pnpm audit --prod`: 0 critical, 2 high в web build graph без upstream patched version. Nuxt build: client chunk 696 kB; остаются warnings dynamic middleware imports, long plugin callbacks и deprecated Vue shared export mapping.
 - [x] `f48f2a4 fix(build): make API bundle and Nuxt SSR production-safe` — production API bundling и Docker context, Zod JSON Schema target и SSR-compatible Zod version исправлены; документация дополнена результатами runtime smoke и итогового прогона.
 - [x] `6aa4fca refactor(api): isolate chat stats DTO mapping` — потоковый accumulator, ранее пропущенный в отчёте, уже находится в `packages/shared`; DB row → `ChatStatsDto` нормализация отделена в `chat-stats.mapper.ts`. `test` 54/54, `test:integration` 18/18, API check/build и lint прошли.
+
+## Фаза 3 — дизайн и адаптив
+
+- [x] 2026-10-07: создана ветка `design/ios-2026`; в `docs/design/DESIGN.md` зафиксированы направление Indigo Glass и дефекты исходных synthetic baseline.
+- [x] Foundation: семантические токены light/dark/system, сохранение выбора, безопасный viewport, `100dvh`, safe areas, tabular numbers, focus ring и режимы reduced motion/transparency.
+- [x] Навигация: desktop sidebar и mobile bottom tab bar; контент получает нижний safe-area inset. Графики отчёта подключаются асинхронно, PWA manifest и OG metadata добавлены в web-приложение.
+- [x] UI: унифицированы минимальные размеры основных действий, добавлены стеклянный BottomSheet с Escape/focus trap, error page и development-only `/design` gallery.
+- [ ] Visual/a11y/performance: требуются фактически выполненные Playwright, axe, Lighthouse прогоны и after-скриншоты. Встроенный browser runner в текущем окружении недоступен, поэтому этот пункт не считается пройденным.

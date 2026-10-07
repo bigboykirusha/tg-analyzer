@@ -22,7 +22,7 @@ const option = computed(() => {
       icon: 'circle',
       textStyle: {
         color: COLORS.text(),
-        fontFamily: 'DM Sans, sans-serif',
+        fontFamily: 'Inter, system-ui, sans-serif',
       },
     },
     series: [

@@ -8,14 +8,14 @@ function cssVar(name: string, fallback: string) {
 }
 
 export const COLORS = {
-  accent: () => cssVar('--accent', '#e8ff6b'),
-  sent: () => cssVar('--accent', '#e8ff6b'),
-  received: () => cssVar('--border-strong', '#3a3a3a'),
+  accent: () => cssVar('--accent', '#9da8ff'),
+  sent: () => cssVar('--accent', '#9da8ff'),
+  received: () => cssVar('--accent-2', '#3bd6c6'),
   neutral: () => cssVar('--bg-overlay', '#222222'),
   neutralSoft: () => cssVar('--border-default', '#2a2a2a'),
-  text: () => cssVar('--text-secondary', '#888888'),
-  textMuted: () => cssVar('--text-tertiary', '#555555'),
-  textPrimary: () => cssVar('--text-primary', '#f0f0f0'),
+  text: () => cssVar('--text-secondary', '#b5bad0'),
+  textMuted: () => cssVar('--text-tertiary', '#9299b3'),
+  textPrimary: () => cssVar('--text-primary', '#f6f7ff'),
   border: () => cssVar('--border-subtle', '#1f1f1f'),
   surface: () => cssVar('--bg-elevated', '#1a1a1a'),
   accentMuted: () => cssVar('--accent-subtle', 'rgba(232, 255, 107, 0.08)'),
@@ -25,7 +25,7 @@ export function createChartTheme() {
   return {
     backgroundColor: 'transparent',
     textStyle: {
-      fontFamily: 'DM Sans, sans-serif',
+      fontFamily: 'Inter, system-ui, sans-serif',
       color: COLORS.text(),
     },
     color: [COLORS.accent(), COLORS.received(), COLORS.neutral(), COLORS.neutralSoft()],
@@ -42,7 +42,7 @@ export function createChartTheme() {
       axisLabel: {
         color: COLORS.textMuted(),
         fontSize: 12,
-        fontFamily: 'DM Mono, monospace',
+        fontFamily: 'Inter, system-ui, sans-serif',
       },
       splitLine: { show: false },
     },
@@ -52,7 +52,7 @@ export function createChartTheme() {
       axisLabel: {
         color: COLORS.textMuted(),
         fontSize: 12,
-        fontFamily: 'DM Mono, monospace',
+        fontFamily: 'Inter, system-ui, sans-serif',
       },
       splitLine: {
         lineStyle: { color: COLORS.border(), type: 'solid' },
@@ -62,7 +62,7 @@ export function createChartTheme() {
       backgroundColor: cssVar('--bg-overlay', '#222222'),
       borderColor: cssVar('--border-default', '#2a2a2a'),
       borderWidth: 1,
-      textStyle: { color: COLORS.textPrimary(), fontSize: 13, fontFamily: 'DM Mono, monospace' },
+      textStyle: { color: COLORS.textPrimary(), fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif' },
       padding: [10, 12],
       extraCssText: 'border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);',
     },

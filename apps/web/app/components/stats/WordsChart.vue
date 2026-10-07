@@ -47,7 +47,7 @@ const option = computed(() => {
       top: 0,
       textStyle: {
         color: COLORS.text(),
-        fontFamily: 'DM Sans, sans-serif',
+        fontFamily: 'Inter, system-ui, sans-serif',
       },
     },
     grid: {

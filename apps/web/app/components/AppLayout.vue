@@ -41,7 +41,7 @@
   }
 
   .app-main {
-    padding: var(--space-4) 0 calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+    padding: var(--space-4) 0 calc(104px + env(safe-area-inset-bottom, 0px));
   }
 }
 </style>

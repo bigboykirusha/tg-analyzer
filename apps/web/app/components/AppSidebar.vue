@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { BarChart2, Clock, Globe, LayoutGrid, LogOut } from '../lib/icons'
+import ThemeToggle from './ui/ThemeToggle.vue'
 import { useToast } from '../composables/useToast'
 import ParseProgress from './stats/ParseProgress.vue'
 import ConfirmDialog from './ui/ConfirmDialog.vue'
@@ -151,6 +152,7 @@ async function syncBrowserTimeZone() {
         <button type="button" :class="{ active: locale === 'ru' }" @click="setLocale('ru')">RU</button>
         <button type="button" :class="{ active: locale === 'en' }" @click="setLocale('en')">EN</button>
       </div>
+      <ThemeToggle />
     </div>
 
     <nav class="sidebar-nav">
@@ -228,33 +230,7 @@ async function syncBrowserTimeZone() {
           <span class="logo-mark">&lt;T&gt;</span>
           <span class="logo-text">tg analyzer</span>
         </div>
-        <div class="mobile-actions">
-          <NuxtLink
-            to="/dashboard"
-            class="mobile-nav-item"
-            :class="{ 'mobile-nav-item-active': route.path.startsWith('/dashboard') }"
-          >
-            <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
-            <span class="sr-only">{{ t('common.dashboard') }}</span>
-          </NuxtLink>
-          <NuxtLink to="/history" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': isHistoryRoute }">
-            <Clock :size="18" :stroke-width="1.5" aria-hidden="true" />
-            <span class="sr-only">{{ t('common.history') }}</span>
-          </NuxtLink>
-          <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="mobile-nav-item mobile-nav-item-active">
-            <BarChart2 :size="18" :stroke-width="1.5" aria-hidden="true" />
-            <span class="sr-only">{{ t('common.report') }}</span>
-          </NuxtLink>
-          <button
-            class="mobile-nav-item mobile-language"
-            type="button"
-            @click="setLocale(locale === 'ru' ? 'en' : 'ru')"
-          >
-            <Globe :size="16" :stroke-width="1.5" aria-hidden="true" />
-            {{ locale.toUpperCase() }}
-            <span class="sr-only">{{ t('nav.language') }}</span>
-          </button>
-        </div>
+        <div class="mobile-actions"><ThemeToggle /></div>
       </div>
 
       <ParseProgress
@@ -273,6 +249,18 @@ async function syncBrowserTimeZone() {
         @cancel="cancelActiveParse"
       />
     </div>
+
+    <nav class="mobile-tabbar" :aria-label="t('common.dashboard')">
+      <NuxtLink to="/dashboard" class="mobile-tab" :class="{ active: isDashboardRoute }">
+        <LayoutGrid :size="19" aria-hidden="true" /><span>{{ t('common.dashboard') }}</span>
+      </NuxtLink>
+      <NuxtLink to="/history" class="mobile-tab" :class="{ active: isHistoryRoute }">
+        <Clock :size="19" aria-hidden="true" /><span>{{ t('common.history') }}</span>
+      </NuxtLink>
+      <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="mobile-tab active">
+        <BarChart2 :size="19" aria-hidden="true" /><span>{{ t('common.report') }}</span>
+      </NuxtLink>
+    </nav>
 
     <ConfirmDialog
       :open="Boolean(confirmState)"
@@ -336,7 +324,9 @@ async function syncBrowserTimeZone() {
   align-items: center;
   gap: var(--space-3);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    opacity var(--transition-fast);
 }
 
 .nav-item {
@@ -514,6 +504,10 @@ async function syncBrowserTimeZone() {
   display: none;
 }
 
+.mobile-tabbar {
+  display: none;
+}
+
 .language-switch {
   display: inline-flex;
   align-items: center;
@@ -623,6 +617,49 @@ async function syncBrowserTimeZone() {
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text-secondary);
+  }
+
+  .mobile-tabbar {
+    position: fixed;
+    z-index: 50;
+    right: max(var(--space-3), env(safe-area-inset-right));
+    bottom: max(var(--space-3), env(safe-area-inset-bottom));
+    left: max(var(--space-3), env(safe-area-inset-left));
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-height: 64px;
+    padding: 6px;
+    border: 1px solid var(--separator);
+    border-radius: var(--radius-xl);
+    background: var(--surface-glass);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(var(--blur-md));
+  }
+
+  .mobile-tab {
+    display: grid;
+    min-width: 0;
+    min-height: 52px;
+    place-items: center;
+    align-content: center;
+    gap: 2px;
+    border-radius: var(--radius-lg);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 650;
+    transition:
+      transform var(--transition-fast),
+      background var(--transition-fast),
+      color var(--transition-fast);
+  }
+
+  .mobile-tab.active {
+    background: var(--accent-subtle);
+    color: var(--accent);
+  }
+
+  .mobile-tab:active {
+    transform: scale(0.97);
   }
 
   .mobile-nav-item-active {
