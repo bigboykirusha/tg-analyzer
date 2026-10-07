@@ -48,3 +48,13 @@ WebSocket использует одноразовый Redis ticket с TTL 30 с�
 Повторный `pnpm audit --prod` оставляет 2 high в web build/CI-графе (`node-forge@1.4.0` и `braces@3.0.3`); upstream patched version для текущих advisories отсутствует. API production-граф чистый. Поэтому Фазы 1a–1c реализованы и основные проверки зелёные, однако dependency audit не зелёный. Корневой `format:check` также сообщает о форматировании в пользовательском незакоммиченном `docs/DESIGN_TASK.md`; этот файл и пользовательские изменения не менялись, затронутые проектные файлы проверялись отдельно.
 
 Повторная `docker compose build api worker web` завершилась успешно после того, как Docker Engine стал доступен; Nuxt оставил предупреждения о большом клиентском чанке, ineffective dynamic imports и длительных plugin callbacks. Реальный Telegram, Redis outage под production-нагрузкой и браузер с выбранными production-доменами требуют отдельной ручной проверки.
+
+## Итоговый срез (2026-10-07)
+
+Фазы 1a–1c реализованы; фаза 2 доведена до API/analytics foundation. Production artifacts прошли smoke-запуск: API `/health` и `/documentation/json` вернули 200; web `/login` вернул 200, SSR-разметку и CSP. Docker собрал `api`, `worker`, `web` с frozen lockfile. Последние проверки: `lint`, `check`, unit 54/54, integration 18/18 на отдельном PostgreSQL/Redis, `build` — успешно.
+
+Заключительная проверка выявила три runtime-проблемы, не видимые typecheck: shared code отсутствовал в API bundle; OpenAPI задавал недопустимый Zod target; Zod 4.4.x конфликтовал с Nitro SSR по идентификатору `process`. Исправлены API bundle/Docker context, target `draft-7`, Zod закреплён на 4.1.5. Production smoke после исправлений прошёл.
+
+Фаза 2 не является полным рефакторингом по исходному TASK.md. Реализованы `/api/v1`, OpenAPI, shared request/response contracts, типизированный web endpoint map, пагинация истории, выделенные чистые метрики и API inject flow с fake Telegram. Потоковый accumulator, часть сборки DTO, широкая декомпозиция composables и production-browser E2E остаются.
+
+Ограничения проверки: `format:check` падает только на незакоммиченном пользовательском `docs/DESIGN_TASK.md`; этот файл не менялся. `pnpm audit --prod` остаётся красным из-за 2 high в web build graph (`node-forge`, `braces`) без upstream patched version. Nuxt build успешен с предупреждениями о client chunk 696 kB, ineffective middleware dynamic imports, долгих callbacks и deprecated Vue shared export mapping. Production domain, настоящий Telegram и Redis outage требуют ручной проверки.

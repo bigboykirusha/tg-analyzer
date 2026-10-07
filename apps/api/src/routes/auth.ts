@@ -55,7 +55,7 @@ const authRateLimitConfig = {
   },
 } as const
 
-const jsonSchemaOptions = { target: 'draft-07' } as const
+const jsonSchemaOptions = { target: 'draft-7' } as const
 const apiErrorSchema = z.toJSONSchema(apiErrorResponseSchema, jsonSchemaOptions)
 const sendCodeBodyJsonSchema = z.toJSONSchema(sendCodeBodySchema, jsonSchemaOptions)
 const verifyCodeBodyJsonSchema = z.toJSONSchema(verifyCodeBodySchema, jsonSchemaOptions)

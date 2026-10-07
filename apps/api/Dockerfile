@@ -3,7 +3,7 @@ RUN corepack enable
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
-COPY apps/api/package.json apps/api/tsconfig.json apps/api/drizzle.config.ts ./apps/api/
+COPY apps/api/package.json apps/api/tsconfig.json apps/api/drizzle.config.ts apps/api/tsup.config.ts ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
 RUN mkdir -p packages/shared/src apps/api/src
 

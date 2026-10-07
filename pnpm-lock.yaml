@@ -22,6 +22,7 @@ overrides:
   tar: 7.5.22
   tsx>esbuild: 0.28.2
   ws: 8.21.0
+  zod: 4.1.5
 
 importers:
 
@@ -100,8 +101,8 @@ importers:
         specifier: ^2.26.22
         version: 2.26.22
       zod:
-        specifier: ^4.1.5
-        version: 4.4.3
+        specifier: 4.1.5
+        version: 4.1.5
     devDependencies:
       '@types/jsonwebtoken':
         specifier: ^9.0.10
@@ -171,8 +172,8 @@ importers:
   packages/shared:
     dependencies:
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: 4.1.5
+        version: 4.1.5
     devDependencies:
       typescript:
         specifier: ^5.9.2
@@ -5777,8 +5778,8 @@ packages:
     resolution: {integrity: sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA==}
     engines: {node: '>= 14'}
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.1.5:
+    resolution: {integrity: sha512-rcUUZqlLJgBC33IT3PNMgsCq6TzLQEG/Ei/KTCU0PedSWRMAXoOUN+4t/0H+Q8bdnLPdqUYnvboJT0bn/229qg==}
 
   zrender@6.1.0:
     resolution: {integrity: sha512-oEGMDB6pOP2S6OwRR4PdVv610zrjnA3Bh+JnSG12fYJlBKjtNAoEb5fSUoCOOINlH96I2fU38/A2UpRKs67xYQ==}
@@ -11705,7 +11706,7 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.7.0
 
-  zod@4.4.3: {}
+  zod@4.1.5: {}
 
   zrender@6.1.0:
     dependencies:

@@ -57,15 +57,16 @@ import {
 } from '../services/telegram.service'
 
 const PARSE_DIALOGS_LIST_LIMIT = 300
-const apiErrorJsonSchema = z.toJSONSchema(apiErrorResponseSchema, { target: 'draft-07' })
-const startBodyJsonSchema = z.toJSONSchema(startParseBodySchema, { target: 'draft-07' })
-const startResponseJsonSchema = z.toJSONSchema(startParseResponseSchema, { target: 'draft-07' })
-const parseStatusJsonSchema = z.toJSONSchema(parseStatusResponseSchema, { target: 'draft-07' })
-const parseDialogsJsonSchema = z.toJSONSchema(parseDialogsResponseSchema, { target: 'draft-07' })
-const parseHistoryPageJsonSchema = z.toJSONSchema(parseHistoryPageResponseSchema, { target: 'draft-07' })
-const paginationQueryJsonSchema = z.toJSONSchema(paginationQuerySchema, { target: 'draft-07' })
-const successJsonSchema = z.toJSONSchema(deleteResponseSchema, { target: 'draft-07' })
-const clearHistoryJsonSchema = z.toJSONSchema(clearHistoryResponseSchema, { target: 'draft-07' })
+const jsonSchemaOptions = { target: 'draft-7' } as const
+const apiErrorJsonSchema = z.toJSONSchema(apiErrorResponseSchema, jsonSchemaOptions)
+const startBodyJsonSchema = z.toJSONSchema(startParseBodySchema, jsonSchemaOptions)
+const startResponseJsonSchema = z.toJSONSchema(startParseResponseSchema, jsonSchemaOptions)
+const parseStatusJsonSchema = z.toJSONSchema(parseStatusResponseSchema, jsonSchemaOptions)
+const parseDialogsJsonSchema = z.toJSONSchema(parseDialogsResponseSchema, jsonSchemaOptions)
+const parseHistoryPageJsonSchema = z.toJSONSchema(parseHistoryPageResponseSchema, jsonSchemaOptions)
+const paginationQueryJsonSchema = z.toJSONSchema(paginationQuerySchema, jsonSchemaOptions)
+const successJsonSchema = z.toJSONSchema(deleteResponseSchema, jsonSchemaOptions)
+const clearHistoryJsonSchema = z.toJSONSchema(clearHistoryResponseSchema, jsonSchemaOptions)
 
 function parseRouteDocs(summary: string, response: Record<number, unknown>, body?: object) {
   return {

@@ -142,6 +142,14 @@ G1 закрыт для объёма 1a: 16 unit- и 6 интеграционны
 
 После запуска Docker Engine повторная проверка завершена: `test:integration` — 13/13; миграция 0008 на чистой отдельной БД применена, повторно применена без изменений и отменена документированным `0008-down.sql`. `docker compose build api web` успешно собрал оба образа с frozen lockfile. Исторические абзацы выше описывают состояние на момент фазы 1, а текущие проверки перечислены в `docs/PROGRESS.md` и `docs/REPORT.md`.
 
+## Итоговая актуализация (2026-10-07)
+
+На итоговом прогоне `lint`, `check`, unit 54/54, Docker-backed integration 18/18, `build` и `docker compose build api worker web` завершились успешно. Production smoke: API `/health` и OpenAPI ответили 200; Nitro `/login` ответил 200 с SSR HTML и CSP/security headers.
+
+Во время smoke-проверки найдены release-дефекты: API bundle оставлял workspace shared import, хотя package export указывает на `.ts`; API build теперь встраивает `@tg-analyzer/shared`, Dockerfile копирует `tsup.config.ts`. OpenAPI использовал неподдерживаемый Zod target `draft-07`, исправлен на `draft-7`. Zod 4.4.x конфликтовал в Nitro SSR с идентификатором `process`; версия закреплена на 4.1.5 и production SSR проверен.
+
+Остаток: `pnpm audit --prod` сообщает 2 high (`node-forge`, `braces`) без upstream patched version; общий `format:check` сообщает только о пользовательском незакоммиченном `docs/DESIGN_TASK.md`; Nuxt client chunk 696 kB и build warnings требуют оптимизации. Реальный Telegram, Redis outage, production-domain/browser refresh остаются ручной проверкой. Фаза 2 закрыта как API/analytics foundation, но не как полный redesign: потоковый accumulator, часть DTO, декомпозиция composables и browser E2E остаются roadmap.
+
 ## Приоритет следующего этапа: фаза 2
 
 1. Вынести чистые вычисления метрик из API/DB service в `packages/shared`, чтобы расчёты можно было проверять без Fastify, PostgreSQL и Telegram.

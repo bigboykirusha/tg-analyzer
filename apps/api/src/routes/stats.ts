@@ -12,7 +12,7 @@ import { sendApiError } from '../services/api-error.service'
 import { deleteChatReport, getActivity, getChat, getChats, getGlobalStats, getTop } from '../services/stats.service'
 
 const chatParamsSchema = numericChatIdParamsSchema
-const errorJsonSchema = z.toJSONSchema(apiErrorResponseSchema, { target: 'draft-07' })
+const errorJsonSchema = z.toJSONSchema(apiErrorResponseSchema, { target: 'draft-7' })
 const chatParamsJsonSchema = {
   type: 'object',
   required: ['chatId'],
