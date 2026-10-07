@@ -6,7 +6,7 @@
 
 После 1a завершена реализация 1b: миграция 0008 предотвращает дубли Telegram-сессий и параллельные активные задачи, отчёт и агрегаты сохраняются одной транзакцией под блокировкой пользователя, а worker восстанавливает непоставленные задачи, корректно различает retry/terminal ошибки, отменяет FLOOD_WAIT и безопасно работает с compare-and-set Redis lease. Повторная интеграционная проверка 1b остаётся недоступной, пока Docker Engine не запущен.
 
-В 1c включены `noUncheckedIndexedAccess`, ESLint и Prettier. API получил deny-by-default CSP, anti-framing и Permissions-Policy. Dependency audit уменьшен с 9 critical / 58 high до 0 critical / 12 high: обновлены `@fastify/jwt`, Fastify, Drizzle ORM, Nuxt 4.5.1 и WebSocket plugin, а совместимые транзитивные исправления закреплены pnpm overrides. Оставшиеся уязвимости и deprecated `lucide-vue-next` требуют отдельной оценки и замены; 1c пока не закрыта.
+В 1c включены `noUncheckedIndexedAccess`, ESLint и Prettier. API и web получили CSP, anti-framing и Permissions-Policy. Dependency audit уменьшен с 9 critical / 58 high до 0 critical / 12 high: обновлены `@fastify/jwt`, Fastify, Drizzle ORM, Nuxt 4.5.1 и WebSocket plugin, а совместимые транзитивные исправления закреплены pnpm overrides. Deprecated `lucide-vue-next` заменён совместимым alias на `@lucide/vue`; 1c пока не закрыта из-за оставшихся advisory.
 
 Фаза 1a завершена коммитом `a100228` (`feat(auth): harden sessions and websocket access`). Старые access/refresh/WS-токены отклоняются, миграция 0007 отзывает прежние refresh-сессии и требует разовый повторный вход. Новые access-токены живут 15 минут, связаны с отзываемой refresh-family и остаются только в памяти браузера. Приложение восстанавливает сессию через HttpOnly refresh-cookie.
 
@@ -28,4 +28,4 @@ WebSocket использует одноразовый Redis ticket с TTL 30 с�
 
 Реальная интеграция Telegram не запускалась: browser-тест использует синтетического пользователя и тестовую зашифрованную сессию. Docker Engine сейчас недоступен, поэтому после изменений 1b не были повторены integration-тесты restart/reconciliation, миграции 0008 и production-compose. Ранее исправленные Dockerfile'ы используют lockfile и успешно собирали API/web images; это нужно повторно подтвердить после восстановления Engine.
 
-Остаются 12 high, 17 moderate и 8 low dependency advisory, web CSP, замена deprecated `lucide-vue-next`, а также Docker-зависимые интеграционные проверки. Пользовательские изменения в `chat/[id].vue`, `dashboard.vue`, `history.vue` и `docs/TASK.md` не включены в коммиты.
+Остаются 12 high, 17 moderate и 8 low dependency advisory, runtime smoke-проверка web CSP и Docker-зависимые интеграционные проверки. Пользовательские изменения в `chat/[id].vue`, `dashboard.vue`, `history.vue` и `docs/TASK.md` не включены в коммиты.
