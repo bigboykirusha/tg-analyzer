@@ -4,7 +4,7 @@
 
 ## Результат
 
-После 1a завершена реализация 1b: миграция 0008 предотвращает дубли Telegram-сессий и параллельные активные задачи, отчёт и агрегаты сохраняются одной транзакцией под блокировкой пользователя, а worker восстанавливает непоставленные задачи, корректно различает retry/terminal ошибки, отменяет FLOOD_WAIT и безопасно работает с compare-and-set Redis lease. Повторная интеграционная проверка 1b остаётся недоступной, пока Docker Engine не запущен.
+После 1a завершена реализация 1b: миграция 0008 предотвращает дубли Telegram-сессий и параллельные активные задачи, отчёт и агрегаты сохраняются одной транзакцией под блокировкой пользователя, а worker восстанавливает непоставленные задачи, корректно различает retry/terminal ошибки, отменяет FLOOD_WAIT и безопасно работает с compare-and-set Redis lease. Docker-проверки 1b выполнены на отдельном PostgreSQL 16 и Redis 7.
 
 В 1c включены `noUncheckedIndexedAccess`, ESLint и Prettier. API и web получили CSP, anti-framing и Permissions-Policy. Dependency audit уменьшен с 9 critical / 58 high до 0 critical / 2 high: обновлены `@fastify/jwt`, Fastify, Drizzle ORM, Nuxt 4.5.1 и WebSocket plugin, а совместимые транзитивные исправления закреплены pnpm overrides. Deprecated `lucide-vue-next` заменён совместимым alias на `@lucide/vue`; 1c пока не закрыта из-за оставшихся advisory.
 
@@ -19,13 +19,14 @@ WebSocket использует одноразовый Redis ticket с TTL 30 с�
 - `pnpm check` — успешно для API и web.
 - `pnpm test` — 23/23 unit-тестов.
 - `pnpm lint` и `pnpm format:check` — успешно.
-- `pnpm test:integration` — 6/6 на изолированных PostgreSQL 16 и Redis 7.
+- `pnpm test:integration` — 13/13 на изолированных PostgreSQL 16 и Redis 7, включая reservation, отмену чужого Redis marker, транзакции агрегатов и reconciliation.
 - `pnpm build` — успешно на Nuxt 4.5.1; остаются предупреждения Nuxt о sourcemap, чанке около 825 kB и deprecated module resolution.
-- Миграции — чистая установка, повторный запуск и upgrade с активной legacy refresh-сессией успешны; 0007 корректно отзывает старую сессию.
+- Миграции — чистая установка, повторный запуск и upgrade с активной legacy refresh-сессией успешны; 0007 корректно отзывает старую сессию. На отдельной чистой БД 0008 применена, повторный запуск оказался идемпотентным, а `0008-down.sql` удалил новые поля и индексы.
+- `docker compose build api web` — успешно; оба образа собираются с `--frozen-lockfile`, web runtime запускается от непривилегированного пользователя.
 - Playwright/Edge — `/login`, `/dashboard`, `/history`, `/chat/sample` на 360, 390, 768, 1024 и 1280 px; silent refresh и logout успешны, access-токен в localStorage отсутствует.
 
 ## Ограничения
 
-Реальная интеграция Telegram не запускалась: browser-тест использует синтетического пользователя и тестовую зашифрованную сессию. Docker Engine сейчас недоступен, поэтому после изменений 1b не были повторены integration-тесты restart/reconciliation, миграции 0008 и production-compose. Ранее исправленные Dockerfile'ы используют lockfile и успешно собирали API/web images; это нужно повторно подтвердить после восстановления Engine.
+Реальная интеграция Telegram не запускалась: browser-тест использует синтетического пользователя и тестовую зашифрованную сессию. Не выполнена ручная проверка реального отказа Redis и production deployment с reverse proxy; эти случаи требуют отдельной инфраструктуры.
 
-Остаются 2 high, 15 moderate и 8 low dependency advisory в web build-графе; production audit API чист. Nuxt 4.6, который может изменить этот граф, требует Node ≥22.21, тогда как доступен 22.14. Web CSP и standalone runtime artifact проверены локально; Docker build и Docker-зависимые integration-проверки не прошли из-за отсутствия Docker Engine. Пользовательские изменения в `chat/[id].vue`, `dashboard.vue`, `history.vue` и `docs/TASK.md` не включены в коммиты.
+Остаются 2 high, 15 moderate и 8 low dependency advisory в web build-графе; production audit API чист. Nuxt 4.6, который может изменить этот граф, требует Node ≥22.21, тогда как доступен 22.14. Web CSP и standalone runtime artifact проверены локально, Docker build и Docker-зависимые integration-проверки прошли. Пользовательские изменения в `chat/[id].vue`, `dashboard.vue`, `history.vue` и `docs/TASK.md` не включены в коммиты.

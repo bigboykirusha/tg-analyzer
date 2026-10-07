@@ -1,4 +1,4 @@
-import test, { after, before } from 'node:test'
+import test, { after, before, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import jwt from 'jsonwebtoken'
@@ -28,9 +28,12 @@ let app: Awaited<ReturnType<typeof buildServer>>
 before(async () => {
   await migrate(db, { migrationsFolder: './src/db/migrations' })
   await migrate(db, { migrationsFolder: './src/db/migrations' })
+  app = await buildServer()
+})
+
+beforeEach(async () => {
   await pool.query('TRUNCATE users CASCADE')
   await redis.flushdb()
-  app = await buildServer()
 })
 
 after(async () => {

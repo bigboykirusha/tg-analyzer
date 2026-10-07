@@ -22,7 +22,7 @@
 - [x] Compare-and-set Redis lease, остановка операции при потере lease, периодическая сверка БД/BullMQ, progress по jobId и последовательный shutdown worker.
 - [x] Прерываемый отменой `FLOOD_WAIT`; typed `SESSION_REVOKED` с деактивацией сессии; unit-тесты Telegram-адаптера.
 - [x] Compose использует AOF/everysec и `noeviction`; policy изоляции очереди/auth от вытесняемых кэшей, proxy query logging и sibling-domain cookies описаны в SECURITY/RUNBOOK.
-- [ ] Тесты конкурентности, rollback, retry/cancel и fail-closed policy проходят; нужен повтор integration-теста рестарта/reconciliation и реального Redis outage после восстановления Docker Engine.
+- [x] Тесты конкурентности, rollback, retry/cancel и fail-closed policy проходят; Docker integration подтверждает рестарт/reconciliation. Реальный outage Redis остаётся отдельной ручной проверкой отказоустойчивости.
 
 ## Фаза 1c — типы, стиль и зависимости
 
@@ -30,7 +30,7 @@
 - [x] ESLint для TypeScript/Vue и Prettier; команды `lint` и `format:check`.
 - [x] API и web получают CSP, anti-framing и Permissions-Policy. Web CSP ограничивает источники текущими API/WS origins и Google Fonts; production Nitro smoke-проверка `/login` подтвердила выдачу всех заголовков.
 - [x] Аудит зависимостей выполнен: устранены все 9 critical и 56 high уязвимостей обновлениями Fastify, Drizzle, Nuxt 4.5.1 и точечными lockfile overrides. В API production-графе advisory нет; два оставшихся high находятся в web build/CI-графе без upstream-патча. Deprecated `lucide-vue-next` заменён совместимым alias на `@lucide/vue`.
-- [ ] `lint`, `format:check`, `check`, 23 unit-теста и build проходят; Docker integration/migration-проверки 1b–1c нужно повторить после восстановления Docker Engine.
+- [x] `lint`, `format:check`, `check`, 23 unit-теста и build проходят; Docker integration, чистая миграция 0008, повторный запуск и rollback подтверждены.
 
 ## Журнал выполнения
 
@@ -61,4 +61,5 @@
 - [x] 2026-10-07: production Nitro server запущен на собранном web artifact; `/login` подтвердил CSP, X-Frame-Options, Permissions-Policy, X-Content-Type-Options и Referrer-Policy.
 - [x] 2026-10-07: web Dockerfile разделён на builder/non-root runner; Nuxt build-модули перенесены в devDependencies, runner запускает только `.output/server/index.mjs`. Локальный `pnpm start` подтвердил HTTP 200 и CSP на готовом artifact; Docker build ожидает Docker Engine.
 - [x] 2026-10-07: production audit API не нашёл advisory. Два оставшихся high относятся только к web build-графу и не попадают в non-root runtime artifact; риск build/CI остаётся открытым до обновления Node/Nuxt либо замены upstream-инструментов.
+- [x] 2026-10-07: после восстановления Docker Engine изолированные PostgreSQL 16/Redis 7 подняты через `docker-compose.test.yml`; `test:integration` прошёл 13/13. Тестовая изоляция очищает БД и Redis перед каждым случаем, поэтому reconciliation не видит задания соседних тестов. На отдельной чистой БД миграции применены, повторный `db:migrate` успешен, а `0008-down.sql` удалил все три поля и семь индексов. `docker compose build api web` успешно собрал оба образа с frozen lockfile.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
