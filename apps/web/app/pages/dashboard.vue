@@ -277,39 +277,11 @@ function isDialogCooldownLike(dialog: ParseDialogDto) {
   return diffMs < 60 * 60 * 1000
 }
 
-function dialogActionLabel(dialog: ParseDialogDto) {
-  return getDialogReport(dialog) ? t('chat.reparse') : t('dashboard.analyze')
-}
-
 function dialogParseDisabled(dialog: ParseDialogDto) {
   return !telegramSessionActive.value
     || pending.value
     || isParseActive.value
     || pendingChatId.value === dialog.id
-}
-
-function dialogHint(dialog: ParseDialogDto) {
-  if (!telegramSessionActive.value) {
-    return t('dashboard.sessionInactive')
-  }
-
-  if (isParseActive.value && progress.value.chatId === dialog.id) {
-    return progress.value.message || statusLabel(progress.value.status)
-  }
-
-  if (isParseActive.value) {
-    return t('dashboard.activeJobNotice')
-  }
-
-  if (isDialogCooldownLike(dialog)) {
-    return t('dashboard.cooldownNotice')
-  }
-
-  if (getDialogReport(dialog)) {
-    return t('dashboard.rerunHint')
-  }
-
-  return t('dashboard.firstReportHint')
 }
 
 async function handleTerminateTelegramSession() {
@@ -767,7 +739,7 @@ onMounted(async () => {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr) minmax(300px, 0.8fr);
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-6);
   min-width: 0;
   align-items: start;

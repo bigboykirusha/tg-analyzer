@@ -41,7 +41,7 @@ const auth = useAuthStore()
 const { fetchChat } = useStats()
 const { progress, bootstrapped, bootstrapFromServer, connect, disconnect } = useParseProgress()
 const stats = useStatsStore()
-const { t, locale, formatNumber, formatDate: formatLocaleDate, formatRelative, intlLocale } = useI18n()
+const { t, locale, formatNumber, formatDate: formatLocaleDate, intlLocale } = useI18n()
 const toast = useToast()
 
 const ready = ref(false)
@@ -758,6 +758,7 @@ async function confirmReparseChat() {
 
 function buildSafeExportName() {
   return ((chat.value?.chatName || routeChatId.value)
+    // eslint-disable-next-line no-control-regex -- Strip control characters from export filenames.
     .replace(/[<>:"/\\|?*\u0000-\u001F]/g, ' ')
     .trim()
     .replace(/\s+/g, '-')
@@ -955,10 +956,6 @@ async function sendReportPdfToTelegramChat() {
   } finally {
     telegramSending.value = false
   }
-}
-
-function formatDate(value: string | null) {
-  return formatLocaleDate(value)
 }
 
 function formatShortDate(value: string | null) {
@@ -1987,7 +1984,7 @@ onBeforeUnmount(() => {
 
 .report-heading {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.9fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   min-width: 0;
 }
