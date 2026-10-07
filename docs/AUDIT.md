@@ -69,3 +69,43 @@ API доверяет подписанному JWT, выборки статист
 3. Миграции, атомарные агрегаты и жизненный цикл задач.
 4. Строгая типизация, линтинг, форматирование, проверка зависимостей.
 5. Unit/integration/browser, check/build; отчёт с доказательствами и честными ограничениями. К фазам 2–5 не переходить.
+
+## Дополнение: эксплуатация, внешние сервисы и браузерный аудит (2026-10-07)
+
+### Дизайн и доступность
+
+Playwright/Edge запущен на ширинах 360, 390, 768, 1024 и 1280 CSS px; исходные файлы лежат в [`docs/design/before/`](design/before/). На всех пяти размерах маршрут `/login` вернул Nuxt error page с HTTP 500 (`Either manifest or precomputed data must be provided`), а не приложение. Поэтому эти изображения — диагностические свидетельства недоступности рендера, а не визуальные скриншоты продукта. Состояния dashboard/history/chat и интерактивные сценарии браузером не проверены. Дизайн-аудит контраста, реальных tap-targets и responsive-переполнения остаётся открытым до исправного запуска web и тестовой авторизованной сессии.
+
+Подтверждённый UI-риск по исходникам: `apps/web/nuxt.config.ts` ограничивает масштабирование через `maximum-scale=1, user-scalable=no`; следует убрать запрет zoom и проверить увеличение текста. Из-за 500 нельзя достоверно присвоить severity визуальным дефектам раскладки, контраста, фокуса и состояний.
+
+### Чистый запуск и запросы БД
+
+Для проверки использован отдельный временный `docker-compose.test.yml`: PostgreSQL 16 и Redis 7, loopback-порты, PostgreSQL data на `tmpfs`, Redis `maxmemory-policy noeviction`. Пользовательская БД не использовалась. В чистом контейнере `pnpm db:migrate` применил журнал из 8 миграций. `EXPLAIN` подтвердил `parse_jobs_history_idx` для истории задач, `refresh_sessions_family_idx` для выборки семейства refresh и `telegram_sessions_user_idx` для Telegram-сессии. Это планировщик на пустых тестовых таблицах; оценка производительности на репрезентативном объёме и проверка rollback новой миграции не выполнены. Полный production-compose не поднимался. Во время последующей браузерной/параллельной проверки Docker Engine стал недоступен; интеграционные проверки, требующие его, не считать пройденными.
+
+### Дополненные категории риска
+
+| Категория | Наблюдение / риск | Требуемое решение |
+| --- | --- | --- |
+| Telegram FLOOD_WAIT | Ожидание API может удерживать worker и блокировку; сейчас нет подтверждённой проверки отмены во время ожидания. | Прерываемый sleep с проверкой отмены и lease; ограничить время блокировки, покрыть тестом. |
+| Telegram SESSION_REVOKED | Отозванная авторизация должна переводить аккаунт в состояние повторного входа, отзывать/деактивировать сессию и не продолжать запись отчёта. | Единый typed error path для `SESSION_REVOKED`/`AUTH_KEY_UNREGISTERED`; повторная авторизация без утечки деталей. |
+| Redis persistence / eviction | Redis одновременно используется для очереди, lock, auth/rate-limit и кэшей. Потеря ключей или eviction может нарушить корректность и защиту от перебора. Тестовый Redis настроен `noeviction`, но production-политика не подтверждена. | Зафиксировать persistence/AOF и backup/restore для BullMQ; отдельное хранилище/лимиты для кэшей; контролировать memory pressure и запретить eviction критичных ключей. |
+| Бэкапы / восстановление | Документированный backup и проверенный restore PostgreSQL/Redis в репозитории не обнаружены. | Определить RPO/RTO, шифрованный offsite backup PostgreSQL, процедуру restore и регулярно проверять её; для Redis определить, что восстанавливается из БД и очереди. |
+| Healthchecks | API имеет `/health` и `/ready`; готовность зависит в том числе от heartbeat worker. Docker orchestration checks и readiness поведение при недоступных зависимостях требуют интеграционной проверки. | Liveness не должен зависеть от БД; readiness проверяет PostgreSQL/Redis и отдельно worker; задать compose/production healthchecks и таймауты. |
+| Sentry / telemetry | Подтверждённой интеграции Sentry не найдено; ошибки могут теряться между API и worker. | Перед интеграцией определить scrubber для cookie, токенов, телефона, кода, пароля, Telegram-сессии, query и job payload; сохранять request/job correlation id. |
+| Версионирование API | REST маршруты не имеют версии; DTO shared package развиваются без видимой политики совместимости. | Зафиксировать версионирование `/api/v1` или совместимую политику до внешних клиентов; websocket events тоже версионировать отдельно. |
+| Ротация ключа шифрования Telegram | AES-GCM ключ задаётся одним `SESSION_ENCRYPTION_KEY`; нет key id или автоматической ротации старых ciphertext. Простая смена ключа делает сессии нечитаемыми. | Формат envelope с `keyVersion`, чтение несколькими ключами и контролируемый re-encrypt/backfill; не журналировать сессии и ключи. |
+| Cross-domain cookie (Vercel + API) | При web на `*.vercel.app` и API на отдельном домене cookie становится cross-site: потребуется `SameSite=None; Secure`, credentialed CORS с точным origin и CSRF guard. Браузерная политика third-party cookies может блокировать cookie даже при верной конфигурации. | Предпочесть same-site custom domains; если невозможны — проверить реальные браузеры, preflight/credentials и CSRF; не использовать wildcard origin/domain. |
+
+### Уточнённые security-решения
+
+- Для B1/B4 websocket не должен принимать access/refresh JWT из URL. Клиент получает access-authenticated `POST /api/auth/ws-ticket`; API выдаёт случайный ticket с TTL около 30 секунд, привязанный к user/session family. WS потребляет его атомарно один раз, проверяет Origin и живость семьи. Ticket всё ещё попадает в query WS handshake, поэтому остаётся короткоживущим секретом: redaction query в access/error logs обязательна.
+- Для B2 при старте приложения делать тихий `POST /api/auth/refresh` с HttpOnly cookie и `credentials: include`; access JWT держать только в памяти. На временной сетевой ошибке не показывать ошибку входа до контролируемого восстановления, но не принимать access JWT из localStorage как fallback после reload.
+- Одноразовый cutover: новый claim version/kind инвалидирует прежние access/WS токены; refresh-сессии старого формата отозвать миграцией с необратимым `revoked_at`. Пользователям понадобится повторный вход. Миграция должна иметь preflight и не очищать неоднозначные данные автоматически.
+
+### Порядок фаз
+
+1. **1a — безопасность и конфигурация:** token purpose/cutover, refresh cookie и CSRF/origin, rate limit, WS ticket, шифрование временной Telegram-сессии, безопасные ошибки/логи, startup refresh и config validation.
+2. **1b — данные, очередь и worker:** атомарные агрегаты, миграции и preflight/rollback, сериализация по пользователю, task reservation/reconciliation, retry/cancel/lease/shutdown и тесты отказов.
+3. **1c — качество:** `noUncheckedIndexedAccess`, lint/format, зависимости и удаление мёртвого кода с повторным полным check/build/test.
+
+Для каждой фазы проверять тестами новый риск до исправления. Следующая фаза начинается только после завершения проверок предыдущей; недоступные Docker/browser/Telegram проверки указывать как непроверенные.
