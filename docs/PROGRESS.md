@@ -29,7 +29,7 @@
 - [x] `noUncheckedIndexedAccess` для API/shared/web без подавления ошибок; shared получил отдельный tsconfig и check.
 - [x] ESLint для TypeScript/Vue и Prettier; команды `lint` и `format:check`.
 - [x] API получает строгие security headers: deny-by-default CSP, защита от встраивания и отключённые camera/geolocation/microphone; web CSP остаётся задачей фазы 4, так как должен учитывать окончательные first-party домены и внешние источники.
-- [ ] Аудит зависимостей выполнен: устранены все 9 critical уязвимостей совместимым обновлением `@fastify/jwt` и точечными lockfile overrides; остаются 51 high, 38 moderate и 14 low для отдельной оценки. Удаление неиспользуемых пакетов требует отдельного подтверждённого анализа.
+- [ ] Аудит зависимостей выполнен: устранены все 9 critical и 38 high уязвимостей обновлениями Fastify, Drizzle, Nuxt 4.5.1 и точечными lockfile overrides; остаются 20 high, 21 moderate и 8 low для отдельной оценки. Удаление неиспользуемых пакетов требует отдельного подтверждённого анализа.
 - [ ] `lint`, `format:check`, `check` и unit-tests проходят; повторить integration после Docker Engine и финальный build после оставшегося dependency audit.
 
 ## Журнал выполнения
@@ -50,4 +50,5 @@
 - [x] 2026-10-07: API получил тестируемые CSP, anti-framing и Permissions-Policy headers; `test`, `lint`, `format:check` и `check` прошли. Полный `build` был запущен, но оболочка оборвала длительный Nuxt-процесс; артефакт `.output` создан, однако успешное завершение команды будет повторно подтверждено перед закрытием 1c.
 - [x] 2026-10-07: `08f7d6a` — `@fastify/jwt` обновлён с 9 до 10, что поднимает `fast-jwt` до исправленной ветки; 3 critical в production audit устранены, тесты и typecheck прошли.
 - [x] 2026-10-07: dependency overrides обновили уязвимые транзитивные зависимости Nuxt без перехода на проблемный Nuxt 4.6.0. `pnpm audit --prod` больше не содержит critical; `test`, `lint`, `format:check` и `check` прошли на реальной frozen-lockfile установке.
+- [x] 2026-10-07: Nuxt обновлён до 4.5.1, Fastify до 5.12.2 и Drizzle ORM до 0.45.3. Единственная несовместимость (`keywords` в `useSeoMeta`) исправлена переносом meta-тега в `useHead`; frozen install, unit tests, lint, format и typecheck проходят. Production audit: 0 critical, 20 high, 21 moderate, 8 low.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
