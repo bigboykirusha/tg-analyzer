@@ -31,6 +31,7 @@ import {
   computeAvailabilityProfile,
   computeCompositionStats,
   computeTrend,
+  analyzeMessageText,
   mapDailyActivity,
   mapMonthlyActivity,
   resolveProductGroupRole,
@@ -39,8 +40,6 @@ import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm'
 import { db, schema } from '../db'
 import type { TelegramMessageLike } from './telegram.service'
 
-const emojiRegex = /\p{Extended_Pictographic}/gu
-const wordRegex = /[\p{L}\p{N}_-]{2,}/gu
 const SESSION_BOUNDARY_MS = 8 * 60 * 60 * 1000
 const GROUP_SESSION_BOUNDARY_MS = 4 * 60 * 60 * 1000
 const LONG_SILENCE_MS = 30 * 24 * 60 * 60 * 1000
@@ -568,21 +567,6 @@ function getLocalWeekday(date: Date, timeZone: string) {
   return getZonedDateParts(date, timeZone).weekday
 }
 
-function normalizeWordToken(word: string) {
-  const normalized = word.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')
-
-  if (!normalized || normalized.length < 2) {
-    return null
-  }
-
-  const lettersOnly = normalized.replace(/[\p{N}_-]/gu, '')
-  if (lettersOnly.length < 2) {
-    return null
-  }
-
-  return normalized
-}
-
 function primaryMessageType(message: AggregationMessageInput): keyof MessageCompositionDto {
   if (message.voice) {
     return 'voice'
@@ -738,37 +722,29 @@ export function aggregateMessage(message: AggregationMessageInput, acc: ReturnTy
     }
   }
 
-  const words = text.match(wordRegex) ?? []
-  acc.totalWords += words.length
+  const textAnalysis = analyzeMessageText(text, stopWords)
+  acc.totalWords += textAnalysis.wordCount
   if (outgoing) {
-    acc.mineWords += words.length
+    acc.mineWords += textAnalysis.wordCount
   } else {
-    acc.theirsWords += words.length
+    acc.theirsWords += textAnalysis.wordCount
   }
   participant.messageCount += 1
-  participant.wordCount += words.length
+  participant.wordCount += textAnalysis.wordCount
   if (!participant.firstSeen || timestamp < participant.firstSeen) {
     participant.firstSeen = timestamp
   }
   if (!participant.lastSeen || timestamp > participant.lastSeen) {
     participant.lastSeen = timestamp
   }
-  for (const word of words) {
-    const normalized = normalizeWordToken(word)
-    if (!normalized) {
-      continue
-    }
-    if (stopWords.has(normalized)) {
-      continue
-    }
+  for (const normalized of textAnalysis.keywords) {
     acc.wordCounts.set(normalized, (acc.wordCounts.get(normalized) ?? 0) + 1)
     participant.wordCounts.set(normalized, (participant.wordCounts.get(normalized) ?? 0) + 1)
     const directionalWords = outgoing ? acc.mineWordCounts : acc.theirsWordCounts
     directionalWords.set(normalized, (directionalWords.get(normalized) ?? 0) + 1)
   }
 
-  const emoji = text.match(emojiRegex) ?? []
-  for (const item of emoji) {
+  for (const item of textAnalysis.emojis) {
     acc.totalEmojiCount += 1
     participant.emojiCount += 1
     acc.emojiCounts.set(item, (acc.emojiCounts.get(item) ?? 0) + 1)
