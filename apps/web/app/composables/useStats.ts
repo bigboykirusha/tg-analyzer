@@ -1,3 +1,4 @@
+import type { ApiQuery } from '@tg-analyzer/shared'
 import { useApiEndpoint } from './useApi'
 
 export function useStats() {
@@ -8,7 +9,11 @@ export function useStats() {
     store.globalStats = await useApiEndpoint('GET /api/v1/stats/global')
   }
 
-  async function fetchChats(page = 1, sort = 'parsed_at', order: 'asc' | 'desc' = 'desc') {
+  async function fetchChats(
+    page = 1,
+    sort: ApiQuery<'GET /api/v1/stats/chats'>['sort'] = 'parsed_at',
+    order: 'asc' | 'desc' = 'desc',
+  ) {
     const result = await useApiEndpoint('GET /api/v1/stats/chats', {
       query: { page, limit: 20, sort, order },
     })

@@ -1,6 +1,7 @@
 import type {
   ApiErrorResponse,
   ApiOperation,
+  ApiQuery,
   ApiRequest,
   ApiResponse,
   AuthSuccessResponse,
@@ -202,6 +203,7 @@ export function useApiFetch<T>(path: string, options: FetchOptions<'json'> = {})
 
 type EndpointOptions<K extends ApiOperation> = Omit<FetchOptions<'json'>, 'method' | 'body'> & {
   body?: ApiRequest<K>
+  query?: ApiQuery<K>
   params?: Record<string, string>
 }
 

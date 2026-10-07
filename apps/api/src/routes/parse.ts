@@ -1,7 +1,14 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
 import { CustomFile } from 'telegram/client/uploads.js'
-import { paginationQuerySchema } from '@tg-analyzer/shared'
+import {
+  apiErrorResponseSchema,
+  paginationQuerySchema,
+  parseDialogsResponseSchema,
+  parseHistoryPageResponseSchema,
+  parseStatusResponseSchema,
+  startParseBodySchema,
+} from '@tg-analyzer/shared'
 import type { ParseDialogDto, ParseDialogsResponse, ParseProgressDto } from '@tg-analyzer/shared'
 import { requireAuth } from '../middleware/auth.middleware'
 import { parseDialogsQueue } from '../queues/parse.queue'
@@ -43,13 +50,6 @@ import {
   type TelegramDialog,
 } from '../services/telegram.service'
 
-const startSchema = z.object({
-  chatIds: z
-    .array(z.string().regex(/^-?\d+$/))
-    .max(500)
-    .optional(),
-})
-
 const shareReportSchema = z.object({
   chatId: z.string().regex(/^-?\d+$/),
   fileName: z.string().min(1).max(200),
@@ -58,6 +58,27 @@ const shareReportSchema = z.object({
 })
 
 const PARSE_DIALOGS_LIST_LIMIT = 300
+const apiErrorJsonSchema = z.toJSONSchema(apiErrorResponseSchema, { target: 'draft-07' })
+const startBodyJsonSchema = z.toJSONSchema(startParseBodySchema, { target: 'draft-07' })
+const parseStatusJsonSchema = z.toJSONSchema(parseStatusResponseSchema, { target: 'draft-07' })
+const parseDialogsJsonSchema = z.toJSONSchema(parseDialogsResponseSchema, { target: 'draft-07' })
+const parseHistoryPageJsonSchema = z.toJSONSchema(parseHistoryPageResponseSchema, { target: 'draft-07' })
+const paginationQueryJsonSchema = z.toJSONSchema(paginationQuerySchema, { target: 'draft-07' })
+const successJsonSchema = {
+  type: 'object',
+  properties: { success: { type: 'boolean', const: true } },
+  required: ['success'],
+} as const
+
+function parseRouteDocs(summary: string, response: Record<number, unknown>, body?: object) {
+  return {
+    summary,
+    tags: ['parse'],
+    security: [{ bearerAuth: [] }],
+    ...(body ? { body } : {}),
+    response,
+  }
+}
 
 function mapParseDialogs(dialogs: TelegramDialog[]): ParseDialogsResponse {
   const filteredDialogs = dialogs.filter((dialog) => !isSystemTelegramDialog(dialog))
@@ -76,72 +97,322 @@ function mapParseDialogs(dialogs: TelegramDialog[]): ParseDialogsResponse {
 }
 
 export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fastify, options) => {
-  fastify.post('/start', { preHandler: requireAuth }, async (request, reply) => {
-    const userId = request.authUserId!
-    const { chatIds } = startSchema.parse(request.body ?? {})
+  fastify.post(
+    '/start',
+    {
+      preHandler: requireAuth,
+      schema:
+        options.apiVersion === 1
+          ? parseRouteDocs(
+              'Start a chat analysis job',
+              {
+                200: { type: 'object', properties: { jobId: { type: 'string', format: 'uuid' } }, required: ['jobId'] },
+                400: apiErrorJsonSchema,
+                401: apiErrorJsonSchema,
+                409: apiErrorJsonSchema,
+                429: apiErrorJsonSchema,
+              },
+              startBodyJsonSchema,
+            )
+          : undefined,
+    },
+    async (request, reply) => {
+      const userId = request.authUserId!
+      const { chatIds } = startParseBodySchema.parse(request.body ?? {})
 
-    const activeMarker = await getActiveJobId(userId)
-    const activeJob = await findCurrentParseJob(userId)
+      const activeMarker = await getActiveJobId(userId)
+      const activeJob = await findCurrentParseJob(userId)
 
-    if (activeMarker && !activeJob) {
-      await clearActiveJob(userId)
-    }
+      if (activeMarker && !activeJob) {
+        await clearActiveJob(userId)
+      }
 
-    if (activeJob) {
-      // Check if the job is actually alive in BullMQ
-      let isAlive = true
-      if (activeJob.bullJobId) {
-        const bullJob = await parseDialogsQueue.getJob(activeJob.bullJobId)
-        if (!bullJob) {
-          isAlive = false
-        } else {
-          const state = await bullJob.getState()
-          if (['completed', 'failed', 'unknown'].includes(state)) {
+      if (activeJob) {
+        // Check if the job is actually alive in BullMQ
+        let isAlive = true
+        if (activeJob.bullJobId) {
+          const bullJob = await parseDialogsQueue.getJob(activeJob.bullJobId)
+          if (!bullJob) {
             isAlive = false
+          } else {
+            const state = await bullJob.getState()
+            if (['completed', 'failed', 'unknown'].includes(state)) {
+              isAlive = false
+            }
           }
+        }
+
+        if (!isAlive) {
+          await updateParseJob(activeJob.id, {
+            status: 'failed',
+            errorMessage: 'Job stalled or disappeared from queue',
+            completedAt: new Date(),
+          })
+          await clearActiveJob(userId)
+        } else {
+          return reply.status(409).send({
+            message: 'A parse job is already running',
+            jobId: activeJob.id,
+          })
         }
       }
 
-      if (!isAlive) {
-        await updateParseJob(activeJob.id, {
+      const session = await getActiveSessionForUser(userId)
+      if (!session) {
+        return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
+      }
+
+      let targetChat: { id: number; title: string } | null = null
+      if (chatIds?.length === 1) {
+        const selectedChatId = chatIds[0]
+        if (!selectedChatId) {
+          return sendApiError(reply, 400, 'A chat id is required', 'INVALID_REQUEST')
+        }
+        const ttl = await getChatCooldown(userId, selectedChatId)
+        if (ttl && ttl > 0) {
+          return reply.status(429).send({
+            message: 'This chat was recently parsed.',
+            retryAfter: ttl,
+          })
+        }
+
+        let dialogs: TelegramDialog[]
+        try {
+          dialogs = await withTelegramReconnectRetry(
+            async () => {
+              const client = await telegramPool.connectAuthorizedClient(userId, session)
+              return (await withFloodWaitRetry(() => client.getDialogs({ limit: 500 }))) as unknown as TelegramDialog[]
+            },
+            async () => {
+              await telegramPool.disconnectAuthorizedClient(userId)
+            },
+          )
+        } catch (error) {
+          if (isTelegramSessionExpiredError(error)) {
+            await deactivateTelegramSessions(userId)
+            await telegramPool.disconnectAuthorizedClient(userId)
+            return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
+          }
+          if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
+            await telegramPool.disconnectAuthorizedClient(userId)
+            return reply.status(409).send({
+              message: 'Telegram session is busy. If you have an active parse running, wait for it or cancel it.',
+              code: 'TELEGRAM_SESSION_BUSY',
+            })
+          }
+          throw error
+        } finally {
+          await telegramPool.disconnectAuthorizedClient(userId)
+        }
+
+        const dialog = dialogs.find((item) => String(item.id) === selectedChatId && !isSystemTelegramDialog(item))
+        targetChat = dialog
+          ? {
+              id: Number(dialog.id),
+              title: dialog.title ?? dialog.name ?? String(dialog.id),
+            }
+          : null
+      } else if (!chatIds?.length) {
+        try {
+          await ensureFullParseCooldown(userId)
+        } catch {
+          return reply.status(429).send({ message: 'Full parse cooldown is still active' })
+        }
+      }
+
+      if (chatIds?.length === 1 && !targetChat) {
+        return reply.status(404).send({ message: 'Chat not found or unavailable for parsing' })
+      }
+
+      let jobId: string
+      try {
+        jobId = await createParseJob({
+          userId,
+          chatId: targetChat?.id ?? null,
+          chatName: targetChat?.title ?? null,
+          chatIds,
+        })
+      } catch (error) {
+        if ((error as { code?: string }).code === '23505') {
+          return sendApiError(reply, 409, 'A parse job is already running', 'PARSE_JOB_ACTIVE')
+        }
+        throw error
+      }
+
+      let bullJobId: string | null = null
+      try {
+        await publishParseProgress(userId, {
+          jobId,
+          current: 0,
+          total: chatIds?.length ?? 0,
+          chatId: targetChat ? String(targetChat.id) : null,
+          chatName: targetChat?.title ?? '',
+          status: 'pending',
+          message: chatIds?.length
+            ? `Queued ${chatIds.length} selected chat${chatIds.length === 1 ? '' : 's'}`
+            : 'Queued full parse',
+        })
+
+        const bullJob = await parseDialogsQueue.add(
+          'parse-dialogs',
+          {
+            userId,
+            jobId,
+            chatIds,
+          },
+          { jobId },
+        )
+        bullJobId = String(bullJob.id)
+
+        await attachBullJobId(jobId, bullJobId)
+        await markActiveJob(userId, jobId)
+        return { jobId }
+      } catch (error) {
+        if (bullJobId) {
+          const queuedJob = await parseDialogsQueue.getJob(bullJobId)
+          if (queuedJob) {
+            await queuedJob.remove().catch(() => undefined)
+          }
+        }
+
+        const errorMessage = error instanceof Error ? error.message : 'Could not queue parse job'
+        await updateParseJob(jobId, {
           status: 'failed',
-          errorMessage: 'Job stalled or disappeared from queue',
+          errorMessage,
           completedAt: new Date(),
         })
         await clearActiveJob(userId)
-      } else {
-        return reply.status(409).send({
-          message: 'A parse job is already running',
-          jobId: activeJob.id,
+        await publishParseProgress(userId, {
+          type: 'failed',
+          jobId,
+          chatId: targetChat ? String(targetChat.id) : null,
+          status: 'failed',
+          message: errorMessage,
         })
-      }
-    }
 
-    const session = await getActiveSessionForUser(userId)
-    if (!session) {
-      return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
-    }
-
-    let targetChat: { id: number; title: string } | null = null
-    if (chatIds?.length === 1) {
-      const selectedChatId = chatIds[0]
-      if (!selectedChatId) {
-        return sendApiError(reply, 400, 'A chat id is required', 'INVALID_REQUEST')
+        return reply.status(503).send({ message: 'Could not queue parse job' })
       }
-      const ttl = await getChatCooldown(userId, selectedChatId)
-      if (ttl && ttl > 0) {
-        return reply.status(429).send({
-          message: 'This chat was recently parsed.',
-          retryAfter: ttl,
-        })
+    },
+  )
+
+  fastify.get(
+    '/status',
+    {
+      preHandler: requireAuth,
+      schema:
+        options.apiVersion === 1
+          ? parseRouteDocs('Get active analysis status', { 200: parseStatusJsonSchema, 401: apiErrorJsonSchema })
+          : undefined,
+    },
+    async (request) => {
+      const userId = request.authUserId!
+      const active = await findCurrentParseJob(userId)
+      const progress = await getParseProgress(userId)
+      const normalized = normalizeParseStatus({
+        activeJob: active
+          ? {
+              id: active.id,
+              status: active.status,
+              chatId: active.chatId ?? null,
+            }
+          : null,
+        cachedProgress: progress as Partial<ParseProgressDto> | null,
+      })
+
+      if (!active && progress) {
+        await clearParseProgress(userId)
       }
 
-      let dialogs: TelegramDialog[]
+      return normalized
+    },
+  )
+
+  fastify.get(
+    '/dialogs',
+    {
+      preHandler: requireAuth,
+      schema:
+        options.apiVersion === 1
+          ? parseRouteDocs('List available Telegram chats', {
+              200: parseDialogsJsonSchema,
+              401: apiErrorJsonSchema,
+              409: apiErrorJsonSchema,
+            })
+          : undefined,
+    },
+    async (request, reply) => {
+      const userId = request.authUserId!
+      const session = await getActiveSessionForUser(userId)
+      if (!session) {
+        return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
+      }
+
       try {
-        dialogs = await withTelegramReconnectRetry(
+        const dialogs = await withTelegramReconnectRetry(
           async () => {
             const client = await telegramPool.connectAuthorizedClient(userId, session)
-            return (await withFloodWaitRetry(() => client.getDialogs({ limit: 500 }))) as unknown as TelegramDialog[]
+            return (await withFloodWaitRetry(() =>
+              client.getDialogs({ limit: PARSE_DIALOGS_LIST_LIMIT }),
+            )) as unknown as TelegramDialog[]
+          },
+          async () => {
+            await telegramPool.disconnectAuthorizedClient(userId)
+          },
+        )
+        const result = mapParseDialogs(dialogs)
+        await cacheParseDialogs(userId, result)
+
+        return result
+      } catch (error) {
+        if (isTelegramSessionExpiredError(error)) {
+          await deactivateTelegramSessions(userId)
+          await telegramPool.disconnectAuthorizedClient(userId)
+          return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
+        }
+        if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
+          await telegramPool.disconnectAuthorizedClient(userId)
+          const cached = await getCachedParseDialogs(userId)
+          if (cached) {
+            return cached
+          }
+
+          return reply.status(409).send()
+        }
+        throw error
+      } finally {
+        await telegramPool.disconnectAuthorizedClient(userId)
+      }
+    },
+  )
+
+  fastify.get(
+    '/dialogs/:dialogId/avatar',
+    {
+      preHandler: requireAuth,
+      schema:
+        options.apiVersion === 1
+          ? parseRouteDocs('Get Telegram chat avatar', {
+              200: { type: 'string', format: 'binary' },
+              401: apiErrorJsonSchema,
+              404: apiErrorJsonSchema,
+              409: apiErrorJsonSchema,
+            })
+          : undefined,
+    },
+    async (request, reply) => {
+      const userId = request.authUserId!
+      const params = z.object({ dialogId: z.string() }).parse(request.params)
+      const session = await getActiveSessionForUser(userId)
+      if (!session) {
+        return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
+      }
+
+      let avatar: Buffer | null | undefined
+      try {
+        avatar = await withTelegramReconnectRetry(
+          async () => {
+            const client = await telegramPool.connectAuthorizedClient(userId, session)
+            return telegramPool.getDialogAvatar(userId, params.dialogId, client)
           },
           async () => {
             await telegramPool.disconnectAuthorizedClient(userId)
@@ -155,219 +426,51 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
         }
         if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
           await telegramPool.disconnectAuthorizedClient(userId)
-          return reply.status(409).send({
-            message: 'Telegram session is busy. If you have an active parse running, wait for it or cancel it.',
-            code: 'TELEGRAM_SESSION_BUSY',
-          })
+          return reply.status(409).send()
         }
         throw error
       } finally {
         await telegramPool.disconnectAuthorizedClient(userId)
       }
 
-      const dialog = dialogs.find((item) => String(item.id) === selectedChatId && !isSystemTelegramDialog(item))
-      targetChat = dialog
-        ? {
-            id: Number(dialog.id),
-            title: dialog.title ?? dialog.name ?? String(dialog.id),
-          }
-        : null
-    } else if (!chatIds?.length) {
-      try {
-        await ensureFullParseCooldown(userId)
-      } catch {
-        return reply.status(429).send({ message: 'Full parse cooldown is still active' })
-      }
-    }
-
-    if (chatIds?.length === 1 && !targetChat) {
-      return reply.status(404).send({ message: 'Chat not found or unavailable for parsing' })
-    }
-
-    let jobId: string
-    try {
-      jobId = await createParseJob({
-        userId,
-        chatId: targetChat?.id ?? null,
-        chatName: targetChat?.title ?? null,
-        chatIds,
-      })
-    } catch (error) {
-      if ((error as { code?: string }).code === '23505') {
-        return sendApiError(reply, 409, 'A parse job is already running', 'PARSE_JOB_ACTIVE')
-      }
-      throw error
-    }
-
-    let bullJobId: string | null = null
-    try {
-      await publishParseProgress(userId, {
-        jobId,
-        current: 0,
-        total: chatIds?.length ?? 0,
-        chatId: targetChat ? String(targetChat.id) : null,
-        chatName: targetChat?.title ?? '',
-        status: 'pending',
-        message: chatIds?.length
-          ? `Queued ${chatIds.length} selected chat${chatIds.length === 1 ? '' : 's'}`
-          : 'Queued full parse',
-      })
-
-      const bullJob = await parseDialogsQueue.add(
-        'parse-dialogs',
-        {
-          userId,
-          jobId,
-          chatIds,
-        },
-        { jobId },
-      )
-      bullJobId = String(bullJob.id)
-
-      await attachBullJobId(jobId, bullJobId)
-      await markActiveJob(userId, jobId)
-      return { jobId }
-    } catch (error) {
-      if (bullJobId) {
-        const queuedJob = await parseDialogsQueue.getJob(bullJobId)
-        if (queuedJob) {
-          await queuedJob.remove().catch(() => undefined)
-        }
+      if (!avatar) {
+        return reply.status(404).send({ message: 'Avatar not found' })
       }
 
-      const errorMessage = error instanceof Error ? error.message : 'Could not queue parse job'
-      await updateParseJob(jobId, {
-        status: 'failed',
-        errorMessage,
-        completedAt: new Date(),
-      })
-      await clearActiveJob(userId)
-      await publishParseProgress(userId, {
-        type: 'failed',
-        jobId,
-        chatId: targetChat ? String(targetChat.id) : null,
-        status: 'failed',
-        message: errorMessage,
-      })
-
-      return reply.status(503).send({ message: 'Could not queue parse job' })
-    }
-  })
-
-  fastify.get('/status', { preHandler: requireAuth }, async (request) => {
-    const userId = request.authUserId!
-    const active = await findCurrentParseJob(userId)
-    const progress = await getParseProgress(userId)
-    const normalized = normalizeParseStatus({
-      activeJob: active
-        ? {
-            id: active.id,
-            status: active.status,
-            chatId: active.chatId ?? null,
-          }
-        : null,
-      cachedProgress: progress as Partial<ParseProgressDto> | null,
-    })
-
-    if (!active && progress) {
-      await clearParseProgress(userId)
-    }
-
-    return normalized
-  })
-
-  fastify.get('/dialogs', { preHandler: requireAuth }, async (request, reply) => {
-    const userId = request.authUserId!
-    const session = await getActiveSessionForUser(userId)
-    if (!session) {
-      return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
-    }
-
-    try {
-      const dialogs = await withTelegramReconnectRetry(
-        async () => {
-          const client = await telegramPool.connectAuthorizedClient(userId, session)
-          return (await withFloodWaitRetry(() =>
-            client.getDialogs({ limit: PARSE_DIALOGS_LIST_LIMIT }),
-          )) as unknown as TelegramDialog[]
-        },
-        async () => {
-          await telegramPool.disconnectAuthorizedClient(userId)
-        },
-      )
-      const result = mapParseDialogs(dialogs)
-      await cacheParseDialogs(userId, result)
-
-      return result
-    } catch (error) {
-      if (isTelegramSessionExpiredError(error)) {
-        await deactivateTelegramSessions(userId)
-        await telegramPool.disconnectAuthorizedClient(userId)
-        return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
-      }
-      if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
-        await telegramPool.disconnectAuthorizedClient(userId)
-        const cached = await getCachedParseDialogs(userId)
-        if (cached) {
-          return cached
-        }
-
-        return reply.status(409).send()
-      }
-      throw error
-    } finally {
-      await telegramPool.disconnectAuthorizedClient(userId)
-    }
-  })
-
-  fastify.get('/dialogs/:dialogId/avatar', { preHandler: requireAuth }, async (request, reply) => {
-    const userId = request.authUserId!
-    const params = z.object({ dialogId: z.string() }).parse(request.params)
-    const session = await getActiveSessionForUser(userId)
-    if (!session) {
-      return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
-    }
-
-    let avatar: Buffer | null | undefined
-    try {
-      avatar = await withTelegramReconnectRetry(
-        async () => {
-          const client = await telegramPool.connectAuthorizedClient(userId, session)
-          return telegramPool.getDialogAvatar(userId, params.dialogId, client)
-        },
-        async () => {
-          await telegramPool.disconnectAuthorizedClient(userId)
-        },
-      )
-    } catch (error) {
-      if (isTelegramSessionExpiredError(error)) {
-        await deactivateTelegramSessions(userId)
-        await telegramPool.disconnectAuthorizedClient(userId)
-        return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
-      }
-      if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
-        await telegramPool.disconnectAuthorizedClient(userId)
-        return reply.status(409).send()
-      }
-      throw error
-    } finally {
-      await telegramPool.disconnectAuthorizedClient(userId)
-    }
-
-    if (!avatar) {
-      return reply.status(404).send({ message: 'Avatar not found' })
-    }
-
-    reply.header('Content-Type', 'image/jpeg')
-    reply.header('Cache-Control', 'private, max-age=3600')
-    return reply.send(avatar)
-  })
+      reply.header('Content-Type', 'image/jpeg')
+      reply.header('Cache-Control', 'private, max-age=3600')
+      return reply.send(avatar)
+    },
+  )
 
   fastify.post(
     '/share-report',
     {
       preHandler: requireAuth,
       bodyLimit: 25 * 1024 * 1024,
+      schema:
+        options.apiVersion === 1
+          ? parseRouteDocs(
+              'Share an analysis report in Telegram',
+              {
+                200: successJsonSchema,
+                400: apiErrorJsonSchema,
+                401: apiErrorJsonSchema,
+                409: apiErrorJsonSchema,
+              },
+              {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  chatId: { type: 'string', pattern: '^-?\\d+$' },
+                  fileName: { type: 'string', minLength: 1, maxLength: 200 },
+                  mimeType: { type: 'string', minLength: 1, maxLength: 100, default: 'application/pdf' },
+                  base64: { type: 'string', minLength: 1, maxLength: 30000000 },
+                },
+                required: ['chatId', 'fileName', 'base64'],
+              },
+            )
+          : undefined,
     },
     async (request, reply) => {
       const userId = request.authUserId!
@@ -420,52 +523,66 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
     },
   )
 
-  fastify.delete('/cancel', { preHandler: requireAuth }, async (request, reply) => {
-    const userId = request.authUserId!
-    const activeMarker = await getActiveJobId(userId)
-    const active = await findCurrentParseJob(userId)
-    const markerJob = activeMarker ? await findParseJobById(activeMarker) : null
-    const targetJob = active ?? (markerJob?.userId === userId ? markerJob : null)
+  fastify.delete(
+    '/cancel',
+    {
+      preHandler: requireAuth,
+      schema:
+        options.apiVersion === 1
+          ? parseRouteDocs('Cancel active analysis', {
+              200: successJsonSchema,
+              401: apiErrorJsonSchema,
+              404: apiErrorJsonSchema,
+            })
+          : undefined,
+    },
+    async (request, reply) => {
+      const userId = request.authUserId!
+      const activeMarker = await getActiveJobId(userId)
+      const active = await findCurrentParseJob(userId)
+      const markerJob = activeMarker ? await findParseJobById(activeMarker) : null
+      const targetJob = active ?? (markerJob?.userId === userId ? markerJob : null)
 
-    if ((!targetJob || markerJob?.userId !== userId) && activeMarker) {
-      await clearActiveJob(userId)
-    }
-
-    if (!targetJob) {
-      return reply.status(404).send({ message: 'No active parse job' })
-    }
-
-    await markCancelledJob(userId, targetJob.id)
-
-    let removedFromQueue = false
-    if (targetJob.bullJobId) {
-      const bullJob = await parseDialogsQueue.getJob(targetJob.bullJobId as never)
-      const state = bullJob ? await bullJob.getState() : null
-      if (bullJob && state && !['active', 'completed', 'failed'].includes(state)) {
-        await bullJob.remove()
-        removedFromQueue = true
+      if ((!targetJob || markerJob?.userId !== userId) && activeMarker) {
+        await clearActiveJob(userId)
       }
-    }
 
-    const cancelled = await cancelParseJob(userId, targetJob.id)
-    if (!cancelled) {
+      if (!targetJob) {
+        return reply.status(404).send({ message: 'No active parse job' })
+      }
+
+      await markCancelledJob(userId, targetJob.id)
+
+      let removedFromQueue = false
+      if (targetJob.bullJobId) {
+        const bullJob = await parseDialogsQueue.getJob(targetJob.bullJobId as never)
+        const state = bullJob ? await bullJob.getState() : null
+        if (bullJob && state && !['active', 'completed', 'failed'].includes(state)) {
+          await bullJob.remove()
+          removedFromQueue = true
+        }
+      }
+
+      const cancelled = await cancelParseJob(userId, targetJob.id)
+      if (!cancelled) {
+        await clearActiveJob(userId)
+        return reply.status(404).send({ message: 'No active parse job' })
+      }
       await clearActiveJob(userId)
-      return reply.status(404).send({ message: 'No active parse job' })
-    }
-    await clearActiveJob(userId)
-    await clearParseProgress(userId)
-    await publishParseProgress(userId, {
-      type: 'cancelled',
-      jobId: targetJob.id,
-      chatId: targetJob.chatId ? String(targetJob.chatId) : null,
-      status: 'cancelled',
-      message: 'Parse cancelled',
-    })
-    if (removedFromQueue || !targetJob.bullJobId) {
-      await clearCancelledJob(userId, targetJob.id)
-    }
-    return { success: true }
-  })
+      await clearParseProgress(userId)
+      await publishParseProgress(userId, {
+        type: 'cancelled',
+        jobId: targetJob.id,
+        chatId: targetJob.chatId ? String(targetJob.chatId) : null,
+        status: 'cancelled',
+        message: 'Parse cancelled',
+      })
+      if (removedFromQueue || !targetJob.bullJobId) {
+        await clearCancelledJob(userId, targetJob.id)
+      }
+      return { success: true }
+    },
+  )
 
   fastify.get(
     '/history',
@@ -474,28 +591,14 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
       schema:
         options.apiVersion === 1
           ? {
-              tags: ['Parse jobs'],
+              tags: ['parse'],
               summary: 'List parse history',
               security: [{ bearerAuth: [] }],
-              querystring: {
-                type: 'object',
-                additionalProperties: false,
-                properties: {
-                  page: { type: 'integer', minimum: 1, default: 1 },
-                  limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
-                },
-              },
+              querystring: paginationQueryJsonSchema,
               response: {
-                200: {
-                  type: 'object',
-                  required: ['items', 'total', 'page', 'limit'],
-                  properties: {
-                    items: { type: 'array', items: { type: 'object', additionalProperties: true } },
-                    total: { type: 'integer' },
-                    page: { type: 'integer' },
-                    limit: { type: 'integer' },
-                  },
-                },
+                200: parseHistoryPageJsonSchema,
+                400: apiErrorJsonSchema,
+                401: apiErrorJsonSchema,
               },
             }
           : undefined,
@@ -523,26 +626,66 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
     },
   )
 
-  fastify.delete('/history', { preHandler: requireAuth }, async (request) => {
-    const userId = request.authUserId!
-    const deleted = await clearParseHistory(userId)
-    return { success: true, deleted }
-  })
+  fastify.delete(
+    '/history',
+    {
+      preHandler: requireAuth,
+      schema:
+        options.apiVersion === 1
+          ? parseRouteDocs('Clear analysis history', {
+              200: {
+                type: 'object',
+                properties: { success: { type: 'boolean', const: true }, deleted: { type: 'integer' } },
+                required: ['success', 'deleted'],
+              },
+              401: apiErrorJsonSchema,
+            })
+          : undefined,
+    },
+    async (request) => {
+      const userId = request.authUserId!
+      const deleted = await clearParseHistory(userId)
+      return { success: true, deleted }
+    },
+  )
 
-  fastify.delete('/history/:jobId', { preHandler: requireAuth }, async (request, reply) => {
-    const userId = request.authUserId!
-    const params = z.object({ jobId: z.string().uuid() }).parse(request.params)
-    const job = await findParseJobById(params.jobId)
+  fastify.delete(
+    '/history/:jobId',
+    {
+      preHandler: requireAuth,
+      schema:
+        options.apiVersion === 1
+          ? {
+              ...parseRouteDocs('Delete a completed analysis history item', {
+                200: successJsonSchema,
+                400: apiErrorJsonSchema,
+                401: apiErrorJsonSchema,
+                404: apiErrorJsonSchema,
+                409: apiErrorJsonSchema,
+              }),
+              params: {
+                type: 'object',
+                properties: { jobId: { type: 'string', format: 'uuid' } },
+                required: ['jobId'],
+              },
+            }
+          : undefined,
+    },
+    async (request, reply) => {
+      const userId = request.authUserId!
+      const params = z.object({ jobId: z.string().uuid() }).parse(request.params)
+      const job = await findParseJobById(params.jobId)
 
-    if (!job || job.userId !== userId) {
-      return reply.status(404).send({ message: 'Parse job not found' })
-    }
+      if (!job || job.userId !== userId) {
+        return reply.status(404).send({ message: 'Parse job not found' })
+      }
 
-    if (job.status === 'pending' || job.status === 'running') {
-      return reply.status(409).send({ message: 'Active parse jobs cannot be deleted' })
-    }
+      if (job.status === 'pending' || job.status === 'running') {
+        return reply.status(409).send({ message: 'Active parse jobs cannot be deleted' })
+      }
 
-    await deleteParseHistoryItem(userId, params.jobId)
-    return { success: true }
-  })
+      await deleteParseHistoryItem(userId, params.jobId)
+      return { success: true }
+    },
+  )
 }

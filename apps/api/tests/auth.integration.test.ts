@@ -115,6 +115,7 @@ test('versioned API exposes an OpenAPI document and keeps legacy routes availabl
       {
         get?: { responses?: Record<string, unknown>; parameters?: unknown[] }
         post?: { requestBody?: unknown; responses?: Record<string, unknown> }
+        delete?: { responses?: Record<string, unknown>; parameters?: unknown[] }
       }
     >
   }>()
@@ -122,6 +123,15 @@ test('versioned API exposes an OpenAPI document and keeps legacy routes availabl
   assert.ok(document.paths['/api/v1/stats/chats']?.get?.parameters?.length)
   assert.ok(document.paths['/api/v1/auth/verify-code']?.post?.requestBody)
   assert.ok(document.paths['/api/v1/auth/verify-code']?.post?.responses?.['200'])
+  assert.ok(document.paths['/api/v1/parse/start']?.post?.requestBody)
+  assert.ok(document.paths['/api/v1/parse/start']?.post?.responses?.['200'])
+  assert.ok(document.paths['/api/v1/parse/status']?.get?.responses?.['200'])
+  assert.ok(document.paths['/api/v1/parse/dialogs']?.get?.responses?.['200'])
+  assert.ok(document.paths['/api/v1/parse/dialogs/{dialogId}/avatar']?.get?.responses?.['200'])
+  assert.ok(document.paths['/api/v1/parse/share-report']?.post?.requestBody)
+  assert.ok(document.paths['/api/v1/parse/cancel']?.delete?.responses?.['200'])
+  assert.ok(document.paths['/api/v1/parse/history']?.delete?.responses?.['200'])
+  assert.ok(document.paths['/api/v1/parse/history/{jobId}']?.delete?.responses?.['200'])
 
   const missingChat = await app.inject({ url: '/api/v1/stats/chats/123', headers })
   assert.equal(missingChat.statusCode, 404)

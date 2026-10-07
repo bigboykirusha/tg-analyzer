@@ -72,6 +72,13 @@ export interface StartParseBody {
   chatIds?: string[]
 }
 
+export interface ShareReportBody {
+  chatId: string
+  fileName: string
+  mimeType?: string
+  base64: string
+}
+
 export interface StartParseResponse {
   jobId: string
 }
