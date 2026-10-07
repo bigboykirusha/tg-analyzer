@@ -23,6 +23,9 @@ const emit = defineEmits<{
   confirm: []
 }>()
 
+const dialogRef = ref<HTMLElement | null>(null)
+let previouslyFocused: HTMLElement | null = null
+
 function close() {
   if (!props.loading) {
     emit('close')
@@ -32,16 +35,47 @@ function close() {
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     close()
+    return
+  }
+
+  if (event.key !== 'Tab' || !dialogRef.value) {
+    return
+  }
+
+  const focusable = Array.from(
+    dialogRef.value.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  )
+  const first = focusable[0]
+  const last = focusable.at(-1)
+  if (!first || !last) {
+    return
+  }
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
   }
 }
 
 watch(
   () => props.open,
-  (open) => {
+  async (open) => {
     if (!import.meta.client) {
       return
     }
-    document.body.style.overflow = open ? 'hidden' : ''
+    if (open) {
+      previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      document.body.style.overflow = 'hidden'
+      await nextTick()
+      dialogRef.value?.querySelector<HTMLElement>('button:not([disabled])')?.focus()
+    } else {
+      document.body.style.overflow = ''
+      previouslyFocused?.focus()
+    }
   },
   { immediate: true },
 )
@@ -60,7 +94,13 @@ onBeforeUnmount(() => {
   <Teleport to="body">
     <Transition name="dialog">
       <div v-if="open" class="dialog-backdrop" @click.self="close">
-        <section class="dialog-panel" role="dialog" aria-modal="true" :aria-labelledby="`confirm-title-${title}`">
+        <section
+          ref="dialogRef"
+          class="dialog-panel"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="`confirm-title-${title}`"
+        >
           <button type="button" class="dialog-close" :aria-label="cancelLabel" :disabled="loading" @click="close">
             <X :size="18" :stroke-width="1.5" aria-hidden="true" />
           </button>
@@ -112,17 +152,15 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-tertiary);
   transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
+    transform var(--transition-fast),
     opacity var(--transition-fast);
 }
 
