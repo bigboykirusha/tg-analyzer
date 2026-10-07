@@ -10,6 +10,7 @@ import { getActiveSessionForUser, getCachedParseDialogs, getChatCooldown } from 
 import {
   attachBullJobId,
   cacheParseDialogs,
+  cancelParseJob,
   clearActiveJob,
   clearCancelledJob,
   clearParseProgress,
@@ -411,10 +412,11 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
 
-    await updateParseJob(targetJob.id, {
-      status: 'cancelled',
-      completedAt: new Date(),
-    })
+    const cancelled = await cancelParseJob(userId, targetJob.id)
+    if (!cancelled) {
+      await clearActiveJob(userId)
+      return reply.status(404).send({ message: 'No active parse job' })
+    }
     await clearActiveJob(userId)
     await clearParseProgress(userId)
     await publishParseProgress(userId, {

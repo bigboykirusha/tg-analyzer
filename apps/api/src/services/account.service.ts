@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { db, schema } from '../db'
 import { cleanupQueue, parseDialogsQueue } from '../queues/parse.queue'
 import { redis } from './redis.service'
@@ -60,7 +60,10 @@ export async function deleteAccount(userId: string) {
     backoff: { type: 'exponential', delay: 1000 },
     removeOnComplete: true,
   })
-  await db.delete(schema.users).where(eq(schema.users.id, userId))
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`)
+    await tx.delete(schema.users).where(eq(schema.users.id, userId))
+  })
   await purgeDeletedUser(userId).catch(error => {
     logger.warn({ err: error }, 'account removed; cache cleanup scheduled')
   })

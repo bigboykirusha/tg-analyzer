@@ -1749,6 +1749,7 @@ function generateInsights(params: {
 
 export async function saveAggregates(params: {
   userId: string
+  jobId?: string
   chat: {
     id: number
     title: string | null
@@ -1759,7 +1760,26 @@ export async function saveAggregates(params: {
   const finalStats = finalizeAccumulator(params.stats, params.chat.type)
   const dailyActivityJson = mapDailyActivity(finalStats.dailyActivity)
   const monthlyActivityJson = mapMonthlyActivity(finalStats.monthlyActivity)
-  await db
+  await db.transaction(async (tx) => {
+    const lockedUser = await tx.execute(sql`SELECT id FROM users WHERE id = ${params.userId} FOR UPDATE`)
+    if (lockedUser.rowCount !== 1) {
+      throw new Error('User no longer exists')
+    }
+
+    if (params.jobId) {
+      const currentJob = await tx.query.parseJobs.findFirst({
+        where: and(
+          eq(schema.parseJobs.id, params.jobId),
+          eq(schema.parseJobs.userId, params.userId),
+          eq(schema.parseJobs.status, 'running'),
+        ),
+      })
+      if (!currentJob) {
+        throw new Error('Parse job is no longer active')
+      }
+    }
+
+    await tx
     .insert(schema.chatStats)
     .values({
       userId: params.userId,
@@ -1863,11 +1883,14 @@ export async function saveAggregates(params: {
       },
     })
 
-  await recomputeGlobalStats(params.userId)
+    await recomputeGlobalStatsInTransaction(tx, params.userId)
+  })
 }
 
-export async function recomputeGlobalStats(userId: string) {
-  const chats = await db.query.chatStats.findMany({
+type StatsTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+async function recomputeGlobalStatsInTransaction(tx: StatsTransaction, userId: string) {
+  const chats = await tx.query.chatStats.findMany({
     where: eq(schema.chatStats.userId, userId),
   })
   const dailyTotals = new Map<string, { sent: number; received: number }>()
@@ -1915,7 +1938,7 @@ export async function recomputeGlobalStats(userId: string) {
     hours: new Map<string, number>(),
   })
 
-  await db.delete(schema.dailyActivity).where(eq(schema.dailyActivity.userId, userId))
+  await tx.delete(schema.dailyActivity).where(eq(schema.dailyActivity.userId, userId))
   const dailyRows = Array.from(dailyTotals.entries()).map(([dateValue, counts]) => ({
     userId,
     date: dateValue,
@@ -1923,7 +1946,7 @@ export async function recomputeGlobalStats(userId: string) {
     received: counts.received,
   }))
   if (dailyRows.length) {
-    await db.insert(schema.dailyActivity).values(dailyRows)
+    await tx.insert(schema.dailyActivity).values(dailyRows)
   }
 
   const mostActiveHour = Array.from(totals.hours.entries()).sort((a, b) => b[1] - a[1])[0]?.[0]
@@ -1934,7 +1957,7 @@ export async function recomputeGlobalStats(userId: string) {
   }, new Map<number, number>())
   const mostActiveDay = Array.from(dayOfWeekTotals.entries()).sort((a, b) => b[1] - a[1])[0]?.[0]
 
-  await db
+  await tx
     .insert(schema.globalStats)
     .values({
       userId,
@@ -1970,23 +1993,40 @@ export async function recomputeGlobalStats(userId: string) {
     })
 }
 
+export async function recomputeGlobalStats(userId: string) {
+  await db.transaction(async (tx) => {
+    const lockedUser = await tx.execute(sql`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`)
+    if (lockedUser.rowCount !== 1) {
+      throw new Error('User no longer exists')
+    }
+    await recomputeGlobalStatsInTransaction(tx, userId)
+  })
+}
+
 export async function deleteChatReport(userId: string, chatId: string) {
   const parsedChatId = Number(chatId)
   if (!Number.isFinite(parsedChatId)) {
     return false
   }
 
-  const deleted = await db
-    .delete(schema.chatStats)
-    .where(and(eq(schema.chatStats.userId, userId), eq(schema.chatStats.tgChatId, parsedChatId)))
-    .returning({ id: schema.chatStats.id })
+  return db.transaction(async (tx) => {
+    const lockedUser = await tx.execute(sql`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`)
+    if (lockedUser.rowCount !== 1) {
+      return false
+    }
 
-  if (!deleted.length) {
-    return false
-  }
+    const deleted = await tx
+      .delete(schema.chatStats)
+      .where(and(eq(schema.chatStats.userId, userId), eq(schema.chatStats.tgChatId, parsedChatId)))
+      .returning({ id: schema.chatStats.id })
 
-  await recomputeGlobalStats(userId)
-  return true
+    if (!deleted.length) {
+      return false
+    }
+
+    await recomputeGlobalStatsInTransaction(tx, userId)
+    return true
+  })
 }
 
 export async function getGlobalStats(userId: string): Promise<GlobalStatsDto> {
@@ -2354,4 +2394,3 @@ function decimalOrNull(value: number | null) {
   }
   return value.toFixed(2)
 }
-

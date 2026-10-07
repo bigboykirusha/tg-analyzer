@@ -138,6 +138,7 @@ async function parseDialog(userId: string, session: {
 
   await saveAggregates({
     userId,
+    jobId,
     chat: {
       id: Number(dialog.id),
       title: dialog.title ?? dialog.name ?? null,

@@ -20,6 +20,7 @@ const { config, cookieName } = await import('../src/config')
 const { signToken } = await import('../src/services/token.service')
 const { authenticateToken } = await import('../src/services/auth-session.service')
 const { consumeWsTicket } = await import('../src/services/ws-ticket.service')
+const stats = await import('../src/services/stats.service')
 
 let app: Awaited<ReturnType<typeof buildServer>>
 
@@ -264,4 +265,126 @@ test('a forged Redis active marker cannot cancel another user job', async () => 
   const job = await sessions.findParseJobById(jobId)
   assert.equal(job?.status, 'pending')
   assert.equal(await redis.get(`parse:active:${attackerId}`), null)
+})
+
+function createStats(message: string, date: Date, outgoing = true) {
+  const accumulator = stats.createChatAccumulator('UTC')
+  stats.aggregateMessage({ message, date, outgoing }, accumulator)
+  return accumulator
+}
+
+test('saving reports is idempotent and serializes aggregate updates per user', async () => {
+  const userId = await createUser()
+  const date = new Date('2026-09-10T12:00:00.000Z')
+
+  await Promise.all([
+    stats.saveAggregates({
+      userId,
+      chat: { id: 401, title: 'One', type: 'private' },
+      stats: createStats('first', date),
+    }),
+    stats.saveAggregates({
+      userId,
+      chat: { id: 402, title: 'Two', type: 'private' },
+      stats: createStats('second', date, false),
+    }),
+  ])
+  await stats.saveAggregates({
+    userId,
+    chat: { id: 401, title: 'One updated', type: 'private' },
+    stats: createStats('replacement', date),
+  })
+
+  const global = await pool.query(
+    'SELECT total_chats, total_messages, total_sent, total_received FROM global_stats WHERE user_id = $1',
+    [userId],
+  )
+  assert.deepEqual(global.rows[0], {
+    total_chats: 2,
+    total_messages: '2',
+    total_sent: '1',
+    total_received: '1',
+  })
+  const daily = await pool.query(
+    'SELECT sent, received FROM daily_activity WHERE user_id = $1 AND date = $2',
+    [userId, '2026-09-10'],
+  )
+  assert.deepEqual(daily.rows, [{ sent: 1, received: 1 }])
+})
+
+test('a failed aggregate recomputation rolls back the chat report', async () => {
+  const userId = await createUser()
+  await pool.query(`
+    CREATE OR REPLACE FUNCTION integration_fail_global_stats() RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'forced aggregate failure';
+    END;
+    $$ LANGUAGE plpgsql;
+    CREATE TRIGGER integration_fail_global_stats
+      BEFORE INSERT OR UPDATE ON global_stats
+      FOR EACH ROW EXECUTE FUNCTION integration_fail_global_stats();
+  `)
+
+  try {
+    await assert.rejects(stats.saveAggregates({
+      userId,
+      chat: { id: 501, title: 'Rollback', type: 'private' },
+      stats: createStats('must rollback', new Date('2026-09-11T12:00:00.000Z')),
+    }))
+
+    const chat = await pool.query('SELECT id FROM chat_stats WHERE user_id = $1 AND tg_chat_id = 501', [userId])
+    assert.equal(chat.rowCount, 0)
+    const daily = await pool.query('SELECT id FROM daily_activity WHERE user_id = $1', [userId])
+    assert.equal(daily.rowCount, 0)
+  } finally {
+    await pool.query('DROP TRIGGER IF EXISTS integration_fail_global_stats ON global_stats')
+    await pool.query('DROP FUNCTION IF EXISTS integration_fail_global_stats()')
+  }
+})
+
+test('cancellation committed before persistence prevents report writes', async () => {
+  const userId = await createUser()
+  const jobId = await sessions.createParseJob({ userId, chatId: 601, chatName: 'Cancelled' })
+  await sessions.updateParseJob(jobId, { status: 'running' })
+  assert.equal(await sessions.cancelParseJob(userId, jobId), true)
+
+  await assert.rejects(stats.saveAggregates({
+    userId,
+    jobId,
+    chat: { id: 601, title: 'Cancelled', type: 'private' },
+    stats: createStats('too late', new Date('2026-09-12T12:00:00.000Z')),
+  }), /no longer active/)
+
+  const chat = await pool.query('SELECT id FROM chat_stats WHERE user_id = $1 AND tg_chat_id = 601', [userId])
+  assert.equal(chat.rowCount, 0)
+})
+
+test('concurrent report save and deletion leave aggregates consistent', async () => {
+  const userId = await createUser()
+  const date = new Date('2026-09-13T12:00:00.000Z')
+  await stats.saveAggregates({
+    userId,
+    chat: { id: 701, title: 'Old', type: 'private' },
+    stats: createStats('old', date),
+  })
+
+  await Promise.all([
+    stats.saveAggregates({
+      userId,
+      chat: { id: 702, title: 'New', type: 'private' },
+      stats: createStats('new', date, false),
+    }),
+    stats.deleteChatReport(userId, '701'),
+  ])
+
+  const actual = await pool.query(
+    'SELECT count(*)::int AS chats, coalesce(sum(total_messages), 0)::bigint AS messages FROM chat_stats WHERE user_id = $1',
+    [userId],
+  )
+  const global = await pool.query(
+    'SELECT total_chats, total_messages FROM global_stats WHERE user_id = $1',
+    [userId],
+  )
+  assert.equal(global.rows[0]?.total_chats, actual.rows[0]?.chats)
+  assert.equal(global.rows[0]?.total_messages, actual.rows[0]?.messages)
 })

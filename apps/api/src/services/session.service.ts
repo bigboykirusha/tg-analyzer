@@ -272,6 +272,25 @@ export async function updateParseJob(jobId: string, payload: Partial<{
   await db.update(schema.parseJobs).set(payload).where(eq(schema.parseJobs.id, jobId))
 }
 
+export async function cancelParseJob(userId: string, jobId: string) {
+  return db.transaction(async (tx) => {
+    const lockedUser = await tx.execute(sql`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`)
+    if (lockedUser.rowCount !== 1) return false
+
+    const cancelled = await tx
+      .update(schema.parseJobs)
+      .set({ status: 'cancelled', completedAt: new Date() })
+      .where(and(
+        eq(schema.parseJobs.id, jobId),
+        eq(schema.parseJobs.userId, userId),
+        inArray(schema.parseJobs.status, ['pending', 'running']),
+      ))
+      .returning({ id: schema.parseJobs.id })
+
+    return cancelled.length === 1
+  })
+}
+
 export async function findCurrentParseJob(userId: string) {
   return db.query.parseJobs.findFirst({
     where: and(eq(schema.parseJobs.userId, userId), inArray(schema.parseJobs.status, ['pending', 'running'])),
