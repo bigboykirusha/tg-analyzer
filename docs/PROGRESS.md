@@ -15,16 +15,20 @@
 
 ## Фаза 1b — данные, очередь и worker
 
+- [x] Восстановить воспроизводимую Docker-сборку: lockfile + `--frozen-lockfile`, полный build-context web.
 - [ ] Транзакционные save/delete отчётов и агрегатов; сериализация записей пользователя; отмена/актуальность до commit.
-- [ ] Новые миграции с preflight, индексами/ограничениями, повторным запуском и документированным откатом.
-- [ ] Атомарная резервация задач и восстановление enqueue; retry отдельно от terminal failure; корректная отмена.
-- [ ] Compare-and-set Redis lease, сверка БД/BullMQ, progress по jobId, отменяемый FLOOD_WAIT, безопасный shutdown.
-- [ ] Тесты конкурентности, rollback, retry/cancel, рестарт, Redis outage и SESSION_REVOKED.
+- [ ] Новые миграции с отклоняющим дубли Telegram-сессий preflight, индексами/ограничениями, повторным запуском и документированным откатом.
+- [ ] Атомарная резервация задач и восстановление enqueue; retry отдельно от terminal failure; отмена с обязательной проверкой владельца Redis marker.
+- [ ] Compare-and-set Redis lease, остановка при потере lease, сверка БД/BullMQ, progress по jobId и безопасный shutdown.
+- [ ] Прерываемый отменой `FLOOD_WAIT`; typed `SESSION_REVOKED` с деактивацией сессии; тесты с Telegram-адаптером.
+- [ ] Зафиксировать production-политику Redis: AOF, `noeviction` для критичных данных и изоляция очереди/auth от вытесняемых кэшей.
+- [ ] Тесты конкурентности, rollback, retry/cancel, рестарт, Redis outage и fail-closed rate limit.
 
 ## Фаза 1c — типы, стиль и зависимости
 
 - [ ] `noUncheckedIndexedAccess` для API/shared/web без подавления ошибок.
 - [ ] ESLint для TypeScript/Vue и Prettier; команды `lint` и `format:check`.
+- [ ] Добавить и проверить security headers/CSP (с production-safe политикой для Nuxt/API).
 - [ ] Аудит зависимостей, удаление неиспользуемого кода и пакетов; новые инструменты только в devDependencies.
 - [ ] Полный `lint`, `format:check`, `check`, tests и `build`.
 
@@ -36,3 +40,5 @@
 - [x] 2026-10-07: `a100228` — реализована 1a: purpose-bound токены и cutover, отзываемые семейства, WS-ticket, Origin/rate limit, AES-GCM для временного auth-state, очистка аккаунта, безопасные ошибки/логи, валидация конфига и тестируемый server builder.
 - [x] 2026-10-07: `check`, локальный `build`, 16 unit- и 6 интеграционных тестов прошли; Playwright/Edge подтвердил 20 viewport-снимков, silent refresh и logout. Чистая установка, повтор миграций и upgrade 0007 прошли на отдельном PostgreSQL/Redis.
 - [x] Фаза 1a завершена. Реальный Telegram-вход не запускался; API Docker image собирается, web Docker image не собирается из-за подтверждённых проблем Dockerfile/lockfile. Фазы 1b и 1c не начаты.
+- [x] 2026-10-07: `5d1fe62` — Docker-сборки API/web используют зафиксированный lockfile и полный web build-context; обе image успешно собраны с Nuxt 4.4.4.
+- [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
