@@ -1,0 +1,12 @@
+.git
+.data
+.nuxt
+.output
+coverage
+dist
+docker-data
+node_modules
+*.log
+.env
+.env.*
+docs/design
