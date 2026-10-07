@@ -190,6 +190,7 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
     let bullJobId: string | null = null
     try {
       await publishParseProgress(userId, {
+        jobId,
         current: 0,
         total: chatIds?.length ?? 0,
         chatId: targetChat ? String(targetChat.id) : null,
@@ -227,6 +228,7 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       await clearActiveJob(userId)
       await publishParseProgress(userId, {
         type: 'failed',
+        jobId,
         chatId: targetChat ? String(targetChat.id) : null,
         status: 'failed',
         message: errorMessage,
@@ -421,6 +423,7 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
     await clearParseProgress(userId)
     await publishParseProgress(userId, {
       type: 'cancelled',
+      jobId: targetJob.id,
       chatId: targetJob.chatId ? String(targetJob.chatId) : null,
       status: 'cancelled',
       message: 'Parse cancelled',

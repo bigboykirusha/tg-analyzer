@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, desc, eq, gt, inArray, isNull, lt, notInArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, isNull, lt, notInArray, sql } from 'drizzle-orm'
 import { db, schema } from '../db'
 import { redis } from './redis.service'
 import { config } from '../config'
@@ -267,6 +267,7 @@ export async function updateParseJob(jobId: string, payload: Partial<{
   totalMessages: number
   status: string
   errorMessage: string | null
+  startedAt: Date | null
   completedAt: Date | null
 }>) {
   await db.update(schema.parseJobs).set(payload).where(eq(schema.parseJobs.id, jobId))
@@ -295,6 +296,13 @@ export async function findCurrentParseJob(userId: string) {
   return db.query.parseJobs.findFirst({
     where: and(eq(schema.parseJobs.userId, userId), inArray(schema.parseJobs.status, ['pending', 'running'])),
     orderBy: [desc(schema.parseJobs.createdAt)],
+  })
+}
+
+export async function listUnfinishedParseJobs() {
+  return db.query.parseJobs.findMany({
+    where: inArray(schema.parseJobs.status, ['pending', 'running']),
+    orderBy: [asc(schema.parseJobs.createdAt)],
   })
 }
 

@@ -21,6 +21,7 @@ const { signToken } = await import('../src/services/token.service')
 const { authenticateToken } = await import('../src/services/auth-session.service')
 const { consumeWsTicket } = await import('../src/services/ws-ticket.service')
 const stats = await import('../src/services/stats.service')
+const { reconcileParseJobs } = await import('../src/services/job-reconciliation.service')
 
 let app: Awaited<ReturnType<typeof buildServer>>
 
@@ -387,4 +388,25 @@ test('concurrent report save and deletion leave aggregates consistent', async ()
   )
   assert.equal(global.rows[0]?.total_chats, actual.rows[0]?.chats)
   assert.equal(global.rows[0]?.total_messages, actual.rows[0]?.messages)
+})
+
+test('reconciliation restores a missing BullMQ job from persisted parameters', async () => {
+  const userId = await createUser()
+  const jobId = await sessions.createParseJob({
+    userId,
+    chatId: 801,
+    chatName: 'Recover me',
+    chatIds: ['801'],
+  })
+
+  assert.equal(await parseDialogsQueue.getJob(jobId), undefined)
+  const result = await reconcileParseJobs()
+  assert.equal(result.enqueued, 1)
+
+  const queued = await parseDialogsQueue.getJob(jobId)
+  assert.deepEqual(queued?.data, { userId, jobId, chatIds: ['801'] })
+  const persisted = await sessions.findParseJobById(jobId)
+  assert.ok(persisted?.enqueuedAt)
+  await queued?.remove()
+  await sessions.cancelParseJob(userId, jobId)
 })

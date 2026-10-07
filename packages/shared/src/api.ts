@@ -90,6 +90,7 @@ export interface ParseDialogsResponse {
 }
 
 export interface ParseProgressDto {
+  jobId?: string
   current: number
   total: number
   chatId: string | null

@@ -34,6 +34,7 @@ import {
 } from '../services/stats.service'
 import { sleep } from '../utils/sleep'
 import { logger } from '../services/logger.service'
+import { shouldRetryParseJob } from '../services/parse-job-lifecycle.service'
 
 const SCAN_PROGRESS_INTERVAL_MS = 1500
 const CHAT_REPARSE_COOLDOWN_SECONDS = 60 * 60
@@ -47,7 +48,7 @@ async function ensureNotCancelled(userId: string, jobId: string) {
   }
 }
 
-class ParseJobCancelledError extends Error {
+export class ParseJobCancelledError extends Error {
   constructor() {
     super('Parse job cancelled')
     this.name = 'ParseJobCancelledError'
@@ -83,10 +84,13 @@ async function parseDialog(userId: string, session: {
 
     const messages = await withTelegramReconnectRetry(async () => {
       const client = await telegramPool.connectAuthorizedClient(userId, session) as unknown as TelegramClientLike
-      return await withFloodWaitRetry(() => client.getMessages(dialog.entity, {
+      await telegramPool.assertClientLease(userId)
+      const result = await withFloodWaitRetry(() => client.getMessages(dialog.entity, {
         limit: 100,
         offsetId,
-      }))
+      }), 2, { assertContinue: () => ensureNotCancelled(userId, jobId) })
+      await telegramPool.assertClientLease(userId)
+      return result
     }, async () => {
       await telegramPool.disconnectAuthorizedClient(userId)
     })
@@ -120,6 +124,7 @@ async function parseDialog(userId: string, session: {
       })
       await publishParseProgress(userId, {
         type: 'progress',
+        jobId,
         current: context.chatIndex,
         total: context.totalChats,
         chatId: String(dialog.id),
@@ -158,6 +163,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
 
     await publishParseProgress(userId, {
       type: 'progress',
+      jobId,
       current: 0,
       total: chatIds?.length ?? 0,
       chatId: chatIds?.length === 1 ? chatIds[0] : null,
@@ -178,6 +184,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
 
     await publishParseProgress(userId, {
       type: 'progress',
+      jobId,
       current: 0,
       total: chatIds?.length ?? 0,
       chatId: chatIds?.length === 1 ? chatIds[0] : null,
@@ -189,7 +196,12 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
 
     const dialogs = await withTelegramReconnectRetry(async () => {
       const client = await telegramPool.connectAuthorizedClient(userId, session) as unknown as TelegramClientLike
-      return await withFloodWaitRetry(() => client.getDialogs({ limit: 500 }))
+      await telegramPool.assertClientLease(userId)
+      const result = await withFloodWaitRetry(() => client.getDialogs({ limit: 500 }), 2, {
+        assertContinue: () => ensureNotCancelled(userId, jobId),
+      })
+      await telegramPool.assertClientLease(userId)
+      return result
     }, async () => {
       await telegramPool.disconnectAuthorizedClient(userId)
     })
@@ -206,6 +218,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
 
     await publishParseProgress(userId, {
       type: 'progress',
+      jobId,
       current: 0,
       total: targetDialogs.length,
       chatId: targetDialogs.length === 1 ? String(targetDialogs[0]?.id) : null,
@@ -222,6 +235,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       const dialog = targetDialogs[index]
       await publishParseProgress(userId, {
         type: 'progress',
+        jobId,
         current: index + 1,
         total: targetDialogs.length,
         chatId: String(dialog.id),
@@ -260,6 +274,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
     }
     await publishParseProgress(userId, {
       type: 'completed',
+      jobId,
       chatId: targetDialogs.length === 1 ? String(targetDialogs[0]?.id) : null,
       status: 'completed',
       totalMessages,
@@ -268,7 +283,7 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
     await clearActiveJob(userId)
     await clearCancelledJob(userId, jobId)
   } catch (error) {
-    if (isTelegramSessionExpiredError(error)) {
+    if (error instanceof ParseJobCancelledError || isTelegramSessionExpiredError(error)) {
       job.discard()
     }
     throw error
@@ -308,6 +323,7 @@ parseWorker.on('failed', async (job, error) => {
     })
     await publishParseProgress(job.data.userId, {
       type: 'cancelled',
+      jobId: job.data.jobId,
       chatId: job.data.chatIds?.length === 1 ? job.data.chatIds[0] : null,
       status: 'cancelled',
       message: 'Parse cancelled',
@@ -324,6 +340,29 @@ parseWorker.on('failed', async (job, error) => {
 
   const errorMessage = error instanceof Error ? error.message : String(error)
   const isTransientTelegramConflict = isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)
+  const retrying = shouldRetryParseJob({
+    attemptsMade: job.attemptsMade,
+    attempts: job.opts.attempts,
+  }, error instanceof Error ? error : { name: '' })
+
+  if (retrying) {
+    await updateParseJob(job.data.jobId, {
+      status: 'pending',
+      errorMessage: isTransientTelegramConflict ? null : errorMessage,
+      completedAt: null,
+    })
+    await publishParseProgress(job.data.userId, {
+      type: 'progress',
+      jobId: job.data.jobId,
+      current: 0,
+      total: job.data.chatIds?.length ?? 0,
+      chatId: job.data.chatIds?.length === 1 ? job.data.chatIds[0] : null,
+      chatName: '',
+      status: 'pending',
+      message: `Retrying analysis (attempt ${job.attemptsMade + 1})`,
+    })
+    return
+  }
 
   await updateParseJob(job.data.jobId, {
     status: 'failed',
@@ -336,6 +375,7 @@ parseWorker.on('failed', async (job, error) => {
   })
   await publishParseProgress(job.data.userId, {
     type: 'failed',
+    jobId: job.data.jobId,
     chatId: job.data.chatIds?.length === 1 ? job.data.chatIds[0] : null,
     status: 'failed',
     message: errorMessage,
@@ -345,6 +385,11 @@ parseWorker.on('failed', async (job, error) => {
 })
 
 parseWorker.on('active', (job) => {
+  void updateParseJob(job.data.jobId, {
+    status: 'running',
+    startedAt: new Date(),
+    completedAt: null,
+  })
   logger.info({
     event: 'parse_job_started',
     bullJobId: job.id,

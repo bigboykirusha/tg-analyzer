@@ -5,6 +5,18 @@ import { config } from '../config'
 import { decryptSession, openJson, sealJson } from './crypto.service'
 import { redis } from './redis.service'
 import { sleep } from '../utils/sleep'
+import {
+  refreshOwnedLease,
+  releaseOwnedLease,
+  TelegramLeaseLostError,
+} from './telegram-reliability.service'
+export {
+  getFloodWaitSeconds,
+  isTelegramSessionExpiredError,
+  TelegramLeaseLostError,
+  TelegramSessionRevokedError,
+  withFloodWaitRetry,
+} from './telegram-reliability.service'
 
 type PhoneCodeState = {
   client: TelegramClient
@@ -243,7 +255,9 @@ class TelegramPool {
     this.stopClientLeaseHeartbeat(userId)
     const intervalMs = Math.max(5_000, Math.floor(this.clientLeaseTtlMs / 3))
     const timer = setInterval(() => {
-      void this.refreshClientLease(userId, token)
+      void this.refreshClientLease(userId, token).catch(() => {
+        this.loseClientLease(userId)
+      })
     }, intervalMs)
     timer.unref?.()
     this.clientLeaseHeartbeats.set(userId, timer)
@@ -257,23 +271,26 @@ class TelegramPool {
     }
   }
 
+  private loseClientLease(userId: string) {
+    this.stopClientLeaseHeartbeat(userId)
+    this.clientLeaseTokens.delete(userId)
+  }
+
   private async refreshClientLease(userId: string, token: string) {
     const key = this.getClientLeaseKey(userId)
-    const current = await redis.get(key)
-    if (current !== token) {
-      this.stopClientLeaseHeartbeat(userId)
-      this.clientLeaseTokens.delete(userId)
-      return
+    const refreshed = await refreshOwnedLease(redis, key, token, this.clientLeaseTtlMs)
+    if (!refreshed) {
+      this.loseClientLease(userId)
     }
-
-    await redis.pexpire(key, this.clientLeaseTtlMs)
+    return refreshed
   }
 
   private async acquireClientLease(userId: string) {
     const existingToken = this.clientLeaseTokens.get(userId)
     if (existingToken) {
-      await this.refreshClientLease(userId, existingToken)
-      return existingToken
+      if (await this.refreshClientLease(userId, existingToken)) {
+        return existingToken
+      }
     }
 
     const key = this.getClientLeaseKey(userId)
@@ -303,10 +320,14 @@ class TelegramPool {
       return
     }
 
-    const key = this.getClientLeaseKey(userId)
-    const current = await redis.get(key)
-    if (current === token) {
-      await redis.del(key)
+    await releaseOwnedLease(redis, this.getClientLeaseKey(userId), token)
+  }
+
+  async assertClientLease(userId: string) {
+    const token = this.clientLeaseTokens.get(userId)
+    if (!token || !await refreshOwnedLease(redis, this.getClientLeaseKey(userId), token, this.clientLeaseTtlMs)) {
+      this.loseClientLease(userId)
+      throw new TelegramLeaseLostError()
     }
   }
 
@@ -544,22 +565,6 @@ export function exportSession(client: TelegramClient) {
   return String(client.session.save())
 }
 
-export function getFloodWaitSeconds(error: unknown) {
-  const value = error as { seconds?: unknown; errorMessage?: unknown; message?: unknown }
-  if (typeof value.seconds === 'number' && Number.isFinite(value.seconds)) {
-    return value.seconds
-  }
-
-  const message = String(value.errorMessage ?? value.message ?? '')
-  const match = message.match(/FLOOD_WAIT_?(\d+)/i)
-  return match ? Number(match[1]) : null
-}
-
-export function isTelegramSessionExpiredError(error: unknown) {
-  const message = String((error as { errorMessage?: unknown; message?: unknown })?.errorMessage ?? (error as Error)?.message ?? '')
-  return /AUTH_KEY_UNREGISTERED|SESSION_REVOKED|SESSION_EXPIRED|USER_DEACTIVATED|AUTH_KEY_INVALID/i.test(message)
-}
-
 export function isTelegramSessionDuplicatedError(error: unknown) {
   const message = String((error as { errorMessage?: unknown; message?: unknown })?.errorMessage ?? (error as Error)?.message ?? '')
   return /AUTH_KEY_DUPLICATED/i.test(message)
@@ -587,24 +592,6 @@ export async function withTelegramReconnectRetry<T>(
 
       await resetConnection()
       await sleep(400)
-    }
-  }
-
-  return action()
-}
-
-export async function withFloodWaitRetry<T>(action: () => Promise<T>, maxAttempts = 2): Promise<T> {
-  let attempt = 0
-  while (attempt < maxAttempts) {
-    try {
-      return await action()
-    } catch (error) {
-      attempt += 1
-      const seconds = getFloodWaitSeconds(error)
-      if (!seconds || attempt >= maxAttempts) {
-        throw error
-      }
-      await sleep((seconds + 1) * 1000)
     }
   }
 
