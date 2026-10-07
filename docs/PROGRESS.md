@@ -37,7 +37,7 @@
 - [ ] Вынести чистые расчёты аналитики из API/DB service в `packages/shared` и закрепить граничные случаи unit-тестами.
 - [ ] Добавить `/api/v1`, OpenAPI и единые схемы запросов/ответов из `packages/shared`; сохранить legacy routes с переходным сроком.
 - [ ] Ввести типобезопасный web API client на shared DTO/schema, убрать ручные generic/cast по страницам.
-- [ ] Добавить пагинацию для parse history и согласовать формат `items/page/limit/total` с web.
+- [x] Добавить пагинацию для parse history и согласовать формат `items/page/limit/total` с web; UI поддерживает переходы и сохраняет текущую страницу при refresh/удалении.
 - [ ] Упростить web composables и разделить доменную логику от компонентов, не переносить состояние в Pinia без необходимости.
 - [ ] Проверить пользовательский сценарий auth → выбор чата → анализ/progress → просмотр/удаление → logout на API/browser тестовом адаптере.
 - [ ] После фазы выполнить `lint`, `format:check`, `check`, unit/integration и `build`; обновить AUDIT/REPORT.
@@ -78,6 +78,7 @@
 - [x] 2026-10-07: `19a9de1 feat(api): document auth routes in OpenAPI` — схемы запросов/ответов и security для auth endpoints; единый текст ошибки Fastify/Zod validation. `check`, `lint`, unit 23/23, integration 15/15, выборочный Prettier и `build` прошли.
 - [x] 2026-10-07: `947560d feat(api): complete parse route contracts` — общие Zod-контракты для parse requests/responses, OpenAPI для всех parse routes и типизированные query-параметры web API-клиента. `check`, `lint`, unit 27/27, integration 15/15, выборочный Prettier и `build` прошли.
 - [x] 2026-10-07: `21d9211 refactor(analytics): extract pure shared calculations` — median/percentile/average/clamp, дневные и месячные ряды, trend и DST-safe active-day streak вынесены в `packages/shared`; чистые граничные случаи покрыты unit-тестами. `check`, `lint`, unit 27/27, integration 15/15, выборочный Prettier и `build` прошли. Основная агрегация сообщений и отчётов пока остаётся в API service.
+- [x] 2026-10-07: `7cd4924 feat(web): paginate analysis history` — web передаёт `page/limit`, показывает общее число запусков и навигацию, после удаления последней записи страницы корректно возвращается на предыдущую. `check`, `lint`, unit 27/27, integration 15/15, выборочный Prettier и `build` прошли.
 - [ ] `format:check` для всего workspace сейчас сообщает о незакоммиченном `docs/DESIGN_TASK.md`; файл не менялся. Изменённые файлы проверяются Prettier отдельно.
 - [ ] Следом выделить оставшиеся вычисления аналитики в shared, добавить UI-пагинацию истории, перевести оставшиеся generic-вызовы web и проверить сквозной пользовательский сценарий.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
