@@ -302,6 +302,27 @@ test('temporary auth data is encrypted and account deletion revokes access and c
   await assert.rejects(authenticateToken(auth.access, 'access'))
 })
 
+test('telegram session upsert replaces the encrypted row for an existing user', async () => {
+  const userId = await createUser()
+  const initialId = await sessions.upsertTelegramSession({
+    userId,
+    encrypted: 'ciphertext-initial',
+    iv: 'initial-iv',
+    authTag: 'initial-tag',
+  })
+  const replacementId = await sessions.upsertTelegramSession({
+    userId,
+    encrypted: 'ciphertext-replacement',
+    iv: 'replacement-iv',
+    authTag: 'replacement-tag',
+  })
+  const { rows } = await pool.query('SELECT id, session_string FROM telegram_sessions WHERE user_id = $1', [userId])
+
+  assert.equal(rows.length, 1)
+  assert.equal(initialId, replacementId)
+  assert.equal(rows[0]?.session_string, 'ciphertext-replacement')
+})
+
 test('validation errors preserve message, code and requestId', async () => {
   const userId = await createUser()
   const auth = await createAuth(userId)

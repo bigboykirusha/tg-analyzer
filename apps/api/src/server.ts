@@ -12,7 +12,7 @@ import { authRoutes } from './routes/auth'
 import { parseRoutes } from './routes/parse'
 import { statsRoutes } from './routes/stats'
 import { wsRoutes } from './routes/ws'
-import { isApiError } from './services/api-error.service'
+import { serializeApiError } from './services/api-error.service'
 import { loggerOptions } from './services/logger.service'
 import { redis } from './services/redis.service'
 import { hasRecentWorkerHeartbeat } from './services/runtime-status.service'
@@ -129,28 +129,9 @@ export async function buildServer() {
     }
   })
   app.setErrorHandler((rawError, request, reply) => {
-    const error = rawError as Error & { statusCode?: number; code?: string; validation?: unknown[] }
-    const statusCode = error.statusCode && error.statusCode >= 400 ? error.statusCode : 500
-    const isValidationError = error.name === 'ZodError' || Array.isArray(error.validation)
-    const responseStatus = isValidationError ? 400 : statusCode
-    const message = isValidationError
-      ? 'Request validation failed'
-      : responseStatus >= 500 && config.NODE_ENV === 'production'
-        ? 'Internal server error'
-        : error.message
-    const code =
-      isApiError(error) && error.code
-        ? error.code
-        : isValidationError
-          ? 'INVALID_REQUEST'
-          : responseStatus >= 500
-            ? 'INTERNAL_ERROR'
-            : typeof error.code === 'string'
-              ? error.code
-              : 'REQUEST_FAILED'
-
-    request.log.error({ err: error }, 'request failed')
-    reply.status(responseStatus).send({ message, code, requestId: request.id })
+    const serialized = serializeApiError(rawError, request.id)
+    request.log.error({ err: rawError }, 'request failed')
+    reply.status(serialized.statusCode).send(serialized.body)
   })
 
   await app.register(authRoutes, { prefix: '/api/v1/auth' })
