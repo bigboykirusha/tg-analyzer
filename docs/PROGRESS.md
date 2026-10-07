@@ -18,9 +18,9 @@
 - [x] Восстановить воспроизводимую Docker-сборку: lockfile + `--frozen-lockfile`, полный build-context web.
 - [x] Транзакционные save/delete отчётов и агрегатов; сериализация по строке пользователя; идемпотентная замена результата; отмена/актуальность до commit и координация с удалением аккаунта.
 - [x] Новая миграция с отклоняющим дубли Telegram-сессий/задач preflight, индексами/ограничениями и документированным откатом; проверить upgrade/repeat/down на изолированной БД.
-- [ ] Атомарная резервация задач выполнена; добавить восстановление enqueue, retry отдельно от terminal failure и завершить корректную отмену. Проверка владельца Redis marker закрыта.
-- [ ] Compare-and-set Redis lease, остановка при потере lease, сверка БД/BullMQ, progress по jobId и безопасный shutdown.
-- [ ] Прерываемый отменой `FLOOD_WAIT`; typed `SESSION_REVOKED` с деактивацией сессии; тесты с Telegram-адаптером.
+- [x] Атомарная резервация, восстановление enqueue и retry отделены от terminal failure; отмена не перезапускается. Проверка владельца Redis marker закрыта.
+- [x] Compare-and-set Redis lease, остановка операции при потере lease, периодическая сверка БД/BullMQ, progress по jobId и последовательный shutdown worker.
+- [x] Прерываемый отменой `FLOOD_WAIT`; typed `SESSION_REVOKED` с деактивацией сессии; unit-тесты Telegram-адаптера.
 - [ ] Compose использует AOF/everysec и `noeviction`; документировать production-изоляцию очереди/auth от вытесняемых кэшей.
 - [ ] Тесты конкурентности, rollback, retry/cancel, рестарт, Redis outage и fail-closed rate limit.
 
@@ -43,4 +43,5 @@
 - [x] 2026-10-07: `5d1fe62` — Docker-сборки API/web используют зафиксированный lockfile и полный web build-context; обе image успешно собраны с Nuxt 4.4.4.
 - [x] 2026-10-07: `05fea57` — БД атомарно допускает одну активную задачу, её UUID стал BullMQ jobId, параметры запуска сохраняются; миграция 0008 добавила preflight/индексы/rollback, отмена больше не доверяет чужому Redis marker.
 - [x] 2026-10-07: `6d58561` — chat report, daily/global aggregates сохраняются и удаляются одной транзакцией под user row lock; повторная обработка не удваивает итоги, отменённая/удалённая задача не может записать результат. Добавлены rollback/concurrency/cancellation integration-тесты.
+- [x] 2026-10-07: `6da4144` — worker восстанавливает зарезервированные, но не поставленные задачи по UUID и сохранённым параметрам; retry сохраняет активность, terminal cases не перезапускаются. Lease Redis стал compare-and-set, FLOOD_WAIT прерывается отменой, SESSION_REVOKED типизирован, shutdown закрывает обработчики до инфраструктуры.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
