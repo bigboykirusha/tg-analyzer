@@ -56,4 +56,5 @@
 - [x] 2026-10-07: `build` повторно завершён успешно после последних dependency overrides.
 - [x] 2026-10-07: web CSP добавлена через Nitro route rules; `lucide-vue-next` направлен на поддерживаемый `@lucide/vue` через совместимый npm alias, чтобы не изменять пользовательские незакоммиченные импорты. Frozen install, test, lint, format, check и build успешны.
 - [x] 2026-10-07: адресные overrides `brace-expansion` исправили десять high в Nuxt/Tailwind build-графе. Audit: 0 critical, 2 high, 15 moderate, 8 low; два оставшихся high (`node-forge`, `braces`) не имеют исправленной версии.
+- [x] 2026-10-07: проверен Nuxt 4.6.0 для устранения оставшихся advisory. Обновление отклонено: Node 22.14 не удовлетворяет требованию Nuxt (≥22.21), а `jiti` 2 несовместим с текущим lockfile; 4.5.1 восстановлен, frozen install и typecheck проходят.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
