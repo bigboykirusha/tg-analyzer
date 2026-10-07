@@ -1,5 +1,6 @@
 export * from './api'
 export * from './api-contract'
+export * from './api-path'
 export * from './activity-analytics'
 export * from './analytics-primitives'
 export * from './conversation-insights'

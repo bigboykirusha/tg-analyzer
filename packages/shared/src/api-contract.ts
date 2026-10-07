@@ -210,3 +210,12 @@ export type ApiOperation = keyof ApiEndpointMap
 export type ApiRequest<K extends ApiOperation> = ApiEndpointMap[K]['request']
 export type ApiResponse<K extends ApiOperation> = ApiEndpointMap[K]['response']
 export type ApiQuery<K extends ApiOperation> = ApiEndpointMap[K] extends { query: infer Query } ? Query : never
+export type ApiOperationPath<K extends ApiOperation> = K extends `${string} ${infer Path}` ? Path : never
+export type ApiPathParameterNames<Path extends string> = Path extends `${string}:${infer Parameter}/${infer Rest}`
+  ? Parameter | ApiPathParameterNames<Rest>
+  : Path extends `${string}:${infer Parameter}`
+    ? Parameter
+    : never
+export type ApiParams<K extends ApiOperation> = [ApiPathParameterNames<ApiOperationPath<K>>] extends [never]
+  ? never
+  : { [Parameter in ApiPathParameterNames<ApiOperationPath<K>>]: string }

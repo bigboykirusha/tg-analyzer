@@ -1,13 +1,16 @@
 import type {
   ApiErrorResponse,
   ApiOperation,
+  ApiParams,
   ApiQuery,
   ApiRequest,
   ApiResponse,
   AuthSuccessResponse,
   UserDto,
 } from '@tg-analyzer/shared'
+import { buildApiPath } from '@tg-analyzer/shared'
 import type { FetchOptions } from 'ofetch'
+import { $fetch as apiFetch } from 'ofetch'
 import { isDefinitiveAuthFailureCode, isTokenUsable } from '../utils/auth'
 
 let refreshPromise: Promise<RefreshResult> | null = null
@@ -22,6 +25,22 @@ type FetchErrorLike = {
     _data?: (ApiErrorResponse & Record<string, unknown>) | undefined
   }
 }
+
+type ApiHttpMethod =
+  | 'GET'
+  | 'POST'
+  | 'PATCH'
+  | 'PUT'
+  | 'DELETE'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'get'
+  | 'post'
+  | 'patch'
+  | 'put'
+  | 'delete'
+  | 'head'
+  | 'options'
 
 export type ApiClientError = Error & {
   statusCode?: number
@@ -146,12 +165,11 @@ export async function refreshAccessToken(apiUrl: string) {
   return refreshPromise
 }
 
-export function useApiFetch<T>(path: string, options: FetchOptions<'json'> = {}) {
+function requestApi<T>(path: string, options: Omit<FetchOptions<'json'>, 'method'> & { method?: ApiHttpMethod } = {}) {
   const config = useRuntimeConfig()
   const auth = useAuthStore()
   const versionedPath = path.replace(/^\/api\/(?!v\d+\/)/, '/api/v1/')
   const requestUrl = `${config.public.apiUrl}${versionedPath}`
-  const fetcher = $fetch as unknown as (url: string, options?: FetchOptions<'json'>) => Promise<T>
 
   const createHeaders = () => {
     const headers = new Headers(options.headers as HeadersInit | undefined)
@@ -164,7 +182,7 @@ export function useApiFetch<T>(path: string, options: FetchOptions<'json'> = {})
   }
 
   const execute = (): Promise<T> =>
-    fetcher(requestUrl, {
+    apiFetch<T>(requestUrl, {
       credentials: 'include',
       ...options,
       headers: createHeaders(),
@@ -208,18 +226,21 @@ export function useApiFetch<T>(path: string, options: FetchOptions<'json'> = {})
 type EndpointOptions<K extends ApiOperation> = Omit<FetchOptions<'json'>, 'method' | 'body'> & {
   body?: ApiRequest<K>
   query?: ApiQuery<K>
-  params?: Record<string, string>
-}
+} & ([ApiParams<K>] extends [never] ? { params?: never } : { params: ApiParams<K> })
 
-export function useApiEndpoint<K extends ApiOperation>(operation: K, options: EndpointOptions<K> = {}) {
-  const separator = operation.indexOf(' ')
-  const method = operation.slice(0, separator) as FetchOptions<'json'>['method']
-  let path = operation.slice(separator + 1)
-  const { params, ...fetchOptions } = options
-
-  for (const [name, value] of Object.entries(params ?? {})) {
-    path = path.replace(`:${name}`, encodeURIComponent(value))
+export function useApiEndpoint<K extends ApiOperation>(
+  operation: K,
+  ...args: [ApiParams<K>] extends [never] ? [options?: EndpointOptions<K>] : [options: EndpointOptions<K>]
+) {
+  const options = (args[0] ?? {}) as Omit<FetchOptions<'json'>, 'method' | 'body'> & {
+    body?: ApiRequest<K>
+    query?: ApiQuery<K>
+    params?: Record<string, string>
   }
+  const separator = operation.indexOf(' ')
+  const method = operation.slice(0, separator) as ApiHttpMethod
+  const { params, ...fetchOptions } = options
+  const path = buildApiPath(operation.slice(separator + 1), params)
 
-  return useApiFetch<ApiResponse<K>>(path, { ...fetchOptions, method })
+  return requestApi<ApiResponse<K>>(path, { ...fetchOptions, method })
 }
