@@ -1070,7 +1070,7 @@ function computeGroupReport(params: {
   const { acc, timeline, activeDays } = params
   const totalMessages = acc.totalMessages
   const totalMedia = acc.mediaCount + acc.voiceCount + acc.stickerCount + acc.fileCount
-  const participants = Array.from(acc.participants.values())
+  const participants = Array.from(acc.participants.values(), (participant) => ({ ...participant }))
   const activeMembers = participants.length
   const lastMessageAt = acc.lastMessageAt ?? new Date()
   const firstMessageAt = acc.firstMessageAt ?? lastMessageAt

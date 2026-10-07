@@ -209,3 +209,33 @@ test('finalizeAccumulator builds group participant and interaction analytics', (
   assert.equal(result.groupReport?.health?.activeMembersLast30Days, 3)
   assert.ok((result.groupReport?.sharedVocabulary.length ?? 0) >= 0)
 })
+
+test('finalizeAccumulator can be repeated without accumulating group interaction counters', () => {
+  const acc = createChatAccumulator()
+  const start = new Date('2026-01-01T10:00:00.000Z')
+  aggregateMessage({ id: 1, senderId: 'self', outgoing: true, message: 'start topic', date: start }, acc)
+  aggregateMessage(
+    {
+      id: 2,
+      senderId: 'other',
+      outgoing: false,
+      message: 'reply topic',
+      date: new Date(start.getTime() + 60_000),
+      replyToMessageId: 1,
+    },
+    acc,
+  )
+
+  const first = finalizeAccumulator(acc, 'group')
+  const interactionCounts = (result: ReturnType<typeof finalizeAccumulator>) =>
+    result.groupReport?.participants.map(({ id, starterCount, replyCount, repliesReceived }) => ({
+      id,
+      starterCount,
+      replyCount,
+      repliesReceived,
+    }))
+  const firstCounts = interactionCounts(first)
+  const second = finalizeAccumulator(acc, 'group')
+
+  assert.deepEqual(interactionCounts(second), firstCounts)
+})
