@@ -1,18 +1,21 @@
 import type { FastifyPluginAsync, FastifyReply } from 'fastify'
 import { Api } from 'telegram'
-import jwt from 'jsonwebtoken'
 import { z } from 'zod'
-import type { UpdateProfileResponse, WsAuthTokenResponse } from '@tg-analyzer/shared'
+import type { UpdateProfileResponse, WsAuthTicketResponse } from '@tg-analyzer/shared'
 import { and, eq } from 'drizzle-orm'
+import { config, cookieName } from '../config'
+import { db, schema } from '../db'
+import { requireAuth } from '../middleware/auth.middleware'
+import { deleteAccount } from '../services/account.service'
+import { createApiError, sendApiError } from '../services/api-error.service'
+import { encryptSession } from '../services/crypto.service'
 import {
   clearRefreshCookie,
   issueAccessToken,
   issueAuthTokens,
   setRefreshCookie,
 } from '../services/jwt.service'
-import { db, schema } from '../db'
-import { createApiError, sendApiError } from '../services/api-error.service'
-import { encryptSession } from '../services/crypto.service'
+import { redis } from '../services/redis.service'
 import {
   clearPendingPasswordContext,
   deactivateTelegramSessions,
@@ -34,21 +37,22 @@ import {
   telegramPool,
   withTelegramReconnectRetry,
 } from '../services/telegram.service'
-import { config, cookieName } from '../config'
-import { requireAuth } from '../middleware/auth.middleware'
+import { verifyToken, type TokenClaims } from '../services/token.service'
+import { issueWsTicket } from '../services/ws-ticket.service'
 
+const phoneField = z.string().regex(/^\+?[1-9]\d{4,19}$/)
 const phoneSchema = z.object({
-  phone: z.string().min(5),
+  phone: phoneField,
 })
 
 const verifyCodeSchema = z.object({
-  phone: z.string().min(5),
-  code: z.string().min(3),
-  phoneCodeHash: z.string().min(1),
+  phone: phoneField,
+  code: z.string().regex(/^\d{3,10}$/),
+  phoneCodeHash: z.string().min(1).max(256),
 })
 
 const verifyPasswordSchema = z.object({
-  password: z.string().min(1),
+  password: z.string().min(1).max(1024),
 })
 
 const updateProfileSchema = z.object({
@@ -118,44 +122,49 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(authResult)
   })
 
-  fastify.post('/refresh', async (request, reply) => {
+  fastify.post('/refresh', { config: authRateLimitConfig }, async (request, reply) => {
     const token = request.cookies[cookieName]
     if (!token) {
-      request.log.warn({ path: request.url }, 'refresh cookie missing')
+      request.log.warn('refresh cookie missing')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Refresh cookie missing', 'AUTH_REFRESH_INVALID')
     }
 
-    let payload: { sub: string; sessionId: string }
+    let payload: TokenClaims
     try {
-      payload = jwt.verify(token, config.JWT_REFRESH_SECRET, { issuer: 'tg-analyzer' }) as { sub: string; sessionId: string }
+      payload = verifyToken(token, 'refresh')
     } catch {
-      request.log.warn({ path: request.url }, 'invalid refresh token')
+      request.log.warn('invalid refresh token')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Invalid refresh token', 'AUTH_REFRESH_INVALID')
     }
 
-    const rotation = await rotateRefreshSession(payload.sessionId)
+    const stored = await db.query.refreshSessions.findFirst({ where: eq(schema.refreshSessions.tokenId, payload.sessionId!) })
+    if (!stored || stored.userId !== payload.sub || stored.familyId !== payload.familyId) {
+      clearRefreshCookie(reply)
+      return sendApiError(reply, 401, 'Refresh session invalid', 'AUTH_REFRESH_INVALID')
+    }
+    const rotation = await rotateRefreshSession(payload.sessionId!)
     if (rotation.status === 'invalid') {
-      request.log.warn({ userId: payload.sub, sessionId: payload.sessionId }, 'refresh session invalid')
+      request.log.warn('refresh session invalid')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Refresh session invalid', 'AUTH_REFRESH_INVALID')
     }
     if (rotation.status === 'replayed') {
-      request.log.warn({ userId: payload.sub, sessionId: payload.sessionId }, 'refresh session replay detected')
+      request.log.warn('refresh session replay detected')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Refresh session replay detected', 'AUTH_REFRESH_REPLAYED')
     }
     if (!('session' in rotation)) {
-      request.log.warn({ userId: payload.sub, sessionId: payload.sessionId }, 'refresh session missing after rotation')
+      request.log.warn('refresh session missing after rotation')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Refresh session invalid', 'AUTH_REFRESH_INVALID')
     }
 
     const session = rotation.session
     if (session.userId !== payload.sub) {
-      request.log.warn({ expectedUserId: payload.sub, actualUserId: session.userId, sessionId: payload.sessionId }, 'refresh session user mismatch')
-      await revokeRefreshSession(payload.sessionId)
+      request.log.warn('refresh session user mismatch')
+      await revokeRefreshSession(payload.sessionId!)
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Refresh session invalid', 'AUTH_REFRESH_INVALID')
     }
@@ -164,24 +173,27 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       where: eq(schema.users.id, session.userId),
     })
     if (!user) {
-      request.log.warn({ userId: session.userId, sessionId: payload.sessionId }, 'refresh user not found')
+      request.log.warn('refresh user not found')
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'User not found', 'AUTH_REFRESH_INVALID')
     }
 
-    setRefreshCookie(reply, session.tokenId, user.id)
-    const result = await issueAccessToken(reply, user)
+    setRefreshCookie(reply, session.tokenId, user.id, session.familyId)
+    const result = await issueAccessToken(user, session.familyId)
     return reply.send(result)
   })
 
-  fastify.post('/logout', async (request, reply) => {
+  fastify.post('/logout', { config: authRateLimitConfig }, async (request, reply) => {
     const refreshToken = request.cookies[cookieName]
     if (refreshToken) {
+      let payload: TokenClaims | null = null
       try {
-        const payload = jwt.verify(refreshToken, config.JWT_REFRESH_SECRET, { issuer: 'tg-analyzer' }) as { sub: string; sessionId: string }
-        await revokeRefreshSessionFamilyByTokenId(payload.sessionId)
+        payload = verifyToken(refreshToken, 'refresh')
       } catch {
-        // noop
+        // Invalid cookies are simply cleared.
+      }
+      if (payload?.sessionId) {
+        await revokeRefreshSessionFamilyByTokenId(payload.sessionId)
       }
     }
 
@@ -189,14 +201,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({ success: true })
   })
 
-  fastify.get('/ws-token', { preHandler: requireAuth }, async (request) => {
-    const token = jwt.sign(
-      { sub: request.authUserId!, kind: 'ws' },
-      config.JWT_SECRET,
-      { expiresIn: '2m', issuer: 'tg-analyzer' },
-    )
-
-    return { token } satisfies WsAuthTokenResponse
+  fastify.post('/ws-ticket', { config: authRateLimitConfig, preHandler: requireAuth }, async (request) => {
+    const ticket = await issueWsTicket({ sub: request.authUserId!, familyId: request.authFamilyId! }, redis)
+    return { ticket } satisfies WsAuthTicketResponse
   })
 
   fastify.patch('/profile', { preHandler: requireAuth }, async (request, reply) => {
@@ -242,7 +249,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         await telegramPool.disconnectAuthorizedClient(userId)
       } catch (error) {
         if (!isTelegramSessionExpiredError(error) && !isTelegramSessionBusyError(error)) {
-          request.log.warn({ err: error }, 'telegram logout failed')
+          request.log.warn('telegram logout failed')
         }
       } finally {
         await telegramPool.disconnectAuthorizedClient(userId)
@@ -297,17 +304,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.delete('/account', { preHandler: requireAuth }, async (request, reply) => {
     const userId = request.authUserId!
-    await telegramPool.disconnectAuthorizedClient(userId)
-    await db.delete(schema.users).where(eq(schema.users.id, userId))
-    const refreshToken = request.cookies[cookieName]
-    if (refreshToken) {
-      try {
-        const payload = jwt.verify(refreshToken, config.JWT_REFRESH_SECRET, { issuer: 'tg-analyzer' }) as { sub: string; sessionId: string }
-        await revokeRefreshSessionFamilyByTokenId(payload.sessionId)
-      } catch {
-        // noop
-      }
-    }
+    await deleteAccount(userId)
     clearRefreshCookie(reply)
     return reply.send({ success: true })
   })
@@ -323,35 +320,20 @@ async function finalizeTelegramAuth(phoneCodeHash: string, reply: FastifyReply) 
     const me = await getTelegramUserData(pending.client)
     const tgUserId = typeof me.id === 'number' ? me.id : Number(me.id.value)
 
-    let user = await db.query.users.findFirst({
-      where: eq(schema.users.tgUserId, tgUserId),
-    })
-
+    const values = {
+      tgUserId,
+      tgPhone: pending.phone,
+      username: me.username ?? null,
+      firstName: me.firstName ?? null,
+      lastLogin: new Date(),
+    }
+    const [user] = await db
+      .insert(schema.users)
+      .values(values)
+      .onConflictDoUpdate({ target: schema.users.tgUserId, set: values })
+      .returning()
     if (!user) {
-      const [created] = await db
-        .insert(schema.users)
-        .values({
-          tgUserId,
-          tgPhone: pending.phone,
-          username: me.username ?? null,
-          firstName: me.firstName ?? null,
-          timezone: 'UTC',
-          lastLogin: new Date(),
-        })
-        .returning()
-      user = created
-    } else {
-      const [updated] = await db
-        .update(schema.users)
-        .set({
-          tgPhone: pending.phone,
-          username: me.username ?? null,
-          firstName: me.firstName ?? null,
-          lastLogin: new Date(),
-        })
-        .where(eq(schema.users.id, user.id))
-        .returning()
-      user = updated
+      throw new Error('User persistence failed')
     }
 
     const sessionString = exportSession(pending.client)

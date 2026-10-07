@@ -33,6 +33,7 @@ import {
   saveAggregates,
 } from '../services/stats.service'
 import { sleep } from '../utils/sleep'
+import { logger } from '../services/logger.service'
 
 const SCAN_PROGRESS_INTERVAL_MS = 1500
 const CHAT_REPARSE_COOLDOWN_SECONDS = 60 * 60
@@ -287,8 +288,17 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
 
 parseWorker.on('failed', async (job, error) => {
   if (!job) {
+    logger.error({ event: 'parse_job_failed' }, 'parse job failed without metadata')
     return
   }
+
+  logger.error({
+    event: 'parse_job_failed',
+    bullJobId: job.id,
+    jobId: job.data.jobId,
+    attempt: job.attemptsMade,
+    err: error,
+  }, 'parse job failed')
 
   if (error instanceof ParseJobCancelledError) {
     await updateParseJob(job.data.jobId, {
@@ -331,4 +341,26 @@ parseWorker.on('failed', async (job, error) => {
   })
   await clearActiveJob(job.data.userId)
   await clearCancelledJob(job.data.userId, job.data.jobId)
+})
+
+parseWorker.on('active', (job) => {
+  logger.info({
+    event: 'parse_job_started',
+    bullJobId: job.id,
+    jobId: job.data.jobId,
+    attempt: job.attemptsMade + 1,
+  }, 'parse job started')
+})
+
+parseWorker.on('completed', (job) => {
+  logger.info({
+    event: 'parse_job_completed',
+    bullJobId: job.id,
+    jobId: job.data.jobId,
+    attempt: job.attemptsMade,
+  }, 'parse job completed')
+})
+
+parseWorker.on('error', (error) => {
+  logger.error({ event: 'parse_worker_error', err: error }, 'parse worker error')
 })

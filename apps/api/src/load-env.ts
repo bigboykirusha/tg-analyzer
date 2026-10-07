@@ -5,5 +5,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = dirname(fileURLToPath(import.meta.url))
 
 // Load repo-root .env for local development, then allow optional app-local overrides.
-dotenv.config({ path: resolve(currentDir, '../../../.env') })
-dotenv.config({ path: resolve(currentDir, '../.env') })
+if (process.env.NODE_ENV !== 'test') {
+  dotenv.config({ path: resolve(currentDir, '../../../.env'), quiet: true })
+  dotenv.config({ path: resolve(currentDir, '../.env'), quiet: true })
+}

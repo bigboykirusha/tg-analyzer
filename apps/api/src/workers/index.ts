@@ -4,6 +4,7 @@ import { cleanupWorker, scheduleCleanupJob } from './cleanup.worker'
 import { pool } from '../db'
 import { redis } from '../services/redis.service'
 import { clearWorkerHeartbeat, updateWorkerHeartbeat } from '../services/runtime-status.service'
+import { logger } from '../services/logger.service'
 
 ;(async () => {
   await scheduleCleanupJob()
@@ -29,12 +30,11 @@ import { clearWorkerHeartbeat, updateWorkerHeartbeat } from '../services/runtime
   process.on('SIGINT', handleShutdown)
   process.on('SIGTERM', handleShutdown)
   process.on('unhandledRejection', (reason) => {
-    // Keep worker crashes visible to the process manager without leaking job payloads.
-    process.stderr.write(`Unhandled rejection in worker process: ${String(reason)}\n`)
+    logger.fatal({ err: reason }, 'unhandled worker rejection')
     process.exit(1)
   })
   process.on('uncaughtException', (error) => {
-    process.stderr.write(`Uncaught exception in worker process: ${error.message}\n`)
+    logger.fatal({ err: error }, 'uncaught worker exception')
     process.exit(1)
   })
 })()

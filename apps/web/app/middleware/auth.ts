@@ -1,9 +1,7 @@
 export default defineNuxtRouteMiddleware(async () => {
   if (import.meta.server) {
-    const cookieHeader = useRequestHeaders(['cookie']).cookie ?? ''
-    if (!cookieHeader.includes('tg_analyzer_refresh=')) {
-      return navigateTo('/login', { replace: true })
-    }
+    // The refresh cookie belongs to the API host and is not visible to a separately hosted web app.
+    // Render the route shell, then let the browser restore the session directly from the API.
     return
   }
 

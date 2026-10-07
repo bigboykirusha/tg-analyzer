@@ -2,7 +2,7 @@ import { Api, TelegramClient } from 'telegram'
 import { computeCheck } from 'telegram/Password.js'
 import { StringSession } from 'telegram/sessions/index.js'
 import { config } from '../config'
-import { decryptSession } from './crypto.service'
+import { decryptSession, openJson, sealJson } from './crypto.service'
 import { redis } from './redis.service'
 import { sleep } from '../utils/sleep'
 
@@ -79,7 +79,7 @@ class TelegramPool {
       sessionString: String(pending.client.session.save()),
       expiresAt: pending.expiresAt,
     }
-    await redis.set(this.getPendingRedisKey(key), JSON.stringify(payload), 'EX', ttlSeconds)
+    await redis.set(this.getPendingRedisKey(key), sealJson(payload), 'EX', ttlSeconds)
   }
 
   private async loadPendingState(key: string) {
@@ -89,7 +89,7 @@ class TelegramPool {
     }
 
     try {
-      const parsed = JSON.parse(raw) as PersistedPhoneCodeState
+      const parsed = openJson<PersistedPhoneCodeState>(raw)
       if (!parsed.phone || !parsed.sessionString || !parsed.expiresAt || parsed.expiresAt <= Date.now()) {
         await redis.del(this.getPendingRedisKey(key))
         return null
@@ -308,6 +308,19 @@ class TelegramPool {
     if (current === token) {
       await redis.del(key)
     }
+  }
+
+  async clearUserCache(userId: string) {
+    await this.disconnectAuthorizedClient(userId)
+    for (const key of this.avatarCache.keys()) {
+      if (key.startsWith(`${userId}:`)) this.avatarCache.delete(key)
+    }
+  }
+
+  async close() {
+    await Promise.allSettled([...this.clients.keys()].map(userId => this.disconnectAuthorizedClient(userId)))
+    await Promise.allSettled([...this.pending.values()].map(value => value.client.disconnect()))
+    this.pending.clear()
   }
 
   async connectAuthorizedClient(userId: string, encryptedSession: {

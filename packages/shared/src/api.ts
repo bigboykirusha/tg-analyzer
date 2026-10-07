@@ -8,8 +8,9 @@ export type AuthErrorCode =
   | 'AUTH_TEMP_TOKEN_INVALID'
 
 export interface ApiErrorResponse {
+  requestId?: string
   message: string
-  code?: AuthErrorCode | string
+  code: AuthErrorCode | string
 }
 
 export interface UserDto {
@@ -63,8 +64,8 @@ export interface RefreshResponse {
   user: UserDto
 }
 
-export interface WsAuthTokenResponse {
-  token: string
+export interface WsAuthTicketResponse {
+  ticket: string
 }
 
 export interface StartParseBody {

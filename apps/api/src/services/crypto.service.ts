@@ -31,3 +31,12 @@ export function decryptSession(encrypted: string, iv: string, authTag: string) {
   decrypted += decipher.final('utf8')
   return decrypted
 }
+
+export function sealJson(value: unknown) {
+  return JSON.stringify(encryptSession(JSON.stringify(value)))
+}
+
+export function openJson<T>(raw: string): T {
+  const envelope = JSON.parse(raw) as EncryptedSession
+  return JSON.parse(decryptSession(envelope.encrypted, envelope.iv, envelope.authTag)) as T
+}

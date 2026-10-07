@@ -15,7 +15,8 @@
     "check": "corepack pnpm -r check",
     "test": "corepack pnpm --filter @tg-analyzer/api test",
     "db:push": "corepack pnpm --filter @tg-analyzer/api db:push",
-    "db:migrate": "corepack pnpm --filter @tg-analyzer/api db:migrate"
+    "db:migrate": "corepack pnpm --filter @tg-analyzer/api db:migrate",
+    "test:integration": "corepack pnpm --filter @tg-analyzer/api test:integration"
   },
   "devDependencies": {
     "@types/node": "^24.12.3",

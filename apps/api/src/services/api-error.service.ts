@@ -25,7 +25,8 @@ export function sendApiError(
 ) {
   return reply.status(statusCode).send({
     message,
-    code,
+    code: code ?? `HTTP_${statusCode}`,
+    requestId: reply.request.id,
   } satisfies ApiErrorResponse)
 }
 

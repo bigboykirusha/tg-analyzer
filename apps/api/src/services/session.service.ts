@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto'
-import { and, desc, eq, gt, inArray, isNotNull, isNull, lt, notInArray, or } from 'drizzle-orm'
+import { and, desc, eq, gt, inArray, isNull, lt, notInArray } from 'drizzle-orm'
 import { db, schema } from '../db'
 import { redis } from './redis.service'
 import { config } from '../config'
 import { addDays } from '../utils/date'
+import { openJson, sealJson } from './crypto.service'
 
 const TEMP_AUTH_PREFIX = 'auth:temp'
 const PROGRESS_PREFIX = 'parse:progress'
@@ -48,13 +49,19 @@ function parseJsonOrNull<T>(raw: string | null): T | null {
 
 export async function savePendingPasswordContext(context: PendingPasswordContext) {
   const token = randomUUID()
-  await redis.set(`${TEMP_AUTH_PREFIX}:${token}`, JSON.stringify(context), 'EX', 300)
+  await redis.set(`${TEMP_AUTH_PREFIX}:${token}`, sealJson(context), 'EX', 300)
   return token
 }
 
 export async function getPendingPasswordContext(token: string): Promise<PendingPasswordContext | null> {
   const raw = await redis.get(`${TEMP_AUTH_PREFIX}:${token}`)
-  return parseJsonOrNull<PendingPasswordContext>(raw)
+  if (!raw) return null
+  try {
+    return openJson<PendingPasswordContext>(raw)
+  } catch {
+    await clearPendingPasswordContext(token)
+    return null
+  }
 }
 
 export async function clearPendingPasswordContext(token: string) {
@@ -73,6 +80,7 @@ export async function createRefreshSession(userId: string, familyId = randomUUID
     })
     .returning()
 
+  if (!created) throw new Error('Refresh session persistence failed')
   return created
 }
 
@@ -370,6 +378,7 @@ export async function rotateRefreshSession(tokenId: string): Promise<
         })
         .returning()
 
+      if (!successor) throw new Error('Refresh session persistence failed')
       return { status: 'rotated', session: successor } as const
     }
 
@@ -416,13 +425,6 @@ export async function rotateRefreshSession(tokenId: string): Promise<
 }
 
 export async function cleanupExpiredRefreshSessions() {
-  const now = new Date()
-  await db.delete(schema.refreshSessions).where(or(
-    lt(schema.refreshSessions.expiresAt, now),
-    isNotNull(schema.refreshSessions.revokedAt),
-    and(
-      isNotNull(schema.refreshSessions.replacedByTokenId),
-      lt(schema.refreshSessions.graceUntil, now),
-    ),
-  ))
+  // Keep rotated/revoked rows until expiry so reuse of an old token remains detectable.
+  await db.delete(schema.refreshSessions).where(lt(schema.refreshSessions.expiresAt, new Date()))
 }
