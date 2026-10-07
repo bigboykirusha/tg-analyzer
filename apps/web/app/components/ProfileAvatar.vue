@@ -10,7 +10,6 @@ const props = withDefaults(
 )
 
 const auth = useAuthStore()
-const config = useRuntimeConfig()
 
 const avatarUrl = ref<string | null>(null)
 const errored = ref(false)
@@ -39,13 +38,7 @@ async function loadAvatar() {
   }
 
   try {
-    const blob = await $fetch<Blob>(`${config.public.apiUrl}/api/auth/avatar`, {
-      credentials: 'include',
-      headers: {
-        Authorization: `Bearer ${auth.accessToken}`,
-      },
-      responseType: 'blob',
-    })
+    const blob = await useApiBlobEndpoint('GET /api/v1/auth/avatar')
     avatarUrl.value = URL.createObjectURL(blob)
     errored.value = false
   } catch {

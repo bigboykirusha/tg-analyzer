@@ -20,7 +20,6 @@ const props = withDefaults(
 const errored = ref(false)
 const avatarUrl = ref<string | null>(null)
 const auth = useAuthStore()
-const config = useRuntimeConfig()
 
 function pruneAvatarCache() {
   const now = Date.now()
@@ -84,12 +83,8 @@ async function loadAvatar() {
   try {
     let request = avatarRequests.get(cacheKey)
     if (!request) {
-      request = $fetch<Blob>(`${config.public.apiUrl}/api/parse/dialogs/${props.chatId}/avatar`, {
-        credentials: 'include',
-        headers: {
-          Authorization: `Bearer ${auth.accessToken}`,
-        },
-        responseType: 'blob',
+      request = useApiBlobEndpoint('GET /api/v1/parse/dialogs/:dialogId/avatar', {
+        params: { dialogId: props.chatId },
       })
         .then((blob) => {
           const objectUrl = URL.createObjectURL(blob)
