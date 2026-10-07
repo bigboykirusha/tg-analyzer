@@ -59,4 +59,5 @@
 - [x] 2026-10-07: проверен Nuxt 4.6.0 для устранения оставшихся advisory. Обновление отклонено: Node 22.14 не удовлетворяет требованию Nuxt (≥22.21), а `jiti` 2 несовместим с текущим lockfile; 4.5.1 восстановлен, frozen install и typecheck проходят.
 - [x] 2026-10-07: `build` повторно успешно завершён на итоговом frozen lockfile после проверки Nuxt 4.6 и восстановления 4.5.1.
 - [x] 2026-10-07: production Nitro server запущен на собранном web artifact; `/login` подтвердил CSP, X-Frame-Options, Permissions-Policy, X-Content-Type-Options и Referrer-Policy.
+- [x] 2026-10-07: web Dockerfile разделён на builder/non-root runner; Nuxt build-модули перенесены в devDependencies, runner запускает только `.output/server/index.mjs`. Локальный `pnpm start` подтвердил HTTP 200 и CSP на готовом artifact; Docker build ожидает Docker Engine.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
