@@ -12,9 +12,7 @@ import type {
   GroupParticipantDto,
   GroupReportDto,
   HealthScoreDto,
-  InsightDto,
   MessageCompositionDto,
-  RelationshipScoreDto,
   ResponseStatsDto,
   SessionStatsDto,
   TopItemDto,
@@ -32,6 +30,8 @@ import {
   computeCompositionStats,
   computeTrend,
   analyzeMessageText,
+  computeSessionStats,
+  generateConversationInsights,
   mapDailyActivity,
   mapMonthlyActivity,
   resolveProductGroupRole,
@@ -993,7 +993,7 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
   const activeDays = dailyRows.length
   const maxStreak = computeMaxStreak(Array.from(acc.dailyActivity.keys()))
   const trend = computeTrend(monthlyRows)
-  const sessionStats = buildSessionStats(timeline, activeDays, acc.timeZone)
+  const sessionStats = computeSessionStats(timeline, activeDays, acc.timeZone)
   acc.activityDistribution = computeActivityDistribution(acc.hourlyActivitySplit)
   acc.compositionStats = computeCompositionStats({
     totalMessages: acc.totalMessages,
@@ -1019,7 +1019,7 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
     relationshipScore,
     trend,
   })
-  const insights = generateInsights({
+  const insights = generateConversationInsights({
     trend,
     longestGap,
     sessionStats,
@@ -1419,198 +1419,6 @@ function buildGroupTopPairs(params: {
   return Array.from(combined.values())
     .sort((left, right) => right.symmetricScore - left.symmetricScore)
     .slice(0, 5)
-}
-
-function averageOrNull(values: number[]) {
-  if (!values.length) {
-    return null
-  }
-
-  return Math.round(calculateAverage(values))
-}
-
-function buildSessionStats(
-  timeline: Array<{ outgoing: boolean; timestamp: Date }>,
-  activeDays: number,
-  timeZone: string,
-): SessionStatsDto {
-  if (!timeline.length) {
-    return createEmptySessionStats()
-  }
-
-  const sessions: SessionStatsDto['highlights'] = []
-  const first = timeline[0]
-  if (!first) return createEmptySessionStats()
-  let currentSession = {
-    startedAt: first.timestamp,
-    endedAt: first.timestamp,
-    totalMessages: 1,
-    sentMessages: first.outgoing ? 1 : 0,
-    receivedMessages: first.outgoing ? 0 : 1,
-  }
-
-  for (let index = 1; index < timeline.length; index += 1) {
-    const item = timeline[index]
-    const previous = timeline[index - 1]
-    if (!item || !previous) continue
-    const gapMs = item.timestamp.getTime() - previous.timestamp.getTime()
-
-    if (gapMs > SESSION_BOUNDARY_MS) {
-      sessions.push({
-        startedAt: currentSession.startedAt.toISOString(),
-        endedAt: currentSession.endedAt.toISOString(),
-        durationSec: Math.max(
-          0,
-          Math.round((currentSession.endedAt.getTime() - currentSession.startedAt.getTime()) / 1000),
-        ),
-        totalMessages: currentSession.totalMessages,
-        sentMessages: currentSession.sentMessages,
-        receivedMessages: currentSession.receivedMessages,
-      })
-
-      currentSession = {
-        startedAt: item.timestamp,
-        endedAt: item.timestamp,
-        totalMessages: 1,
-        sentMessages: item.outgoing ? 1 : 0,
-        receivedMessages: item.outgoing ? 0 : 1,
-      }
-      continue
-    }
-
-    currentSession.endedAt = item.timestamp
-    currentSession.totalMessages += 1
-    if (item.outgoing) {
-      currentSession.sentMessages += 1
-    } else {
-      currentSession.receivedMessages += 1
-    }
-  }
-
-  sessions.push({
-    startedAt: currentSession.startedAt.toISOString(),
-    endedAt: currentSession.endedAt.toISOString(),
-    durationSec: Math.max(
-      0,
-      Math.round((currentSession.endedAt.getTime() - currentSession.startedAt.getTime()) / 1000),
-    ),
-    totalMessages: currentSession.totalMessages,
-    sentMessages: currentSession.sentMessages,
-    receivedMessages: currentSession.receivedMessages,
-  })
-
-  const durations = sessions.map((session) => session.durationSec)
-  const messageCounts = sessions.map((session) => session.totalMessages)
-  const nightSessions = sessions.filter((session) => {
-    const hour = getLocalHour(new Date(session.startedAt), timeZone)
-    return hour >= 23 || hour <= 5
-  }).length
-  const activeWeeks = Math.max(activeDays / 7, 1)
-  const longestByDuration = [...sessions].sort((left, right) => right.durationSec - left.durationSec)[0] ?? null
-  const densestByMessages = [...sessions].sort((left, right) => right.totalMessages - left.totalMessages)[0] ?? null
-  const highlights = [densestByMessages, longestByDuration]
-    .filter(
-      (value, index, items): value is NonNullable<typeof value> => Boolean(value) && items.indexOf(value) === index,
-    )
-    .slice(0, 3)
-
-  return {
-    totalSessions: sessions.length,
-    averageSessionMessages: Math.round(calculateAverage(messageCounts)),
-    averageSessionDurationSec: averageOrNull(durations),
-    longestSessionMessages: Math.max(...messageCounts),
-    longestSessionDurationSec: durations.length ? Math.max(...durations) : null,
-    sessionsPerActiveWeek: Number((sessions.length / activeWeeks).toFixed(1)),
-    nightSessionsPct: sessions.length ? Math.round((nightSessions / sessions.length) * 100) : null,
-    highlights,
-  }
-}
-
-function generateInsights(params: {
-  trend: ConversationFactsDto['trend']
-  longestGap: ConversationFactsDto['longestGap']
-  sessionStats: SessionStatsDto
-  relationshipScore: RelationshipScoreDto | null
-  responseStats: ResponseStatsDto
-}): InsightDto[] {
-  const insights: InsightDto[] = []
-
-  if (params.sessionStats.totalSessions > 0) {
-    insights.push({
-      key: 'session-intensity',
-      title: 'Conversation rhythm',
-      description: `The chat formed ${params.sessionStats.totalSessions} sessions, averaging ${params.sessionStats.averageSessionMessages} messages each.`,
-      tone: 'neutral',
-    })
-  }
-
-  if (params.sessionStats.longestSessionDurationSec && params.sessionStats.longestSessionDurationSec >= 3 * 60 * 60) {
-    insights.push({
-      key: 'long-session',
-      title: 'High-intensity window',
-      description: `Your longest session lasted ${Math.round(params.sessionStats.longestSessionDurationSec / 3600)}h and reached ${params.sessionStats.longestSessionMessages} messages.`,
-      tone: 'positive',
-    })
-  }
-
-  if (params.trend === 'growing') {
-    insights.push({
-      key: 'trend-growing',
-      title: 'Momentum is building',
-      description: 'Recent activity is stronger than the previous period, which suggests the connection is warming up.',
-      tone: 'positive',
-    })
-  } else if (params.trend === 'fading') {
-    insights.push({
-      key: 'trend-fading',
-      title: 'Momentum cooled down',
-      description: 'Recent activity dropped versus the previous period, so this conversation may be losing cadence.',
-      tone: 'warning',
-    })
-  }
-
-  if (params.longestGap && params.longestGap.seconds >= 45 * 24 * 60 * 60) {
-    insights.push({
-      key: 'long-gap',
-      title: 'Extended silence',
-      description: `There was a long break of about ${Math.round(params.longestGap.seconds / 86400)} days between messages.`,
-      tone: 'warning',
-    })
-  }
-
-  if (params.relationshipScore) {
-    const tone =
-      params.relationshipScore.label === 'cooling' || params.relationshipScore.label === 'one_sided'
-        ? 'warning'
-        : params.relationshipScore.label === 'warm'
-          ? 'positive'
-          : 'neutral'
-    insights.push({
-      key: 'relationship-score',
-      title: 'Relationship dynamics',
-      description: `The balance score is ${params.relationshipScore.score}/100 with a ${params.relationshipScore.label.replace('_', ' ')} pattern.`,
-      tone,
-    })
-  }
-
-  if (params.responseStats.mineSamples + params.responseStats.theirsSamples >= 6) {
-    const myMedian = params.responseStats.medianMineSec
-    const theirMedian = params.responseStats.medianTheirsSec
-    if (myMedian !== null && theirMedian !== null) {
-      const slowerSide = myMedian > theirMedian ? 'You' : 'Your contact'
-      const gapHours = Math.abs(myMedian - theirMedian) / 3600
-      if (gapHours >= 1) {
-        insights.push({
-          key: 'response-asymmetry',
-          title: 'Reply tempo mismatch',
-          description: `${slowerSide} usually respond slower, with a median gap difference of about ${gapHours.toFixed(1)} hours.`,
-          tone: 'neutral',
-        })
-      }
-    }
-  }
-
-  return insights.slice(0, 5)
 }
 
 export async function saveAggregates(params: {
