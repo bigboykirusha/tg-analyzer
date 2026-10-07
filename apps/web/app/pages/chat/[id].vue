@@ -48,7 +48,6 @@ const ready = ref(false)
 const loadError = ref('')
 const reparsing = ref(false)
 const shareOpen = ref(false)
-const telegramSending = ref(false)
 const reparseConfirmOpen = ref(false)
 const activeView = ref<'overview' | 'rhythm' | 'words' | 'timeline'>('overview')
 const isMobileLayout = ref(false)
@@ -58,6 +57,13 @@ const reportExportRef = ref<HTMLElement | null>(null)
 
 const routeChatId = computed(() => String(route.params.id))
 const chat = computed(() => stats.selectedChat)
+const { downloadReportPdf, exporting, sendReportPdfToTelegramChat } = useReportExport({
+  reportElement: reportExportRef,
+  fileBaseName: computed(() => chat.value?.chatName || routeChatId.value),
+  chatId: routeChatId,
+  expandedChart,
+  shareOpen,
+})
 const parseForCurrentChat = computed(() => progress.value.chatId === routeChatId.value)
 const parseActiveForCurrentChat = computed(() => parseForCurrentChat.value && ['running', 'pending'].includes(progress.value.status))
 const parseTerminalForCurrentChat = computed(() => parseForCurrentChat.value && ['completed', 'failed', 'cancelled'].includes(progress.value.status))
@@ -703,9 +709,9 @@ const insightItems = computed(() => {
   })
 })
 const shareActions = computed(() => {
-  const actions: { key: string; label: string; action: () => void | Promise<void> }[] = [
-    { key: 'telegram-direct', label: t('chat.sendTelegramDirect'), action: sendReportPdfToTelegramChat },
-    { key: 'download-pdf', label: t('chat.downloadPdf'), action: downloadReportPdf },
+  const actions: { key: string; label: string; disabled: boolean; action: () => void | Promise<void> }[] = [
+    { key: 'telegram-direct', label: t('chat.sendTelegramDirect'), disabled: exporting.value, action: sendReportPdfToTelegramChat },
+    { key: 'download-pdf', label: t('chat.downloadPdf'), disabled: exporting.value, action: downloadReportPdf },
   ]
 
   return actions
@@ -754,208 +760,6 @@ async function reparseChat() {
 async function confirmReparseChat() {
   reparseConfirmOpen.value = false
   await reparseChat()
-}
-
-function buildSafeExportName() {
-  return ((chat.value?.chatName || routeChatId.value)
-    // eslint-disable-next-line no-control-regex -- Strip control characters from export filenames.
-    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, ' ')
-    .trim()
-    .replace(/\s+/g, '-')
-    .slice(0, 60)) || 'telegram-chat'
-}
-
-function downloadFile(file: File) {
-  if (!import.meta.client) {
-    return
-  }
-
-  try {
-    const url = URL.createObjectURL(file)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = file.name
-    document.body.append(link)
-    link.click()
-    window.setTimeout(() => {
-      link.remove()
-      URL.revokeObjectURL(url)
-    }, 1000)
-  } catch (error) {
-    throw error instanceof Error ? error : new Error(String(error))
-  }
-}
-
-async function createReportPdfFile() {
-  if (!import.meta.client) {
-    throw new Error('Client-only action')
-  }
-
-  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-    import('html2canvas'),
-    import('jspdf'),
-  ])
-
-  expandedChart.value = null
-  shareOpen.value = false
-  await nextTick()
-
-  let exportRoot: HTMLElement | null = null
-  try {
-    const target = reportExportRef.value
-    if (!target) {
-      throw new Error('Report content is unavailable')
-    }
-
-    exportRoot = target.cloneNode(true) as HTMLElement
-    exportRoot.classList.add('pdf-export-clone')
-    exportRoot.querySelectorAll('.no-print, .dialog-backdrop, .chart-overlay').forEach((node) => node.remove())
-    Object.assign(exportRoot.style, {
-      position: 'fixed',
-      left: '-20000px',
-      top: '0',
-      width: `${Math.ceil(target.scrollWidth)}px`,
-      maxWidth: 'none',
-      minWidth: `${Math.ceil(target.scrollWidth)}px`,
-      background: '#ffffff',
-      zIndex: '-1',
-      pointerEvents: 'none',
-      overflow: 'visible',
-    })
-    document.body.append(exportRoot)
-
-    const exportWidth = Math.ceil(exportRoot.scrollWidth)
-    const exportHeight = Math.ceil(exportRoot.scrollHeight)
-
-    const canvas = await html2canvas(exportRoot, {
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      logging: false,
-      width: exportWidth,
-      height: exportHeight,
-      windowWidth: exportWidth,
-      windowHeight: exportHeight,
-      scrollX: 0,
-      scrollY: 0,
-    })
-
-    const pdf = new jsPDF({
-      orientation: 'p',
-      unit: 'pt',
-      format: 'a4',
-      compress: true,
-    })
-
-    const pageWidth = pdf.internal.pageSize.getWidth()
-    const pageHeight = pdf.internal.pageSize.getHeight()
-    const pageHeightPx = Math.floor((canvas.width * pageHeight) / pageWidth)
-    const totalPages = Math.max(1, Math.ceil(canvas.height / pageHeightPx))
-
-    for (let pageIndex = 0; pageIndex < totalPages; pageIndex += 1) {
-      if (pageIndex > 0) {
-        pdf.addPage()
-      }
-
-      const sliceTop = pageIndex * pageHeightPx
-      const sliceHeight = Math.min(pageHeightPx, canvas.height - sliceTop)
-      const pageCanvas = document.createElement('canvas')
-      pageCanvas.width = canvas.width
-      pageCanvas.height = sliceHeight
-
-      const pageContext = pageCanvas.getContext('2d')
-      if (!pageContext) {
-        throw new Error('Canvas is unavailable')
-      }
-
-      pageContext.fillStyle = '#ffffff'
-      pageContext.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
-      pageContext.drawImage(
-        canvas,
-        0,
-        sliceTop,
-        canvas.width,
-        sliceHeight,
-        0,
-        0,
-        canvas.width,
-        sliceHeight,
-      )
-
-      const pageImageHeight = (sliceHeight * pageWidth) / canvas.width
-      const pageImage = pageCanvas.toDataURL('image/jpeg', 0.92)
-
-      pdf.addImage(
-        pageImage,
-        'JPEG',
-        0,
-        0,
-        pageWidth,
-        pageImageHeight,
-        undefined,
-        'FAST',
-      )
-    }
-
-    const blob = pdf.output('blob')
-    return new File([blob], `${buildSafeExportName()}-report.pdf`, { type: 'application/pdf' })
-  } finally {
-    exportRoot?.remove()
-  }
-}
-
-async function downloadReportPdf() {
-  try {
-    const file = await createReportPdfFile()
-    downloadFile(file)
-    toast.success(t('chat.pdfReady'))
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('chat.pdfReady'))
-  }
-}
-
-async function fileToBase64(file: File) {
-  const buffer = await file.arrayBuffer()
-  const bytes = new Uint8Array(buffer)
-  const chunkSize = 0x8000
-  let binary = ''
-
-  for (let index = 0; index < bytes.length; index += chunkSize) {
-    const chunk = bytes.subarray(index, index + chunkSize)
-    binary += String.fromCharCode(...chunk)
-  }
-
-  return btoa(binary)
-}
-
-async function sendReportPdfToTelegramChat() {
-  if (auth.user?.telegramSessionActive === false) {
-    toast.warning(t('dashboard.sessionInactive'))
-    return
-  }
-
-  telegramSending.value = true
-
-  try {
-    const file = await createReportPdfFile()
-    const base64 = await fileToBase64(file)
-
-    await useApiEndpoint('POST /api/v1/parse/share-report', {
-      body: {
-        chatId: routeChatId.value,
-        fileName: file.name,
-        mimeType: file.type,
-        base64,
-      },
-    })
-
-    shareOpen.value = false
-    toast.success(t('chat.sentToTelegram'))
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('chat.sentToTelegram'))
-  } finally {
-    telegramSending.value = false
-  }
 }
 
 function formatShortDate(value: string | null) {
@@ -1330,6 +1134,7 @@ onBeforeUnmount(() => {
                 </Button>
               </template>
               <button v-for="item in shareActions" :key="item.key" type="button" class="share-option"
+                :disabled="item.disabled" :aria-busy="item.disabled"
                 @click="item.action">
                 {{ item.label }}
               </button>
@@ -1780,6 +1585,7 @@ onBeforeUnmount(() => {
               </div>
               <div class="share-dialog-actions">
                 <button v-for="item in shareActions" :key="item.key" type="button" class="share-option share-option-card"
+                  :disabled="item.disabled" :aria-busy="item.disabled"
                   @click="item.action">
                   {{ item.label }}
                 </button>
