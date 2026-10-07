@@ -128,7 +128,7 @@ export interface ClearHistoryResponse extends DeleteResponse {
   deleted: number
 }
 
-export interface DeleteHistoryItemResponse extends DeleteResponse {}
+export type DeleteHistoryItemResponse = DeleteResponse
 
 export interface PagedChatsResponse {
   chats: ChatStatsDto[]
@@ -289,11 +289,7 @@ export interface HealthScoreDto {
   longTermStability: number | null
 }
 
-export type GroupMemberRole =
-  | 'anchor'
-  | 'contributor'
-  | 'newcomer'
-  | 'inactive'
+export type GroupMemberRole = 'anchor' | 'contributor' | 'newcomer' | 'inactive'
 
 export interface GroupParticipantDto {
   id: string
@@ -465,8 +461,4 @@ export interface ParseErrorEvent {
 }
 
 export type ParseProgressWsEvent =
-  | ParseProgressEvent
-  | ParseCompletedEvent
-  | ParseFailedEvent
-  | ParseCancelledEvent
-  | ParseErrorEvent
+  ParseProgressEvent | ParseCompletedEvent | ParseFailedEvent | ParseCancelledEvent | ParseErrorEvent

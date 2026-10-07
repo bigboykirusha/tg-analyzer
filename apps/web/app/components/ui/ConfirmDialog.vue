@@ -2,18 +2,21 @@
 import Button from './Button.vue'
 import { X } from '../../lib/icons'
 
-const props = withDefaults(defineProps<{
-  open: boolean
-  title: string
-  description: string
-  confirmLabel: string
-  cancelLabel: string
-  variant?: 'default' | 'danger'
-  loading?: boolean
-}>(), {
-  variant: 'default',
-  loading: false,
-})
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    title: string
+    description: string
+    confirmLabel: string
+    cancelLabel: string
+    variant?: 'default' | 'danger'
+    loading?: boolean
+  }>(),
+  {
+    variant: 'default',
+    loading: false,
+  },
+)
 
 const emit = defineEmits<{
   close: []
@@ -32,12 +35,16 @@ function handleKeydown(event: KeyboardEvent) {
   }
 }
 
-watch(() => props.open, (open) => {
-  if (!import.meta.client) {
-    return
-  }
-  document.body.style.overflow = open ? 'hidden' : ''
-}, { immediate: true })
+watch(
+  () => props.open,
+  (open) => {
+    if (!import.meta.client) {
+      return
+    }
+    document.body.style.overflow = open ? 'hidden' : ''
+  },
+  { immediate: true },
+)
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
@@ -53,12 +60,7 @@ onBeforeUnmount(() => {
   <Teleport to="body">
     <Transition name="dialog">
       <div v-if="open" class="dialog-backdrop" @click.self="close">
-        <section
-          class="dialog-panel"
-          role="dialog"
-          aria-modal="true"
-          :aria-labelledby="`confirm-title-${title}`"
-        >
+        <section class="dialog-panel" role="dialog" aria-modal="true" :aria-labelledby="`confirm-title-${title}`">
           <button type="button" class="dialog-close" :aria-label="cancelLabel" :disabled="loading" @click="close">
             <X :size="18" :stroke-width="1.5" aria-hidden="true" />
           </button>
@@ -68,11 +70,7 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="dialog-actions">
-            <Button
-              :variant="variant === 'danger' ? 'danger' : 'primary'"
-              :loading="loading"
-              @click="emit('confirm')"
-            >
+            <Button :variant="variant === 'danger' ? 'danger' : 'primary'" :loading="loading" @click="emit('confirm')">
               {{ confirmLabel }}
             </Button>
           </div>
@@ -136,7 +134,9 @@ onBeforeUnmount(() => {
 
 .dialog-close:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+  box-shadow:
+    0 0 0 2px var(--bg-base),
+    0 0 0 4px var(--accent);
 }
 
 .dialog-close:disabled {

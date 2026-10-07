@@ -6,21 +6,29 @@ import { deleteChatReport, getActivity, getChat, getChats, getGlobalStats, getTo
 const chatsQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
-  sort: z.enum([
-    'total_messages',
-    'sent_messages',
-    'received_messages',
-    'last_message_at',
-    'first_message_at',
-    'chat_name',
-    'parsed_at',
-  ]).default('total_messages'),
+  sort: z
+    .enum([
+      'total_messages',
+      'sent_messages',
+      'received_messages',
+      'last_message_at',
+      'first_message_at',
+      'chat_name',
+      'parsed_at',
+    ])
+    .default('total_messages'),
   order: z.enum(['asc', 'desc']).default('desc'),
 })
 
 const activityQuerySchema = z.object({
-  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  from: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  to: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
 })
 
 const chatParamsSchema = z.object({

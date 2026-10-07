@@ -17,13 +17,17 @@ test('config rejects invalid ports, URLs, origins, cookie domains and unsafe pro
     { NODE_ENV: 'production', COOKIE_SECURE: 'false' },
     { NODE_ENV: 'production', CORS_ORIGIN: '*' },
     { COOKIE_SECURE: 'false', COOKIE_SAME_SITE: 'none' },
-  ]) assert.throws(() => parseConfig({ ...process.env, ...overrides }))
+  ])
+    assert.throws(() => parseConfig({ ...process.env, ...overrides }))
 })
 
 test('invalid config does not disclose a rejected secret', () => {
-  assert.throws(() => parseConfig({ ...process.env, JWT_SECRET: 'private' }), error => {
-    assert.ok(error instanceof Error)
-    assert.ok(!error.message.includes('private'))
-    return true
-  })
+  assert.throws(
+    () => parseConfig({ ...process.env, JWT_SECRET: 'private' }),
+    (error) => {
+      assert.ok(error instanceof Error)
+      assert.ok(!error.message.includes('private'))
+      return true
+    },
+  )
 })

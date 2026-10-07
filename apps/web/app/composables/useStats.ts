@@ -20,7 +20,9 @@ export function useStats() {
   }
 
   async function fetchChats(page = 1, sort = 'parsed_at', order: 'asc' | 'desc' = 'desc') {
-    const result = await useApiFetch<PagedChatsResponse>(`/api/stats/chats?page=${page}&limit=20&sort=${sort}&order=${order}`)
+    const result = await useApiFetch<PagedChatsResponse>(
+      `/api/stats/chats?page=${page}&limit=20&sort=${sort}&order=${order}`,
+    )
     store.chats = result.chats
   }
 

@@ -128,7 +128,9 @@ onBeforeUnmount(() => {
   color: var(--text-primary);
   cursor: pointer;
   text-align: left;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .popover-option:hover {
@@ -142,7 +144,9 @@ onBeforeUnmount(() => {
 
 .popover-enter-active,
 .popover-leave-active {
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .popover-enter-from,

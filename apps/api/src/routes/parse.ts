@@ -42,7 +42,10 @@ import {
 } from '../services/telegram.service'
 
 const startSchema = z.object({
-  chatIds: z.array(z.string().regex(/^-?\d+$/)).max(500).optional(),
+  chatIds: z
+    .array(z.string().regex(/^-?\d+$/))
+    .max(500)
+    .optional(),
 })
 
 const shareReportSchema = z.object({
@@ -98,16 +101,16 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       if (!isAlive) {
-        await updateParseJob(activeJob.id, { 
-          status: 'failed', 
+        await updateParseJob(activeJob.id, {
+          status: 'failed',
           errorMessage: 'Job stalled or disappeared from queue',
-          completedAt: new Date()
+          completedAt: new Date(),
         })
         await clearActiveJob(userId)
       } else {
-        return reply.status(409).send({ 
+        return reply.status(409).send({
           message: 'A parse job is already running',
-          jobId: activeJob.id
+          jobId: activeJob.id,
         })
       }
     }
@@ -133,12 +136,15 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
 
       let dialogs: TelegramDialog[]
       try {
-        dialogs = await withTelegramReconnectRetry(async () => {
-          const client = await telegramPool.connectAuthorizedClient(userId, session)
-          return await withFloodWaitRetry(() => client.getDialogs({ limit: 500 })) as unknown as TelegramDialog[]
-        }, async () => {
-          await telegramPool.disconnectAuthorizedClient(userId)
-        })
+        dialogs = await withTelegramReconnectRetry(
+          async () => {
+            const client = await telegramPool.connectAuthorizedClient(userId, session)
+            return (await withFloodWaitRetry(() => client.getDialogs({ limit: 500 }))) as unknown as TelegramDialog[]
+          },
+          async () => {
+            await telegramPool.disconnectAuthorizedClient(userId)
+          },
+        )
       } catch (error) {
         if (isTelegramSessionExpiredError(error)) {
           await deactivateTelegramSessions(userId)
@@ -147,9 +153,9 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
         }
         if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
           await telegramPool.disconnectAuthorizedClient(userId)
-          return reply.status(409).send({ 
+          return reply.status(409).send({
             message: 'Telegram session is busy. If you have an active parse running, wait for it or cancel it.',
-            code: 'TELEGRAM_SESSION_BUSY' 
+            code: 'TELEGRAM_SESSION_BUSY',
           })
         }
         throw error
@@ -205,11 +211,15 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
           : 'Queued full parse',
       })
 
-      const bullJob = await parseDialogsQueue.add('parse-dialogs', {
-        userId,
-        jobId,
-        chatIds,
-      }, { jobId })
+      const bullJob = await parseDialogsQueue.add(
+        'parse-dialogs',
+        {
+          userId,
+          jobId,
+          chatIds,
+        },
+        { jobId },
+      )
       bullJobId = String(bullJob.id)
 
       await attachBullJobId(jobId, bullJobId)
@@ -272,12 +282,17 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     try {
-      const dialogs = await withTelegramReconnectRetry(async () => {
-        const client = await telegramPool.connectAuthorizedClient(userId, session)
-        return await withFloodWaitRetry(() => client.getDialogs({ limit: PARSE_DIALOGS_LIST_LIMIT })) as unknown as TelegramDialog[]
-      }, async () => {
-        await telegramPool.disconnectAuthorizedClient(userId)
-      })
+      const dialogs = await withTelegramReconnectRetry(
+        async () => {
+          const client = await telegramPool.connectAuthorizedClient(userId, session)
+          return (await withFloodWaitRetry(() =>
+            client.getDialogs({ limit: PARSE_DIALOGS_LIST_LIMIT }),
+          )) as unknown as TelegramDialog[]
+        },
+        async () => {
+          await telegramPool.disconnectAuthorizedClient(userId)
+        },
+      )
       const result = mapParseDialogs(dialogs)
       await cacheParseDialogs(userId, result)
 
@@ -311,14 +326,17 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
       return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
     }
 
-    let avatar: Buffer | null = null
+    let avatar: Buffer | null | undefined
     try {
-      avatar = await withTelegramReconnectRetry(async () => {
-        const client = await telegramPool.connectAuthorizedClient(userId, session)
-        return telegramPool.getDialogAvatar(userId, params.dialogId, client)
-      }, async () => {
-        await telegramPool.disconnectAuthorizedClient(userId)
-      })
+      avatar = await withTelegramReconnectRetry(
+        async () => {
+          const client = await telegramPool.connectAuthorizedClient(userId, session)
+          return telegramPool.getDialogAvatar(userId, params.dialogId, client)
+        },
+        async () => {
+          await telegramPool.disconnectAuthorizedClient(userId)
+        },
+      )
     } catch (error) {
       if (isTelegramSessionExpiredError(error)) {
         await deactivateTelegramSessions(userId)
@@ -343,53 +361,62 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(avatar)
   })
 
-  fastify.post('/share-report', {
-    preHandler: requireAuth,
-    bodyLimit: 25 * 1024 * 1024,
-  }, async (request, reply) => {
-    const userId = request.authUserId!
-    const payload = shareReportSchema.parse(request.body ?? {})
-    const session = await getActiveSessionForUser(userId)
-    if (!session) {
-      return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
-    }
-
-    const fileBuffer = Buffer.from(payload.base64, 'base64')
-    if (!fileBuffer.length) {
-      return sendApiError(reply, 400, 'Invalid file payload')
-    }
-
-    try {
-      await withTelegramReconnectRetry(async () => {
-        const client = await telegramPool.connectAuthorizedClient(userId, session)
-        const upload = new CustomFile(payload.fileName, fileBuffer.length, '', fileBuffer)
-
-        await withFloodWaitRetry(() => client.sendFile(payload.chatId, {
-          file: upload,
-          caption: '',
-          forceDocument: true,
-          workers: 1,
-        }))
-      }, async () => {
-        await telegramPool.disconnectAuthorizedClient(userId)
-      })
-
-      return { success: true as const }
-    } catch (error) {
-      if (isTelegramSessionExpiredError(error)) {
-        await deactivateTelegramSessions(userId)
-        await telegramPool.disconnectAuthorizedClient(userId)
+  fastify.post(
+    '/share-report',
+    {
+      preHandler: requireAuth,
+      bodyLimit: 25 * 1024 * 1024,
+    },
+    async (request, reply) => {
+      const userId = request.authUserId!
+      const payload = shareReportSchema.parse(request.body ?? {})
+      const session = await getActiveSessionForUser(userId)
+      if (!session) {
         return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
       }
-      if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
-        await telegramPool.disconnectAuthorizedClient(userId)
-        return sendApiError(reply, 409, 'Telegram is busy with another operation')
+
+      const fileBuffer = Buffer.from(payload.base64, 'base64')
+      if (!fileBuffer.length) {
+        return sendApiError(reply, 400, 'Invalid file payload')
       }
-      throw error
-    } finally {
-      await telegramPool.disconnectAuthorizedClient(userId)
-    }
-  })
+
+      try {
+        await withTelegramReconnectRetry(
+          async () => {
+            const client = await telegramPool.connectAuthorizedClient(userId, session)
+            const upload = new CustomFile(payload.fileName, fileBuffer.length, '', fileBuffer)
+
+            await withFloodWaitRetry(() =>
+              client.sendFile(payload.chatId, {
+                file: upload,
+                caption: '',
+                forceDocument: true,
+                workers: 1,
+              }),
+            )
+          },
+          async () => {
+            await telegramPool.disconnectAuthorizedClient(userId)
+          },
+        )
+
+        return { success: true as const }
+      } catch (error) {
+        if (isTelegramSessionExpiredError(error)) {
+          await deactivateTelegramSessions(userId)
+          await telegramPool.disconnectAuthorizedClient(userId)
+          return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
+        }
+        if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
+          await telegramPool.disconnectAuthorizedClient(userId)
+          return sendApiError(reply, 409, 'Telegram is busy with another operation')
+        }
+        throw error
+      } finally {
+        await telegramPool.disconnectAuthorizedClient(userId)
+      }
+    },
+  )
 
   fastify.delete('/cancel', { preHandler: requireAuth }, async (request, reply) => {
     const userId = request.authUserId!

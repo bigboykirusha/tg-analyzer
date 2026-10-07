@@ -2,16 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "paths": {
-      "@tg-analyzer/shared": [
-        "../../packages/shared/src/index.ts"
-      ],
-      "@tg-analyzer/shared/*": [
-        "../../packages/shared/src/*"
-      ]
+      "@tg-analyzer/shared": ["../../packages/shared/src/index.ts"],
+      "@tg-analyzer/shared/*": ["../../packages/shared/src/*"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }

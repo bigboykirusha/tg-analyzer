@@ -29,7 +29,7 @@ export async function purgeDeletedUser(userId: string) {
   do {
     const result = await redis.scan(cursor, 'MATCH', `*:${userId}*`, 'COUNT', 100)
     cursor = result[0]
-    const keys = result[1].filter(key => {
+    const keys = result[1].filter((key) => {
       if (!/^(parse:|telegram:client:)/.test(key)) {
         return false
       }
@@ -48,23 +48,29 @@ export async function purgeDeletedUser(userId: string) {
 
 export async function deleteAccount(userId: string) {
   const activeJobs = await db.query.parseJobs.findMany({ where: eq(schema.parseJobs.userId, userId) })
-  await Promise.all(activeJobs
-    .filter(job => job.status === 'pending' || job.status === 'running')
-    .map(job => redis.set(`parse:cancelled:${userId}:${job.id}`, '1', 'EX', 24 * 60 * 60)))
+  await Promise.all(
+    activeJobs
+      .filter((job) => job.status === 'pending' || job.status === 'running')
+      .map((job) => redis.set(`parse:cancelled:${userId}:${job.id}`, '1', 'EX', 24 * 60 * 60)),
+  )
 
   // Schedule durable cleanup before deleting the owner. If deletion fails, the job retries safely.
-  await cleanupQueue.add('delete-user-data', { userId }, {
-    jobId: `delete-${userId}`,
-    delay: 5000,
-    attempts: 20,
-    backoff: { type: 'exponential', delay: 1000 },
-    removeOnComplete: true,
-  })
+  await cleanupQueue.add(
+    'delete-user-data',
+    { userId },
+    {
+      jobId: `delete-${userId}`,
+      delay: 5000,
+      attempts: 20,
+      backoff: { type: 'exponential', delay: 1000 },
+      removeOnComplete: true,
+    },
+  )
   await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`)
     await tx.delete(schema.users).where(eq(schema.users.id, userId))
   })
-  await purgeDeletedUser(userId).catch(error => {
+  await purgeDeletedUser(userId).catch((error) => {
     logger.warn({ err: error }, 'account removed; cache cleanup scheduled')
   })
 }

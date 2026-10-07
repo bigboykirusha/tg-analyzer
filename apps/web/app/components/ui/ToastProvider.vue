@@ -5,12 +5,14 @@ const { toasts, remove } = useToast()
 const { t } = useI18n()
 
 function variantLabel(variant: string) {
-  return {
-    success: t('toast.success'),
-    error: t('toast.error'),
-    info: t('toast.info'),
-    warning: t('toast.warning'),
-  }[variant] ?? 'Info'
+  return (
+    {
+      success: t('toast.success'),
+      error: t('toast.error'),
+      info: t('toast.info'),
+      warning: t('toast.warning'),
+    }[variant] ?? 'Info'
+  )
 }
 </script>
 
@@ -103,7 +105,9 @@ function variantLabel(variant: string) {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .toast-close:hover {
@@ -113,7 +117,9 @@ function variantLabel(variant: string) {
 
 .toast-close:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+  box-shadow:
+    0 0 0 2px var(--bg-base),
+    0 0 0 4px var(--accent);
 }
 
 .toast-close svg {
@@ -143,7 +149,9 @@ function variantLabel(variant: string) {
 
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity var(--transition-normal), transform var(--transition-normal);
+  transition:
+    opacity var(--transition-normal),
+    transform var(--transition-normal);
 }
 
 .toast-enter-from,

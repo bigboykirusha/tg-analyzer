@@ -34,32 +34,226 @@ const LONG_SILENCE_MS = 30 * 24 * 60 * 60 * 1000
 const IMPLIED_REPLY_WINDOW_MS = 10 * 60 * 1000
 const RESPONSE_COVERAGE_WINDOW_MS = 30 * 60 * 1000
 const STOP_WORDS_RU = new Set([
-  '\u0438', '\u0432', '\u043d\u0435', '\u043d\u0430', '\u044f', '\u0447\u0442\u043e', '\u0442\u043e\u0442', '\u044d\u0442\u043e', '\u0441', '\u043e\u043d',
-  '\u043a\u0430\u043a', '\u043f\u043e', '\u043d\u043e', '\u043e\u043d\u0438', '\u043a', '\u0438\u0437', '\u0443', '\u0437\u0430', '\u0442\u043e', '\u0436\u0435',
-  '\u043e\u0442', '\u0442\u0430\u043a', '\u0430', '\u0434\u0430', '\u043d\u0443', '\u0432\u043e\u0442', '\u0443\u0436\u0435', '\u0435\u0449\u0451', '\u0435\u0449\u0435', '\u0431\u044b',
-  '\u043b\u0438', '\u0434\u043e', '\u0441\u043e', '\u043c\u043d\u0435', '\u0442\u044b', '\u043c\u044b', '\u0432\u044b', '\u043e\u043d\u0430', '\u043e\u043d\u043e', '\u043e\u0431',
-  '\u0435\u0451', '\u0435\u0435', '\u0435\u0433\u043e', '\u0438\u0445', '\u0435\u0439', '\u0438\u043c', '\u043d\u0430\u0441', '\u0432\u0430\u0441', '\u043d\u0435\u0442', '\u0431\u044b\u043b',
-  '\u0431\u044b\u043b\u0430', '\u0431\u044b\u043b\u0438', '\u0431\u044b\u0442\u044c', '\u0435\u0441\u0442\u044c', '\u0431\u0443\u0434\u0443', '\u0432\u0441\u0451', '\u0432\u0441\u0435', '\u0438\u043b\u0438', '\u0435\u0441\u043b\u0438', '\u043a\u043e\u0433\u0434\u0430',
-  '\u0447\u0442\u043e\u0431\u044b', '\u043f\u043e\u0442\u043e\u043c\u0443', '\u044d\u0442\u043e\u0442', '\u044d\u0442\u0430', '\u044d\u0442\u0438', '\u043f\u0440\u0438', '\u0431\u0435\u0437', '\u043f\u043e\u0434', '\u043d\u0430\u0434', '\u0434\u043b\u044f',
-  '\u043f\u0440\u043e', '\u043c\u0435\u043d\u044f', '\u0442\u0435\u0431\u044f', '\u043d\u0435\u0433\u043e', '\u043d\u0435\u0451', '\u043d\u0435\u0435', '\u043d\u0438\u0445', '\u0441\u0435\u0431\u044f', '\u0442\u0430\u043c', '\u0442\u0443\u0442',
-  '\u0433\u0434\u0435', '\u043a\u0443\u0434\u0430', '\u043c\u043e\u0439', '\u0442\u0432\u043e\u0439', '\u0441\u0432\u043e\u0439', '\u043d\u0430\u0448', '\u0432\u0430\u0448', '\u0447\u0435\u043c', '\u043c\u043e\u0436\u043d\u043e', '\u043d\u0430\u0434\u043e',
-  '\u043d\u0443\u0436\u043d\u043e', '\u0442\u043e\u043b\u044c\u043a\u043e', '\u0432\u043e\u043e\u0431\u0449\u0435', '\u043f\u0440\u043e\u0441\u0442\u043e', '\u043e\u0447\u0435\u043d\u044c', '\u0442\u043e\u0436\u0435', '\u0437\u0430\u0442\u043e', '\u0445\u043e\u0442\u044f', '\u043f\u043e\u043a\u0430', '\u043f\u043e\u0442\u043e\u043c',
-  '\u043f\u043e\u0441\u043b\u0435', '\u043f\u0435\u0440\u0435\u0434', '\u043c\u0435\u0436\u0434\u0443', '\u0447\u0435\u0440\u0435\u0437', '\u0437\u0434\u0435\u0441\u044c', '\u0442\u0443\u0434\u0430', '\u043e\u0442\u0442\u0443\u0434\u0430', '\u0432\u0435\u0434\u044c', '\u0434\u0430\u0436\u0435', '\u043b\u0438\u0448\u044c',
-  '\u0438\u043c\u0435\u043d\u043d\u043e', '\u0440\u0430\u0437\u0432\u0435', '\u043d\u0435\u0443\u0436\u0435\u043b\u0438', '\u0432\u0434\u0440\u0443\u0433',
+  '\u0438',
+  '\u0432',
+  '\u043d\u0435',
+  '\u043d\u0430',
+  '\u044f',
+  '\u0447\u0442\u043e',
+  '\u0442\u043e\u0442',
+  '\u044d\u0442\u043e',
+  '\u0441',
+  '\u043e\u043d',
+  '\u043a\u0430\u043a',
+  '\u043f\u043e',
+  '\u043d\u043e',
+  '\u043e\u043d\u0438',
+  '\u043a',
+  '\u0438\u0437',
+  '\u0443',
+  '\u0437\u0430',
+  '\u0442\u043e',
+  '\u0436\u0435',
+  '\u043e\u0442',
+  '\u0442\u0430\u043a',
+  '\u0430',
+  '\u0434\u0430',
+  '\u043d\u0443',
+  '\u0432\u043e\u0442',
+  '\u0443\u0436\u0435',
+  '\u0435\u0449\u0451',
+  '\u0435\u0449\u0435',
+  '\u0431\u044b',
+  '\u043b\u0438',
+  '\u0434\u043e',
+  '\u0441\u043e',
+  '\u043c\u043d\u0435',
+  '\u0442\u044b',
+  '\u043c\u044b',
+  '\u0432\u044b',
+  '\u043e\u043d\u0430',
+  '\u043e\u043d\u043e',
+  '\u043e\u0431',
+  '\u0435\u0451',
+  '\u0435\u0435',
+  '\u0435\u0433\u043e',
+  '\u0438\u0445',
+  '\u0435\u0439',
+  '\u0438\u043c',
+  '\u043d\u0430\u0441',
+  '\u0432\u0430\u0441',
+  '\u043d\u0435\u0442',
+  '\u0431\u044b\u043b',
+  '\u0431\u044b\u043b\u0430',
+  '\u0431\u044b\u043b\u0438',
+  '\u0431\u044b\u0442\u044c',
+  '\u0435\u0441\u0442\u044c',
+  '\u0431\u0443\u0434\u0443',
+  '\u0432\u0441\u0451',
+  '\u0432\u0441\u0435',
+  '\u0438\u043b\u0438',
+  '\u0435\u0441\u043b\u0438',
+  '\u043a\u043e\u0433\u0434\u0430',
+  '\u0447\u0442\u043e\u0431\u044b',
+  '\u043f\u043e\u0442\u043e\u043c\u0443',
+  '\u044d\u0442\u043e\u0442',
+  '\u044d\u0442\u0430',
+  '\u044d\u0442\u0438',
+  '\u043f\u0440\u0438',
+  '\u0431\u0435\u0437',
+  '\u043f\u043e\u0434',
+  '\u043d\u0430\u0434',
+  '\u0434\u043b\u044f',
+  '\u043f\u0440\u043e',
+  '\u043c\u0435\u043d\u044f',
+  '\u0442\u0435\u0431\u044f',
+  '\u043d\u0435\u0433\u043e',
+  '\u043d\u0435\u0451',
+  '\u043d\u0435\u0435',
+  '\u043d\u0438\u0445',
+  '\u0441\u0435\u0431\u044f',
+  '\u0442\u0430\u043c',
+  '\u0442\u0443\u0442',
+  '\u0433\u0434\u0435',
+  '\u043a\u0443\u0434\u0430',
+  '\u043c\u043e\u0439',
+  '\u0442\u0432\u043e\u0439',
+  '\u0441\u0432\u043e\u0439',
+  '\u043d\u0430\u0448',
+  '\u0432\u0430\u0448',
+  '\u0447\u0435\u043c',
+  '\u043c\u043e\u0436\u043d\u043e',
+  '\u043d\u0430\u0434\u043e',
+  '\u043d\u0443\u0436\u043d\u043e',
+  '\u0442\u043e\u043b\u044c\u043a\u043e',
+  '\u0432\u043e\u043e\u0431\u0449\u0435',
+  '\u043f\u0440\u043e\u0441\u0442\u043e',
+  '\u043e\u0447\u0435\u043d\u044c',
+  '\u0442\u043e\u0436\u0435',
+  '\u0437\u0430\u0442\u043e',
+  '\u0445\u043e\u0442\u044f',
+  '\u043f\u043e\u043a\u0430',
+  '\u043f\u043e\u0442\u043e\u043c',
+  '\u043f\u043e\u0441\u043b\u0435',
+  '\u043f\u0435\u0440\u0435\u0434',
+  '\u043c\u0435\u0436\u0434\u0443',
+  '\u0447\u0435\u0440\u0435\u0437',
+  '\u0437\u0434\u0435\u0441\u044c',
+  '\u0442\u0443\u0434\u0430',
+  '\u043e\u0442\u0442\u0443\u0434\u0430',
+  '\u0432\u0435\u0434\u044c',
+  '\u0434\u0430\u0436\u0435',
+  '\u043b\u0438\u0448\u044c',
+  '\u0438\u043c\u0435\u043d\u043d\u043e',
+  '\u0440\u0430\u0437\u0432\u0435',
+  '\u043d\u0435\u0443\u0436\u0435\u043b\u0438',
+  '\u0432\u0434\u0440\u0443\u0433',
 ])
 const STOP_WORDS_EN = new Set([
-  'i', 'me', 'my', 'myself', 'we', 'our', 'you', 'your', 'he', 'him',
-  'his', 'she', 'her', 'it', 'its', 'they', 'them', 'their', 'what',
-  'which', 'who', 'this', 'that', 'these', 'those', 'am', 'is', 'are',
-  'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do',
-  'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might',
-  'shall', 'can', 'need', 'dare', 'ought', 'used', 'to', 'of', 'in',
-  'for', 'on', 'with', 'at', 'by', 'from', 'as', 'an', 'the', 'and',
-  'but', 'or', 'nor', 'so', 'yet', 'both', 'either', 'not', 'no',
-  'if', 'then', 'than', 'too', 'very', 'just', 'because', 'while',
-  'although', 'though', 'since', 'until', 'unless', 'also', 'about',
-  'up', 'out', 'into', 'over', 'after', 'before', 'between', 'through',
-  'ok', 'okay', 'yes', 'yeah', 'yep', 'nope', 'hey', 'hi',
+  'i',
+  'me',
+  'my',
+  'myself',
+  'we',
+  'our',
+  'you',
+  'your',
+  'he',
+  'him',
+  'his',
+  'she',
+  'her',
+  'it',
+  'its',
+  'they',
+  'them',
+  'their',
+  'what',
+  'which',
+  'who',
+  'this',
+  'that',
+  'these',
+  'those',
+  'am',
+  'is',
+  'are',
+  'was',
+  'were',
+  'be',
+  'been',
+  'being',
+  'have',
+  'has',
+  'had',
+  'do',
+  'does',
+  'did',
+  'will',
+  'would',
+  'could',
+  'should',
+  'may',
+  'might',
+  'shall',
+  'can',
+  'need',
+  'dare',
+  'ought',
+  'used',
+  'to',
+  'of',
+  'in',
+  'for',
+  'on',
+  'with',
+  'at',
+  'by',
+  'from',
+  'as',
+  'an',
+  'the',
+  'and',
+  'but',
+  'or',
+  'nor',
+  'so',
+  'yet',
+  'both',
+  'either',
+  'not',
+  'no',
+  'if',
+  'then',
+  'than',
+  'too',
+  'very',
+  'just',
+  'because',
+  'while',
+  'although',
+  'though',
+  'since',
+  'until',
+  'unless',
+  'also',
+  'about',
+  'up',
+  'out',
+  'into',
+  'over',
+  'after',
+  'before',
+  'between',
+  'through',
+  'ok',
+  'okay',
+  'yes',
+  'yeah',
+  'yep',
+  'nope',
+  'hey',
+  'hi',
 ])
 const stopWords = new Set([...STOP_WORDS_RU, ...STOP_WORDS_EN])
 
@@ -178,9 +372,13 @@ export function createChatAccumulator(timeZone = 'UTC'): AggregatedChatStats & {
     topEmoji: [],
     hourlyActivity: Object.fromEntries(Array.from({ length: 24 }, (_, index) => [String(index), 0])),
     dailyActivity: new Map(),
-    weekdayActivity: Object.fromEntries(Array.from({ length: 7 }, (_, index) => [String(index), createDirectionalCount()])),
+    weekdayActivity: Object.fromEntries(
+      Array.from({ length: 7 }, (_, index) => [String(index), createDirectionalCount()]),
+    ),
     monthlyActivity: new Map(),
-    hourlyActivitySplit: Object.fromEntries(Array.from({ length: 24 }, (_, index) => [String(index), createDirectionalCount()])),
+    hourlyActivitySplit: Object.fromEntries(
+      Array.from({ length: 24 }, (_, index) => [String(index), createDirectionalCount()]),
+    ),
     topWordsBySender: { mine: [], theirs: [] },
     topEmojiBySender: { mine: [], theirs: [] },
     uniqueWordsBySender: { mine: [], theirs: [] },
@@ -362,9 +560,7 @@ function getLocalWeekday(date: Date, timeZone: string) {
 }
 
 function normalizeWordToken(word: string) {
-  const normalized = word
-    .toLowerCase()
-    .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')
+  const normalized = word.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')
 
   if (!normalized || normalized.length < 2) {
     return null
@@ -450,16 +646,17 @@ function normalizeParticipantName(name: string) {
   if (!normalized) {
     return 'Name unavailable'
   }
-  if (/^user unknown$/i.test(normalized) || /^unknown$/i.test(normalized) || /^unknown participant$/i.test(normalized)) {
+  if (
+    /^user unknown$/i.test(normalized) ||
+    /^unknown$/i.test(normalized) ||
+    /^unknown participant$/i.test(normalized)
+  ) {
     return 'Name unavailable'
   }
   return normalized
 }
 
-export function aggregateMessage(
-  message: AggregationMessageInput,
-  acc: ReturnType<typeof createChatAccumulator>,
-) {
+export function aggregateMessage(message: AggregationMessageInput, acc: ReturnType<typeof createChatAccumulator>) {
   const outgoing = Boolean(message.outgoing)
   const senderId = message.senderId?.trim() || (outgoing ? 'self' : 'unknown')
   const participant = ensureParticipant(acc, senderId, message.senderName, outgoing)
@@ -596,16 +793,16 @@ export function projectTelegramMessageMetadata(message: TelegramMessageLike): Ag
 
 function extractSenderId(message: TelegramMessageLike) {
   const candidate =
-    readNestedValue(message, ['senderId', 'value'])
-    ?? readNestedValue(message, ['senderId', 'userId'])
-    ?? readNestedValue(message, ['senderId', 'channelId'])
-    ?? readNestedValue(message, ['senderId', 'chatId'])
-    ?? readNestedValue(message, ['fromId', 'value'])
-    ?? readNestedValue(message, ['fromId', 'userId'])
-    ?? readNestedValue(message, ['fromId', 'channelId'])
-    ?? readNestedValue(message, ['fromId', 'chatId'])
-    ?? readNestedValue(message, ['sender', 'id'])
-    ?? readNestedValue(message, ['sender', 'userId'])
+    readNestedValue(message, ['senderId', 'value']) ??
+    readNestedValue(message, ['senderId', 'userId']) ??
+    readNestedValue(message, ['senderId', 'channelId']) ??
+    readNestedValue(message, ['senderId', 'chatId']) ??
+    readNestedValue(message, ['fromId', 'value']) ??
+    readNestedValue(message, ['fromId', 'userId']) ??
+    readNestedValue(message, ['fromId', 'channelId']) ??
+    readNestedValue(message, ['fromId', 'chatId']) ??
+    readNestedValue(message, ['sender', 'id']) ??
+    readNestedValue(message, ['sender', 'userId'])
 
   return candidate !== null && candidate !== undefined ? String(candidate) : null
 }
@@ -630,19 +827,20 @@ function extractSenderName(message: TelegramMessageLike) {
     }
   }
 
-  const directName = typeof readNestedValue(message, ['senderName']) === 'string'
-    ? String(readNestedValue(message, ['senderName']))
-    : null
+  const directName =
+    typeof readNestedValue(message, ['senderName']) === 'string'
+      ? String(readNestedValue(message, ['senderName']))
+      : null
 
   return directName
 }
 
 function extractReplyToMessageId(message: TelegramMessageLike) {
   const candidate =
-    readNestedValue(message, ['replyTo', 'replyToMsgId'])
-    ?? readNestedValue(message, ['replyTo', 'replyToMsgIds', 0])
-    ?? readNestedValue(message, ['replyToMessageId'])
-    ?? readNestedValue(message, ['replyToMsgId'])
+    readNestedValue(message, ['replyTo', 'replyToMsgId']) ??
+    readNestedValue(message, ['replyTo', 'replyToMsgIds', 0]) ??
+    readNestedValue(message, ['replyToMessageId']) ??
+    readNestedValue(message, ['replyToMsgId'])
 
   return candidate !== null && candidate !== undefined ? String(candidate) : null
 }
@@ -802,12 +1000,10 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
   }
 
   const dailyRows = mapDailyActivity(acc.dailyActivity)
-  const mostActiveDate = dailyRows.length
-    ? [...dailyRows].sort((left, right) => right.total - left.total)[0]
-    : null
+  const mostActiveDate = dailyRows.length ? [...dailyRows].sort((left, right) => right.total - left.total)[0] : null
   const monthlyRows = mapMonthlyActivity(acc.monthlyActivity)
   const mostActiveMonth = monthlyRows.length
-    ? [...monthlyRows].sort((left, right) => right.total - left.total)[0]?.month ?? null
+    ? ([...monthlyRows].sort((left, right) => right.total - left.total)[0]?.month ?? null)
     : null
   const activeDays = dailyRows.length
   const maxStreak = computeMaxStreak(Array.from(acc.dailyActivity.keys()))
@@ -921,7 +1117,7 @@ function computeGroupReport(params: {
     hourlyParticipants.set(hourKey, hourParticipants)
 
     const previous = timeline[index - 1]
-    if (!previous || (current.timestamp.getTime() - previous.timestamp.getTime()) > GROUP_SESSION_BOUNDARY_MS) {
+    if (!previous || current.timestamp.getTime() - previous.timestamp.getTime() > GROUP_SESSION_BOUNDARY_MS) {
       currentParticipant.starterCount += 1
       totalSessions += 1
     }
@@ -973,7 +1169,9 @@ function computeGroupReport(params: {
   const sharedVocabularyThreshold = Math.max(1, Math.ceil(activeMembers * 0.5))
   const sharedVocabulary = mapToTopItems(
     new Map(
-      Array.from(acc.wordCounts.entries()).filter(([word]) => (participantWordPresence.get(word) ?? 0) >= sharedVocabularyThreshold),
+      Array.from(acc.wordCounts.entries()).filter(
+        ([word]) => (participantWordPresence.get(word) ?? 0) >= sharedVocabularyThreshold,
+      ),
     ),
     15,
   )
@@ -987,22 +1185,28 @@ function computeGroupReport(params: {
     15,
   )
 
-  const activeMembersLast30Days = participants.filter((participant) => participant.lastSeen && (now.getTime() - participant.lastSeen.getTime()) <= (30 * 24 * 60 * 60 * 1000)).length
-  const previousWindowStart = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000))
-  const previousWindowEnd = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000))
-  const previousActiveMembers = participants.filter((participant) => participant.lastSeen && participant.lastSeen >= previousWindowStart && participant.lastSeen < previousWindowEnd).length
-  const momentum: GroupHealthDto['momentum'] = previousActiveMembers > 0
-    ? activeMembersLast30Days > previousActiveMembers * 1.15
-      ? 'growing'
-      : activeMembersLast30Days < previousActiveMembers * 0.85
-        ? 'shrinking'
+  const activeMembersLast30Days = participants.filter(
+    (participant) => participant.lastSeen && now.getTime() - participant.lastSeen.getTime() <= 30 * 24 * 60 * 60 * 1000,
+  ).length
+  const previousWindowStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
+  const previousWindowEnd = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const previousActiveMembers = participants.filter(
+    (participant) =>
+      participant.lastSeen && participant.lastSeen >= previousWindowStart && participant.lastSeen < previousWindowEnd,
+  ).length
+  const momentum: GroupHealthDto['momentum'] =
+    previousActiveMembers > 0
+      ? activeMembersLast30Days > previousActiveMembers * 1.15
+        ? 'growing'
+        : activeMembersLast30Days < previousActiveMembers * 0.85
+          ? 'shrinking'
+          : 'stable'
+      : activeMembersLast30Days > 0
+        ? 'growing'
         : 'stable'
-    : activeMembersLast30Days > 0
-      ? 'growing'
-      : 'stable'
 
-  const earlyWindowEnd = new Date(firstMessageAt.getTime() + (90 * 24 * 60 * 60 * 1000))
-  const recentWindowStart = new Date(lastMessageAt.getTime() - (90 * 24 * 60 * 60 * 1000))
+  const earlyWindowEnd = new Date(firstMessageAt.getTime() + 90 * 24 * 60 * 60 * 1000)
+  const recentWindowStart = new Date(lastMessageAt.getTime() - 90 * 24 * 60 * 60 * 1000)
   const earlyActive = new Set(
     participants
       .filter((participant) => participant.firstSeen && participant.firstSeen <= earlyWindowEnd)
@@ -1016,41 +1220,63 @@ function computeGroupReport(params: {
   const retained = Array.from(earlyActive).filter((participantId) => recentActive.has(participantId)).length
   const retentionRate = earlyActive.size ? Number(((retained / earlyActive.size) * 100).toFixed(1)) : 100
 
-  const firstHalfBoundary = new Date(firstMessageAt.getTime() + ((lastMessageAt.getTime() - firstMessageAt.getTime()) / 2))
-  const churnedMembers = participants.filter((participant) =>
-    participant.lastSeen
-    && participant.lastSeen < new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000))
-    && participant.firstSeen
-    && participant.firstSeen < firstHalfBoundary)
+  const firstHalfBoundary = new Date(
+    firstMessageAt.getTime() + (lastMessageAt.getTime() - firstMessageAt.getTime()) / 2,
+  )
+  const churnedMembers = participants.filter(
+    (participant) =>
+      participant.lastSeen &&
+      participant.lastSeen < new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000) &&
+      participant.firstSeen &&
+      participant.firstSeen < firstHalfBoundary,
+  )
 
-  const shares = participants.map((participant) => totalMessages ? participant.messageCount / totalMessages : 0).sort((left, right) => left - right)
+  const shares = participants
+    .map((participant) => (totalMessages ? participant.messageCount / totalMessages : 0))
+    .sort((left, right) => left - right)
   const meanShare = shares.length ? average(shares) : 0
-  const giniCoefficient = shares.length && meanShare
-    ? Number((shares.reduce((sum, share, index) => sum + ((2 * (index + 1)) - shares.length - 1) * share, 0) / (shares.length * shares.length * meanShare)).toFixed(3))
-    : 0
+  const giniCoefficient =
+    shares.length && meanShare
+      ? Number(
+          (
+            shares.reduce((sum, share, index) => sum + (2 * (index + 1) - shares.length - 1) * share, 0) /
+            (shares.length * shares.length * meanShare)
+          ).toFixed(3),
+        )
+      : 0
   const lurkerRatio = activeMembers
-    ? Number(((participants.filter((participant) => totalMessages ? ((participant.messageCount / totalMessages) * 100) < 0.5 : true).length / activeMembers) * 100).toFixed(1))
+    ? Number(
+        (
+          (participants.filter((participant) =>
+            totalMessages ? (participant.messageCount / totalMessages) * 100 < 0.5 : true,
+          ).length /
+            activeMembers) *
+          100
+        ).toFixed(1),
+      )
     : 0
   const responseCoverage = totalMessages ? Number(((respondedMessages / totalMessages) * 100).toFixed(1)) : 0
   const consistency = Number(((activeDays / durationDays) * 100).toFixed(1))
   const peakSimultaneity = Array.from(hourlyParticipants.values()).reduce((max, set) => Math.max(max, set.size), 0)
-  const healthScore = Number((
-    ((1 - giniCoefficient) * 100 * 0.30)
-    + (retentionRate * 0.25)
-    + (consistency * 0.25)
-    + (responseCoverage * 0.20)
-  ).toFixed(1))
+  const healthScore = Number(
+    ((1 - giniCoefficient) * 100 * 0.3 + retentionRate * 0.25 + consistency * 0.25 + responseCoverage * 0.2).toFixed(1),
+  )
 
   const participantsDto: GroupParticipantDto[] = participants
     .map((participant) => {
       const messageShare = totalMessages ? Number(((participant.messageCount / totalMessages) * 100).toFixed(1)) : 0
       const mediaShare = totalMedia ? Number(((participant.mediaCount / totalMedia) * 100).toFixed(1)) : 0
-      const avgWordsPerMessage = participant.messageCount ? Number((participant.wordCount / participant.messageCount).toFixed(2)) : null
+      const avgWordsPerMessage = participant.messageCount
+        ? Number((participant.wordCount / participant.messageCount).toFixed(2))
+        : null
       const starterShare = totalSessions ? Number(((participant.starterCount / totalSessions) * 100).toFixed(1)) : 0
       const consistencyScore = Number(((participant.activeDays.size / durationDays) * 100).toFixed(1))
-      const magnetScore = participant.messageCount ? Number((participant.repliesReceived / participant.messageCount).toFixed(2)) : null
-      const replyRatio = participant.messageCount ? Number((participant.replyCount / participant.messageCount).toFixed(2)) : null
-      const emojiShare = acc.totalEmojiCount ? (participant.emojiCount / acc.totalEmojiCount) * 100 : 0
+      const magnetScore = participant.messageCount
+        ? Number((participant.repliesReceived / participant.messageCount).toFixed(2))
+        : null
+      const replyRatio = participant.messageCount
+        ? Number((participant.replyCount / participant.messageCount).toFixed(2))
+        : null
       const role = resolveGroupRole({
         messageShare,
         consistencyScore,
@@ -1179,9 +1405,13 @@ function buildGroupTopPairs(params: {
     if (combined.has(normalizedKey)) {
       continue
     }
-    const directReplies = (params.directPairCounts.get(`${leftId}|${rightId}`) ?? 0) + (params.directPairCounts.get(`${rightId}|${leftId}`) ?? 0)
-    const impliedReplies = (params.impliedPairCounts.get(`${leftId}|${rightId}`) ?? 0) + (params.impliedPairCounts.get(`${rightId}|${leftId}`) ?? 0)
-    const symmetricScore = (directReplies * 2) + impliedReplies
+    const directReplies =
+      (params.directPairCounts.get(`${leftId}|${rightId}`) ?? 0) +
+      (params.directPairCounts.get(`${rightId}|${leftId}`) ?? 0)
+    const impliedReplies =
+      (params.impliedPairCounts.get(`${leftId}|${rightId}`) ?? 0) +
+      (params.impliedPairCounts.get(`${rightId}|${leftId}`) ?? 0)
+    const symmetricScore = directReplies * 2 + impliedReplies
     if (!symmetricScore) {
       continue
     }
@@ -1369,7 +1599,10 @@ function buildSessionStats(
       sessions.push({
         startedAt: currentSession.startedAt.toISOString(),
         endedAt: currentSession.endedAt.toISOString(),
-        durationSec: Math.max(0, Math.round((currentSession.endedAt.getTime() - currentSession.startedAt.getTime()) / 1000)),
+        durationSec: Math.max(
+          0,
+          Math.round((currentSession.endedAt.getTime() - currentSession.startedAt.getTime()) / 1000),
+        ),
         totalMessages: currentSession.totalMessages,
         sentMessages: currentSession.sentMessages,
         receivedMessages: currentSession.receivedMessages,
@@ -1397,7 +1630,10 @@ function buildSessionStats(
   sessions.push({
     startedAt: currentSession.startedAt.toISOString(),
     endedAt: currentSession.endedAt.toISOString(),
-    durationSec: Math.max(0, Math.round((currentSession.endedAt.getTime() - currentSession.startedAt.getTime()) / 1000)),
+    durationSec: Math.max(
+      0,
+      Math.round((currentSession.endedAt.getTime() - currentSession.startedAt.getTime()) / 1000),
+    ),
     totalMessages: currentSession.totalMessages,
     sentMessages: currentSession.sentMessages,
     receivedMessages: currentSession.receivedMessages,
@@ -1413,7 +1649,9 @@ function buildSessionStats(
   const longestByDuration = [...sessions].sort((left, right) => right.durationSec - left.durationSec)[0] ?? null
   const densestByMessages = [...sessions].sort((left, right) => right.totalMessages - left.totalMessages)[0] ?? null
   const highlights = [densestByMessages, longestByDuration]
-    .filter((value, index, items): value is NonNullable<typeof value> => Boolean(value) && items.indexOf(value) === index)
+    .filter(
+      (value, index, items): value is NonNullable<typeof value> => Boolean(value) && items.indexOf(value) === index,
+    )
     .slice(0, 3)
 
   return {
@@ -1505,7 +1743,9 @@ function computeCompositionStats(params: {
     voiceSharePct: Number(((params.messageComposition.voice / params.totalMessages) * 100).toFixed(2)),
     stickerSharePct: Number(((params.messageComposition.sticker / params.totalMessages) * 100).toFixed(2)),
     fileSharePct: Number(((params.messageComposition.file / params.totalMessages) * 100).toFixed(2)),
-    avgCharsPerTextMessage: params.textMessageCount ? Number((params.totalChars / params.textMessageCount).toFixed(2)) : null,
+    avgCharsPerTextMessage: params.textMessageCount
+      ? Number((params.totalChars / params.textMessageCount).toFixed(2))
+      : null,
   }
 }
 
@@ -1530,11 +1770,8 @@ function computeAvailabilityProfile(hourlyActivity: Record<string, number>): Ava
   const averageHourly = entries.length ? totalMessages / entries.length : 0
   const maxHourly = peakHours[0]?.total ?? 0
   const concentrationIndex = averageHourly > 0 ? Number((maxHourly / averageHourly).toFixed(2)) : null
-  const predictability = concentrationIndex === null || concentrationIndex < 2
-    ? 'low'
-    : concentrationIndex < 3.5
-      ? 'medium'
-      : 'high'
+  const predictability =
+    concentrationIndex === null || concentrationIndex < 2 ? 'low' : concentrationIndex < 3.5 ? 'medium' : 'high'
 
   return {
     activeHours: activeHours.length,
@@ -1561,17 +1798,21 @@ function computeHealthScore(params: {
     ? Math.min(1, params.sessionStats.totalSessions / Math.max(params.activeDays, 1))
     : 1
   const initiativeBalance = params.relationshipScore.attentionBalance
-  const longTermStability = clamp(Math.round(
-    (params.relationshipScore.stability ?? 50) * 0.7
-    + (params.trend === 'growing' ? 90 : params.trend === 'stable' ? 75 : params.trend === 'fading' ? 35 : 55) * 0.3,
-  ))
+  const longTermStability = clamp(
+    Math.round(
+      (params.relationshipScore.stability ?? 50) * 0.7 +
+        (params.trend === 'growing' ? 90 : params.trend === 'stable' ? 75 : params.trend === 'fading' ? 35 : 55) * 0.3,
+    ),
+  )
   const responseRateScore = params.responseRate ?? 55
-  const score = clamp(Math.round(
-    responseRateScore * 0.3
-    + (100 - fragmentation * 50) * 0.2
-    + (initiativeBalance ?? 50) * 0.2
-    + longTermStability * 0.3,
-  ))
+  const score = clamp(
+    Math.round(
+      responseRateScore * 0.3 +
+        (100 - fragmentation * 50) * 0.2 +
+        (initiativeBalance ?? 50) * 0.2 +
+        longTermStability * 0.3,
+    ),
+  )
 
   let label: HealthScoreDto['label'] = 'steady'
   if (score >= 80) {
@@ -1633,29 +1874,28 @@ function computeRelationshipScore(params: {
 
   const shareDelta = Math.abs(params.sentMessages - params.receivedMessages) / totalMessages
   const reciprocity = clamp(Math.round((1 - shareDelta) * 100))
-  const attentionBalance = params.iWriteFirstPct === null
-    ? reciprocity
-    : clamp(100 - Math.abs(params.iWriteFirstPct - 50) * 2)
-  const responsivenessSamples = [params.responseStats.medianMineSec, params.responseStats.medianTheirsSec]
-    .reduce<number[]>((acc, value) => {
-      const scored = scoreResponsiveness(value)
-      if (scored !== null) {
-        acc.push(scored)
-      }
-      return acc
-    }, [])
+  const attentionBalance =
+    params.iWriteFirstPct === null ? reciprocity : clamp(100 - Math.abs(params.iWriteFirstPct - 50) * 2)
+  const responsivenessSamples = [params.responseStats.medianMineSec, params.responseStats.medianTheirsSec].reduce<
+    number[]
+  >((acc, value) => {
+    const scored = scoreResponsiveness(value)
+    if (scored !== null) {
+      acc.push(scored)
+    }
+    return acc
+  }, [])
   const responsiveness = responsivenessSamples.length ? Math.round(average(responsivenessSamples)) : null
-  const stability = clamp(Math.round(
-    Math.min(1, params.activeDays / 60) * 45
-    + Math.min(1, params.maxStreakDays / 21) * 35
-    + (params.trend === 'fading' ? 5 : params.trend === 'growing' ? 20 : params.trend === 'stable' ? 15 : 10),
-  ))
-  const score = clamp(Math.round(
-    reciprocity * 0.3
-    + (responsiveness ?? 55) * 0.25
-    + stability * 0.25
-    + attentionBalance * 0.2,
-  ))
+  const stability = clamp(
+    Math.round(
+      Math.min(1, params.activeDays / 60) * 45 +
+        Math.min(1, params.maxStreakDays / 21) * 35 +
+        (params.trend === 'fading' ? 5 : params.trend === 'growing' ? 20 : params.trend === 'stable' ? 15 : 10),
+    ),
+  )
+  const score = clamp(
+    Math.round(reciprocity * 0.3 + (responsiveness ?? 55) * 0.25 + stability * 0.25 + attentionBalance * 0.2),
+  )
 
   let label: RelationshipScoreDto['label'] = 'balanced'
   if (score >= 78 && params.trend !== 'fading') {
@@ -1731,11 +1971,12 @@ function generateInsights(params: {
   }
 
   if (params.relationshipScore) {
-    const tone = params.relationshipScore.label === 'cooling' || params.relationshipScore.label === 'one_sided'
-      ? 'warning'
-      : params.relationshipScore.label === 'warm'
-        ? 'positive'
-        : 'neutral'
+    const tone =
+      params.relationshipScore.label === 'cooling' || params.relationshipScore.label === 'one_sided'
+        ? 'warning'
+        : params.relationshipScore.label === 'warm'
+          ? 'positive'
+          : 'neutral'
     insights.push({
       key: 'relationship-score',
       title: 'Relationship dynamics',
@@ -1744,7 +1985,7 @@ function generateInsights(params: {
     })
   }
 
-  if ((params.responseStats.mineSamples + params.responseStats.theirsSamples) >= 6) {
+  if (params.responseStats.mineSamples + params.responseStats.theirsSamples >= 6) {
     const myMedian = params.responseStats.medianMineSec
     const theirMedian = params.responseStats.medianTheirsSec
     if (myMedian !== null && theirMedian !== null) {
@@ -1797,60 +2038,10 @@ export async function saveAggregates(params: {
     }
 
     await tx
-    .insert(schema.chatStats)
-    .values({
-      userId: params.userId,
-      tgChatId: params.chat.id,
-      chatName: params.chat.title,
-      chatType: params.chat.type,
-      totalMessages: finalStats.totalMessages,
-      sentMessages: finalStats.sentMessages,
-      receivedMessages: finalStats.receivedMessages,
-      totalChars: finalStats.totalChars,
-      totalWords: finalStats.totalWords,
-      textMessageCount: finalStats.textMessageCount,
-      mediaCount: finalStats.mediaCount,
-      voiceCount: finalStats.voiceCount,
-      stickerCount: finalStats.stickerCount,
-      fileCount: finalStats.fileCount,
-      firstMessageAt: finalStats.firstMessageAt,
-      lastMessageAt: finalStats.lastMessageAt,
-      averageMyResponseSec: finalStats.averageMyResponseSec,
-      medianMyResponseSec: finalStats.medianMyResponseSec,
-      medianTheirResponseSec: finalStats.medianTheirResponseSec,
-      iWriteFirstPct: finalStats.iWriteFirstPct,
-      responseRate: decimalOrNull(finalStats.responseRate),
-      parsedAt: new Date(),
-      myWordsPerMessage: decimalOrNull(finalStats.wordsPerMessage.mine),
-      theirWordsPerMessage: decimalOrNull(finalStats.wordsPerMessage.theirs),
-      topWords: finalStats.topWords,
-      topEmoji: finalStats.topEmoji,
-      hourlyActivity: finalStats.hourlyActivity,
-      dailyActivity: dailyActivityJson,
-      weekdayActivity: finalStats.weekdayActivity,
-      monthlyActivity: monthlyActivityJson,
-      hourlyActivitySplit: finalStats.hourlyActivitySplit,
-      topWordsBySender: finalStats.topWordsBySender,
-      topEmojiBySender: finalStats.topEmojiBySender,
-      uniqueWordsBySender: finalStats.uniqueWordsBySender,
-      responseStats: finalStats.responseStats,
-      messageComposition: finalStats.messageComposition,
-      activityDistribution: finalStats.activityDistribution,
-      compositionStats: finalStats.compositionStats,
-      availabilityProfile: finalStats.availabilityProfile,
-      healthScore: finalStats.healthScore,
-      conversationFacts: finalStats.conversationFacts,
-      wordsPerMessage: finalStats.wordsPerMessage,
-      groupParticipants: finalStats.groupReport?.participants ?? [],
-      groupTopPairs: finalStats.groupReport?.topPairs ?? [],
-      groupHealth: finalStats.groupReport?.health ?? null,
-      sharedVocabulary: finalStats.groupReport?.sharedVocabulary ?? [],
-      uniqueGroupWords: finalStats.groupReport?.uniqueGroupWords ?? [],
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: [schema.chatStats.userId, schema.chatStats.tgChatId],
-      set: {
+      .insert(schema.chatStats)
+      .values({
+        userId: params.userId,
+        tgChatId: params.chat.id,
         chatName: params.chat.title,
         chatType: params.chat.type,
         totalMessages: finalStats.totalMessages,
@@ -1897,8 +2088,58 @@ export async function saveAggregates(params: {
         sharedVocabulary: finalStats.groupReport?.sharedVocabulary ?? [],
         uniqueGroupWords: finalStats.groupReport?.uniqueGroupWords ?? [],
         updatedAt: new Date(),
-      },
-    })
+      })
+      .onConflictDoUpdate({
+        target: [schema.chatStats.userId, schema.chatStats.tgChatId],
+        set: {
+          chatName: params.chat.title,
+          chatType: params.chat.type,
+          totalMessages: finalStats.totalMessages,
+          sentMessages: finalStats.sentMessages,
+          receivedMessages: finalStats.receivedMessages,
+          totalChars: finalStats.totalChars,
+          totalWords: finalStats.totalWords,
+          textMessageCount: finalStats.textMessageCount,
+          mediaCount: finalStats.mediaCount,
+          voiceCount: finalStats.voiceCount,
+          stickerCount: finalStats.stickerCount,
+          fileCount: finalStats.fileCount,
+          firstMessageAt: finalStats.firstMessageAt,
+          lastMessageAt: finalStats.lastMessageAt,
+          averageMyResponseSec: finalStats.averageMyResponseSec,
+          medianMyResponseSec: finalStats.medianMyResponseSec,
+          medianTheirResponseSec: finalStats.medianTheirResponseSec,
+          iWriteFirstPct: finalStats.iWriteFirstPct,
+          responseRate: decimalOrNull(finalStats.responseRate),
+          parsedAt: new Date(),
+          myWordsPerMessage: decimalOrNull(finalStats.wordsPerMessage.mine),
+          theirWordsPerMessage: decimalOrNull(finalStats.wordsPerMessage.theirs),
+          topWords: finalStats.topWords,
+          topEmoji: finalStats.topEmoji,
+          hourlyActivity: finalStats.hourlyActivity,
+          dailyActivity: dailyActivityJson,
+          weekdayActivity: finalStats.weekdayActivity,
+          monthlyActivity: monthlyActivityJson,
+          hourlyActivitySplit: finalStats.hourlyActivitySplit,
+          topWordsBySender: finalStats.topWordsBySender,
+          topEmojiBySender: finalStats.topEmojiBySender,
+          uniqueWordsBySender: finalStats.uniqueWordsBySender,
+          responseStats: finalStats.responseStats,
+          messageComposition: finalStats.messageComposition,
+          activityDistribution: finalStats.activityDistribution,
+          compositionStats: finalStats.compositionStats,
+          availabilityProfile: finalStats.availabilityProfile,
+          healthScore: finalStats.healthScore,
+          conversationFacts: finalStats.conversationFacts,
+          wordsPerMessage: finalStats.wordsPerMessage,
+          groupParticipants: finalStats.groupReport?.participants ?? [],
+          groupTopPairs: finalStats.groupReport?.topPairs ?? [],
+          groupHealth: finalStats.groupReport?.health ?? null,
+          sharedVocabulary: finalStats.groupReport?.sharedVocabulary ?? [],
+          uniqueGroupWords: finalStats.groupReport?.uniqueGroupWords ?? [],
+          updatedAt: new Date(),
+        },
+      })
 
     await recomputeGlobalStatsInTransaction(tx, params.userId)
   })
@@ -1912,48 +2153,51 @@ async function recomputeGlobalStatsInTransaction(tx: StatsTransaction, userId: s
   })
   const dailyTotals = new Map<string, { sent: number; received: number }>()
 
-  const totals = chats.reduce((acc, chat) => {
-    acc.totalChats += 1
-    acc.totalMessages += chat.totalMessages
-    acc.totalSent += chat.sentMessages
-    acc.totalReceived += chat.receivedMessages
-    acc.totalChars += chat.totalChars
+  const totals = chats.reduce(
+    (acc, chat) => {
+      acc.totalChats += 1
+      acc.totalMessages += chat.totalMessages
+      acc.totalSent += chat.sentMessages
+      acc.totalReceived += chat.receivedMessages
+      acc.totalChars += chat.totalChars
 
-    if (!acc.firstEverMessage || (chat.firstMessageAt && chat.firstMessageAt < acc.firstEverMessage)) {
-      acc.firstEverMessage = chat.firstMessageAt
-    }
-    if (!acc.lastEverMessage || (chat.lastMessageAt && chat.lastMessageAt > acc.lastEverMessage)) {
-      acc.lastEverMessage = chat.lastMessageAt
-    }
+      if (!acc.firstEverMessage || (chat.firstMessageAt && chat.firstMessageAt < acc.firstEverMessage)) {
+        acc.firstEverMessage = chat.firstMessageAt
+      }
+      if (!acc.lastEverMessage || (chat.lastMessageAt && chat.lastMessageAt > acc.lastEverMessage)) {
+        acc.lastEverMessage = chat.lastMessageAt
+      }
 
-    for (const item of chat.topWords as TopItemDto[]) {
-      acc.words.set(item.value, (acc.words.get(item.value) ?? 0) + item.count)
-    }
-    for (const item of chat.topEmoji as TopItemDto[]) {
-      acc.emoji.set(item.value, (acc.emoji.get(item.value) ?? 0) + item.count)
-    }
-    for (const [hour, count] of Object.entries(chat.hourlyActivity as Record<string, number>)) {
-      acc.hours.set(hour, (acc.hours.get(hour) ?? 0) + count)
-    }
-    for (const item of chat.dailyActivity) {
-      const current = dailyTotals.get(item.date) ?? { sent: 0, received: 0 }
-      current.sent += item.sent
-      current.received += item.received
-      dailyTotals.set(item.date, current)
-    }
-    return acc
-  }, {
-    totalChats: 0,
-    totalMessages: 0,
-    totalSent: 0,
-    totalReceived: 0,
-    totalChars: 0,
-    firstEverMessage: null as Date | null,
-    lastEverMessage: null as Date | null,
-    words: new Map<string, number>(),
-    emoji: new Map<string, number>(),
-    hours: new Map<string, number>(),
-  })
+      for (const item of chat.topWords as TopItemDto[]) {
+        acc.words.set(item.value, (acc.words.get(item.value) ?? 0) + item.count)
+      }
+      for (const item of chat.topEmoji as TopItemDto[]) {
+        acc.emoji.set(item.value, (acc.emoji.get(item.value) ?? 0) + item.count)
+      }
+      for (const [hour, count] of Object.entries(chat.hourlyActivity as Record<string, number>)) {
+        acc.hours.set(hour, (acc.hours.get(hour) ?? 0) + count)
+      }
+      for (const item of chat.dailyActivity) {
+        const current = dailyTotals.get(item.date) ?? { sent: 0, received: 0 }
+        current.sent += item.sent
+        current.received += item.received
+        dailyTotals.set(item.date, current)
+      }
+      return acc
+    },
+    {
+      totalChats: 0,
+      totalMessages: 0,
+      totalSent: 0,
+      totalReceived: 0,
+      totalChars: 0,
+      firstEverMessage: null as Date | null,
+      lastEverMessage: null as Date | null,
+      words: new Map<string, number>(),
+      emoji: new Map<string, number>(),
+      hours: new Map<string, number>(),
+    },
+  )
 
   await tx.delete(schema.dailyActivity).where(eq(schema.dailyActivity.userId, userId))
   const dailyRows = Array.from(dailyTotals.entries()).map(([dateValue, counts]) => ({
@@ -2083,15 +2327,16 @@ export async function getGlobalStats(userId: string): Promise<GlobalStatsDto> {
 }
 
 export async function getChats(userId: string, page: number, limit: number, sort: string, order: 'asc' | 'desc') {
-  const sortColumn = {
-    total_messages: schema.chatStats.totalMessages,
-    sent_messages: schema.chatStats.sentMessages,
-    received_messages: schema.chatStats.receivedMessages,
-    last_message_at: schema.chatStats.lastMessageAt,
-    first_message_at: schema.chatStats.firstMessageAt,
-    chat_name: schema.chatStats.chatName,
-    parsed_at: schema.chatStats.parsedAt,
-  }[sort] ?? schema.chatStats.totalMessages
+  const sortColumn =
+    {
+      total_messages: schema.chatStats.totalMessages,
+      sent_messages: schema.chatStats.sentMessages,
+      received_messages: schema.chatStats.receivedMessages,
+      last_message_at: schema.chatStats.lastMessageAt,
+      first_message_at: schema.chatStats.firstMessageAt,
+      chat_name: schema.chatStats.chatName,
+      parsed_at: schema.chatStats.parsedAt,
+    }[sort] ?? schema.chatStats.totalMessages
 
   const rows = await db.query.chatStats.findMany({
     where: eq(schema.chatStats.userId, userId),
@@ -2099,7 +2344,10 @@ export async function getChats(userId: string, page: number, limit: number, sort
     offset: (page - 1) * limit,
     orderBy: [order === 'asc' ? asc(sortColumn) : desc(sortColumn)],
   })
-  const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(schema.chatStats).where(eq(schema.chatStats.userId, userId))
+  const [countRow] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.chatStats)
+    .where(eq(schema.chatStats.userId, userId))
 
   return {
     chats: rows.map(toChatDto),
@@ -2146,7 +2394,9 @@ export async function getTop(userId: string, type: string, limit = 10) {
       orderBy: [desc(schema.chatStats.totalMessages)],
       limit,
     })
-    return { items: result.map((item) => ({ value: item.chatName ?? String(item.tgChatId), count: item.totalMessages })) }
+    return {
+      items: result.map((item) => ({ value: item.chatName ?? String(item.tgChatId), count: item.totalMessages })),
+    }
   }
 
   const stats = await getGlobalStats(userId)
@@ -2155,7 +2405,9 @@ export async function getTop(userId: string, type: string, limit = 10) {
   }
 }
 
-function normalizeConversationFacts(value: (typeof schema.chatStats.$inferSelect)['conversationFacts']): ConversationFactsDto {
+function normalizeConversationFacts(
+  value: (typeof schema.chatStats.$inferSelect)['conversationFacts'],
+): ConversationFactsDto {
   const sessionStats = value?.sessionStats
   const relationshipScore = value?.relationshipScore
 
@@ -2318,19 +2570,26 @@ function resolveTextMessageCount(row: typeof schema.chatStats.$inferSelect) {
   }
 
   return Math.max(
-    (row.totalMessages ?? 0)
-      - (row.mediaCount ?? 0)
-      - (row.voiceCount ?? 0)
-      - (row.stickerCount ?? 0)
-      - (row.fileCount ?? 0),
+    (row.totalMessages ?? 0) -
+      (row.mediaCount ?? 0) -
+      (row.voiceCount ?? 0) -
+      (row.stickerCount ?? 0) -
+      (row.fileCount ?? 0),
     0,
   )
 }
 
-function resolveMessageComposition(row: typeof schema.chatStats.$inferSelect, textMessageCount: number): MessageCompositionDto {
+function resolveMessageComposition(
+  row: typeof schema.chatStats.$inferSelect,
+  textMessageCount: number,
+): MessageCompositionDto {
   const storedComposition = row.messageComposition ?? null
   const storedCompositionTotal = storedComposition
-    ? storedComposition.text + storedComposition.media + storedComposition.voice + storedComposition.sticker + storedComposition.file
+    ? storedComposition.text +
+      storedComposition.media +
+      storedComposition.voice +
+      storedComposition.sticker +
+      storedComposition.file
     : 0
 
   if (storedComposition && storedCompositionTotal > 0) {

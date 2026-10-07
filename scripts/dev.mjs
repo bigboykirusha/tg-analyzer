@@ -87,12 +87,16 @@ function startInfrastructure() {
   })
 
   if (result.error) {
-    process.stderr.write(prefixLine('infra', '\x1b[33m', 'Docker is unavailable, continuing without auto-starting postgres/redis.') + '\n')
+    process.stderr.write(
+      prefixLine('infra', '\x1b[33m', 'Docker is unavailable, continuing without auto-starting postgres/redis.') + '\n',
+    )
     return
   }
 
   if (result.status !== 0) {
-    process.stderr.write(prefixLine('infra', '\x1b[33m', 'docker compose up returned a non-zero exit code, continuing anyway.') + '\n')
+    process.stderr.write(
+      prefixLine('infra', '\x1b[33m', 'docker compose up returned a non-zero exit code, continuing anyway.') + '\n',
+    )
   }
 }
 

@@ -9,14 +9,21 @@ import {
 
 test('FLOOD_WAIT can be interrupted before the retry delay completes', async () => {
   let calls = 0
-  await assert.rejects(withFloodWaitRetry(async () => {
-    calls += 1
-    throw Object.assign(new Error('FLOOD_WAIT_60'), { seconds: 60 })
-  }, 2, {
-    assertContinue: async () => {
-      throw new Error('cancelled')
-    },
-  }), /cancelled/)
+  await assert.rejects(
+    withFloodWaitRetry(
+      async () => {
+        calls += 1
+        throw Object.assign(new Error('FLOOD_WAIT_60'), { seconds: 60 })
+      },
+      2,
+      {
+        assertContinue: async () => {
+          throw new Error('cancelled')
+        },
+      },
+    ),
+    /cancelled/,
+  )
   assert.equal(calls, 1)
 })
 

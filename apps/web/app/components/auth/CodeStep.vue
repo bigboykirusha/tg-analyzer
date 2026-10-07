@@ -10,14 +10,22 @@ const { t } = useI18n()
 const digits = ref(['', '', '', '', ''])
 const inputs = ref<HTMLInputElement[]>([])
 
-watch(code, (value) => {
-  const next = value.replace(/\D/g, '').slice(0, 5).split('')
-  digits.value = Array.from({ length: 5 }, (_, index) => next[index] ?? '')
-}, { immediate: true })
+watch(
+  code,
+  (value) => {
+    const next = value.replace(/\D/g, '').slice(0, 5).split('')
+    digits.value = Array.from({ length: 5 }, (_, index) => next[index] ?? '')
+  },
+  { immediate: true },
+)
 
-watch(digits, (value) => {
-  code.value = value.join('')
-}, { deep: true })
+watch(
+  digits,
+  (value) => {
+    code.value = value.join('')
+  },
+  { deep: true },
+)
 
 function setInputRef(index: number) {
   return (element: Element | ComponentPublicInstance | null) => {
@@ -72,12 +80,16 @@ function handlePaste(event: ClipboardEvent) {
 
 function submit() {
   if (code.value.length !== 5) {
-    focusInput(Math.max(0, digits.value.findIndex((digit) => !digit)))
+    focusInput(
+      Math.max(
+        0,
+        digits.value.findIndex((digit) => !digit),
+      ),
+    )
     return
   }
   emit('submit')
 }
-
 </script>
 
 <template>
@@ -102,7 +114,7 @@ function submit() {
           :aria-label="t('login.codeLabel')"
           @input="handleInput($event, index)"
           @keydown="handleKeydown($event, index)"
-        >
+        />
       </div>
       <span class="t-small">{{ t('login.codeHelp') }}</span>
     </label>
@@ -142,7 +154,10 @@ function submit() {
   font-size: 20px;
   text-align: center;
   outline: none;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .otp-input:focus {

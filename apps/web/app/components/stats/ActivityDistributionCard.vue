@@ -11,10 +11,30 @@ const { t, formatNumber } = useI18n()
 const items = computed(() => {
   const total = Math.max(props.totalMessages, 1)
   return [
-    { key: 'night', label: t('chat.bucketNight'), value: props.distribution.night.total, share: (props.distribution.night.total / total) * 100 },
-    { key: 'morning', label: t('chat.bucketMorning'), value: props.distribution.morning.total, share: (props.distribution.morning.total / total) * 100 },
-    { key: 'afternoon', label: t('chat.bucketAfternoon'), value: props.distribution.afternoon.total, share: (props.distribution.afternoon.total / total) * 100 },
-    { key: 'evening', label: t('chat.bucketEvening'), value: props.distribution.evening.total, share: (props.distribution.evening.total / total) * 100 },
+    {
+      key: 'night',
+      label: t('chat.bucketNight'),
+      value: props.distribution.night.total,
+      share: (props.distribution.night.total / total) * 100,
+    },
+    {
+      key: 'morning',
+      label: t('chat.bucketMorning'),
+      value: props.distribution.morning.total,
+      share: (props.distribution.morning.total / total) * 100,
+    },
+    {
+      key: 'afternoon',
+      label: t('chat.bucketAfternoon'),
+      value: props.distribution.afternoon.total,
+      share: (props.distribution.afternoon.total / total) * 100,
+    },
+    {
+      key: 'evening',
+      label: t('chat.bucketEvening'),
+      value: props.distribution.evening.total,
+      share: (props.distribution.evening.total / total) * 100,
+    },
   ]
 })
 </script>

@@ -18,7 +18,8 @@ const selectedCountryLabel = computed(() => {
 
 const phonePlaceholder = computed(() => {
   const [firstGroup = 0, ...rest] = phoneInput.country.value.pattern
-  const prefix = firstGroup > 0 ? `(${Array.from({ length: firstGroup }, (_, index) => String((index + 1) % 10)).join('')})` : ''
+  const prefix =
+    firstGroup > 0 ? `(${Array.from({ length: firstGroup }, (_, index) => String((index + 1) % 10)).join('')})` : ''
   const suffix = rest
     .map((size) => Array.from({ length: size }, (_, index) => String((index + 1) % 10)).join(''))
     .join(' ')
@@ -46,9 +47,13 @@ function flagSrcset(code: string) {
 }
 
 // Sync with parent phone model
-watch(phoneInput.normalizedPhone, (val) => {
-  phone.value = val
-}, { immediate: true })
+watch(
+  phoneInput.normalizedPhone,
+  (val) => {
+    phone.value = val
+  },
+  { immediate: true },
+)
 
 function selectCountry(code: string) {
   phoneInput.setCountry(code)
@@ -70,11 +75,23 @@ function submit() {
       <div class="phone-row">
         <PopoverMenu v-model:open="countryOpen" align="start" match-trigger-width mobile-fullscreen>
           <template #trigger>
-            <button class="dial-code t-mono" type="button" :aria-label="t('login.countryLabel')"
-              :aria-expanded="countryOpen" @click="countryOpen = !countryOpen">
-              <img class="country-flag-img" :src="flagSrc(phoneInput.country.value.code)"
-                :srcset="flagSrcset(phoneInput.country.value.code)" width="20" height="14" alt="" loading="eager"
-                decoding="async">
+            <button
+              class="dial-code t-mono"
+              type="button"
+              :aria-label="t('login.countryLabel')"
+              :aria-expanded="countryOpen"
+              @click="countryOpen = !countryOpen"
+            >
+              <img
+                class="country-flag-img"
+                :src="flagSrc(phoneInput.country.value.code)"
+                :srcset="flagSrcset(phoneInput.country.value.code)"
+                width="20"
+                height="14"
+                alt=""
+                loading="eager"
+                decoding="async"
+              />
               <span>{{ selectedCountryLabel }}</span>
               <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="m7 10 5 5 5-5" />
@@ -87,8 +104,12 @@ function submit() {
               <span class="t-label">{{ t('login.countryLabel') }}</span>
               <h2 class="t-h3">{{ t('login.selectCountry') }}</h2>
             </div>
-            <button class="country-sheet-close" type="button" :aria-label="t('common.close')"
-              @click="countryOpen = false">
+            <button
+              class="country-sheet-close"
+              type="button"
+              :aria-label="t('common.close')"
+              @click="countryOpen = false"
+            >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="m7 7 10 10M17 7 7 17" />
               </svg>
@@ -96,18 +117,39 @@ function submit() {
           </div>
 
           <div class="country-options">
-            <button v-for="country in phoneInput.countries" :key="country.code" type="button" class="country-option"
-              :class="{ active: country.code === phoneInput.countryCode.value }" @click="selectCountry(country.code)">
-              <img class="country-flag-img" :src="flagSrc(country.code)" :srcset="flagSrcset(country.code)" width="20"
-                height="14" alt="" loading="lazy" decoding="async">
+            <button
+              v-for="country in phoneInput.countries"
+              :key="country.code"
+              type="button"
+              class="country-option"
+              :class="{ active: country.code === phoneInput.countryCode.value }"
+              @click="selectCountry(country.code)"
+            >
+              <img
+                class="country-flag-img"
+                :src="flagSrc(country.code)"
+                :srcset="flagSrcset(country.code)"
+                width="20"
+                height="14"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
               <span class="country-code">{{ country.code }}</span>
               <span class="t-mono">{{ country.dialCode }}</span>
             </button>
           </div>
         </PopoverMenu>
 
-        <input :value="phoneDisplay" class="input phone-input" :placeholder="phonePlaceholder"
-          :maxlength="phoneMaxLength" inputmode="tel" autocomplete="tel" @input="handleInput">
+        <input
+          :value="phoneDisplay"
+          class="input phone-input"
+          :placeholder="phonePlaceholder"
+          :maxlength="phoneMaxLength"
+          inputmode="tel"
+          autocomplete="tel"
+          @input="handleInput"
+        />
       </div>
     </label>
 
@@ -155,7 +197,10 @@ function submit() {
   color: var(--text-secondary);
   white-space: nowrap;
   cursor: pointer;
-  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .dial-code:hover,
@@ -200,7 +245,9 @@ function submit() {
   color: var(--text-secondary);
   cursor: pointer;
   text-align: left;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .country-option:hover,

@@ -39,7 +39,7 @@ const heatmapWeeks = computed(() => {
   }
 
   const limited = cells.slice(-371)
-  const weeks: typeof limited[] = []
+  const weeks: (typeof limited)[] = []
 
   for (let index = 0; index < limited.length; index += 7) {
     weeks.push(limited.slice(index, index + 7))
@@ -68,17 +68,17 @@ function levelClass(level: number) {
 <template>
   <div v-if="heatmapWeeks.length" class="heatmap-scroll">
     <div class="heatmap-grid">
-      <div
-        v-for="(week, weekIndex) in heatmapWeeks"
-        :key="`week-${weekIndex}`"
-        class="heatmap-week"
-      >
+      <div v-for="(week, weekIndex) in heatmapWeeks" :key="`week-${weekIndex}`" class="heatmap-week">
         <div
           v-for="(day, dayIndex) in week"
           :key="day.date ?? `empty-${weekIndex}-${dayIndex}`"
           class="heatmap-day"
           :class="[levelClass(day.level), { 'heatmap-day-empty': !day.date }]"
-          :title="day.date ? `${formatDate(day.date, { month: 'short', day: 'numeric', year: 'numeric' })}: ${formatNumber(day.total)} ${t('common.messages')}` : ''"
+          :title="
+            day.date
+              ? `${formatDate(day.date, { month: 'short', day: 'numeric', year: 'numeric' })}: ${formatNumber(day.total)} ${t('common.messages')}`
+              : ''
+          "
         />
       </div>
     </div>

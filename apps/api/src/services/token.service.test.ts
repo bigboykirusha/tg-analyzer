@@ -12,27 +12,31 @@ const claims = {
 test('tokens are bound to purpose, version, issuer and algorithm', () => {
   const token = signToken('access', claims)
   assert.equal(verifyToken(token, 'access').sub, claims.sub)
-  const legacyWsToken = jwt.sign(
-    { ...claims, kind: 'ws', version: 2 },
-    config.JWT_SECRET,
-    { algorithm: 'HS256', issuer: 'tg-analyzer' },
-  )
+  const legacyWsToken = jwt.sign({ ...claims, kind: 'ws', version: 2 }, config.JWT_SECRET, {
+    algorithm: 'HS256',
+    issuer: 'tg-analyzer',
+  })
   assert.throws(() => verifyToken(legacyWsToken, 'access'))
   assert.throws(() => verifyToken(jwt.sign(claims, config.JWT_SECRET), 'access'))
-  assert.throws(() => verifyToken(jwt.sign(
-    { ...claims, kind: 'access', version: 2 },
-    config.JWT_SECRET,
-    { algorithm: 'HS384', issuer: 'tg-analyzer' },
-  ), 'access'))
+  assert.throws(() =>
+    verifyToken(
+      jwt.sign({ ...claims, kind: 'access', version: 2 }, config.JWT_SECRET, {
+        algorithm: 'HS384',
+        issuer: 'tg-analyzer',
+      }),
+      'access',
+    ),
+  )
   const decoded = jwt.decode(token) as { exp: number; iat: number }
   assert.equal(decoded.exp! - decoded.iat!, 900)
 })
 
 test('expired and malformed subject tokens are rejected', () => {
-  assert.throws(() => verifyToken(jwt.sign(
-    { ...claims, version: 2, kind: 'access' },
-    config.JWT_SECRET,
-    { expiresIn: -1, issuer: 'tg-analyzer' },
-  ), 'access'))
+  assert.throws(() =>
+    verifyToken(
+      jwt.sign({ ...claims, version: 2, kind: 'access' }, config.JWT_SECRET, { expiresIn: -1, issuer: 'tg-analyzer' }),
+      'access',
+    ),
+  )
   assert.throws(() => verifyToken(signToken('access', { ...claims, sub: '' }), 'access'))
 })

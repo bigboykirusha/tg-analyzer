@@ -18,13 +18,16 @@ function getRefreshCookieOptions(): CookieSerializeOptions {
   }
 }
 
-export function toUserDto(user: {
-  id: string
-  tgUserId: number
-  username: string | null
-  firstName: string | null
-  timezone: string
-}, telegramSessionActive?: boolean): UserDto {
+export function toUserDto(
+  user: {
+    id: string
+    tgUserId: number
+    username: string | null
+    firstName: string | null
+    timezone: string
+  },
+  telegramSessionActive?: boolean,
+): UserDto {
   return {
     id: user.id,
     tgUserId: String(user.tgUserId),
@@ -35,25 +38,33 @@ export function toUserDto(user: {
   }
 }
 
-export async function issueAuthTokens(reply: FastifyReply, user: {
-  id: string
-  tgUserId: number
-  username: string | null
-  firstName: string | null
-  timezone: string
-}, telegramSessionActiveOverride?: boolean) {
+export async function issueAuthTokens(
+  reply: FastifyReply,
+  user: {
+    id: string
+    tgUserId: number
+    username: string | null
+    firstName: string | null
+    timezone: string
+  },
+  telegramSessionActiveOverride?: boolean,
+) {
   const refreshSession = await createRefreshSession(user.id)
   setRefreshCookie(reply, refreshSession.tokenId, user.id, refreshSession.familyId)
   return issueAccessToken(user, refreshSession.familyId, telegramSessionActiveOverride)
 }
 
-export async function issueAccessToken(user: {
-  id: string
-  tgUserId: number
-  username: string | null
-  firstName: string | null
-  timezone: string
-}, familyId: string, telegramSessionActiveOverride?: boolean) {
+export async function issueAccessToken(
+  user: {
+    id: string
+    tgUserId: number
+    username: string | null
+    firstName: string | null
+    timezone: string
+  },
+  familyId: string,
+  telegramSessionActiveOverride?: boolean,
+) {
   const telegramSession = await db.query.telegramSessions.findFirst({
     where: eq(schema.telegramSessions.userId, user.id),
   })

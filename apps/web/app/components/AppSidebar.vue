@@ -182,16 +182,30 @@ async function syncBrowserTimeZone() {
           <button class="utility-item" type="button" :disabled="securityPending !== null" @click="openTerminateConfirm">
             <span class="utility-copy">
               <span class="utility-label">{{ t('dashboard.terminateTelegram') }}</span>
-              <span class="utility-subtext">{{ securityPending === 'telegram' ? t('dashboard.stopping') : t('dashboard.terminateConfirm') }}</span>
+              <span class="utility-subtext">{{
+                securityPending === 'telegram' ? t('dashboard.stopping') : t('dashboard.terminateConfirm')
+              }}</span>
             </span>
           </button>
-          <button class="utility-item utility-item-danger" type="button" :disabled="securityPending !== null" @click="openDeleteAccountConfirm">
+          <button
+            class="utility-item utility-item-danger"
+            type="button"
+            :disabled="securityPending !== null"
+            @click="openDeleteAccountConfirm"
+          >
             <span class="utility-copy">
               <span class="utility-label">{{ t('dashboard.deleteAccount') }}</span>
-              <span class="utility-subtext">{{ securityPending === 'account' ? t('dashboard.deleting') : t('dashboard.deleteConfirm') }}</span>
+              <span class="utility-subtext">{{
+                securityPending === 'account' ? t('dashboard.deleting') : t('dashboard.deleteConfirm')
+              }}</span>
             </span>
           </button>
-          <button v-if="!auth.telegramSessionActive" class="utility-item utility-item-accent" type="button" @click="logout">
+          <button
+            v-if="!auth.telegramSessionActive"
+            class="utility-item utility-item-accent"
+            type="button"
+            @click="logout"
+          >
             <span class="utility-copy">
               <span class="utility-label">{{ t('common.relogin') }}</span>
               <span class="utility-subtext">{{ t('dashboard.sessionInactive') }}</span>
@@ -215,23 +229,31 @@ async function syncBrowserTimeZone() {
           <span class="logo-text">tg analyzer</span>
         </div>
         <div class="mobile-actions">
-        <NuxtLink to="/dashboard" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': route.path.startsWith('/dashboard') }">
-          <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
-          <span class="sr-only">{{ t('common.dashboard') }}</span>
-        </NuxtLink>
-        <NuxtLink to="/history" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': isHistoryRoute }">
-          <Clock :size="18" :stroke-width="1.5" aria-hidden="true" />
-          <span class="sr-only">{{ t('common.history') }}</span>
-        </NuxtLink>
-        <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="mobile-nav-item mobile-nav-item-active">
-          <BarChart2 :size="18" :stroke-width="1.5" aria-hidden="true" />
-          <span class="sr-only">{{ t('common.report') }}</span>
-        </NuxtLink>
-        <button class="mobile-nav-item mobile-language" type="button" @click="setLocale(locale === 'ru' ? 'en' : 'ru')">
-          <Globe :size="16" :stroke-width="1.5" aria-hidden="true" />
-          {{ locale.toUpperCase() }}
-          <span class="sr-only">{{ t('nav.language') }}</span>
-        </button>
+          <NuxtLink
+            to="/dashboard"
+            class="mobile-nav-item"
+            :class="{ 'mobile-nav-item-active': route.path.startsWith('/dashboard') }"
+          >
+            <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
+            <span class="sr-only">{{ t('common.dashboard') }}</span>
+          </NuxtLink>
+          <NuxtLink to="/history" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': isHistoryRoute }">
+            <Clock :size="18" :stroke-width="1.5" aria-hidden="true" />
+            <span class="sr-only">{{ t('common.history') }}</span>
+          </NuxtLink>
+          <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="mobile-nav-item mobile-nav-item-active">
+            <BarChart2 :size="18" :stroke-width="1.5" aria-hidden="true" />
+            <span class="sr-only">{{ t('common.report') }}</span>
+          </NuxtLink>
+          <button
+            class="mobile-nav-item mobile-language"
+            type="button"
+            @click="setLocale(locale === 'ru' ? 'en' : 'ru')"
+          >
+            <Globe :size="16" :stroke-width="1.5" aria-hidden="true" />
+            {{ locale.toUpperCase() }}
+            <span class="sr-only">{{ t('nav.language') }}</span>
+          </button>
         </div>
       </div>
 
@@ -250,9 +272,7 @@ async function syncBrowserTimeZone() {
         :cancelling="mobileCancelling"
         @cancel="cancelActiveParse"
       />
-      
-      
-      </div>
+    </div>
 
     <ConfirmDialog
       :open="Boolean(confirmState)"
@@ -438,7 +458,9 @@ async function syncBrowserTimeZone() {
   color: var(--text-secondary);
   text-align: left;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .utility-item:hover {
@@ -522,7 +544,9 @@ async function syncBrowserTimeZone() {
   font-family: var(--font-mono);
   font-size: 12px;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .language-switch button:hover,

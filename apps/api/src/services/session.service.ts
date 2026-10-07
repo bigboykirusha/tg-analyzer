@@ -124,10 +124,7 @@ export async function getActiveSessionForUser(userId: string) {
 }
 
 export async function deactivateTelegramSessions(userId: string) {
-  await db
-    .update(schema.telegramSessions)
-    .set({ isActive: false })
-    .where(eq(schema.telegramSessions.userId, userId))
+  await db.update(schema.telegramSessions).set({ isActive: false }).where(eq(schema.telegramSessions.userId, userId))
 }
 
 export async function setParseProgress(userId: string, payload: unknown) {
@@ -192,12 +189,7 @@ export async function getFullParseCooldown(userId: string) {
 }
 
 export async function activateFullParseCooldown(userId: string) {
-  await redis.set(
-    `${FULL_PARSE_COOLDOWN_PREFIX}:${userId}`,
-    '1',
-    'EX',
-    config.FULL_PARSE_COOLDOWN_HOURS * 60 * 60,
-  )
+  await redis.set(`${FULL_PARSE_COOLDOWN_PREFIX}:${userId}`, '1', 'EX', config.FULL_PARSE_COOLDOWN_HOURS * 60 * 60)
 }
 
 export async function getChatCooldown(userId: string, chatId: string) {
@@ -230,9 +222,8 @@ export async function createParseJob(input: {
   chatIds?: string[]
 }) {
   const id = randomUUID()
-  const requestedChatIds = input.chatIds ?? (input.chatId === null || input.chatId === undefined
-    ? []
-    : [String(input.chatId)])
+  const requestedChatIds =
+    input.chatIds ?? (input.chatId === null || input.chatId === undefined ? [] : [String(input.chatId)])
   const [job] = await db
     .insert(schema.parseJobs)
     .values({
@@ -261,15 +252,18 @@ export async function attachBullJobId(jobId: string, bullJobId: string) {
     .where(eq(schema.parseJobs.id, jobId))
 }
 
-export async function updateParseJob(jobId: string, payload: Partial<{
-  totalChats: number
-  parsedChats: number
-  totalMessages: number
-  status: string
-  errorMessage: string | null
-  startedAt: Date | null
-  completedAt: Date | null
-}>) {
+export async function updateParseJob(
+  jobId: string,
+  payload: Partial<{
+    totalChats: number
+    parsedChats: number
+    totalMessages: number
+    status: string
+    errorMessage: string | null
+    startedAt: Date | null
+    completedAt: Date | null
+  }>,
+) {
   await db.update(schema.parseJobs).set(payload).where(eq(schema.parseJobs.id, jobId))
 }
 
@@ -281,11 +275,13 @@ export async function cancelParseJob(userId: string, jobId: string) {
     const cancelled = await tx
       .update(schema.parseJobs)
       .set({ status: 'cancelled', completedAt: new Date() })
-      .where(and(
-        eq(schema.parseJobs.id, jobId),
-        eq(schema.parseJobs.userId, userId),
-        inArray(schema.parseJobs.status, ['pending', 'running']),
-      ))
+      .where(
+        and(
+          eq(schema.parseJobs.id, jobId),
+          eq(schema.parseJobs.userId, userId),
+          inArray(schema.parseJobs.status, ['pending', 'running']),
+        ),
+      )
       .returning({ id: schema.parseJobs.id })
 
     return cancelled.length === 1
@@ -323,10 +319,7 @@ export async function listParseHistory(userId: string) {
 export async function clearParseHistory(userId: string) {
   const deleted = await db
     .delete(schema.parseJobs)
-    .where(and(
-      eq(schema.parseJobs.userId, userId),
-      notInArray(schema.parseJobs.status, ['pending', 'running']),
-    ))
+    .where(and(eq(schema.parseJobs.userId, userId), notInArray(schema.parseJobs.status, ['pending', 'running'])))
     .returning({ id: schema.parseJobs.id })
 
   return deleted.length
@@ -335,11 +328,13 @@ export async function clearParseHistory(userId: string) {
 export async function deleteParseHistoryItem(userId: string, jobId: string) {
   const deleted = await db
     .delete(schema.parseJobs)
-    .where(and(
-      eq(schema.parseJobs.userId, userId),
-      eq(schema.parseJobs.id, jobId),
-      notInArray(schema.parseJobs.status, ['pending', 'running']),
-    ))
+    .where(
+      and(
+        eq(schema.parseJobs.userId, userId),
+        eq(schema.parseJobs.id, jobId),
+        notInArray(schema.parseJobs.status, ['pending', 'running']),
+      ),
+    )
     .returning({ id: schema.parseJobs.id })
 
   return deleted.length > 0
@@ -353,10 +348,7 @@ export async function revokeRefreshSessionFamily(familyId: string) {
   await db
     .update(schema.refreshSessions)
     .set({ revokedAt: new Date() })
-    .where(and(
-      eq(schema.refreshSessions.familyId, familyId),
-      isNull(schema.refreshSessions.revokedAt),
-    ))
+    .where(and(eq(schema.refreshSessions.familyId, familyId), isNull(schema.refreshSessions.revokedAt)))
 }
 
 export async function revokeRefreshSessionFamilyByTokenId(tokenId: string) {
@@ -372,10 +364,9 @@ export async function revokeRefreshSessionFamilyByTokenId(tokenId: string) {
   return true
 }
 
-export async function rotateRefreshSession(tokenId: string): Promise<
-  | { status: 'rotated' | 'grace'; session: RefreshSessionRecord }
-  | { status: 'invalid' | 'replayed' }
-> {
+export async function rotateRefreshSession(
+  tokenId: string,
+): Promise<{ status: 'rotated' | 'grace'; session: RefreshSessionRecord } | { status: 'invalid' | 'replayed' }> {
   return db.transaction(async (tx) => {
     const now = new Date()
     const successorTokenId = randomUUID()
@@ -388,12 +379,14 @@ export async function rotateRefreshSession(tokenId: string): Promise<
         rotatedAt: now,
         graceUntil,
       })
-      .where(and(
-        eq(schema.refreshSessions.tokenId, tokenId),
-        isNull(schema.refreshSessions.replacedByTokenId),
-        isNull(schema.refreshSessions.revokedAt),
-        gt(schema.refreshSessions.expiresAt, now),
-      ))
+      .where(
+        and(
+          eq(schema.refreshSessions.tokenId, tokenId),
+          isNull(schema.refreshSessions.replacedByTokenId),
+          isNull(schema.refreshSessions.revokedAt),
+          gt(schema.refreshSessions.expiresAt, now),
+        ),
+      )
       .returning()
 
     if (rotated) {

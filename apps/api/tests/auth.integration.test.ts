@@ -11,7 +11,7 @@ process.env.COOKIE_SECURE = 'false'
 process.env.CORS_ORIGIN = 'http://localhost:3000'
 await import('../src/test-env')
 
-const { db, pool, schema } = await import('../src/db')
+const { db, pool } = await import('../src/db')
 const { redis } = await import('../src/services/redis.service')
 const { parseDialogsQueue, cleanupQueue } = await import('../src/queues/parse.queue')
 const sessions = await import('../src/services/session.service')
@@ -42,10 +42,11 @@ after(async () => {
 
 async function createUser() {
   const id = randomUUID()
-  await pool.query(
-    'INSERT INTO users(id, tg_user_id, timezone) VALUES ($1, $2, $3)',
-    [id, Math.floor(Math.random() * 1e12), 'UTC'],
-  )
+  await pool.query('INSERT INTO users(id, tg_user_id, timezone) VALUES ($1, $2, $3)', [
+    id,
+    Math.floor(Math.random() * 1e12),
+    'UTC',
+  ])
   return id
 }
 
@@ -66,16 +67,16 @@ test('HTTP auth accepts only a live access token and keeps users isolated', asyn
   const first = await createUser()
   const second = await createUser()
   const auth = await createAuth(first)
-  const legacyWs = jwt.sign(
-    { sub: first, familyId: randomUUID(), kind: 'ws', version: 2 },
-    config.JWT_SECRET,
-    { algorithm: 'HS256', issuer: 'tg-analyzer', expiresIn: '1m' },
-  )
-  const expired = jwt.sign(
-    { sub: first, familyId: randomUUID(), kind: 'access', version: 2 },
-    config.JWT_SECRET,
-    { algorithm: 'HS256', issuer: 'tg-analyzer', expiresIn: -1 },
-  )
+  const legacyWs = jwt.sign({ sub: first, familyId: randomUUID(), kind: 'ws', version: 2 }, config.JWT_SECRET, {
+    algorithm: 'HS256',
+    issuer: 'tg-analyzer',
+    expiresIn: '1m',
+  })
+  const expired = jwt.sign({ sub: first, familyId: randomUUID(), kind: 'access', version: 2 }, config.JWT_SECRET, {
+    algorithm: 'HS256',
+    issuer: 'tg-analyzer',
+    expiresIn: -1,
+  })
 
   assert.equal((await app.inject({ url: '/api/stats/global', headers: bearer(legacyWs) })).statusCode, 401)
   assert.equal((await app.inject({ url: '/api/stats/global', headers: bearer(expired) })).statusCode, 401)
@@ -88,26 +89,29 @@ test('HTTP auth accepts only a live access token and keeps users isolated', asyn
     payload: { timezone: 'Europe/Moscow' },
   })
   assert.equal(update.statusCode, 200)
-  const rows = await pool.query('SELECT id, timezone FROM users WHERE id = ANY($1::uuid[]) ORDER BY id', [[first, second]])
-  assert.equal(rows.rows.find(row => row.id === first)?.timezone, 'Europe/Moscow')
-  assert.equal(rows.rows.find(row => row.id === second)?.timezone, 'UTC')
+  const rows = await pool.query('SELECT id, timezone FROM users WHERE id = ANY($1::uuid[]) ORDER BY id', [
+    [first, second],
+  ])
+  assert.equal(rows.rows.find((row) => row.id === first)?.timezone, 'Europe/Moscow')
+  assert.equal(rows.rows.find((row) => row.id === second)?.timezone, 'UTC')
 })
 
 test('refresh races share one successor and logout revokes the whole family', async () => {
   const userId = await createUser()
   const auth = await createAuth(userId)
-  const request = () => app.inject({
-    method: 'POST',
-    url: '/api/auth/refresh',
-    headers: { cookie: auth.cookie, origin: 'http://localhost:3000' },
-    remoteAddress: '127.0.0.21',
-  })
+  const request = () =>
+    app.inject({
+      method: 'POST',
+      url: '/api/auth/refresh',
+      headers: { cookie: auth.cookie, origin: 'http://localhost:3000' },
+      remoteAddress: '127.0.0.21',
+    })
   const [first, second] = await Promise.all([request(), request()])
   assert.equal(first.statusCode, 200)
   assert.equal(second.statusCode, 200)
 
-  const firstCookie = first.cookies.find(cookie => cookie.name === cookieName)
-  const secondCookie = second.cookies.find(cookie => cookie.name === cookieName)
+  const firstCookie = first.cookies.find((cookie) => cookie.name === cookieName)
+  const secondCookie = second.cookies.find((cookie) => cookie.name === cookieName)
   assert.ok(firstCookie && secondCookie)
   const firstClaims = jwt.verify(firstCookie.value, config.JWT_REFRESH_SECRET) as { sessionId: string }
   const secondClaims = jwt.verify(secondCookie.value, config.JWT_REFRESH_SECRET) as { sessionId: string }
@@ -122,12 +126,17 @@ test('refresh races share one successor and logout revokes the whole family', as
   })
   assert.equal(logout.statusCode, 200)
   assert.equal((await app.inject({ url: '/api/stats/global', headers: bearer(access) })).statusCode, 401)
-  assert.equal((await app.inject({
-    method: 'POST',
-    url: '/api/auth/refresh',
-    headers: { cookie: `${cookieName}=${firstCookie.value}`, origin: 'http://localhost:3000' },
-    remoteAddress: '127.0.0.23',
-  })).statusCode, 401)
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/auth/refresh',
+        headers: { cookie: `${cookieName}=${firstCookie.value}`, origin: 'http://localhost:3000' },
+        remoteAddress: '127.0.0.23',
+      })
+    ).statusCode,
+    401,
+  )
 })
 
 test('cookie operations enforce Origin and auth limits are shared through Redis', async () => {
@@ -141,12 +150,17 @@ test('cookie operations enforce Origin and auth limits are shared through Redis'
   })
   assert.equal(rejectedOrigin.statusCode, 403)
   assert.equal(rejectedOrigin.json<{ code: string }>().code, 'ORIGIN_FORBIDDEN')
-  assert.equal((await app.inject({
-    method: 'POST',
-    url: '/api/auth/logout',
-    headers: { cookie: auth.cookie },
-    remoteAddress: '127.0.0.32',
-  })).statusCode, 403)
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/auth/logout',
+        headers: { cookie: auth.cookie },
+        remoteAddress: '127.0.0.32',
+      })
+    ).statusCode,
+    403,
+  )
 
   const statuses: number[] = []
   for (let index = 0; index <= config.AUTH_RATE_LIMIT_MAX; index += 1) {
@@ -202,11 +216,10 @@ test('temporary auth data is encrypted and account deletion revokes access and c
     remoteAddress: '127.0.0.51',
   })
   assert.equal(response.statusCode, 200)
-  assert.equal((await db.query.users.findFirst({ where: (users, { eq }) => eq(users.id, userId) })), undefined)
-  const remainingSessions = await pool.query(
-    'SELECT count(*)::int AS count FROM refresh_sessions WHERE user_id = $1',
-    [userId],
-  )
+  assert.equal(await db.query.users.findFirst({ where: (users, { eq }) => eq(users.id, userId) }), undefined)
+  const remainingSessions = await pool.query('SELECT count(*)::int AS count FROM refresh_sessions WHERE user_id = $1', [
+    userId,
+  ])
   assert.equal(remainingSessions.rows[0]?.count, 0)
   assert.equal(await redis.get(`parse:dialogs:${userId}`), null)
   await assert.rejects(authenticateToken(auth.access, 'access'))
@@ -235,8 +248,8 @@ test('only one active parse job can be reserved for a user', async () => {
     sessions.createParseJob({ userId, chatId: 202, chatName: 'Second' }),
   ])
 
-  assert.equal(reservations.filter(result => result.status === 'fulfilled').length, 1)
-  assert.equal(reservations.filter(result => result.status === 'rejected').length, 1)
+  assert.equal(reservations.filter((result) => result.status === 'fulfilled').length, 1)
+  assert.equal(reservations.filter((result) => result.status === 'rejected').length, 1)
 
   const jobs = await pool.query(
     `SELECT id, bull_job_id, chat_id, requested_chat_ids
@@ -306,10 +319,10 @@ test('saving reports is idempotent and serializes aggregate updates per user', a
     total_sent: '1',
     total_received: '1',
   })
-  const daily = await pool.query(
-    'SELECT sent, received FROM daily_activity WHERE user_id = $1 AND date = $2',
-    [userId, '2026-09-10'],
-  )
+  const daily = await pool.query('SELECT sent, received FROM daily_activity WHERE user_id = $1 AND date = $2', [
+    userId,
+    '2026-09-10',
+  ])
   assert.deepEqual(daily.rows, [{ sent: 1, received: 1 }])
 })
 
@@ -327,11 +340,13 @@ test('a failed aggregate recomputation rolls back the chat report', async () => 
   `)
 
   try {
-    await assert.rejects(stats.saveAggregates({
-      userId,
-      chat: { id: 501, title: 'Rollback', type: 'private' },
-      stats: createStats('must rollback', new Date('2026-09-11T12:00:00.000Z')),
-    }))
+    await assert.rejects(
+      stats.saveAggregates({
+        userId,
+        chat: { id: 501, title: 'Rollback', type: 'private' },
+        stats: createStats('must rollback', new Date('2026-09-11T12:00:00.000Z')),
+      }),
+    )
 
     const chat = await pool.query('SELECT id FROM chat_stats WHERE user_id = $1 AND tg_chat_id = 501', [userId])
     assert.equal(chat.rowCount, 0)
@@ -349,12 +364,15 @@ test('cancellation committed before persistence prevents report writes', async (
   await sessions.updateParseJob(jobId, { status: 'running' })
   assert.equal(await sessions.cancelParseJob(userId, jobId), true)
 
-  await assert.rejects(stats.saveAggregates({
-    userId,
-    jobId,
-    chat: { id: 601, title: 'Cancelled', type: 'private' },
-    stats: createStats('too late', new Date('2026-09-12T12:00:00.000Z')),
-  }), /no longer active/)
+  await assert.rejects(
+    stats.saveAggregates({
+      userId,
+      jobId,
+      chat: { id: 601, title: 'Cancelled', type: 'private' },
+      stats: createStats('too late', new Date('2026-09-12T12:00:00.000Z')),
+    }),
+    /no longer active/,
+  )
 
   const chat = await pool.query('SELECT id FROM chat_stats WHERE user_id = $1 AND tg_chat_id = 601', [userId])
   assert.equal(chat.rowCount, 0)
@@ -382,10 +400,7 @@ test('concurrent report save and deletion leave aggregates consistent', async ()
     'SELECT count(*)::int AS chats, coalesce(sum(total_messages), 0)::bigint AS messages FROM chat_stats WHERE user_id = $1',
     [userId],
   )
-  const global = await pool.query(
-    'SELECT total_chats, total_messages FROM global_stats WHERE user_id = $1',
-    [userId],
-  )
+  const global = await pool.query('SELECT total_chats, total_messages FROM global_stats WHERE user_id = $1', [userId])
   assert.equal(global.rows[0]?.total_chats, actual.rows[0]?.chats)
   assert.equal(global.rows[0]?.total_messages, actual.rows[0]?.messages)
 })

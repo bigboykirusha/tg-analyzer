@@ -21,7 +21,7 @@ const { t } = useI18n()
         autocapitalize="off"
         autocorrect="off"
         spellcheck="false"
-      >
+      />
       <span class="t-small">{{ t('login.passwordHelp') }}</span>
     </label>
     <Button variant="primary" size="lg" :loading="loading" block>

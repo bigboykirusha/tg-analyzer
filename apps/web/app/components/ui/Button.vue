@@ -3,30 +3,28 @@ import type { Component } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 
-const props = withDefaults(defineProps<{
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
-  size?: 'sm' | 'md' | 'lg'
-  icon?: Component | null
-  loading?: boolean
-  disabled?: boolean
-  block?: boolean
-}>(), {
-  variant: 'secondary',
-  size: 'md',
-  icon: null,
-  loading: false,
-  disabled: false,
-  block: false,
-})
+const props = withDefaults(
+  defineProps<{
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+    size?: 'sm' | 'md' | 'lg'
+    icon?: Component | null
+    loading?: boolean
+    disabled?: boolean
+    block?: boolean
+  }>(),
+  {
+    variant: 'secondary',
+    size: 'md',
+    icon: null,
+    loading: false,
+    disabled: false,
+    block: false,
+  },
+)
 
 const attrs = useAttrs()
 
-const classes = computed(() => [
-  'btn',
-  `btn--${props.variant}`,
-  `btn--${props.size}`,
-  { 'btn--block': props.block },
-])
+const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.size}`, { 'btn--block': props.block }])
 </script>
 
 <template>
@@ -67,7 +65,9 @@ const classes = computed(() => [
 
 .btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+  box-shadow:
+    0 0 0 2px var(--bg-base),
+    0 0 0 4px var(--accent);
 }
 
 .btn:disabled {
@@ -135,13 +135,13 @@ const classes = computed(() => [
 
 .btn--danger {
   background: var(--danger-subtle);
-  border-color: rgba(248, 113, 113, 0.20);
+  border-color: rgba(248, 113, 113, 0.2);
   color: var(--danger);
 }
 
 .btn--danger:hover:not(:disabled) {
   background: rgba(248, 113, 113, 0.16);
-  border-color: rgba(248, 113, 113, 0.30);
+  border-color: rgba(248, 113, 113, 0.3);
 }
 
 /* ─── Icon slot ────────────────────────────────────────────────────────────── */

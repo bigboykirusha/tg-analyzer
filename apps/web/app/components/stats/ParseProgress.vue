@@ -227,10 +227,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section
-    class="progress-card animate-fade-in-down"
-    :class="{ 'progress-card-compact': compact }"
-  >
+  <section class="progress-card animate-fade-in-down" :class="{ 'progress-card-compact': compact }">
     <div class="progress-header">
       <div class="progress-copy">
         <div class="t-label">{{ t('parse.label') }}</div>
@@ -415,7 +412,10 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .cancel-button svg {
@@ -445,7 +445,9 @@ onBeforeUnmount(() => {
 
 .cancel-button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--accent), 0 0 0 3px var(--bg-base);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 0 3px var(--bg-base);
 }
 
 .cancel-button:disabled {

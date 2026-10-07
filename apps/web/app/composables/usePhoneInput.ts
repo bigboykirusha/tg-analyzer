@@ -70,7 +70,9 @@ export function usePhoneInput(initialCountry = 'RU') {
   const countryCode = ref(initialCountry)
   const nationalDigits = ref('')
 
-  const country = computed<PhoneCountry>(() => PHONE_COUNTRIES.find((item) => item.code === countryCode.value) ?? DEFAULT_COUNTRY)
+  const country = computed<PhoneCountry>(
+    () => PHONE_COUNTRIES.find((item) => item.code === countryCode.value) ?? DEFAULT_COUNTRY,
+  )
 
   const displayValue = computed({
     get() {
@@ -94,10 +96,10 @@ export function usePhoneInput(initialCountry = 'RU') {
     return totalDigits + spaces + parentheses
   })
 
-  const isValid = computed(() => (
-    nationalDigits.value.length >= country.value.minDigits
-    && nationalDigits.value.length <= country.value.maxDigits
-  ))
+  const isValid = computed(
+    () =>
+      nationalDigits.value.length >= country.value.minDigits && nationalDigits.value.length <= country.value.maxDigits,
+  )
 
   function setCountry(nextCode: string) {
     countryCode.value = nextCode
@@ -117,7 +119,10 @@ export function usePhoneInput(initialCountry = 'RU') {
     }
 
     countryCode.value = match.code
-    nationalDigits.value = digits.slice(onlyDigits(match.dialCode).length, onlyDigits(match.dialCode).length + match.maxDigits)
+    nationalDigits.value = digits.slice(
+      onlyDigits(match.dialCode).length,
+      onlyDigits(match.dialCode).length + match.maxDigits,
+    )
   }
 
   return {

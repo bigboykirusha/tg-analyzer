@@ -18,7 +18,7 @@ export async function isFamilyActive(claims: Pick<TokenClaims, 'sub' | 'familyId
 
 export async function authenticateToken(token: string, kind: 'access') {
   const claims = verifyToken(token, kind)
-  if (!await isFamilyActive(claims)) {
+  if (!(await isFamilyActive(claims))) {
     throw new Error('Session revoked')
   }
 

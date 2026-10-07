@@ -59,7 +59,7 @@ export function useAuth() {
         return persistedSession
       }
 
-      return await restoreSession(true) ?? persistedSession
+      return (await restoreSession(true)) ?? persistedSession
     }
 
     return restoreSession(false)

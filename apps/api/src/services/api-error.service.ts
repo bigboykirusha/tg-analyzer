@@ -17,12 +17,7 @@ export function createApiError(statusCode: number, message: string, code?: AuthE
   return new ApiError(statusCode, message, code)
 }
 
-export function sendApiError(
-  reply: FastifyReply,
-  statusCode: number,
-  message: string,
-  code?: AuthErrorCode | string,
-) {
+export function sendApiError(reply: FastifyReply, statusCode: number, message: string, code?: AuthErrorCode | string) {
   return reply.status(statusCode).send({
     message,
     code: code ?? `HTTP_${statusCode}`,

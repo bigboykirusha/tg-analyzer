@@ -1,11 +1,27 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  variant?: 'default' | 'info' | 'success' | 'warning' | 'danger' | 'accent' | 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'inactive' | 'cooldown'
-  label?: string
-}>(), {
-  variant: 'default',
-  label: '',
-})
+const props = withDefaults(
+  defineProps<{
+    variant?:
+      | 'default'
+      | 'info'
+      | 'success'
+      | 'warning'
+      | 'danger'
+      | 'accent'
+      | 'pending'
+      | 'running'
+      | 'completed'
+      | 'failed'
+      | 'cancelled'
+      | 'inactive'
+      | 'cooldown'
+    label?: string
+  }>(),
+  {
+    variant: 'default',
+    label: '',
+  },
+)
 
 const title = computed(() => props.label || undefined)
 </script>

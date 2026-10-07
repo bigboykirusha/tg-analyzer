@@ -56,7 +56,9 @@ export function getFloodWaitSeconds(error: unknown) {
 
 export function isTelegramSessionExpiredError(error: unknown) {
   if (error instanceof TelegramSessionRevokedError) return true
-  const message = String((error as { errorMessage?: unknown; message?: unknown })?.errorMessage ?? (error as Error)?.message ?? '')
+  const message = String(
+    (error as { errorMessage?: unknown; message?: unknown })?.errorMessage ?? (error as Error)?.message ?? '',
+  )
   return /AUTH_KEY_UNREGISTERED|SESSION_REVOKED|SESSION_EXPIRED|USER_DEACTIVATED|AUTH_KEY_INVALID/i.test(message)
 }
 
@@ -71,9 +73,7 @@ export async function withFloodWaitRetry<T>(
       return await action()
     } catch (error) {
       if (isTelegramSessionExpiredError(error)) {
-        throw error instanceof TelegramSessionRevokedError
-          ? error
-          : new TelegramSessionRevokedError(error)
+        throw error instanceof TelegramSessionRevokedError ? error : new TelegramSessionRevokedError(error)
       }
       attempt += 1
       const seconds = getFloodWaitSeconds(error)

@@ -47,6 +47,8 @@ export function isTokenUsable(token: string, thresholdMs = 0) {
   return payload.exp * 1000 > Date.now() + thresholdMs
 }
 
-export function isDefinitiveAuthFailureCode(code?: string): code is Extract<AuthErrorCode, 'AUTH_REFRESH_INVALID' | 'AUTH_REFRESH_REPLAYED'> {
+export function isDefinitiveAuthFailureCode(
+  code?: string,
+): code is Extract<AuthErrorCode, 'AUTH_REFRESH_INVALID' | 'AUTH_REFRESH_REPLAYED'> {
   return code === 'AUTH_REFRESH_INVALID' || code === 'AUTH_REFRESH_REPLAYED'
 }

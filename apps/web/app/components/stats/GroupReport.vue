@@ -20,147 +20,149 @@ const isRu = computed(() => locale.value === 'ru')
 const activeTab = ref<'overview' | 'members' | 'dynamics' | 'network' | 'content'>('overview')
 const selectedParticipantId = ref<string | null>(null)
 
-const copy = computed(() => isRu.value
-  ? {
-      overview: 'Обзор',
-      members: 'Участники',
-      dynamics: 'Динамика',
-      network: 'Взаимодействия',
-      content: 'Контент',
-      activeMembers: 'Наблюдаемые участники',
-      activeNow: 'Писали за 30 дней',
-      mostActive: 'Самый активный',
-      groupHealth: 'Здоровье группы',
-      avgLoad: 'Сообщений на участника',
-      avgLoadSub: 'Среднее число сообщений на одного активного участника',
-      pulseTitle: 'Кто формирует ядро группы',
-      pulseText: 'Распределение сообщений между самыми заметными участниками.',
-      healthTitle: 'Показатели группы',
-      insightsTitle: 'Что видно сразу',
-      insightsEmpty: 'Пока недостаточно сигнала для уверенных выводов.',
-      membersTitle: 'Кто и как участвует',
-      membersText: 'Здесь видно реальный вклад участников, а не абстрактные рейтинги.',
-      spotlight: 'Фокус на участнике',
-      role: 'Роль',
-      roleWhy: 'Почему такая роль',
-      messages: 'Сообщения',
-      share: 'Доля сообщений',
-      wordsPerMessage: 'Средняя длина сообщения',
-      media: 'Медиа',
-      starters: 'Запускает разговоры',
-      repliesReceived: 'Получает ответов',
-      magnet: 'Притягивает ответы',
-      lastSeen: 'Последняя активность',
-      activityWindow: 'Период активности',
-      topWords: 'Частые слова',
-      signatureWords: 'Фирменные слова',
-      topConnections: 'С кем чаще всего пересекается',
-      tableTitle: 'Таблица участников',
-      monthlyTitle: 'Активность по месяцам',
-      dailyTitle: 'Дневной темп',
-      heatmapTitle: 'Теплокарта активности',
-      networkTitle: 'Структура взаимодействий',
-      networkText: 'Кто кому отвечает, кто чаще начинает темы, и какие пары общаются плотнее других.',
-      topPairs: 'Самые плотные пары',
-      topPairsEmpty: 'Явно выраженных пар пока не видно.',
-      pairScore: 'Общий вес взаимодействия',
-      pairDirect: 'прямых ответов',
-      pairImplied: 'быстрых подхватов',
-      starterLeaders: 'Чаще начинают разговоры',
-      replyMagnets: 'Чаще получают ответы',
-      contentTitle: 'Язык и словарь группы',
-      contentText: 'Что объединяет группу и какие слова особенно характерны для отдельных участников.',
-      sharedVocabulary: 'Общий словарь',
-      uniqueWords: 'Слова, характерные именно для этой группы',
-      signatures: 'Фирменные слова участников',
-      topEmoji: 'Популярные эмодзи',
-      noGroupData: 'Для этого чата ещё нет группового отчёта.',
-      noGroupDataText: 'Нужно заново распарсить чат после обновления аналитики.',
-      noWords: 'Недостаточно текста для содержательного контентного блока.',
-      unknownParticipant: 'Участник',
-      healthStrong: 'Сильная и живая группа',
-      healthSteady: 'Устойчивый ритм',
-      healthFragile: 'Хрупкая структура',
-      momentumGrowing: 'Группа оживляется',
-      momentumStable: 'Ритм стабильный',
-      momentumShrinking: 'Активность сужается',
-      gini: 'Концентрация участия',
-      retention: 'Сохранение состава',
-      responseCoverage: 'Сообщения получают ответы',
-      lurkers: 'Почти не пишут',
-      churned: 'Выпали из общения',
-      peakSimultaneity: 'Пик одновременной активности',
-    }
-  : {
-      overview: 'Overview',
-      members: 'Members',
-      dynamics: 'Dynamics',
-      network: 'Interactions',
-      content: 'Content',
-      activeMembers: 'Observed members',
-      activeNow: 'Posted in 30 days',
-      mostActive: 'Most active',
-      groupHealth: 'Group health',
-      avgLoad: 'Messages per member',
-      avgLoadSub: 'Average messages per active member',
-      pulseTitle: 'Who forms the core',
-      pulseText: 'How message volume is split across the most visible members.',
-      healthTitle: 'Group indicators',
-      insightsTitle: 'What stands out',
-      insightsEmpty: 'Not enough signal for confident insights yet.',
-      membersTitle: 'Who contributes and how',
-      membersText: 'A clearer view of contribution instead of abstract rankings.',
-      spotlight: 'Member spotlight',
-      role: 'Role',
-      roleWhy: 'Why this role',
-      messages: 'Messages',
-      share: 'Message share',
-      wordsPerMessage: 'Average message length',
-      media: 'Media',
-      starters: 'Starts conversations',
-      repliesReceived: 'Replies received',
-      magnet: 'Reply magnet',
-      lastSeen: 'Last seen',
-      activityWindow: 'Activity window',
-      topWords: 'Frequent words',
-      signatureWords: 'Signature words',
-      topConnections: 'Most frequent overlaps',
-      tableTitle: 'Participants table',
-      monthlyTitle: 'Monthly activity',
-      dailyTitle: 'Daily tempo',
-      heatmapTitle: 'Activity heatmap',
-      networkTitle: 'Interaction structure',
-      networkText: 'Who replies to whom, who starts threads, and which pairs are denser than the rest.',
-      topPairs: 'Top interaction pairs',
-      topPairsEmpty: 'No clearly dominant pairs yet.',
-      pairScore: 'Combined interaction weight',
-      pairDirect: 'direct replies',
-      pairImplied: 'quick follow-ups',
-      starterLeaders: 'Conversation starters',
-      replyMagnets: 'Reply magnets',
-      contentTitle: 'Group language and vocabulary',
-      contentText: 'What the group shares and which words are especially typical for specific members.',
-      sharedVocabulary: 'Shared vocabulary',
-      uniqueWords: 'Words specific to this group',
-      signatures: 'Member signature words',
-      topEmoji: 'Popular emoji',
-      noGroupData: 'This chat does not have group analytics yet.',
-      noGroupDataText: 'Re-parse the chat after the analytics update to generate it.',
-      noWords: 'Not enough text for a meaningful content view.',
-      unknownParticipant: 'Participant',
-      healthStrong: 'Strong and lively group',
-      healthSteady: 'Steady rhythm',
-      healthFragile: 'Fragile structure',
-      momentumGrowing: 'Gaining momentum',
-      momentumStable: 'Stable rhythm',
-      momentumShrinking: 'Narrowing activity',
-      gini: 'Participation concentration',
-      retention: 'Member retention',
-      responseCoverage: 'Messages get replies',
-      lurkers: 'Barely contribute',
-      churned: 'Dropped off',
-      peakSimultaneity: 'Peak simultaneous activity',
-    })
+const copy = computed(() =>
+  isRu.value
+    ? {
+        overview: 'Обзор',
+        members: 'Участники',
+        dynamics: 'Динамика',
+        network: 'Взаимодействия',
+        content: 'Контент',
+        activeMembers: 'Наблюдаемые участники',
+        activeNow: 'Писали за 30 дней',
+        mostActive: 'Самый активный',
+        groupHealth: 'Здоровье группы',
+        avgLoad: 'Сообщений на участника',
+        avgLoadSub: 'Среднее число сообщений на одного активного участника',
+        pulseTitle: 'Кто формирует ядро группы',
+        pulseText: 'Распределение сообщений между самыми заметными участниками.',
+        healthTitle: 'Показатели группы',
+        insightsTitle: 'Что видно сразу',
+        insightsEmpty: 'Пока недостаточно сигнала для уверенных выводов.',
+        membersTitle: 'Кто и как участвует',
+        membersText: 'Здесь видно реальный вклад участников, а не абстрактные рейтинги.',
+        spotlight: 'Фокус на участнике',
+        role: 'Роль',
+        roleWhy: 'Почему такая роль',
+        messages: 'Сообщения',
+        share: 'Доля сообщений',
+        wordsPerMessage: 'Средняя длина сообщения',
+        media: 'Медиа',
+        starters: 'Запускает разговоры',
+        repliesReceived: 'Получает ответов',
+        magnet: 'Притягивает ответы',
+        lastSeen: 'Последняя активность',
+        activityWindow: 'Период активности',
+        topWords: 'Частые слова',
+        signatureWords: 'Фирменные слова',
+        topConnections: 'С кем чаще всего пересекается',
+        tableTitle: 'Таблица участников',
+        monthlyTitle: 'Активность по месяцам',
+        dailyTitle: 'Дневной темп',
+        heatmapTitle: 'Теплокарта активности',
+        networkTitle: 'Структура взаимодействий',
+        networkText: 'Кто кому отвечает, кто чаще начинает темы, и какие пары общаются плотнее других.',
+        topPairs: 'Самые плотные пары',
+        topPairsEmpty: 'Явно выраженных пар пока не видно.',
+        pairScore: 'Общий вес взаимодействия',
+        pairDirect: 'прямых ответов',
+        pairImplied: 'быстрых подхватов',
+        starterLeaders: 'Чаще начинают разговоры',
+        replyMagnets: 'Чаще получают ответы',
+        contentTitle: 'Язык и словарь группы',
+        contentText: 'Что объединяет группу и какие слова особенно характерны для отдельных участников.',
+        sharedVocabulary: 'Общий словарь',
+        uniqueWords: 'Слова, характерные именно для этой группы',
+        signatures: 'Фирменные слова участников',
+        topEmoji: 'Популярные эмодзи',
+        noGroupData: 'Для этого чата ещё нет группового отчёта.',
+        noGroupDataText: 'Нужно заново распарсить чат после обновления аналитики.',
+        noWords: 'Недостаточно текста для содержательного контентного блока.',
+        unknownParticipant: 'Участник',
+        healthStrong: 'Сильная и живая группа',
+        healthSteady: 'Устойчивый ритм',
+        healthFragile: 'Хрупкая структура',
+        momentumGrowing: 'Группа оживляется',
+        momentumStable: 'Ритм стабильный',
+        momentumShrinking: 'Активность сужается',
+        gini: 'Концентрация участия',
+        retention: 'Сохранение состава',
+        responseCoverage: 'Сообщения получают ответы',
+        lurkers: 'Почти не пишут',
+        churned: 'Выпали из общения',
+        peakSimultaneity: 'Пик одновременной активности',
+      }
+    : {
+        overview: 'Overview',
+        members: 'Members',
+        dynamics: 'Dynamics',
+        network: 'Interactions',
+        content: 'Content',
+        activeMembers: 'Observed members',
+        activeNow: 'Posted in 30 days',
+        mostActive: 'Most active',
+        groupHealth: 'Group health',
+        avgLoad: 'Messages per member',
+        avgLoadSub: 'Average messages per active member',
+        pulseTitle: 'Who forms the core',
+        pulseText: 'How message volume is split across the most visible members.',
+        healthTitle: 'Group indicators',
+        insightsTitle: 'What stands out',
+        insightsEmpty: 'Not enough signal for confident insights yet.',
+        membersTitle: 'Who contributes and how',
+        membersText: 'A clearer view of contribution instead of abstract rankings.',
+        spotlight: 'Member spotlight',
+        role: 'Role',
+        roleWhy: 'Why this role',
+        messages: 'Messages',
+        share: 'Message share',
+        wordsPerMessage: 'Average message length',
+        media: 'Media',
+        starters: 'Starts conversations',
+        repliesReceived: 'Replies received',
+        magnet: 'Reply magnet',
+        lastSeen: 'Last seen',
+        activityWindow: 'Activity window',
+        topWords: 'Frequent words',
+        signatureWords: 'Signature words',
+        topConnections: 'Most frequent overlaps',
+        tableTitle: 'Participants table',
+        monthlyTitle: 'Monthly activity',
+        dailyTitle: 'Daily tempo',
+        heatmapTitle: 'Activity heatmap',
+        networkTitle: 'Interaction structure',
+        networkText: 'Who replies to whom, who starts threads, and which pairs are denser than the rest.',
+        topPairs: 'Top interaction pairs',
+        topPairsEmpty: 'No clearly dominant pairs yet.',
+        pairScore: 'Combined interaction weight',
+        pairDirect: 'direct replies',
+        pairImplied: 'quick follow-ups',
+        starterLeaders: 'Conversation starters',
+        replyMagnets: 'Reply magnets',
+        contentTitle: 'Group language and vocabulary',
+        contentText: 'What the group shares and which words are especially typical for specific members.',
+        sharedVocabulary: 'Shared vocabulary',
+        uniqueWords: 'Words specific to this group',
+        signatures: 'Member signature words',
+        topEmoji: 'Popular emoji',
+        noGroupData: 'This chat does not have group analytics yet.',
+        noGroupDataText: 'Re-parse the chat after the analytics update to generate it.',
+        noWords: 'Not enough text for a meaningful content view.',
+        unknownParticipant: 'Participant',
+        healthStrong: 'Strong and lively group',
+        healthSteady: 'Steady rhythm',
+        healthFragile: 'Fragile structure',
+        momentumGrowing: 'Gaining momentum',
+        momentumStable: 'Stable rhythm',
+        momentumShrinking: 'Narrowing activity',
+        gini: 'Participation concentration',
+        retention: 'Member retention',
+        responseCoverage: 'Messages get replies',
+        lurkers: 'Barely contribute',
+        churned: 'Dropped off',
+        peakSimultaneity: 'Peak simultaneous activity',
+      },
+)
 
 const groupReport = computed(() => props.chat.groupReport)
 const participants = computed(() => groupReport.value?.participants ?? [])
@@ -177,18 +179,26 @@ const tabs = computed(() => [
   { value: 'content' as const, label: copy.value.content },
 ])
 
-watch(participants, (value) => {
-  if (!value.length) {
-    selectedParticipantId.value = null
-    return
-  }
-  if (!selectedParticipantId.value || !value.some((participant) => participant.id === selectedParticipantId.value)) {
-    selectedParticipantId.value = value[0]?.id ?? null
-  }
-}, { immediate: true })
+watch(
+  participants,
+  (value) => {
+    if (!value.length) {
+      selectedParticipantId.value = null
+      return
+    }
+    if (!selectedParticipantId.value || !value.some((participant) => participant.id === selectedParticipantId.value)) {
+      selectedParticipantId.value = value[0]?.id ?? null
+    }
+  },
+  { immediate: true },
+)
 
-const selectedParticipant = computed(() =>
-  participants.value.find((participant) => participant.id === selectedParticipantId.value) ?? participants.value[0] ?? null)
+const selectedParticipant = computed(
+  () =>
+    participants.value.find((participant) => participant.id === selectedParticipantId.value) ??
+    participants.value[0] ??
+    null,
+)
 
 const topParticipants = computed(() => participants.value.slice(0, 5))
 const othersShare = computed(() => {
@@ -214,59 +224,79 @@ const overviewMetrics = computed(() => [
   },
   {
     label: copy.value.avgLoad,
-    value: participants.value.length ? formatNumber(Math.round(props.chat.totalMessages / participants.value.length)) : '—',
+    value: participants.value.length
+      ? formatNumber(Math.round(props.chat.totalMessages / participants.value.length))
+      : '—',
     sub: copy.value.avgLoadSub,
   },
 ])
 
-const healthFacts = computed(() => health.value ? [
-  { label: copy.value.gini, value: `${health.value.giniCoefficient.toFixed(2)}` },
-  { label: copy.value.retention, value: `${health.value.retentionRate}%` },
-  { label: copy.value.responseCoverage, value: `${health.value.responseCoverage}%` },
-  { label: copy.value.lurkers, value: `${health.value.lurkerRatio}%` },
-  { label: copy.value.churned, value: formatNumber(health.value.churnedMembers) },
-  { label: copy.value.peakSimultaneity, value: formatNumber(health.value.peakSimultaneity) },
-] : [])
+const healthFacts = computed(() =>
+  health.value
+    ? [
+        { label: copy.value.gini, value: `${health.value.giniCoefficient.toFixed(2)}` },
+        { label: copy.value.retention, value: `${health.value.retentionRate}%` },
+        { label: copy.value.responseCoverage, value: `${health.value.responseCoverage}%` },
+        { label: copy.value.lurkers, value: `${health.value.lurkerRatio}%` },
+        { label: copy.value.churned, value: formatNumber(health.value.churnedMembers) },
+        { label: copy.value.peakSimultaneity, value: formatNumber(health.value.peakSimultaneity) },
+      ]
+    : [],
+)
 
 const insights = computed(() => {
   const items: string[] = []
   const top = topParticipants.value[0]
 
   if (top && top.messageShare >= 35) {
-    items.push(isRu.value
-      ? `${top.name} заметно тянет общение на себе: ${top.messageShare}% всех сообщений.`
-      : `${top.name} noticeably carries the group with ${top.messageShare}% of all messages.`)
+    items.push(
+      isRu.value
+        ? `${top.name} заметно тянет общение на себе: ${top.messageShare}% всех сообщений.`
+        : `${top.name} noticeably carries the group with ${top.messageShare}% of all messages.`,
+    )
   }
 
   if ((health.value?.lurkerRatio ?? 0) >= 45) {
-    items.push(isRu.value
-      ? 'Основная часть общения держится на сравнительно узком круге людей.'
-      : 'Most of the conversation is concentrated in a relatively small core.')
+    items.push(
+      isRu.value
+        ? 'Основная часть общения держится на сравнительно узком круге людей.'
+        : 'Most of the conversation is concentrated in a relatively small core.',
+    )
   }
 
   if (topPairs.value[0]) {
     const pair = topPairs.value[0]
-    items.push(isRu.value
-      ? `Самая плотная связка — ${pair.leftParticipantName} и ${pair.rightParticipantName}.`
-      : `The densest pair is ${pair.leftParticipantName} and ${pair.rightParticipantName}.`)
+    items.push(
+      isRu.value
+        ? `Самая плотная связка — ${pair.leftParticipantName} и ${pair.rightParticipantName}.`
+        : `The densest pair is ${pair.leftParticipantName} and ${pair.rightParticipantName}.`,
+    )
   }
 
   if (health.value?.momentum === 'growing') {
-    items.push(isRu.value ? 'В последние недели группа оживилась.' : 'The group has become more active in recent weeks.')
+    items.push(
+      isRu.value ? 'В последние недели группа оживилась.' : 'The group has become more active in recent weeks.',
+    )
   }
 
   if (health.value?.score !== undefined && health.value.score >= 75) {
-    items.push(isRu.value ? 'Структура выглядит живой и достаточно устойчивой.' : 'The structure looks lively and fairly resilient.')
+    items.push(
+      isRu.value
+        ? 'Структура выглядит живой и достаточно устойчивой.'
+        : 'The structure looks lively and fairly resilient.',
+    )
   }
 
   return items.slice(0, 4)
 })
 
-const networkPairs = computed(() => topPairs.value.map((pair) => ({
-  ...pair,
-  leftParticipantName: normalizeDisplayName(pair.leftParticipantName),
-  rightParticipantName: normalizeDisplayName(pair.rightParticipantName),
-})))
+const networkPairs = computed(() =>
+  topPairs.value.map((pair) => ({
+    ...pair,
+    leftParticipantName: normalizeDisplayName(pair.leftParticipantName),
+    rightParticipantName: normalizeDisplayName(pair.rightParticipantName),
+  })),
+)
 
 const selectedParticipantConnections = computed(() => {
   if (!selectedParticipant.value) {
@@ -274,9 +304,14 @@ const selectedParticipantConnections = computed(() => {
   }
 
   return networkPairs.value
-    .filter((pair) => pair.leftParticipantId === selectedParticipant.value?.id || pair.rightParticipantId === selectedParticipant.value?.id)
+    .filter(
+      (pair) =>
+        pair.leftParticipantId === selectedParticipant.value?.id ||
+        pair.rightParticipantId === selectedParticipant.value?.id,
+    )
     .map((pair) => ({
-      name: pair.leftParticipantId === selectedParticipant.value?.id ? pair.rightParticipantName : pair.leftParticipantName,
+      name:
+        pair.leftParticipantId === selectedParticipant.value?.id ? pair.rightParticipantName : pair.leftParticipantName,
       score: pair.symmetricScore,
     }))
     .sort((left, right) => right.score - left.score)
@@ -284,25 +319,23 @@ const selectedParticipantConnections = computed(() => {
 })
 
 const starterLeaders = computed(() =>
-  [...participants.value]
-    .sort((left, right) => right.starterShare - left.starterShare)
-    .slice(0, 8))
+  [...participants.value].sort((left, right) => right.starterShare - left.starterShare).slice(0, 8),
+)
 
 const replyMagnets = computed(() =>
-  [...participants.value]
-    .sort((left, right) => (right.magnetScore ?? 0) - (left.magnetScore ?? 0))
-    .slice(0, 8))
+  [...participants.value].sort((left, right) => (right.magnetScore ?? 0) - (left.magnetScore ?? 0)).slice(0, 8),
+)
 
 function normalizeDisplayName(name: string | null | undefined) {
   if (!name) {
     return copy.value.unknownParticipant
   }
   if (
-    /^unknown participant$/i.test(name)
-    || /^user unknown$/i.test(name)
-    || /^name unavailable$/i.test(name)
-    || /^profile unknown$/i.test(name)
-    || /^profile\s+\S+/i.test(name)
+    /^unknown participant$/i.test(name) ||
+    /^user unknown$/i.test(name) ||
+    /^name unavailable$/i.test(name) ||
+    /^profile unknown$/i.test(name) ||
+    /^profile\s+\S+/i.test(name)
   ) {
     return copy.value.unknownParticipant
   }
@@ -394,7 +427,13 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | undefined) {
 
   <div v-else class="page-stack">
     <div class="grid-kpi group-kpi-grid">
-      <MetricCard v-for="item in overviewMetrics" :key="item.label" :label="item.label" :value="item.value" :sub="item.sub" />
+      <MetricCard
+        v-for="item in overviewMetrics"
+        :key="item.label"
+        :label="item.label"
+        :value="item.value"
+        :sub="item.sub"
+      />
     </div>
 
     <SegmentedControl v-model="activeTab" :options="tabs" />
@@ -456,7 +495,9 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | undefined) {
           <div class="facts-grid">
             <div class="fact-card">
               <span class="t-label">{{ copy.activeMembers }}</span>
-              <strong class="fact-value t-mono">{{ formatNumber(health?.activeMembers ?? participants.length) }}</strong>
+              <strong class="fact-value t-mono">{{
+                formatNumber(health?.activeMembers ?? participants.length)
+              }}</strong>
             </div>
             <div class="fact-card">
               <span class="t-label">{{ copy.activeNow }}</span>
@@ -632,7 +673,11 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | undefined) {
         </div>
 
         <div v-if="networkPairs.length" class="pairs-grid">
-          <article v-for="pair in networkPairs" :key="`${pair.leftParticipantId}-${pair.rightParticipantId}`" class="pair-card">
+          <article
+            v-for="pair in networkPairs"
+            :key="`${pair.leftParticipantId}-${pair.rightParticipantId}`"
+            class="pair-card"
+          >
             <div class="pair-head">
               <strong>{{ pair.leftParticipantName }} × {{ pair.rightParticipantName }}</strong>
               <span class="pair-score">{{ formatNumber(pair.symmetricScore) }}</span>
@@ -713,7 +758,11 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | undefined) {
           <h2 class="t-h2">{{ copy.signatures }}</h2>
         </div>
         <div class="signature-grid">
-          <div v-for="participant in participants.slice(0, 8)" :key="`signature-${participant.id}`" class="fact-card signature-card">
+          <div
+            v-for="participant in participants.slice(0, 8)"
+            :key="`signature-${participant.id}`"
+            class="fact-card signature-card"
+          >
             <strong>{{ normalizeDisplayName(participant.name) }}</strong>
             <div class="chip-wrap compact-chip-wrap">
               <span v-for="item in participant.topicSignature" :key="item.value" class="word-chip">
@@ -950,8 +999,11 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | undefined) {
   padding: var(--space-4);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 94%, transparent), color-mix(in srgb, var(--bg-surface) 98%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-elevated) 94%, transparent),
+    color-mix(in srgb, var(--bg-surface) 98%, transparent)
+  );
 }
 
 .connection-row,

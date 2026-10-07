@@ -1,6 +1,5 @@
 import type { UserDto } from '@tg-analyzer/shared'
 
-
 export type AuthHealth = 'ready' | 'degraded' | 'unauthenticated'
 const PARSE_DIALOGS_STORAGE_PREFIX = 'tg-analyzer-parse-dialogs:'
 const AUTH_STORAGE_KEY = 'tg-analyzer-auth'

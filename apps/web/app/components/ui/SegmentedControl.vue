@@ -82,7 +82,9 @@ const emit = defineEmits<{
 
 .segment:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--accent), 0 0 0 3px var(--bg-base);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 0 3px var(--bg-base);
 }
 
 .segment:disabled {

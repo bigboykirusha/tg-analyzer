@@ -11,8 +11,9 @@ test('request and error serializers omit query credentials and error details', (
     }),
     { id: 'request-1', method: 'GET', path: '/ws/parse-progress' },
   )
-  assert.deepEqual(
-    loggerOptions.serializers.err({ name: 'PrivateTelegramError' }),
-    { type: 'PrivateTelegramError', message: 'Operation failed', stack: '' },
-  )
+  assert.deepEqual(loggerOptions.serializers.err({ name: 'PrivateTelegramError' }), {
+    type: 'PrivateTelegramError',
+    message: 'Operation failed',
+    stack: '',
+  })
 })

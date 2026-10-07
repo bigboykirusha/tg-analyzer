@@ -10,10 +10,12 @@ const { formatDate } = useI18n()
 
 const option = computed(() => {
   const theme = CHART_THEME.base()
-  const labels = props.items.map((item) => formatDate(`${item.month}-01T00:00:00`, {
-    month: 'short',
-    year: '2-digit',
-  }))
+  const labels = props.items.map((item) =>
+    formatDate(`${item.month}-01T00:00:00`, {
+      month: 'short',
+      year: '2-digit',
+    }),
+  )
 
   return {
     ...theme,

@@ -150,11 +150,12 @@ export function useApiFetch<T>(path: string, options: FetchOptions<'json'> = {})
     return headers
   }
 
-  const execute = (): Promise<T> => fetcher(requestUrl, {
-    credentials: 'include',
-    ...options,
-    headers: createHeaders(),
-  })
+  const execute = (): Promise<T> =>
+    fetcher(requestUrl, {
+      credentials: 'include',
+      ...options,
+      headers: createHeaders(),
+    })
 
   return execute().catch(async (rawError) => {
     const error = normalizeApiError(rawError)

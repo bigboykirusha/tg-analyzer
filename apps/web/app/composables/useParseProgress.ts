@@ -1,4 +1,9 @@
-import type { ParseProgressDto, ParseProgressWsEvent, ParseStatusResponse, WsAuthTicketResponse } from '@tg-analyzer/shared'
+import type {
+  ParseProgressDto,
+  ParseProgressWsEvent,
+  ParseStatusResponse,
+  WsAuthTicketResponse,
+} from '@tg-analyzer/shared'
 import { refreshAccessToken } from './useApi'
 import { isTokenExpiringSoon, isTokenUsable } from '../utils/auth'
 
@@ -90,7 +95,13 @@ export function useParseProgress() {
 
   function scheduleReconnect() {
     const reconnectable = progress.value.status === 'running' || progress.value.status === 'pending'
-    if (!import.meta.client || retryCount.value >= MAX_RETRIES || !reconnectable || !auth.isAuthorized || !bootstrapped.value) {
+    if (
+      !import.meta.client ||
+      retryCount.value >= MAX_RETRIES ||
+      !reconnectable ||
+      !auth.isAuthorized ||
+      !bootstrapped.value
+    ) {
       return
     }
 

@@ -24,21 +24,28 @@ onMounted(() => {
   isMounted.value = true
 })
 
-const seoTitle = computed(() => locale.value === 'ru'
-  ? 'TG Analyzer - вход в Telegram-аналитику'
-  : 'TG Analyzer - Telegram analytics login')
-const seoDescription = computed(() => locale.value === 'ru'
-  ? 'Войдите в TG Analyzer и анализируйте Telegram-чаты: динамика общения, активность, слова, эмодзи и подробные отчеты.'
-  : 'Sign in to TG Analyzer to explore Telegram chat analytics, activity patterns, vocabulary, emoji usage, and focused reports.')
-const seoKeywords = computed(() => locale.value === 'ru'
-  ? 'telegram analytics, анализ telegram чатов, статистика telegram, tg analyzer, аналитика переписок'
-  : 'telegram analytics, telegram chat analysis, telegram stats, tg analyzer, chat insights')
+const seoTitle = computed(() =>
+  locale.value === 'ru' ? 'TG Analyzer - вход в Telegram-аналитику' : 'TG Analyzer - Telegram analytics login',
+)
+const seoDescription = computed(() =>
+  locale.value === 'ru'
+    ? 'Войдите в TG Analyzer и анализируйте Telegram-чаты: динамика общения, активность, слова, эмодзи и подробные отчеты.'
+    : 'Sign in to TG Analyzer to explore Telegram chat analytics, activity patterns, vocabulary, emoji usage, and focused reports.',
+)
+const seoKeywords = computed(() =>
+  locale.value === 'ru'
+    ? 'telegram analytics, анализ telegram чатов, статистика telegram, tg analyzer, аналитика переписок'
+    : 'telegram analytics, telegram chat analysis, telegram stats, tg analyzer, chat insights',
+)
 
-const stepIndex = computed(() => ({
-  phone: 0,
-  code: 1,
-  password: 2,
-}[step.value]))
+const stepIndex = computed(
+  () =>
+    ({
+      phone: 0,
+      code: 1,
+      password: 2,
+    })[step.value],
+)
 
 useSeoMeta({
   title: () => seoTitle.value,
@@ -124,8 +131,12 @@ async function handlePassword() {
         </div>
 
         <div class="login-progress">
-          <div v-for="index in 3" :key="index" class="progress-step"
-            :class="{ 'progress-step-active': stepIndex >= index - 1 }" />
+          <div
+            v-for="index in 3"
+            :key="index"
+            class="progress-step"
+            :class="{ 'progress-step-active': stepIndex >= index - 1 }"
+          />
         </div>
 
         <div class="login-card">
@@ -144,12 +155,27 @@ async function handlePassword() {
           </div>
 
           <Transition name="auth-step" mode="out-in">
-            <PhoneStep v-if="step === 'phone'" key="phone" v-model:phone="phone" :loading="loading"
-              @submit="handlePhone" />
-            <CodeStep v-else-if="step === 'code'" key="code" v-model:code="code" :loading="loading"
-              @submit="handleCode" />
-            <PasswordStep v-else key="password" v-model:password="password" :loading="loading"
-              @submit="handlePassword" />
+            <PhoneStep
+              v-if="step === 'phone'"
+              key="phone"
+              v-model:phone="phone"
+              :loading="loading"
+              @submit="handlePhone"
+            />
+            <CodeStep
+              v-else-if="step === 'code'"
+              key="code"
+              v-model:code="code"
+              :loading="loading"
+              @submit="handleCode"
+            />
+            <PasswordStep
+              v-else
+              key="password"
+              v-model:password="password"
+              :loading="loading"
+              @submit="handlePassword"
+            />
           </Transition>
 
           <p v-if="error" class="login-error t-small">
@@ -161,13 +187,13 @@ async function handlePassword() {
           <span class="trust-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
               <path
-                d="M8 10V7.75A4 4 0 0 1 12 4a4 4 0 0 1 4 3.75V10m-7.25 0h6.5A1.75 1.75 0 0 1 17 11.75v5.5A1.75 1.75 0 0 1 15.25 19h-6.5A1.75 1.75 0 0 1 7 17.25v-5.5A1.75 1.75 0 0 1 8.75 10Z" />
+                d="M8 10V7.75A4 4 0 0 1 12 4a4 4 0 0 1 4 3.75V10m-7.25 0h6.5A1.75 1.75 0 0 1 17 11.75v5.5A1.75 1.75 0 0 1 15.25 19h-6.5A1.75 1.75 0 0 1 7 17.25v-5.5A1.75 1.75 0 0 1 8.75 10Z"
+              />
             </svg>
           </span>
           <p class="t-small">{{ t('login.trust') }}</p>
         </div>
       </section>
-
     </section>
   </div>
 </template>
@@ -181,9 +207,7 @@ async function handlePassword() {
   align-items: stretch;
   justify-content: center;
   padding: var(--space-6);
-  background:
-    radial-gradient(circle at top, var(--accent-subtle), transparent 18%),
-    var(--bg-base);
+  background: radial-gradient(circle at top, var(--accent-subtle), transparent 18%), var(--bg-base);
   overflow: hidden;
 }
 
@@ -287,7 +311,9 @@ async function handlePassword() {
   font-family: var(--font-mono);
   font-size: 12px;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .language-switch button:hover,
@@ -420,10 +446,11 @@ async function handlePassword() {
   max-width: 420px;
 }
 
-
 .auth-step-enter-active,
 .auth-step-leave-active {
-  transition: opacity var(--transition-normal), transform var(--transition-normal);
+  transition:
+    opacity var(--transition-normal),
+    transform var(--transition-normal);
 }
 
 .auth-step-enter-from {
@@ -480,4 +507,3 @@ async function handlePassword() {
   }
 }
 </style>
-

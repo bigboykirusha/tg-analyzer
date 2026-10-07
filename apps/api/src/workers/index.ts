@@ -19,7 +19,7 @@ import { cleanupQueue, parseDialogsQueue } from '../queues/parse.queue'
   }, 10_000)
   heartbeatInterval.unref?.()
   const reconciliationInterval = setInterval(() => {
-    void reconcileParseJobs().catch(error => {
+    void reconcileParseJobs().catch((error) => {
       logger.error({ event: 'parse_reconciliation_failed', err: error }, 'parse reconciliation failed')
     })
   }, 30_000)

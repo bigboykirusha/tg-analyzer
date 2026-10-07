@@ -13,10 +13,7 @@ import { pool } from './db'
     await server.close()
     await telegramPool.close()
     await Promise.allSettled([parseDialogsQueue.close(), cleanupQueue.close()])
-    await Promise.allSettled([
-      redis.quit(),
-      pool.end(),
-    ])
+    await Promise.allSettled([redis.quit(), pool.end()])
     process.exit(0)
   }
 

@@ -15,15 +15,11 @@ type TokenKind = z.infer<typeof claimsSchema>['kind']
 export type TokenClaims = z.infer<typeof claimsSchema>
 
 export function signToken(kind: TokenKind, claims: { sub: string; familyId: string; sessionId?: string }) {
-  return jwt.sign(
-    { ...claims, kind, version: 2 },
-    kind === 'refresh' ? config.JWT_REFRESH_SECRET : config.JWT_SECRET,
-    {
-      algorithm: 'HS256',
-      issuer: 'tg-analyzer',
-      expiresIn: kind === 'access' ? '15m' : '90d',
-    },
-  )
+  return jwt.sign({ ...claims, kind, version: 2 }, kind === 'refresh' ? config.JWT_REFRESH_SECRET : config.JWT_SECRET, {
+    algorithm: 'HS256',
+    issuer: 'tg-analyzer',
+    expiresIn: kind === 'access' ? '15m' : '90d',
+  })
 }
 
 export function verifyToken(token: string, kind: TokenKind): TokenClaims {
@@ -32,11 +28,12 @@ export function verifyToken(token: string, kind: TokenKind): TokenClaims {
     throw new Error('Invalid token')
   }
 
-  const claims = claimsSchema.parse(jwt.verify(
-    token,
-    kind === 'refresh' ? config.JWT_REFRESH_SECRET : config.JWT_SECRET,
-    { algorithms: ['HS256'], issuer: 'tg-analyzer' },
-  ))
+  const claims = claimsSchema.parse(
+    jwt.verify(token, kind === 'refresh' ? config.JWT_REFRESH_SECRET : config.JWT_SECRET, {
+      algorithms: ['HS256'],
+      issuer: 'tg-analyzer',
+    }),
+  )
   if (claims.kind !== kind || (kind === 'refresh' && !claims.sessionId)) {
     throw new Error('Invalid token')
   }

@@ -29,10 +29,13 @@ export async function buildServer() {
         return
       }
 
-      cb(Object.assign(new Error('Origin is not allowed'), {
-        statusCode: 403,
-        code: 'ORIGIN_FORBIDDEN',
-      }), false)
+      cb(
+        Object.assign(new Error('Origin is not allowed'), {
+          statusCode: 403,
+          code: 'ORIGIN_FORBIDDEN',
+        }),
+        false,
+      )
     },
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -44,8 +47,13 @@ export async function buildServer() {
     redis,
     nameSpace: 'rate:auth:',
     ...authRateLimitFailurePolicy,
-    keyGenerator: request => request.ip,
-    errorResponseBuilder: request => ({ statusCode: 429, message: 'Too many requests', code: 'RATE_LIMITED', requestId: request.id }),
+    keyGenerator: (request) => request.ip,
+    errorResponseBuilder: (request) => ({
+      statusCode: 429,
+      message: 'Too many requests',
+      code: 'RATE_LIMITED',
+      requestId: request.id,
+    }),
     max: config.AUTH_RATE_LIMIT_MAX,
     timeWindow: config.AUTH_RATE_LIMIT_WINDOW,
   })
@@ -97,20 +105,22 @@ export async function buildServer() {
     const error = rawError as Error & { statusCode?: number; code?: string }
     const statusCode = error.statusCode && error.statusCode >= 400 ? error.statusCode : 500
     const responseStatus = error.name === 'ZodError' ? 400 : statusCode
-    const message = responseStatus === 400 && error.name === 'ZodError'
-      ? 'Request validation failed'
-      : responseStatus >= 500 && config.NODE_ENV === 'production'
-        ? 'Internal server error'
-        : error.message
-    const code = isApiError(error) && error.code
-      ? error.code
-      : responseStatus === 400
-        ? 'INVALID_REQUEST'
-        : responseStatus >= 500
-          ? 'INTERNAL_ERROR'
-          : typeof error.code === 'string'
-            ? error.code
-            : 'REQUEST_FAILED'
+    const message =
+      responseStatus === 400 && error.name === 'ZodError'
+        ? 'Request validation failed'
+        : responseStatus >= 500 && config.NODE_ENV === 'production'
+          ? 'Internal server error'
+          : error.message
+    const code =
+      isApiError(error) && error.code
+        ? error.code
+        : responseStatus === 400
+          ? 'INVALID_REQUEST'
+          : responseStatus >= 500
+            ? 'INTERNAL_ERROR'
+            : typeof error.code === 'string'
+              ? error.code
+              : 'REQUEST_FAILED'
 
     request.log.error({ err: error }, 'request failed')
     reply.status(responseStatus).send({ message, code, requestId: request.id })

@@ -9,12 +9,7 @@ import { requireAuth } from '../middleware/auth.middleware'
 import { deleteAccount } from '../services/account.service'
 import { createApiError, sendApiError } from '../services/api-error.service'
 import { encryptSession } from '../services/crypto.service'
-import {
-  clearRefreshCookie,
-  issueAccessToken,
-  issueAuthTokens,
-  setRefreshCookie,
-} from '../services/jwt.service'
+import { clearRefreshCookie, issueAccessToken, issueAuthTokens, setRefreshCookie } from '../services/jwt.service'
 import { redis } from '../services/redis.service'
 import {
   clearPendingPasswordContext,
@@ -139,7 +134,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       return sendApiError(reply, 401, 'Invalid refresh token', 'AUTH_REFRESH_INVALID')
     }
 
-    const stored = await db.query.refreshSessions.findFirst({ where: eq(schema.refreshSessions.tokenId, payload.sessionId!) })
+    const stored = await db.query.refreshSessions.findFirst({
+      where: eq(schema.refreshSessions.tokenId, payload.sessionId!),
+    })
     if (!stored || stored.userId !== payload.sub || stored.familyId !== payload.familyId) {
       clearRefreshCookie(reply)
       return sendApiError(reply, 401, 'Refresh session invalid', 'AUTH_REFRESH_INVALID')
@@ -214,11 +211,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       where: and(eq(schema.telegramSessions.userId, userId), eq(schema.telegramSessions.isActive, true)),
     })
 
-    const [user] = await db
-      .update(schema.users)
-      .set({ timezone })
-      .where(eq(schema.users.id, userId))
-      .returning()
+    const [user] = await db.update(schema.users).set({ timezone }).where(eq(schema.users.id, userId)).returning()
 
     if (!user) {
       return sendApiError(reply, 404, 'User not found')
@@ -270,14 +263,17 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
     }
 
-    let avatar: Buffer | null = null
+    let avatar: Buffer | null | undefined
     try {
-      avatar = await withTelegramReconnectRetry(async () => {
-        const client = await telegramPool.connectAuthorizedClient(userId, session)
-        return telegramPool.getSelfAvatar(userId, client)
-      }, async () => {
-        await telegramPool.disconnectAuthorizedClient(userId)
-      })
+      avatar = await withTelegramReconnectRetry(
+        async () => {
+          const client = await telegramPool.connectAuthorizedClient(userId, session)
+          return telegramPool.getSelfAvatar(userId, client)
+        },
+        async () => {
+          await telegramPool.disconnectAuthorizedClient(userId)
+        },
+      )
     } catch (error) {
       if (isTelegramSessionExpiredError(error)) {
         await deactivateTelegramSessions(userId)

@@ -1,13 +1,16 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
-  width?: string
-  height?: string
-  radius?: string
-}>(), {
-  width: '100%',
-  height: '1rem',
-  radius: 'var(--radius-sm)',
-})
+withDefaults(
+  defineProps<{
+    width?: string
+    height?: string
+    radius?: string
+  }>(),
+  {
+    width: '100%',
+    height: '1rem',
+    radius: 'var(--radius-sm)',
+  },
+)
 </script>
 
 <template>

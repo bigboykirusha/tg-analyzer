@@ -7,7 +7,9 @@ const props = defineProps<{
   activity: Record<string, DirectionalCountDto>
 }>()
 const { t } = useI18n()
-const hasData = computed(() => Object.values(props.activity).some((entry) => (entry?.sent ?? 0) > 0 || (entry?.received ?? 0) > 0))
+const hasData = computed(() =>
+  Object.values(props.activity).some((entry) => (entry?.sent ?? 0) > 0 || (entry?.received ?? 0) > 0),
+)
 
 const option = computed(() => {
   const theme = CHART_THEME.base()

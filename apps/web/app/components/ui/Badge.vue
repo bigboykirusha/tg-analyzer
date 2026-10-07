@@ -1,9 +1,25 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
-  variant?: 'default' | 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'inactive' | 'cooldown'
-}>(), {
-  variant: 'default',
-})
+withDefaults(
+  defineProps<{
+    variant?:
+      | 'default'
+      | 'accent'
+      | 'success'
+      | 'warning'
+      | 'danger'
+      | 'info'
+      | 'pending'
+      | 'running'
+      | 'completed'
+      | 'failed'
+      | 'cancelled'
+      | 'inactive'
+      | 'cooldown'
+  }>(),
+  {
+    variant: 'default',
+  },
+)
 </script>
 
 <template>

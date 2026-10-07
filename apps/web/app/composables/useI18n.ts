@@ -55,7 +55,8 @@ const messages: Record<Locale, Messages> = {
     'login.codeDescription': 'Enter the 5-digit code Telegram sent to your account.',
     'login.passwordTitle': 'Finish with 2FA',
     'login.passwordDescription': 'Use your Telegram password only if two-factor authentication is enabled.',
-    'login.trust': 'Original messages are not stored in the app database. We only keep aggregated statistics, the session is refreshed through a secure HttpOnly cookie, and other users or the interface do not get direct access to your chat contents.',
+    'login.trust':
+      'Original messages are not stored in the app database. We only keep aggregated statistics, the session is refreshed through a secure HttpOnly cookie, and other users or the interface do not get direct access to your chat contents.',
     'login.sendCodeError': 'Could not send code',
     'login.invalidCodeError': 'Code is invalid',
     'login.invalidPasswordError': 'Password is invalid',
@@ -99,7 +100,8 @@ const messages: Record<Locale, Messages> = {
     'dashboard.reloginRequired': 'Re-login required',
     'dashboard.sessionInactive': 'Telegram session terminated. Re-login before loading dialogs or starting a parse.',
     'dashboard.loadDialogsError': 'Could not load Telegram chats',
-    'dashboard.dialogsBusy': 'Telegram is busy with another operation. The chat list will be available again when it finishes.',
+    'dashboard.dialogsBusy':
+      'Telegram is busy with another operation. The chat list will be available again when it finishes.',
     'dashboard.loadStatsError': 'Could not load dashboard data',
     'dashboard.truncated': 'Showing the first {total} dialogs. Some chats may not be visible.',
     'dashboard.currentSelection': 'Current selection',
@@ -133,11 +135,16 @@ const messages: Record<Locale, Messages> = {
     'dashboard.historyPageText': 'Worker jobs, durations, parse progress, and failures collected in one place.',
     'dashboard.openSecurityInfo': 'How it works',
     'dashboard.securityInfoTitle': 'How Telegram access and security work',
-    'dashboard.securityInfoIntro': 'Telegram is used only to authenticate you and to scan the chats you explicitly choose for analysis.',
-    'dashboard.securityInfoSessions': 'Your Telegram session string is encrypted on the backend. Access to the app itself uses a short-lived JWT and an HttpOnly refresh cookie.',
-    'dashboard.securityInfoMessages': 'The app does not store original chat messages or media files as product data. It keeps aggregated statistics and report metrics.',
-    'dashboard.securityInfoWorkers': 'Parsing runs asynchronously in a worker. During parsing we use lightweight message metadata to compute aggregates and then keep only the report snapshot.',
-    'dashboard.securityInfoAccess': 'Other users do not get direct access to your chats. The interface works only with your authorized account and your stored aggregates.',
+    'dashboard.securityInfoIntro':
+      'Telegram is used only to authenticate you and to scan the chats you explicitly choose for analysis.',
+    'dashboard.securityInfoSessions':
+      'Your Telegram session string is encrypted on the backend. Access to the app itself uses a short-lived JWT and an HttpOnly refresh cookie.',
+    'dashboard.securityInfoMessages':
+      'The app does not store original chat messages or media files as product data. It keeps aggregated statistics and report metrics.',
+    'dashboard.securityInfoWorkers':
+      'Parsing runs asynchronously in a worker. During parsing we use lightweight message metadata to compute aggregates and then keep only the report snapshot.',
+    'dashboard.securityInfoAccess':
+      'Other users do not get direct access to your chats. The interface works only with your authorized account and your stored aggregates.',
     'profile.timezone': 'Timezone',
     'profile.timezoneHelp': 'Controls how hours, days, and months are grouped in new reports.',
     'profile.timezoneSaved': 'Timezone updated',
@@ -147,7 +154,8 @@ const messages: Record<Locale, Messages> = {
     'dashboard.stopping': 'Stopping...',
     'dashboard.deleteAccount': 'Delete account and data',
     'dashboard.deleting': 'Deleting...',
-    'dashboard.deleteConfirm': 'This action is irreversible. Account, Telegram session, and collected data will be deleted. Continue?',
+    'dashboard.deleteConfirm':
+      'This action is irreversible. Account, Telegram session, and collected data will be deleted. Continue?',
     'dashboard.startedJob': 'Started job {jobId}',
     'dashboard.parseStarted': 'Parse started',
     'dashboard.cooldownTitle': 'Cooldown active',
@@ -213,7 +221,8 @@ const messages: Record<Locale, Messages> = {
     'chat.exportImageSubtitle': 'Private Telegram chat snapshot',
     'chat.exportFooter': 'Messages, rhythm, and balance in one clean snapshot.',
     'chat.exportPdf': 'Save PDF',
-    'chat.reportRefreshing': 'Report is refreshing. Reloaded analytics will appear automatically when parsing finishes.',
+    'chat.reportRefreshing':
+      'Report is refreshing. Reloaded analytics will appear automatically when parsing finishes.',
     'chat.refreshing': 'Refreshing...',
     'chat.popupBlocked': 'Popup blocked',
     'chat.firstMsg': 'First msg',
@@ -289,7 +298,8 @@ const messages: Record<Locale, Messages> = {
     'chat.charactersMedia': 'Characters / media events',
     'chat.responseSampleHint': '{count} replies in sample',
     'chat.responsePatternsTitle': 'Reply patterns',
-    'chat.responsePatternsText': 'How often the conversation gets a reply and how wide the response-time spread is on each side.',
+    'chat.responsePatternsText':
+      'How often the conversation gets a reply and how wide the response-time spread is on each side.',
     'chat.responseRate': 'Response rate',
     'chat.privateOnlyMetric': 'Available for private chats only',
     'chat.yourResponseSpread': 'Your response spread',
@@ -312,7 +322,8 @@ const messages: Record<Locale, Messages> = {
     'chat.longTermStability': 'Long-term stability',
     'chat.activityDistribution': 'Activity profile',
     'chat.activityDistributionTitle': 'Time-of-day distribution',
-    'chat.activityDistributionText': 'A compact split of the chat volume across the daily cycle, plus predictability hints.',
+    'chat.activityDistributionText':
+      'A compact split of the chat volume across the daily cycle, plus predictability hints.',
     'chat.bucketNight': 'Night',
     'chat.bucketMorning': 'Morning',
     'chat.bucketAfternoon': 'Afternoon',
@@ -339,7 +350,8 @@ const messages: Record<Locale, Messages> = {
     'chat.hourlySentReceived': 'Hourly sent / received',
     'chat.hourlyText': 'Hourly split across the full local-day cycle for the parsed history.',
     'chat.noTextTitle': 'No text signals found',
-    'chat.noTextDescription': 'This chat may consist only of media, stickers, or voice messages, so text analytics are empty.',
+    'chat.noTextDescription':
+      'This chat may consist only of media, stickers, or voice messages, so text analytics are empty.',
     'chat.popularWords': 'Popular words by sender',
     'chat.wordsText': 'Russian and English stop words are filtered out before ranking.',
     'chat.noWordsTitle': 'No meaningful words',
@@ -362,7 +374,8 @@ const messages: Record<Locale, Messages> = {
     'chat.dailyArcText': 'Daily flow across the whole period. Silent days stay on the chart as zero points.',
     'chat.sessions': 'Sessions',
     'chat.sessionsTitle': 'Conversation sessions',
-    'chat.sessionsText': 'Message bursts grouped into 8-hour windows so you can see intensity, pacing, and night activity.',
+    'chat.sessionsText':
+      'Message bursts grouped into 8-hour windows so you can see intensity, pacing, and night activity.',
     'chat.sessionCount': 'Sessions',
     'chat.sessionCountSub': 'Total conversation windows',
     'chat.avgSessionSize': 'Avg session size',
@@ -383,21 +396,26 @@ const messages: Record<Locale, Messages> = {
     'chat.insightsEmptyTitle': 'No insights yet',
     'chat.insightsEmptyDescription': 'Run a fuller parse or wait for more history to surface stronger patterns.',
     'chat.insightSessionIntensityTitle': 'Conversation rhythm',
-    'chat.insightSessionIntensityDescription': 'The chat formed {sessions} sessions, averaging {average} messages each.',
+    'chat.insightSessionIntensityDescription':
+      'The chat formed {sessions} sessions, averaging {average} messages each.',
     'chat.insightLongSessionTitle': 'High-intensity window',
     'chat.insightLongSessionDescription': 'Your longest session lasted {hours}h and reached {messages} messages.',
     'chat.insightLongSessionExtendedTitle': 'Extended conversation window',
-    'chat.insightLongSessionExtendedDescription': 'The longest window lasted {duration} and included {messages} messages. This is not continuous chatting, but a chain without any gap longer than 8 hours.',
+    'chat.insightLongSessionExtendedDescription':
+      'The longest window lasted {duration} and included {messages} messages. This is not continuous chatting, but a chain without any gap longer than 8 hours.',
     'chat.insightTrendGrowingTitle': 'Momentum is building',
-    'chat.insightTrendGrowingDescription': 'Recent activity is stronger than the previous period, which suggests the connection is warming up.',
+    'chat.insightTrendGrowingDescription':
+      'Recent activity is stronger than the previous period, which suggests the connection is warming up.',
     'chat.insightTrendFadingTitle': 'Momentum cooled down',
-    'chat.insightTrendFadingDescription': 'Recent activity dropped versus the previous period, so this conversation may be losing cadence.',
+    'chat.insightTrendFadingDescription':
+      'Recent activity dropped versus the previous period, so this conversation may be losing cadence.',
     'chat.insightLongGapTitle': 'Extended silence',
     'chat.insightLongGapDescription': 'There was a long break of about {days} days between messages.',
     'chat.insightRelationshipScoreTitle': 'Relationship dynamics',
     'chat.insightRelationshipScoreDescription': 'The balance score is {score}/100 with a {label} pattern.',
     'chat.insightResponseAsymmetryTitle': 'Reply tempo mismatch',
-    'chat.insightResponseAsymmetryDescription': '{side} usually respond slower, with a median gap difference of about {hours} hours.',
+    'chat.insightResponseAsymmetryDescription':
+      '{side} usually respond slower, with a median gap difference of about {hours} hours.',
     'chat.insightYou': 'You',
     'chat.insightContact': 'Your contact',
     'chat.insightPositive': 'Positive',
@@ -484,7 +502,8 @@ const messages: Record<Locale, Messages> = {
     'login.codeDescription': 'Введите 5-значный код, который Telegram отправил в аккаунт.',
     'login.passwordTitle': 'Завершите вход с 2FA',
     'login.passwordDescription': 'Пароль нужен только если в Telegram включена двухфакторная защита.',
-    'login.trust': 'Оригинальные сообщения не сохраняются в базе приложения. Мы храним только агрегированную статистику, сессия обновляется через защищенную HttpOnly-cookie, а прямого доступа к содержимому ваших чатов у интерфейса и других пользователей нет.',
+    'login.trust':
+      'Оригинальные сообщения не сохраняются в базе приложения. Мы храним только агрегированную статистику, сессия обновляется через защищенную HttpOnly-cookie, а прямого доступа к содержимому ваших чатов у интерфейса и других пользователей нет.',
     'login.sendCodeError': 'Не удалось отправить код',
     'login.invalidCodeError': 'Код неверный',
     'login.invalidPasswordError': 'Пароль неверный',
@@ -562,21 +581,28 @@ const messages: Record<Locale, Messages> = {
     'dashboard.historyPageText': 'Здесь собраны задачи воркера, длительность, прогресс по чатам и ошибки парсинга.',
     'dashboard.openSecurityInfo': 'Как это работает',
     'dashboard.securityInfoTitle': 'Как устроены Telegram и безопасность',
-    'dashboard.securityInfoIntro': 'Telegram используется только для авторизации и для чтения тех чатов, которые вы сами выбираете для анализа.',
-    'dashboard.securityInfoSessions': 'Строка Telegram-сессии хранится на backend в зашифрованном виде. Доступ в само приложение работает через короткий JWT и HttpOnly refresh-cookie.',
-    'dashboard.securityInfoMessages': 'Приложение не хранит исходные сообщения и медиа как продуктовые данные. В базе остаются только агрегированная статистика и метрики отчета.',
-    'dashboard.securityInfoWorkers': 'Парсинг выполняется асинхронно в воркере. Во время прохода используются только легкие метаданные сообщения, а после сохраняется готовый снимок отчета.',
-    'dashboard.securityInfoAccess': 'Другие пользователи не получают прямой доступ к вашим чатам. Интерфейс работает только с вашим авторизованным аккаунтом и вашими агрегатами.',
+    'dashboard.securityInfoIntro':
+      'Telegram используется только для авторизации и для чтения тех чатов, которые вы сами выбираете для анализа.',
+    'dashboard.securityInfoSessions':
+      'Строка Telegram-сессии хранится на backend в зашифрованном виде. Доступ в само приложение работает через короткий JWT и HttpOnly refresh-cookie.',
+    'dashboard.securityInfoMessages':
+      'Приложение не хранит исходные сообщения и медиа как продуктовые данные. В базе остаются только агрегированная статистика и метрики отчета.',
+    'dashboard.securityInfoWorkers':
+      'Парсинг выполняется асинхронно в воркере. Во время прохода используются только легкие метаданные сообщения, а после сохраняется готовый снимок отчета.',
+    'dashboard.securityInfoAccess':
+      'Другие пользователи не получают прямой доступ к вашим чатам. Интерфейс работает только с вашим авторизованным аккаунтом и вашими агрегатами.',
     'profile.timezone': 'Часовой пояс',
     'profile.timezoneHelp': 'Влияет на группировку часов, дней и месяцев в новых отчетах.',
     'profile.timezoneSaved': 'Часовой пояс обновлен',
     'profile.timezoneSaveError': 'Не удалось обновить часовой пояс',
     'dashboard.terminateTelegram': 'Завершить сессию Telegram',
-    'dashboard.terminateConfirm': 'Авторизация Telegram будет отключена для этого аккаунта. Позже можно будет войти заново.',
+    'dashboard.terminateConfirm':
+      'Авторизация Telegram будет отключена для этого аккаунта. Позже можно будет войти заново.',
     'dashboard.stopping': 'Останавливаем...',
     'dashboard.deleteAccount': 'Удалить аккаунт и данные',
     'dashboard.deleting': 'Удаляем...',
-    'dashboard.deleteConfirm': 'Действие необратимо. Аккаунт, сессия Telegram и собранные данные будут удалены. Продолжить?',
+    'dashboard.deleteConfirm':
+      'Действие необратимо. Аккаунт, сессия Telegram и собранные данные будут удалены. Продолжить?',
     'dashboard.startedJob': 'Запущена задача {jobId}',
     'dashboard.parseStarted': 'Парсинг запущен',
     'dashboard.cooldownTitle': 'Действует пауза',
@@ -633,7 +659,8 @@ const messages: Record<Locale, Messages> = {
     'chat.shared': 'Отправлено',
     'chat.shareLabel': 'Экспорт отчета',
     'chat.shareTitle': 'Поделиться полной PDF',
-    'chat.shareText': 'Отчет приватный, поэтому здесь отправка PDF-файла через Telegram, WhatsApp или другое приложение.',
+    'chat.shareText':
+      'Отчет приватный, поэтому здесь отправка PDF-файла через Telegram, WhatsApp или другое приложение.',
     'chat.shareOtherApps': 'Другие приложения',
     'chat.downloadPdf': 'Скачать PDF',
     'chat.pdfReady': 'PDF готов',
@@ -677,9 +704,11 @@ const messages: Record<Locale, Messages> = {
     'chat.relationshipResponsiveness': 'Скорость ответов',
     'chat.relationshipStability': 'Стабильность',
     'chat.relationshipAttention': 'Баланс внимания',
-    'chat.relationshipReciprocityDetail': 'Показывает, насколько общий объем сообщений с обеих сторон близок друг к другу.',
+    'chat.relationshipReciprocityDetail':
+      'Показывает, насколько общий объем сообщений с обеих сторон близок друг к другу.',
     'chat.relationshipResponsivenessDetail': 'Чем выше значение, тем быстрее вы обычно отвечаете друг другу.',
-    'chat.relationshipStabilityDetail': 'Оценивает, насколько стабильно чат живет без долгих провалов и редких всплесков.',
+    'chat.relationshipStabilityDetail':
+      'Оценивает, насколько стабильно чат живет без долгих провалов и редких всплесков.',
     'chat.relationshipAttentionDetail': 'Показывает, насколько равномерно обе стороны начинают разговор после пауз.',
     'chat.facts': 'Интересные факты',
     'chat.snapshot': 'Поведенческий снимок',
@@ -717,7 +746,8 @@ const messages: Record<Locale, Messages> = {
     'chat.charactersMedia': 'Символы / медиа-события',
     'chat.responseSampleHint': '{count} ответов в расчете',
     'chat.responsePatternsTitle': 'Паттерны ответов',
-    'chat.responsePatternsText': 'Как часто диалог получает ответ и насколько широк разброс времени ответа у каждой стороны.',
+    'chat.responsePatternsText':
+      'Как часто диалог получает ответ и насколько широк разброс времени ответа у каждой стороны.',
     'chat.responseRate': 'Доля ответов',
     'chat.privateOnlyMetric': 'Доступно только для личных чатов',
     'chat.yourResponseSpread': 'Разброс ваших ответов',
@@ -767,7 +797,8 @@ const messages: Record<Locale, Messages> = {
     'chat.hourlySentReceived': 'Отправлено / получено по часам',
     'chat.hourlyText': 'Распределение по часам за весь период переписки внутри локального дня.',
     'chat.noTextTitle': 'Текстовых сигналов нет',
-    'chat.noTextDescription': 'В чате могут быть только медиа, стикеры или голосовые, поэтому текстовая аналитика пуста.',
+    'chat.noTextDescription':
+      'В чате могут быть только медиа, стикеры или голосовые, поэтому текстовая аналитика пуста.',
     'chat.popularWords': 'Популярные слова по сторонам',
     'chat.wordsText': 'Русские и английские стоп-слова исключены перед ранжированием.',
     'chat.noWordsTitle': 'Значимых слов нет',
@@ -790,7 +821,8 @@ const messages: Record<Locale, Messages> = {
     'chat.dailyArcText': 'Ход переписки по всему периоду. Дни без сообщений остаются на графике нулевыми точками.',
     'chat.sessions': 'Сессии',
     'chat.sessionsTitle': 'Сессии общения',
-    'chat.sessionsText': 'Всплески сообщений, собранные в 8-часовые окна, чтобы видеть интенсивность, ритм и ночную активность.',
+    'chat.sessionsText':
+      'Всплески сообщений, собранные в 8-часовые окна, чтобы видеть интенсивность, ритм и ночную активность.',
     'chat.sessionCount': 'Сессии',
     'chat.sessionCountSub': 'Всего окон общения',
     'chat.avgSessionSize': 'Средний размер сессии',
@@ -809,23 +841,30 @@ const messages: Record<Locale, Messages> = {
     'chat.insightsTitle': 'Объяснимые инсайты',
     'chat.insightsText': 'Выводы, которые опираются на реальные паттерны времени и объема сообщений в этом чате.',
     'chat.insightsEmptyTitle': 'Инсайтов пока нет',
-    'chat.insightsEmptyDescription': 'Сделайте более полный парс или накопите больше истории, чтобы появились сильные паттерны.',
+    'chat.insightsEmptyDescription':
+      'Сделайте более полный парс или накопите больше истории, чтобы появились сильные паттерны.',
     'chat.insightSessionIntensityTitle': 'Ритм общения',
-    'chat.insightSessionIntensityDescription': 'В чате было {sessions} сессий, в среднем по {average} сообщений в каждой.',
+    'chat.insightSessionIntensityDescription':
+      'В чате было {sessions} сессий, в среднем по {average} сообщений в каждой.',
     'chat.insightLongSessionTitle': 'Пиковое окно общения',
     'chat.insightLongSessionDescription': 'Самая длинная сессия длилась {hours} ч и дошла до {messages} сообщений.',
     'chat.insightLongSessionExtendedTitle': 'Растянутое окно общения',
-    'chat.insightLongSessionExtendedDescription': 'Самое длинное окно заняло {duration} и собрало {messages} сообщений. Это не непрерывный разговор, а цепочка сообщений без паузы дольше 8 часов.',
+    'chat.insightLongSessionExtendedDescription':
+      'Самое длинное окно заняло {duration} и собрало {messages} сообщений. Это не непрерывный разговор, а цепочка сообщений без паузы дольше 8 часов.',
     'chat.insightTrendGrowingTitle': 'Темп растет',
-    'chat.insightTrendGrowingDescription': 'Недавняя активность выше предыдущего периода, похоже, связь становится теплее.',
+    'chat.insightTrendGrowingDescription':
+      'Недавняя активность выше предыдущего периода, похоже, связь становится теплее.',
     'chat.insightTrendFadingTitle': 'Темп снизился',
-    'chat.insightTrendFadingDescription': 'Недавняя активность просела относительно прошлого периода, поэтому ритм общения мог ослабнуть.',
+    'chat.insightTrendFadingDescription':
+      'Недавняя активность просела относительно прошлого периода, поэтому ритм общения мог ослабнуть.',
     'chat.insightLongGapTitle': 'Длинная пауза',
     'chat.insightLongGapDescription': 'Между сообщениями был длинный перерыв примерно на {days} дней.',
     'chat.insightRelationshipScoreTitle': 'Динамика отношений',
-    'chat.insightRelationshipScoreDescription': 'Баланс отношений оценивается в {score}/100, текущий паттерн — {label}.',
+    'chat.insightRelationshipScoreDescription':
+      'Баланс отношений оценивается в {score}/100, текущий паттерн — {label}.',
     'chat.insightResponseAsymmetryTitle': 'Разный темп ответов',
-    'chat.insightResponseAsymmetryDescription': '{side} обычно отвечает медленнее, медианная разница составляет около {hours} ч.',
+    'chat.insightResponseAsymmetryDescription':
+      '{side} обычно отвечает медленнее, медианная разница составляет около {hours} ч.',
     'chat.insightYou': 'Вы',
     'chat.insightContact': 'Собеседник',
     'chat.insightPositive': 'Позитивно',
@@ -883,7 +922,7 @@ export function useI18n() {
     }
   })
 
-  const intlLocale = computed(() => locale.value === 'ru' ? 'ru-RU' : 'en-US')
+  const intlLocale = computed(() => (locale.value === 'ru' ? 'ru-RU' : 'en-US'))
 
   function setLocale(nextLocale: Locale) {
     locale.value = nextLocale
@@ -908,7 +947,9 @@ export function useI18n() {
     if (Number.isNaN(date.getTime()) || date.getUTCFullYear() < 2000) {
       return t('common.na')
     }
-    return new Intl.DateTimeFormat(intlLocale.value, options ?? { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+    return new Intl.DateTimeFormat(intlLocale.value, options ?? { dateStyle: 'medium', timeStyle: 'short' }).format(
+      date,
+    )
   }
 
   function formatRelative(value: string | null | undefined) {
