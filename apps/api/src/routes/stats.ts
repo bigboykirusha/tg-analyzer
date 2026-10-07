@@ -5,6 +5,7 @@ import {
   apiErrorResponseSchema,
   chatListQuerySchema,
   numericChatIdParamsSchema,
+  topQuerySchema,
 } from '@tg-analyzer/shared'
 import { requireAuth } from '../middleware/auth.middleware'
 import { sendApiError } from '../services/api-error.service'
@@ -17,11 +18,6 @@ const chatParamsJsonSchema = {
   required: ['chatId'],
   properties: { chatId: { type: 'string', pattern: '^-?\\d+$' } },
 }
-
-const topQuerySchema = z.object({
-  type: z.enum(['emoji', 'words', 'chats']).default('emoji'),
-  limit: z.coerce.number().min(1).max(50).default(10),
-})
 
 export const statsRoutes: FastifyPluginAsync = async (fastify) => {
   const endpointDocs = (summary: string, response: Record<string, unknown>) => ({

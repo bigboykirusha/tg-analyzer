@@ -15,6 +15,7 @@ const { db, pool } = await import('../src/db')
 const { redis } = await import('../src/services/redis.service')
 const { parseDialogsQueue, cleanupQueue } = await import('../src/queues/parse.queue')
 const sessions = await import('../src/services/session.service')
+const telegramService = await import('../src/services/telegram.service')
 const { buildServer } = await import('../src/server')
 const { config, cookieName } = await import('../src/config')
 const { signToken } = await import('../src/services/token.service')
@@ -522,4 +523,140 @@ test('reconciliation restores a missing BullMQ job from persisted parameters', a
   assert.ok(persisted?.enqueuedAt)
   await queued?.remove()
   await sessions.cancelParseJob(userId, jobId)
+})
+
+test('mock Telegram adapter supports login, analysis progress, results, deletion, and logout end to end', async () => {
+  const phone = '+19995550123'
+  const phoneCodeHash = `test-${randomUUID()}`
+  const chatId = 4242
+  const fakeClient = {
+    invoke: async () => undefined,
+    getMe: async () => ({ id: 998877665, username: 'test-user', firstName: 'Test User' }),
+    getDialogs: async () => [{ id: chatId, title: 'Fixture chat', entity: { className: 'Channel', megagroup: true } }],
+    session: { save: () => 'fake-telegram-session' },
+    disconnect: async () => undefined,
+  }
+  const fakePending = {
+    phone,
+    phoneCodeHash,
+    client: fakeClient as never,
+    expiresAt: Date.now() + 5 * 60 * 1000,
+  }
+  const pool = telegramService.telegramPool
+  const original = {
+    createPendingClient: pool.createPendingClient,
+    getPendingClient: pool.getPendingClient,
+    finalizePendingClient: pool.finalizePendingClient,
+    connectAuthorizedClient: pool.connectAuthorizedClient,
+    disconnectAuthorizedClient: pool.disconnectAuthorizedClient,
+  }
+  pool.createPendingClient = async () => phoneCodeHash
+  pool.getPendingClient = async () => fakePending as never
+  pool.finalizePendingClient = async () => fakePending as never
+  pool.connectAuthorizedClient = async () => fakeClient as never
+  pool.disconnectAuthorizedClient = async () => undefined
+
+  let jobId: string | undefined
+  try {
+    const sentCode = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/send-code',
+      payload: { phone },
+      remoteAddress: '127.0.0.71',
+    })
+    assert.equal(sentCode.statusCode, 200)
+    assert.equal(sentCode.json<{ phoneCodeHash: string }>().phoneCodeHash, phoneCodeHash)
+
+    const verified = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/verify-code',
+      payload: { phone, code: '12345', phoneCodeHash },
+      remoteAddress: '127.0.0.72',
+    })
+    assert.equal(verified.statusCode, 200)
+    const { accessToken, user } = verified.json<{ accessToken: string; user: { id: string } }>()
+    const refreshCookie = verified.cookies.find((cookie) => cookie.name === cookieName)
+    assert.ok(refreshCookie)
+    const headers = bearer(accessToken)
+
+    const dialogs = await app.inject({ url: '/api/v1/parse/dialogs', headers })
+    assert.equal(dialogs.statusCode, 200)
+    assert.equal(dialogs.json<{ dialogs: Array<{ id: string; title: string }> }>().dialogs[0]?.id, String(chatId))
+
+    const started = await app.inject({
+      method: 'POST',
+      url: '/api/v1/parse/start',
+      headers,
+      payload: { chatIds: [String(chatId)] },
+    })
+    assert.equal(started.statusCode, 200)
+    jobId = started.json<{ jobId: string }>().jobId
+    assert.ok(await parseDialogsQueue.getJob(jobId))
+
+    await sessions.updateParseJob(jobId, { status: 'running', startedAt: new Date() })
+    await sessions.publishParseProgress(user.id, {
+      jobId,
+      current: 1,
+      total: 1,
+      chatId: String(chatId),
+      chatName: 'Fixture chat',
+      status: 'running',
+      scannedMessages: 2,
+    })
+    const status = await app.inject({ url: '/api/v1/parse/status', headers })
+    assert.equal(status.statusCode, 200)
+    assert.equal(
+      status.json<{ jobId: string; status: string; progress: { scannedMessages?: number } }>().status,
+      'running',
+    )
+    assert.equal(status.json<{ progress: { scannedMessages?: number } }>().progress.scannedMessages, 2)
+
+    const accumulator = stats.createChatAccumulator('UTC')
+    stats.aggregateMessage(
+      { id: 1, message: 'hello there', date: new Date('2026-01-01T12:00:00Z'), outgoing: true },
+      accumulator,
+    )
+    stats.aggregateMessage(
+      { id: 2, message: 'hello back', date: new Date('2026-01-01T12:01:00Z'), outgoing: false },
+      accumulator,
+    )
+    await stats.saveAggregates({
+      userId: user.id,
+      jobId,
+      chat: { id: chatId, title: 'Fixture chat', type: 'group' },
+      stats: accumulator,
+    })
+    await sessions.updateParseJob(jobId, { status: 'completed', completedAt: new Date(), totalMessages: 2 })
+    await sessions.clearActiveJob(user.id)
+
+    const result = await app.inject({ url: `/api/v1/stats/chats/${chatId}`, headers })
+    assert.equal(result.statusCode, 200)
+    assert.equal(result.json<{ totalMessages: number }>().totalMessages, 2)
+    const history = await app.inject({ url: '/api/v1/parse/history?page=1&limit=10', headers })
+    assert.equal(history.json<{ items: Array<{ jobId: string }> }>().items[0]?.jobId, jobId)
+
+    const deletedResult = await app.inject({ method: 'DELETE', url: `/api/v1/stats/chats/${chatId}`, headers })
+    assert.equal(deletedResult.statusCode, 200)
+    const deletedHistory = await app.inject({ method: 'DELETE', url: `/api/v1/parse/history/${jobId}`, headers })
+    assert.equal(deletedHistory.statusCode, 200)
+
+    const logout = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/logout',
+      headers: { cookie: `${cookieName}=${refreshCookie.value}`, origin: 'http://localhost:3000' },
+      remoteAddress: '127.0.0.73',
+    })
+    assert.equal(logout.statusCode, 200)
+    assert.equal((await app.inject({ url: '/api/v1/stats/global', headers })).statusCode, 401)
+  } finally {
+    if (jobId) {
+      const job = await parseDialogsQueue.getJob(jobId)
+      await job?.remove().catch(() => undefined)
+    }
+    pool.createPendingClient = original.createPendingClient
+    pool.getPendingClient = original.getPendingClient
+    pool.finalizePendingClient = original.finalizePendingClient
+    pool.connectAuthorizedClient = original.connectAuthorizedClient
+    pool.disconnectAuthorizedClient = original.disconnectAuthorizedClient
+  }
 })

@@ -1,6 +1,11 @@
 import type { FastifyPluginAsync, FastifyReply, FastifySchema } from 'fastify'
 import { Api } from 'telegram'
-import { z } from 'zod'
+import {
+  sendCodeBodySchema,
+  updateProfileBodySchema,
+  verifyCodeBodySchema,
+  verifyPasswordBodySchema,
+} from '@tg-analyzer/shared'
 import type { UpdateProfileResponse, WsAuthTicketResponse } from '@tg-analyzer/shared'
 import { and, eq } from 'drizzle-orm'
 import { config, cookieName } from '../config'
@@ -34,25 +39,6 @@ import {
 } from '../services/telegram.service'
 import { verifyToken, type TokenClaims } from '../services/token.service'
 import { issueWsTicket } from '../services/ws-ticket.service'
-
-const phoneField = z.string().regex(/^\+?[1-9]\d{4,19}$/)
-const phoneSchema = z.object({
-  phone: phoneField,
-})
-
-const verifyCodeSchema = z.object({
-  phone: phoneField,
-  code: z.string().regex(/^\d{3,10}$/),
-  phoneCodeHash: z.string().min(1).max(256),
-})
-
-const verifyPasswordSchema = z.object({
-  password: z.string().min(1).max(1024),
-})
-
-const updateProfileSchema = z.object({
-  timezone: z.string().min(1).max(64),
-})
 
 const authRateLimitConfig = {
   rateLimit: {
@@ -136,7 +122,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       }),
     },
     async (request) => {
-      const { phone } = phoneSchema.parse(request.body)
+      const { phone } = sendCodeBodySchema.parse(request.body)
       const phoneCodeHash = await telegramPool.createPendingClient(phone).catch((error) => {
         throwAuthError(error, 'Could not send Telegram code')
       })
@@ -167,7 +153,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       }),
     },
     async (request, reply) => {
-      const { phone, code, phoneCodeHash } = verifyCodeSchema.parse(request.body)
+      const { phone, code, phoneCodeHash } = verifyCodeBodySchema.parse(request.body)
       const result = await signInWithCode(phone, code, phoneCodeHash).catch((error) => {
         throwAuthError(error, 'Invalid Telegram code')
       })
@@ -218,7 +204,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         return sendApiError(reply, 401, 'Temp token expired', 'AUTH_TEMP_TOKEN_INVALID')
       }
 
-      const { password } = verifyPasswordSchema.parse(request.body)
+      const { password } = verifyPasswordBodySchema.parse(request.body)
       await signInWithPassword(tempToken, password).catch((error) => {
         throwAuthError(error, 'Invalid Telegram password')
       })
@@ -371,7 +357,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const userId = request.authUserId!
-      const payload = updateProfileSchema.parse(request.body ?? {})
+      const payload = updateProfileBodySchema.parse(request.body ?? {})
       const timezone = validateTimeZone(payload.timezone)
       const telegramSession = await db.query.telegramSessions.findFirst({
         where: and(eq(schema.telegramSessions.userId, userId), eq(schema.telegramSessions.isActive, true)),

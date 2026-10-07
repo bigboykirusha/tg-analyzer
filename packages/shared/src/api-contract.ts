@@ -17,6 +17,7 @@ import type {
   ShareReportBody,
   StartParseBody,
   StartParseResponse,
+  TopResponse,
   UpdateProfileBody,
   UpdateProfileResponse,
   VerifyCodeBody,
@@ -29,6 +30,39 @@ export const apiErrorResponseSchema = z.object({
   message: z.string(),
   code: z.string(),
 })
+
+const phoneSchema = z.string().regex(/^\+?[1-9]\d{4,19}$/)
+
+export const sendCodeBodySchema: z.ZodType<SendCodeBody> = z.object({ phone: phoneSchema })
+
+export const verifyCodeBodySchema: z.ZodType<VerifyCodeBody> = z.object({
+  phone: phoneSchema,
+  code: z.string().regex(/^\d{3,10}$/),
+  phoneCodeHash: z.string().min(1).max(256),
+})
+
+export const verifyPasswordBodySchema: z.ZodType<VerifyPasswordBody> = z.object({
+  password: z.string().min(1).max(1024),
+})
+
+export const updateProfileBodySchema: z.ZodType<UpdateProfileBody> = z.object({
+  timezone: z.string().min(1).max(64),
+})
+
+export const shareReportBodySchema: z.ZodType<ShareReportBody> = z.object({
+  chatId: z.string().regex(/^-?\d+$/),
+  fileName: z.string().min(1).max(200),
+  mimeType: z.string().min(1).max(100).default('application/pdf'),
+  base64: z.string().min(1).max(30_000_000),
+})
+
+export const topQuerySchema = z.object({
+  type: z.enum(['emoji', 'words', 'chats']).default('emoji'),
+  limit: z.coerce.number().min(1).max(50).default(10),
+})
+
+export const dialogIdParamsSchema = z.object({ dialogId: z.string() })
+export const parseHistoryJobIdParamsSchema = z.object({ jobId: z.string().uuid() })
 
 export const paginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -164,6 +198,11 @@ export interface ApiEndpointMap {
     request: undefined
     query: z.infer<typeof activityQuerySchema>
     response: ActivityResponse
+  }
+  'GET /api/v1/stats/top': {
+    request: undefined
+    query: z.infer<typeof topQuerySchema>
+    response: TopResponse
   }
 }
 

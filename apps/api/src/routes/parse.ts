@@ -3,10 +3,13 @@ import { z } from 'zod'
 import { CustomFile } from 'telegram/client/uploads.js'
 import {
   apiErrorResponseSchema,
+  dialogIdParamsSchema,
   paginationQuerySchema,
   parseDialogsResponseSchema,
   parseHistoryPageResponseSchema,
+  parseHistoryJobIdParamsSchema,
   parseStatusResponseSchema,
+  shareReportBodySchema,
   startParseBodySchema,
 } from '@tg-analyzer/shared'
 import type { ParseDialogDto, ParseDialogsResponse, ParseProgressDto } from '@tg-analyzer/shared'
@@ -49,13 +52,6 @@ import {
   withFloodWaitRetry,
   type TelegramDialog,
 } from '../services/telegram.service'
-
-const shareReportSchema = z.object({
-  chatId: z.string().regex(/^-?\d+$/),
-  fileName: z.string().min(1).max(200),
-  mimeType: z.string().min(1).max(100).default('application/pdf'),
-  base64: z.string().min(1).max(30_000_000),
-})
 
 const PARSE_DIALOGS_LIST_LIMIT = 300
 const apiErrorJsonSchema = z.toJSONSchema(apiErrorResponseSchema, { target: 'draft-07' })
@@ -401,7 +397,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
     },
     async (request, reply) => {
       const userId = request.authUserId!
-      const params = z.object({ dialogId: z.string() }).parse(request.params)
+      const params = dialogIdParamsSchema.parse(request.params)
       const session = await getActiveSessionForUser(userId)
       if (!session) {
         return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
@@ -474,7 +470,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
     },
     async (request, reply) => {
       const userId = request.authUserId!
-      const payload = shareReportSchema.parse(request.body ?? {})
+      const payload = shareReportBodySchema.parse(request.body ?? {})
       const session = await getActiveSessionForUser(userId)
       if (!session) {
         return sendApiError(reply, 401, 'Telegram session expired', 'TELEGRAM_REAUTH_REQUIRED')
@@ -673,7 +669,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
     },
     async (request, reply) => {
       const userId = request.authUserId!
-      const params = z.object({ jobId: z.string().uuid() }).parse(request.params)
+      const params = parseHistoryJobIdParamsSchema.parse(request.params)
       const job = await findParseJobById(params.jobId)
 
       if (!job || job.userId !== userId) {
