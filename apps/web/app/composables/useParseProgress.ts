@@ -1,3 +1,4 @@
+import { applyParseProgressEvent } from '@tg-analyzer/shared'
 import type { ParseProgressDto, ParseProgressWsEvent, ParseStatusResponse } from '@tg-analyzer/shared'
 import { refreshAccessToken, useApiEndpoint } from './useApi'
 import { isTokenExpiringSoon, isTokenUsable } from '../utils/auth'
@@ -153,42 +154,8 @@ export function useParseProgress() {
       } catch {
         return
       }
-      if (data.type === 'progress') {
-        progress.value = {
-          current: data.current,
-          total: data.total,
-          chatId: data.chatId ?? null,
-          chatName: data.chatName ?? '',
-          status: data.status ?? 'running',
-          message: data.message ?? '',
-          scannedMessages: data.scannedMessages ?? 0,
-        }
-      }
-      if (data.type === 'completed') {
-        progress.value = {
-          ...progress.value,
-          chatId: data.chatId ?? progress.value.chatId ?? null,
-          status: 'completed',
-          message: data.message ?? 'Parse completed',
-        }
-        disconnect()
-      }
-      if (data.type === 'failed' || data.type === 'error') {
-        progress.value = {
-          ...progress.value,
-          chatId: 'chatId' in data ? (data.chatId ?? progress.value.chatId ?? null) : progress.value.chatId,
-          status: 'failed',
-          message: 'message' in data ? data.message : progress.value.message,
-        }
-        disconnect()
-      }
-      if (data.type === 'cancelled') {
-        progress.value = {
-          ...progress.value,
-          chatId: data.chatId ?? progress.value.chatId ?? null,
-          status: 'cancelled',
-          message: data.message ?? 'Parse cancelled',
-        }
+      progress.value = applyParseProgressEvent(progress.value, data)
+      if (data.type === 'completed' || data.type === 'failed' || data.type === 'error' || data.type === 'cancelled') {
         disconnect()
       }
     }
