@@ -1,7 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { resolveProductGroupRole } from '@tg-analyzer/shared'
-import { aggregateMessage, createChatAccumulator, finalizeAccumulator } from './stats.service'
+import {
+  aggregateMessage,
+  createChatAccumulator,
+  finalizeAccumulator,
+  resolveProductGroupRole,
+} from '@tg-analyzer/shared'
 
 test('resolveProductGroupRole keeps recently active top members out of inactive roles', () => {
   const now = new Date('2026-05-22T00:00:00.000Z')

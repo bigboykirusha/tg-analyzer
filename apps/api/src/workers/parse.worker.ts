@@ -1,5 +1,6 @@
 import { Worker, type Job } from 'bullmq'
 import { eq } from 'drizzle-orm'
+import { aggregateMessage, createChatAccumulator } from '@tg-analyzer/shared'
 import { type ParseJobData } from '../queues/parse.queue'
 import { db, schema } from '../db'
 import { redis } from '../services/redis.service'
@@ -26,12 +27,8 @@ import {
   setChatCooldown,
   updateParseJob,
 } from '../services/session.service'
-import {
-  aggregateMessage,
-  createChatAccumulator,
-  projectTelegramMessageMetadata,
-  saveAggregates,
-} from '../services/stats.service'
+import { saveAggregates } from '../services/stats.service'
+import { projectTelegramMessageMetadata } from '../services/telegram-message.mapper'
 import { sleep } from '../utils/sleep'
 import { logger } from '../services/logger.service'
 import { shouldRetryParseJob } from '../services/parse-job-lifecycle.service'
