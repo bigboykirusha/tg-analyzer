@@ -1,4 +1,4 @@
-# План и прогресс фаз 1a–1c
+# План и прогресс фаз 1a–1c и Фазы 2
 
 Основа работ: [`AUDIT.md`](AUDIT.md). Рабочая ветка: `refactor/production-readiness`. Пользовательские изменения в `chat/[id].vue`, `dashboard.vue` и `history.vue` должны остаться нетронутыми и вне коммитов.
 
@@ -49,7 +49,7 @@
 - [x] 2026-10-07: `4d335a4` — зафиксирован промежуточный прогресс и ограничения первичных проверок.
 - [x] 2026-10-07: `a100228` — реализована 1a: purpose-bound токены и cutover, отзываемые семейства, WS-ticket, Origin/rate limit, AES-GCM для временного auth-state, очистка аккаунта, безопасные ошибки/логи, валидация конфига и тестируемый server builder.
 - [x] 2026-10-07: `check`, локальный `build`, 16 unit- и 6 интеграционных тестов прошли; Playwright/Edge подтвердил 20 viewport-снимков, silent refresh и logout. Чистая установка, повтор миграций и upgrade 0007 прошли на отдельном PostgreSQL/Redis.
-- [x] Фаза 1a завершена. Реальный Telegram-вход не запускался; API Docker image собирается, web Docker image не собирается из-за подтверждённых проблем Dockerfile/lockfile. Фазы 1b и 1c не начаты.
+- [x] Историческая проверка раннего этапа: реальный Telegram-вход не запускался. Docker build и integration-проверки были повторно выполнены позже; актуальные результаты записаны ниже.
 - [x] 2026-10-07: `5d1fe62` — Docker-сборки API/web используют зафиксированный lockfile и полный web build-context; обе image успешно собраны с Nuxt 4.4.4.
 - [x] 2026-10-07: `05fea57` — БД атомарно допускает одну активную задачу, её UUID стал BullMQ jobId, параметры запуска сохраняются; миграция 0008 добавила preflight/индексы/rollback, отмена больше не доверяет чужому Redis marker.
 - [x] 2026-10-07: `6d58561` — chat report, daily/global aggregates сохраняются и удаляются одной транзакцией под user row lock; повторная обработка не удваивает итоги, отменённая/удалённая задача не может записать результат. Добавлены rollback/concurrency/cancellation integration-тесты.
@@ -76,6 +76,7 @@
 - [x] 2026-10-07: начата фаза 2 — добавлены `/api/v1` aliases, OpenAPI + Swagger UI, shared endpoint map и типизированный `useApiEndpoint`; web composables переведены на общие response-типы. `GET /api/v1/parse/history` теперь принимает page/limit и возвращает items/total, legacy path сохраняет старый массив. Integration проверяет версионирование, docs, ошибки статистики и страницы истории с изоляцией пользователя.
 - [x] 2026-10-07: `8b562bd feat(api): add versioned contracts and pagination` — первый коммит фазы 2; `check`, unit 23/23, integration 15/15, `lint` и `build` прошли. Выборочный Prettier check затронутых файлов прошёл; общий `format:check` ограничен незакоммиченным `docs/DESIGN_TASK.md`.
 - [x] 2026-10-07: `19a9de1 feat(api): document auth routes in OpenAPI` — схемы запросов/ответов и security для auth endpoints; единый текст ошибки Fastify/Zod validation. `check`, `lint`, unit 23/23, integration 15/15, выборочный Prettier и `build` прошли.
+- [x] 2026-10-07: `947560d feat(api): complete parse route contracts` — общие Zod-контракты для parse requests/responses, OpenAPI для всех parse routes и типизированные query-параметры web API-клиента. `check`, `lint`, unit 27/27, integration 15/15, выборочный Prettier и `build` прошли.
 - [ ] `format:check` для всего workspace сейчас сообщает о незакоммиченном `docs/DESIGN_TASK.md`; файл не менялся. Изменённые файлы проверяются Prettier отдельно.
-- [ ] Следом вынести вычислительную аналитику в shared и покрыть её чистыми unit-тестами; дополнить OpenAPI схемами auth/parse и перевести оставшиеся generic-вызовы web.
+- [ ] Следом выделить оставшиеся вычисления аналитики в shared, добавить UI-пагинацию истории, перевести оставшиеся generic-вызовы web и проверить сквозной пользовательский сценарий.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
