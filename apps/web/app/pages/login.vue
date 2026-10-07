@@ -2,6 +2,7 @@
 import PhoneStep from '../components/auth/PhoneStep.vue'
 import CodeStep from '../components/auth/CodeStep.vue'
 import PasswordStep from '../components/auth/PasswordStep.vue'
+import ThemeToggle from '../components/ui/ThemeToggle.vue'
 import guestMiddleware from '../middleware/guest'
 
 definePageMeta({
@@ -71,8 +72,8 @@ async function handlePhone() {
   try {
     await sendCode(phone.value)
     step.value = 'code'
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : t('login.sendCodeError')
+  } catch {
+    error.value = t('login.sendCodeError')
   } finally {
     loading.value = false
   }
@@ -94,8 +95,8 @@ async function handleCode() {
     }
 
     await navigateTo('/dashboard', { replace: true })
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : t('login.invalidCodeError')
+  } catch {
+    error.value = t('login.invalidCodeError')
   } finally {
     loading.value = false
   }
@@ -107,8 +108,8 @@ async function handlePassword() {
   try {
     await verifyPassword({ password: password.value })
     await navigateTo('/dashboard', { replace: true })
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : t('login.invalidPasswordError')
+  } catch {
+    error.value = t('login.invalidPasswordError')
   } finally {
     loading.value = false
   }
@@ -129,9 +130,12 @@ async function handlePassword() {
           <div class="brand-copy">
             <div class="brand-topline">
               <h1 class="t-h1">{{ t('login.title') }}</h1>
-              <div class="language-switch" :aria-label="t('nav.language')">
-                <button type="button" :class="{ active: locale === 'ru' }" @click="setLocale('ru')">RU</button>
-                <button type="button" :class="{ active: locale === 'en' }" @click="setLocale('en')">EN</button>
+              <div class="login-controls">
+                <div class="language-switch" :aria-label="t('nav.language')">
+                  <button type="button" :class="{ active: locale === 'ru' }" @click="setLocale('ru')">RU</button>
+                  <button type="button" :class="{ active: locale === 'en' }" @click="setLocale('en')">EN</button>
+                </div>
+                <ThemeToggle />
               </div>
             </div>
             <p class="t-body login-lead">{{ t('login.lead') }}</p>
@@ -186,7 +190,7 @@ async function handlePassword() {
             />
           </Transition>
 
-          <p v-if="error" class="login-error t-small">
+          <p v-if="error" class="login-error t-small" role="alert" aria-live="assertive">
             {{ error }}
           </p>
         </div>
@@ -363,6 +367,12 @@ async function handlePassword() {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
+}
+
+.login-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .login-lead {

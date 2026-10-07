@@ -54,6 +54,10 @@ const messages: Record<Locale, Messages> = {
     'error.notFoundTitle': 'Page not found',
     'error.notFoundText': 'This address does not point to a TG Analyzer page.',
     'error.backHome': 'Go to dashboard',
+    'offline.title': 'You are offline',
+    'offline.text':
+      'Check your connection and try again. Your existing reports will remain available after reconnecting.',
+    'offline.retry': 'Try again',
 
     'login.brandLabel': 'Telegram analytics',
     'login.title': 'tg analyzer',
@@ -512,6 +516,10 @@ const messages: Record<Locale, Messages> = {
     'error.notFoundTitle': 'Страница не найдена',
     'error.notFoundText': 'По этому адресу нет страницы TG Analyzer.',
     'error.backHome': 'К рабочему пространству',
+    'offline.title': 'Нет подключения',
+    'offline.text':
+      'Проверьте интернет и попробуйте ещё раз. Существующие отчёты останутся доступны после подключения.',
+    'offline.retry': 'Попробовать снова',
 
     'login.brandLabel': 'Telegram аналитика',
     'login.title': 'tg analyzer',

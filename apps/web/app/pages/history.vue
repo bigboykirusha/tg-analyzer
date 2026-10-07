@@ -478,8 +478,8 @@ onMounted(async () => {
                   </div>
                 </div>
 
-                <div v-if="selectedHistoryItem.errorMessage" class="detail-error t-small">
-                  {{ selectedHistoryItem.errorMessage }}
+                <div v-if="shouldRenderHistoryError(selectedHistoryItem)" class="detail-error t-small" role="status">
+                  {{ t('dashboard.startError') }}
                 </div>
               </section>
             </div>

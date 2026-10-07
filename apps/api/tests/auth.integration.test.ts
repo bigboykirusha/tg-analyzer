@@ -237,6 +237,19 @@ test('refresh races share one successor and logout revokes the whole family', as
 })
 
 test('cookie operations enforce Origin and auth limits are shared through Redis', async () => {
+  const preflight = await app.inject({
+    method: 'OPTIONS',
+    url: '/api/v1/auth/send-code',
+    headers: {
+      origin: 'http://localhost:3000',
+      'access-control-request-method': 'POST',
+      'access-control-request-headers': 'content-type',
+    },
+  })
+  assert.equal(preflight.statusCode, 204)
+  assert.equal(preflight.headers['access-control-allow-origin'], 'http://localhost:3000')
+  assert.equal(preflight.headers['access-control-allow-credentials'], 'true')
+
   const userId = await createUser()
   const auth = await createAuth(userId)
   const rejectedOrigin = await app.inject({

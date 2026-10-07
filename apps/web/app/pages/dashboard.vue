@@ -99,7 +99,7 @@ async function loadParseDialogs() {
       return
     }
 
-    parseDialogsError.value = error instanceof Error ? error.message : t('dashboard.loadDialogsError')
+    parseDialogsError.value = t('dashboard.loadDialogsError')
   } finally {
     parseDialogsLoading.value = false
   }
