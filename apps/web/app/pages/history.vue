@@ -26,6 +26,11 @@ const stats = useStatsStore()
 const { progress, bootstrapped, bootstrapFromServer, connect, disconnect } = useParseProgress()
 const { t, formatNumber, formatDate: formatLocaleDate } = useI18n()
 const toast = useToast()
+const historyPageSize = 20
+const historyPage = ref(1)
+const historyTotal = ref(0)
+const loadingHistoryPage = ref(false)
+const historyPageCount = computed(() => Math.max(1, Math.ceil(historyTotal.value / historyPageSize)))
 
 const ready = ref(false)
 const clearingHistory = ref(false)
@@ -172,6 +177,18 @@ function closeHistoryDetails() {
   selectedHistoryItem.value = null
 }
 
+async function loadHistoryPage(page: number) {
+  loadingHistoryPage.value = true
+  try {
+    const result = await fetchHistory(page, historyPageSize)
+    historyPage.value = result.page
+    historyTotal.value = result.total
+    return result
+  } finally {
+    loadingHistoryPage.value = false
+  }
+}
+
 function openClearHistoryConfirm() {
   confirmState.value = {
     type: 'clear-history',
@@ -196,7 +213,7 @@ async function handleClearHistory() {
 
   try {
     await clearHistory()
-    await fetchHistory()
+    await loadHistoryPage(historyPage.value)
     toast.success(t('dashboard.historyCleared'))
   } catch (error) {
     toast.error(error instanceof Error ? error.message : t('dashboard.clearHistoryError'))
@@ -211,7 +228,10 @@ async function handleDeleteHistoryItem(jobId: string) {
 
   try {
     await deleteHistoryItem(jobId)
-    await fetchHistory()
+    const result = await loadHistoryPage(historyPage.value)
+    if (!result.items.length && historyPage.value > 1) {
+      await loadHistoryPage(historyPage.value - 1)
+    }
     toast.success(t('dashboard.historyItemDeleted'))
   } catch (error) {
     toast.error(error instanceof Error ? error.message : t('dashboard.deleteHistoryItemError'))
@@ -262,7 +282,7 @@ watch(isParseTerminal, async (terminal) => {
   }
 
   disconnect()
-  await fetchHistory().catch(() => undefined)
+  await loadHistoryPage(historyPage.value).catch(() => undefined)
 })
 
 onBeforeUnmount(() => {
@@ -272,7 +292,7 @@ onBeforeUnmount(() => {
 onMounted(async () => {
   try {
     await bootstrapFromServer().catch(() => undefined)
-    await fetchHistory()
+    await loadHistoryPage(1)
   } catch (error) {
     toast.error(error instanceof Error ? error.message : t('dashboard.loadStatsError'))
   } finally {
@@ -315,7 +335,7 @@ onMounted(async () => {
               <span class="t-label">{{ t('dashboard.runHistoryLabel') }}</span>
               <div class="section-title-row">
                 <h1 class="t-h2">{{ t('dashboard.historyPageTitle') }}</h1>
-                <Badge variant="accent">{{ t('dashboard.jobsCount', { count: formatNumber(stats.history.length) }) }}</Badge>
+                <Badge variant="accent">{{ t('dashboard.jobsCount', { count: formatNumber(historyTotal) }) }}</Badge>
               </div>
               <p class="t-small section-text">{{ t('dashboard.historyPageText') }}</p>
             </div>
@@ -371,6 +391,31 @@ onMounted(async () => {
             :title="t('dashboard.noJobsTitle')"
             :description="t('dashboard.noJobsDescription')"
           />
+
+          <nav
+            v-if="historyTotal > historyPageSize"
+            class="history-pagination"
+            :aria-label="t('dashboard.historyPagination')"
+            aria-live="polite"
+          >
+            <Button
+              variant="secondary"
+              size="sm"
+              :disabled="loadingHistoryPage || historyPage <= 1"
+              @click="loadHistoryPage(historyPage - 1)"
+            >
+              {{ t('common.previousPage') }}
+            </Button>
+            <span class="t-small">{{ t('common.pageOf', { page: formatNumber(historyPage), total: formatNumber(historyPageCount) }) }}</span>
+            <Button
+              variant="secondary"
+              size="sm"
+              :disabled="loadingHistoryPage || historyPage >= historyPageCount"
+              @click="loadHistoryPage(historyPage + 1)"
+            >
+              {{ t('common.nextPage') }}
+            </Button>
+          </nav>
 
           <div v-if="stats.history.length" class="history-actions-footer">
             <Button variant="secondary" size="md" class="history-clear-button" :loading="clearingHistory" @click="openClearHistoryConfirm">
@@ -561,6 +606,14 @@ onMounted(async () => {
 .history-actions-footer {
   display: flex;
   justify-content: flex-end;
+}
+
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
 .dialog-backdrop {

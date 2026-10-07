@@ -37,9 +37,10 @@ export function useStats() {
     store.activity = result.daily
   }
 
-  async function fetchHistory() {
-    const result = await useApiEndpoint('GET /api/v1/parse/history', { query: { page: 1, limit: 20 } })
+  async function fetchHistory(page = 1, limit = 20) {
+    const result = await useApiEndpoint('GET /api/v1/parse/history', { query: { page, limit } })
     store.history = result.items
+    return result
   }
 
   async function clearHistory() {
