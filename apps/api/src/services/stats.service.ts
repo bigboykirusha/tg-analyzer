@@ -7,8 +7,6 @@ import type {
   DirectionalCountDto,
   DirectionalTopItemsDto,
   GlobalStatsDto,
-  GroupHealthDto,
-  GroupPairDto,
   GroupParticipantDto,
   GroupReportDto,
   HealthScoreDto,
@@ -18,7 +16,6 @@ import type {
   TopItemDto,
 } from '@tg-analyzer/shared'
 import {
-  calculateAverage,
   calculateMedian,
   calculatePercentile,
   computeMaxStreak,
@@ -32,6 +29,7 @@ import {
   analyzeMessageText,
   computeSessionStats,
   generateConversationInsights,
+  computeGroupReportAnalytics,
   mapDailyActivity,
   mapMonthlyActivity,
   resolveProductGroupRole,
@@ -41,10 +39,7 @@ import { db, schema } from '../db'
 import type { TelegramMessageLike } from './telegram.service'
 
 const SESSION_BOUNDARY_MS = 8 * 60 * 60 * 1000
-const GROUP_SESSION_BOUNDARY_MS = 4 * 60 * 60 * 1000
 const LONG_SILENCE_MS = 30 * 24 * 60 * 60 * 1000
-const IMPLIED_REPLY_WINDOW_MS = 10 * 60 * 1000
-const RESPONSE_COVERAGE_WINDOW_MS = 30 * 60 * 1000
 const STOP_WORDS_RU = new Set([
   '\u0438',
   '\u0432',
@@ -1068,264 +1063,22 @@ function computeGroupReport(params: {
   activeDays: number
 }): GroupReportDto {
   const { acc, timeline, activeDays } = params
-  const totalMessages = acc.totalMessages
-  const totalMedia = acc.mediaCount + acc.voiceCount + acc.stickerCount + acc.fileCount
-  const participants = Array.from(acc.participants.values(), (participant) => ({ ...participant }))
-  const activeMembers = participants.length
-  const lastMessageAt = acc.lastMessageAt ?? new Date()
-  const firstMessageAt = acc.firstMessageAt ?? lastMessageAt
-  const durationDays = Math.max(
-    1,
-    Math.ceil((lastMessageAt.getTime() - firstMessageAt.getTime()) / (24 * 60 * 60 * 1000)) + 1,
-  )
-  const now = new Date()
-
-  const directPairCounts = new Map<string, number>()
-  const impliedPairCounts = new Map<string, number>()
-  const participantById = new Map(participants.map((participant) => [participant.id, participant]))
-
-  let totalSessions = 0
-  let respondedMessages = 0
-  const hourlyParticipants = new Map<string, Set<string>>()
-
-  for (let index = 0; index < timeline.length; index += 1) {
-    const current = timeline[index]
-    if (!current) continue
-    const currentParticipant = participantById.get(current.senderId)
-    if (!currentParticipant) {
-      continue
-    }
-
-    const hourKey = `${toLocalDayKey(current.timestamp, acc.timeZone)}:${String(getLocalHour(current.timestamp, acc.timeZone)).padStart(2, '0')}`
-    const hourParticipants = hourlyParticipants.get(hourKey) ?? new Set<string>()
-    hourParticipants.add(current.senderId)
-    hourlyParticipants.set(hourKey, hourParticipants)
-
-    const previous = timeline[index - 1]
-    if (!previous || current.timestamp.getTime() - previous.timestamp.getTime() > GROUP_SESSION_BOUNDARY_MS) {
-      currentParticipant.starterCount += 1
-      totalSessions += 1
-    }
-
-    if (current.replyToMessageId) {
-      const repliedTo = acc.messageIndex.get(current.replyToMessageId)
-      if (repliedTo && repliedTo.senderId !== current.senderId) {
-        currentParticipant.replyCount += 1
-        const recipient = participantById.get(repliedTo.senderId)
-        if (recipient) {
-          recipient.repliesReceived += 1
-        }
-        const pairKey = `${repliedTo.senderId}|${current.senderId}`
-        directPairCounts.set(pairKey, (directPairCounts.get(pairKey) ?? 0) + 1)
-      }
-    } else if (previous && previous.senderId !== current.senderId) {
-      const gapMs = current.timestamp.getTime() - previous.timestamp.getTime()
-      if (gapMs >= 0 && gapMs <= IMPLIED_REPLY_WINDOW_MS) {
-        const pairKey = `${previous.senderId}|${current.senderId}`
-        impliedPairCounts.set(pairKey, (impliedPairCounts.get(pairKey) ?? 0) + 1)
-      }
-    }
-
-    let covered = false
-    for (let lookahead = index + 1; lookahead < timeline.length; lookahead += 1) {
-      const next = timeline[lookahead]
-      if (!next) continue
-      const gapMs = next.timestamp.getTime() - current.timestamp.getTime()
-      if (gapMs > RESPONSE_COVERAGE_WINDOW_MS) {
-        break
-      }
-      if (next.senderId !== current.senderId) {
-        covered = true
-        break
-      }
-    }
-    if (covered) {
-      respondedMessages += 1
-    }
-  }
-
-  const participantWordPresence = new Map<string, number>()
-  for (const participant of participants) {
-    for (const word of participant.wordCounts.keys()) {
-      participantWordPresence.set(word, (participantWordPresence.get(word) ?? 0) + 1)
-    }
-  }
-
-  const sharedVocabularyThreshold = Math.max(1, Math.ceil(activeMembers * 0.5))
-  const sharedVocabulary = mapToTopItems(
-    new Map(
-      Array.from(acc.wordCounts.entries()).filter(
-        ([word]) => (participantWordPresence.get(word) ?? 0) >= sharedVocabularyThreshold,
-      ),
-    ),
-    15,
-  )
-  const uniqueGroupWords = mapToTopItems(
-    new Map(
-      Array.from(acc.wordCounts.entries()).filter(([word, count]) => {
-        const presence = participantWordPresence.get(word) ?? 0
-        return count >= 3 && presence <= Math.max(1, Math.floor(activeMembers * 0.3))
-      }),
-    ),
-    15,
-  )
-
-  const activeMembersLast30Days = participants.filter(
-    (participant) => participant.lastSeen && now.getTime() - participant.lastSeen.getTime() <= 30 * 24 * 60 * 60 * 1000,
-  ).length
-  const previousWindowStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
-  const previousWindowEnd = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-  const previousActiveMembers = participants.filter(
-    (participant) =>
-      participant.lastSeen && participant.lastSeen >= previousWindowStart && participant.lastSeen < previousWindowEnd,
-  ).length
-  const momentum: GroupHealthDto['momentum'] =
-    previousActiveMembers > 0
-      ? activeMembersLast30Days > previousActiveMembers * 1.15
-        ? 'growing'
-        : activeMembersLast30Days < previousActiveMembers * 0.85
-          ? 'shrinking'
-          : 'stable'
-      : activeMembersLast30Days > 0
-        ? 'growing'
-        : 'stable'
-
-  const earlyWindowEnd = new Date(firstMessageAt.getTime() + 90 * 24 * 60 * 60 * 1000)
-  const recentWindowStart = new Date(lastMessageAt.getTime() - 90 * 24 * 60 * 60 * 1000)
-  const earlyActive = new Set(
-    participants
-      .filter((participant) => participant.firstSeen && participant.firstSeen <= earlyWindowEnd)
-      .map((participant) => participant.id),
-  )
-  const recentActive = new Set(
-    participants
-      .filter((participant) => participant.lastSeen && participant.lastSeen >= recentWindowStart)
-      .map((participant) => participant.id),
-  )
-  const retained = Array.from(earlyActive).filter((participantId) => recentActive.has(participantId)).length
-  const retentionRate = earlyActive.size ? Number(((retained / earlyActive.size) * 100).toFixed(1)) : 100
-
-  const firstHalfBoundary = new Date(
-    firstMessageAt.getTime() + (lastMessageAt.getTime() - firstMessageAt.getTime()) / 2,
-  )
-  const churnedMembers = participants.filter(
-    (participant) =>
-      participant.lastSeen &&
-      participant.lastSeen < new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000) &&
-      participant.firstSeen &&
-      participant.firstSeen < firstHalfBoundary,
-  )
-
-  const shares = participants
-    .map((participant) => (totalMessages ? participant.messageCount / totalMessages : 0))
-    .sort((left, right) => left - right)
-  const meanShare = shares.length ? calculateAverage(shares) : 0
-  const giniCoefficient =
-    shares.length && meanShare
-      ? Number(
-          (
-            shares.reduce((sum, share, index) => sum + (2 * (index + 1) - shares.length - 1) * share, 0) /
-            (shares.length * shares.length * meanShare)
-          ).toFixed(3),
-        )
-      : 0
-  const lurkerRatio = activeMembers
-    ? Number(
-        (
-          (participants.filter((participant) =>
-            totalMessages ? (participant.messageCount / totalMessages) * 100 < 0.5 : true,
-          ).length /
-            activeMembers) *
-          100
-        ).toFixed(1),
-      )
-    : 0
-  const responseCoverage = totalMessages ? Number(((respondedMessages / totalMessages) * 100).toFixed(1)) : 0
-  const consistency = Number(((activeDays / durationDays) * 100).toFixed(1))
-  const peakSimultaneity = Array.from(hourlyParticipants.values()).reduce((max, set) => Math.max(max, set.size), 0)
-  const healthScore = Number(
-    ((1 - giniCoefficient) * 100 * 0.3 + retentionRate * 0.25 + consistency * 0.25 + responseCoverage * 0.2).toFixed(1),
-  )
-
-  const participantsDto: GroupParticipantDto[] = participants
-    .map((participant) => {
-      const messageShare = totalMessages ? Number(((participant.messageCount / totalMessages) * 100).toFixed(1)) : 0
-      const mediaShare = totalMedia ? Number(((participant.mediaCount / totalMedia) * 100).toFixed(1)) : 0
-      const avgWordsPerMessage = participant.messageCount
-        ? Number((participant.wordCount / participant.messageCount).toFixed(2))
-        : null
-      const starterShare = totalSessions ? Number(((participant.starterCount / totalSessions) * 100).toFixed(1)) : 0
-      const consistencyScore = Number(((participant.activeDays.size / durationDays) * 100).toFixed(1))
-      const magnetScore = participant.messageCount
-        ? Number((participant.repliesReceived / participant.messageCount).toFixed(2))
-        : null
-      const replyRatio = participant.messageCount
-        ? Number((participant.replyCount / participant.messageCount).toFixed(2))
-        : null
-      const role = resolveGroupRole({
-        messageShare,
-        consistencyScore,
-        starterShare,
-        firstSeen: participant.firstSeen,
-        lastSeen: participant.lastSeen,
-        messageCount: participant.messageCount,
-        now,
-      })
-      const topicSignature = computeTopicSignature(participant.wordCounts, acc.wordCounts)
-
-      return {
-        id: participant.id,
-        name: participant.name,
-        isSelf: participant.isSelf,
-        role,
-        messageCount: participant.messageCount,
-        messageShare,
-        wordCount: participant.wordCount,
-        avgWordsPerMessage,
-        mediaCount: participant.mediaCount,
-        mediaShare,
-        firstSeen: participant.firstSeen?.toISOString() ?? null,
-        lastSeen: participant.lastSeen?.toISOString() ?? null,
-        activeDays: participant.activeDays.size,
-        consistencyScore,
-        starterCount: participant.starterCount,
-        starterShare,
-        replyCount: participant.replyCount,
-        repliesReceived: participant.repliesReceived,
-        magnetScore,
-        replyRatio,
-        topWords: mapToTopItems(participant.wordCounts, 5),
-        topEmoji: mapToTopItems(participant.emojiCounts, 5),
-        topicSignature,
-      }
-    })
-    .sort((left, right) => right.messageCount - left.messageCount)
-
-  const topPairs = buildGroupTopPairs({
-    participantsById: new Map(participantsDto.map((participant) => [participant.id, participant])),
-    directPairCounts,
-    impliedPairCounts,
+  return computeGroupReportAnalytics({
+    totalMessages: acc.totalMessages,
+    mediaCount: acc.mediaCount,
+    voiceCount: acc.voiceCount,
+    stickerCount: acc.stickerCount,
+    fileCount: acc.fileCount,
+    firstMessageAt: acc.firstMessageAt,
+    lastMessageAt: acc.lastMessageAt,
+    timeZone: acc.timeZone,
+    activeDays,
+    now: new Date(),
+    wordCounts: acc.wordCounts,
+    messageIndex: acc.messageIndex,
+    timeline,
+    participants: Array.from(acc.participants.values()),
   })
-
-  return {
-    participants: participantsDto,
-    topPairs,
-    health: {
-      score: healthScore,
-      giniCoefficient,
-      lurkerRatio,
-      retentionRate,
-      responseCoverage,
-      consistency,
-      momentum,
-      activeMembers,
-      activeMembersLast30Days,
-      churnedMembers: churnedMembers.length,
-      peakSimultaneity,
-    },
-    sharedVocabulary,
-    uniqueGroupWords,
-  }
 }
 
 function resolveGroupRole(params: {
@@ -1345,80 +1098,6 @@ function normalizeStoredGroupRole(
   now = new Date(),
 ): GroupParticipantDto['role'] {
   return resolveGroupRole({ ...participant, now })
-}
-
-function computeTopicSignature(source: Map<string, number>, total: Map<string, number>) {
-  const sourceTotal = Array.from(source.values()).reduce((sum, value) => sum + value, 0)
-  const totalWords = Array.from(total.values()).reduce((sum, value) => sum + value, 0)
-  if (!sourceTotal || !totalWords) {
-    return [] as TopItemDto[]
-  }
-
-  return Array.from(source.entries())
-    .map(([word, count]) => {
-      const localShare = count / sourceTotal
-      const globalShare = (total.get(word) ?? count) / totalWords
-      return {
-        value: word,
-        count: Number((localShare / Math.max(globalShare, 1 / totalWords)).toFixed(2)),
-      }
-    })
-    .sort((left, right) => right.count - left.count)
-    .slice(0, 5)
-}
-
-function buildGroupTopPairs(params: {
-  participantsById: Map<string, GroupParticipantDto>
-  directPairCounts: Map<string, number>
-  impliedPairCounts: Map<string, number>
-}): GroupPairDto[] {
-  const pairKeys = new Set<string>()
-  for (const key of params.directPairCounts.keys()) {
-    pairKeys.add(key)
-  }
-  for (const key of params.impliedPairCounts.keys()) {
-    pairKeys.add(key)
-  }
-
-  const combined = new Map<string, GroupPairDto>()
-  for (const key of pairKeys) {
-    const [leftId, rightId] = key.split('|')
-    if (!leftId || !rightId || leftId === rightId) {
-      continue
-    }
-    const normalizedKey = [leftId, rightId].sort().join('|')
-    if (combined.has(normalizedKey)) {
-      continue
-    }
-    const directReplies =
-      (params.directPairCounts.get(`${leftId}|${rightId}`) ?? 0) +
-      (params.directPairCounts.get(`${rightId}|${leftId}`) ?? 0)
-    const impliedReplies =
-      (params.impliedPairCounts.get(`${leftId}|${rightId}`) ?? 0) +
-      (params.impliedPairCounts.get(`${rightId}|${leftId}`) ?? 0)
-    const symmetricScore = directReplies * 2 + impliedReplies
-    if (!symmetricScore) {
-      continue
-    }
-    const left = params.participantsById.get(leftId)
-    const right = params.participantsById.get(rightId)
-    if (!left || !right) {
-      continue
-    }
-    combined.set(normalizedKey, {
-      leftParticipantId: left.id,
-      leftParticipantName: left.name,
-      rightParticipantId: right.id,
-      rightParticipantName: right.name,
-      symmetricScore,
-      directReplies,
-      impliedReplies,
-    })
-  }
-
-  return Array.from(combined.values())
-    .sort((left, right) => right.symmetricScore - left.symmetricScore)
-    .slice(0, 5)
 }
 
 export async function saveAggregates(params: {
