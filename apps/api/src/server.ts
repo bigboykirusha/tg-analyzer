@@ -15,6 +15,7 @@ import { loggerOptions } from './services/logger.service'
 import { redis } from './services/redis.service'
 import { hasRecentWorkerHeartbeat } from './services/runtime-status.service'
 import { authRateLimitFailurePolicy } from './services/auth-rate-limit.service'
+import { apiSecurityHeaders } from './services/security-headers.service'
 
 export async function buildServer() {
   const app = Fastify({
@@ -59,6 +60,9 @@ export async function buildServer() {
   })
   await app.register(websocket)
   app.addHook('onRequest', async (request, reply) => {
+    for (const [name, value] of Object.entries(apiSecurityHeaders)) {
+      reply.header(name, value)
+    }
     reply.header('X-Request-Id', request.id)
     reply.header('X-Content-Type-Options', 'nosniff')
     reply.header('Referrer-Policy', 'no-referrer')
