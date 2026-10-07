@@ -53,4 +53,5 @@
 - [x] 2026-10-07: Nuxt обновлён до 4.5.1, Fastify до 5.12.2 и Drizzle ORM до 0.45.3. Единственная несовместимость (`keywords` в `useSeoMeta`) исправлена переносом meta-тега в `useHead`; frozen install, unit tests, lint, format и typecheck проходят. Production audit: 0 critical, 20 high, 21 moderate, 8 low.
 - [x] 2026-10-07: финальный `build` успешно завершён на Nuxt 4.5.1. Остаются предупреждения Nuxt о sourcemap, chunk 825 kB и deprecated package export resolution.
 - [x] 2026-10-07: обновлён `@fastify/websocket` и закреплены безопасные patch-версии `ws`, `ip-address`, PostCSS-графа. Production audit сокращён до 0 critical, 12 high, 17 moderate, 8 low; frozen install, unit tests, lint, format и typecheck проходят.
+- [x] 2026-10-07: `build` повторно завершён успешно после последних dependency overrides.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
