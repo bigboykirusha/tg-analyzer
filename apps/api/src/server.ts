@@ -72,6 +72,7 @@ export async function buildServer() {
       components: {
         securitySchemes: {
           bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+          refreshCookie: { type: 'apiKey', in: 'cookie', name: cookieName },
         },
       },
     },
@@ -128,19 +129,19 @@ export async function buildServer() {
     }
   })
   app.setErrorHandler((rawError, request, reply) => {
-    const error = rawError as Error & { statusCode?: number; code?: string }
+    const error = rawError as Error & { statusCode?: number; code?: string; validation?: unknown[] }
     const statusCode = error.statusCode && error.statusCode >= 400 ? error.statusCode : 500
-    const responseStatus = error.name === 'ZodError' ? 400 : statusCode
-    const message =
-      responseStatus === 400 && error.name === 'ZodError'
-        ? 'Request validation failed'
-        : responseStatus >= 500 && config.NODE_ENV === 'production'
-          ? 'Internal server error'
-          : error.message
+    const isValidationError = error.name === 'ZodError' || Array.isArray(error.validation)
+    const responseStatus = isValidationError ? 400 : statusCode
+    const message = isValidationError
+      ? 'Request validation failed'
+      : responseStatus >= 500 && config.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : error.message
     const code =
       isApiError(error) && error.code
         ? error.code
-        : responseStatus === 400
+        : isValidationError
           ? 'INVALID_REQUEST'
           : responseStatus >= 500
             ? 'INTERNAL_ERROR'

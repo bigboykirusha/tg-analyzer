@@ -110,10 +110,18 @@ test('versioned API exposes an OpenAPI document and keeps legacy routes availabl
   const openApi = await app.inject({ url: '/documentation/json' })
   assert.equal(openApi.statusCode, 200)
   const document = openApi.json<{
-    paths: Record<string, { get?: { responses?: Record<string, unknown>; parameters?: unknown[] } }>
+    paths: Record<
+      string,
+      {
+        get?: { responses?: Record<string, unknown>; parameters?: unknown[] }
+        post?: { requestBody?: unknown; responses?: Record<string, unknown> }
+      }
+    >
   }>()
   assert.ok(document.paths['/api/v1/stats/global']?.get?.responses?.['200'])
   assert.ok(document.paths['/api/v1/stats/chats']?.get?.parameters?.length)
+  assert.ok(document.paths['/api/v1/auth/verify-code']?.post?.requestBody)
+  assert.ok(document.paths['/api/v1/auth/verify-code']?.post?.responses?.['200'])
 
   const missingChat = await app.inject({ url: '/api/v1/stats/chats/123', headers })
   assert.equal(missingChat.statusCode, 404)
