@@ -38,3 +38,5 @@ WebSocket использует одноразовый Redis ticket с TTL 30 с�
 Общие типы и валидируемые query-схемы начали жить в `packages/shared`; endpoint map задаёт пары method/path, request и response, а auth/progress/stats composables используют `useApiEndpoint`. Текущая UI страница истории всё ещё читает первую страницу из 20 записей; управление страницами и миграция всех generic call sites предстоят.
 
 Добавлены `@fastify/swagger` и `@fastify/swagger-ui` для контрактной документации API; `zod` добавлен в shared как runtime-схема запросов. Новые зависимости оправданы требованиями фазы 2 и уже используемым Zod runtime. Проверки текущего среза: `check`, `lint`, unit 23/23, integration 15/15 и `build` прошли. Изменённые файлы отформатированы. Общий `format:check` сейчас находит форматирование в незакоммиченном `docs/DESIGN_TASK.md`; файл оставлен без изменений. Фаза 2 остаётся незавершённой: чистая аналитика пока находится преимущественно в `apps/api/src/services/stats.service.ts`, а OpenAPI и общие схемы нужно расширить на оставшиеся auth/parse endpoints.
+
+Код API foundation зафиксирован `8b562bd` (`feat(api): add versioned contracts and pagination`).
