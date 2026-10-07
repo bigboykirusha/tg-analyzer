@@ -20,6 +20,7 @@ import type {
   TopResponse,
   UpdateProfileBody,
   UpdateProfileResponse,
+  UserDto,
   VerifyCodeBody,
   VerifyPasswordBody,
   WsAuthTicketResponse,
@@ -29,6 +30,51 @@ export const apiErrorResponseSchema = z.object({
   requestId: z.string().optional(),
   message: z.string(),
   code: z.string(),
+})
+
+export const userDtoSchema: z.ZodType<UserDto> = z.object({
+  id: z.string(),
+  tgUserId: z.string(),
+  username: z.string().nullable(),
+  firstName: z.string().nullable(),
+  timezone: z.string(),
+  telegramSessionActive: z.boolean().optional(),
+})
+
+export const sendCodeResponseSchema: z.ZodType<SendCodeResponse> = z.object({
+  phoneCodeHash: z.string().min(1),
+  isPasswordRequired: z.literal(false).optional(),
+})
+
+export const authSuccessResponseSchema: z.ZodType<AuthSuccessResponse> = z.object({
+  accessToken: z.string().min(1),
+  user: userDtoSchema,
+})
+
+export const pendingPasswordResponseSchema: z.ZodType<PendingPasswordResponse> = z.object({
+  isPasswordRequired: z.literal(true),
+  tempToken: z.string().min(1),
+})
+
+export const wsAuthTicketResponseSchema: z.ZodType<WsAuthTicketResponse> = z.object({
+  ticket: z.string().min(1),
+})
+
+export const updateProfileResponseSchema: z.ZodType<UpdateProfileResponse> = z.object({
+  user: userDtoSchema,
+})
+
+export const deleteResponseSchema: z.ZodType<DeleteResponse> = z.object({
+  success: z.literal(true),
+})
+
+export const startParseResponseSchema: z.ZodType<StartParseResponse> = z.object({
+  jobId: z.string().uuid(),
+})
+
+export const clearHistoryResponseSchema: z.ZodType<ClearHistoryResponse> = z.object({
+  success: z.literal(true),
+  deleted: z.number().int().nonnegative(),
 })
 
 const phoneSchema = z.string().regex(/^\+?[1-9]\d{4,19}$/)

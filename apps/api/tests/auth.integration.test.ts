@@ -174,6 +174,25 @@ test('versioned parse history returns an isolated page with a total count', asyn
   assert.ok([...first.items, ...second.items].every((item) => jobIds.includes(item.jobId)))
 })
 
+test('versioned parse errors use the shared error contract', async () => {
+  const userId = await createUser()
+  const auth = await createAuth(userId)
+  const headers = bearer(auth.access)
+  const responses = await Promise.all([
+    app.inject({ method: 'DELETE', url: '/api/v1/parse/cancel', headers }),
+    app.inject({
+      method: 'DELETE',
+      url: '/api/v1/parse/history/00000000-0000-4000-8000-000000000000',
+      headers,
+    }),
+  ])
+
+  for (const response of responses) {
+    assert.equal(response.statusCode, 404)
+    assert.deepEqual(Object.keys(response.json()).sort(), ['code', 'message', 'requestId'])
+  }
+})
+
 test('refresh races share one successor and logout revokes the whole family', async () => {
   const userId = await createUser()
   const auth = await createAuth(userId)

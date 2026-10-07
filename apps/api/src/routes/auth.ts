@@ -1,10 +1,18 @@
 import type { FastifyPluginAsync, FastifyReply, FastifySchema } from 'fastify'
+import { z } from 'zod'
 import { Api } from 'telegram'
 import {
+  apiErrorResponseSchema,
+  authSuccessResponseSchema,
+  deleteResponseSchema,
+  pendingPasswordResponseSchema,
   sendCodeBodySchema,
+  sendCodeResponseSchema,
   updateProfileBodySchema,
+  updateProfileResponseSchema,
   verifyCodeBodySchema,
   verifyPasswordBodySchema,
+  wsAuthTicketResponseSchema,
 } from '@tg-analyzer/shared'
 import type { UpdateProfileResponse, WsAuthTicketResponse } from '@tg-analyzer/shared'
 import { and, eq } from 'drizzle-orm'
@@ -47,42 +55,18 @@ const authRateLimitConfig = {
   },
 } as const
 
-const apiErrorSchema = {
-  type: 'object',
-  properties: {
-    message: { type: 'string' },
-    code: { type: 'string' },
-    requestId: { type: 'string' },
-  },
-  required: ['message', 'code'],
-} as const
-const userSchema = {
-  type: 'object',
-  properties: {
-    id: { type: 'string' },
-    tgUserId: { type: 'string' },
-    username: { type: ['string', 'null'] },
-    firstName: { type: ['string', 'null'] },
-    timezone: { type: 'string' },
-    telegramSessionActive: { type: 'boolean' },
-  },
-  required: ['id', 'tgUserId', 'username', 'firstName', 'timezone'],
-} as const
-const authSuccessSchema = {
-  type: 'object',
-  properties: { accessToken: { type: 'string' }, user: userSchema },
-  required: ['accessToken', 'user'],
-} as const
-const pendingPasswordResponseSchema = {
-  type: 'object',
-  properties: { isPasswordRequired: { type: 'boolean', const: true }, tempToken: { type: 'string' } },
-  required: ['isPasswordRequired', 'tempToken'],
-} as const
-const successResponseSchema = {
-  type: 'object',
-  properties: { success: { type: 'boolean', const: true } },
-  required: ['success'],
-} as const
+const jsonSchemaOptions = { target: 'draft-07' } as const
+const apiErrorSchema = z.toJSONSchema(apiErrorResponseSchema, jsonSchemaOptions)
+const sendCodeBodyJsonSchema = z.toJSONSchema(sendCodeBodySchema, jsonSchemaOptions)
+const verifyCodeBodyJsonSchema = z.toJSONSchema(verifyCodeBodySchema, jsonSchemaOptions)
+const verifyPasswordBodyJsonSchema = z.toJSONSchema(verifyPasswordBodySchema, jsonSchemaOptions)
+const updateProfileBodyJsonSchema = z.toJSONSchema(updateProfileBodySchema, jsonSchemaOptions)
+const sendCodeResponseJsonSchema = z.toJSONSchema(sendCodeResponseSchema, jsonSchemaOptions)
+const authSuccessSchema = z.toJSONSchema(authSuccessResponseSchema, jsonSchemaOptions)
+const pendingPasswordResponseJsonSchema = z.toJSONSchema(pendingPasswordResponseSchema, jsonSchemaOptions)
+const wsAuthTicketResponseJsonSchema = z.toJSONSchema(wsAuthTicketResponseSchema, jsonSchemaOptions)
+const updateProfileResponseJsonSchema = z.toJSONSchema(updateProfileResponseSchema, jsonSchemaOptions)
+const successResponseSchema = z.toJSONSchema(deleteResponseSchema, jsonSchemaOptions)
 const authenticated = [{ bearerAuth: [] as string[] }]
 const refreshCookieAuth = [{ refreshCookie: [] as string[] }]
 
@@ -109,13 +93,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     {
       config: authRateLimitConfig,
       schema: authDocs('Send Telegram login code', {
-        body: {
-          type: 'object',
-          properties: { phone: { type: 'string', pattern: '^\\+?[1-9]\\d{4,19}$' } },
-          required: ['phone'],
-        },
+        body: sendCodeBodyJsonSchema,
         response: {
-          200: { type: 'object', properties: { phoneCodeHash: { type: 'string' } }, required: ['phoneCodeHash'] },
+          200: sendCodeResponseJsonSchema,
           400: apiErrorSchema,
           429: apiErrorSchema,
         },
@@ -135,17 +115,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     {
       config: authRateLimitConfig,
       schema: authDocs('Verify Telegram login code', {
-        body: {
-          type: 'object',
-          properties: {
-            phone: { type: 'string', pattern: '^\\+?[1-9]\\d{4,19}$' },
-            code: { type: 'string', pattern: '^\\d{3,10}$' },
-            phoneCodeHash: { type: 'string', minLength: 1, maxLength: 256 },
-          },
-          required: ['phone', 'code', 'phoneCodeHash'],
-        },
+        body: verifyCodeBodyJsonSchema,
         response: {
-          200: { oneOf: [authSuccessSchema, pendingPasswordResponseSchema] },
+          200: { oneOf: [authSuccessSchema, pendingPasswordResponseJsonSchema] },
           400: apiErrorSchema,
           401: apiErrorSchema,
           429: apiErrorSchema,
@@ -183,11 +155,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     {
       config: authRateLimitConfig,
       schema: authDocs('Verify Telegram 2FA password', {
-        body: {
-          type: 'object',
-          properties: { password: { type: 'string', minLength: 1, maxLength: 1024 } },
-          required: ['password'],
-        },
+        body: verifyPasswordBodyJsonSchema,
         security: authenticated,
         response: { 200: authSuccessSchema, 400: apiErrorSchema, 401: apiErrorSchema, 429: apiErrorSchema },
       }),
@@ -324,7 +292,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       schema: authDocs('Issue one-time WebSocket ticket', {
         security: authenticated,
         response: {
-          200: { type: 'object', properties: { ticket: { type: 'string' } }, required: ['ticket'] },
+          200: wsAuthTicketResponseJsonSchema,
           401: apiErrorSchema,
           429: apiErrorSchema,
         },
@@ -341,14 +309,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     {
       preHandler: requireAuth,
       schema: authDocs('Update profile', {
-        body: {
-          type: 'object',
-          properties: { timezone: { type: 'string', minLength: 1, maxLength: 64 } },
-          required: ['timezone'],
-        },
+        body: updateProfileBodyJsonSchema,
         security: authenticated,
         response: {
-          200: { type: 'object', properties: { user: userSchema }, required: ['user'] },
+          200: updateProfileResponseJsonSchema,
           400: apiErrorSchema,
           401: apiErrorSchema,
           404: apiErrorSchema,
@@ -454,7 +418,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         }
         if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
           await telegramPool.disconnectAuthorizedClient(userId)
-          return reply.status(409).send({ message: 'Telegram session is busy with another operation' })
+          return sendApiError(reply, 409, 'Telegram session is busy with another operation', 'TELEGRAM_BUSY')
         }
         throw error
       } finally {
@@ -462,7 +426,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       if (!avatar) {
-        return reply.status(404).send({ message: 'Avatar not found' })
+        return sendApiError(reply, 404, 'Avatar not found', 'AVATAR_NOT_FOUND')
       }
 
       reply.header('Content-Type', 'image/jpeg')

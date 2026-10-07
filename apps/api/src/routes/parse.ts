@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { CustomFile } from 'telegram/client/uploads.js'
 import {
   apiErrorResponseSchema,
+  clearHistoryResponseSchema,
+  deleteResponseSchema,
   dialogIdParamsSchema,
   paginationQuerySchema,
   parseDialogsResponseSchema,
@@ -11,6 +13,7 @@ import {
   parseStatusResponseSchema,
   shareReportBodySchema,
   startParseBodySchema,
+  startParseResponseSchema,
 } from '@tg-analyzer/shared'
 import type { ParseDialogDto, ParseDialogsResponse, ParseProgressDto } from '@tg-analyzer/shared'
 import { requireAuth } from '../middleware/auth.middleware'
@@ -56,15 +59,13 @@ import {
 const PARSE_DIALOGS_LIST_LIMIT = 300
 const apiErrorJsonSchema = z.toJSONSchema(apiErrorResponseSchema, { target: 'draft-07' })
 const startBodyJsonSchema = z.toJSONSchema(startParseBodySchema, { target: 'draft-07' })
+const startResponseJsonSchema = z.toJSONSchema(startParseResponseSchema, { target: 'draft-07' })
 const parseStatusJsonSchema = z.toJSONSchema(parseStatusResponseSchema, { target: 'draft-07' })
 const parseDialogsJsonSchema = z.toJSONSchema(parseDialogsResponseSchema, { target: 'draft-07' })
 const parseHistoryPageJsonSchema = z.toJSONSchema(parseHistoryPageResponseSchema, { target: 'draft-07' })
 const paginationQueryJsonSchema = z.toJSONSchema(paginationQuerySchema, { target: 'draft-07' })
-const successJsonSchema = {
-  type: 'object',
-  properties: { success: { type: 'boolean', const: true } },
-  required: ['success'],
-} as const
+const successJsonSchema = z.toJSONSchema(deleteResponseSchema, { target: 'draft-07' })
+const clearHistoryJsonSchema = z.toJSONSchema(clearHistoryResponseSchema, { target: 'draft-07' })
 
 function parseRouteDocs(summary: string, response: Record<number, unknown>, body?: object) {
   return {
@@ -102,7 +103,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
           ? parseRouteDocs(
               'Start a chat analysis job',
               {
-                200: { type: 'object', properties: { jobId: { type: 'string', format: 'uuid' } }, required: ['jobId'] },
+                200: startResponseJsonSchema,
                 400: apiErrorJsonSchema,
                 401: apiErrorJsonSchema,
                 409: apiErrorJsonSchema,
@@ -146,10 +147,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
           })
           await clearActiveJob(userId)
         } else {
-          return reply.status(409).send({
-            message: 'A parse job is already running',
-            jobId: activeJob.id,
-          })
+          return sendApiError(reply, 409, 'A parse job is already running', 'PARSE_ALREADY_RUNNING')
         }
       }
 
@@ -166,10 +164,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
         }
         const ttl = await getChatCooldown(userId, selectedChatId)
         if (ttl && ttl > 0) {
-          return reply.status(429).send({
-            message: 'This chat was recently parsed.',
-            retryAfter: ttl,
-          })
+          return sendApiError(reply, 429, 'This chat was recently parsed', 'PARSE_COOLDOWN')
         }
 
         let dialogs: TelegramDialog[]
@@ -191,10 +186,12 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
           }
           if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
             await telegramPool.disconnectAuthorizedClient(userId)
-            return reply.status(409).send({
-              message: 'Telegram session is busy. If you have an active parse running, wait for it or cancel it.',
-              code: 'TELEGRAM_SESSION_BUSY',
-            })
+            return sendApiError(
+              reply,
+              409,
+              'Telegram session is busy. If you have an active parse running, wait for it or cancel it.',
+              'TELEGRAM_SESSION_BUSY',
+            )
           }
           throw error
         } finally {
@@ -212,12 +209,12 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
         try {
           await ensureFullParseCooldown(userId)
         } catch {
-          return reply.status(429).send({ message: 'Full parse cooldown is still active' })
+          return sendApiError(reply, 429, 'Full parse cooldown is still active', 'PARSE_COOLDOWN')
         }
       }
 
       if (chatIds?.length === 1 && !targetChat) {
-        return reply.status(404).send({ message: 'Chat not found or unavailable for parsing' })
+        return sendApiError(reply, 404, 'Chat not found or unavailable for parsing', 'CHAT_NOT_FOUND')
       }
 
       let jobId: string
@@ -286,7 +283,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
           message: errorMessage,
         })
 
-        return reply.status(503).send({ message: 'Could not queue parse job' })
+        return sendApiError(reply, 503, 'Could not queue parse job', 'QUEUE_UNAVAILABLE')
       }
     },
   )
@@ -372,7 +369,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
             return cached
           }
 
-          return reply.status(409).send()
+          return sendApiError(reply, 409, 'Telegram session is busy with another operation', 'TELEGRAM_BUSY')
         }
         throw error
       } finally {
@@ -422,7 +419,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
         }
         if (isTelegramSessionDuplicatedError(error) || isTelegramSessionBusyError(error)) {
           await telegramPool.disconnectAuthorizedClient(userId)
-          return reply.status(409).send()
+          return sendApiError(reply, 409, 'Telegram session is busy with another operation', 'TELEGRAM_BUSY')
         }
         throw error
       } finally {
@@ -430,7 +427,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
       }
 
       if (!avatar) {
-        return reply.status(404).send({ message: 'Avatar not found' })
+        return sendApiError(reply, 404, 'Avatar not found', 'AVATAR_NOT_FOUND')
       }
 
       reply.header('Content-Type', 'image/jpeg')
@@ -544,7 +541,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
       }
 
       if (!targetJob) {
-        return reply.status(404).send({ message: 'No active parse job' })
+        return sendApiError(reply, 404, 'No active parse job', 'PARSE_NOT_ACTIVE')
       }
 
       await markCancelledJob(userId, targetJob.id)
@@ -562,7 +559,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
       const cancelled = await cancelParseJob(userId, targetJob.id)
       if (!cancelled) {
         await clearActiveJob(userId)
-        return reply.status(404).send({ message: 'No active parse job' })
+        return sendApiError(reply, 404, 'No active parse job', 'PARSE_NOT_ACTIVE')
       }
       await clearActiveJob(userId)
       await clearParseProgress(userId)
@@ -629,11 +626,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
       schema:
         options.apiVersion === 1
           ? parseRouteDocs('Clear analysis history', {
-              200: {
-                type: 'object',
-                properties: { success: { type: 'boolean', const: true }, deleted: { type: 'integer' } },
-                required: ['success', 'deleted'],
-              },
+              200: clearHistoryJsonSchema,
               401: apiErrorJsonSchema,
             })
           : undefined,
@@ -673,11 +666,11 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
       const job = await findParseJobById(params.jobId)
 
       if (!job || job.userId !== userId) {
-        return reply.status(404).send({ message: 'Parse job not found' })
+        return sendApiError(reply, 404, 'Parse job not found', 'PARSE_JOB_NOT_FOUND')
       }
 
       if (job.status === 'pending' || job.status === 'running') {
-        return reply.status(409).send({ message: 'Active parse jobs cannot be deleted' })
+        return sendApiError(reply, 409, 'Active parse jobs cannot be deleted', 'PARSE_JOB_ACTIVE')
       }
 
       await deleteParseHistoryItem(userId, params.jobId)

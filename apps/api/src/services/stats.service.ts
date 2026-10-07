@@ -26,6 +26,8 @@ import {
 } from '@tg-analyzer/shared'
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm'
 import { db, schema } from '../db'
+
+export { aggregateMessage, createChatAccumulator, finalizeAccumulator } from '@tg-analyzer/shared'
 function resolveGroupRole(params: {
   messageShare: number
   consistencyScore: number
