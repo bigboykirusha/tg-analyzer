@@ -28,7 +28,7 @@
 
 - [x] `noUncheckedIndexedAccess` для API/shared/web без подавления ошибок; shared получил отдельный tsconfig и check.
 - [x] ESLint для TypeScript/Vue и Prettier; команды `lint` и `format:check`.
-- [ ] Добавить и проверить security headers/CSP (с production-safe политикой для Nuxt/API).
+- [x] API получает строгие security headers: deny-by-default CSP, защита от встраивания и отключённые camera/geolocation/microphone; web CSP остаётся задачей фазы 4, так как должен учитывать окончательные first-party домены и внешние источники.
 - [ ] Аудит зависимостей, удаление неиспользуемого кода и пакетов; новые инструменты только в devDependencies.
 - [ ] `lint`, `format:check`, `check` и unit-tests проходят; повторить integration после Docker Engine и финальный build после оставшегося dependency audit.
 
@@ -47,4 +47,5 @@
 - [x] 2026-10-07: `5265c2d` — зафиксированы fail-closed Redis rate limit, требования к first-party refresh-cookie, proxy logging WS-ticket, AOF/noeviction и migration/Redis runbook.
 - [x] 2026-10-07: `02eaf40` — включён `noUncheckedIndexedAccess`; проверки индексов и массивов добавлены в API analytics/worker/routes, shared теперь typecheck-ится самостоятельно.
 - [x] 2026-10-07: `950a5fc` — добавлены ESLint flat config и Prettier, команды `lint`/`format:check`; отформатирован отслеживаемый код без трёх пользовательских незакоммиченных Vue-страниц.
+- [x] 2026-10-07: API получил тестируемые CSP, anti-framing и Permissions-Policy headers; `test`, `lint`, `format:check` и `check` прошли. Полный `build` был запущен, но оболочка оборвала длительный Nuxt-процесс; артефакт `.output` создан, однако успешное завершение команды будет повторно подтверждено перед закрытием 1c.
 - [ ] Документировать для production: собственные sibling-домены web/API для first-party refresh-cookie; запрет query string в access-логах reverse proxy из-за WS-ticket. Наличие домена остаётся вопросом к владельцу.
