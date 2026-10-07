@@ -490,7 +490,10 @@ export function aggregateMessage(
   participant.activeDays.add(day)
 
   const weekday = String(getLocalWeekday(timestamp, acc.timeZone))
-  incrementDirectional(acc.weekdayActivity[weekday], outgoing)
+  const weekdayActivity = acc.weekdayActivity[weekday]
+  if (weekdayActivity) {
+    incrementDirectional(weekdayActivity, outgoing)
+  }
 
   const month = toLocalMonthKey(timestamp, acc.timeZone)
   const monthly = acc.monthlyActivity.get(month) ?? createDirectionalCount()
@@ -720,6 +723,7 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
 
   for (let index = 0; index < timeline.length; index += 1) {
     const current = timeline[index]
+    if (!current) continue
     const previous = timeline[index - 1]
     if (!previous) {
       sessionStarts.push(current.outgoing)
@@ -905,6 +909,7 @@ function computeGroupReport(params: {
 
   for (let index = 0; index < timeline.length; index += 1) {
     const current = timeline[index]
+    if (!current) continue
     const currentParticipant = participantById.get(current.senderId)
     if (!currentParticipant) {
       continue
@@ -943,6 +948,7 @@ function computeGroupReport(params: {
     let covered = false
     for (let lookahead = index + 1; lookahead < timeline.length; lookahead += 1) {
       const next = timeline[lookahead]
+      if (!next) continue
       const gapMs = next.timestamp.getTime() - current.timestamp.getTime()
       if (gapMs > RESPONSE_COVERAGE_WINDOW_MS) {
         break
@@ -1206,9 +1212,11 @@ function median(values: number[]) {
   }
   const sorted = [...values].sort((left, right) => left - right)
   const middle = Math.floor(sorted.length / 2)
-  return sorted.length % 2
-    ? sorted[middle]
-    : Math.round((sorted[middle - 1] + sorted[middle]) / 2)
+  const middleValue = sorted[middle]
+  if (middleValue === undefined) return null
+  if (sorted.length % 2) return middleValue
+  const previousValue = sorted[middle - 1]
+  return previousValue === undefined ? null : Math.round((previousValue + middleValue) / 2)
 }
 
 function percentile(values: number[], p: number) {
@@ -1318,7 +1326,9 @@ function computeTrend(months: MonthlyActivityDto[]): ConversationFactsDto['trend
 }
 
 function buildMonthWindow(lastMonth: string, count: number) {
-  const [year, month] = lastMonth.split('-').map(Number)
+  const [yearText, monthText] = lastMonth.split('-')
+  const year = Number(yearText)
+  const month = Number(monthText)
   const cursor = new Date(year, month - 1, 1)
   cursor.setMonth(cursor.getMonth() - count + 1)
 
@@ -1339,17 +1349,20 @@ function buildSessionStats(
   }
 
   const sessions: SessionStatsDto['highlights'] = []
+  const first = timeline[0]
+  if (!first) return createEmptySessionStats()
   let currentSession = {
-    startedAt: timeline[0].timestamp,
-    endedAt: timeline[0].timestamp,
+    startedAt: first.timestamp,
+    endedAt: first.timestamp,
     totalMessages: 1,
-    sentMessages: timeline[0].outgoing ? 1 : 0,
-    receivedMessages: timeline[0].outgoing ? 0 : 1,
+    sentMessages: first.outgoing ? 1 : 0,
+    receivedMessages: first.outgoing ? 0 : 1,
   }
 
   for (let index = 1; index < timeline.length; index += 1) {
     const item = timeline[index]
     const previous = timeline[index - 1]
+    if (!item || !previous) continue
     const gapMs = item.timestamp.getTime() - previous.timestamp.getTime()
 
     if (gapMs > SESSION_BOUNDARY_MS) {
@@ -1422,11 +1435,14 @@ function computeResponseRate(timeline: Array<{ outgoing: boolean; timestamp: Dat
 
   let totalTurns = 0
   let repliedTurns = 0
-  let turnOutgoing = timeline[0].outgoing
+  const first = timeline[0]
+  if (!first) return null
+  let turnOutgoing = first.outgoing
 
   for (let index = 1; index < timeline.length; index += 1) {
     const current = timeline[index]
     const previous = timeline[index - 1]
+    if (!current || !previous) continue
     const gapMs = current.timestamp.getTime() - previous.timestamp.getTime()
 
     if (gapMs > SESSION_BOUNDARY_MS) {
@@ -1500,6 +1516,7 @@ function buildWindowLabel(hours: number[]) {
   const sorted = [...hours].sort((left, right) => right - left)
   const start = sorted[sorted.length - 1]
   const end = sorted[0]
+  if (start === undefined || end === undefined) return null
   return `${padNumber(start)}:00-${padNumber((end + 1) % 24)}:00`
 }
 
@@ -2082,11 +2099,11 @@ export async function getChats(userId: string, page: number, limit: number, sort
     offset: (page - 1) * limit,
     orderBy: [order === 'asc' ? asc(sortColumn) : desc(sortColumn)],
   })
-  const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(schema.chatStats).where(eq(schema.chatStats.userId, userId))
+  const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(schema.chatStats).where(eq(schema.chatStats.userId, userId))
 
   return {
     chats: rows.map(toChatDto),
-    total: Number(count),
+    total: Number(countRow?.count ?? 0),
     page,
     limit,
   }

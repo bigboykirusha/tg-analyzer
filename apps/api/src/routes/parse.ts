@@ -119,7 +119,11 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
 
     let targetChat: { id: number; title: string } | null = null
     if (chatIds?.length === 1) {
-      const ttl = await getChatCooldown(userId, chatIds[0])
+      const selectedChatId = chatIds[0]
+      if (!selectedChatId) {
+        return sendApiError(reply, 400, 'A chat id is required', 'INVALID_REQUEST')
+      }
+      const ttl = await getChatCooldown(userId, selectedChatId)
       if (ttl && ttl > 0) {
         return reply.status(429).send({
           message: 'This chat was recently parsed.',
@@ -153,7 +157,7 @@ export const parseRoutes: FastifyPluginAsync = async (fastify) => {
         await telegramPool.disconnectAuthorizedClient(userId)
       }
 
-      const dialog = dialogs.find((item) => String(item.id) === chatIds[0] && !isSystemTelegramDialog(item))
+      const dialog = dialogs.find((item) => String(item.id) === selectedChatId && !isSystemTelegramDialog(item))
       targetChat = dialog
         ? {
             id: Number(dialog.id),

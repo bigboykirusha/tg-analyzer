@@ -233,6 +233,9 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       await ensureNotCancelled(userId, jobId)
 
       const dialog = targetDialogs[index]
+      if (!dialog) {
+        throw new Error('Parse dialog disappeared during processing')
+      }
       await publishParseProgress(userId, {
         type: 'progress',
         jobId,
@@ -268,7 +271,10 @@ export const parseWorker = new Worker<ParseJobData>('parse-dialogs', async (job:
       completedAt: new Date(),
     })
     if (chatIds?.length === 1) {
-      await setChatCooldown(userId, chatIds[0], CHAT_REPARSE_COOLDOWN_SECONDS)
+      const chatId = chatIds[0]
+      if (chatId) {
+        await setChatCooldown(userId, chatId, CHAT_REPARSE_COOLDOWN_SECONDS)
+      }
     } else if (!chatIds?.length) {
       await activateFullParseCooldown(userId)
     }
