@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:22-alpine AS builder
 RUN corepack enable
 WORKDIR /app
 
@@ -17,4 +17,14 @@ COPY apps/web/tailwind.config.ts ./apps/web/tailwind.config.ts
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @tg-analyzer/web build
 
-CMD ["pnpm", "--filter", "@tg-analyzer/web", "start"]
+FROM node:22-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NITRO_HOST=0.0.0.0
+
+RUN addgroup --system app && adduser --system --ingroup app app
+COPY --from=builder --chown=app:app /app/apps/web/.output .output
+
+USER app
+EXPOSE 3000
+CMD ["node", ".output/server/index.mjs"]

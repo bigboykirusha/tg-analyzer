@@ -7,11 +7,9 @@
     "dev": "nuxt dev --host 0.0.0.0 --port 3000",
     "build": "nuxt build",
     "check": "nuxt typecheck",
-    "start": "nuxt start"
+    "start": "node .output/server/index.mjs"
   },
   "dependencies": {
-    "@nuxtjs/tailwindcss": "^6.14.0",
-    "@pinia/nuxt": "^0.11.2",
     "@tg-analyzer/shared": "workspace:*",
     "echarts": "^6.0.0",
     "html2canvas": "^1.4.1",
@@ -22,7 +20,10 @@
     "vue-echarts": "^8.0.1"
   },
   "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@pinia/nuxt": "^0.11.2",
     "@types/node": "^24.3.0",
+    "nuxt": "^4.5.1",
     "typescript": "^5.9.2",
     "vue-tsc": "^3.0.6"
   }
