@@ -16,12 +16,9 @@ import type {
   TopItemDto,
 } from '@tg-analyzer/shared'
 import {
-  calculateMedian,
-  calculatePercentile,
   computeMaxStreak,
   computeHealthScore,
   computeRelationshipScore,
-  computeResponseRate,
   computeActivityDistribution,
   computeAvailabilityProfile,
   computeCompositionStats,
@@ -30,6 +27,7 @@ import {
   computeSessionStats,
   generateConversationInsights,
   computeGroupReportAnalytics,
+  computeConversationTimelineAnalytics,
   mapDailyActivity,
   mapMonthlyActivity,
   resolveProductGroupRole,
@@ -38,8 +36,6 @@ import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm'
 import { db, schema } from '../db'
 import type { TelegramMessageLike } from './telegram.service'
 
-const SESSION_BOUNDARY_MS = 8 * 60 * 60 * 1000
-const LONG_SILENCE_MS = 30 * 24 * 60 * 60 * 1000
 const STOP_WORDS_RU = new Set([
   '\u0438',
   '\u0432',
@@ -893,91 +889,14 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
   const privateLike = chatType === 'private'
   const groupLike = chatType === 'group'
   const timeline = [...acc.timeline].sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
-  const mineResponseSeconds: number[] = []
-  const theirsResponseSeconds: number[] = []
-  let longestGap: ConversationFactsDto['longestGap'] = null
-  const silencePeriodsOver30Days: NonNullable<ConversationFactsDto['silencePeriodsOver30Days']> = []
-  const sessionStarts: boolean[] = []
-
-  for (let index = 0; index < timeline.length; index += 1) {
-    const current = timeline[index]
-    if (!current) continue
-    const previous = timeline[index - 1]
-    if (!previous) {
-      sessionStarts.push(current.outgoing)
-      continue
-    }
-
-    const gapMs = current.timestamp.getTime() - previous.timestamp.getTime()
-    const gap = {
-      seconds: Math.round(gapMs / 1000),
-      from: previous.timestamp.toISOString(),
-      to: current.timestamp.toISOString(),
-    }
-    if (!longestGap || gap.seconds > longestGap.seconds) {
-      longestGap = gap
-    }
-    if (gapMs > LONG_SILENCE_MS) {
-      silencePeriodsOver30Days.push(gap)
-    }
-    if (gapMs > SESSION_BOUNDARY_MS) {
-      sessionStarts.push(current.outgoing)
-    }
-    if (privateLike && previous.outgoing !== current.outgoing && gapMs >= 0 && gapMs <= SESSION_BOUNDARY_MS) {
-      if (current.outgoing) {
-        mineResponseSeconds.push(gap.seconds)
-      } else {
-        theirsResponseSeconds.push(gap.seconds)
-      }
-    }
-  }
-
-  if (privateLike) {
-    const averageMineSec = mineResponseSeconds.length
-      ? Math.round(mineResponseSeconds.reduce((sum, value) => sum + value, 0) / mineResponseSeconds.length)
-      : null
-    const medianMineSec = calculateMedian(mineResponseSeconds)
-    const medianTheirsSec = calculateMedian(theirsResponseSeconds)
-    acc.responseStats = {
-      medianMineSec,
-      medianTheirsSec,
-      mineSamples: mineResponseSeconds.length,
-      theirsSamples: theirsResponseSeconds.length,
-      mineP25Sec: calculatePercentile(mineResponseSeconds, 25),
-      mineP75Sec: calculatePercentile(mineResponseSeconds, 75),
-      mineP95Sec: calculatePercentile(mineResponseSeconds, 95),
-      theirsP25Sec: calculatePercentile(theirsResponseSeconds, 25),
-      theirsP75Sec: calculatePercentile(theirsResponseSeconds, 75),
-      theirsP95Sec: calculatePercentile(theirsResponseSeconds, 95),
-    }
-    acc.averageMyResponseSec = averageMineSec
-    acc.medianMyResponseSec = medianMineSec
-    acc.medianTheirResponseSec = medianTheirsSec
-    acc.responseRate = computeResponseRate(timeline)
-
-    if (sessionStarts.length > 0) {
-      const outgoingStarts = sessionStarts.filter(Boolean).length
-      acc.iWriteFirstPct = Math.round((outgoingStarts / sessionStarts.length) * 100)
-    }
-  } else {
-    acc.responseStats = {
-      medianMineSec: null,
-      medianTheirsSec: null,
-      mineSamples: 0,
-      theirsSamples: 0,
-      mineP25Sec: null,
-      mineP75Sec: null,
-      mineP95Sec: null,
-      theirsP25Sec: null,
-      theirsP75Sec: null,
-      theirsP95Sec: null,
-    }
-    acc.averageMyResponseSec = null
-    acc.medianMyResponseSec = null
-    acc.medianTheirResponseSec = null
-    acc.iWriteFirstPct = null
-    acc.responseRate = null
-  }
+  const timelineAnalytics = computeConversationTimelineAnalytics(timeline, privateLike)
+  const { longestGap, silencePeriodsOver30Days } = timelineAnalytics
+  acc.responseStats = timelineAnalytics.responseStats
+  acc.averageMyResponseSec = timelineAnalytics.averageMyResponseSec
+  acc.medianMyResponseSec = timelineAnalytics.medianMyResponseSec
+  acc.medianTheirResponseSec = timelineAnalytics.medianTheirResponseSec
+  acc.iWriteFirstPct = timelineAnalytics.iWriteFirstPct
+  acc.responseRate = timelineAnalytics.responseRate
 
   const dailyRows = mapDailyActivity(acc.dailyActivity)
   const mostActiveDate = dailyRows.length ? [...dailyRows].sort((left, right) => right.total - left.total)[0] : null
