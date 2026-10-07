@@ -29,6 +29,10 @@ export type ApiClientError = Error & {
   data?: (ApiErrorResponse & Record<string, unknown>) | undefined
 }
 
+export function isApiClientError(error: unknown): error is ApiClientError {
+  return error instanceof Error && ('statusCode' in error || 'code' in error || 'data' in error)
+}
+
 type RefreshResult = {
   accessToken: string | null
   user: UserDto | null

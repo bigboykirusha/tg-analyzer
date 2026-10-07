@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ParseDialogDto } from '@tg-analyzer/shared'
-import type { ApiClientError } from '../composables/useApi'
+import { isApiClientError } from '../composables/useApi'
 import AppLayout from '../components/AppLayout.vue'
 import ChatAvatar from '../components/ChatAvatar.vue'
 import Container from '../components/layout/Container.vue'
@@ -117,23 +117,22 @@ async function startParse(chatIds?: string[]) {
   pendingChatId.value = chatIds?.length === 1 ? (chatIds[0] ?? null) : null
 
   try {
-    await useApiFetch<{ jobId: string }>('/api/parse/start', {
-      method: 'POST',
+    await useApiEndpoint('POST /api/v1/parse/start', {
       body: chatIds?.length ? { chatIds } : {},
     })
 
     await bootstrapFromServer()
     await fetchHistory()
   } catch (error) {
-    const err = error as ApiClientError
-    const retryAfter = err.data?.retryAfter
-    const code = err.code ?? (typeof err.data?.code === 'string' ? err.data.code : undefined)
+    const apiError = isApiClientError(error) ? error : null
+    const retryAfter = apiError?.data?.retryAfter
+    const code = apiError?.code ?? (typeof apiError?.data?.code === 'string' ? apiError.data.code : undefined)
 
-    if (err.statusCode === 409) {
+    if (apiError?.statusCode === 409) {
       if (code === 'TELEGRAM_SESSION_BUSY') {
-        toast.warning(t('dashboard.startError'), err.message || t('dashboard.cancelParse'))
+        toast.warning(t('dashboard.startError'), apiError.message || t('dashboard.cancelParse'))
       } else {
-        toast.info(t('dashboard.activeParse'), err.message || t('dashboard.cancelParse'))
+        toast.info(t('dashboard.activeParse'), apiError.message || t('dashboard.cancelParse'))
       }
     } else if (typeof retryAfter === 'number' && retryAfter > 0) {
       toast.warning(t('dashboard.cooldownTitle'), t('dashboard.cooldown', { time: formatCooldown(retryAfter) }))
@@ -150,9 +149,7 @@ async function cancelActiveParse() {
   cancelling.value = true
 
   try {
-    await useApiFetch('/api/parse/cancel', {
-      method: 'DELETE',
-    })
+    await useApiEndpoint('DELETE /api/v1/parse/cancel')
 
     disconnect()
     reset()

@@ -22,7 +22,7 @@ import SegmentedControl from '../../components/ui/SegmentedControl.vue'
 import Skeleton from '../../components/ui/Skeleton.vue'
 import { AlertCircle, BarChart2, Clock, MessageSquare } from '../../lib/icons'
 import { ArrowLeft, RotateCw, Share2 } from 'lucide-vue-next'
-import type { ApiClientError } from '../../composables/useApi'
+import { isApiClientError } from '../../composables/useApi'
 import { useI18n } from '../../composables/useI18n'
 import { useParseProgress } from '../../composables/useParseProgress'
 import { useStats } from '../../composables/useStats'
@@ -738,15 +738,14 @@ async function reparseChat() {
 
   reparsing.value = true
   try {
-    await useApiFetch('/api/parse/start', {
-      method: 'POST',
+    await useApiEndpoint('POST /api/v1/parse/start', {
       body: { chatIds: [routeChatId.value] },
     })
     await bootstrapFromServer()
     toast.success(t('chat.reparseStarted'))
   } catch (error) {
-    const apiError = error as ApiClientError
-    toast.error(apiError.message || t('chat.reparseError'))
+    const apiError = isApiClientError(error) ? error : null
+    toast.error(apiError?.message || (error instanceof Error ? error.message : t('chat.reparseError')))
   } finally {
     reparsing.value = false
   }
@@ -940,8 +939,7 @@ async function sendReportPdfToTelegramChat() {
     const file = await createReportPdfFile()
     const base64 = await fileToBase64(file)
 
-    await useApiFetch('/api/parse/share-report', {
-      method: 'POST',
+    await useApiEndpoint('POST /api/v1/parse/share-report', {
       body: {
         chatId: routeChatId.value,
         fileName: file.name,

@@ -100,7 +100,7 @@ async function confirmAction() {
 async function cancelActiveParse() {
   mobileCancelling.value = true
   try {
-    await useApiFetch('/api/parse/cancel', { method: 'DELETE' })
+    await useApiEndpoint('DELETE /api/v1/parse/cancel')
     await bootstrapFromServer()
     toast.success(t('dashboard.cancelled'))
   } catch (error) {
