@@ -381,8 +381,8 @@ function closeAndLogout() {
   }
   .app-navigation--report .mobile-report-toolbar:not(:empty) {
     display: block;
-    min-height: 70px;
-    padding: 10px 16px;
+    min-height: 56px;
+    padding: 16px 20px 4px;
     background: var(--glass-sheen), color-mix(in srgb, var(--glass) 92%, var(--bg-base));
     box-shadow: var(--glass-inset);
     backdrop-filter: var(--glass-filter);

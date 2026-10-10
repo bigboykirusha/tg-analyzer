@@ -86,9 +86,6 @@ const receivedShareValue = computed(() =>
   directionalMessageTotal.value ? ((chat.value?.receivedMessages ?? 0) / directionalMessageTotal.value) * 100 : 0,
 )
 const sentShare = computed(() => formatDecimal(sentShareValue.value))
-const balanceLeadLabel = computed(() =>
-  sentShareValue.value >= receivedShareValue.value ? t('chat.balanceYouLead') : t('chat.balanceTheyLead'),
-)
 const emptyComposition: MessageCompositionDto = { text: 0, media: 0, voice: 0, sticker: 0, file: 0 }
 const emptyActivityDistribution: ActivityDistributionDto = {
   night: { sent: 0, received: 0, total: 0 },
@@ -107,13 +104,16 @@ const overallWordsPerTextMessage = computed(() => {
     maximumFractionDigits: 1,
   }).format(chat.value.totalWords / chat.value.textMessageCount)
 })
-const peakHour = computed(() => {
+const peakHourNumber = computed(() => {
   const hourly = chat.value?.hourlyActivitySplit ?? {}
   const best = Object.entries(hourly)
     .filter(([hour, value]) => Number(hour) >= 0 && Number(hour) <= 23 && (value?.total ?? 0) > 0)
     .sort((left, right) => (right[1]?.total ?? 0) - (left[1]?.total ?? 0))[0]
-  return best ? `${best[0].padStart(2, '0')}:00` : t('common.na')
+  return best ? Number(best[0]) : null
 })
+const peakHour = computed(() =>
+  peakHourNumber.value === null ? t('common.na') : `${String(peakHourNumber.value).padStart(2, '0')}:00`,
+)
 const hasWords = computed(() =>
   Boolean(chat.value?.topWordsBySender.mine.length || chat.value?.topWordsBySender.theirs.length),
 )
@@ -150,7 +150,18 @@ const kpiMessageSummary = computed(() =>
 const kpiShareSummary = computed(() =>
   sentShareValue.value >= receivedShareValue.value ? t('chat.metricShareMine') : t('chat.metricShareTheirs'),
 )
-const kpiPeakSummary = computed(() => t('chat.metricPeakDay', { day: busiestWeekdayLabel.value }))
+const kpiPeakSummary = computed(() => {
+  if (peakHourNumber.value === null) return t('common.na')
+  const endHour = (peakHourNumber.value + 1) % 24
+  return `${peakHour.value}–${String(endHour).padStart(2, '0')}:00 · ${t('chat.metricPeakDay', { day: busiestWeekdayLabel.value.toLocaleLowerCase() })}`
+})
+const medianResponseSummary = computed(() => {
+  const values = [chat.value?.responseStats.medianMineSec, chat.value?.responseStats.medianTheirsSec].filter(
+    (value): value is number => typeof value === 'number',
+  )
+  if (!values.length) return t('common.na')
+  return formatDurationFromSec(values.reduce((sum, value) => sum + value, 0) / values.length)
+})
 const totalLongSilenceDays = computed(() => {
   const totalSeconds = (chat.value?.conversationFacts.silencePeriodsOver30Days ?? []).reduce(
     (sum, gap) => sum + gap.seconds,
@@ -209,21 +220,12 @@ const trendLabel = computed(() => {
   return labels[trend]
 })
 const relationshipScore = computed(() => chat.value?.conversationFacts.relationshipScore ?? null)
-const relationshipLabel = computed(() => {
-  const label = relationshipScore.value?.label
-  if (!label) {
-    return t('common.na')
-  }
-
-  const labels = {
-    balanced: t('chat.relationshipBalanced'),
-    warm: t('chat.relationshipWarm'),
-    cooling: t('chat.relationshipCooling'),
-    one_sided: t('chat.relationshipOneSided'),
-    emerging: t('chat.relationshipEmerging'),
-  }
-
-  return labels[label]
+const relationshipSummary = computed(() => {
+  const stability = relationshipScore.value?.stability
+  if (stability === null || stability === undefined) return t('chat.relationshipTitle')
+  if (stability < 45) return t('chat.relationshipBursts')
+  if (stability < 75) return t('chat.relationshipVariable')
+  return t('chat.relationshipSteady')
 })
 
 function scoreTone(value: number | null, warningThreshold = 55, successThreshold = 75) {
@@ -887,7 +889,7 @@ onBeforeUnmount(() => {
                   <strong class="t-mono">{{ formatNumber(chat?.receivedMessages ?? 0) }}</strong>
                 </div>
                 <p class="t-small section-text">
-                  {{ t('chat.balanceLead') }} <strong>{{ balanceLeadLabel }}</strong>
+                  {{ t('chat.medianResponse', { time: medianResponseSummary }) }}
                 </p>
               </div>
             </div>
@@ -896,10 +898,7 @@ onBeforeUnmount(() => {
           <article class="card section-card">
             <div class="section-copy">
               <span class="t-label">{{ t('chat.relationship') }}</span>
-              <h2 v-if="relationshipScore" class="t-h2">
-                {{ relationshipScore.score }} {{ t('chat.of100') }} · {{ relationshipLabel }}
-              </h2>
-              <h2 v-else class="t-h2">{{ t('chat.relationshipTitle') }}</h2>
+              <h2 class="t-h2">{{ relationshipSummary }}</h2>
             </div>
 
             <template v-if="relationshipScore">
@@ -1444,6 +1443,8 @@ onBeforeUnmount(() => {
 }
 
 .chat-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: 0;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -1593,6 +1594,7 @@ onBeforeUnmount(() => {
 }
 
 .report-header :deep(.metric) {
+  height: 100%;
   min-height: 118px;
   border: 0;
   border-right: 1px solid var(--border);
@@ -1608,6 +1610,9 @@ onBeforeUnmount(() => {
 .report-header :deep(.metric-label),
 .report-header :deep(.metric-sub) {
   color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .report-header :deep(.metric-value) {
@@ -1629,6 +1634,7 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-5);
   min-width: 0;
+  align-items: start;
 }
 
 .report-peek-grid {
@@ -1805,7 +1811,7 @@ onBeforeUnmount(() => {
 
 .balance-visual {
   display: grid;
-  grid-template-columns: 168px minmax(0, 1fr);
+  grid-template-columns: 150px minmax(0, 1fr);
   align-items: center;
   gap: var(--space-8);
 }
@@ -1814,7 +1820,7 @@ onBeforeUnmount(() => {
   --sent-angle: 180deg;
   position: relative;
   display: grid;
-  width: 168px;
+  width: 150px;
   aspect-ratio: 1;
   place-items: center;
   border-radius: 50%;
@@ -1888,12 +1894,12 @@ onBeforeUnmount(() => {
 
 @media (max-width: 560px) {
   .balance-visual {
-    grid-template-columns: 132px minmax(0, 1fr);
+    grid-template-columns: 112px minmax(0, 1fr);
     gap: var(--space-5);
   }
 
   .balance-donut {
-    width: 132px;
+    width: 112px;
   }
 
   .balance-donut::after {
@@ -2020,7 +2026,8 @@ onBeforeUnmount(() => {
   }
 
   .report-topline {
-    min-height: 50px;
+    height: 36px;
+    min-height: 36px;
   }
 
   .page-toolbar,
@@ -2062,7 +2069,8 @@ onBeforeUnmount(() => {
   }
 
   .report-title {
-    font-size: 22px;
+    font-size: 16px;
+    font-weight: 700;
   }
 
   .section-card {
@@ -2095,16 +2103,16 @@ onBeforeUnmount(() => {
   }
 
   .report-identity-main {
-    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-columns: 32px minmax(0, 1fr);
     align-items: center;
     gap: var(--space-2);
   }
 
   .report-identity-main > :deep(.avatar-shell) {
-    width: 42px;
-    height: 42px;
-    font-size: 13px;
-    flex: 0 0 42px;
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+    flex: 0 0 32px;
   }
 
   .report-highlight-row {
@@ -2114,6 +2122,22 @@ onBeforeUnmount(() => {
   .report-title-block {
     flex: 1;
     min-width: 0;
+  }
+
+  .report-subtitle {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .toolbar-actions :deep(.btn),
+  .toolbar-icon-button,
+  .toolbar-back {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
   }
 
   .facts-grid,
@@ -2169,24 +2193,24 @@ onBeforeUnmount(() => {
   }
 
   .toolbar-actions :deep(.btn) {
-    min-height: 44px;
-    height: 44px;
+    min-height: 36px;
+    height: 36px;
     min-width: 0;
     padding-inline: var(--space-3);
     font-size: 12px;
   }
 
   .toolbar-icon-button {
-    width: 44px;
-    min-width: 44px;
+    width: 36px;
+    min-width: 36px;
     padding-inline: 0;
   }
 
   .toolbar-back {
-    width: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    height: 44px;
+    width: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    height: 36px;
     padding-inline: 0;
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
@@ -2223,6 +2247,7 @@ onBeforeUnmount(() => {
 @media (max-width: 640px) {
   .chat-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
   }
 
   .report-header :deep(.metric) {

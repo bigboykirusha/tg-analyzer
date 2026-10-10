@@ -138,39 +138,17 @@ async function handlePassword() {
 
       <aside class="login-story">
         <div class="story-copy">
-          <span class="story-kicker">{{ t('login.brandLabel') }}</span>
           <h2 class="story-title">{{ t('login.heroTitle') }}</h2>
           <p>{{ t('login.heroText') }}</p>
         </div>
 
-        <div class="story-visual" aria-hidden="true">
-          <div class="story-metric">
-            <strong>{{ t('login.heroMetric') }}</strong>
-            <span>{{ t('login.heroMetricLabel') }}</span>
-          </div>
-          <div class="signal-bars">
-            <i
-              v-for="height in [24, 42, 30, 58, 76, 50, 88, 68, 44, 62, 34, 52]"
-              :key="height"
-              :style="{ height: `${height}%` }"
-            />
-          </div>
-        </div>
-
-        <ul class="story-features">
-          <li>{{ t('login.featureOne') }}</li>
-          <li>{{ t('login.featureTwo') }}</li>
-          <li>{{ t('login.featureThree') }}</li>
-        </ul>
+        <p class="story-footer">{{ t('login.heroFooter') }}</p>
       </aside>
 
       <section class="login-panel">
+        <h1 class="mobile-hero">{{ t('login.mobileHeroTitle') }}</h1>
         <div class="login-card">
           <div class="login-copy">
-            <div class="login-step-line">
-              <span class="t-label">{{ t('login.secure') }}</span>
-              <span class="step-count">0{{ stepIndex + 1 }} / 03</span>
-            </div>
             <h1 class="t-h2">
               <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
               <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
@@ -219,17 +197,6 @@ async function handlePassword() {
           <p v-if="error" class="login-error t-small" role="alert" aria-live="assertive">
             {{ error }}
           </p>
-        </div>
-
-        <div class="login-trust">
-          <span class="trust-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M8 10V7.75A4 4 0 0 1 12 4a4 4 0 0 1 4 3.75V10m-7.25 0h6.5A1.75 1.75 0 0 1 17 11.75v5.5A1.75 1.75 0 0 1 15.25 19h-6.5A1.75 1.75 0 0 1 7 17.25v-5.5A1.75 1.75 0 0 1 8.75 10Z"
-              />
-            </svg>
-          </span>
-          <p class="t-small">{{ t('login.trust') }}</p>
         </div>
       </section>
     </section>
@@ -328,6 +295,10 @@ async function handlePassword() {
   gap: var(--space-5);
   width: min(100%, 420px);
   margin-inline: auto;
+}
+
+.mobile-hero {
+  display: none;
 }
 
 .login-brand {
@@ -640,6 +611,14 @@ async function handlePassword() {
   line-height: 1.55;
 }
 
+.story-footer {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 .story-visual {
   position: relative;
   z-index: 1;
@@ -807,6 +786,17 @@ async function handlePassword() {
     min-height: 100dvh;
     justify-content: flex-start;
     padding: 88px clamp(20px, 7vw, 72px) 32px;
+  }
+
+  .mobile-hero {
+    display: block;
+    margin-bottom: var(--space-8);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: clamp(32px, 9vw, 48px);
+    font-weight: 720;
+    line-height: 1.05;
+    letter-spacing: -0.05em;
   }
 
   .mobile-brand {

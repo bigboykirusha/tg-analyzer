@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MessageSquare } from '../lib/icons'
 const AVATAR_CACHE_TTL_MS = 60 * 60 * 1000
 const AVATAR_CACHE_MAX_ENTRIES = 300
 const avatarCache = new Map<string, { url: string; expiresAt: number }>()
@@ -55,14 +56,17 @@ const sizeClass = computed(() => {
 })
 
 const initials = computed(() => {
-  return (
-    props.title
-      ?.split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? '')
-      .join('') || '?'
-  )
+  if (!props.title) return ''
+
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+  return props.title
+    .trim()
+    .split(/\s+/u)
+    .map((part) => Array.from(segmenter.segment(part), ({ segment }) => segment).find((item) => /[\p{L}\p{N}]/u.test(item)) ?? '')
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toLocaleUpperCase()
 })
 
 async function loadAvatar() {
@@ -129,7 +133,8 @@ watch(
       class="h-full w-full object-cover"
       @error="errored = true"
     />
-    <span v-else>{{ initials }}</span>
+    <span v-else-if="initials">{{ initials }}</span>
+    <MessageSquare v-else :size="18" aria-hidden="true" />
   </div>
 </template>
 

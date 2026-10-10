@@ -186,6 +186,17 @@ const elapsedTime = computed(() => {
   return t('common.durationSeconds', { seconds })
 })
 
+const currentPhaseStep = computed(() => Math.max(1, phaseInfo.value?.currentStep || 1))
+const compactTitle = computed(() => t('parse.analysisTitle', { name: props.chatName || t('common.telegram') }))
+const compactSubtitle = computed(() =>
+  t('parse.compactSummary', {
+    current: formatNumber(currentPhaseStep.value),
+    total: formatNumber(4),
+    status: displayMessage.value,
+    seconds: formatNumber(elapsedSeconds.value),
+  }),
+)
+
 const scannedLabel = computed(() => {
   if (!formattedScanned.value) {
     return null
@@ -231,11 +242,10 @@ onBeforeUnmount(() => {
   <section class="progress-card animate-fade-in-down" :class="{ 'progress-card-compact': compact }">
     <div class="progress-header">
       <div class="progress-copy">
-        <div class="t-label">{{ t('parse.label') }}</div>
         <div class="progress-title-row">
-          <h3 class="t-h3">{{ titleText }}</h3>
+          <h3 class="t-h3">{{ compact ? compactTitle : titleText }}</h3>
         </div>
-        <p class="t-small progress-message">{{ subtitleText }}</p>
+        <p class="t-small progress-message">{{ compact ? compactSubtitle : subtitleText }}</p>
       </div>
       <IconButton
         v-if="cancellable"
@@ -250,6 +260,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div
+      v-if="!compact"
       class="progress-bar"
       role="progressbar"
       :aria-label="t('parse.title')"
@@ -262,7 +273,11 @@ onBeforeUnmount(() => {
       <div class="progress-bar-fill" :style="{ width: `${progressPercent}%` }" />
     </div>
 
-    <div class="progress-meta t-small">
+    <div v-else class="phase-progress" role="progressbar" :aria-label="t('parse.title')" :aria-valuenow="currentPhaseStep" aria-valuemin="1" aria-valuemax="4">
+      <span v-for="phase in 4" :key="phase" :class="{ complete: phase <= currentPhaseStep }" />
+    </div>
+
+    <div v-if="!compact" class="progress-meta t-small">
       <div class="meta-left">
         <p v-if="progressSummary" class="t-mono">{{ progressSummary }}</p>
         <p v-if="phaseSummary" class="progress-phase">{{ phaseSummary }}</p>
@@ -338,6 +353,30 @@ onBeforeUnmount(() => {
 
 .progress-card-compact .progress-message {
   font-size: 12px;
+}
+
+.phase-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.phase-progress span {
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--bg-overlay);
+}
+
+.phase-progress span.complete {
+  background: var(--accent);
+}
+
+.cancel-button {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  color: var(--danger);
 }
 
 .progress-bar {

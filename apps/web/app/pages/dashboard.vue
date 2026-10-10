@@ -10,7 +10,7 @@ import EmptyState from '../components/ui/EmptyState.vue'
 import SegmentedControl from '../components/ui/SegmentedControl.vue'
 import Skeleton from '../components/ui/Skeleton.vue'
 import ListSkeleton from '../components/ui/ListSkeleton.vue'
-import { AlertCircle, BarChart2, MessageSquare, Trash2, WifiOff } from '../lib/icons'
+import { AlertCircle, BarChart2, MessageSquare, RotateCw, Trash2, WifiOff } from '../lib/icons'
 import { useI18n } from '../composables/useI18n'
 import { useParseProgress } from '../composables/useParseProgress'
 import { useStats } from '../composables/useStats'
@@ -28,7 +28,7 @@ const auth = useAuthStore()
 const { deleteChat, fetchChats, fetchHistory, fetchParseDialogs } = useStats()
 const stats = useStatsStore()
 const { progress, bootstrapped, bootstrapFromServer, disconnect, reset } = useParseProgress()
-const { t, formatNumber, formatDate: formatLocaleDate, formatRelative } = useI18n()
+const { t, formatNumber, formatDate: formatLocaleDate } = useI18n()
 const toast = useToast()
 
 const pending = ref(false)
@@ -479,7 +479,7 @@ onMounted(async () => {
                       </div>
                       <div class="dialog-meta t-small">
                         <span class="t-small selection-subline">{{
-                          t('dashboard.lastAnalyzed', { time: formatRelative(getDialogReport(dialog)?.parsedAt) })
+                          t('dashboard.lastAnalyzed', { time: formatShortDate(getDialogReport(dialog)?.parsedAt ?? null) })
                         }}</span>
                       </div>
                     </div>
@@ -501,6 +501,17 @@ onMounted(async () => {
                       <Button variant="primary" size="md" class="dialog-action-button" :to="`/chat/${dialog.id}`">
                         {{ t('common.report') }}
                       </Button>
+                      <Button
+                        variant="secondary"
+                        size="md"
+                        class="dialog-refresh-button"
+                        :icon="RotateCw"
+                        icon-only
+                        :loading="pendingChatId === dialog.id"
+                        :disabled="dialogParseDisabled(dialog)"
+                        :aria-label="t('common.refresh')"
+                        @click="startDialogParse(dialog)"
+                      />
                     </template>
                     <Button
                       v-else
@@ -907,13 +918,23 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
+.dialog-refresh-button {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+}
+
 .dialog-title {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.3;
 }
 
 .dialog-load-sentinel {

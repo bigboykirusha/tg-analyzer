@@ -81,7 +81,7 @@ function submit() {
               :aria-expanded="countryOpen"
               @click.stop="countryOpen = !countryOpen"
             >
-              <span class="country-flag" aria-hidden="true">{{ phoneInput.country.value.flag }}</span>
+              <span aria-hidden="true">{{ phoneInput.country.value.code }}</span>
               <span>{{ selectedCountryLabel }}</span>
               <ChevronDown class="chevron" :size="14" aria-hidden="true" />
             </button>
@@ -145,7 +145,12 @@ function submit() {
   display: grid;
   grid-template-columns: minmax(104px, auto) minmax(0, 1fr);
   align-items: center;
-  gap: var(--space-2);
+  gap: 0;
+  min-height: 48px;
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
 }
 
 .dial-code {
@@ -154,11 +159,12 @@ function submit() {
   justify-content: center;
   gap: var(--space-2);
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
   padding: 0 var(--space-3);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
+  border: 0;
+  border-right: 1px solid var(--border-default);
+  border-radius: 0;
+  background: transparent;
   color: var(--text-secondary);
   white-space: nowrap;
   cursor: pointer;
@@ -170,9 +176,20 @@ function submit() {
 
 .dial-code:hover,
 .dial-code[aria-expanded='true'] {
-  border-color: var(--border-strong);
   background: var(--bg-overlay);
   color: var(--text-primary);
+}
+
+.phone-input {
+  min-height: 48px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.phone-input:focus {
+  box-shadow: none;
 }
 
 .chevron {

@@ -60,7 +60,17 @@ function formatShortDate(value: string | null) {
 }
 
 function formatHistoryDates(item: ParseHistoryItem) {
-  return formatShortDate(item.createdAt)
+  return `${formatShortDate(item.createdAt)} · ${formatNumber(item.totalMessages)} ${t('dashboard.messagesShort')}`
+}
+
+function historyStatus(item: ParseHistoryItem) {
+  return {
+    pending: t('common.statusPending'),
+    running: t('common.statusRunning'),
+    completed: t('common.statusReady'),
+    failed: t('common.statusFailed'),
+    cancelled: t('common.statusCancelled'),
+  }[item.status]
 }
 
 function formatCompletedDate(value: string | null) {
@@ -248,6 +258,11 @@ onMounted(async () => {
       </div>
 
       <div v-else class="page-stack">
+        <div class="history-heading">
+          <h1 class="t-h1">{{ t('common.history') }}</h1>
+          <span class="t-small">{{ t('dashboard.launchesCount', { count: formatNumber(historyTotal) }) }}</span>
+        </div>
+
         <ParseProgress
           v-if="isParseActive"
           class="dashboard-progress-inline"
@@ -285,6 +300,7 @@ onMounted(async () => {
                       </div>
                       <div class="history-meta t-small">
                         <span class="selection-subline">{{ formatHistoryDates(item) }}</span>
+                        <span class="status-pill" :data-status="item.status">{{ historyStatus(item) }}</span>
                       </div>
                     </div>
                   </div>
@@ -370,9 +386,6 @@ onMounted(async () => {
           <template v-if="selectedHistoryItem" #header>
             <div class="history-dialog-copy">
               <h2 class="t-h3">{{ formatHistoryScope(selectedHistoryItem) }}</h2>
-              <p class="t-small">
-                {{ selectedHistoryItem.chatName || selectedHistoryItem.chatId || selectedHistoryItem.jobId }}
-              </p>
             </div>
           </template>
 
@@ -386,17 +399,13 @@ onMounted(async () => {
                     <span class="t-label">{{ t('common.messages') }}</span>
                     <span class="t-mono">{{ formatNumber(selectedHistoryItem.totalMessages) }}</span>
                   </div>
-                  <div class="history-dialog-item">
-                    <span class="t-label">{{ t('dashboard.jobId') }}</span>
-                    <span class="t-mono history-dialog-jobid">{{ selectedHistoryItem.jobId }}</span>
-                  </div>
             </div>
 
             <div v-if="shouldRenderHistoryError(selectedHistoryItem)" class="detail-error t-small" role="status">
               {{ t('dashboard.startError') }}
             </div>
-            <Button v-if="selectedReportPath" variant="primary" size="md" :to="selectedReportPath">
-              {{ t('common.report') }}
+            <Button v-if="selectedReportPath" variant="primary" size="md" :to="selectedReportPath" block>
+              {{ t('dashboard.openReport') }}
             </Button>
           </template>
         </ModalDialog>
@@ -409,6 +418,17 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+}
+
+.history-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.history-heading .t-small {
+  color: var(--text-secondary);
 }
 
 .stack-md {
@@ -486,6 +506,32 @@ onMounted(async () => {
   align-items: center;
   justify-content: flex-start;
   gap: var(--space-3);
+}
+
+.history-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.status-pill {
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.status-pill[data-status='completed'] {
+  color: var(--success);
+}
+
+.delete-btn {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
 }
 
 .history-open {
