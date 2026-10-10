@@ -18,6 +18,7 @@ const sessions = await import('../src/services/session.service')
 const telegramService = await import('../src/services/telegram.service')
 const { buildServer } = await import('../src/server')
 const { config, cookieName } = await import('../src/config')
+const { AUTH_REFRESH_RATE_LIMIT_MAX } = await import('../src/routes/auth')
 const { signToken } = await import('../src/services/token.service')
 const { authenticateToken } = await import('../src/services/auth-session.service')
 const { consumeWsTicket } = await import('../src/services/ws-ticket.service')
@@ -296,7 +297,7 @@ test('cookie operations enforce Origin and auth limits are shared through Redis'
   )
 
   const statuses: number[] = []
-  for (let index = 0; index <= config.AUTH_RATE_LIMIT_MAX; index += 1) {
+  for (let index = 0; index <= AUTH_REFRESH_RATE_LIMIT_MAX; index += 1) {
     const response = await app.inject({
       method: 'POST',
       url: '/api/auth/refresh',
@@ -304,13 +305,13 @@ test('cookie operations enforce Origin and auth limits are shared through Redis'
       remoteAddress: '127.0.0.33',
     })
     statuses.push(response.statusCode)
-    if (index === config.AUTH_RATE_LIMIT_MAX) {
+    if (index === AUTH_REFRESH_RATE_LIMIT_MAX) {
       const body = response.json<{ code: string; requestId: string }>()
       assert.equal(body.code, 'RATE_LIMITED')
       assert.ok(body.requestId)
     }
   }
-  assert.deepEqual(statuses.slice(0, -1), Array(config.AUTH_RATE_LIMIT_MAX).fill(401))
+  assert.deepEqual(statuses.slice(0, -1), Array(AUTH_REFRESH_RATE_LIMIT_MAX).fill(401))
   assert.equal(statuses.at(-1), 429)
 })
 

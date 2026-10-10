@@ -303,6 +303,7 @@ type ParticipantAccumulator = {
   name: string
   isSelf: boolean
   messageCount: number
+  textMessageCount: number
   wordCount: number
   mediaCount: number
   emojiCount: number
@@ -594,6 +595,7 @@ function ensureParticipant(
     name: resolvedName,
     isSelf: outgoing,
     messageCount: 0,
+    textMessageCount: 0,
     wordCount: 0,
     mediaCount: 0,
     emojiCount: 0,
@@ -691,6 +693,7 @@ export function aggregateMessage(message: AggregationMessageInput, acc: ReturnTy
   acc.messageComposition[messageType] += 1
   if (text.trim().length > 0) {
     acc.textMessageCount += 1
+    participant.textMessageCount += 1
     if (outgoing) {
       acc.mineTextMessages += 1
     } else {
@@ -770,7 +773,11 @@ function normalizeMessageDate(value: unknown): Date | undefined {
   return undefined
 }
 
-export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator>, chatType?: string | null) {
+export function finalizeAccumulator(
+  acc: ReturnType<typeof createChatAccumulator>,
+  chatType?: string | null,
+  asOf = new Date(),
+) {
   acc.topWords = mapToTopItems(acc.wordCounts)
   acc.topEmoji = mapToTopItems(acc.emojiCounts)
   acc.topWordsBySender = {
@@ -810,7 +817,7 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
     : null
   const activeDays = dailyRows.length
   const maxStreak = computeMaxStreak(Array.from(acc.dailyActivity.keys()))
-  const trend = computeTrend(monthlyRows)
+  const trend = computeTrend(monthlyRows, toLocalMonthKey(asOf, acc.timeZone))
   const sessionStats = computeSessionStats(timeline, activeDays, acc.timeZone)
   acc.activityDistribution = computeActivityDistribution(acc.hourlyActivitySplit)
   acc.compositionStats = computeCompositionStats({
@@ -849,6 +856,7 @@ export function finalizeAccumulator(acc: ReturnType<typeof createChatAccumulator
         acc,
         timeline,
         activeDays,
+        asOf,
       })
     : null
   acc.conversationFacts = {
@@ -884,8 +892,9 @@ function computeGroupReport(params: {
   acc: ReturnType<typeof createChatAccumulator>
   timeline: TimelineEntry[]
   activeDays: number
+  asOf: Date
 }): GroupReportDto {
-  const { acc, timeline, activeDays } = params
+  const { acc, timeline, activeDays, asOf } = params
   return computeGroupReportAnalytics({
     totalMessages: acc.totalMessages,
     mediaCount: acc.mediaCount,
@@ -896,7 +905,7 @@ function computeGroupReport(params: {
     lastMessageAt: acc.lastMessageAt,
     timeZone: acc.timeZone,
     activeDays,
-    now: new Date(),
+    now: asOf,
     wordCounts: acc.wordCounts,
     messageIndex: acc.messageIndex,
     timeline,

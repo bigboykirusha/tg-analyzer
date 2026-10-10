@@ -62,7 +62,10 @@ const initials = computed(() => {
   return props.title
     .trim()
     .split(/\s+/u)
-    .map((part) => Array.from(segmenter.segment(part), ({ segment }) => segment).find((item) => /[\p{L}\p{N}]/u.test(item)) ?? '')
+    .map(
+      (part) =>
+        Array.from(segmenter.segment(part), ({ segment }) => segment).find((item) => /[\p{L}\p{N}]/u.test(item)) ?? '',
+    )
     .filter(Boolean)
     .slice(0, 2)
     .join('')

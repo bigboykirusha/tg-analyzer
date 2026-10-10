@@ -3,13 +3,7 @@
   "build": {
     "builder": "NIXPACKS",
     "buildCommand": "corepack pnpm install && corepack pnpm --filter @tg-analyzer/shared build && corepack pnpm --filter @tg-analyzer/api build",
-    "watchPatterns": [
-      "apps/api/**",
-      "packages/**",
-      "pnpm-lock.yaml",
-      "package.json",
-      "railway.json"
-    ]
+    "watchPatterns": ["apps/api/**", "packages/**", "pnpm-lock.yaml", "package.json", "railway.json"]
   },
   "deploy": {
     "healthcheckPath": "/health",

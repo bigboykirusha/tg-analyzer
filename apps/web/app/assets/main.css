@@ -554,6 +554,10 @@ button:disabled,
 }
 
 @media (max-width: 640px) {
+  html {
+    scrollbar-gutter: auto;
+  }
+
   .grid-2,
   .grid-3,
   .grid-kpi {

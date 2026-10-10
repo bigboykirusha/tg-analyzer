@@ -62,8 +62,9 @@ function createAuthRateLimitConfig(scope: 'login' | 'refresh' | 'session', max =
 // operations use separate buckets so completing 2FA cannot exhaust the budget
 // required to bootstrap the application immediately afterwards.
 const loginRateLimitConfig = createAuthRateLimitConfig('login')
-const refreshRateLimitConfig = createAuthRateLimitConfig('refresh', Math.max(30, config.AUTH_RATE_LIMIT_MAX * 6))
-const sessionRateLimitConfig = createAuthRateLimitConfig('session', Math.max(30, config.AUTH_RATE_LIMIT_MAX * 6))
+export const AUTH_REFRESH_RATE_LIMIT_MAX = Math.max(30, config.AUTH_RATE_LIMIT_MAX * 6)
+const refreshRateLimitConfig = createAuthRateLimitConfig('refresh', AUTH_REFRESH_RATE_LIMIT_MAX)
+const sessionRateLimitConfig = createAuthRateLimitConfig('session', AUTH_REFRESH_RATE_LIMIT_MAX)
 
 const jsonSchemaOptions = { target: 'draft-7' } as const
 const apiErrorSchema = z.toJSONSchema(apiErrorResponseSchema, jsonSchemaOptions)

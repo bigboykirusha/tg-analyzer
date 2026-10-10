@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import VChart from 'vue-echarts'
+import '../../lib/registerECharts'
 import type { DatedActivityDto } from '@tg-analyzer/shared'
 import { CHART_THEME, COLORS } from '~~/utils/chart-theme'
 
@@ -48,8 +49,9 @@ const option = computed(() => {
     series: [
       {
         type: 'line',
-        smooth: true,
-        symbol: 'none',
+        smooth: false,
+        symbol: props.items.length <= 14 ? 'circle' : 'none',
+        symbolSize: 6,
         data: props.items.map((item) => item.total),
         areaStyle: {
           color: COLORS.accentMuted(),

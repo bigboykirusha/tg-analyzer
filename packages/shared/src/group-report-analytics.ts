@@ -14,6 +14,7 @@ export interface GroupReportParticipantInput {
   name: string
   isSelf: boolean
   messageCount: number
+  textMessageCount: number
   wordCount: number
   mediaCount: number
   activeDays: ReadonlySet<string>
@@ -56,6 +57,12 @@ const GROUP_SESSION_BOUNDARY_MS = 4 * 60 * 60 * 1000
 const IMPLIED_REPLY_WINDOW_MS = 10 * 60 * 1000
 const RESPONSE_COVERAGE_WINDOW_MS = 30 * 60 * 1000
 const DAY_MS = 24 * 60 * 60 * 1000
+export const GROUP_RETENTION_MIN_DAYS = 180
+
+export function hasSufficientGroupRetentionPeriod(first: Date, last: Date): boolean {
+  const span = last.getTime() - first.getTime()
+  return Number.isFinite(span) && span >= 0 && Math.ceil(span / DAY_MS) + 1 >= GROUP_RETENTION_MIN_DAYS
+}
 
 export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): GroupReportDto {
   const participants = input.participants.map((participant) => ({
@@ -134,7 +141,7 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
     }
   }
 
-  const sharedVocabularyThreshold = Math.max(1, Math.ceil(activeMembers * 0.5))
+  const sharedVocabularyThreshold = Math.max(2, Math.ceil(activeMembers * 0.5))
   const sharedVocabulary = topItems(
     new Map(
       Array.from(input.wordCounts.entries()).filter(
@@ -153,25 +160,29 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
     15,
   )
 
-  const activeMembersLast30Days = participants.filter(
-    (participant) => participant.lastSeen && input.now.getTime() - participant.lastSeen.getTime() <= 30 * DAY_MS,
+  const today = new Date(`${getLocalTime(input.now).day}T00:00:00.000Z`)
+  const currentWindowStart = dayKeyAtOffset(today, -29)
+  const previousWindowStart = dayKeyAtOffset(today, -59)
+  const nextDay = dayKeyAtOffset(today, 1)
+  const activeMembersLast30Days = participants.filter((participant) =>
+    hasActivityInWindow(participant.activeDays, currentWindowStart, nextDay),
   ).length
-  const previousWindowStart = new Date(input.now.getTime() - 60 * DAY_MS)
-  const previousWindowEnd = new Date(input.now.getTime() - 30 * DAY_MS)
-  const previousActiveMembers = participants.filter(
-    (participant) =>
-      participant.lastSeen && participant.lastSeen >= previousWindowStart && participant.lastSeen < previousWindowEnd,
+  const previousActiveMembers = participants.filter((participant) =>
+    hasActivityInWindow(participant.activeDays, previousWindowStart, currentWindowStart),
   ).length
   const momentum: GroupHealthDto['momentum'] =
-    previousActiveMembers > 0
-      ? activeMembersLast30Days > previousActiveMembers * 1.15
-        ? 'growing'
-        : activeMembersLast30Days < previousActiveMembers * 0.85
-          ? 'shrinking'
+    getLocalTime(firstMessageAt).day > previousWindowStart ||
+    (previousActiveMembers === 0 && activeMembersLast30Days === 0)
+      ? 'unknown'
+      : previousActiveMembers > 0
+        ? activeMembersLast30Days > previousActiveMembers * 1.15
+          ? 'growing'
+          : activeMembersLast30Days < previousActiveMembers * 0.85
+            ? 'shrinking'
+            : 'stable'
+        : activeMembersLast30Days > 0
+          ? 'growing'
           : 'stable'
-      : activeMembersLast30Days > 0
-        ? 'growing'
-        : 'stable'
 
   const earlyWindowEnd = new Date(firstMessageAt.getTime() + 90 * DAY_MS)
   const recentWindowStart = new Date(lastMessageAt.getTime() - 90 * DAY_MS)
@@ -186,15 +197,19 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
       .map((participant) => participant.id),
   )
   const retained = Array.from(earlyActive).filter((participantId) => recentActive.has(participantId)).length
-  const retentionRate = earlyActive.size ? Number(((retained / earlyActive.size) * 100).toFixed(1)) : 100
+  const retentionRate =
+    hasSufficientGroupRetentionPeriod(firstMessageAt, lastMessageAt) && earlyActive.size
+      ? Number(((retained / earlyActive.size) * 100).toFixed(1))
+      : null
 
   const firstHalfBoundary = new Date(
     firstMessageAt.getTime() + (lastMessageAt.getTime() - firstMessageAt.getTime()) / 2,
   )
+  const churnCutoff = new Date(lastMessageAt.getTime() - 90 * DAY_MS)
   const churnedMembers = participants.filter(
     (participant) =>
       participant.lastSeen &&
-      participant.lastSeen < new Date(input.now.getTime() - 90 * DAY_MS) &&
+      participant.lastSeen < churnCutoff &&
       participant.firstSeen &&
       participant.firstSeen < firstHalfBoundary,
   )
@@ -223,14 +238,9 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
         ).toFixed(1),
       )
     : 0
-  const responseCoverage = conversationTurns
-    ? Number(((respondedTurns / conversationTurns) * 100).toFixed(1))
-    : 0
+  const responseCoverage = conversationTurns ? Number(((respondedTurns / conversationTurns) * 100).toFixed(1)) : 0
   const consistency = Number(((input.activeDays / durationDays) * 100).toFixed(1))
   const peakSimultaneity = Array.from(hourlyParticipants.values()).reduce((max, set) => Math.max(max, set.size), 0)
-  const healthScore = Number(
-    ((1 - giniCoefficient) * 100 * 0.3 + retentionRate * 0.25 + consistency * 0.25 + responseCoverage * 0.2).toFixed(1),
-  )
 
   const participantsDto: GroupParticipantDto[] = participants
     .map((participant) => {
@@ -238,8 +248,8 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
         ? Number(((participant.messageCount / input.totalMessages) * 100).toFixed(1))
         : 0
       const mediaShare = totalMedia ? Number(((participant.mediaCount / totalMedia) * 100).toFixed(1)) : 0
-      const avgWordsPerMessage = participant.messageCount
-        ? Number((participant.wordCount / participant.messageCount).toFixed(2))
+      const avgWordsPerMessage = participant.textMessageCount
+        ? Number((participant.wordCount / participant.textMessageCount).toFixed(2))
         : null
       const starterShare = totalSessions ? Number(((participant.starterCount / totalSessions) * 100).toFixed(1)) : 0
       const consistencyScore = Number(((participant.activeDays.size / durationDays) * 100).toFixed(1))
@@ -295,7 +305,6 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
     health:
       input.totalMessages > 0 && activeMembers > 0
         ? {
-            score: healthScore,
             giniCoefficient,
             lurkerRatio,
             retentionRate,
@@ -311,6 +320,17 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
     sharedVocabulary,
     uniqueGroupWords,
   }
+}
+
+function dayKeyAtOffset(day: Date, offset: number): string {
+  return new Date(day.getTime() + offset * DAY_MS).toISOString().slice(0, 10)
+}
+
+function hasActivityInWindow(days: ReadonlySet<string>, start: string, end: string): boolean {
+  for (const day of days) {
+    if (day >= start && day < end) return true
+  }
+  return false
 }
 
 function findNextDifferentMessages(timeline: readonly GroupReportTimelineEntry[]) {

@@ -5,9 +5,7 @@ import PasswordStep from '../components/auth/PasswordStep.vue'
 import LocaleSwitch from '../components/ui/LocaleSwitch.vue'
 import ThemeToggle from '../components/ui/ThemeToggle.vue'
 import { useToast } from '../composables/useToast'
-import guestMiddleware from '../middleware/guest'
-
-definePageMeta({ middleware: [guestMiddleware] })
+definePageMeta({ middleware: ['guest'] })
 
 const auth = useAuthStore()
 const { sendCode, verifyCode, verifyPassword } = useAuth()

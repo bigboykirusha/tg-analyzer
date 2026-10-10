@@ -48,13 +48,13 @@ const segments = computed(() => {
       ratio: (props.composition.file / total) * 100,
       className: 'segment-files',
     },
-  ]
+  ].filter((segment) => segment.value > 0)
 })
 </script>
 
 <template>
-  <div class="composition">
-    <div class="composition-bar">
+  <div v-if="segments.length" class="composition">
+    <div class="composition-bar" aria-hidden="true">
       <div
         v-for="segment in segments"
         :key="segment.label"
@@ -74,6 +74,7 @@ const segments = computed(() => {
       </div>
     </div>
   </div>
+  <div v-else class="composition-empty t-small">{{ t('chart.noComposition') }}</div>
 </template>
 
 <style scoped>
@@ -98,8 +99,16 @@ const segments = computed(() => {
 
 .composition-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: var(--space-3);
+}
+
+.composition-empty {
+  padding: var(--space-8);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 .composition-item {
@@ -146,11 +155,5 @@ const segments = computed(() => {
 
 .segment-files {
   background: var(--warning);
-}
-
-@media (max-width: 768px) {
-  .composition-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 </style>

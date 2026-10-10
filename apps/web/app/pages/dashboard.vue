@@ -15,13 +15,12 @@ import { useI18n } from '../composables/useI18n'
 import { useParseProgress } from '../composables/useParseProgress'
 import { useStats } from '../composables/useStats'
 import { useToast } from '../composables/useToast'
-import authMiddleware from '../middleware/auth'
 import { useAuthStore } from '../stores/auth'
 import { useStatsStore } from '../stores/stats'
 
 definePageMeta({
   layout: 'workspace',
-  middleware: [authMiddleware],
+  middleware: ['auth'],
 })
 
 const auth = useAuthStore()
@@ -412,6 +411,7 @@ onMounted(async () => {
       </div>
 
       <div v-else class="page-stack">
+        <h1 class="sr-only">{{ t('dashboard.title') }}</h1>
         <ParseProgress
           v-if="isParseActive"
           class="dashboard-progress-inline"
@@ -500,7 +500,7 @@ onMounted(async () => {
 
                   <div class="dialog-actions">
                     <template v-if="getDialogReport(dialog)">
-                      <Button variant="primary" size="md" class="dialog-action-button" :to="`/chat/${dialog.id}`">
+                      <Button variant="secondary" size="md" class="dialog-action-button" :to="`/chat/${dialog.id}`">
                         {{ t('common.report') }}
                       </Button>
                       <Button
@@ -517,7 +517,7 @@ onMounted(async () => {
                     </template>
                     <Button
                       v-else
-                      variant="secondary"
+                      variant="primary"
                       size="md"
                       class="dialog-action-button"
                       :loading="pendingChatId === dialog.id"
@@ -920,10 +920,13 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
-.dialog-refresh-button {
+.dialog-actions :deep(.dialog-refresh-button.btn--icon-only) {
   width: 36px;
   min-width: 36px;
+  max-width: 36px;
   height: 36px;
+  min-height: 36px;
+  max-height: 36px;
   border-radius: var(--radius-full);
 }
 
@@ -1185,6 +1188,10 @@ onMounted(async () => {
   .dialog-actions :deep(.btn) {
     min-height: 44px;
     height: 44px;
+  }
+
+  .dialog-actions :deep(.dialog-refresh-button.btn--icon-only) {
+    display: none;
   }
 
   .dialog-action-button {

@@ -52,14 +52,19 @@ export function computeMaxStreak(days: readonly string[]): StreakInfoDto {
   return { days: max, startDate: bestStart, endDate: bestEnd }
 }
 
-export function computeTrend(months: readonly MonthlyActivityDto[]): ConversationFactsDto['trend'] {
+export function computeTrend(
+  months: readonly MonthlyActivityDto[],
+  incompleteMonth?: string,
+): ConversationFactsDto['trend'] {
   const validMonths = months
     .filter((item) => /^\d{4}-(0[1-9]|1[0-2])$/.test(item.month))
     .sort((left, right) => left.month.localeCompare(right.month))
   const firstMonth = validMonths[0]?.month
-  const lastMonth = validMonths[validMonths.length - 1]?.month
-  if (!firstMonth || !lastMonth) return 'unknown'
-  if (!lastMonth || !/^\d{4}-(0[1-9]|1[0-2])$/.test(lastMonth)) return 'unknown'
+  const latestMonth = validMonths[validMonths.length - 1]?.month
+  if (!firstMonth || !latestMonth) return 'unknown'
+
+  const lastMonth = latestMonth === incompleteMonth ? buildMonthWindow(latestMonth, 2)[0] : latestMonth
+  if (!lastMonth) return 'unknown'
 
   const monthWindow = buildMonthWindow(lastMonth, 6)
   const windowStart = monthWindow[0]

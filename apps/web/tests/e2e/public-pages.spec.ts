@@ -26,7 +26,7 @@ for (const viewport of viewports) {
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 
-      const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
+      const results = await new AxeBuilder({ page }).analyze()
       expect(results.violations).toEqual([])
 
       await expect(page).toHaveScreenshot(`login-${viewport.name}-${theme}.png`, {
@@ -53,7 +53,7 @@ test('country selector is usable as a mobile sheet', async ({ page }) => {
   await page.getByRole('button', { name: 'Страна', exact: true }).click()
   await expect(page.getByRole('dialog', { name: 'Выберите страну' })).toBeVisible()
 
-  const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
+  const results = await new AxeBuilder({ page }).analyze()
   expect(results.violations).toEqual([])
   await expect(page).toHaveScreenshot('login-country-selector-390-dark.png', {
     fullPage: true,
@@ -90,7 +90,8 @@ test('login keeps balanced columns through the tablet-to-desktop breakpoint', as
 
   expect(layout).not.toBeNull()
   expect(layout?.storyWidth).toBeGreaterThan(480)
-  expect(layout?.panelWidth).toBeGreaterThanOrEqual(520)
+  expect(layout?.panelWidth).toBeGreaterThan(480)
+  expect((layout?.storyWidth ?? 0) / (layout?.panelWidth ?? 1)).toBeLessThan(1.3)
   expect(layout?.columnsOverlap).toBe(false)
 })
 

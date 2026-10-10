@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import type { ChatStatsDto, GroupParticipantDto } from '@tg-analyzer/shared'
-import { resolveParticipantProductRole } from '@tg-analyzer/shared'
+import { hasSufficientGroupRetentionPeriod, resolveParticipantProductRole } from '@tg-analyzer/shared'
 import ActivityHeatmap from './ActivityHeatmap.vue'
-import DailyVolumeChart from './DailyVolumeChart.vue'
 import EmojiGrid from './EmojiGrid.vue'
-import MonthlyChart from './MonthlyChart.vue'
 import SegmentedControl from '../ui/SegmentedControl.vue'
 import MetricCard from '../ui/MetricCard.vue'
 import EmptyState from '../ui/EmptyState.vue'
@@ -13,6 +11,9 @@ import { BarChart2, LayoutGrid, MessageSquare } from '../../lib/icons'
 const props = defineProps<{
   chat: ChatStatsDto
 }>()
+
+const DailyVolumeChart = defineAsyncComponent(() => import('./DailyVolumeChart.vue'))
+const MonthlyChart = defineAsyncComponent(() => import('./MonthlyChart.vue'))
 
 const { locale, formatNumber, formatDate, formatRelative } = useI18n()
 
@@ -31,7 +32,6 @@ const copy = computed(() =>
         activeMembers: 'Наблюдаемые участники',
         activeNow: 'Писали за 30 дней',
         mostActive: 'Самый активный',
-        groupHealth: 'Здоровье группы',
         avgLoad: 'Сообщений на участника',
         avgLoadSub: 'Среднее число сообщений на одного активного участника',
         pulseTitle: 'Кто формирует ядро группы',
@@ -46,7 +46,7 @@ const copy = computed(() =>
         roleWhy: 'Почему такая роль',
         messages: 'Сообщения',
         share: 'Доля сообщений',
-        wordsPerMessage: 'Средняя длина сообщения',
+        wordsPerMessage: 'Слов в текстовом сообщении',
         media: 'Медиа',
         starters: 'Запускает разговоры',
         repliesReceived: 'Получает ответов',
@@ -72,19 +72,16 @@ const copy = computed(() =>
         contentTitle: 'Язык и словарь группы',
         contentText: 'Что объединяет группу и какие слова особенно характерны для отдельных участников.',
         sharedVocabulary: 'Общий словарь',
-        uniqueWords: 'Слова, характерные именно для этой группы',
+        uniqueWords: 'Слова отдельных участников',
         signatures: 'Фирменные слова участников',
         topEmoji: 'Популярные эмодзи',
         noGroupData: 'Для этого чата ещё нет группового отчёта.',
         noGroupDataText: 'Нужно заново распарсить чат после обновления аналитики.',
         noWords: 'Недостаточно текста для содержательного контентного блока.',
         unknownParticipant: 'Участник',
-        healthStrong: 'Сильная и живая группа',
-        healthSteady: 'Устойчивый ритм',
-        healthFragile: 'Хрупкая структура',
-        momentumGrowing: 'Группа оживляется',
-        momentumStable: 'Ритм стабильный',
-        momentumShrinking: 'Активность сужается',
+        momentumGrowing: 'Активных участников стало больше',
+        momentumStable: 'Число активных участников стабильно',
+        momentumShrinking: 'Активных участников стало меньше',
         gini: 'Концентрация участия',
         retention: 'Сохранение состава',
         responseCoverage: 'Сообщения получают ответы',
@@ -101,7 +98,6 @@ const copy = computed(() =>
         activeMembers: 'Observed members',
         activeNow: 'Posted in 30 days',
         mostActive: 'Most active',
-        groupHealth: 'Group health',
         avgLoad: 'Messages per member',
         avgLoadSub: 'Average messages per active member',
         pulseTitle: 'Who forms the core',
@@ -116,7 +112,7 @@ const copy = computed(() =>
         roleWhy: 'Why this role',
         messages: 'Messages',
         share: 'Message share',
-        wordsPerMessage: 'Average message length',
+        wordsPerMessage: 'Words per text message',
         media: 'Media',
         starters: 'Starts conversations',
         repliesReceived: 'Replies received',
@@ -142,19 +138,16 @@ const copy = computed(() =>
         contentTitle: 'Group language and vocabulary',
         contentText: 'What the group shares and which words are especially typical for specific members.',
         sharedVocabulary: 'Shared vocabulary',
-        uniqueWords: 'Words specific to this group',
+        uniqueWords: 'Words used by few members',
         signatures: 'Member signature words',
         topEmoji: 'Popular emoji',
         noGroupData: 'This chat does not have group analytics yet.',
         noGroupDataText: 'Re-parse the chat after the analytics update to generate it.',
         noWords: 'Not enough text for a meaningful content view.',
         unknownParticipant: 'Participant',
-        healthStrong: 'Strong and lively group',
-        healthSteady: 'Steady rhythm',
-        healthFragile: 'Fragile structure',
-        momentumGrowing: 'Gaining momentum',
-        momentumStable: 'Stable rhythm',
-        momentumShrinking: 'Narrowing activity',
+        momentumGrowing: 'More members are active',
+        momentumStable: 'The number of active members is steady',
+        momentumShrinking: 'Fewer members are active',
         gini: 'Participation concentration',
         retention: 'Member retention',
         responseCoverage: 'Messages get replies',
@@ -167,6 +160,12 @@ const copy = computed(() =>
 const groupReport = computed(() => props.chat.groupReport)
 const participants = computed(() => groupReport.value?.participants ?? [])
 const health = computed(() => groupReport.value?.health ?? null)
+const hasRetentionWindow = computed(() => {
+  return hasSufficientGroupRetentionPeriod(
+    new Date(props.chat.firstMessageAt ?? ''),
+    new Date(props.chat.lastMessageAt ?? ''),
+  )
+})
 const topPairs = computed(() => groupReport.value?.topPairs ?? [])
 const sharedVocabulary = computed(() => groupReport.value?.sharedVocabulary ?? [])
 const uniqueGroupWords = computed(() => groupReport.value?.uniqueGroupWords ?? [])
@@ -210,17 +209,17 @@ const overviewMetrics = computed(() => [
   {
     label: copy.value.activeMembers,
     value: formatNumber(health.value?.activeMembers ?? participants.value.length),
-    sub: `${copy.value.activeNow}: ${formatNumber(health.value?.activeMembersLast30Days ?? 0)}`,
+    sub: null,
+  },
+  {
+    label: copy.value.activeNow,
+    value: health.value ? formatNumber(health.value.activeMembersLast30Days) : '—',
+    sub: null,
   },
   {
     label: copy.value.mostActive,
     value: normalizeDisplayName(topParticipants.value[0]?.name) ?? '—',
     sub: topParticipants.value[0] ? `${topParticipants.value[0].messageShare}%` : null,
-  },
-  {
-    label: copy.value.groupHealth,
-    value: health.value ? `${formatNumber(Math.round(health.value.score))}/100` : '—',
-    sub: healthTone(health.value?.score ?? null),
   },
   {
     label: copy.value.avgLoad,
@@ -235,7 +234,9 @@ const healthFacts = computed(() =>
   health.value
     ? [
         { label: copy.value.gini, value: `${health.value.giniCoefficient.toFixed(2)}` },
-        { label: copy.value.retention, value: `${health.value.retentionRate}%` },
+        ...(!hasRetentionWindow.value || health.value.retentionRate === null
+          ? []
+          : [{ label: copy.value.retention, value: `${health.value.retentionRate}%` }]),
         { label: copy.value.responseCoverage, value: `${health.value.responseCoverage}%` },
         { label: copy.value.lurkers, value: `${health.value.lurkerRatio}%` },
         { label: copy.value.churned, value: formatNumber(health.value.churnedMembers) },
@@ -251,8 +252,8 @@ const insights = computed(() => {
   if (top && top.messageShare >= 35) {
     items.push(
       isRu.value
-        ? `${top.name} заметно тянет общение на себе: ${top.messageShare}% всех сообщений.`
-        : `${top.name} noticeably carries the group with ${top.messageShare}% of all messages.`,
+        ? `На сообщения ${normalizeDisplayName(top.name)} приходится ${top.messageShare}% от общего числа.`
+        : `${normalizeDisplayName(top.name)} accounts for ${top.messageShare}% of group messages.`,
     )
   }
 
@@ -276,14 +277,6 @@ const insights = computed(() => {
   if (health.value?.momentum === 'growing') {
     items.push(
       isRu.value ? 'В последние недели группа оживилась.' : 'The group has become more active in recent weeks.',
-    )
-  }
-
-  if (health.value?.score !== undefined && health.value.score >= 75) {
-    items.push(
-      isRu.value
-        ? 'Структура выглядит живой и достаточно устойчивой.'
-        : 'The structure looks lively and fairly resilient.',
     )
   }
 
@@ -396,27 +389,14 @@ function activityWindow(participant: GroupParticipantDto) {
   return `${formatDate(participant.firstSeen, { month: 'short', day: 'numeric', year: 'numeric' })} - ${formatDate(participant.lastSeen, { month: 'short', day: 'numeric', year: 'numeric' })}`
 }
 
-function healthTone(score: number | null) {
-  if (score === null) {
-    return '—'
-  }
-  if (score >= 75) {
-    return copy.value.healthStrong
-  }
-  if (score >= 55) {
-    return copy.value.healthSteady
-  }
-  return copy.value.healthFragile
-}
-
-function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | undefined) {
+function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | 'unknown') {
   if (value === 'growing') {
     return copy.value.momentumGrowing
   }
   if (value === 'shrinking') {
     return copy.value.momentumShrinking
   }
-  return copy.value.momentumStable
+  return value === 'stable' ? copy.value.momentumStable : null
 }
 </script>
 
@@ -436,7 +416,9 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | undefined) {
       />
     </div>
 
-    <SegmentedControl v-model="activeTab" :options="tabs" />
+    <div class="group-tabs-scroll">
+      <SegmentedControl v-model="activeTab" :options="tabs" />
+    </div>
 
     <section v-if="activeTab === 'overview'" class="page-stack">
       <article class="card section-card">
@@ -469,47 +451,24 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | undefined) {
         </div>
       </article>
 
-      <div class="report-grid">
-        <article class="card section-card">
-          <div class="section-copy">
-            <span class="t-label">{{ copy.healthTitle }}</span>
-            <h2 class="t-h2">{{ copy.healthTitle }}</h2>
-            <p class="t-small section-text">{{ momentumLabel(health?.momentum) }}</p>
-          </div>
+      <article v-if="health" class="card section-card">
+        <div class="section-copy">
+          <h2 class="t-h2">{{ copy.healthTitle }}</h2>
+          <p v-if="momentumLabel(health.momentum)" class="t-small section-text">
+            {{ momentumLabel(health.momentum) }}
+          </p>
+        </div>
 
-          <div class="facts-grid">
-            <div v-for="fact in healthFacts" :key="fact.label" class="fact-card">
-              <span class="t-label">{{ fact.label }}</span>
-              <strong class="fact-value t-mono">{{ fact.value }}</strong>
-            </div>
+        <div class="facts-grid">
+          <div v-for="fact in healthFacts" :key="fact.label" class="fact-card">
+            <span class="t-label">{{ fact.label }}</span>
+            <strong class="fact-value t-mono">{{ fact.value }}</strong>
           </div>
-        </article>
-
-        <article class="card section-card">
-          <div class="section-copy">
-            <span class="t-label">{{ copy.healthTitle }}</span>
-            <h2 class="t-h2">{{ copy.healthTitle }}</h2>
-            <p class="t-small section-text">{{ momentumLabel(health?.momentum) }}</p>
-          </div>
-
-          <div class="facts-grid">
-            <div class="fact-card">
-              <span class="t-label">{{ copy.activeMembers }}</span>
-              <strong class="fact-value t-mono">{{
-                formatNumber(health?.activeMembers ?? participants.length)
-              }}</strong>
-            </div>
-            <div class="fact-card">
-              <span class="t-label">{{ copy.activeNow }}</span>
-              <strong class="fact-value t-mono">{{ formatNumber(health?.activeMembersLast30Days ?? 0) }}</strong>
-            </div>
-          </div>
-        </article>
-      </div>
+        </div>
+      </article>
 
       <article class="card section-card">
         <div class="section-copy">
-          <span class="t-label">{{ copy.insightsTitle }}</span>
           <h2 class="t-h2">{{ copy.insightsTitle }}</h2>
         </div>
 
@@ -810,6 +769,26 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | undefined) {
   gap: var(--space-2);
 }
 
+.group-tabs-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.group-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.group-kpi-grid :deep(.metric-label) {
+  display: -webkit-box;
+  min-height: 2.5em;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+}
+
 .group-kpi-grid,
 .report-grid,
 .facts-grid,
@@ -1032,6 +1011,15 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | undefined) {
 }
 
 @media (max-width: 768px) {
+  .group-tabs-scroll :deep(.segmented) {
+    min-width: 560px;
+    max-width: none;
+  }
+
+  .facts-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
   .spotlight-head {
     flex-direction: column;
   }
@@ -1043,6 +1031,18 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | undefined) {
   .members-table th,
   .members-table td {
     padding: 12px 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .group-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    gap: var(--space-2);
+  }
+
+  .facts-grid > .fact-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 }
 </style>

@@ -82,9 +82,7 @@ export function computeAvailabilityProfile(hourlyActivity: Readonly<Record<strin
   const windows = buildRankedWindows(entries.map((entry) => entry.total))
   const peak = windows[0]
   const occupiedHours = new Set(peak?.hours ?? [])
-  const secondary = windows.find(
-    (window) => window.total > 0 && window.hours.every((hour) => !occupiedHours.has(hour)),
-  )
+  const secondary = windows.find((window) => window.total > 0 && window.hours.every((hour) => !occupiedHours.has(hour)))
 
   return {
     activeHours: activeHours.length,

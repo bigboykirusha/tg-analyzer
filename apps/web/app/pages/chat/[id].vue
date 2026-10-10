@@ -19,13 +19,12 @@ import { useI18n } from '../../composables/useI18n'
 import { useParseProgress } from '../../composables/useParseProgress'
 import { useStats } from '../../composables/useStats'
 import { useToast } from '../../composables/useToast'
-import authMiddleware from '../../middleware/auth'
 import { useAuthStore } from '../../stores/auth'
 import { useStatsStore } from '../../stores/stats'
 
 definePageMeta({
   layout: 'workspace',
-  middleware: [authMiddleware],
+  middleware: ['auth'],
 })
 
 const GroupReport = defineAsyncComponent(() => import('../../components/stats/GroupReport.vue'))
@@ -96,7 +95,7 @@ const emptyActivityDistribution: ActivityDistributionDto = {
 const messageComposition = computed(() => chat.value?.messageComposition ?? emptyComposition)
 const overallWordsPerTextMessage = computed(() => {
   if (!chat.value || !chat.value.textMessageCount) {
-    return '0.0'
+    return t('common.na')
   }
 
   return new Intl.NumberFormat(intlLocale.value, {
@@ -148,7 +147,11 @@ const kpiMessageSummary = computed(() =>
   }),
 )
 const kpiShareSummary = computed(() =>
-  sentShareValue.value >= receivedShareValue.value ? t('chat.metricShareMine') : t('chat.metricShareTheirs'),
+  directionalMessageTotal.value === 0
+    ? t('common.na')
+    : sentShareValue.value >= receivedShareValue.value
+      ? t('chat.metricShareMine')
+      : t('chat.metricShareTheirs'),
 )
 const kpiPeakSummary = computed(() => {
   if (peakHourNumber.value === null) return t('common.na')
@@ -156,11 +159,16 @@ const kpiPeakSummary = computed(() => {
   return `${peakHour.value}–${String(endHour).padStart(2, '0')}:00 · ${t('chat.metricPeakDay', { day: busiestWeekdayLabel.value.toLocaleLowerCase() })}`
 })
 const medianResponseSummary = computed(() => {
-  const values = [chat.value?.responseStats.medianMineSec, chat.value?.responseStats.medianTheirsSec].filter(
-    (value): value is number => typeof value === 'number',
-  )
-  if (!values.length) return t('common.na')
-  return formatDurationFromSec(values.reduce((sum, value) => sum + value, 0) / values.length)
+  const mine = chat.value?.responseStats.medianMineSec
+  const theirs = chat.value?.responseStats.medianTheirsSec
+  const parts = []
+  if (mine !== null && mine !== undefined) {
+    parts.push(`${t('chat.medianResponseMine')}: ${formatDurationFromSec(mine)}`)
+  }
+  if (theirs !== null && theirs !== undefined) {
+    parts.push(`${t('chat.medianResponseTheirs')}: ${formatDurationFromSec(theirs)}`)
+  }
+  return parts.join(' · ')
 })
 const totalLongSilenceDays = computed(() => {
   const totalSeconds = (chat.value?.conversationFacts.silencePeriodsOver30Days ?? []).reduce(
@@ -169,9 +177,6 @@ const totalLongSilenceDays = computed(() => {
   )
   return Math.round(totalSeconds / 86400)
 })
-const trendConfidenceLabel = computed(() =>
-  chat.value?.conversationFacts.trend === 'unknown' ? t('chat.confidenceLow') : t('chat.confidenceHigh'),
-)
 const continuousDailyActivity = computed(() => {
   return fillDailyGaps(
     chat.value?.dailyActivity ?? [],
@@ -654,7 +659,7 @@ onBeforeUnmount(() => {
           <Teleport defer to="#mobile-report-toolbar" :disabled="!isMobileLayout">
           <div class="report-topline">
             <div class="toolbar-skeleton-slot">
-              <Skeleton height="44px" width="44px" radius="var(--radius-full)" />
+              <Skeleton height="42px" width="42px" radius="var(--radius-full)" />
             </div>
             <div class="report-identity-main">
               <div class="report-avatar-skeleton">
@@ -667,7 +672,7 @@ onBeforeUnmount(() => {
             </div>
             <div class="toolbar-actions">
               <div v-for="item in 2" :key="item" class="toolbar-skeleton-slot">
-                <Skeleton height="44px" width="44px" radius="var(--radius-full)" />
+                <Skeleton height="42px" width="42px" radius="var(--radius-full)" />
               </div>
             </div>
           </div>
@@ -873,12 +878,13 @@ onBeforeUnmount(() => {
             <div class="balance-visual">
               <div
                 class="balance-donut"
+                :class="{ 'balance-donut--empty': directionalMessageTotal === 0 }"
                 role="img"
                 :aria-label="kpiMessageSummary"
                 :style="{ '--sent-angle': `${sentShareValue * 3.6}deg` }"
               >
                 <div class="balance-donut-center">
-                  <strong>{{ Math.round(sentShareValue) }}%</strong>
+                  <strong>{{ directionalMessageTotal ? `${Math.round(sentShareValue)}%` : t('common.na') }}</strong>
                   <span>{{ t('chart.you') }}</span>
                 </div>
               </div>
@@ -891,7 +897,7 @@ onBeforeUnmount(() => {
                   <span><i class="balance-dot balance-dot-received" />{{ t('chart.them') }}</span>
                   <strong class="t-mono">{{ formatNumber(chat?.receivedMessages ?? 0) }}</strong>
                 </div>
-                <p class="t-small section-text">
+                <p v-if="medianResponseSummary" class="t-small section-text">
                   {{ t('chat.medianResponse', { time: medianResponseSummary }) }}
                 </p>
               </div>
@@ -1147,7 +1153,7 @@ onBeforeUnmount(() => {
 
           <div class="grid-kpi timeline-kpi-grid">
             <MetricCard :label="t('chat.mostActiveMonth')" :value="mostActiveMonthLabel" />
-            <MetricCard :label="t('chat.trend')" :value="trendLabel" :sub="trendConfidenceLabel" />
+            <MetricCard :label="t('chat.trend')" :value="trendLabel" />
             <MetricCard
               :label="t('chat.silences')"
               :value="formatNumber(chat?.conversationFacts.silencePeriodsOver30Days.length ?? 0)"
@@ -1831,6 +1837,10 @@ onBeforeUnmount(() => {
   box-shadow: inset 0 0 0 1px var(--border);
 }
 
+.balance-donut--empty {
+  background: var(--surface-2);
+}
+
 .balance-donut::after {
   content: '';
   position: absolute;
@@ -2029,8 +2039,12 @@ onBeforeUnmount(() => {
   }
 
   .report-topline {
-    height: 36px;
-    min-height: 36px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: 42px;
+    min-height: 42px;
+    overflow: visible;
   }
 
   .page-toolbar,
@@ -2096,8 +2110,9 @@ onBeforeUnmount(() => {
   }
 
   .tabs-scroll {
-    margin-inline: calc(var(--space-3) * -1);
-    padding-inline: var(--space-3);
+    width: calc(100% + 2 * var(--space-4));
+    margin-inline: calc(-1 * var(--space-4));
+    padding-inline: 0;
   }
 
   .report-identity-row {
@@ -2106,16 +2121,16 @@ onBeforeUnmount(() => {
   }
 
   .report-identity-main {
-    grid-template-columns: 32px minmax(0, 1fr);
+    grid-template-columns: 42px minmax(0, 1fr);
     align-items: center;
     gap: var(--space-2);
   }
 
   .report-identity-main > :deep(.avatar-shell) {
-    width: 32px;
-    height: 32px;
-    font-size: 11px;
-    flex: 0 0 32px;
+    width: 42px;
+    height: 42px;
+    font-size: 13px;
+    flex: 0 0 42px;
   }
 
   .report-highlight-row {
@@ -2137,10 +2152,17 @@ onBeforeUnmount(() => {
   .toolbar-actions :deep(.btn),
   .toolbar-icon-button,
   .toolbar-back {
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
-    min-height: 36px;
+    width: 42px;
+    min-width: 42px;
+    max-width: 42px;
+    height: 42px;
+    min-height: 42px;
+    max-height: 42px;
+  }
+
+  .toolbar-actions :deep(.popover-root) {
+    width: 42px;
+    height: 42px;
   }
 
   .facts-grid,
@@ -2196,27 +2218,33 @@ onBeforeUnmount(() => {
   }
 
   .toolbar-actions :deep(.btn) {
-    min-height: 36px;
-    height: 36px;
-    min-width: 0;
-    padding-inline: var(--space-3);
+    width: 42px;
+    min-width: 42px;
+    max-width: 42px;
+    height: 42px;
+    min-height: 42px;
+    max-height: 42px;
+    padding-inline: 0;
     font-size: 12px;
   }
 
   .toolbar-icon-button {
-    width: 36px;
-    min-width: 36px;
+    width: 42px;
+    min-width: 42px;
+    max-width: 42px;
     padding-inline: 0;
   }
 
   .toolbar-back {
-    width: 36px;
-    min-width: 36px;
-    min-height: 36px;
-    height: 36px;
+    width: 42px;
+    min-width: 42px;
+    max-width: 42px;
+    min-height: 42px;
+    height: 42px;
+    max-height: 42px;
     padding-inline: 0;
     border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-full);
     background: var(--bg-elevated);
   }
 

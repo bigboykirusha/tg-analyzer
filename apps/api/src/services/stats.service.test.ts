@@ -229,6 +229,80 @@ test('finalizeAccumulator builds group participant and interaction analytics', (
   assert.ok((result.groupReport?.sharedVocabulary.length ?? 0) >= 0)
 })
 
+test('group momentum counts activity in both thirty-day windows', () => {
+  const acc = createChatAccumulator()
+  const asOf = new Date('2026-10-10T12:00:00.000Z')
+  aggregateMessage({ senderId: 'a', message: 'start', date: new Date('2026-08-01T12:00:00.000Z') }, acc)
+  aggregateMessage({ senderId: 'a', message: 'earlier', date: new Date('2026-08-20T12:00:00.000Z') }, acc)
+  aggregateMessage({ senderId: 'b', message: 'earlier', date: new Date('2026-08-21T12:00:00.000Z') }, acc)
+  aggregateMessage({ senderId: 'a', message: 'recent', date: new Date('2026-09-20T12:00:00.000Z') }, acc)
+  aggregateMessage({ senderId: 'c', message: 'recent', date: new Date('2026-09-25T12:00:00.000Z') }, acc)
+
+  const result = finalizeAccumulator(acc, 'group', asOf)
+
+  assert.equal(result.groupReport?.health?.activeMembersLast30Days, 2)
+  assert.equal(result.groupReport?.health?.momentum, 'stable')
+})
+
+test('group momentum is unknown without a complete comparison window', () => {
+  const acc = createChatAccumulator()
+  aggregateMessage({ senderId: 'a', message: 'hello', date: new Date('2026-10-01T12:00:00.000Z') }, acc)
+  aggregateMessage({ senderId: 'b', message: 'reply', date: new Date('2026-10-02T12:00:00.000Z') }, acc)
+
+  const result = finalizeAccumulator(acc, 'group', new Date('2026-10-10T12:00:00.000Z'))
+
+  assert.equal(result.groupReport?.health?.momentum, 'unknown')
+  assert.equal(result.groupReport?.health?.retentionRate, null)
+})
+
+test('group retention is measured only across a sufficiently long history', () => {
+  const acc = createChatAccumulator()
+  aggregateMessage({ senderId: 'a', message: 'start', date: new Date('2026-01-01T12:00:00.000Z') }, acc)
+  aggregateMessage({ senderId: 'b', message: 'join', date: new Date('2026-01-02T12:00:00.000Z') }, acc)
+  aggregateMessage({ senderId: 'a', message: 'later', date: new Date('2026-07-01T12:00:00.000Z') }, acc)
+
+  const result = finalizeAccumulator(acc, 'group', new Date('2026-07-10T12:00:00.000Z'))
+
+  assert.equal(result.groupReport?.health?.retentionRate, 50)
+})
+
+test('shared group vocabulary requires words from at least two members', () => {
+  const acc = createChatAccumulator()
+  aggregateMessage({ senderId: 'a', message: 'alpha alpha alpha shared', date: new Date('2026-10-01') }, acc)
+  aggregateMessage({ senderId: 'b', message: 'beta beta beta shared', date: new Date('2026-10-02') }, acc)
+
+  const result = finalizeAccumulator(acc, 'group', new Date('2026-10-10'))
+
+  assert.deepEqual(
+    result.groupReport?.sharedVocabulary.map((item) => item.value),
+    ['shared'],
+  )
+  assert.ok(result.groupReport?.uniqueGroupWords.some((item) => item.value === 'alpha'))
+})
+
+test('group word averages exclude messages without text', () => {
+  const acc = createChatAccumulator()
+  aggregateMessage({ senderId: 'a', message: 'alpha beta', date: new Date('2026-10-01') }, acc)
+  aggregateMessage({ senderId: 'a', media: true, date: new Date('2026-10-02') }, acc)
+  aggregateMessage({ senderId: 'b', media: true, date: new Date('2026-10-03') }, acc)
+
+  const result = finalizeAccumulator(acc, 'group', new Date('2026-10-10'))
+
+  assert.equal(result.groupReport?.participants.find((participant) => participant.id === 'a')?.avgWordsPerMessage, 2)
+  assert.equal(result.groupReport?.participants.find((participant) => participant.id === 'b')?.avgWordsPerMessage, null)
+})
+
+test('archived group activity does not mark every participant as churned', () => {
+  const acc = createChatAccumulator()
+  aggregateMessage({ senderId: 'a', message: 'start', date: new Date('2025-10-01T12:00:00.000Z') }, acc)
+  aggregateMessage({ senderId: 'b', message: 'join', date: new Date('2025-10-02T12:00:00.000Z') }, acc)
+  aggregateMessage({ senderId: 'a', message: 'end', date: new Date('2025-12-01T12:00:00.000Z') }, acc)
+
+  const result = finalizeAccumulator(acc, 'group', new Date('2026-10-10T12:00:00.000Z'))
+
+  assert.equal(result.groupReport?.health?.churnedMembers, 0)
+})
+
 test('finalizeAccumulator can be repeated without accumulating group interaction counters', () => {
   const acc = createChatAccumulator()
   const start = new Date('2026-01-01T10:00:00.000Z')

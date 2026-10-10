@@ -67,3 +67,19 @@ test('monthly trend requires six months and compares the latest three-month wind
     'fading',
   )
 })
+
+test('monthly trend excludes an incomplete current month', () => {
+  const months = [
+    { month: '2026-01', sent: 10, received: 0, total: 10 },
+    { month: '2026-02', sent: 10, received: 0, total: 10 },
+    { month: '2026-03', sent: 10, received: 0, total: 10 },
+    { month: '2026-04', sent: 20, received: 0, total: 20 },
+    { month: '2026-05', sent: 20, received: 0, total: 20 },
+    { month: '2026-06', sent: 20, received: 0, total: 20 },
+    { month: '2026-07', sent: 1, received: 0, total: 1 },
+  ]
+
+  assert.equal(computeTrend(months, '2026-07'), 'growing')
+  assert.equal(computeTrend(months.slice(1), '2026-07'), 'unknown')
+  assert.equal(computeTrend(months, '2026-08'), 'stable')
+})

@@ -10,3 +10,4 @@ apps/web/app/pages/chat/\[id\].vue
 apps/web/app/pages/dashboard.vue
 apps/web/app/pages/history.vue
 docs/TASK.md
+docs/design_claude/TG Analyzer — редизайн.html

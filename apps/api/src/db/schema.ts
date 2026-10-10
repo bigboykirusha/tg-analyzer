@@ -358,13 +358,12 @@ export const chatStats = pgTable(
       .default([])
       .notNull(),
     groupHealth: jsonb('group_health').$type<{
-      score: number
       giniCoefficient: number
       lurkerRatio: number
-      retentionRate: number
+      retentionRate: number | null
       responseCoverage: number
       consistency: number
-      momentum: 'growing' | 'stable' | 'shrinking'
+      momentum: 'growing' | 'stable' | 'shrinking' | 'unknown'
       activeMembers: number
       activeMembersLast30Days: number
       churnedMembers: number

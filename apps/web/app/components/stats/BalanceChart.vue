@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import VChart from 'vue-echarts'
+import '../../lib/registerECharts'
 import { CHART_THEME, COLORS } from '~~/utils/chart-theme'
 
 const props = defineProps<{

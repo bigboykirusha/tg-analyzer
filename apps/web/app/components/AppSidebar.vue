@@ -225,8 +225,8 @@ function closeAndLogout() {
   align-items: end;
   justify-content: center;
   gap: 3px;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   padding: 9px;
   border-radius: 50%;
   background: var(--accent);
@@ -283,8 +283,8 @@ function closeAndLogout() {
 }
 .account-trigger {
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   place-items: center;
   padding: 0;
   border: 1px solid var(--border);
@@ -292,6 +292,10 @@ function closeAndLogout() {
   background: var(--surface);
   color: var(--text-primary);
   cursor: pointer;
+}
+.account-menu {
+  width: 42px;
+  height: 42px;
 }
 .account-trigger[aria-expanded='true'] {
   border-color: var(--accent-border);
@@ -372,6 +376,11 @@ function closeAndLogout() {
   }
   .mobile-report-toolbar:not(:empty) {
     display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: clip;
     padding: 10px 16px;
     border-width: 0 0 1px;
     border-radius: 0;
@@ -380,9 +389,10 @@ function closeAndLogout() {
     display: none;
   }
   .app-navigation--report .mobile-report-toolbar:not(:empty) {
-    display: block;
-    min-height: 56px;
-    padding: 16px 20px 4px;
+    display: flex;
+    min-height: 70px;
+    align-items: center;
+    padding: 14px 20px;
     background: var(--glass-sheen), color-mix(in srgb, var(--glass) 92%, var(--bg-base));
     box-shadow: var(--glass-inset);
     backdrop-filter: var(--glass-filter);

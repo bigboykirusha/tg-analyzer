@@ -37,7 +37,7 @@ export function parseConfig(env: Record<string, string | undefined>) {
   }
 
   const raw = result.data
-  const apiPort = env.API_PORT ? Number(env.API_PORT) : raw.PORT ?? raw.API_PORT
+  const apiPort = env.API_PORT ? Number(env.API_PORT) : (raw.PORT ?? raw.API_PORT)
   const secure = raw.COOKIE_SECURE ?? raw.NODE_ENV === 'production'
   const sameSite = raw.COOKIE_SAME_SITE ?? (secure ? 'none' : 'lax')
   const origins = [...new Set(raw.CORS_ORIGIN.split(',').map((value) => value.trim()))]

@@ -277,7 +277,15 @@ onBeforeUnmount(() => {
       <div class="progress-bar-fill" :style="{ width: `${progressPercent}%` }" />
     </div>
 
-    <div v-else class="phase-progress" role="progressbar" :aria-label="t('parse.title')" :aria-valuenow="currentPhaseStep" aria-valuemin="1" aria-valuemax="4">
+    <div
+      v-else
+      class="phase-progress"
+      role="progressbar"
+      :aria-label="t('parse.title')"
+      :aria-valuenow="currentPhaseStep"
+      aria-valuemin="1"
+      aria-valuemax="4"
+    >
       <span v-for="phase in 4" :key="phase" :class="{ complete: phase <= currentPhaseStep }" />
     </div>
 

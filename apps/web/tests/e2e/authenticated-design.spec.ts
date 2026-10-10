@@ -232,6 +232,82 @@ const report = {
   groupReport: null,
 }
 
+const groupReport = {
+  ...report,
+  tgChatId: '101',
+  chatName: 'Product team',
+  chatType: 'group',
+  groupReport: {
+    participants: [
+      {
+        id: '1',
+        name: 'Alex',
+        isSelf: true,
+        role: 'anchor',
+        messageCount: 64,
+        messageShare: 53.8,
+        wordCount: 360,
+        avgWordsPerMessage: 6,
+        mediaCount: 0,
+        mediaShare: 0,
+        firstSeen: '2026-09-26T08:00:00.000Z',
+        lastSeen: '2026-10-01T20:00:00.000Z',
+        activeDays: 6,
+        consistencyScore: 80,
+        starterCount: 5,
+        starterShare: 50,
+        replyCount: 12,
+        repliesReceived: 10,
+        magnetScore: 50,
+        replyRatio: 50,
+        topWords: [],
+        topEmoji: [],
+        topicSignature: [],
+      },
+      {
+        id: '2',
+        name: 'Mila',
+        isSelf: false,
+        role: 'contributor',
+        messageCount: 55,
+        messageShare: 46.2,
+        wordCount: 240,
+        avgWordsPerMessage: 6,
+        mediaCount: 0,
+        mediaShare: 0,
+        firstSeen: '2026-09-26T08:00:00.000Z',
+        lastSeen: '2026-10-01T19:00:00.000Z',
+        activeDays: 5,
+        consistencyScore: 70,
+        starterCount: 5,
+        starterShare: 50,
+        replyCount: 10,
+        repliesReceived: 12,
+        magnetScore: 50,
+        replyRatio: 50,
+        topWords: [],
+        topEmoji: [],
+        topicSignature: [],
+      },
+    ],
+    topPairs: [],
+    health: {
+      giniCoefficient: 0.1,
+      lurkerRatio: 0,
+      retentionRate: null,
+      responseCoverage: 70,
+      consistency: 75,
+      momentum: 'unknown',
+      activeMembers: 2,
+      activeMembersLast30Days: 2,
+      churnedMembers: 0,
+      peakSimultaneity: 2,
+    },
+    sharedVocabulary: [],
+    uniqueGroupWords: [],
+  },
+}
+
 async function mockApi(page: Page) {
   await page.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url())
@@ -274,6 +350,9 @@ async function mockApi(page: Page) {
     }
     if (path.endsWith('/stats/chats/102')) {
       return route.fulfill({ json: report })
+    }
+    if (path.endsWith('/stats/chats/101')) {
+      return route.fulfill({ json: groupReport })
     }
 
     return route.fulfill({ status: 404, json: { code: 'NOT_FOUND', message: 'Not found in design fixture' } })
@@ -440,7 +519,9 @@ for (const outcome of ['completed', 'cancelled', 'failed'] as const) {
     await expect(page.getByRole('progressbar')).toBeVisible()
     await expect(row.getByRole('button')).toBeDisabled()
     phase = 'running'
-    await expect(page.locator('.progress-card')).toContainText(/2\s?500/, { timeout: 15_000 })
+    await expect(page.locator('.progress-card [role="progressbar"]')).toHaveAttribute('aria-valuenow', '4', {
+      timeout: 15_000,
+    })
     if (outcome === 'completed') {
       await page.locator('.mobile-tabbar a[href="/history"]').click()
       await expect(page.getByRole('progressbar')).toBeVisible()
@@ -498,12 +579,21 @@ for (const route of ['/dashboard', '/history', '/chat/102']) {
 
         if (route === '/chat/102') {
           await expect(page.locator('.balance-donut')).toBeVisible({ timeout: 30_000 })
+          await expect(page.locator('.balance-details')).toContainText('Медианный ответ: вы:')
+          await expect(page.locator('.balance-details')).toContainText('собеседник:')
+          await expect(page.locator('.composition-item')).toHaveCount(2)
+          if (viewport.width <= 768) {
+            const tabsBounds = await page.locator('.tabs-scroll.no-print').boundingBox()
+            const pageWidth = await page.evaluate(() => document.documentElement.clientWidth)
+            expect(tabsBounds?.x).toBe(0)
+            expect(tabsBounds?.width).toBe(pageWidth)
+          }
         }
         await expect
           .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
           .toBe(true)
 
-        const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
+        const results = await new AxeBuilder({ page }).analyze()
         expect(results.violations).toEqual([])
         await page.evaluate(() => {
           window.scrollTo(0, 0)
@@ -555,7 +645,7 @@ test('account popover and confirmation dialog expose clear desktop states', asyn
   await page.getByRole('menuitem', { name: 'Завершить сессию Telegram', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Завершить сессию Telegram' })
   await expect(dialog).toBeVisible()
-  const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
+  const results = await new AxeBuilder({ page }).analyze()
   expect(results.violations).toEqual([])
   await expect(page).toHaveScreenshot('dashboard-confirm-dialog-1280-light.png', {
     fullPage: true,
@@ -590,7 +680,10 @@ test('content dialogs share one desktop interaction pattern', async ({ page }) =
   await page.locator('.history-open').first().click()
   const historyDialog = page.getByRole('dialog')
   await expect(historyDialog).toBeVisible()
-  await expect(historyDialog.getByRole('link', { name: 'Отчет', exact: true })).toHaveAttribute('href', '/chat/101')
+  await expect(historyDialog.getByRole('link', { name: 'Открыть отчёт', exact: true })).toHaveAttribute(
+    'href',
+    '/chat/101',
+  )
   await expect(page).toHaveScreenshot('history-details-dialog-1280-light.png', {
     fullPage: true,
     animations: 'disabled',
@@ -603,7 +696,7 @@ test('content dialogs share one desktop interaction pattern', async ({ page }) =
   await page.locator('.chart-card').first().click()
   const chartDialog = page.getByRole('dialog', { name: 'Развернуть график' })
   await expect(chartDialog).toBeVisible()
-  const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
+  const results = await new AxeBuilder({ page }).analyze()
   expect(results.violations).toEqual([])
   await expect(page).toHaveScreenshot('chat-chart-dialog-390-light.png', {
     animations: 'disabled',
@@ -650,6 +743,32 @@ test('mobile report topbar stays pinned while content scrolls', async ({ page })
     animations: 'disabled',
     timeout: 15_000,
   })
+})
+
+test('group overview has one indicators card and fits mobile width', async ({ page }) => {
+  await mockApi(page)
+  await page.addInitScript(() => {
+    localStorage.setItem('tg-analyzer-theme', 'light')
+    localStorage.setItem('tg-analyzer-locale', 'ru')
+  })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/chat/101', { waitUntil: 'domcontentloaded', timeout: 30_000 })
+
+  await expect(page.getByRole('heading', { name: 'Показатели группы' })).toHaveCount(1)
+  await expect(page.locator('.group-kpi-grid .metric')).toHaveCount(4)
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  await expect(page).toHaveScreenshot('chat-101-overview-390-light.png', {
+    fullPage: true,
+    animations: 'disabled',
+  })
+
+  const contentTab = page.getByRole('tab', { name: 'Контент' })
+  await contentTab.click()
+  await expect(contentTab).toHaveAttribute('aria-selected', 'true')
+
+  const dynamicsTab = page.getByRole('tab', { name: 'Динамика' })
+  await dynamicsTab.click()
+  await expect(page.locator('.chart.chart-lg')).toHaveCount(2)
 })
 
 test('avatars are fetched only when a dialog explicitly declares one', async ({ page }) => {

@@ -70,11 +70,7 @@ function levelClass(level: number) {
 <template>
   <div v-if="heatmapWeeks.length" class="heatmap-scroll">
     <div v-if="compactHeatmap" class="heatmap-grid heatmap-grid-compact">
-      <div
-        v-for="day in compactDays"
-        :key="day.date ?? ''"
-        class="heatmap-compact-day"
-      >
+      <div v-for="day in compactDays" :key="day.date ?? ''" class="heatmap-compact-day">
         <div
           class="heatmap-day"
           :class="levelClass(day.level)"

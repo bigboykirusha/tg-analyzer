@@ -151,13 +151,12 @@ function normalizeGroupReport(row: typeof schema.chatStats.$inferSelect): GroupR
     topPairs,
     health: health
       ? {
-          score: health.score ?? 0,
           giniCoefficient: health.giniCoefficient ?? 0,
           lurkerRatio: health.lurkerRatio ?? 0,
-          retentionRate: health.retentionRate ?? 0,
+          retentionRate: health.retentionRate ?? null,
           responseCoverage: health.responseCoverage ?? 0,
           consistency: health.consistency ?? 0,
-          momentum: health.momentum ?? 'stable',
+          momentum: health.momentum ?? 'unknown',
           activeMembers: health.activeMembers ?? participants.length,
           activeMembersLast30Days: health.activeMembersLast30Days ?? 0,
           churnedMembers: health.churnedMembers ?? 0,
