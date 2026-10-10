@@ -85,6 +85,7 @@ function submit() {
             >
               <ChevronDown class="chevron" :size="14" aria-hidden="true" />
               <CountryFlag class="dial-flag" :code="phoneInput.country.value.code" />
+              <span class="dial-number">{{ phoneInput.country.value.dialCode }}</span>
             </button>
           </template>
 
@@ -162,7 +163,7 @@ function submit() {
 
 .phone-row {
   display: grid;
-  grid-template-columns: 80px minmax(0, 1fr);
+  grid-template-columns: 112px minmax(0, 1fr);
   align-items: center;
   gap: 0;
   min-height: 48px;
@@ -241,6 +242,10 @@ function submit() {
   flex: 0 0 auto;
 }
 
+.dial-number {
+  font-variant-numeric: tabular-nums;
+}
+
 .country-options {
   display: grid;
   width: 100%;
@@ -293,7 +298,7 @@ function submit() {
 
 @media (max-width: 420px) {
   .phone-row {
-    grid-template-columns: 76px minmax(0, 1fr);
+    grid-template-columns: 104px minmax(0, 1fr);
   }
 }
 
