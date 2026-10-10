@@ -6,9 +6,7 @@ import LocaleSwitch from '../components/ui/LocaleSwitch.vue'
 import ThemeToggle from '../components/ui/ThemeToggle.vue'
 import guestMiddleware from '../middleware/guest'
 
-definePageMeta({
-  middleware: [guestMiddleware],
-})
+definePageMeta({ middleware: [guestMiddleware] })
 
 const auth = useAuthStore()
 const { sendCode, verifyCode, verifyPassword } = useAuth()
@@ -20,14 +18,9 @@ const code = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
-const isMounted = ref(false)
 const codeAttemptsLeft = ref(3)
 const resendSeconds = ref(0)
 let resendTimer: number | null = null
-
-onMounted(() => {
-  isMounted.value = true
-})
 
 onBeforeUnmount(() => {
   if (resendTimer) window.clearInterval(resendTimer)
@@ -58,15 +51,7 @@ const seoKeywords = computed(() =>
     ? 'telegram analytics, анализ telegram чатов, статистика telegram, tg analyzer, аналитика переписок'
     : 'telegram analytics, telegram chat analysis, telegram stats, tg analyzer, chat insights',
 )
-
-const stepIndex = computed(
-  () =>
-    ({
-      phone: 0,
-      code: 1,
-      password: 2,
-    })[step.value],
-)
+const stepIndex = computed(() => ({ phone: 0, code: 1, password: 2 })[step.value])
 
 useSeoMeta({
   title: () => seoTitle.value,
@@ -76,15 +61,7 @@ useSeoMeta({
   twitterTitle: () => seoTitle.value,
   twitterDescription: () => seoDescription.value,
 })
-
-useHead({
-  meta: [
-    {
-      name: 'keywords',
-      content: () => seoKeywords.value,
-    },
-  ],
-})
+useHead({ meta: [{ name: 'keywords', content: () => seoKeywords.value }] })
 
 async function handlePhone() {
   loading.value = true
@@ -105,17 +82,11 @@ async function handleCode() {
   loading.value = true
   error.value = ''
   try {
-    const result = await verifyCode({
-      phone: phone.value,
-      code: code.value,
-      phoneCodeHash: auth.phoneCodeHash,
-    })
-
+    const result = await verifyCode({ phone: phone.value, code: code.value, phoneCodeHash: auth.phoneCodeHash })
     if ('isPasswordRequired' in result && result.isPasswordRequired) {
       step.value = 'password'
       return
     }
-
     await navigateTo('/dashboard', { replace: true })
   } catch {
     codeAttemptsLeft.value = Math.max(0, codeAttemptsLeft.value - 1)
@@ -165,87 +136,91 @@ async function handlePassword() {
 
 <template>
   <main class="login-page">
-    <template v-if="isMounted">
-      <div class="login-noise" aria-hidden="true" />
-      <div class="login-orbit login-orbit-right" aria-hidden="true" />
-    </template>
-
     <section class="login-shell animate-scale-in">
       <header class="login-header">
-        <div class="story-brand">
+        <div class="brand">
           <span class="brand-symbol" aria-hidden="true"><i /><i /><i /></span>
           <span>{{ t('login.title') }}</span>
         </div>
-        <div class="login-controls">
-          <LocaleSwitch />
-          <ThemeToggle />
-        </div>
+        <div class="login-controls"><LocaleSwitch /><ThemeToggle /></div>
       </header>
 
       <aside class="login-story">
         <div class="story-copy">
-          <h2 class="story-title">{{ t('login.heroTitle') }}</h2>
+          <span class="story-kicker">{{ t('login.brandLabel') }}</span>
+          <h1>{{ t('login.heroTitle') }}</h1>
           <p>{{ t('login.heroText') }}</p>
+        </div>
+
+        <div class="story-insights" aria-hidden="true">
+          <div class="insight-card">
+            <span class="insight-icon insight-icon-rhythm"><i /><i /><i /><i /></span>
+            <span>{{ t('login.featureOne') }}</span>
+          </div>
+          <div class="insight-card">
+            <span class="insight-icon insight-icon-balance"><i /><i /></span>
+            <span>{{ t('login.featureTwo') }}</span>
+          </div>
+          <div class="insight-card">
+            <span class="insight-icon insight-icon-private"><i /></span>
+            <span>{{ t('login.featureThree') }}</span>
+          </div>
         </div>
 
         <p class="story-footer">{{ t('login.heroFooter') }}</p>
       </aside>
 
       <section class="login-panel">
-        <h1 class="mobile-hero">{{ t('login.mobileHeroTitle') }}</h1>
-        <div class="login-card">
-          <div class="login-progress" aria-hidden="true">
-            <div
-              v-for="index in 3"
-              :key="index"
-              class="progress-step"
-              :class="{ 'progress-step-active': stepIndex >= index - 1 }"
-            />
+        <div class="login-content">
+          <h1 class="mobile-hero">{{ t('login.mobileHeroTitle') }}</h1>
+
+          <div class="login-card">
+            <div class="login-progress" aria-hidden="true">
+              <span v-for="index in 3" :key="index" :class="{ active: stepIndex >= index - 1 }" />
+            </div>
+
+            <div class="login-copy">
+              <h2>
+                <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
+                <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
+                <template v-else>{{ t('login.passwordTitle') }}</template>
+              </h2>
+              <p>
+                <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
+                <template v-else-if="step === 'code'">{{ t('login.codeDescription') }}</template>
+                <template v-else>{{ t('login.passwordDescription') }}</template>
+              </p>
+            </div>
+
+            <Transition name="auth-step" mode="out-in">
+              <PhoneStep
+                v-if="step === 'phone'"
+                key="phone"
+                v-model:phone="phone"
+                :loading="loading"
+                @submit="handlePhone"
+              />
+              <CodeStep
+                v-else-if="step === 'code'"
+                key="code"
+                v-model:code="code"
+                :loading="loading"
+                :resend-seconds="resendSeconds"
+                @submit="handleCode"
+                @resend="handleResendCode"
+                @change-number="handleChangeNumber"
+              />
+              <PasswordStep
+                v-else
+                key="password"
+                v-model:password="password"
+                :loading="loading"
+                @submit="handlePassword"
+              />
+            </Transition>
+
+            <p v-if="error" class="login-error" role="alert" aria-live="assertive">{{ error }}</p>
           </div>
-
-          <div class="login-copy">
-            <h1 class="t-h2">
-              <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
-              <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
-              <template v-else>{{ t('login.passwordTitle') }}</template>
-            </h1>
-            <p class="t-small">
-              <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
-              <template v-else-if="step === 'code'">{{ t('login.codeDescription') }}</template>
-              <template v-else>{{ t('login.passwordDescription') }}</template>
-            </p>
-          </div>
-
-          <Transition name="auth-step" mode="out-in">
-            <PhoneStep
-              v-if="step === 'phone'"
-              key="phone"
-              v-model:phone="phone"
-              :loading="loading"
-              @submit="handlePhone"
-            />
-            <CodeStep
-              v-else-if="step === 'code'"
-              key="code"
-              v-model:code="code"
-              :loading="loading"
-              :resend-seconds="resendSeconds"
-              @submit="handleCode"
-              @resend="handleResendCode"
-              @change-number="handleChangeNumber"
-            />
-            <PasswordStep
-              v-else
-              key="password"
-              v-model:password="password"
-              :loading="loading"
-              @submit="handlePassword"
-            />
-          </Transition>
-
-          <p v-if="error" class="login-error t-small" role="alert" aria-live="assertive">
-            {{ error }}
-          </p>
         </div>
       </section>
     </section>
@@ -254,365 +229,67 @@ async function handlePassword() {
 
 <style scoped>
 .login-page {
-  position: relative;
   min-height: 100vh;
   min-height: 100dvh;
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  padding: var(--space-6);
-  background: radial-gradient(circle at top, var(--accent-subtle), transparent 18%), var(--bg-base);
-  overflow: hidden;
-}
-
-.login-orbit {
-  position: absolute;
-  top: 50%;
-  width: min(28vw, 360px);
-  aspect-ratio: 1;
-  border-radius: 999px;
-  opacity: 0.18;
-  filter: blur(14px);
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.login-orbit-left {
-  left: -6vw;
-  background:
-    radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 60%),
-    radial-gradient(circle at 65% 65%, color-mix(in srgb, var(--accent-hover) 26%, transparent), transparent 56%);
-}
-
-.login-orbit-right {
-  right: -6vw;
-  background:
-    radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--accent-border) 34%, transparent), transparent 58%),
-    radial-gradient(circle at 40% 70%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 58%);
-}
-
-.login-shell {
-  position: relative;
-  z-index: 1;
-  width: min(100%, 460px);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: center;
-  gap: 0;
-}
-
-.login-noise {
-  position: absolute;
-  inset: 0;
-  opacity: 0.1;
-  background-image:
-    linear-gradient(var(--grid-line-soft) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line-soft) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: radial-gradient(circle at center, black 45%, transparent 85%);
-}
-
-.login-stat-card {
-  border: 1px solid var(--border-subtle);
-  border-radius: calc(var(--radius-lg) + 2px);
-  background: color-mix(in srgb, var(--panel-translucent) 94%, transparent);
-  box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(10px);
-}
-
-.login-stat-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-4);
-}
-
-.login-stat-card span {
-  color: var(--text-secondary);
-}
-
-.login-stat-value {
-  font-family: var(--font-mono);
-  font-size: clamp(18px, 2vw, 24px);
+  background: var(--bg);
   color: var(--text-primary);
 }
 
-.login-panel {
+.login-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr);
+  grid-template-rows: 76px minmax(0, 1fr);
+}
+
+.login-header {
   position: relative;
+  z-index: 2;
+  grid-column: 1 / -1;
   display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  width: min(100%, 420px);
-  margin-inline: auto;
-}
-
-.mobile-hero {
-  display: none;
-}
-
-.login-brand {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-}
-
-.brand-mark {
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface);
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 18px;
-  box-shadow: var(--shadow-sm);
-}
-
-.brand-copy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  flex: 1;
-}
-
-.brand-topline {
-  display: flex;
-  align-items: flex-start;
   justify-content: space-between;
+  gap: var(--space-6);
+  padding: 0 clamp(var(--space-8), 5vw, 72px);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: var(--glass-filter);
+}
+
+.brand,
+.login-controls {
+  display: flex;
+  align-items: center;
+}
+
+.brand {
   gap: var(--space-3);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
 .login-controls {
-  display: inline-flex;
-  align-items: center;
   gap: var(--space-2);
-}
-
-.login-lead {
-  color: var(--text-secondary);
-  max-width: 420px;
-}
-
-.login-progress {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.progress-step {
-  height: 4px;
-  flex: 1;
-  border-radius: var(--radius-full);
-  background: var(--border-subtle);
-  transition: background var(--transition-fast);
-}
-
-.progress-step-active {
-  background: var(--accent);
-}
-
-.login-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  width: 100%;
-  max-width: 400px;
-  padding: 32px;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-xl);
-  background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(10px);
-}
-
-.login-copy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.login-copy p {
-  color: var(--text-secondary);
-}
-
-.login-error {
-  border: none;
-  padding: 0;
-  background: transparent;
-  color: var(--danger);
-}
-
-.login-trust {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  color: var(--text-tertiary);
-  text-align: center;
-}
-
-.trust-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  color: var(--accent);
-  flex: 0 0 auto;
-}
-
-.trust-icon svg {
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.login-trust p {
-  max-width: 420px;
-}
-
-.auth-step-enter-active,
-.auth-step-leave-active {
-  transition:
-    opacity var(--transition-normal),
-    transform var(--transition-normal);
-}
-
-.auth-step-enter-from {
-  opacity: 0;
-  transform: translateY(12px);
-}
-
-.auth-step-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-@media (max-width: 1180px) {
-  .login-shell {
-    max-width: 560px;
-  }
-}
-
-@media (max-width: 640px) {
-  .login-page {
-    padding: var(--space-4);
-  }
-
-  .login-noise,
-  .login-orbit {
-    display: none;
-  }
-
-  .brand-topline {
-    align-items: center;
-  }
-
-  .login-lead {
-    display: none;
-  }
-
-  .login-card {
-    max-width: none;
-    padding: var(--space-5);
-  }
-
-  .brand-mark {
-    min-width: 48px;
-    width: 48px;
-    height: 48px;
-  }
-
-  .login-panel {
-    gap: var(--space-4);
-  }
-}
-
-/* Signal Studio composition */
-.login-page {
-  align-items: center;
-  padding: clamp(16px, 3vw, 48px);
-  background:
-    radial-gradient(circle at 82% 8%, color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 26rem),
-    radial-gradient(circle at 8% 92%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 30rem),
-    var(--bg-base);
-}
-
-.login-shell {
-  width: min(100%, 1180px);
-  min-height: min(760px, calc(100dvh - 64px));
-  grid-template-columns: minmax(0, 1.12fr) minmax(390px, 0.88fr);
-  align-items: stretch;
-  border: 1px solid var(--border-default);
-  border-radius: 32px;
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-}
-
-.login-story {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: var(--space-10);
-  min-width: 0;
-  padding: clamp(32px, 5vw, 72px);
-  background: var(--bg);
-  color: var(--text-primary);
-  overflow: hidden;
-}
-
-.login-story::before {
-  content: '';
-  position: absolute;
-  right: -120px;
-  bottom: -160px;
-  width: 420px;
-  height: 420px;
-  border: 1px solid var(--glass-border);
-  border-radius: 50%;
-  box-shadow: var(--shadow);
-}
-
-.story-brand,
-.mobile-brand {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
 }
 
 .brand-symbol {
   display: grid;
-  grid-template-columns: repeat(3, 5px);
+  grid-template-columns: repeat(3, 4px);
   align-items: end;
   gap: 3px;
   width: 36px;
   height: 36px;
   padding: 9px;
-  border-radius: 12px;
+  border-radius: var(--radius-full);
   background: var(--accent);
   color: var(--on-accent);
 }
 
 .brand-symbol i {
-  display: block;
-  width: 5px;
-  border-radius: 999px;
+  width: 4px;
+  border-radius: var(--radius-full);
   background: currentColor;
 }
 
@@ -624,479 +301,328 @@ async function handlePassword() {
 }
 .brand-symbol i:nth-child(3) {
   height: 12px;
-  background: var(--accent-2);
+}
+
+.login-story {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-12);
+  padding: clamp(var(--space-10), 7vw, 96px);
+  overflow: hidden;
+  background: radial-gradient(circle at 12% 15%, var(--accent-subtle), transparent 30rem), var(--bg);
+}
+
+.login-story::after {
+  content: '';
+  position: absolute;
+  right: -160px;
+  bottom: -220px;
+  width: 480px;
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  box-shadow: 0 0 0 64px color-mix(in srgb, var(--accent-subtle) 45%, transparent);
+  pointer-events: none;
+}
+
+.story-copy,
+.story-insights,
+.story-footer {
+  position: relative;
+  z-index: 1;
 }
 
 .story-copy {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--space-5);
-  max-width: 560px;
+  max-width: 680px;
 }
 
 .story-kicker {
-  color: var(--text-muted);
+  color: var(--accent);
   font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.13em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.story-title {
-  max-width: 620px;
+.story-copy h1 {
+  max-width: 680px;
   font-family: var(--font-display);
-  font-size: clamp(42px, 5.4vw, 74px);
+  font-size: clamp(48px, 5.7vw, 76px);
   font-weight: 720;
   line-height: 0.98;
   letter-spacing: -0.06em;
 }
 
 .story-copy p {
-  max-width: 480px;
-  color: var(--text-muted);
-  font-size: clamp(16px, 1.7vw, 20px);
+  max-width: 560px;
+  color: var(--text-secondary);
+  font-size: clamp(17px, 1.6vw, 21px);
   line-height: 1.55;
 }
 
-.story-footer {
-  position: relative;
-  z-index: 1;
-  margin-top: auto;
-  color: var(--text-muted);
+.story-insights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  width: min(100%, 640px);
+}
+
+.insight-card {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 76%, transparent);
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
-.story-visual {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: end;
-  gap: var(--space-8);
-  min-height: 150px;
-  padding: var(--space-6);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  background: var(--glass);
-}
-
-.story-metric {
+.insight-icon {
   display: flex;
-  flex-direction: column;
+  align-items: end;
   gap: 4px;
+  width: 42px;
+  height: 24px;
 }
 
-.story-metric strong {
-  font-size: clamp(34px, 4vw, 52px);
-  line-height: 1;
-  letter-spacing: -0.05em;
-}
-
-.story-metric span {
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.signal-bars {
-  display: flex;
-  align-items: end;
-  gap: clamp(4px, 0.7vw, 9px);
-  height: 96px;
-}
-
-.signal-bars i {
-  flex: 1;
-  min-width: 4px;
-  border-radius: 999px 999px 3px 3px;
+.insight-icon i {
+  display: block;
+  border-radius: var(--radius-full);
   background: var(--accent);
 }
 
-.signal-bars i:nth-child(3n) {
+.insight-icon-rhythm i {
+  width: 5px;
+}
+.insight-icon-rhythm i:nth-child(1) {
+  height: 9px;
+}
+.insight-icon-rhythm i:nth-child(2) {
+  height: 19px;
+}
+.insight-icon-rhythm i:nth-child(3) {
+  height: 13px;
   background: var(--accent-2);
 }
-
-.story-features {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  gap: var(--space-6);
-  flex-wrap: wrap;
-  color: var(--text-muted);
-  font-size: 12px;
-  list-style: none;
+.insight-icon-rhythm i:nth-child(4) {
+  height: 24px;
 }
-
-.story-features li {
-  display: flex;
+.insight-icon-balance {
   align-items: center;
-  gap: var(--space-2);
+}
+.insight-icon-balance i {
+  width: 18px;
+  height: 18px;
+}
+.insight-icon-balance i:last-child {
+  background: var(--accent-2);
+}
+.insight-icon-private {
+  align-items: center;
+}
+.insight-icon-private i {
+  width: 32px;
+  height: 8px;
+  background: var(--accent-2);
 }
 
-.story-features li::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent-2);
+.story-footer {
+  color: var(--text-tertiary);
+  font-size: 13px;
 }
 
 .login-panel {
-  justify-content: center;
-  width: 100%;
-  padding: clamp(28px, 5vw, 64px);
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  padding: clamp(var(--space-8), 7vw, 96px);
+  border-left: 1px solid var(--border);
+  background: radial-gradient(circle at 100% 0%, var(--accent-subtle), transparent 26rem), var(--surface);
 }
 
-.login-controls {
-  position: absolute;
-  top: clamp(24px, 3vw, 40px);
-  right: clamp(24px, 3vw, 40px);
+.login-content {
+  width: min(100%, 460px);
 }
-
-.mobile-brand {
+.mobile-hero {
   display: none;
-  color: var(--text-primary);
 }
 
 .login-card {
-  max-width: none;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-.login-copy {
-  gap: var(--space-3);
-}
-
-.login-copy .t-h2 {
-  max-width: 380px;
-  font-size: clamp(30px, 3vw, 44px);
-  line-height: 1.05;
-  letter-spacing: -0.045em;
-}
-
-.login-step-line {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-}
-
-.step-count {
-  color: var(--text-tertiary);
-  font-family: var(--font-mono);
-  font-size: 11px;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: clamp(var(--space-6), 4vw, var(--space-10));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--shadow);
 }
 
 .login-progress {
-  order: 0;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
 }
 
-.progress-step {
-  height: 3px;
+.login-progress span {
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  transition: background var(--transition-normal);
 }
 
-.login-trust {
-  align-items: flex-start;
-  justify-content: flex-start;
-  text-align: left;
-}
-
-.login-trust p {
-  max-width: none;
-}
-
-@media (max-width: 900px) {
-  .login-page {
-    align-items: stretch;
-    padding: 0;
-    overflow: auto;
-  }
-
-  .login-shell {
-    min-height: 100dvh;
-    grid-template-columns: 1fr;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .login-story {
-    display: none;
-  }
-
-  .login-panel {
-    min-height: 100dvh;
-    justify-content: flex-start;
-    padding: var(--space-5) var(--space-6) var(--space-10);
-  }
-
-  .mobile-hero {
-    display: block;
-    margin-bottom: 30px;
-    color: var(--text-primary);
-    font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: 720;
-    line-height: 1.14;
-    letter-spacing: -0.045em;
-  }
-
-  .mobile-brand {
-    display: flex;
-    margin-bottom: var(--space-6);
-  }
-
-  .mobile-brand .brand-symbol {
-    background: var(--accent);
-  }
-}
-
-@media (max-width: 480px) {
-  .login-panel {
-    padding-inline: var(--space-6);
-  }
-
-  .login-controls {
-    top: var(--space-5);
-    right: var(--space-5);
-  }
-
-  .login-trust {
-    margin-top: var(--space-2);
-  }
-}
-
-/* Reference composition: an editorial left panel and a focused auth form. */
-@media (min-width: 901px) {
-  .login-page {
-    padding: 0;
-    background: var(--bg);
-  }
-  .login-shell {
-    width: 100%;
-    max-width: none;
-    min-height: 100dvh;
-    grid-template-columns: minmax(0, 1fr) minmax(520px, 1fr);
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-  .login-story {
-    padding: clamp(48px, 7vw, 88px);
-    background: var(--bg);
-    color: var(--text-primary);
-  }
-  .login-story::before {
-    display: none;
-  }
-  .login-panel {
-    position: relative;
-    padding: clamp(48px, 9vw, 12vw);
-    background: radial-gradient(70% 380px at 85% 0, var(--glow), transparent), var(--bg);
-  }
-  .story-kicker,
-  .story-copy p,
-  .story-metric span,
-  .story-features {
-    color: var(--text-muted);
-  }
-  .story-title {
-    font-size: clamp(48px, 5vw, 76px);
-    color: var(--text-primary);
-  }
-  .story-visual {
-    border-color: var(--border);
-    background: var(--surface);
-    box-shadow: var(--shadow);
-  }
-  .signal-bars i {
-    background: var(--accent);
-  }
-  .signal-bars i:nth-child(3n) {
-    background: var(--accent-2);
-  }
-}
-
-.brand-symbol {
-  border-radius: 50%;
+.login-progress span.active {
   background: var(--accent);
-  color: var(--on-accent);
-}
-.brand-symbol i:nth-child(3) {
-  background: currentColor;
-}
-.login-card {
-  color: var(--text-primary);
-}
-.story-features li::before {
-  background: var(--accent-2);
-}
-@media (max-width: 900px) {
-  .mobile-brand .brand-symbol {
-    background: var(--accent);
-  }
 }
 
-@media (min-width: 901px) {
-  .login-story {
-    justify-content: flex-start;
-  }
-
-  .story-copy {
-    margin-top: auto;
-  }
-
-  .story-visual {
-    display: block;
-    min-height: 0;
-    margin-top: var(--space-8);
-    padding: var(--space-6) 0 0;
-    border: 0;
-    border-top: 1px solid var(--border);
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .signal-bars,
-  .story-features {
-    display: none;
-  }
-
-  .story-metric {
-    flex-direction: row;
-    align-items: baseline;
-    gap: var(--space-2);
-  }
-
-  .story-metric strong {
-    font-size: 24px;
-  }
+.login-copy {
+  display: grid;
+  gap: var(--space-3);
 }
 
-@media (max-width: 900px) {
-  .login-panel {
-    justify-content: flex-start;
-    padding: var(--space-5) var(--space-6) var(--space-10);
-  }
-
-  .mobile-brand {
-    position: absolute;
-    top: var(--space-5);
-    left: var(--space-5);
-    margin: 0;
-  }
-
-  .login-controls {
-    display: none;
-  }
+.login-copy h2 {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3vw, 40px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
 }
 
-/* Unified shell: one top rail, aligned columns and stable responsive rhythm. */
-.login-shell {
-  grid-template-rows: 72px minmax(0, 1fr);
+.login-copy p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
 }
 
-.login-header {
-  position: relative;
-  z-index: 3;
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 72px;
-  padding: 0 clamp(var(--space-5), 3vw, var(--space-8));
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
-  backdrop-filter: var(--glass-filter);
+.login-error {
+  color: var(--danger);
+  font-size: 13px;
 }
 
-.login-header .login-controls {
-  position: static;
-  margin-left: auto;
+.auth-step-enter-active,
+.auth-step-leave-active {
+  transition:
+    opacity var(--transition-normal),
+    transform var(--transition-normal);
+}
+.auth-step-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.auth-step-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
-@media (min-width: 901px) {
-  .login-story,
-  .login-panel {
-    min-height: 0;
-  }
-
-  .login-story {
-    justify-content: center;
-    padding-block: clamp(var(--space-10), 6vh, var(--space-16));
-  }
-
-  .story-copy {
-    flex: 0 1 auto;
-    margin-top: 0;
-  }
-
-  .story-visual {
-    margin-top: var(--space-10);
-  }
-
-  .login-panel {
-    padding: clamp(var(--space-10), 7vw, 88px);
-  }
-}
-
-@media (max-width: 900px) {
+@media (max-width: 1040px) {
   .login-shell {
-    grid-template-rows: 64px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 0.9fr);
+  }
+  .story-insights {
+    grid-template-columns: 1fr;
+    width: min(100%, 360px);
+  }
+  .insight-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 860px) {
+  .login-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: 72px minmax(0, 1fr);
   }
 
   .login-header {
-    position: sticky;
-    top: 0;
-    min-height: 64px;
-    padding: var(--space-5) var(--space-6) 0;
-    border-bottom: 0;
-    background: transparent;
-    backdrop-filter: none;
+    padding: 0 var(--space-6);
+  }
+  .login-story {
+    display: none;
   }
 
   .login-panel {
-    min-height: calc(100dvh - 64px);
-    padding: var(--space-5) var(--space-6) var(--space-10);
+    place-items: start center;
+    padding: clamp(var(--space-8), 8vw, var(--space-16)) var(--space-6) var(--space-12);
+    border-left: 0;
+    background: radial-gradient(circle at 100% 0%, var(--accent-subtle), transparent 24rem), var(--bg);
   }
 
-  .login-header .brand-symbol {
-    width: 28px;
-    height: 28px;
-    padding: 7px;
-    grid-template-columns: repeat(3, 4px);
-    gap: 2px;
+  .login-content {
+    width: min(100%, 520px);
   }
-
-  .login-header .brand-symbol i {
-    width: 4px;
+  .mobile-hero {
+    display: block;
+    margin-bottom: var(--space-8);
+    font-family: var(--font-display);
+    font-size: clamp(32px, 8vw, 44px);
+    font-weight: 720;
+    line-height: 1.06;
+    letter-spacing: -0.05em;
   }
+  .login-card {
+    padding: var(--space-8);
+  }
+}
 
-  .story-brand {
+@media (max-width: 520px) {
+  .login-shell {
+    grid-template-rows: 64px minmax(0, 1fr);
+  }
+  .login-header {
+    padding: 0 var(--space-5);
+    background: transparent;
+    backdrop-filter: none;
+  }
+  .brand {
     gap: 10px;
     font-size: 16px;
   }
-
+  .brand-symbol {
+    width: 32px;
+    height: 32px;
+    padding: 7px;
+  }
+  .login-controls {
+    gap: var(--space-1);
+  }
+  .login-panel {
+    padding: var(--space-8) var(--space-5) var(--space-10);
+  }
+  .mobile-hero {
+    margin-bottom: var(--space-8);
+    font-size: clamp(30px, 8.4vw, 38px);
+  }
   .login-card {
     gap: var(--space-6);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
-
-  .login-copy .t-h2 {
-    font-size: 28px;
+  .login-copy h2 {
+    font-size: 30px;
   }
+}
 
-  .login-copy .t-small {
-    font-size: 15px;
-    line-height: 1.4;
+@media (max-width: 380px) {
+  .brand > span:last-child {
+    display: none;
+  }
+  .login-panel {
+    padding-inline: var(--space-4);
+  }
+  .mobile-hero {
+    font-size: 29px;
   }
 }
 </style>
