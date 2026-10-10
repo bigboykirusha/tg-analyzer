@@ -27,7 +27,7 @@ const isScanningMessage = computed(() => /^Scanning\s+[\d,\s]+\s+messages$/i.tes
 const phaseInfo = computed(() => {
   if (props.status === 'pending') {
     return {
-      message: t('parse.waiting'),
+      message: t('parse.queued'),
       currentStep: 1,
       totalSteps: 4,
     }
@@ -36,6 +36,10 @@ const phaseInfo = computed(() => {
   const message = normalizedMessage.value
   if (!message) {
     return null
+  }
+
+  if (/flood|rate.?limit|too many requests|wait\s+\d+\s*(?:s|sec|seconds)/i.test(message)) {
+    return { message: t('parse.telegramPause'), currentStep: 4, totalSteps: 4 }
   }
 
   if (/^Connecting to Telegram$/i.test(message)) {

@@ -852,6 +852,9 @@ onBeforeUnmount(() => {
             />
             <MetricCard :label="t('chat.peakHour')" :value="peakHour" :sub="kpiPeakSummary" />
           </div>
+          <div v-if="!isGroupChat && totalMessages < 20" class="info-banner" role="status">
+            <strong>{{ t('chat.lowData') }}</strong>
+          </div>
         </header>
 
         <div v-if="!isGroupChat" class="tabs-scroll no-print">

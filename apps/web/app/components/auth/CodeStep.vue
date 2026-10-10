@@ -3,12 +3,16 @@ import type { ComponentPublicInstance } from 'vue'
 import Button from '../ui/Button.vue'
 
 const code = defineModel<string>('code', { required: true })
-defineProps<{ loading: boolean }>()
-const emit = defineEmits<{ submit: [] }>()
+defineProps<{ loading: boolean; resendSeconds: number }>()
+const emit = defineEmits<{ submit: []; resend: []; changeNumber: [] }>()
 
 const { t } = useI18n()
 const digits = ref(['', '', '', '', ''])
 const inputs = ref<HTMLInputElement[]>([])
+
+function formatCountdown(seconds: number) {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+}
 
 watch(
   code,
@@ -118,6 +122,14 @@ function submit() {
       </div>
       <span class="t-small">{{ t('login.codeHelp') }}</span>
     </label>
+    <div class="code-actions t-small">
+      <button type="button" class="text-action" :disabled="resendSeconds > 0 || loading" @click="emit('resend')">
+        {{ resendSeconds > 0 ? t('login.resendIn', { time: formatCountdown(resendSeconds) }) : t('login.resend') }}
+      </button>
+      <button type="button" class="text-action text-action-primary" :disabled="loading" @click="emit('changeNumber')">
+        {{ t('login.changeNumber') }}
+      </button>
+    </div>
     <Button variant="primary" size="lg" :loading="loading" :disabled="code.length !== 5" block>
       {{ loading ? t('login.checkingCode') : t('login.confirmCode') }}
     </Button>
@@ -135,6 +147,30 @@ function submit() {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.code-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.text-action {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.text-action:disabled {
+  color: var(--text-tertiary);
+  cursor: default;
+}
+
+.text-action-primary:not(:disabled) {
+  color: var(--accent);
 }
 
 .otp-row {

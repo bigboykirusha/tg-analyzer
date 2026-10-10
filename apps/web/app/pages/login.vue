@@ -21,10 +21,29 @@ const password = ref('')
 const loading = ref(false)
 const error = ref('')
 const isMounted = ref(false)
+const codeAttemptsLeft = ref(3)
+const resendSeconds = ref(0)
+let resendTimer: number | null = null
 
 onMounted(() => {
   isMounted.value = true
 })
+
+onBeforeUnmount(() => {
+  if (resendTimer) window.clearInterval(resendTimer)
+})
+
+function startResendTimer() {
+  resendSeconds.value = 42
+  if (resendTimer) window.clearInterval(resendTimer)
+  resendTimer = window.setInterval(() => {
+    resendSeconds.value = Math.max(0, resendSeconds.value - 1)
+    if (!resendSeconds.value && resendTimer) {
+      window.clearInterval(resendTimer)
+      resendTimer = null
+    }
+  }, 1000)
+}
 
 const seoTitle = computed(() =>
   locale.value === 'ru' ? 'TG Analyzer - вход в Telegram-аналитику' : 'TG Analyzer - Telegram analytics login',
@@ -72,6 +91,8 @@ async function handlePhone() {
   error.value = ''
   try {
     await sendCode(phone.value)
+    codeAttemptsLeft.value = 3
+    startResendTimer()
     step.value = 'code'
   } catch {
     error.value = t('login.sendCodeError')
@@ -97,10 +118,35 @@ async function handleCode() {
 
     await navigateTo('/dashboard', { replace: true })
   } catch {
-    error.value = t('login.invalidCodeError')
+    codeAttemptsLeft.value = Math.max(0, codeAttemptsLeft.value - 1)
+    error.value = t('login.invalidCodeError', { count: codeAttemptsLeft.value })
   } finally {
     loading.value = false
   }
+}
+
+async function handleResendCode() {
+  if (loading.value || resendSeconds.value > 0) return
+  loading.value = true
+  error.value = ''
+  try {
+    await sendCode(phone.value)
+    codeAttemptsLeft.value = 3
+    startResendTimer()
+  } catch {
+    error.value = t('login.sendCodeError')
+  } finally {
+    loading.value = false
+  }
+}
+
+function handleChangeNumber() {
+  step.value = 'phone'
+  code.value = ''
+  error.value = ''
+  if (resendTimer) window.clearInterval(resendTimer)
+  resendTimer = null
+  resendSeconds.value = 0
 }
 
 async function handlePassword() {
@@ -183,7 +229,10 @@ async function handlePassword() {
               key="code"
               v-model:code="code"
               :loading="loading"
+              :resend-seconds="resendSeconds"
               @submit="handleCode"
+              @resend="handleResendCode"
+              @change-number="handleChangeNumber"
             />
             <PasswordStep
               v-else

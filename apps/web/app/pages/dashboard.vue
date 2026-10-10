@@ -25,6 +25,7 @@ definePageMeta({
 })
 
 const auth = useAuthStore()
+const { logout } = useAuth()
 const { deleteChat, fetchChats, fetchHistory, fetchParseDialogs } = useStats()
 const stats = useStatsStore()
 const { progress, bootstrapped, bootstrapFromServer, disconnect, reset } = useParseProgress()
@@ -449,12 +450,13 @@ onMounted(async () => {
               v-else-if="parseDialogsError"
               :icon="parseDialogsBusy ? WifiOff : AlertCircle"
               :title="parseDialogsBusy ? t('dashboard.dialogsBusy') : t('dashboard.loadDialogsError')"
-              :description="parseDialogsError"
+              :description="parseDialogsBusy ? parseDialogsError : t('dashboard.loadDialogsDescription')"
             >
               <template #action>
-                <Button variant="secondary" @click="loadParseDialogs">
-                  {{ t('common.retry') }}
-                </Button>
+                <div class="error-actions">
+                  <Button variant="secondary" @click="loadParseDialogs">{{ t('common.retry') }}</Button>
+                  <Button v-if="!parseDialogsBusy" variant="ghost" @click="logout">{{ t('common.relogin') }}</Button>
+                </div>
               </template>
             </EmptyState>
 
@@ -1039,6 +1041,13 @@ onMounted(async () => {
   background: var(--danger-subtle);
   color: var(--danger);
   overflow-wrap: anywhere;
+}
+
+.error-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 @media (max-width: 900px) {
