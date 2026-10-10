@@ -194,6 +194,15 @@ async function handlePassword() {
       <section class="login-panel">
         <h1 class="mobile-hero">{{ t('login.mobileHeroTitle') }}</h1>
         <div class="login-card">
+          <div class="login-progress" aria-hidden="true">
+            <div
+              v-for="index in 3"
+              :key="index"
+              class="progress-step"
+              :class="{ 'progress-step-active': stepIndex >= index - 1 }"
+            />
+          </div>
+
           <div class="login-copy">
             <h1 class="t-h2">
               <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
@@ -205,15 +214,6 @@ async function handlePassword() {
               <template v-else-if="step === 'code'">{{ t('login.codeDescription') }}</template>
               <template v-else>{{ t('login.passwordDescription') }}</template>
             </p>
-          </div>
-
-          <div class="login-progress" aria-hidden="true">
-            <div
-              v-for="index in 3"
-              :key="index"
-              class="progress-step"
-              :class="{ 'progress-step-active': stepIndex >= index - 1 }"
-            />
           </div>
 
           <Transition name="auth-step" mode="out-in">
@@ -834,18 +834,18 @@ async function handlePassword() {
   .login-panel {
     min-height: 100dvh;
     justify-content: flex-start;
-    padding: 88px clamp(20px, 7vw, 72px) 32px;
+    padding: var(--space-5) var(--space-6) var(--space-10);
   }
 
   .mobile-hero {
     display: block;
-    margin-bottom: var(--space-8);
+    margin-bottom: 30px;
     color: var(--text-primary);
     font-family: var(--font-display);
-    font-size: clamp(32px, 9vw, 48px);
+    font-size: 28px;
     font-weight: 720;
-    line-height: 1.05;
-    letter-spacing: -0.05em;
+    line-height: 1.14;
+    letter-spacing: -0.045em;
   }
 
   .mobile-brand {
@@ -860,7 +860,7 @@ async function handlePassword() {
 
 @media (max-width: 480px) {
   .login-panel {
-    padding-inline: var(--space-5);
+    padding-inline: var(--space-6);
   }
 
   .login-controls {
@@ -984,8 +984,8 @@ async function handlePassword() {
 
 @media (max-width: 900px) {
   .login-panel {
-    justify-content: center;
-    padding: 112px clamp(20px, 7vw, 72px) 48px;
+    justify-content: flex-start;
+    padding: var(--space-5) var(--space-6) var(--space-10);
   }
 
   .mobile-brand {
@@ -996,7 +996,7 @@ async function handlePassword() {
   }
 
   .login-controls {
-    top: var(--space-4);
+    display: none;
   }
 }
 
@@ -1051,19 +1051,52 @@ async function handlePassword() {
 
 @media (max-width: 900px) {
   .login-shell {
-    grid-template-rows: 70px minmax(0, 1fr);
+    grid-template-rows: 64px minmax(0, 1fr);
   }
 
   .login-header {
     position: sticky;
     top: 0;
-    min-height: 70px;
-    padding-inline: var(--space-4);
+    min-height: 64px;
+    padding: var(--space-5) var(--space-6) 0;
+    border-bottom: 0;
+    background: transparent;
+    backdrop-filter: none;
   }
 
   .login-panel {
-    min-height: calc(100dvh - 70px);
-    padding: var(--space-8) clamp(var(--space-5), 7vw, 72px) var(--space-10);
+    min-height: calc(100dvh - 64px);
+    padding: var(--space-5) var(--space-6) var(--space-10);
+  }
+
+  .login-header .brand-symbol {
+    width: 28px;
+    height: 28px;
+    padding: 7px;
+    grid-template-columns: repeat(3, 4px);
+    gap: 2px;
+  }
+
+  .login-header .brand-symbol i {
+    width: 4px;
+  }
+
+  .story-brand {
+    gap: 10px;
+    font-size: 16px;
+  }
+
+  .login-card {
+    gap: var(--space-6);
+  }
+
+  .login-copy .t-h2 {
+    font-size: 28px;
+  }
+
+  .login-copy .t-small {
+    font-size: 15px;
+    line-height: 1.4;
   }
 }
 </style>
