@@ -14,11 +14,6 @@ const phoneDisplay = phoneInput.displayValue
 const countryOpen = ref(false)
 const phoneInputId = useId()
 
-const selectedCountryLabel = computed(() => {
-  const country = phoneInput.country.value
-  return country.dialCode
-})
-
 const countryNames = computed(() => new Intl.DisplayNames([locale.value], { type: 'region' }))
 
 function getCountryName(code: string) {
@@ -90,7 +85,6 @@ function submit() {
             >
               <ChevronDown class="chevron" :size="14" aria-hidden="true" />
               <CountryFlag class="dial-flag" :code="phoneInput.country.value.code" />
-              <span>{{ phoneInput.country.value.code }} {{ selectedCountryLabel }}</span>
             </button>
           </template>
 
@@ -168,7 +162,7 @@ function submit() {
 
 .phone-row {
   display: grid;
-  grid-template-columns: minmax(124px, auto) minmax(0, 1fr);
+  grid-template-columns: 80px minmax(0, 1fr);
   align-items: center;
   gap: 0;
   min-height: 48px;
@@ -221,7 +215,12 @@ function submit() {
 }
 
 .phone-input:focus {
+  outline: none;
   box-shadow: none;
+}
+
+.phone-input:focus-visible {
+  outline: none;
 }
 
 .chevron {
@@ -294,7 +293,7 @@ function submit() {
 
 @media (max-width: 420px) {
   .phone-row {
-    grid-template-columns: minmax(112px, auto) minmax(0, 1fr);
+    grid-template-columns: 76px minmax(0, 1fr);
   }
 }
 
