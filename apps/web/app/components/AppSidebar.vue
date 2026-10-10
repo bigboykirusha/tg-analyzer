@@ -1,22 +1,25 @@
 <script setup lang="ts">
-import { BarChart2, Clock, Globe, LayoutGrid, LogOut } from '../lib/icons'
+import { Clock, LayoutGrid, LogOut, Settings, Trash2 } from '../lib/icons'
+import ThemeToggle from './ui/ThemeToggle.vue'
 import { useToast } from '../composables/useToast'
-import ParseProgress from './stats/ParseProgress.vue'
 import ConfirmDialog from './ui/ConfirmDialog.vue'
+import MenuItem from './ui/MenuItem.vue'
+import LocaleSwitch from './ui/LocaleSwitch.vue'
+import PopoverMenu from './ui/PopoverMenu.vue'
 
 const auth = useAuthStore()
 const { deleteAccount, logout, terminateTelegramSession, updateProfile } = useAuth()
 const route = useRoute()
-const { locale, setLocale, t } = useI18n()
+const { t } = useI18n()
 const toast = useToast()
-const { progress, bootstrapFromServer } = useParseProgress()
 const mounted = ref(false)
-
-const isChatRoute = computed(() => route.path.startsWith('/chat/'))
-const isDashboardRoute = computed(() => route.path.startsWith('/dashboard'))
-const isHistoryRoute = computed(() => route.path.startsWith('/history'))
-const isParseActive = computed(() => progress.value.status === 'running' || progress.value.status === 'pending')
-const mobileCancelling = ref(false)
+const accountOpen = ref(false)
+watch(
+  () => route.path,
+  () => {
+    accountOpen.value = false
+  },
+)
 const securityPending = ref<'telegram' | 'account' | null>(null)
 const confirmState = ref<{
   type: 'terminate' | 'delete-account'
@@ -26,21 +29,13 @@ const confirmState = ref<{
   variant: 'default' | 'danger'
 } | null>(null)
 
-const displayName = computed(() => {
-  if (!mounted.value) {
-    return t('common.anonymous')
-  }
-
-  return auth.user?.firstName || auth.user?.username || t('common.anonymous')
-})
-
-const displayHandle = computed(() => {
-  if (!mounted.value) {
-    return ''
-  }
-
-  return auth.user?.username ? `@${auth.user.username}` : ''
-})
+const isDashboardRoute = computed(() => route.path.startsWith('/dashboard'))
+const isHistoryRoute = computed(() => route.path.startsWith('/history'))
+const isReportRoute = computed(() => route.path.startsWith('/chat/'))
+const displayName = computed(() =>
+  mounted.value ? auth.user?.firstName || auth.user?.username || t('common.anonymous') : t('common.anonymous'),
+)
+const displayHandle = computed(() => (mounted.value && auth.user?.username ? `@${auth.user.username}` : ''))
 
 onMounted(() => {
   mounted.value = true
@@ -48,6 +43,7 @@ onMounted(() => {
 })
 
 function openTerminateConfirm() {
+  accountOpen.value = false
   confirmState.value = {
     type: 'terminate',
     title: t('dashboard.terminateTelegram'),
@@ -58,6 +54,7 @@ function openTerminateConfirm() {
 }
 
 function openDeleteAccountConfirm() {
+  accountOpen.value = false
   confirmState.value = {
     type: 'delete-account',
     title: t('dashboard.deleteAccount'),
@@ -68,10 +65,7 @@ function openDeleteAccountConfirm() {
 }
 
 async function confirmAction() {
-  if (!confirmState.value) {
-    return
-  }
-
+  if (!confirmState.value) return
   if (confirmState.value.type === 'terminate') {
     securityPending.value = 'telegram'
     try {
@@ -85,7 +79,6 @@ async function confirmAction() {
     }
     return
   }
-
   securityPending.value = 'account'
   try {
     await deleteAccount()
@@ -97,163 +90,96 @@ async function confirmAction() {
   }
 }
 
-async function cancelActiveParse() {
-  mobileCancelling.value = true
-  try {
-    await useApiFetch('/api/parse/cancel', { method: 'DELETE' })
-    await bootstrapFromServer()
-    toast.success(t('dashboard.cancelled'))
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('dashboard.cancelError'))
-  } finally {
-    mobileCancelling.value = false
-  }
-}
-
 async function syncBrowserTimeZone() {
-  if (!import.meta.client || !auth.isAuthorized) {
-    return
-  }
-
+  if (!import.meta.client || !auth.isAuthorized) return
   const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  if (!browserTimeZone || browserTimeZone === auth.user?.timezone) {
-    return
-  }
-
+  if (!browserTimeZone || browserTimeZone === auth.user?.timezone) return
   try {
     await updateProfile(browserTimeZone)
   } catch {
-    // Timezone sync is opportunistic; the next profile update can retry it.
+    /* non-blocking profile convenience */
   }
+}
+
+function closeAndLogout() {
+  accountOpen.value = false
+  void logout()
 }
 </script>
 
 <template>
-  <aside class="sidebar">
-    <div class="sidebar-top">
-      <div class="sidebar-logo">
-        <span class="logo-mark">&lt;T&gt;</span>
-        <span class="logo-text">tg analyzer</span>
-      </div>
-
-      <div class="sidebar-user">
-        <ProfileAvatar :title="displayName" />
-        <div class="user-info">
-          <span class="user-name">{{ displayName }}</span>
-          <span v-if="displayHandle" class="user-handle">{{ displayHandle }}</span>
-        </div>
-      </div>
-
-      <div class="language-switch" :aria-label="t('nav.language')">
-        <span class="language-icon" aria-hidden="true">
-          <Globe :size="14" :stroke-width="1.5" />
-        </span>
-        <button type="button" :class="{ active: locale === 'ru' }" @click="setLocale('ru')">RU</button>
-        <button type="button" :class="{ active: locale === 'en' }" @click="setLocale('en')">EN</button>
+  <header class="app-navigation" :class="{ 'app-navigation--report': isReportRoute }">
+    <div class="topbar glass-surface">
+      <NuxtLink to="/dashboard" class="brand" aria-label="TG Analyzer"
+        ><span class="brand-mark" aria-hidden="true"><i /><i /><i /></span><span>TG Analyzer</span></NuxtLink
+      >
+      <nav class="desktop-nav" :aria-label="t('dashboard.workspace')">
+        <NuxtLink
+          to="/dashboard"
+          class="topbar-link"
+          :class="{ active: isDashboardRoute }"
+          :aria-current="isDashboardRoute ? 'page' : undefined"
+          >{{ t('dashboard.title') }}</NuxtLink
+        >
+        <NuxtLink
+          to="/history"
+          class="topbar-link"
+          :class="{ active: isHistoryRoute }"
+          :aria-current="isHistoryRoute ? 'page' : undefined"
+          >{{ t('common.history') }}</NuxtLink
+        >
+      </nav>
+      <div class="topbar-actions">
+        <LocaleSwitch class="desktop-locale" />
+        <ThemeToggle />
+        <PopoverMenu v-model:open="accountOpen" class="account-menu" align="end" :aria-label="displayName">
+          <template #trigger>
+            <button
+              type="button"
+              class="account-trigger interactive-surface"
+              :aria-expanded="accountOpen"
+              :aria-label="displayName"
+              @click="accountOpen = !accountOpen"
+            >
+              <ProfileAvatar :title="displayName" />
+            </button>
+          </template>
+          <div class="account-popover">
+            <div class="account-identity">
+              <ProfileAvatar :title="displayName" /><span
+                ><strong>{{ displayName }}</strong
+                ><small v-if="displayHandle">{{ displayHandle }}</small></span
+              >
+            </div>
+            <div class="mobile-account-preferences"><LocaleSwitch /></div>
+            <MenuItem role="menuitem" :icon="Settings" @click="openTerminateConfirm">
+              {{ t('dashboard.terminateTelegram') }}
+            </MenuItem>
+            <MenuItem role="menuitem" :icon="LogOut" @click="closeAndLogout">{{ t('common.logout') }}</MenuItem>
+            <div class="account-divider" role="separator" />
+            <MenuItem role="menuitem" :icon="Trash2" danger @click="openDeleteAccountConfirm">
+              {{ t('dashboard.deleteAccount') }}
+            </MenuItem>
+          </div>
+        </PopoverMenu>
       </div>
     </div>
-
-    <nav class="sidebar-nav">
-      <NuxtLink to="/dashboard" class="nav-item" :class="{ 'nav-item-active': route.path.startsWith('/dashboard') }">
-        <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
-        <span>{{ t('common.dashboard') }}</span>
-      </NuxtLink>
-
-      <NuxtLink to="/history" class="nav-item" :class="{ 'nav-item-active': isHistoryRoute }">
-        <Clock :size="18" :stroke-width="1.5" aria-hidden="true" />
-        <span>{{ t('common.history') }}</span>
-      </NuxtLink>
-
-      <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="nav-item" :class="{ 'nav-item-active': isChatRoute }">
-        <BarChart2 :size="18" :stroke-width="1.5" aria-hidden="true" />
-        <span>{{ t('common.report') }}</span>
-      </NuxtLink>
+    <div id="mobile-report-toolbar" class="mobile-report-toolbar glass-surface" />
+    <nav class="mobile-tabbar glass-surface" :aria-label="t('dashboard.workspace')">
+      <NuxtLink
+        to="/dashboard"
+        class="mobile-tab"
+        :class="{ active: isDashboardRoute }"
+        :aria-current="isDashboardRoute ? 'page' : undefined"
+        ><LayoutGrid :size="18" aria-hidden="true" /><span>{{ t('dashboard.title') }}</span></NuxtLink
+      ><NuxtLink
+        to="/history"
+        class="mobile-tab"
+        :class="{ active: isHistoryRoute }"
+        :aria-current="isHistoryRoute ? 'page' : undefined"
+        ><Clock :size="18" aria-hidden="true" /><span>{{ t('common.history') }}</span></NuxtLink
+      >
     </nav>
-
-    <div class="sidebar-spacer" />
-
-    <div class="sidebar-bottom">
-      <div v-if="isDashboardRoute" class="desktop-security">
-        <div v-if="!auth.telegramSessionActive" class="sidebar-security-banner">
-          {{ t('dashboard.sessionInactive') }}
-        </div>
-
-        <div class="sidebar-utility-list">
-          <button class="utility-item" type="button" :disabled="securityPending !== null" @click="openTerminateConfirm">
-            <span class="utility-copy">
-              <span class="utility-label">{{ t('dashboard.terminateTelegram') }}</span>
-              <span class="utility-subtext">{{ securityPending === 'telegram' ? t('dashboard.stopping') : t('dashboard.terminateConfirm') }}</span>
-            </span>
-          </button>
-          <button class="utility-item utility-item-danger" type="button" :disabled="securityPending !== null" @click="openDeleteAccountConfirm">
-            <span class="utility-copy">
-              <span class="utility-label">{{ t('dashboard.deleteAccount') }}</span>
-              <span class="utility-subtext">{{ securityPending === 'account' ? t('dashboard.deleting') : t('dashboard.deleteConfirm') }}</span>
-            </span>
-          </button>
-          <button v-if="!auth.telegramSessionActive" class="utility-item utility-item-accent" type="button" @click="logout">
-            <span class="utility-copy">
-              <span class="utility-label">{{ t('common.relogin') }}</span>
-              <span class="utility-subtext">{{ t('dashboard.sessionInactive') }}</span>
-            </span>
-          </button>
-        </div>
-      </div>
-
-      <button class="utility-item" type="button" @click="logout">
-        <LogOut :size="18" :stroke-width="1.5" aria-hidden="true" />
-        <span class="utility-copy">
-          <span class="utility-label">{{ t('common.logout') }}</span>
-        </span>
-      </button>
-    </div>
-
-    <div class="mobile-topbar" :class="{ 'mobile-topbar-with-progress': isParseActive }">
-      <div class="mobile-topbar-row">
-        <div class="mobile-brand">
-          <span class="logo-mark">&lt;T&gt;</span>
-          <span class="logo-text">tg analyzer</span>
-        </div>
-        <div class="mobile-actions">
-        <NuxtLink to="/dashboard" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': route.path.startsWith('/dashboard') }">
-          <LayoutGrid :size="18" :stroke-width="1.5" aria-hidden="true" />
-          <span class="sr-only">{{ t('common.dashboard') }}</span>
-        </NuxtLink>
-        <NuxtLink to="/history" class="mobile-nav-item" :class="{ 'mobile-nav-item-active': isHistoryRoute }">
-          <Clock :size="18" :stroke-width="1.5" aria-hidden="true" />
-          <span class="sr-only">{{ t('common.history') }}</span>
-        </NuxtLink>
-        <NuxtLink v-if="isChatRoute" :to="route.fullPath" class="mobile-nav-item mobile-nav-item-active">
-          <BarChart2 :size="18" :stroke-width="1.5" aria-hidden="true" />
-          <span class="sr-only">{{ t('common.report') }}</span>
-        </NuxtLink>
-        <button class="mobile-nav-item mobile-language" type="button" @click="setLocale(locale === 'ru' ? 'en' : 'ru')">
-          <Globe :size="16" :stroke-width="1.5" aria-hidden="true" />
-          {{ locale.toUpperCase() }}
-          <span class="sr-only">{{ t('nav.language') }}</span>
-        </button>
-        </div>
-      </div>
-
-      <ParseProgress
-        v-if="isParseActive"
-        class="mobile-topbar-progress"
-        compact
-        :current="progress.current"
-        :total="progress.total"
-        :chat-name="progress.chatName"
-        :status="progress.status"
-        :message="progress.message"
-        :scanned-messages="progress.scannedMessages"
-        :start-time="progress.startTime"
-        cancellable
-        :cancelling="mobileCancelling"
-        @cancel="cancelActiveParse"
-      />
-      
-      
-      </div>
-
     <ConfirmDialog
       :open="Boolean(confirmState)"
       :title="confirmState?.title ?? ''"
@@ -265,357 +191,237 @@ async function syncBrowserTimeZone() {
       @close="confirmState = null"
       @confirm="confirmAction"
     />
-  </aside>
+  </header>
 </template>
 
 <style scoped>
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  padding: var(--space-4);
-  border-right: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
+.app-navigation {
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
-
-.sidebar-top {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
-}
-
-.sidebar-logo {
+.topbar {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-2);
+  min-height: 72px;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 10px clamp(var(--space-4), 3vw, var(--space-8));
+  border-width: 0 0 1px;
+  border-radius: 0;
 }
-
-.logo-mark {
-  font-family: var(--font-mono);
-  font-size: 18px;
-  color: var(--accent);
-}
-
-.logo-text {
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0;
-  color: var(--text-primary);
-}
-
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.nav-item,
-.mobile-nav-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
-}
-
-.nav-item {
-  position: relative;
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.nav-item:hover {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-}
-
-.nav-item-active {
-  background: var(--accent-subtle);
-  color: var(--text-primary);
-}
-
-.nav-item-active::before {
-  content: '';
-  position: absolute;
-  left: -12px;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  border-radius: 999px;
-  background: var(--accent);
-}
-
-.nav-item :deep(svg),
-.mobile-nav-item :deep(svg),
-.language-icon :deep(svg) {
-  flex: 0 0 auto;
-}
-
-.sidebar-spacer {
-  flex: 1;
-}
-
-.sidebar-bottom {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-top: var(--space-5);
-}
-
-.desktop-security {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding-top: var(--space-1);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.sidebar-security-banner {
-  padding: var(--space-3);
-  border: 1px solid rgba(251, 191, 36, 0.15);
-  border-radius: var(--radius-md);
-  background: rgba(251, 191, 36, 0.06);
-  color: var(--warning);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.sidebar-utility-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.sidebar-user {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface);
-}
-
-.user-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.user-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-handle {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.utility-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  width: 100%;
-  min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-secondary);
-  text-align: left;
-  cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.utility-item:hover {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-}
-
-.utility-item:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.utility-item :deep(svg) {
-  flex: 0 0 auto;
-}
-
-.utility-item-danger:hover {
-  background: var(--danger-subtle);
-  color: var(--danger);
-}
-
-.utility-item-accent:hover {
-  background: var(--accent-subtle);
-  color: var(--text-primary);
-}
-
-.utility-copy {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.utility-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: inherit;
-}
-
-.utility-subtext {
-  font-size: 11px;
-  line-height: 1.4;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mobile-topbar {
-  display: none;
-}
-
-.language-switch {
+.brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
+  gap: 10px;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
 }
-
-.language-icon {
+.brand-mark {
+  display: inline-flex;
+  align-items: end;
+  justify-content: center;
+  gap: 3px;
+  width: 40px;
+  height: 40px;
+  padding: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.brand-mark i {
+  width: 4px;
+  border-radius: var(--radius-full);
+  background: var(--on-accent);
+}
+.brand-mark i:nth-child(1) {
+  height: 9px;
+}
+.brand-mark i:nth-child(2) {
+  height: 18px;
+}
+.brand-mark i:nth-child(3) {
+  height: 13px;
+}
+.desktop-nav {
+  display: flex;
+  gap: 4px;
+  margin-left: 16px;
+}
+.topbar-link,
+.mobile-tab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  color: var(--text-tertiary);
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  font-weight: 600;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
-
-.language-switch button {
-  flex: 1;
-  min-width: 36px;
-  height: 30px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.language-switch button:hover,
-.language-switch button.active {
-  background: var(--accent-subtle);
+.topbar-link:hover,
+.topbar-link.active {
+  background: var(--surface-2);
   color: var(--text-primary);
 }
-
-.mobile-language {
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
+.topbar-link:focus-visible,
+.mobile-tab:focus-visible,
+.account-trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
-
-@media (max-width: 768px) {
-  .sidebar {
-    position: relative;
-    z-index: 20;
-    display: block;
-    flex-shrink: 0;
-    padding: 0 var(--space-4);
-    border-right: none;
-    border-bottom: 1px solid var(--border-subtle);
-    background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
-    backdrop-filter: blur(8px);
-    overflow: visible;
-  }
-
-  .sidebar-top,
-  .sidebar-nav,
-  .sidebar-spacer,
-  .desktop-security,
-  .sidebar-bottom {
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+.account-trigger {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.account-trigger[aria-expanded='true'] {
+  border-color: var(--accent-border);
+  box-shadow: var(--focus-ring);
+}
+.account-menu :deep(.popover-panel) {
+  width: min(300px, calc(100vw - 32px));
+  padding: 8px;
+  background: var(--surface);
+  border-color: var(--border);
+}
+.account-popover {
+  display: grid;
+  gap: 4px;
+}
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px 16px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.account-identity span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.account-identity strong,
+.account-identity small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--border-subtle);
+}
+.account-identity small {
+  color: var(--text-muted);
+}
+.mobile-tabbar {
+  display: none;
+}
+.mobile-account-preferences,
+.mobile-report-toolbar {
+  display: none;
+}
+@media (max-width: 380px) {
+  .brand > span:last-child {
     display: none;
   }
-
-  .mobile-topbar {
+}
+@media (max-width: 768px) {
+  .topbar {
+    min-height: 70px;
+    margin: 0;
+    padding: 12px 16px;
+    border-width: 0 0 1px;
+    border-radius: 0;
+    background: var(--glass-sheen), color-mix(in srgb, var(--glass) 92%, var(--bg-base));
+    box-shadow: var(--glass-inset);
+    backdrop-filter: var(--glass-filter);
+  }
+  .brand {
+    font-size: 18px;
+  }
+  .desktop-nav,
+  .desktop-locale {
+    display: none;
+  }
+  .mobile-account-preferences {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: center;
-    gap: var(--space-2);
-    min-height: 52px;
-    min-width: 0;
-    padding-block: calc(var(--space-2) + env(safe-area-inset-top, 0px)) var(--space-2);
+    padding: 4px 10px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 8px;
   }
-
-  .mobile-topbar-row {
+  .mobile-report-toolbar:not(:empty) {
+    display: block;
+    padding: 10px 16px;
+    border-width: 0 0 1px;
+    border-radius: 0;
+  }
+  .app-navigation--report .topbar {
+    display: none;
+  }
+  .app-navigation--report .mobile-report-toolbar:not(:empty) {
+    display: block;
+    min-height: 70px;
+    padding: 10px 16px;
+    background: var(--glass-sheen), color-mix(in srgb, var(--glass) 92%, var(--bg-base));
+    box-shadow: var(--glass-inset);
+    backdrop-filter: var(--glass-filter);
+  }
+  .topbar-actions {
+    gap: 12px;
+  }
+  .mobile-tabbar {
+    position: fixed;
+    z-index: 30;
+    right: 16px;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: 16px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
+    padding: 4px;
+    border-radius: var(--radius-full);
+    transition:
+      background-color var(--transition-base),
+      border-color var(--transition-base),
+      box-shadow var(--transition-base),
+      backdrop-filter var(--transition-base);
+  }
+  .mobile-tab {
+    flex: 1;
+    gap: 7px;
     min-width: 0;
+    padding: 0 10px;
+    font-size: 14px;
+    border-radius: calc(var(--radius-full) - 4px);
+    transition:
+      color var(--transition-fast),
+      background-color var(--transition-fast),
+      transform var(--transition-fast);
   }
-
-  .mobile-brand,
-  .mobile-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-width: 0;
-  }
-
-  .mobile-brand {
-    overflow: hidden;
-  }
-
-  .mobile-nav-item {
-    justify-content: center;
-    min-width: 40px;
-    height: 40px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text-secondary);
-  }
-
-  .mobile-nav-item-active {
-    background: var(--accent-subtle);
-    box-shadow: inset 0 0 0 1px var(--accent-border);
+  .mobile-tab.active {
+    background: var(--surface-2);
     color: var(--text-primary);
-  }
-
-  .logo-text {
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .mobile-topbar-progress {
-    margin-bottom: 2px;
+    box-shadow: var(--shadow-xs);
+    transform: translateY(-1px);
   }
 }
 </style>

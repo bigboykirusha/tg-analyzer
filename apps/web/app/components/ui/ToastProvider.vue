@@ -1,35 +1,41 @@
 <script setup lang="ts">
 import { useI18n } from '../../composables/useI18n'
 import { useToast } from '../../composables/useToast'
+import { X } from '../../lib/icons'
+import IconButton from './IconButton.vue'
 const { toasts, remove } = useToast()
 const { t } = useI18n()
 
 function variantLabel(variant: string) {
-  return {
-    success: t('toast.success'),
-    error: t('toast.error'),
-    info: t('toast.info'),
-    warning: t('toast.warning'),
-  }[variant] ?? 'Info'
+  return (
+    {
+      success: t('toast.success'),
+      error: t('toast.error'),
+      info: t('toast.info'),
+      warning: t('toast.warning'),
+    }[variant] ?? 'Info'
+  )
 }
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="toast-region" aria-live="polite" :aria-label="t('toast.notifications')">
+    <div class="toast-region" role="region" aria-live="polite" :aria-label="t('toast.notifications')">
       <TransitionGroup name="toast">
-        <article v-for="toast in toasts" :key="toast.id" class="toast" :class="`toast-${toast.variant}`" role="status">
+        <article
+          v-for="toast in toasts"
+          :key="toast.id"
+          class="toast"
+          :class="`toast-${toast.variant}`"
+          :role="toast.variant === 'error' ? 'alert' : 'status'"
+        >
           <div class="toast-indicator" aria-hidden="true" />
           <div class="toast-copy">
             <span class="sr-only">{{ variantLabel(toast.variant) }}</span>
             <strong>{{ toast.title }}</strong>
             <p v-if="toast.description">{{ toast.description }}</p>
           </div>
-          <button class="toast-close" type="button" :aria-label="t('common.close')" @click="remove(toast.id)">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m7 7 10 10M17 7 7 17" />
-            </svg>
-          </button>
+          <IconButton class="toast-close" :label="t('common.close')" :icon="X" size="sm" @click="remove(toast.id)" />
         </article>
       </TransitionGroup>
     </div>
@@ -55,11 +61,11 @@ function variantLabel(variant: string) {
   align-items: start;
   min-width: 0;
   padding: var(--space-3);
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
-  background: var(--panel-translucent);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(14px);
+  background: var(--glass-sheen), var(--panel-translucent);
+  box-shadow: var(--glass-inset), var(--shadow-md);
+  backdrop-filter: var(--glass-filter);
   pointer-events: auto;
 }
 
@@ -92,39 +98,6 @@ function variantLabel(variant: string) {
   overflow-wrap: anywhere;
 }
 
-.toast-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.toast-close:hover {
-  background: var(--bg-overlay);
-  color: var(--text-primary);
-}
-
-.toast-close:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
-}
-
-.toast-close svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-width: 1.8;
-}
-
 .toast-success {
   color: var(--success);
 }
@@ -143,7 +116,9 @@ function variantLabel(variant: string) {
 
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity var(--transition-normal), transform var(--transition-normal);
+  transition:
+    opacity var(--transition-normal),
+    transform var(--transition-normal);
 }
 
 .toast-enter-from,
@@ -156,9 +131,13 @@ function variantLabel(variant: string) {
   .toast-region {
     top: auto;
     right: var(--space-3);
-    bottom: var(--space-3);
+    bottom: calc(84px + env(safe-area-inset-bottom));
     left: var(--space-3);
     width: auto;
+  }
+
+  .toast-close {
+    margin: -4px;
   }
 }
 </style>

@@ -1,4 +1,10 @@
-import type { ActivityPointDto, ChatStatsDto, GlobalStatsDto, ParseDialogDto, ParseHistoryItem } from '@tg-analyzer/shared'
+import type {
+  ActivityPointDto,
+  ChatStatsDto,
+  GlobalStatsDto,
+  ParseDialogDto,
+  ParseHistoryItem,
+} from '@tg-analyzer/shared'
 
 const PARSE_DIALOGS_STORAGE_PREFIX = 'tg-analyzer-parse-dialogs'
 
@@ -9,17 +15,17 @@ export const useStatsStore = defineStore('stats', {
     selectedChat: null as ChatStatsDto | null,
     activity: [] as ActivityPointDto[],
     history: [] as ParseHistoryItem[],
+    chatsLoaded: false,
+    historyLoaded: false,
+    historyPage: 1,
+    historyTotal: 0,
     parseDialogs: [] as ParseDialogDto[],
     parseDialogsTruncated: false,
     parseDialogsTotal: 0,
     selectedParseDialogIds: [] as string[],
   }),
   actions: {
-    setParseDialogs(payload: {
-      dialogs: ParseDialogDto[]
-      truncated: boolean
-      total: number
-    }) {
+    setParseDialogs(payload: { dialogs: ParseDialogDto[]; truncated: boolean; total: number }) {
       this.parseDialogs = payload.dialogs
       this.parseDialogsTruncated = payload.truncated
       this.parseDialogsTotal = payload.total
@@ -66,11 +72,14 @@ export const useStatsStore = defineStore('stats', {
         return
       }
 
-      localStorage.setItem(`${PARSE_DIALOGS_STORAGE_PREFIX}:${userId}`, JSON.stringify({
-        dialogs: this.parseDialogs,
-        truncated: this.parseDialogsTruncated,
-        total: this.parseDialogsTotal,
-      }))
+      localStorage.setItem(
+        `${PARSE_DIALOGS_STORAGE_PREFIX}:${userId}`,
+        JSON.stringify({
+          dialogs: this.parseDialogs,
+          truncated: this.parseDialogsTruncated,
+          total: this.parseDialogsTotal,
+        }),
+      )
     },
     reset() {
       this.globalStats = null
@@ -78,6 +87,10 @@ export const useStatsStore = defineStore('stats', {
       this.selectedChat = null
       this.activity = []
       this.history = []
+      this.chatsLoaded = false
+      this.historyLoaded = false
+      this.historyPage = 1
+      this.historyTotal = 0
       this.parseDialogs = []
       this.parseDialogsTruncated = false
       this.parseDialogsTotal = 0

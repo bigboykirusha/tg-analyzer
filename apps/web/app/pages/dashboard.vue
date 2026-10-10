@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import type { ParseDialogDto } from '@tg-analyzer/shared'
-import type { ApiClientError } from '../composables/useApi'
-import AppLayout from '../components/AppLayout.vue'
+import { isApiClientError } from '../composables/useApi'
 import ChatAvatar from '../components/ChatAvatar.vue'
 import Container from '../components/layout/Container.vue'
 import ParseProgress from '../components/stats/ParseProgress.vue'
-import Badge from '../components/ui/Badge.vue'
 import Button from '../components/ui/Button.vue'
 import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
+import SegmentedControl from '../components/ui/SegmentedControl.vue'
 import Skeleton from '../components/ui/Skeleton.vue'
-import StatusDot from '../components/ui/StatusDot.vue'
-import { AlertCircle, BarChart2, MessageSquare, RefreshCw, Trash2, WifiOff, X } from '../lib/icons'
-import { useAuth } from '../composables/useAuth'
+import ListSkeleton from '../components/ui/ListSkeleton.vue'
+import { AlertCircle, BarChart2, MessageSquare, Trash2, WifiOff } from '../lib/icons'
 import { useI18n } from '../composables/useI18n'
 import { useParseProgress } from '../composables/useParseProgress'
 import { useStats } from '../composables/useStats'
@@ -22,31 +20,37 @@ import { useAuthStore } from '../stores/auth'
 import { useStatsStore } from '../stores/stats'
 
 definePageMeta({
+  layout: 'workspace',
   middleware: [authMiddleware],
 })
 
 const auth = useAuthStore()
-const { deleteAccount, logout, terminateTelegramSession } = useAuth()
 const { deleteChat, fetchChats, fetchHistory, fetchParseDialogs } = useStats()
 const stats = useStatsStore()
-const { progress, bootstrapped, bootstrapFromServer, connect, disconnect, reset } = useParseProgress()
+const { progress, bootstrapped, bootstrapFromServer, disconnect, reset } = useParseProgress()
 const { t, formatNumber, formatDate: formatLocaleDate, formatRelative } = useI18n()
 const toast = useToast()
 
 const pending = ref(false)
 const cancelling = ref(false)
-const securityPending = ref<'telegram' | 'account' | null>(null)
 const deletingChatId = ref<string | null>(null)
-const ready = ref(false)
+const ready = ref(stats.chatsLoaded && stats.parseDialogs.length > 0)
 const parseDialogsLoading = ref(false)
 const parseDialogsError = ref('')
 const parseDialogsBusy = ref(false)
-const securityInfoOpen = ref(false)
 const dialogSearch = ref('')
+const dialogFilter = ref<'all' | 'reported' | 'unreported'>('all')
+const dialogFilterOptions = computed(() => [
+  { value: 'all' as const, label: t('dashboard.filterAll') },
+  { value: 'reported' as const, label: t('dashboard.filterReported') },
+  { value: 'unreported' as const, label: t('dashboard.filterUnreported') },
+])
 const visibleDialogsCount = ref(18)
+const loadMoreSentinel = ref<HTMLElement | null>(null)
+let loadMoreObserver: IntersectionObserver | null = null
 const pendingChatId = ref<string | null>(null)
 const confirmState = ref<{
-  type: 'terminate' | 'delete-account' | 'delete-report'
+  type: 'delete-report'
   title: string
   description: string
   confirmLabel: string
@@ -69,6 +73,11 @@ const filteredDialogs = computed(() => {
   return stats.parseDialogs
     .filter((dialog) => ['private', 'group'].includes(dialog.type))
     .filter((dialog) => {
+      if (dialogFilter.value === 'all') return true
+      const hasReport = analyzedChatIds.value.has(dialog.id)
+      return dialogFilter.value === 'reported' ? hasReport : !hasReport
+    })
+    .filter((dialog) => {
       if (!query) {
         return true
       }
@@ -80,18 +89,21 @@ const filteredDialogs = computed(() => {
 const visibleDialogs = computed(() => filteredDialogs.value.slice(0, visibleDialogsCount.value))
 const hasMoreDialogs = computed(() => filteredDialogs.value.length > visibleDialogsCount.value)
 const analyzedChatMap = computed(() => new Map(analyzedChats.value.map((chat) => [chat.tgChatId, chat])))
-const activeHistoryJob = computed(() => stats.history.find((item) => item.status === 'running' || item.status === 'pending') ?? null)
+const activeHistoryJob = computed(
+  () => stats.history.find((item) => item.status === 'running' || item.status === 'pending') ?? null,
+)
 
 async function loadParseDialogs() {
-  parseDialogsLoading.value = true
+  parseDialogsLoading.value = stats.parseDialogs.length === 0
   parseDialogsError.value = ''
   parseDialogsBusy.value = false
 
   try {
     await fetchParseDialogs()
   } catch (error) {
-    const isBusyError = typeof (error as { statusCode?: number } | null)?.statusCode === 'number'
-      && (error as { statusCode?: number }).statusCode === 409
+    const isBusyError =
+      typeof (error as { statusCode?: number } | null)?.statusCode === 'number' &&
+      (error as { statusCode?: number }).statusCode === 409
 
     if (isBusyError) {
       parseDialogsBusy.value = true
@@ -99,41 +111,43 @@ async function loadParseDialogs() {
       return
     }
 
-    parseDialogsError.value = error instanceof Error ? error.message : t('dashboard.loadDialogsError')
+    parseDialogsError.value = t('dashboard.loadDialogsError')
   } finally {
     parseDialogsLoading.value = false
   }
 }
 
 async function refreshOperationalData() {
-  await Promise.all([
-    fetchHistory(),
-    fetchChats(),
-  ])
+  await Promise.all([fetchHistory(), fetchChats()])
 }
 
 async function startParse(chatIds?: string[]) {
+  if (pending.value || isParseActive.value) return
   pending.value = true
   pendingChatId.value = chatIds?.length === 1 ? (chatIds[0] ?? null) : null
 
   try {
-    await useApiFetch<{ jobId: string }>('/api/parse/start', {
-      method: 'POST',
+    await useApiEndpoint('POST /api/v1/parse/start', {
       body: chatIds?.length ? { chatIds } : {},
     })
-
+    progress.value = {
+      current: 0, total: chatIds?.length ?? 0,
+      chatId: chatIds?.length === 1 ? chatIds[0]! : null,
+      chatName: stats.parseDialogs.find((dialog) => dialog.id === chatIds?.[0])?.title ?? '',
+      status: 'pending', message: '', scannedMessages: 0, startTime: Date.now(),
+    }
     await bootstrapFromServer()
     await fetchHistory()
   } catch (error) {
-    const err = error as ApiClientError
-    const retryAfter = err.data?.retryAfter
-    const code = err.code ?? (typeof err.data?.code === 'string' ? err.data.code : undefined)
+    const apiError = isApiClientError(error) ? error : null
+    const retryAfter = apiError?.data?.retryAfter
+    const code = apiError?.code ?? (typeof apiError?.data?.code === 'string' ? apiError.data.code : undefined)
 
-    if (err.statusCode === 409) {
+    if (apiError?.statusCode === 409) {
       if (code === 'TELEGRAM_SESSION_BUSY') {
-        toast.warning(t('dashboard.startError'), err.message || t('dashboard.cancelParse'))
+        toast.warning(t('dashboard.startError'), apiError.message || t('dashboard.cancelParse'))
       } else {
-        toast.info(t('dashboard.activeParse'), err.message || t('dashboard.cancelParse'))
+        toast.info(t('dashboard.activeParse'), apiError.message || t('dashboard.cancelParse'))
       }
     } else if (typeof retryAfter === 'number' && retryAfter > 0) {
       toast.warning(t('dashboard.cooldownTitle'), t('dashboard.cooldown', { time: formatCooldown(retryAfter) }))
@@ -150,17 +164,12 @@ async function cancelActiveParse() {
   cancelling.value = true
 
   try {
-    await useApiFetch('/api/parse/cancel', {
-      method: 'DELETE',
-    })
+    await useApiEndpoint('DELETE /api/v1/parse/cancel')
 
     disconnect()
     reset()
 
-    await Promise.all([
-      fetchHistory(),
-      bootstrapFromServer(),
-    ])
+    await Promise.all([fetchHistory(), bootstrapFromServer()])
 
     toast.info(t('dashboard.cancelled'))
   } catch (error) {
@@ -184,9 +193,37 @@ async function startDialogParse(dialog: ParseDialogDto) {
   await startParse([dialog.id])
 }
 
-function showMoreDialogs() {
+async function revealMoreDialogs() {
+  if (!hasMoreDialogs.value) return
   visibleDialogsCount.value += 18
+  await nextTick()
+
+  const sentinel = loadMoreSentinel.value
+  if (hasMoreDialogs.value && sentinel && sentinel.getBoundingClientRect().top < window.innerHeight + 240) {
+    requestAnimationFrame(() => void revealMoreDialogs())
+  }
 }
+
+watch([dialogSearch, dialogFilter], () => {
+  visibleDialogsCount.value = 18
+})
+
+watch(loadMoreSentinel, (next, previous) => {
+  if (previous) loadMoreObserver?.unobserve(previous)
+  if (next) loadMoreObserver?.observe(next)
+})
+
+onMounted(() => {
+  loadMoreObserver = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) void revealMoreDialogs()
+    },
+    { rootMargin: '240px 0px' },
+  )
+  if (loadMoreSentinel.value) loadMoreObserver.observe(loadMoreSentinel.value)
+})
+
+onBeforeUnmount(() => loadMoreObserver?.disconnect())
 
 function formatShortDate(value: string | null) {
   if (!value) {
@@ -215,25 +252,6 @@ function formatCooldown(seconds: number) {
   return t('common.durationSeconds', { seconds: remainingSeconds })
 }
 
-function statusLabel(status: string) {
-  if (status === 'completed') {
-    return t('common.statusCompleted')
-  }
-  if (status === 'failed') {
-    return t('common.statusFailed')
-  }
-  if (status === 'cancelled') {
-    return t('common.statusCancelled')
-  }
-  if (status === 'running') {
-    return t('common.statusRunning')
-  }
-  if (status === 'pending') {
-    return t('common.statusPending')
-  }
-  return status
-}
-
 function dialogTypeLabel(type: ParseDialogDto['type']) {
   const labels: Record<ParseDialogDto['type'], string> = {
     private: t('dashboard.dialogTypePrivate'),
@@ -246,100 +264,12 @@ function dialogTypeLabel(type: ParseDialogDto['type']) {
   return labels[type]
 }
 
-function dialogState(dialog: ParseDialogDto) {
-  if (progress.value.chatId === dialog.id && isParseActive.value) {
-    return {
-      variant: 'info' as const,
-      label: statusLabel(progress.value.status),
-    }
-  }
-
-  if (analyzedChatIds.value.has(dialog.id)) {
-    return {
-      variant: 'accent' as const,
-      label: isDialogCooldownLike(dialog)
-        ? t('dashboard.recentReport')
-        : t('dashboard.reportReady'),
-    }
-  }
-
-  return null
-}
-
 function getDialogReport(dialog: ParseDialogDto) {
   return analyzedChatMap.value.get(dialog.id) ?? null
 }
 
-function isDialogCooldownLike(dialog: ParseDialogDto) {
-  const parsedAt = getDialogReport(dialog)?.parsedAt
-  if (!parsedAt) {
-    return false
-  }
-
-  const diffMs = Date.now() - new Date(parsedAt).getTime()
-  return diffMs < 60 * 60 * 1000
-}
-
-function dialogActionLabel(dialog: ParseDialogDto) {
-  return getDialogReport(dialog) ? t('chat.reparse') : t('dashboard.analyze')
-}
-
 function dialogParseDisabled(dialog: ParseDialogDto) {
-  return !telegramSessionActive.value
-    || pending.value
-    || isParseActive.value
-    || pendingChatId.value === dialog.id
-}
-
-function dialogHint(dialog: ParseDialogDto) {
-  if (!telegramSessionActive.value) {
-    return t('dashboard.sessionInactive')
-  }
-
-  if (isParseActive.value && progress.value.chatId === dialog.id) {
-    return progress.value.message || statusLabel(progress.value.status)
-  }
-
-  if (isParseActive.value) {
-    return t('dashboard.activeJobNotice')
-  }
-
-  if (isDialogCooldownLike(dialog)) {
-    return t('dashboard.cooldownNotice')
-  }
-
-  if (getDialogReport(dialog)) {
-    return t('dashboard.rerunHint')
-  }
-
-  return t('dashboard.firstReportHint')
-}
-
-async function handleTerminateTelegramSession() {
-  securityPending.value = 'telegram'
-
-  try {
-    await terminateTelegramSession()
-    toast.info(t('dashboard.sessionInactive'))
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('dashboard.terminateError'))
-  } finally {
-    securityPending.value = null
-    confirmState.value = null
-  }
-}
-
-async function handleDeleteAccount() {
-  securityPending.value = 'account'
-
-  try {
-    await deleteAccount()
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('dashboard.deleteError'))
-  } finally {
-    securityPending.value = null
-    confirmState.value = null
-  }
+  return !telegramSessionActive.value || pending.value || isParseActive.value || pendingChatId.value === dialog.id
 }
 
 async function handleDeleteReport(chatId: string) {
@@ -354,26 +284,6 @@ async function handleDeleteReport(chatId: string) {
   } finally {
     deletingChatId.value = null
     confirmState.value = null
-  }
-}
-
-function openTerminateConfirm() {
-  confirmState.value = {
-    type: 'terminate',
-    title: t('dashboard.terminateTelegram'),
-    description: t('dashboard.terminateConfirm'),
-    confirmLabel: t('dashboard.terminateTelegram'),
-    variant: 'default',
-  }
-}
-
-function openDeleteAccountConfirm() {
-  confirmState.value = {
-    type: 'delete-account',
-    title: t('dashboard.deleteAccount'),
-    description: t('dashboard.deleteConfirm'),
-    confirmLabel: t('dashboard.deleteAccount'),
-    variant: 'danger',
   }
 }
 
@@ -393,11 +303,7 @@ async function confirmAction() {
     return
   }
 
-  if (confirmState.value.type === 'terminate') {
-    await handleTerminateTelegramSession()
-  } else if (confirmState.value.type === 'delete-account') {
-    await handleDeleteAccount()
-  } else if (confirmState.value.type === 'delete-report' && confirmState.value.chatId) {
+  if (confirmState.value.chatId) {
     await handleDeleteReport(confirmState.value.chatId)
   }
 }
@@ -406,19 +312,13 @@ const confirmLoading = computed(() => {
   if (!confirmState.value) {
     return false
   }
-  if (confirmState.value.type === 'terminate') {
-    return securityPending.value === 'telegram'
-  }
-  if (confirmState.value.type === 'delete-account') {
-    return securityPending.value === 'account'
-  }
   if (confirmState.value.type === 'delete-report') {
     return deletingChatId.value === confirmState.value.chatId
   }
   return false
 })
 
-watch(dialogSearch, () => {
+watch([dialogSearch, dialogFilter], () => {
   visibleDialogsCount.value = 18
 })
 
@@ -427,14 +327,7 @@ watch(isParseActive, async (active, wasActive) => {
     return
   }
 
-  if (active) {
-    connect()
-    return
-  }
-
-  disconnect()
-
-  if (wasActive) {
+  if (!active && wasActive) {
     await refreshOperationalData().catch(() => undefined)
   }
 })
@@ -444,32 +337,30 @@ watch(isParseTerminal, async (terminal) => {
     return
   }
 
-  disconnect()
   await refreshOperationalData().catch(() => undefined)
 })
 
-watch(() => progress.value.status, (status, previousStatus) => {
-  if (status === previousStatus) {
-    return
-  }
+watch(
+  () => progress.value.status,
+  (status, previousStatus) => {
+    if (status === previousStatus) {
+      return
+    }
 
-  const wasActive = previousStatus === 'running' || previousStatus === 'pending'
-  if (!wasActive) {
-    return
-  }
+    const wasActive = previousStatus === 'running' || previousStatus === 'pending'
+    if (!wasActive) {
+      return
+    }
 
-  if (status === 'completed') {
-    toast.success(t('dashboard.reportReady'), progress.value.message || t('common.statusCompleted'))
-  } else if (status === 'failed') {
-    toast.error(t('common.statusFailed'), progress.value.message || t('dashboard.startError'))
-  } else if (status === 'cancelled') {
-    toast.info(t('common.statusCancelled'), progress.value.message || t('dashboard.cancelled'))
-  }
-})
-
-onBeforeUnmount(() => {
-  disconnect()
-})
+    if (status === 'completed') {
+      toast.success(t('dashboard.reportReady'), progress.value.message || t('common.statusCompleted'))
+    } else if (status === 'failed') {
+      toast.error(t('common.statusFailed'), progress.value.message || t('dashboard.startError'))
+    } else if (status === 'cancelled') {
+      toast.info(t('common.statusCancelled'), progress.value.message || t('dashboard.cancelled'))
+    }
+  },
+)
 
 onMounted(async () => {
   try {
@@ -498,158 +389,168 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppLayout>
     <Container size="default">
-    <div v-if="!ready" class="page-stack">
-      <div class="dashboard-grid">
-        <section class="card workspace-card">
-          <div class="stack-md">
-            <Skeleton height="24px" width="160px" />
-            <Skeleton height="132px" radius="var(--radius-md)" />
-            <div class="list-grid">
-              <Skeleton v-for="item in 6" :key="item" height="88px" radius="var(--radius-md)" />
+      <div v-if="!ready" class="page-stack" aria-busy="true">
+        <div class="dashboard-grid">
+          <section class="card section-card workspace-card">
+            <div class="stack-md">
+              <Skeleton height="24px" width="160px" />
+              <Skeleton height="44px" radius="var(--radius-full)" />
+              <ListSkeleton :rows="6" />
             </div>
-          </div>
-        </section>
-        <section class="card workspace-card">
-          <div class="stack-md">
-            <Skeleton height="24px" width="140px" />
-            <div class="list-grid">
-              <Skeleton v-for="item in 4" :key="item" height="96px" radius="var(--radius-md)" />
+          </section>
+          <section class="card workspace-card">
+            <div class="stack-md">
+              <Skeleton height="24px" width="140px" />
+              <div class="list-grid">
+                <Skeleton v-for="item in 4" :key="item" height="96px" radius="var(--radius-md)" />
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
-    </div>
 
-    <div v-else class="page-stack animate-fade-in" :class="{ 'page-stack-with-mobile-toast': isParseActive }">
-      
+      <div v-else class="page-stack">
+        <ParseProgress
+          v-if="isParseActive"
+          class="dashboard-progress-inline"
+          compact
+          :current="progress.current"
+          :total="progress.total"
+          :chat-name="progress.chatName"
+          :status="progress.status"
+          :message="progress.message"
+          :scanned-messages="progress.scannedMessages"
+          :start-time="progress.startTime"
+          cancellable
+          :cancelling="cancelling"
+          @cancel="cancelActiveParse"
+        />
 
-      <ParseProgress v-if="isParseActive" class="dashboard-progress-inline" compact :current="progress.current" :total="progress.total"
-        :chat-name="progress.chatName" :status="progress.status" :message="progress.message"
-        :scanned-messages="progress.scannedMessages" :start-time="progress.startTime" cancellable
-        :cancelling="cancelling" @cancel="cancelActiveParse" />
-
-      <div class="dashboard-grid">
-        <section class="card section-card workspace-card">
-          <div class="section-header">
-            <div class="section-copy">
-              <span class="t-label">{{ t('dashboard.sourceLabel') }}</span>
-              <h2 class="t-h2">{{ t('dashboard.sourceTitle') }}</h2>
-              <p class="t-small section-text">{{ t('dashboard.sourceText') }}</p>
+        <div class="dashboard-grid">
+          <section class="card section-card workspace-card">
+            <div class="source-actions">
+              <input v-model="dialogSearch" type="text" class="input" :placeholder="t('dashboard.search')" />
             </div>
-          </div>
 
-          <div class="source-actions">
-            <input v-model="dialogSearch" type="text" class="input" :placeholder="t('dashboard.search')" />
-          </div>
-
-          <div v-if="!telegramSessionActive" class="info-banner warning-banner">
-            {{ t('dashboard.sessionInactive') }}
-          </div>
-
-          <div v-else-if="parseDialogsLoading" class="list-grid">
-            <div v-for="item in 6" :key="item" class="card-elevated dialog-skeleton">
-              <div class="dialog-skeleton-inner">
-                <Skeleton height="40px" width="40px" radius="999px" />
-                <div class="dialog-skeleton-copy">
-                  <Skeleton height="14px" width="56%" />
-                  <Skeleton height="12px" width="32%" />
-                </div>
-                <Skeleton height="34px" width="128px" radius="var(--radius-md)" />
-              </div>
-            </div>
-          </div>
-
-          <EmptyState
-            v-else-if="parseDialogsError"
-            :icon="parseDialogsBusy ? WifiOff : AlertCircle"
-            :title="parseDialogsBusy ? t('dashboard.dialogsBusy') : t('dashboard.loadDialogsError')"
-            :description="parseDialogsError"
-          >
-            <template #action>
-              <Button variant="secondary" @click="loadParseDialogs">
-                {{ t('common.retry') }}
-              </Button>
-            </template>
-          </EmptyState>
-
-          <div v-else class="stack-lg">
-            
-
-            <div v-if="visibleDialogs.length" class="dialog-list">
-              <div v-for="(dialog, index) in visibleDialogs" :key="dialog.id" class="dialog-item stagger-item"
-                :class="{ 'dialog-item-active': progress.chatId === dialog.id && isParseActive }"
-                :style="{ '--delay': `${index * 35}ms` }">
-                <NuxtLink v-if="getDialogReport(dialog)" :to="`/chat/${dialog.id}`" class="dialog-main dialog-main-link">
-                  <ChatAvatar :chat-id="dialog.id" :title="dialog.title" :has-avatar="dialog.hasAvatar" />
-                  <div class="dialog-copy">
-                    <div class="dialog-title-row">
-                      <span class="dialog-title">{{ dialog.title }}</span>
-                    </div>
-                    <div class="dialog-meta t-small">
-                      <span class="t-small selection-subline">{{ t('dashboard.lastAnalyzed', { time: formatRelative(getDialogReport(dialog)?.parsedAt) }) }}</span>
-                    </div>
-                  </div>
-                </NuxtLink>
-                <div v-else class="dialog-main">
-                  <ChatAvatar :chat-id="dialog.id" :title="dialog.title" :has-avatar="dialog.hasAvatar" />
-                  <div class="dialog-copy">
-                    <div class="dialog-title-row">
-                      <span class="dialog-title">{{ dialog.title }}</span>
-                      <StatusDot v-if="dialogState(dialog)" :variant="dialogState(dialog)?.variant ?? 'default'"
-                        :label="dialogState(dialog)?.label ?? ''" />
-                    </div>
-                    <div class="dialog-meta t-small">
-                      <span class="t-small selection-subline">{{ dialogTypeLabel(dialog.type) }}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="dialog-actions">
-                  <template v-if="getDialogReport(dialog)">
-                    <NuxtLink :to="`/chat/${dialog.id}`" class="dialog-report-link">
-                      {{ t('common.report') }}
-                    </NuxtLink>
-                    <Button variant="ghost" size="sm" class="dialog-refresh-button" :icon="RefreshCw"
-                      :loading="pendingChatId === dialog.id"
-                      :disabled="dialogParseDisabled(dialog)" @click="startDialogParse(dialog)" />
-                  </template>
-                  <Button v-else variant="primary" size="md" class="dialog-analyze-button" :loading="pendingChatId === dialog.id"
-                    :disabled="dialogParseDisabled(dialog)" @click="startDialogParse(dialog)">
-                    {{ t('dashboard.analyze') }}
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <EmptyState
-              v-else
-              :icon="MessageSquare"
-              :title="t('dashboard.noChatsTitle')"
-              :description="t('dashboard.noChatsDescription')"
+            <SegmentedControl
+              v-model="dialogFilter"
+              :options="dialogFilterOptions"
+              :aria-label="t('dashboard.sourceTitle')"
             />
 
-            <div v-if="hasMoreDialogs" class="more-row">
-              <Button variant="secondary" @click="showMoreDialogs">{{ t('common.showMore') }}</Button>
+            <div v-if="!telegramSessionActive" class="info-banner warning-banner">
+              {{ t('dashboard.sessionInactive') }}
             </div>
-          </div>
-        </section>
 
-        <section class="card section-card workspace-card">
+            <ListSkeleton v-else-if="parseDialogsLoading" :rows="6" aria-busy="true" />
+
+            <EmptyState
+              v-else-if="parseDialogsError"
+              :icon="parseDialogsBusy ? WifiOff : AlertCircle"
+              :title="parseDialogsBusy ? t('dashboard.dialogsBusy') : t('dashboard.loadDialogsError')"
+              :description="parseDialogsError"
+            >
+              <template #action>
+                <Button variant="secondary" @click="loadParseDialogs">
+                  {{ t('common.retry') }}
+                </Button>
+              </template>
+            </EmptyState>
+
+            <div v-else class="stack-lg">
+              <div v-if="visibleDialogs.length" class="dialog-list">
+                <div
+                  v-for="(dialog, index) in visibleDialogs"
+                  :key="dialog.id"
+                  class="dialog-item"
+                  :class="{ 'dialog-item-active': progress.chatId === dialog.id && isParseActive }"
+                  :style="{ '--delay': `${index * 35}ms` }"
+                >
+                  <NuxtLink
+                    v-if="getDialogReport(dialog)"
+                    :to="`/chat/${dialog.id}`"
+                    class="dialog-main dialog-main-link"
+                  >
+                    <ChatAvatar :chat-id="dialog.id" :title="dialog.title" :has-avatar="dialog.hasAvatar" />
+                    <div class="dialog-copy">
+                      <div class="dialog-title-row">
+                        <span class="dialog-title">{{ dialog.title }}</span>
+                      </div>
+                      <div class="dialog-meta t-small">
+                        <span class="t-small selection-subline">{{
+                          t('dashboard.lastAnalyzed', { time: formatRelative(getDialogReport(dialog)?.parsedAt) })
+                        }}</span>
+                      </div>
+                    </div>
+                  </NuxtLink>
+                  <div v-else class="dialog-main">
+                    <ChatAvatar :chat-id="dialog.id" :title="dialog.title" :has-avatar="dialog.hasAvatar" />
+                    <div class="dialog-copy">
+                      <div class="dialog-title-row">
+                        <span class="dialog-title">{{ dialog.title }}</span>
+                      </div>
+                      <div class="dialog-meta t-small">
+                        <span class="t-small selection-subline">{{ dialogTypeLabel(dialog.type) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="dialog-actions">
+                    <template v-if="getDialogReport(dialog)">
+                      <Button variant="primary" size="md" class="dialog-action-button" :to="`/chat/${dialog.id}`">
+                        {{ t('common.report') }}
+                      </Button>
+                    </template>
+                    <Button
+                      v-else
+                      variant="secondary"
+                      size="md"
+                      class="dialog-action-button"
+                      :loading="pendingChatId === dialog.id"
+                      :disabled="dialogParseDisabled(dialog)"
+                      @click="startDialogParse(dialog)"
+                    >
+                      {{ t('dashboard.analyze') }}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <EmptyState
+                v-else
+                :icon="MessageSquare"
+                :title="t('dashboard.noChatsTitle')"
+                :description="t('dashboard.noChatsDescription')"
+              />
+
+              <div v-if="hasMoreDialogs" ref="loadMoreSentinel" class="dialog-load-sentinel" aria-live="polite">
+                <span class="dialog-load-indicator" aria-hidden="true" />
+                <span class="t-small">{{
+                  t('dashboard.dialogsShown', {
+                    visible: formatNumber(visibleDialogs.length),
+                    total: formatNumber(filteredDialogs.length),
+                  })
+                }}</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="card section-card workspace-card">
             <div class="section-header">
               <div class="section-copy">
                 <span class="t-label">{{ t('dashboard.analyzedLabel') }}</span>
-                <div class="section-title-row">
-                  <h2 class="t-h2">{{ t('dashboard.analyzedTitle') }}</h2>
-                  <Badge variant="accent">{{ t('dashboard.readyCount', { count: formatNumber(analyzedChats.length) }) }}</Badge>
-                </div>
+                <h2 class="t-h2">{{ t('dashboard.analyzedTitle') }}</h2>
                 <p class="t-small section-text">{{ t('dashboard.analyzedText') }}</p>
               </div>
             </div>
 
             <div v-if="analyzedChats.length" class="analyzed-list">
-              <div v-for="(chat, index) in analyzedChats" :key="chat.tgChatId" class="analyzed-card stagger-item"
-                :style="{ '--delay': `${index * 45}ms` }">
+              <div
+                v-for="(chat, index) in analyzedChats"
+                :key="chat.tgChatId"
+                class="analyzed-card stagger-item"
+                :style="{ '--delay': `${index * 45}ms` }"
+              >
                 <NuxtLink :to="`/chat/${chat.tgChatId}`" class="analyzed-link">
                   <ChatAvatar :chat-id="chat.tgChatId" :title="chat.chatName || chat.tgChatId" />
                   <div class="dialog-copy">
@@ -663,7 +564,16 @@ onMounted(async () => {
                 </NuxtLink>
 
                 <div class="analyzed-actions">
-                  <Button variant="ghost" size="sm" class="delete-btn" :icon="Trash2" aria-label="Delete" :loading="deletingChatId === chat.tgChatId" @click="openDeleteReportConfirm(chat.tgChatId, chat.chatName || chat.tgChatId)" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="delete-btn"
+                    :icon="Trash2"
+                    icon-only
+                    :aria-label="t('dashboard.deleteReport')"
+                    :loading="deletingChatId === chat.tgChatId"
+                    @click="openDeleteReportConfirm(chat.tgChatId, chat.chatName || chat.tgChatId)"
+                  />
                 </div>
               </div>
             </div>
@@ -674,73 +584,24 @@ onMounted(async () => {
               :title="t('dashboard.noParsedTitle')"
               :description="t('dashboard.noParsedDescription')"
             />
-        </section>
-
-        <section class="stack-lg dashboard-side-column">
-          <section class="card section-card workspace-card mobile-security-section">
-            <button type="button" class="security-explainer" @click="securityInfoOpen = true">
-              <div class="section-copy">
-                <span class="t-label">{{ t('dashboard.securityLabel') }}</span>
-                <h2 class="t-h2">{{ t('dashboard.securityTitle') }}</h2>
-                <p class="t-small section-text">{{ t('dashboard.securityText') }}</p>
-              </div>
-              <Badge variant="accent">{{ t('dashboard.openSecurityInfo') }}</Badge>
-            </button>
-
-            <div class="stack-md">
-              <div v-if="!telegramSessionActive" class="info-banner warning-banner">
-                {{ t('dashboard.sessionInactive') }}
-              </div>
-
-              <Button variant="secondary" size="lg" :loading="securityPending === 'telegram'"
-                @click="openTerminateConfirm">
-                {{ securityPending === 'telegram' ? t('dashboard.stopping') : t('dashboard.terminateTelegram') }}
-              </Button>
-              <Button variant="danger" size="lg" :loading="securityPending === 'account'"
-                @click="openDeleteAccountConfirm">
-                {{ securityPending === 'account' ? t('dashboard.deleting') : t('dashboard.deleteAccount') }}
-              </Button>
-              <Button variant="primary" size="lg" @click="logout">
-                {{ t('common.logout') }}
-              </Button>
-            </div>
           </section>
-        </section>
+
+        </div>
+
+        <ConfirmDialog
+          :open="Boolean(confirmState)"
+          :title="confirmState?.title ?? ''"
+          :description="confirmState?.description ?? ''"
+          :confirm-label="confirmState?.confirmLabel ?? ''"
+          :cancel-label="t('common.cancel')"
+          :variant="confirmState?.variant ?? 'default'"
+          :loading="confirmLoading"
+          @close="confirmState = null"
+          @confirm="confirmAction"
+        />
+
       </div>
-
-      <ConfirmDialog :open="Boolean(confirmState)" :title="confirmState?.title ?? ''"
-        :description="confirmState?.description ?? ''" :confirm-label="confirmState?.confirmLabel ?? ''"
-        :cancel-label="t('common.cancel')" :variant="confirmState?.variant ?? 'default'" :loading="confirmLoading"
-        @close="confirmState = null" @confirm="confirmAction" />
-
-      <Teleport to="body">
-        <Transition name="dialog">
-          <div v-if="securityInfoOpen" class="dialog-backdrop" @click.self="securityInfoOpen = false">
-            <section class="dialog-panel security-dialog-panel" role="dialog" aria-modal="true">
-              <button type="button" class="dialog-close" :aria-label="t('common.close')" @click="securityInfoOpen = false">
-                <X :size="18" :stroke-width="1.5" aria-hidden="true" />
-              </button>
-              <div class="security-dialog-copy">
-                <div class="section-title-row">
-                  <h2 class="t-h3">{{ t('dashboard.securityInfoTitle') }}</h2>
-                  <Badge variant="accent">{{ t('dashboard.securityLabel') }}</Badge>
-                </div>
-              </div>
-
-              <div class="security-dialog-stack">
-                <p class="t-small section-text">{{ t('dashboard.securityInfoIntro') }}</p>
-                <p class="t-small section-text">{{ t('dashboard.securityInfoSessions') }}</p>
-                <p class="t-small section-text">{{ t('dashboard.securityInfoMessages') }}</p>
-                <p class="t-small section-text">{{ t('dashboard.securityInfoWorkers') }}</p>
-                <p class="t-small section-text">{{ t('dashboard.securityInfoAccess') }}</p>
-              </div>
-            </section>
-          </div>
-        </Transition>
-      </Teleport>
-    </div>
     </Container>
-  </AppLayout>
 </template>
 
 <style scoped>
@@ -748,6 +609,81 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+}
+
+.workspace-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-8);
+  min-height: 180px;
+  padding: clamp(var(--space-5), 3vw, var(--space-8)) clamp(var(--space-5), 4vw, var(--space-10));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(24px) saturate(1.4);
+  overflow: hidden;
+}
+
+.workspace-intro-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.workspace-intro-copy .t-label {
+  color: var(--text-muted);
+}
+
+.workspace-intro-copy .t-display {
+  font-size: clamp(44px, 7vw, 76px);
+}
+
+.workspace-intro-copy p {
+  max-width: 610px;
+  color: var(--text-secondary);
+}
+
+.workspace-signal {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: min(32%, 250px);
+  height: 94px;
+  transform: translateY(8px);
+}
+
+.workspace-signal span {
+  flex: 1;
+  border-radius: 999px 999px 4px 4px;
+  background: var(--accent);
+}
+
+.workspace-signal span:nth-child(1) {
+  height: 28%;
+}
+.workspace-signal span:nth-child(2) {
+  height: 46%;
+}
+.workspace-signal span:nth-child(3) {
+  height: 76%;
+  background: var(--accent-2);
+}
+.workspace-signal span:nth-child(4) {
+  height: 54%;
+}
+.workspace-signal span:nth-child(5) {
+  height: 92%;
+}
+.workspace-signal span:nth-child(6) {
+  height: 66%;
+  background: var(--accent-2);
+}
+.workspace-signal span:nth-child(7) {
+  height: 38%;
 }
 
 .stack-md,
@@ -764,17 +700,18 @@ onMounted(async () => {
   gap: var(--space-6);
 }
 
-.mobile-security-section {
-  display: none !important;
-}
-
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr) minmax(300px, 0.8fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-6);
   min-width: 0;
   align-items: start;
 }
+
+.dashboard-grid > :not(:first-child) {
+  display: none;
+}
+
 
 .workspace-header {
   display: flex;
@@ -785,34 +722,6 @@ onMounted(async () => {
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
   box-shadow: var(--shadow-sm);
-}
-
-.security-explainer {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.security-explainer:hover .section-copy .t-h2 {
-  color: var(--accent);
-}
-
-.security-dialog-panel {
-  width: min(720px, 100%);
-}
-
-.security-dialog-stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-top: var(--space-4);
 }
 
 .hero-copy {
@@ -871,7 +780,7 @@ onMounted(async () => {
 
 .workspace-card {
   border-color: var(--border-default);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .source-actions {
@@ -883,48 +792,24 @@ onMounted(async () => {
 .analyzed-list,
 .list-grid {
   display: grid;
-  gap: var(--space-2);
-}
-
-.dialog-skeleton {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-}
-
-.dialog-skeleton-inner,
-.dialog-skeleton-copy {
-  display: flex;
-}
-
-.dialog-skeleton-inner {
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.dialog-skeleton-inner {
-  min-height: 58px;
-}
-
-.dialog-skeleton-copy {
-  flex-direction: column;
-}
-
-.dialog-skeleton-copy {
-  flex: 1;
-  gap: var(--space-2);
-  min-width: 0;
+  gap: 0;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .dialog-item,
 .analyzed-card {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  transition: all var(--transition-fast);
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: transparent;
+  transition:
+    transform var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.dialog-item:last-child,
+.analyzed-card:last-child {
+  border-bottom: 0;
 }
 
 .selection-subline,
@@ -953,13 +838,12 @@ onMounted(async () => {
 .dialog-item:hover,
 .dialog-item-active,
 .analyzed-card:hover {
-  border-color: var(--border-strong);
-  background: var(--bg-elevated);
+  border-color: var(--border-subtle);
+  background: color-mix(in srgb, var(--accent-subtle) 45%, transparent);
 }
 
 .dialog-item-active {
-  border-color: var(--accent-border);
-  box-shadow: inset 0 0 0 1px var(--accent-border);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .dialog-main {
@@ -994,8 +878,8 @@ onMounted(async () => {
 }
 
 .dialog-actions :deep(.btn) {
-  min-height: 34px;
-  height: 34px;
+  min-height: 36px;
+  height: 36px;
 }
 
 .dialog-meta {
@@ -1018,71 +902,9 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
-.dialog-report-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  height: 34px;
-  box-sizing: border-box;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.2;
-  text-decoration: none;
-  white-space: nowrap;
-  transition:
-    border-color var(--transition-fast),
-    background var(--transition-fast),
-    color var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.dialog-report-link:hover {
-  border-color: var(--border-strong);
-  background: var(--bg-elevated);
-}
-
-.dialog-report-link:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
-}
-
-.dialog-action-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  height: 34px;
-  box-sizing: border-box;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-size: 12px;
-  font-weight: 600;
-  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
-}
-
-.dialog-action-link:hover {
-  border-color: var(--border-strong);
-  background: var(--bg-elevated);
-}
-
-.dialog-analyze-button {
+.dialog-action-button {
   min-width: 104px;
   white-space: nowrap;
-}
-
-.dialog-refresh-button {
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
-  padding: 0;
 }
 
 .dialog-title {
@@ -1094,13 +916,29 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
-.more-row {
+.dialog-load-sentinel {
   display: flex;
+  min-height: 42px;
+  align-items: center;
   justify-content: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
 }
 
-.page-stack-with-mobile-toast {
-  padding-bottom: 0;
+.dialog-load-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-subtle);
+  animation: load-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes load-pulse {
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
 }
 
 .dashboard-progress-inline {
@@ -1173,91 +1011,6 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
-.dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-4);
-  background: rgba(0, 0, 0, 0.64);
-}
-
-.dialog-panel {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-5);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-lg);
-}
-
-.dialog-close {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-tertiary);
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast);
-}
-
-.dialog-close:hover {
-  background: var(--bg-elevated);
-  border-color: var(--border-subtle);
-  color: var(--text-primary);
-}
-
-.dialog-close:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
-}
-
-.security-dialog-copy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding-right: calc(var(--space-6) + var(--space-2));
-}
-
-.security-dialog-copy p {
-  color: var(--text-secondary);
-}
-
-.dialog-enter-active,
-.dialog-leave-active {
-  transition: opacity var(--transition-normal);
-}
-
-.dialog-enter-active .dialog-panel,
-.dialog-leave-active .dialog-panel {
-  transition: transform var(--transition-normal);
-}
-
-.dialog-enter-from,
-.dialog-leave-to {
-  opacity: 0;
-}
-
-.dialog-enter-from .dialog-panel,
-.dialog-leave-to .dialog-panel {
-  transform: translateY(8px) scale(0.98);
-}
-
 .detail-error {
   border: 1px solid var(--danger);
   border-radius: var(--radius-md);
@@ -1267,12 +1020,6 @@ onMounted(async () => {
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 1200px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
 @media (max-width: 900px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
@@ -1280,19 +1027,25 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-
-  .dashboard-progress-inline {
-    display: none;
+  .workspace-intro {
+    min-height: 160px;
+    align-items: flex-start;
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
   }
 
-  .mobile-security-section {
-    display: flex !important;
+  .workspace-intro-copy .t-display {
+    font-size: 44px;
   }
 
-  .dialog-action-link {
-    width: 100%;
-    min-height: 34px;
-    height: 34px;
+  .workspace-intro-copy p {
+    font-size: 14px;
+  }
+
+  .workspace-signal {
+    width: 82px;
+    height: 70px;
+    flex: 0 0 auto;
   }
 
   .workspace-header,
@@ -1343,16 +1096,16 @@ onMounted(async () => {
   }
 
   .dialog-item {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-    gap: var(--space-2);
+    grid-template-columns: minmax(0, 1fr) 112px;
+    align-items: center;
+    gap: var(--space-3);
     min-height: unset;
     padding: var(--space-3);
   }
 
   .dialog-main {
     grid-template-columns: auto minmax(0, 1fr);
-    align-items: flex-start;
+    align-items: center;
     gap: var(--space-2);
   }
 
@@ -1388,41 +1141,25 @@ onMounted(async () => {
   }
 
   .dialog-actions {
-    width: 100%;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 34px;
-    gap: var(--space-2);
+    width: 112px;
+    display: flex;
   }
 
-  .dialog-action-link {
-    width: 100%;
-    min-height: 34px;
-  }
-
-  .dialog-report-link {
-    min-height: 34px;
-    height: 34px;
+  .dialog-action-button {
+    min-height: 44px;
+    height: 44px;
     width: 100%;
     padding: 0 var(--space-4);
   }
 
   .dialog-actions :deep(.btn) {
-    min-height: 34px;
+    min-height: 44px;
+    height: 44px;
   }
 
-  .dialog-refresh-button {
-    width: 34px;
-    min-width: 34px;
-    padding: 0;
-  }
-
-  .dialog-analyze-button {
+  .dialog-action-button {
     width: 100%;
     min-width: 0;
-  }
-
-  .dialog-actions > :only-child:not(.dialog-refresh-button) {
-    grid-column: 1 / -1;
   }
 
   .analyzed-foot {
@@ -1441,15 +1178,5 @@ onMounted(async () => {
     font-size: 12px;
   }
 
-  .dialog-backdrop {
-    align-items: flex-end;
-    padding: var(--space-3);
-  }
-
-  .dialog-panel {
-    width: 100%;
-    padding: var(--space-4);
-  }
 }
-
 </style>

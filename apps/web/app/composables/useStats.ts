@@ -1,35 +1,32 @@
-import type {
-  ActivityResponse,
-  ChatStatsDto,
-  ClearHistoryResponse,
-  DeleteResponse,
-  DeleteHistoryItemResponse,
-  GlobalStatsDto,
-  PagedChatsResponse,
-  ParseDialogsResponse,
-  ParseStatusResponse,
-  ParseHistoryItem,
-} from '@tg-analyzer/shared'
+import type { ApiQuery } from '@tg-analyzer/shared'
+import { useApiEndpoint } from './useApi'
 
 export function useStats() {
   const store = useStatsStore()
   store.hydrateParseDialogs()
 
   async function fetchGlobal() {
-    store.globalStats = await useApiFetch<GlobalStatsDto>('/api/stats/global')
+    store.globalStats = await useApiEndpoint('GET /api/v1/stats/global')
   }
 
-  async function fetchChats(page = 1, sort = 'parsed_at', order: 'asc' | 'desc' = 'desc') {
-    const result = await useApiFetch<PagedChatsResponse>(`/api/stats/chats?page=${page}&limit=20&sort=${sort}&order=${order}`)
+  async function fetchChats(
+    page = 1,
+    sort: ApiQuery<'GET /api/v1/stats/chats'>['sort'] = 'parsed_at',
+    order: 'asc' | 'desc' = 'desc',
+  ) {
+    const result = await useApiEndpoint('GET /api/v1/stats/chats', {
+      query: { page, limit: 20, sort, order },
+    })
     store.chats = result.chats
+    store.chatsLoaded = true
   }
 
   async function fetchChat(chatId: string) {
-    store.selectedChat = await useApiFetch<ChatStatsDto>(`/api/stats/chats/${chatId}`)
+    store.selectedChat = await useApiEndpoint('GET /api/v1/stats/chats/:chatId', { params: { chatId } })
   }
 
   async function deleteChat(chatId: string) {
-    await useApiFetch<DeleteResponse>(`/api/stats/chats/${chatId}`, { method: 'DELETE' })
+    await useApiEndpoint('DELETE /api/v1/stats/chats/:chatId', { params: { chatId } })
     store.chats = store.chats.filter((chat) => chat.tgChatId !== chatId)
     if (store.selectedChat?.tgChatId === chatId) {
       store.selectedChat = null
@@ -37,30 +34,30 @@ export function useStats() {
   }
 
   async function fetchActivity() {
-    const result = await useApiFetch<ActivityResponse>('/api/stats/activity')
+    const result = await useApiEndpoint('GET /api/v1/stats/activity')
     store.activity = result.daily
   }
 
-  async function fetchHistory() {
-    store.history = await useApiFetch<ParseHistoryItem[]>('/api/parse/history')
-  }
-
-  async function clearHistory() {
-    await useApiFetch<ClearHistoryResponse>('/api/parse/history', { method: 'DELETE' })
-    store.history = store.history.filter((item) => item.status === 'pending' || item.status === 'running')
+  async function fetchHistory(page = 1, limit = 20) {
+    const result = await useApiEndpoint('GET /api/v1/parse/history', { query: { page, limit } })
+    store.history = result.items
+    store.historyLoaded = true
+    store.historyPage = result.page
+    store.historyTotal = result.total
+    return result
   }
 
   async function deleteHistoryItem(jobId: string) {
-    await useApiFetch<DeleteHistoryItemResponse>(`/api/parse/history/${jobId}`, { method: 'DELETE' })
+    await useApiEndpoint('DELETE /api/v1/parse/history/:jobId', { params: { jobId } })
     store.history = store.history.filter((item) => item.jobId !== jobId)
   }
 
   async function fetchParseStatus() {
-    return useApiFetch<ParseStatusResponse>('/api/parse/status')
+    return useApiEndpoint('GET /api/v1/parse/status')
   }
 
   async function fetchParseDialogs() {
-    const result = await useApiFetch<ParseDialogsResponse>('/api/parse/dialogs')
+    const result = await useApiEndpoint('GET /api/v1/parse/dialogs')
     store.setParseDialogs({
       dialogs: result.dialogs,
       truncated: result.truncated,
@@ -75,7 +72,6 @@ export function useStats() {
     deleteChat,
     fetchActivity,
     fetchHistory,
-    clearHistory,
     deleteHistoryItem,
     fetchParseStatus,
     fetchParseDialogs,

@@ -1,5 +1,6 @@
-import type { ParseProgressDto, ParseProgressWsEvent, ParseStatusResponse, WsAuthTokenResponse } from '@tg-analyzer/shared'
-import { refreshAccessToken } from './useApi'
+import { applyParseProgressEvent } from '@tg-analyzer/shared'
+import type { ParseProgressDto, ParseProgressWsEvent, ParseStatusResponse } from '@tg-analyzer/shared'
+import { refreshAccessToken, useApiEndpoint } from './useApi'
 import { isTokenExpiringSoon, isTokenUsable } from '../utils/auth'
 
 const MAX_RETRIES = 5
@@ -52,7 +53,7 @@ export function useParseProgress() {
 
     statusRequestPromise = (async () => {
       try {
-        const status = await useApiFetch<ParseStatusResponse>('/api/parse/status')
+        const status = await useApiEndpoint('GET /api/v1/parse/status')
         applyStatus(status)
         return status
       } catch {
@@ -84,13 +85,19 @@ export function useParseProgress() {
     return Boolean(auth.accessToken && isTokenUsable(auth.accessToken))
   }
 
-  async function getWebSocketToken() {
-    return useApiFetch<WsAuthTokenResponse>('/api/auth/ws-token')
+  async function getWebSocketTicket() {
+    return useApiEndpoint('POST /api/v1/auth/ws-ticket')
   }
 
   function scheduleReconnect() {
     const reconnectable = progress.value.status === 'running' || progress.value.status === 'pending'
-    if (!import.meta.client || retryCount.value >= MAX_RETRIES || !reconnectable || !auth.isAuthorized || !bootstrapped.value) {
+    if (
+      !import.meta.client ||
+      retryCount.value >= MAX_RETRIES ||
+      !reconnectable ||
+      !auth.isAuthorized ||
+      !bootstrapped.value
+    ) {
       return
     }
 
@@ -99,6 +106,19 @@ export function useParseProgress() {
       retryCount.value += 1
       void connect()
     }, delay)
+  }
+
+  function resolveWebSocketUrl(pathWithQuery: string) {
+    const explicit = config.public.wsUrl
+    if (explicit) {
+      return `${explicit}${pathWithQuery}`
+    }
+    const directBase = config.public.wsDirectFallbackUrl
+    if (directBase) {
+      return `${directBase}${pathWithQuery}`
+    }
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${protocol}//${window.location.host}${pathWithQuery}`
   }
 
   async function connect() {
@@ -120,8 +140,8 @@ export function useParseProgress() {
         return
       }
 
-      const { token } = await getWebSocketToken()
-      socket = new WebSocket(`${config.public.wsUrl}/ws/parse-progress?token=${token}`)
+      const { ticket } = await getWebSocketTicket()
+      socket = new WebSocket(resolveWebSocketUrl(`/ws/parse-progress?ticket=${ticket}`))
     } catch {
       scheduleReconnect()
       return
@@ -147,42 +167,8 @@ export function useParseProgress() {
       } catch {
         return
       }
-      if (data.type === 'progress') {
-        progress.value = {
-          current: data.current,
-          total: data.total,
-          chatId: data.chatId ?? null,
-          chatName: data.chatName ?? '',
-          status: data.status ?? 'running',
-          message: data.message ?? '',
-          scannedMessages: data.scannedMessages ?? 0,
-        }
-      }
-      if (data.type === 'completed') {
-        progress.value = {
-          ...progress.value,
-          chatId: data.chatId ?? progress.value.chatId ?? null,
-          status: 'completed',
-          message: data.message ?? 'Parse completed',
-        }
-        disconnect()
-      }
-      if (data.type === 'failed' || data.type === 'error') {
-        progress.value = {
-          ...progress.value,
-          chatId: 'chatId' in data ? (data.chatId ?? progress.value.chatId ?? null) : progress.value.chatId,
-          status: 'failed',
-          message: 'message' in data ? data.message : progress.value.message,
-        }
-        disconnect()
-      }
-      if (data.type === 'cancelled') {
-        progress.value = {
-          ...progress.value,
-          chatId: data.chatId ?? progress.value.chatId ?? null,
-          status: 'cancelled',
-          message: data.message ?? 'Parse cancelled',
-        }
+      progress.value = applyParseProgressEvent(progress.value, data)
+      if (data.type === 'completed' || data.type === 'failed' || data.type === 'error' || data.type === 'cancelled') {
         disconnect()
       }
     }
@@ -231,18 +217,10 @@ export function useParseProgress() {
   }
 
   async function bootstrapFromServer() {
-    bootstrapped.value = false
-    reset()
-    disconnect()
-
-    try {
-      const status = await useApiFetch<ParseStatusResponse>('/api/parse/status')
-      applyStatus(status)
-      return status
-    } catch (error) {
-      bootstrapped.value = true
-      throw error
-    }
+    const status = await fetchCurrentStatus()
+    bootstrapped.value = true
+    if (progress.value.status === 'pending' || progress.value.status === 'running') void connect()
+    return status
   }
 
   function clearBootstrap() {

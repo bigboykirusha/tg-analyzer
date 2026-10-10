@@ -1,16 +1,16 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  size?: 'narrow' | 'default' | 'full'
-  as?: string
-}>(), {
-  size: 'default',
-  as: 'div',
-})
+const props = withDefaults(
+  defineProps<{
+    size?: 'narrow' | 'default' | 'full'
+    as?: string
+  }>(),
+  {
+    size: 'default',
+    as: 'div',
+  },
+)
 
-const classes = computed(() => [
-  'ui-container',
-  `ui-container-${props.size}`,
-])
+const classes = computed(() => ['ui-container', `ui-container-${props.size}`])
 </script>
 
 <template>
@@ -27,15 +27,15 @@ const classes = computed(() => [
 }
 
 .ui-container-narrow {
-  max-width: 720px;
+  max-width: calc(720px + var(--space-8) * 2);
 }
 
 .ui-container-default {
-  max-width: none;
+  max-width: calc(800px + var(--space-8) * 2);
 }
 
 .ui-container-full {
-  max-width: none;
+  max-width: calc(1000px + var(--space-8) * 2);
 }
 
 @media (min-width: 768px) {

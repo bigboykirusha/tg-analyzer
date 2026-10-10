@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto'
-import { and, desc, eq, gt, inArray, isNotNull, isNull, lt, notInArray, or } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt, notInArray, sql } from 'drizzle-orm'
 import { db, schema } from '../db'
 import { redis } from './redis.service'
 import { config } from '../config'
 import { addDays } from '../utils/date'
+import { openJson, sealJson } from './crypto.service'
 
 const TEMP_AUTH_PREFIX = 'auth:temp'
 const PROGRESS_PREFIX = 'parse:progress'
@@ -48,13 +49,19 @@ function parseJsonOrNull<T>(raw: string | null): T | null {
 
 export async function savePendingPasswordContext(context: PendingPasswordContext) {
   const token = randomUUID()
-  await redis.set(`${TEMP_AUTH_PREFIX}:${token}`, JSON.stringify(context), 'EX', 300)
+  await redis.set(`${TEMP_AUTH_PREFIX}:${token}`, sealJson(context), 'EX', 300)
   return token
 }
 
 export async function getPendingPasswordContext(token: string): Promise<PendingPasswordContext | null> {
   const raw = await redis.get(`${TEMP_AUTH_PREFIX}:${token}`)
-  return parseJsonOrNull<PendingPasswordContext>(raw)
+  if (!raw) return null
+  try {
+    return openJson<PendingPasswordContext>(raw)
+  } catch {
+    await clearPendingPasswordContext(token)
+    return null
+  }
 }
 
 export async function clearPendingPasswordContext(token: string) {
@@ -73,6 +80,7 @@ export async function createRefreshSession(userId: string, familyId = randomUUID
     })
     .returning()
 
+  if (!created) throw new Error('Refresh session persistence failed')
   return created
 }
 
@@ -83,24 +91,6 @@ export async function upsertTelegramSession(input: {
   authTag: string
   dcId?: number | null
 }) {
-  const existing = await db.query.telegramSessions.findFirst({
-    where: eq(schema.telegramSessions.userId, input.userId),
-  })
-
-  if (existing) {
-    await db
-      .update(schema.telegramSessions)
-      .set({
-        sessionString: input.encrypted,
-        sessionIv: input.iv,
-        authTag: input.authTag,
-        dcId: input.dcId ?? null,
-        isActive: true,
-      })
-      .where(eq(schema.telegramSessions.id, existing.id))
-    return existing.id
-  }
-
   const [created] = await db
     .insert(schema.telegramSessions)
     .values({
@@ -111,8 +101,19 @@ export async function upsertTelegramSession(input: {
       dcId: input.dcId ?? null,
       isActive: true,
     })
+    .onConflictDoUpdate({
+      target: schema.telegramSessions.userId,
+      set: {
+        sessionString: input.encrypted,
+        sessionIv: input.iv,
+        authTag: input.authTag,
+        dcId: input.dcId ?? null,
+        isActive: true,
+      },
+    })
     .returning({ id: schema.telegramSessions.id })
 
+  if (!created) throw new Error('Telegram session persistence failed')
   return created.id
 }
 
@@ -123,10 +124,7 @@ export async function getActiveSessionForUser(userId: string) {
 }
 
 export async function deactivateTelegramSessions(userId: string) {
-  await db
-    .update(schema.telegramSessions)
-    .set({ isActive: false })
-    .where(eq(schema.telegramSessions.userId, userId))
+  await db.update(schema.telegramSessions).set({ isActive: false }).where(eq(schema.telegramSessions.userId, userId))
 }
 
 export async function setParseProgress(userId: string, payload: unknown) {
@@ -191,12 +189,7 @@ export async function getFullParseCooldown(userId: string) {
 }
 
 export async function activateFullParseCooldown(userId: string) {
-  await redis.set(
-    `${FULL_PARSE_COOLDOWN_PREFIX}:${userId}`,
-    '1',
-    'EX',
-    config.FULL_PARSE_COOLDOWN_HOURS * 60 * 60,
-  )
+  await redis.set(`${FULL_PARSE_COOLDOWN_PREFIX}:${userId}`, '1', 'EX', config.FULL_PARSE_COOLDOWN_HOURS * 60 * 60)
 }
 
 export async function getChatCooldown(userId: string, chatId: string) {
@@ -226,17 +219,25 @@ export async function createParseJob(input: {
   userId: string
   chatId?: number | null
   chatName?: string | null
+  chatIds?: string[]
 }) {
+  const id = randomUUID()
+  const requestedChatIds =
+    input.chatIds ?? (input.chatId === null || input.chatId === undefined ? [] : [String(input.chatId)])
   const [job] = await db
     .insert(schema.parseJobs)
     .values({
+      id,
       userId: input.userId,
+      bullJobId: id,
       chatId: input.chatId ?? null,
       chatName: input.chatName ?? null,
+      requestedChatIds,
       status: 'pending',
     })
     .returning({ id: schema.parseJobs.id })
 
+  if (!job) throw new Error('Parse job reservation failed')
   return job.id
 }
 
@@ -245,27 +246,59 @@ export async function attachBullJobId(jobId: string, bullJobId: string) {
     .update(schema.parseJobs)
     .set({
       bullJobId,
-      startedAt: new Date(),
-      status: 'running',
+      enqueueAttempts: sql`${schema.parseJobs.enqueueAttempts} + 1`,
+      enqueuedAt: new Date(),
     })
     .where(eq(schema.parseJobs.id, jobId))
 }
 
-export async function updateParseJob(jobId: string, payload: Partial<{
-  totalChats: number
-  parsedChats: number
-  totalMessages: number
-  status: string
-  errorMessage: string | null
-  completedAt: Date | null
-}>) {
+export async function updateParseJob(
+  jobId: string,
+  payload: Partial<{
+    totalChats: number
+    parsedChats: number
+    totalMessages: number
+    status: string
+    errorMessage: string | null
+    startedAt: Date | null
+    completedAt: Date | null
+  }>,
+) {
   await db.update(schema.parseJobs).set(payload).where(eq(schema.parseJobs.id, jobId))
+}
+
+export async function cancelParseJob(userId: string, jobId: string) {
+  return db.transaction(async (tx) => {
+    const lockedUser = await tx.execute(sql`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`)
+    if (lockedUser.rowCount !== 1) return false
+
+    const cancelled = await tx
+      .update(schema.parseJobs)
+      .set({ status: 'cancelled', completedAt: new Date() })
+      .where(
+        and(
+          eq(schema.parseJobs.id, jobId),
+          eq(schema.parseJobs.userId, userId),
+          inArray(schema.parseJobs.status, ['pending', 'running']),
+        ),
+      )
+      .returning({ id: schema.parseJobs.id })
+
+    return cancelled.length === 1
+  })
 }
 
 export async function findCurrentParseJob(userId: string) {
   return db.query.parseJobs.findFirst({
     where: and(eq(schema.parseJobs.userId, userId), inArray(schema.parseJobs.status, ['pending', 'running'])),
     orderBy: [desc(schema.parseJobs.createdAt)],
+  })
+}
+
+export async function listUnfinishedParseJobs() {
+  return db.query.parseJobs.findMany({
+    where: inArray(schema.parseJobs.status, ['pending', 'running']),
+    orderBy: [asc(schema.parseJobs.createdAt)],
   })
 }
 
@@ -283,13 +316,25 @@ export async function listParseHistory(userId: string) {
   })
 }
 
+export async function listParseHistoryPage(userId: string, page: number, limit: number) {
+  const offset = (page - 1) * limit
+  const [items, countRows] = await Promise.all([
+    db.query.parseJobs.findMany({
+      where: eq(schema.parseJobs.userId, userId),
+      orderBy: [desc(schema.parseJobs.createdAt)],
+      limit,
+      offset,
+    }),
+    db.select({ total: count() }).from(schema.parseJobs).where(eq(schema.parseJobs.userId, userId)),
+  ])
+
+  return { items, total: countRows[0]?.total ?? 0 }
+}
+
 export async function clearParseHistory(userId: string) {
   const deleted = await db
     .delete(schema.parseJobs)
-    .where(and(
-      eq(schema.parseJobs.userId, userId),
-      notInArray(schema.parseJobs.status, ['pending', 'running']),
-    ))
+    .where(and(eq(schema.parseJobs.userId, userId), notInArray(schema.parseJobs.status, ['pending', 'running'])))
     .returning({ id: schema.parseJobs.id })
 
   return deleted.length
@@ -298,11 +343,13 @@ export async function clearParseHistory(userId: string) {
 export async function deleteParseHistoryItem(userId: string, jobId: string) {
   const deleted = await db
     .delete(schema.parseJobs)
-    .where(and(
-      eq(schema.parseJobs.userId, userId),
-      eq(schema.parseJobs.id, jobId),
-      notInArray(schema.parseJobs.status, ['pending', 'running']),
-    ))
+    .where(
+      and(
+        eq(schema.parseJobs.userId, userId),
+        eq(schema.parseJobs.id, jobId),
+        notInArray(schema.parseJobs.status, ['pending', 'running']),
+      ),
+    )
     .returning({ id: schema.parseJobs.id })
 
   return deleted.length > 0
@@ -316,10 +363,7 @@ export async function revokeRefreshSessionFamily(familyId: string) {
   await db
     .update(schema.refreshSessions)
     .set({ revokedAt: new Date() })
-    .where(and(
-      eq(schema.refreshSessions.familyId, familyId),
-      isNull(schema.refreshSessions.revokedAt),
-    ))
+    .where(and(eq(schema.refreshSessions.familyId, familyId), isNull(schema.refreshSessions.revokedAt)))
 }
 
 export async function revokeRefreshSessionFamilyByTokenId(tokenId: string) {
@@ -335,10 +379,9 @@ export async function revokeRefreshSessionFamilyByTokenId(tokenId: string) {
   return true
 }
 
-export async function rotateRefreshSession(tokenId: string): Promise<
-  | { status: 'rotated' | 'grace'; session: RefreshSessionRecord }
-  | { status: 'invalid' | 'replayed' }
-> {
+export async function rotateRefreshSession(
+  tokenId: string,
+): Promise<{ status: 'rotated' | 'grace'; session: RefreshSessionRecord } | { status: 'invalid' | 'replayed' }> {
   return db.transaction(async (tx) => {
     const now = new Date()
     const successorTokenId = randomUUID()
@@ -351,12 +394,14 @@ export async function rotateRefreshSession(tokenId: string): Promise<
         rotatedAt: now,
         graceUntil,
       })
-      .where(and(
-        eq(schema.refreshSessions.tokenId, tokenId),
-        isNull(schema.refreshSessions.replacedByTokenId),
-        isNull(schema.refreshSessions.revokedAt),
-        gt(schema.refreshSessions.expiresAt, now),
-      ))
+      .where(
+        and(
+          eq(schema.refreshSessions.tokenId, tokenId),
+          isNull(schema.refreshSessions.replacedByTokenId),
+          isNull(schema.refreshSessions.revokedAt),
+          gt(schema.refreshSessions.expiresAt, now),
+        ),
+      )
       .returning()
 
     if (rotated) {
@@ -370,6 +415,7 @@ export async function rotateRefreshSession(tokenId: string): Promise<
         })
         .returning()
 
+      if (!successor) throw new Error('Refresh session persistence failed')
       return { status: 'rotated', session: successor } as const
     }
 
@@ -416,13 +462,6 @@ export async function rotateRefreshSession(tokenId: string): Promise<
 }
 
 export async function cleanupExpiredRefreshSessions() {
-  const now = new Date()
-  await db.delete(schema.refreshSessions).where(or(
-    lt(schema.refreshSessions.expiresAt, now),
-    isNotNull(schema.refreshSessions.revokedAt),
-    and(
-      isNotNull(schema.refreshSessions.replacedByTokenId),
-      lt(schema.refreshSessions.graceUntil, now),
-    ),
-  ))
+  // Keep rotated/revoked rows until expiry so reuse of an old token remains detectable.
+  await db.delete(schema.refreshSessions).where(lt(schema.refreshSessions.expiresAt, new Date()))
 }

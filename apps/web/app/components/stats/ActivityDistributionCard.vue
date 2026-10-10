@@ -3,18 +3,43 @@ import type { ActivityDistributionDto } from '@tg-analyzer/shared'
 
 const props = defineProps<{
   distribution: ActivityDistributionDto
-  totalMessages: number
 }>()
 
 const { t, formatNumber } = useI18n()
 
 const items = computed(() => {
-  const total = Math.max(props.totalMessages, 1)
+  const total = Math.max(
+    props.distribution.night.total +
+      props.distribution.morning.total +
+      props.distribution.afternoon.total +
+      props.distribution.evening.total,
+    1,
+  )
   return [
-    { key: 'night', label: t('chat.bucketNight'), value: props.distribution.night.total, share: (props.distribution.night.total / total) * 100 },
-    { key: 'morning', label: t('chat.bucketMorning'), value: props.distribution.morning.total, share: (props.distribution.morning.total / total) * 100 },
-    { key: 'afternoon', label: t('chat.bucketAfternoon'), value: props.distribution.afternoon.total, share: (props.distribution.afternoon.total / total) * 100 },
-    { key: 'evening', label: t('chat.bucketEvening'), value: props.distribution.evening.total, share: (props.distribution.evening.total / total) * 100 },
+    {
+      key: 'night',
+      label: t('chat.bucketNight'),
+      value: props.distribution.night.total,
+      share: (props.distribution.night.total / total) * 100,
+    },
+    {
+      key: 'morning',
+      label: t('chat.bucketMorning'),
+      value: props.distribution.morning.total,
+      share: (props.distribution.morning.total / total) * 100,
+    },
+    {
+      key: 'afternoon',
+      label: t('chat.bucketAfternoon'),
+      value: props.distribution.afternoon.total,
+      share: (props.distribution.afternoon.total / total) * 100,
+    },
+    {
+      key: 'evening',
+      label: t('chat.bucketEvening'),
+      value: props.distribution.evening.total,
+      share: (props.distribution.evening.total / total) * 100,
+    },
   ]
 })
 </script>
@@ -63,7 +88,6 @@ const items = computed(() => {
 
 .distribution-fill {
   height: 100%;
-  min-width: 4px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 78%, #fff 12%), var(--accent));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 78%, var(--on-accent) 12%), var(--accent));
 }
 </style>

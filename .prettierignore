@@ -1,0 +1,12 @@
+node_modules
+dist
+.nuxt
+.output
+coverage
+pnpm-lock.yaml
+docs/design
+apps/api/src/db/migrations/meta
+apps/web/app/pages/chat/\[id\].vue
+apps/web/app/pages/dashboard.vue
+apps/web/app/pages/history.vue
+docs/TASK.md

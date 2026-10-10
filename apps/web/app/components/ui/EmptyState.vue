@@ -14,7 +14,9 @@ defineProps<{
       <component :is="icon" v-if="icon" />
       <slot name="icon">
         <svg v-if="!icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 7.75A2.75 2.75 0 0 1 7.75 5h8.5A2.75 2.75 0 0 1 19 7.75v8.5A2.75 2.75 0 0 1 16.25 19h-8.5A2.75 2.75 0 0 1 5 16.25zM8.5 9.5h7m-7 5h4" />
+          <path
+            d="M5 7.75A2.75 2.75 0 0 1 7.75 5h8.5A2.75 2.75 0 0 1 19 7.75v8.5A2.75 2.75 0 0 1 16.25 19h-8.5A2.75 2.75 0 0 1 5 16.25zM8.5 9.5h7m-7 5h4"
+          />
         </svg>
       </slot>
     </div>

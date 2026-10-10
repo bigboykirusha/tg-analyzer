@@ -8,8 +8,9 @@ export type AuthErrorCode =
   | 'AUTH_TEMP_TOKEN_INVALID'
 
 export interface ApiErrorResponse {
+  requestId?: string
   message: string
-  code?: AuthErrorCode | string
+  code: AuthErrorCode | string
 }
 
 export interface UserDto {
@@ -63,12 +64,19 @@ export interface RefreshResponse {
   user: UserDto
 }
 
-export interface WsAuthTokenResponse {
-  token: string
+export interface WsAuthTicketResponse {
+  ticket: string
 }
 
 export interface StartParseBody {
   chatIds?: string[]
+}
+
+export interface ShareReportBody {
+  chatId: string
+  fileName: string
+  mimeType?: string
+  base64: string
 }
 
 export interface StartParseResponse {
@@ -89,6 +97,7 @@ export interface ParseDialogsResponse {
 }
 
 export interface ParseProgressDto {
+  jobId?: string
   current: number
   total: number
   chatId: string | null
@@ -114,6 +123,7 @@ export interface ParseHistoryItem {
   parsedChats: number
   totalMessages: number
   createdAt: string
+  startedAt: string | null
   completedAt: string | null
   errorMessage?: string | null
 }
@@ -126,7 +136,7 @@ export interface ClearHistoryResponse extends DeleteResponse {
   deleted: number
 }
 
-export interface DeleteHistoryItemResponse extends DeleteResponse {}
+export type DeleteHistoryItemResponse = DeleteResponse
 
 export interface PagedChatsResponse {
   chats: ChatStatsDto[]
@@ -287,11 +297,7 @@ export interface HealthScoreDto {
   longTermStability: number | null
 }
 
-export type GroupMemberRole =
-  | 'anchor'
-  | 'contributor'
-  | 'newcomer'
-  | 'inactive'
+export type GroupMemberRole = 'anchor' | 'contributor' | 'newcomer' | 'inactive'
 
 export interface GroupParticipantDto {
   id: string
@@ -463,8 +469,4 @@ export interface ParseErrorEvent {
 }
 
 export type ParseProgressWsEvent =
-  | ParseProgressEvent
-  | ParseCompletedEvent
-  | ParseFailedEvent
-  | ParseCancelledEvent
-  | ParseErrorEvent
+  ParseProgressEvent | ParseCompletedEvent | ParseFailedEvent | ParseCancelledEvent | ParseErrorEvent

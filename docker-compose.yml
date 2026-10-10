@@ -6,15 +6,15 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --appendfsync everysec --maxmemory-policy noeviction
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
 
@@ -28,12 +28,12 @@ services:
       DATABASE_URL: postgresql://postgres:password@postgres:5432/tganalyzer
       REDIS_URL: redis://redis:6379
       CORS_ORIGIN: http://localhost:3000
-      COOKIE_SECURE: "false"
+      COOKIE_SECURE: 'false'
     depends_on:
       - postgres
       - redis
     ports:
-      - "3001:3001"
+      - '3001:3001'
 
   worker:
     build:
@@ -45,7 +45,7 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:password@postgres:5432/tganalyzer
       REDIS_URL: redis://redis:6379
-      COOKIE_SECURE: "false"
+      COOKIE_SECURE: 'false'
     depends_on:
       - postgres
       - redis
@@ -62,7 +62,7 @@ services:
     depends_on:
       - api
     ports:
-      - "3000:3000"
+      - '3000:3000'
 
   bull-board:
     image: deadly0/bull-board
@@ -74,7 +74,7 @@ services:
     depends_on:
       - redis
     ports:
-      - "3002:3000"
+      - '3002:3000'
 
 volumes:
   postgres_data:

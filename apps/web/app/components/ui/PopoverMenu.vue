@@ -1,16 +1,19 @@
 <script setup lang="ts">
+import MenuItem from './MenuItem.vue'
+import ModalDialog from './ModalDialog.vue'
 export interface PopoverMenuOption {
   label: string
   value: string
   disabled?: boolean
 }
 
-defineProps<{
+const props = defineProps<{
   open: boolean
   options?: PopoverMenuOption[]
   align?: 'start' | 'end'
   matchTriggerWidth?: boolean
-  mobileFullscreen?: boolean
+  ariaLabel?: string
+  panelRole?: 'menu' | 'dialog'
 }>()
 
 const emit = defineEmits<{
@@ -19,6 +22,14 @@ const emit = defineEmits<{
 }>()
 
 const menuRef = ref<HTMLElement | null>(null)
+const panelRef = ref<HTMLElement | null>(null)
+const isMobile = ref(false)
+const { t } = useI18n()
+let media: MediaQueryList | undefined
+function syncViewport() {
+  isMobile.value = media?.matches ?? false
+}
+let previouslyFocused: HTMLElement | null = null
 
 function selectOption(option: PopoverMenuOption) {
   if (option.disabled) {
@@ -29,47 +40,136 @@ function selectOption(option: PopoverMenuOption) {
 }
 
 function handleDocumentClick(event: MouseEvent) {
+  if (isMobile.value) return
   if (!menuRef.value?.contains(event.target as Node)) {
     emit('update:open', false)
   }
 }
 
+function closeMenu() {
+  emit('update:open', false)
+}
+
+function handleFocusOut(event: FocusEvent) {
+  if (isMobile.value) return
+  if (props.open && event.relatedTarget instanceof Node && !menuRef.value?.contains(event.relatedTarget)) {
+    closeMenu()
+  }
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeMenu()
+    return
+  }
+  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key) || !panelRef.value) return
+  const items = Array.from(
+    panelRef.value.querySelectorAll<HTMLElement>(
+      '[role="menuitem"]:not([aria-disabled="true"]), button:not([disabled]), [href], input:not([disabled])',
+    ),
+  )
+  if (!items.length) return
+  event.preventDefault()
+  const current = Math.max(0, items.indexOf(document.activeElement as HTMLElement))
+  const nextIndex =
+    event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? items.length - 1
+        : (current + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+  items[nextIndex]?.focus()
+}
+
+watch(
+  () => props.open,
+  async (open) => {
+    if (!import.meta.client || isMobile.value) return
+    if (open) {
+      previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      await nextTick()
+      panelRef.value
+        ?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"]), button:not([disabled])')
+        ?.focus()
+      return
+    }
+    if (panelRef.value?.contains(document.activeElement)) previouslyFocused?.focus()
+  },
+)
+
 onMounted(() => {
+  media = window.matchMedia('(max-width: 768px)')
+  syncViewport()
+  media.addEventListener('change', syncViewport)
   document.addEventListener('click', handleDocumentClick)
 })
 
 onBeforeUnmount(() => {
+  media?.removeEventListener('change', syncViewport)
   document.removeEventListener('click', handleDocumentClick)
 })
 </script>
 
 <template>
-  <div ref="menuRef" class="popover-root" @click.stop>
+  <div ref="menuRef" class="popover-root" @click.stop @focusout="handleFocusOut">
     <slot name="trigger" />
     <Transition name="popover">
       <div
-        v-if="open"
-        class="popover-panel"
-        :class="[
-          align === 'start' ? 'align-start' : 'align-end',
-          { 'match-trigger': matchTriggerWidth },
-          { 'mobile-fullscreen': mobileFullscreen },
-        ]"
+        v-if="open && !isMobile"
+        class="popover-layer"
+        :class="[align === 'start' ? 'align-start' : 'align-end', { 'match-trigger': matchTriggerWidth }]"
+        @click.self="closeMenu"
+      >
+        <div
+          ref="panelRef"
+          class="popover-panel"
+          :role="panelRole ?? 'menu'"
+          :aria-label="ariaLabel"
+          @keydown="handleKeydown"
+        >
+          <slot>
+            <MenuItem
+              v-for="option in options ?? []"
+              :key="option.value"
+              type="button"
+              role="menuitem"
+              :disabled="option.disabled"
+              :aria-disabled="option.disabled || undefined"
+              @click="selectOption(option)"
+            >
+              {{ option.label }}
+            </MenuItem>
+          </slot>
+        </div>
+      </div>
+    </Transition>
+    <ModalDialog
+      v-if="isMobile"
+      :open="open"
+      :title="ariaLabel"
+      :close-label="t('common.close')"
+      size="sm"
+      @close="closeMenu"
+    >
+      <div
+        ref="panelRef"
+        :role="panelRole === 'dialog' ? undefined : 'menu'"
+        :aria-label="ariaLabel"
+        @keydown="handleKeydown"
       >
         <slot>
-          <button
+          <MenuItem
             v-for="option in options ?? []"
             :key="option.value"
-            type="button"
-            class="popover-option"
+            role="menuitem"
             :disabled="option.disabled"
             @click="selectOption(option)"
           >
             {{ option.label }}
-          </button>
+          </MenuItem>
         </slot>
       </div>
-    </Transition>
+    </ModalDialog>
   </div>
 </template>
 
@@ -81,20 +181,24 @@ onBeforeUnmount(() => {
   max-width: 100%;
 }
 
-.popover-panel {
+.popover-layer {
   position: absolute;
   top: calc(100% + var(--space-2));
   z-index: 30;
+}
+
+.popover-panel {
   display: grid;
   min-width: 180px;
   max-height: min(320px, 70vh);
   overflow-y: auto;
   gap: var(--space-1);
   padding: var(--space-1);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--glass-inset), var(--shadow-lg);
+  backdrop-filter: var(--glass-filter);
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -116,65 +220,22 @@ onBeforeUnmount(() => {
   left: 0;
 }
 
-.popover-option {
-  display: flex;
-  align-items: center;
-  min-height: 38px;
-  width: 100%;
-  padding: 0 var(--space-3);
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-primary);
-  cursor: pointer;
-  text-align: left;
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.popover-option:hover {
-  background: var(--bg-overlay);
-}
-
-.popover-option:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 .popover-enter-active,
 .popover-leave-active {
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.popover-enter-active .popover-panel,
+.popover-leave-active .popover-panel {
+  transition: transform var(--transition-normal);
 }
 
 .popover-enter-from,
 .popover-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
-}
-
-@media (max-width: 640px) {
-  .popover-panel {
-    position: fixed;
-    right: var(--space-3);
-    left: var(--space-3);
-    top: auto;
-    bottom: var(--space-3);
-    min-width: 0;
-    max-height: 55vh;
-  }
-
-  .popover-panel.mobile-fullscreen {
-    inset: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    width: auto;
-    max-height: none;
-    padding: var(--space-4);
-    padding-top: max(var(--space-4), env(safe-area-inset-top));
-    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
-    border: 0;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    background: var(--bg-base);
-  }
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top;
 }
 </style>

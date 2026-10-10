@@ -1,0 +1,18 @@
+{
+  "name": "TG Analyzer",
+  "short_name": "TG Analyzer",
+  "description": "Private Telegram chat analytics",
+  "lang": "ru",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#11131c",
+  "theme_color": "#11131c",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -3,21 +3,28 @@ import type { Component } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 
-const props = withDefaults(defineProps<{
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
-  size?: 'sm' | 'md' | 'lg'
-  icon?: Component | null
-  loading?: boolean
-  disabled?: boolean
-  block?: boolean
-}>(), {
-  variant: 'secondary',
-  size: 'md',
-  icon: null,
-  loading: false,
-  disabled: false,
-  block: false,
-})
+const props = withDefaults(
+  defineProps<{
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+    size?: 'sm' | 'md' | 'lg'
+    icon?: Component | null
+    loading?: boolean
+    disabled?: boolean
+    block?: boolean
+    iconOnly?: boolean
+    to?: string
+  }>(),
+  {
+    variant: 'secondary',
+    size: 'md',
+    icon: null,
+    loading: false,
+    disabled: false,
+    block: false,
+    iconOnly: false,
+    to: '',
+  },
+)
 
 const attrs = useAttrs()
 
@@ -25,12 +32,20 @@ const classes = computed(() => [
   'btn',
   `btn--${props.variant}`,
   `btn--${props.size}`,
-  { 'btn--block': props.block },
+  { 'btn--block': props.block, 'btn--icon-only': props.iconOnly },
 ])
 </script>
 
 <template>
-  <button v-bind="attrs" :class="classes" :disabled="disabled || loading">
+  <NuxtLink v-if="to" v-bind="attrs" :to="to" :class="classes" :aria-busy="loading || undefined">
+    <span v-if="icon || $slots.icon" class="btn__icon" aria-hidden="true">
+      <span v-if="loading" class="btn__spinner" />
+      <component :is="icon" v-else-if="icon" />
+      <slot v-else name="icon" />
+    </span>
+    <slot />
+  </NuxtLink>
+  <button v-else v-bind="attrs" :class="classes" :disabled="disabled || loading" :aria-busy="loading || undefined">
     <span v-if="loading || icon || $slots.icon" class="btn__icon" aria-hidden="true">
       <span v-if="loading" class="btn__spinner" />
       <component :is="icon" v-else-if="icon" />
@@ -48,9 +63,9 @@ const classes = computed(() => [
   justify-content: center;
   gap: var(--space-2);
   font-family: var(--font-sans);
-  font-weight: 500;
+  font-weight: 650;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   cursor: pointer;
   white-space: normal;
   text-align: center;
@@ -58,16 +73,16 @@ const classes = computed(() => [
   min-width: 0;
   max-width: 100%;
   transition:
+    transform var(--transition-fast),
+    opacity var(--transition-fast),
     background var(--transition-fast),
     border-color var(--transition-fast),
-    color var(--transition-fast),
-    box-shadow var(--transition-fast),
-    opacity var(--transition-fast);
+    box-shadow var(--transition-fast);
 }
 
 .btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+  box-shadow: var(--focus-ring);
 }
 
 .btn:disabled {
@@ -76,27 +91,49 @@ const classes = computed(() => [
   pointer-events: none;
 }
 
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 /* ─── Sizes ────────────────────────────────────────────────────────────────── */
 .btn--sm {
-  height: 28px;
+  min-height: 36px;
   padding: 0 var(--space-3);
   font-size: 12px;
 }
 
 .btn--md {
-  height: 34px;
+  min-height: 44px;
   padding: 0 var(--space-4);
   font-size: 13px;
 }
 
 .btn--lg {
-  height: 40px;
+  min-height: 48px;
   padding: 0 var(--space-5);
   font-size: 14px;
 }
 
 .btn--block {
   width: 100%;
+}
+
+.btn--icon-only {
+  flex: 0 0 auto;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.btn--icon-only.btn--sm {
+  width: 36px;
+}
+
+.btn--icon-only.btn--md {
+  width: 44px;
+}
+
+.btn--icon-only.btn--lg {
+  width: 48px;
 }
 
 /* ─── Variants ─────────────────────────────────────────────────────────────── */
@@ -107,19 +144,10 @@ const classes = computed(() => [
   box-shadow: var(--shadow-accent);
 }
 
-.btn--primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-}
-
 .btn--secondary {
-  background: var(--bg-surface);
+  background: transparent;
   border-color: var(--border-default);
   color: var(--text-primary);
-}
-
-.btn--secondary:hover:not(:disabled) {
-  background: var(--bg-elevated);
-  border-color: var(--border-strong);
 }
 
 .btn--ghost {
@@ -128,20 +156,33 @@ const classes = computed(() => [
   color: var(--text-secondary);
 }
 
-.btn--ghost:hover:not(:disabled) {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-}
-
 .btn--danger {
   background: var(--danger-subtle);
-  border-color: rgba(248, 113, 113, 0.20);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
   color: var(--danger);
 }
 
-.btn--danger:hover:not(:disabled) {
-  background: rgba(248, 113, 113, 0.16);
-  border-color: rgba(248, 113, 113, 0.30);
+@media (hover: hover) {
+  .btn--primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn--secondary:hover:not(:disabled) {
+    background: var(--bg-elevated);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+
+  .btn--ghost:hover:not(:disabled) {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+  }
+
+  .btn--danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--danger) 16%, transparent);
+    border-color: color-mix(in srgb, var(--danger) 42%, transparent);
+  }
 }
 
 /* ─── Icon slot ────────────────────────────────────────────────────────────── */
@@ -197,15 +238,19 @@ const classes = computed(() => [
 /* ─── Mobile ───────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .btn--sm {
-    height: 32px;
+    min-height: 44px;
+  }
+
+  .btn--icon-only.btn--sm {
+    width: 44px;
   }
 
   .btn--md {
-    height: 36px;
+    min-height: 44px;
   }
 
   .btn--lg {
-    height: 44px;
+    min-height: 48px;
   }
 }
 </style>

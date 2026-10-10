@@ -4,20 +4,22 @@ const AVATAR_CACHE_MAX_ENTRIES = 300
 const avatarCache = new Map<string, { url: string; expiresAt: number }>()
 const avatarRequests = new Map<string, Promise<string | null>>()
 
-const props = withDefaults(defineProps<{
-  chatId: string
-  title: string | null | undefined
-  hasAvatar?: boolean
-  size?: 'sm' | 'md' | 'lg'
-}>(), {
-  hasAvatar: true,
-  size: 'md',
-})
+const props = withDefaults(
+  defineProps<{
+    chatId: string
+    title: string | null | undefined
+    hasAvatar?: boolean
+    size?: 'sm' | 'md' | 'lg'
+  }>(),
+  {
+    hasAvatar: false,
+    size: 'md',
+  },
+)
 
 const errored = ref(false)
 const avatarUrl = ref<string | null>(null)
 const auth = useAuthStore()
-const config = useRuntimeConfig()
 
 function pruneAvatarCache() {
   const now = Date.now()
@@ -53,12 +55,14 @@ const sizeClass = computed(() => {
 })
 
 const initials = computed(() => {
-  return props.title
-    ?.split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('') || '?'
+  return (
+    props.title
+      ?.split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('') || '?'
+  )
 })
 
 async function loadAvatar() {
@@ -79,12 +83,8 @@ async function loadAvatar() {
   try {
     let request = avatarRequests.get(cacheKey)
     if (!request) {
-      request = $fetch<Blob>(`${config.public.apiUrl}/api/parse/dialogs/${props.chatId}/avatar`, {
-        credentials: 'include',
-        headers: {
-          Authorization: `Bearer ${auth.accessToken}`,
-        },
-        responseType: 'blob',
+      request = useApiBlobEndpoint('GET /api/v1/parse/dialogs/:dialogId/avatar', {
+        params: { dialogId: props.chatId },
       })
         .then((blob) => {
           const objectUrl = URL.createObjectURL(blob)
@@ -110,24 +110,25 @@ async function loadAvatar() {
   }
 }
 
-watch(() => [props.chatId, props.hasAvatar, auth.accessToken], () => {
-  errored.value = false
-  void loadAvatar()
-}, { immediate: true })
+watch(
+  () => [props.chatId, props.hasAvatar, auth.accessToken],
+  () => {
+    errored.value = false
+    void loadAvatar()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
-  <div
-    class="avatar-shell"
-    :class="sizeClass"
-  >
+  <div class="avatar-shell" :class="sizeClass">
     <img
       v-if="avatarUrl && !errored"
       :src="avatarUrl"
       :alt="title || 'Chat avatar'"
       class="h-full w-full object-cover"
       @error="errored = true"
-    >
+    />
     <span v-else>{{ initials }}</span>
   </div>
 </template>
@@ -141,9 +142,7 @@ watch(() => [props.chatId, props.hasAvatar, auth.accessToken], () => {
   overflow: hidden;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-subtle);
-  background:
-    radial-gradient(circle at 30% 30%, var(--accent-border), transparent 60%),
-    var(--bg-elevated);
+  background: radial-gradient(circle at 30% 30%, var(--accent-border), transparent 60%), var(--bg-elevated);
   color: var(--text-primary);
   font-weight: 600;
 }
