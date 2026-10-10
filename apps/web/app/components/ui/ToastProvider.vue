@@ -5,6 +5,8 @@ import { X } from '../../lib/icons'
 import IconButton from './IconButton.vue'
 const { toasts, remove } = useToast()
 const { t } = useI18n()
+const route = useRoute()
+const hasMobileNavigation = computed(() => route.path === '/dashboard' || route.path === '/history')
 
 function variantLabel(variant: string) {
   return (
@@ -20,7 +22,13 @@ function variantLabel(variant: string) {
 
 <template>
   <Teleport to="body">
-    <div class="toast-region" role="region" aria-live="polite" :aria-label="t('toast.notifications')">
+    <div
+      class="toast-region"
+      :class="{ 'toast-region--with-nav': hasMobileNavigation }"
+      role="region"
+      aria-live="polite"
+      :aria-label="t('toast.notifications')"
+    >
       <TransitionGroup name="toast">
         <article
           v-for="toast in toasts"
@@ -52,8 +60,9 @@ function variantLabel(variant: string) {
 <style scoped>
 .toast-region {
   position: fixed;
-  top: var(--space-5);
+  top: auto;
   right: var(--space-5);
+  bottom: var(--space-5);
   z-index: 100;
   display: grid;
   gap: var(--space-3);
@@ -105,6 +114,15 @@ function variantLabel(variant: string) {
   overflow-wrap: anywhere;
 }
 
+.toast-close {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: var(--radius-full);
+  justify-self: end;
+}
+
 .toast-success {
   color: var(--success);
 }
@@ -131,20 +149,20 @@ function variantLabel(variant: string) {
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateY(-8px) scale(0.98);
+  transform: translateY(8px) scale(0.98);
 }
 
 @media (max-width: 640px) {
   .toast-region {
     top: auto;
     right: var(--space-3);
-    bottom: calc(84px + env(safe-area-inset-bottom));
+    bottom: max(var(--space-3), env(safe-area-inset-bottom));
     left: var(--space-3);
     width: auto;
   }
 
-  .toast-close {
-    margin: -4px;
+  .toast-region--with-nav {
+    bottom: calc(84px + env(safe-area-inset-bottom));
   }
 }
 </style>
