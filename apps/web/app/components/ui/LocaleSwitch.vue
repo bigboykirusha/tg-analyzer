@@ -22,7 +22,7 @@ function toggleLocale() {
   display: inline-flex;
   min-height: 42px;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   color: var(--text-muted);
   font-size: 13px;
   font-weight: 650;
