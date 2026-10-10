@@ -254,7 +254,7 @@ async function handlePassword() {
 }
 
 .login-controls {
-  gap: 4px;
+  gap: var(--space-4);
 }
 
 .brand-symbol {
@@ -491,7 +491,7 @@ async function handlePassword() {
     padding: 10px;
   }
   .login-controls {
-    gap: 4px;
+    gap: var(--space-4);
   }
   .login-panel {
     padding: var(--space-8) var(--space-5) var(--space-10);
