@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Button from '../ui/Button.vue'
+import CountryFlag from '../ui/CountryFlag.vue'
 import PopoverMenu from '../ui/PopoverMenu.vue'
 import { ChevronDown } from '../../lib/icons'
 
@@ -97,8 +98,7 @@ function submit() {
               :aria-selected="country.code === phoneInput.countryCode.value"
               @click="selectCountry(country.code)"
             >
-              <span class="country-flag" aria-hidden="true">{{ country.flag }}</span>
-              <span class="country-code">{{ country.code }}</span>
+              <CountryFlag :code="country.code" />
               <span class="t-mono">{{ country.dialCode }}</span>
             </button>
           </div>
@@ -214,7 +214,7 @@ function submit() {
 
 .country-option {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto;
+  grid-template-columns: 22px minmax(0, 1fr);
   align-items: center;
   gap: var(--space-2);
   min-height: 38px;
@@ -236,23 +236,6 @@ function submit() {
   color: var(--accent);
 }
 
-.country-flag {
-  display: inline-grid;
-  width: 22px;
-  height: 18px;
-  flex: 0 0 auto;
-  place-items: center;
-  font-size: 16px;
-  line-height: 1;
-}
-
-.country-code {
-  display: none;
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: 12px;
-}
-
 @media (max-width: 420px) {
   .phone-row {
     grid-template-columns: minmax(96px, auto) minmax(0, 1fr);
@@ -270,10 +253,6 @@ function submit() {
 
   .country-options::-webkit-scrollbar {
     display: none;
-  }
-
-  .country-code {
-    display: inline;
   }
 
   .country-option {
