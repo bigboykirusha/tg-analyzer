@@ -2,20 +2,13 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "corepack pnpm install && corepack pnpm -r build",
-    "nixpacks": {
-      "infrastructure": {
-        "nix": {
-          "packageVersioning": "devshell-flake"
-        }
-      }
-    },
+    "buildCommand": "corepack pnpm install && corepack pnpm --filter @tg-analyzer/shared build && corepack pnpm --filter @tg-analyzer/api build",
     "watchPatterns": [
       "apps/api/**",
-      "apps/web/**",
       "packages/**",
       "pnpm-lock.yaml",
-      "package.json"
+      "package.json",
+      "railway.json"
     ]
   },
   "deploy": {
@@ -23,7 +16,7 @@
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10,
-    "startCommand": "echo 'MULTI-SERVICE MONOREPO: set per-service override in Railway: use $RAILWAY_SERVICE_NAME == api for corepack pnpm --filter @tg-analyzer/api start, or set explicit --service flag per deploy.'"
+    "startCommand": "corepack pnpm start:api"
   },
   "services": {
     "$service-api": {
@@ -33,23 +26,11 @@
         "buildCommand": "corepack pnpm install && corepack pnpm --filter @tg-analyzer/shared build && corepack pnpm --filter @tg-analyzer/api build"
       },
       "deploy": {
-        "startCommand": "corepack pnpm --filter @tg-analyzer/api start",
+        "startCommand": "corepack pnpm start:api",
         "healthcheckPath": "/health",
         "healthcheckTimeout": 300,
-        "restartPolicyType": "ON_FAILURE"
-      }
-    },
-    "$service-web": {
-      "name": "tga-web",
-      "build": {
-        "builder": "NIXPACKS",
-        "buildCommand": "corepack pnpm install && corepack pnpm --filter @tg-analyzer/shared build && corepack pnpm --filter @tg-analyzer/web build"
-      },
-      "deploy": {
-        "startCommand": "corepack pnpm --filter @tg-analyzer/web start",
-        "healthcheckPath": "/",
-        "healthcheckTimeout": 300,
-        "restartPolicyType": "ON_FAILURE"
+        "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10
       }
     },
     "$service-worker": {
@@ -59,8 +40,9 @@
         "buildCommand": "corepack pnpm install && corepack pnpm --filter @tg-analyzer/shared build && corepack pnpm --filter @tg-analyzer/api build"
       },
       "deploy": {
-        "startCommand": "corepack pnpm --filter @tg-analyzer/api worker",
+        "startCommand": "corepack pnpm start:worker",
         "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10,
         "healthcheckPath": "",
         "healthcheckTimeout": 0
       }
