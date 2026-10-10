@@ -21,4 +21,4 @@ export {
   Trash2,
   WifiOff,
   X,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
