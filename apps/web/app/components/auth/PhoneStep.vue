@@ -75,15 +75,14 @@ function submit() {
         >
           <template #trigger>
             <button
-              class="dial-code t-mono"
+              class="dial-code"
               type="button"
               :aria-label="t('login.countryLabel')"
               :aria-expanded="countryOpen"
               @click.stop="countryOpen = !countryOpen"
             >
-              <span aria-hidden="true">{{ phoneInput.country.value.code }}</span>
-              <span>{{ selectedCountryLabel }}</span>
               <ChevronDown class="chevron" :size="14" aria-hidden="true" />
+              <span>{{ phoneInput.country.value.code }} {{ selectedCountryLabel }}</span>
             </button>
           </template>
 

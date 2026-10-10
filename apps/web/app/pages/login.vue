@@ -151,23 +151,6 @@ async function handlePassword() {
           <h1>{{ t('login.heroTitle') }}</h1>
           <p>{{ t('login.heroText') }}</p>
         </div>
-
-        <div class="story-insights" aria-hidden="true">
-          <div class="insight-card">
-            <span class="insight-icon insight-icon-rhythm"><i /><i /><i /><i /></span>
-            <span>{{ t('login.featureOne') }}</span>
-          </div>
-          <div class="insight-card">
-            <span class="insight-icon insight-icon-balance"><i /><i /></span>
-            <span>{{ t('login.featureTwo') }}</span>
-          </div>
-          <div class="insight-card">
-            <span class="insight-icon insight-icon-private"><i /></span>
-            <span>{{ t('login.featureThree') }}</span>
-          </div>
-        </div>
-
-        <p class="story-footer">{{ t('login.heroFooter') }}</p>
       </aside>
 
       <section class="login-panel">
@@ -328,9 +311,7 @@ async function handlePassword() {
   pointer-events: none;
 }
 
-.story-copy,
-.story-insights,
-.story-footer {
+.story-copy {
   position: relative;
   z-index: 1;
 }
@@ -363,79 +344,6 @@ async function handlePassword() {
   color: var(--text-secondary);
   font-size: clamp(17px, 1.6vw, 21px);
   line-height: 1.55;
-}
-
-.story-insights {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
-  width: min(100%, 640px);
-}
-
-.insight-card {
-  display: grid;
-  min-width: 0;
-  gap: var(--space-4);
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--surface) 76%, transparent);
-  color: var(--text-secondary);
-  font-size: 13px;
-}
-
-.insight-icon {
-  display: flex;
-  align-items: end;
-  gap: 4px;
-  width: 42px;
-  height: 24px;
-}
-
-.insight-icon i {
-  display: block;
-  border-radius: var(--radius-full);
-  background: var(--accent);
-}
-
-.insight-icon-rhythm i {
-  width: 5px;
-}
-.insight-icon-rhythm i:nth-child(1) {
-  height: 9px;
-}
-.insight-icon-rhythm i:nth-child(2) {
-  height: 19px;
-}
-.insight-icon-rhythm i:nth-child(3) {
-  height: 13px;
-  background: var(--accent-2);
-}
-.insight-icon-rhythm i:nth-child(4) {
-  height: 24px;
-}
-.insight-icon-balance {
-  align-items: center;
-}
-.insight-icon-balance i {
-  width: 18px;
-  height: 18px;
-}
-.insight-icon-balance i:last-child {
-  background: var(--accent-2);
-}
-.insight-icon-private {
-  align-items: center;
-}
-.insight-icon-private i {
-  width: 32px;
-  height: 8px;
-  background: var(--accent-2);
-}
-
-.story-footer {
-  color: var(--text-tertiary);
-  font-size: 13px;
 }
 
 .login-panel {
@@ -524,15 +432,6 @@ async function handlePassword() {
 @media (max-width: 1040px) {
   .login-shell {
     grid-template-columns: minmax(0, 1fr) minmax(400px, 0.9fr);
-  }
-  .story-insights {
-    grid-template-columns: 1fr;
-    width: min(100%, 360px);
-  }
-  .insight-card {
-    grid-template-columns: 42px minmax(0, 1fr);
-    align-items: center;
-    gap: var(--space-3);
   }
 }
 
