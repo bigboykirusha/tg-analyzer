@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Clock, LayoutGrid, LogOut, Settings, Trash2 } from '../lib/icons'
+import { Clock, LayoutGrid, LogOut, Trash2 } from '../lib/icons'
 import ThemeToggle from './ui/ThemeToggle.vue'
 import { useToast } from '../composables/useToast'
 import ConfirmDialog from './ui/ConfirmDialog.vue'
@@ -8,7 +8,7 @@ import LocaleSwitch from './ui/LocaleSwitch.vue'
 import PopoverMenu from './ui/PopoverMenu.vue'
 
 const auth = useAuthStore()
-const { deleteAccount, logout, terminateTelegramSession, updateProfile } = useAuth()
+const { deleteAccount, logout, updateProfile } = useAuth()
 const route = useRoute()
 const { t } = useI18n()
 const toast = useToast()
@@ -20,9 +20,9 @@ watch(
     accountOpen.value = false
   },
 )
-const securityPending = ref<'telegram' | 'account' | null>(null)
+const securityPending = ref<'account' | null>(null)
 const confirmState = ref<{
-  type: 'terminate' | 'delete-account'
+  type: 'delete-account'
   title: string
   description: string
   confirmLabel: string
@@ -42,17 +42,6 @@ onMounted(() => {
   void syncBrowserTimeZone()
 })
 
-function openTerminateConfirm() {
-  accountOpen.value = false
-  confirmState.value = {
-    type: 'terminate',
-    title: t('dashboard.terminateTelegram'),
-    description: t('dashboard.terminateConfirm'),
-    confirmLabel: t('dashboard.terminateTelegram'),
-    variant: 'default',
-  }
-}
-
 function openDeleteAccountConfirm() {
   accountOpen.value = false
   confirmState.value = {
@@ -66,19 +55,6 @@ function openDeleteAccountConfirm() {
 
 async function confirmAction() {
   if (!confirmState.value) return
-  if (confirmState.value.type === 'terminate') {
-    securityPending.value = 'telegram'
-    try {
-      await terminateTelegramSession()
-      toast.success(t('dashboard.terminateTelegram'))
-      confirmState.value = null
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('dashboard.terminateError'))
-    } finally {
-      securityPending.value = null
-    }
-    return
-  }
   securityPending.value = 'account'
   try {
     await deleteAccount()
@@ -152,9 +128,6 @@ function closeAndLogout() {
               >
             </div>
             <div class="mobile-account-preferences"><LocaleSwitch /></div>
-            <MenuItem role="menuitem" :icon="Settings" @click="openTerminateConfirm">
-              {{ t('dashboard.terminateTelegram') }}
-            </MenuItem>
             <MenuItem role="menuitem" :icon="LogOut" @click="closeAndLogout">{{ t('common.logout') }}</MenuItem>
             <div class="account-divider" role="separator" />
             <MenuItem role="menuitem" :icon="Trash2" danger @click="openDeleteAccountConfirm">
@@ -165,7 +138,7 @@ function closeAndLogout() {
       </div>
     </div>
     <div id="mobile-report-toolbar" class="mobile-report-toolbar glass-surface" />
-    <nav class="mobile-tabbar glass-surface" :aria-label="t('dashboard.workspace')">
+    <nav v-if="!isReportRoute" class="mobile-tabbar glass-surface" :aria-label="t('dashboard.workspace')">
       <NuxtLink
         to="/dashboard"
         class="mobile-tab"

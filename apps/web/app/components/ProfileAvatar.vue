@@ -128,8 +128,8 @@ watch(
 }
 
 .avatar-md {
-  width: 36px;
-  height: 36px;
-  font-size: 12px;
+  width: 42px;
+  height: 42px;
+  font-size: 13px;
 }
 </style>

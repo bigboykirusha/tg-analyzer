@@ -123,13 +123,6 @@ export function useAuth() {
     }
   }
 
-  async function terminateTelegramSession() {
-    await useApiEndpoint('POST /api/v1/auth/terminate-telegram')
-    parseProgress.disconnect()
-    parseProgress.reset()
-    auth.setTelegramSessionActive(false)
-  }
-
   async function deleteAccount() {
     await useApiEndpoint('DELETE /api/v1/auth/account')
     parseProgress.disconnect()
@@ -154,7 +147,6 @@ export function useAuth() {
     refresh,
     updateProfile,
     logout,
-    terminateTelegramSession,
     deleteAccount,
   }
 }

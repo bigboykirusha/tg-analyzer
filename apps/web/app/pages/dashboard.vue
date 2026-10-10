@@ -1179,15 +1179,15 @@ onMounted(async () => {
   }
 
   .dialog-action-button {
-    min-height: 44px;
-    height: 44px;
+    min-height: 42px;
+    height: 42px;
     width: 100%;
     padding: 0 var(--space-4);
   }
 
   .dialog-actions :deep(.btn) {
-    min-height: 44px;
-    height: 44px;
+    min-height: 42px;
+    height: 42px;
   }
 
   .dialog-actions :deep(.dialog-refresh-button.btn--icon-only) {

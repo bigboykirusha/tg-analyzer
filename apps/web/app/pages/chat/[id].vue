@@ -1643,7 +1643,7 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-5);
   min-width: 0;
-  align-items: start;
+  align-items: stretch;
 }
 
 .report-peek-grid {
@@ -2110,8 +2110,8 @@ onBeforeUnmount(() => {
   }
 
   .tabs-scroll {
-    width: calc(100% + 2 * var(--space-4));
-    margin-inline: calc(-1 * var(--space-4));
+    width: 100%;
+    margin-inline: 0;
     padding-inline: 0;
   }
 

@@ -433,8 +433,9 @@ test('mobile navigation preserves the shell and cached content', async ({ page }
   await expect(page.locator('.mobile-security-section')).toHaveCount(0)
   await page.getByRole('button', { name: 'Alex', exact: true }).click()
   await expect(page.getByRole('dialog', { name: 'Alex' })).toBeVisible()
-  await page.getByRole('menuitem', { name: 'Завершить сессию Telegram', exact: true }).click()
-  const confirmation = page.getByRole('dialog', { name: 'Завершить сессию Telegram' })
+  await expect(page.getByRole('menuitem', { name: 'Завершить сессию Telegram', exact: true })).toHaveCount(0)
+  await page.getByRole('menuitem', { name: 'Удалить аккаунт и данные', exact: true }).click()
+  const confirmation = page.getByRole('dialog', { name: 'Удалить аккаунт и данные' })
   await expect(confirmation).toBeVisible()
   await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('hidden')
   await confirmation.getByRole('button', { name: 'Отмена', exact: true }).click()
@@ -551,7 +552,7 @@ const reportTabs = [
 
 // Playwright requires a destructured fixtures argument to access TestInfo.
 // eslint-disable-next-line no-empty-pattern
-test.beforeEach(({}, testInfo) => {
+test.beforeEach(({ }, testInfo) => {
   test.skip(testInfo.project.name === 'mobile', 'This suite controls its responsive viewports explicitly')
 })
 test.setTimeout(60_000)
@@ -642,8 +643,9 @@ test('account popover and confirmation dialog expose clear desktop states', asyn
     timeout: 15_000,
   })
 
-  await page.getByRole('menuitem', { name: 'Завершить сессию Telegram', exact: true }).click()
-  const dialog = page.getByRole('dialog', { name: 'Завершить сессию Telegram' })
+  await expect(page.getByRole('menuitem', { name: 'Завершить сессию Telegram', exact: true })).toHaveCount(0)
+  await page.getByRole('menuitem', { name: 'Удалить аккаунт и данные', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Удалить аккаунт и данные' })
   await expect(dialog).toBeVisible()
   const results = await new AxeBuilder({ page }).analyze()
   expect(results.violations).toEqual([])
