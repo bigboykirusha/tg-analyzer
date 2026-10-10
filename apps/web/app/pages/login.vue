@@ -4,6 +4,7 @@ import CodeStep from '../components/auth/CodeStep.vue'
 import PasswordStep from '../components/auth/PasswordStep.vue'
 import LocaleSwitch from '../components/ui/LocaleSwitch.vue'
 import ThemeToggle from '../components/ui/ThemeToggle.vue'
+import { useToast } from '../composables/useToast'
 import guestMiddleware from '../middleware/guest'
 
 definePageMeta({ middleware: [guestMiddleware] })
@@ -11,13 +12,13 @@ definePageMeta({ middleware: [guestMiddleware] })
 const auth = useAuthStore()
 const { sendCode, verifyCode, verifyPassword } = useAuth()
 const { locale, t } = useI18n()
+const toast = useToast()
 
 const step = ref<'phone' | 'code' | 'password'>('phone')
 const phone = ref('')
 const code = ref('')
 const password = ref('')
 const loading = ref(false)
-const error = ref('')
 const codeAttemptsLeft = ref(3)
 const resendSeconds = ref(0)
 let resendTimer: number | null = null
@@ -65,14 +66,13 @@ useHead({ meta: [{ name: 'keywords', content: () => seoKeywords.value }] })
 
 async function handlePhone() {
   loading.value = true
-  error.value = ''
   try {
     await sendCode(phone.value)
     codeAttemptsLeft.value = 3
     startResendTimer()
     step.value = 'code'
   } catch {
-    error.value = t('login.sendCodeError')
+    toast.error(t('login.sendCodeError'))
   } finally {
     loading.value = false
   }
@@ -80,7 +80,6 @@ async function handlePhone() {
 
 async function handleCode() {
   loading.value = true
-  error.value = ''
   try {
     const result = await verifyCode({ phone: phone.value, code: code.value, phoneCodeHash: auth.phoneCodeHash })
     if ('isPasswordRequired' in result && result.isPasswordRequired) {
@@ -90,7 +89,7 @@ async function handleCode() {
     await navigateTo('/dashboard', { replace: true })
   } catch {
     codeAttemptsLeft.value = Math.max(0, codeAttemptsLeft.value - 1)
-    error.value = t('login.invalidCodeError', { count: codeAttemptsLeft.value })
+    toast.error(t('login.invalidCodeError', { count: codeAttemptsLeft.value }))
   } finally {
     loading.value = false
   }
@@ -99,13 +98,12 @@ async function handleCode() {
 async function handleResendCode() {
   if (loading.value || resendSeconds.value > 0) return
   loading.value = true
-  error.value = ''
   try {
     await sendCode(phone.value)
     codeAttemptsLeft.value = 3
     startResendTimer()
   } catch {
-    error.value = t('login.sendCodeError')
+    toast.error(t('login.sendCodeError'))
   } finally {
     loading.value = false
   }
@@ -114,7 +112,6 @@ async function handleResendCode() {
 function handleChangeNumber() {
   step.value = 'phone'
   code.value = ''
-  error.value = ''
   if (resendTimer) window.clearInterval(resendTimer)
   resendTimer = null
   resendSeconds.value = 0
@@ -122,12 +119,11 @@ function handleChangeNumber() {
 
 async function handlePassword() {
   loading.value = true
-  error.value = ''
   try {
     await verifyPassword({ password: password.value })
     await navigateTo('/dashboard', { replace: true })
   } catch {
-    error.value = t('login.invalidPasswordError')
+    toast.error(t('login.invalidPasswordError'))
   } finally {
     loading.value = false
   }
@@ -201,8 +197,6 @@ async function handlePassword() {
                 @submit="handlePassword"
               />
             </Transition>
-
-            <p v-if="error" class="login-error" role="alert" aria-live="assertive">{{ error }}</p>
           </div>
         </div>
       </section>
@@ -407,11 +401,6 @@ async function handlePassword() {
   color: var(--text-secondary);
   font-size: 15px;
   line-height: 1.5;
-}
-
-.login-error {
-  color: var(--danger);
-  font-size: 13px;
 }
 
 .auth-step-enter-active,

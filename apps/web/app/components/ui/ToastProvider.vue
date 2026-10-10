@@ -35,7 +35,14 @@ function variantLabel(variant: string) {
             <strong>{{ toast.title }}</strong>
             <p v-if="toast.description">{{ toast.description }}</p>
           </div>
-          <IconButton class="toast-close" :label="t('common.close')" :icon="X" size="sm" @click="remove(toast.id)" />
+          <IconButton
+            class="toast-close"
+            :label="t('common.close')"
+            :icon="X"
+            variant="secondary"
+            size="sm"
+            @click="remove(toast.id)"
+          />
         </article>
       </TransitionGroup>
     </div>
@@ -49,30 +56,30 @@ function variantLabel(variant: string) {
   right: var(--space-5);
   z-index: 100;
   display: grid;
-  gap: var(--space-2);
-  width: min(360px, calc(100vw - 32px));
+  gap: var(--space-3);
+  width: min(380px, calc(100vw - 32px));
   pointer-events: none;
 }
 
 .toast {
   display: grid;
-  grid-template-columns: 4px minmax(0, 1fr) auto;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
   gap: var(--space-3);
-  align-items: start;
+  align-items: center;
   min-width: 0;
-  padding: var(--space-3);
+  min-height: 68px;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
-  background: var(--glass-sheen), var(--panel-translucent);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
   box-shadow: var(--glass-inset), var(--shadow-md);
   backdrop-filter: var(--glass-filter);
   pointer-events: auto;
 }
 
 .toast-indicator {
-  width: 4px;
-  height: 100%;
-  min-height: 36px;
+  width: 8px;
+  height: 8px;
   border-radius: var(--radius-full);
   background: currentColor;
 }
@@ -86,9 +93,9 @@ function variantLabel(variant: string) {
 
 .toast-copy strong {
   color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.3;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 .toast-copy p {
@@ -124,7 +131,7 @@ function variantLabel(variant: string) {
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-8px) scale(0.98);
 }
 
 @media (max-width: 640px) {
