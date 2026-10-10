@@ -89,6 +89,7 @@ function submit() {
               @click.stop="countryOpen = !countryOpen"
             >
               <ChevronDown class="chevron" :size="14" aria-hidden="true" />
+              <CountryFlag class="dial-flag" :code="phoneInput.country.value.code" />
               <span>{{ phoneInput.country.value.code }} {{ selectedCountryLabel }}</span>
             </button>
           </template>
@@ -145,6 +146,13 @@ function submit() {
   width: min(288px, calc(100vw - 40px));
 }
 
+@media (min-width: 641px) {
+  :deep(.popover-layer) {
+    top: auto;
+    bottom: calc(100% + var(--space-2));
+  }
+}
+
 :deep(.popover-panel) {
   width: 100%;
   max-height: min(360px, 60vh);
@@ -160,7 +168,7 @@ function submit() {
 
 .phone-row {
   display: grid;
-  grid-template-columns: minmax(104px, auto) minmax(0, 1fr);
+  grid-template-columns: minmax(124px, auto) minmax(0, 1fr);
   align-items: center;
   gap: 0;
   min-height: 48px;
@@ -228,7 +236,10 @@ function submit() {
 
 .dial-code:focus-visible {
   outline: none;
-  box-shadow: var(--focus-ring);
+}
+
+.dial-flag {
+  flex: 0 0 auto;
 }
 
 .country-options {
@@ -283,7 +294,7 @@ function submit() {
 
 @media (max-width: 420px) {
   .phone-row {
-    grid-template-columns: minmax(96px, auto) minmax(0, 1fr);
+    grid-template-columns: minmax(112px, auto) minmax(0, 1fr);
   }
 }
 

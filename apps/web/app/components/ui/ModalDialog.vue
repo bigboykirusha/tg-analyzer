@@ -95,7 +95,7 @@ onBeforeUnmount(() => {
                 <h2 class="t-h3">{{ title }}</h2>
               </slot>
             </div>
-            <IconButton :label="closeLabel" :icon="X" size="sm" :disabled="busy" @click="close" />
+            <IconButton :label="closeLabel" :icon="X" variant="secondary" size="sm" :disabled="busy" @click="close" />
           </div>
 
           <div class="modal-body">
