@@ -262,9 +262,9 @@ async function handlePassword() {
   grid-template-columns: repeat(3, 4px);
   align-items: end;
   gap: 3px;
-  width: 36px;
-  height: 36px;
-  padding: 9px;
+  width: 42px;
+  height: 42px;
+  padding: 10px;
   border-radius: var(--radius-full);
   background: var(--accent);
   color: var(--on-accent);
@@ -486,9 +486,9 @@ async function handlePassword() {
     font-size: 16px;
   }
   .brand-symbol {
-    width: 32px;
-    height: 32px;
-    padding: 7px;
+    width: 42px;
+    height: 42px;
+    padding: 10px;
   }
   .login-controls {
     gap: var(--space-1);

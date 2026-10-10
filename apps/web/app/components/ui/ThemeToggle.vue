@@ -38,8 +38,8 @@ function toggle() {
 .theme-toggle {
   position: relative;
   display: inline-grid;
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   place-items: center;
   border: 1px solid var(--separator);
   border-radius: 50%;
