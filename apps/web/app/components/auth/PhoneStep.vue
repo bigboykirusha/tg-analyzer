@@ -321,5 +321,9 @@ function submit() {
     border-bottom: 1px solid var(--border-subtle);
     border-radius: 0;
   }
+
+  .country-option:last-child {
+    border-bottom: 0;
+  }
 }
 </style>
