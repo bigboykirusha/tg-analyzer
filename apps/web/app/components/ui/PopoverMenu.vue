@@ -28,6 +28,9 @@ const { t } = useI18n()
 let media: MediaQueryList | undefined
 function syncViewport() {
   isMobile.value = media?.matches ?? false
+  if (isMobile.value) {
+    document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
+  }
 }
 let previouslyFocused: HTMLElement | null = null
 
@@ -39,22 +42,16 @@ function selectOption(option: PopoverMenuOption) {
   emit('update:open', false)
 }
 
-function handleDocumentClick(event: MouseEvent) {
+function handleDocumentPointerDown(event: PointerEvent) {
   if (isMobile.value) return
-  if (!menuRef.value?.contains(event.target as Node)) {
+  const menu = menuRef.value
+  if (menu && !event.composedPath().includes(menu)) {
     emit('update:open', false)
   }
 }
 
 function closeMenu() {
   emit('update:open', false)
-}
-
-function handleFocusOut(event: FocusEvent) {
-  if (isMobile.value) return
-  if (props.open && event.relatedTarget instanceof Node && !menuRef.value?.contains(event.relatedTarget)) {
-    closeMenu()
-  }
 }
 
 function handleKeydown(event: KeyboardEvent) {
@@ -88,11 +85,13 @@ watch(
     if (open) {
       previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
       await nextTick()
+      document.addEventListener('pointerdown', handleDocumentPointerDown, true)
       panelRef.value
         ?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"]), button:not([disabled])')
         ?.focus()
       return
     }
+    document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
     if (panelRef.value?.contains(document.activeElement)) previouslyFocused?.focus()
   },
 )
@@ -101,17 +100,16 @@ onMounted(() => {
   media = window.matchMedia('(max-width: 768px)')
   syncViewport()
   media.addEventListener('change', syncViewport)
-  document.addEventListener('click', handleDocumentClick)
 })
 
 onBeforeUnmount(() => {
   media?.removeEventListener('change', syncViewport)
-  document.removeEventListener('click', handleDocumentClick)
+  document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
 })
 </script>
 
 <template>
-  <div ref="menuRef" class="popover-root" @click.stop @focusout="handleFocusOut">
+  <div ref="menuRef" class="popover-root" @click.stop>
     <slot name="trigger" />
     <Transition name="popover">
       <div

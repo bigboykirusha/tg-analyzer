@@ -8,7 +8,7 @@ const phone = defineModel<string>('phone', { required: true })
 defineProps<{ loading: boolean }>()
 const emit = defineEmits<{ submit: [] }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const phoneInput = usePhoneInput()
 const phoneDisplay = phoneInput.displayValue
 const countryOpen = ref(false)
@@ -18,6 +18,12 @@ const selectedCountryLabel = computed(() => {
   const country = phoneInput.country.value
   return country.dialCode
 })
+
+const countryNames = computed(() => new Intl.DisplayNames([locale.value], { type: 'region' }))
+
+function getCountryName(code: string) {
+  return countryNames.value.of(code) ?? code
+}
 
 const phonePlaceholder = computed(() => {
   const [firstGroup = 0, ...rest] = phoneInput.country.value.pattern
@@ -99,7 +105,8 @@ function submit() {
               @click="selectCountry(country.code)"
             >
               <CountryFlag :code="country.code" />
-              <span class="t-mono">{{ country.dialCode }}</span>
+              <span class="country-name">{{ getCountryName(country.code) }}</span>
+              <span class="country-dial">{{ country.dialCode }}</span>
             </button>
           </div>
         </PopoverMenu>
@@ -134,6 +141,17 @@ function submit() {
   width: 100%;
 }
 
+:deep(.popover-layer) {
+  width: min(288px, calc(100vw - 40px));
+}
+
+:deep(.popover-panel) {
+  width: 100%;
+  max-height: min(360px, 60vh);
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+}
+
 .auth-field {
   display: flex;
   flex-direction: column;
@@ -146,10 +164,17 @@ function submit() {
   align-items: center;
   gap: 0;
   min-height: 48px;
-  overflow: hidden;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   background: var(--bg-elevated);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.phone-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
 }
 
 .dial-code {
@@ -162,7 +187,7 @@ function submit() {
   padding: 0 var(--space-3);
   border: 0;
   border-right: 1px solid var(--border-default);
-  border-radius: 0;
+  border-radius: calc(var(--radius-sm) - 1px) 0 0 calc(var(--radius-sm) - 1px);
   background: transparent;
   color: var(--text-secondary);
   white-space: nowrap;
@@ -182,7 +207,7 @@ function submit() {
 .phone-input {
   min-height: 48px;
   border: 0;
-  border-radius: 0;
+  border-radius: 0 calc(var(--radius-sm) - 1px) calc(var(--radius-sm) - 1px) 0;
   background: transparent;
   box-shadow: none;
 }
@@ -214,11 +239,11 @@ function submit() {
 
 .country-option {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-columns: 22px minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--space-2);
-  min-height: 38px;
-  padding: 0 var(--space-2);
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: 0 var(--space-3);
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -236,6 +261,26 @@ function submit() {
   color: var(--accent);
 }
 
+.country-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.country-dial {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.country-option.active .country-dial {
+  color: var(--accent);
+}
+
 @media (max-width: 420px) {
   .phone-row {
     grid-template-columns: minmax(96px, auto) minmax(0, 1fr);
@@ -246,7 +291,7 @@ function submit() {
   .country-options {
     flex: 1;
     overflow-y: auto;
-    padding-top: var(--space-3);
+    padding-top: var(--space-2);
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
