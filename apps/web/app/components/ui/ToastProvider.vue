@@ -48,7 +48,7 @@ function variantLabel(variant: string) {
             :label="t('common.close')"
             :icon="X"
             variant="secondary"
-            size="sm"
+            size="control"
             @click="remove(toast.id)"
           />
         </article>
@@ -115,11 +115,6 @@ function variantLabel(variant: string) {
 }
 
 .toast-close {
-  width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0;
-  border-radius: var(--radius-full);
   justify-self: end;
 }
 

@@ -6,7 +6,7 @@ defineOptions({ inheritAttrs: false })
 const props = withDefaults(
   defineProps<{
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
-    size?: 'sm' | 'md' | 'lg'
+    size?: 'sm' | 'md' | 'lg' | 'control'
     icon?: Component | null
     loading?: boolean
     disabled?: boolean
@@ -114,6 +114,12 @@ const classes = computed(() => [
   font-size: 14px;
 }
 
+.btn--control {
+  min-height: 42px;
+  padding: 0;
+  font-size: 13px;
+}
+
 .btn--block {
   width: 100%;
 }
@@ -134,6 +140,11 @@ const classes = computed(() => [
 
 .btn--icon-only.btn--lg {
   width: 48px;
+}
+
+.btn--icon-only.btn--control {
+  width: 42px;
+  height: 42px;
 }
 
 /* ─── Variants ─────────────────────────────────────────────────────────────── */
@@ -205,6 +216,11 @@ const classes = computed(() => [
 }
 
 .btn--lg .btn__icon {
+  width: 16px;
+  height: 16px;
+}
+
+.btn--control .btn__icon {
   width: 16px;
   height: 16px;
 }

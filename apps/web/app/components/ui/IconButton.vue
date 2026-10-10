@@ -9,7 +9,7 @@ withDefaults(
     label: string
     icon: Component
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
-    size?: 'sm' | 'md' | 'lg'
+    size?: 'sm' | 'md' | 'lg' | 'control'
     loading?: boolean
     disabled?: boolean
   }>(),
