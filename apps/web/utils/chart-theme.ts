@@ -1,4 +1,4 @@
-function cssVar(name: string, fallback: string) {
+function cssVar(name: string, fallback = 'transparent') {
   if (!import.meta.client) {
     return fallback
   }
@@ -8,24 +8,24 @@ function cssVar(name: string, fallback: string) {
 }
 
 export const COLORS = {
-  accent: () => cssVar('--accent', '#9da8ff'),
-  sent: () => cssVar('--accent', '#9da8ff'),
-  received: () => cssVar('--accent-2', '#3bd6c6'),
-  neutral: () => cssVar('--bg-overlay', '#222222'),
-  neutralSoft: () => cssVar('--border-default', '#2a2a2a'),
-  text: () => cssVar('--text-secondary', '#b5bad0'),
-  textMuted: () => cssVar('--text-tertiary', '#9299b3'),
-  textPrimary: () => cssVar('--text-primary', '#f6f7ff'),
-  border: () => cssVar('--border-subtle', '#1f1f1f'),
-  surface: () => cssVar('--bg-elevated', '#1a1a1a'),
-  accentMuted: () => cssVar('--accent-subtle', 'rgba(232, 255, 107, 0.08)'),
+  accent: () => cssVar('--accent'),
+  sent: () => cssVar('--accent'),
+  received: () => cssVar('--accent-2'),
+  neutral: () => cssVar('--bg-overlay'),
+  neutralSoft: () => cssVar('--border-default'),
+  text: () => cssVar('--text-secondary'),
+  textMuted: () => cssVar('--text-tertiary'),
+  textPrimary: () => cssVar('--text-primary'),
+  border: () => cssVar('--border-subtle'),
+  surface: () => cssVar('--bg-elevated'),
+  accentMuted: () => cssVar('--accent-subtle'),
 }
 
 export function createChartTheme() {
   return {
     backgroundColor: 'transparent',
     textStyle: {
-      fontFamily: 'Inter, system-ui, sans-serif',
+      fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text, Manrope, system-ui, sans-serif',
       color: COLORS.text(),
     },
     color: [COLORS.accent(), COLORS.received(), COLORS.neutral(), COLORS.neutralSoft()],
@@ -42,7 +42,7 @@ export function createChartTheme() {
       axisLabel: {
         color: COLORS.textMuted(),
         fontSize: 12,
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text, Manrope, system-ui, sans-serif',
       },
       splitLine: { show: false },
     },
@@ -52,19 +52,23 @@ export function createChartTheme() {
       axisLabel: {
         color: COLORS.textMuted(),
         fontSize: 12,
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text, Manrope, system-ui, sans-serif',
       },
       splitLine: {
         lineStyle: { color: COLORS.border(), type: 'solid' },
       },
     },
     tooltip: {
-      backgroundColor: cssVar('--bg-overlay', '#222222'),
-      borderColor: cssVar('--border-default', '#2a2a2a'),
+      backgroundColor: cssVar('--bg-overlay'),
+      borderColor: cssVar('--border-default'),
       borderWidth: 1,
-      textStyle: { color: COLORS.textPrimary(), fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif' },
+      textStyle: {
+        color: COLORS.textPrimary(),
+        fontSize: 13,
+        fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text, Manrope, system-ui, sans-serif',
+      },
       padding: [10, 12],
-      extraCssText: 'border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);',
+      extraCssText: 'border-radius: var(--radius-sm); box-shadow: var(--shadow);',
     },
   }
 }

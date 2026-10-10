@@ -689,7 +689,7 @@ export function aggregateMessage(message: AggregationMessageInput, acc: ReturnTy
   acc.totalChars += text.length
   const messageType = primaryMessageType(message)
   acc.messageComposition[messageType] += 1
-  if (messageType === 'text') {
+  if (text.trim().length > 0) {
     acc.textMessageCount += 1
     if (outgoing) {
       acc.mineTextMessages += 1

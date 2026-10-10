@@ -18,6 +18,7 @@ import { redis } from './services/redis.service'
 import { hasRecentWorkerHeartbeat } from './services/runtime-status.service'
 import { authRateLimitFailurePolicy } from './services/auth-rate-limit.service'
 import { apiSecurityHeaders } from './services/security-headers.service'
+import { isOriginAllowed } from './services/origin-policy.service'
 
 export async function buildServer() {
   const app = Fastify({
@@ -26,8 +27,7 @@ export async function buildServer() {
 
   await app.register(cors, {
     origin: (origin, cb) => {
-      const wildcardAllowed = config.NODE_ENV !== 'production' && config.ALLOWED_ORIGINS.includes('*')
-      if (!origin || wildcardAllowed || config.ALLOWED_ORIGINS.includes(origin)) {
+      if (!origin || isOriginAllowed(origin, config.ALLOWED_ORIGINS, config.NODE_ENV)) {
         cb(null, true)
         return
       }
@@ -92,7 +92,7 @@ export async function buildServer() {
     reply.header('Cache-Control', 'no-store')
     if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return
     const origin = request.headers.origin
-    const allowed = origin && config.ALLOWED_ORIGINS.includes(origin)
+    const allowed = origin && isOriginAllowed(origin, config.ALLOWED_ORIGINS, config.NODE_ENV)
     if (!allowed && (origin || request.cookies[cookieName])) {
       return reply.status(403).send({
         message: 'Origin is not allowed',

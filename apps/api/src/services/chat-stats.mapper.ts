@@ -95,11 +95,6 @@ function normalizeResponseStats(value: (typeof schema.chatStats.$inferSelect)['r
 }
 
 function resolveActivityDistribution(row: typeof schema.chatStats.$inferSelect): ActivityDistributionDto {
-  const value = row.activityDistribution ?? null
-  if (value?.night && value?.morning && value?.afternoon && value?.evening) {
-    return value
-  }
-
   return computeActivityDistribution(row.hourlyActivitySplit as Record<string, DirectionalCountDto>)
 }
 
@@ -108,18 +103,6 @@ function resolveCompositionStats(
   messageComposition: MessageCompositionDto,
   textMessageCount: number,
 ): CompositionStatsDto {
-  const value = row.compositionStats ?? null
-  if (value) {
-    return {
-      textSharePct: value.textSharePct ?? null,
-      mediaSharePct: value.mediaSharePct ?? null,
-      voiceSharePct: value.voiceSharePct ?? null,
-      stickerSharePct: value.stickerSharePct ?? null,
-      fileSharePct: value.fileSharePct ?? null,
-      avgCharsPerTextMessage: value.avgCharsPerTextMessage ?? null,
-    }
-  }
-
   return computeCompositionStats({
     totalMessages: row.totalMessages ?? 0,
     totalChars: row.totalChars ?? 0,
@@ -129,18 +112,6 @@ function resolveCompositionStats(
 }
 
 function resolveAvailabilityProfile(row: typeof schema.chatStats.$inferSelect): AvailabilityProfileDto {
-  const value = row.availabilityProfile ?? null
-  if (value) {
-    return {
-      activeHours: value.activeHours ?? 0,
-      activeHoursPct: value.activeHoursPct ?? 0,
-      concentrationIndex: value.concentrationIndex ?? null,
-      predictability: value.predictability ?? 'low',
-      peakWindow: value.peakWindow ?? null,
-      secondaryWindow: value.secondaryWindow ?? null,
-    }
-  }
-
   return computeAvailabilityProfile(row.hourlyActivity as Record<string, number>)
 }
 

@@ -47,6 +47,8 @@ const heatmapWeeks = computed(() => {
 
   return weeks.slice(-53)
 })
+const compactHeatmap = computed(() => heatmapWeeks.value.length <= 2)
+const compactDays = computed(() => heatmapWeeks.value.flat().filter((day) => day.date !== null))
 
 function levelClass(level: number) {
   if (level === 4) {
@@ -67,7 +69,32 @@ function levelClass(level: number) {
 
 <template>
   <div v-if="heatmapWeeks.length" class="heatmap-scroll">
-    <div class="heatmap-grid">
+    <div v-if="compactHeatmap" class="heatmap-grid heatmap-grid-compact">
+      <div
+        v-for="day in compactDays"
+        :key="day.date ?? ''"
+        class="heatmap-compact-day"
+      >
+        <div
+          class="heatmap-day"
+          :class="levelClass(day.level)"
+          :title="
+            day.date
+              ? `${formatDate(day.date, { month: 'short', day: 'numeric', year: 'numeric' })}: ${formatNumber(day.total)} ${t('common.messages')}`
+              : ''
+          "
+          :aria-label="
+            day.date
+              ? `${formatDate(day.date, { month: 'short', day: 'numeric' })}: ${formatNumber(day.total)} ${t('common.messages')}`
+              : undefined
+          "
+        />
+        <span class="heatmap-compact-label">{{
+          day.date ? formatDate(day.date, { weekday: 'short', day: 'numeric' }) : ''
+        }}</span>
+      </div>
+    </div>
+    <div v-else class="heatmap-grid">
       <div v-for="(week, weekIndex) in heatmapWeeks" :key="`week-${weekIndex}`" class="heatmap-week">
         <div
           v-for="(day, dayIndex) in week"
@@ -101,6 +128,34 @@ function levelClass(level: number) {
   display: flex;
   gap: 4px;
   width: max-content;
+}
+
+.heatmap-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(42px, 1fr));
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.heatmap-compact-day {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  text-align: center;
+}
+
+.heatmap-compact-day .heatmap-day {
+  width: auto;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.heatmap-compact-label {
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .heatmap-week {

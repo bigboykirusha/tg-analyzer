@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Square } from '../../lib/icons'
+import IconButton from '../ui/IconButton.vue'
 
 const props = defineProps<{
   current: number
@@ -97,7 +98,7 @@ const phaseSummary = computed(() => {
   })
 })
 
-const isIndeterminate = computed(() => props.status === 'running' && props.total <= 1)
+const isIndeterminate = computed(() => props.status === 'pending' || (props.status === 'running' && props.total <= 1))
 
 const progressPercent = computed(() => {
   if (props.status === 'completed') {
@@ -143,7 +144,7 @@ const estimatedTimeRemaining = computed(() => {
     return null
   }
 
-  const elapsed = (Date.now() - props.startTime) / 1000
+  const elapsed = elapsedSeconds.value
   if (elapsed < 5) {
     return null
   }
@@ -236,20 +237,28 @@ onBeforeUnmount(() => {
         </div>
         <p class="t-small progress-message">{{ subtitleText }}</p>
       </div>
-      <button
+      <IconButton
         v-if="cancellable"
-        class="cancel-button cancel-button-icon"
-        type="button"
+        class="cancel-button"
+        :icon="Square"
+        :label="cancelling ? t('dashboard.cancelling') : t('dashboard.cancelParse')"
+        variant="danger"
+        size="sm"
         :disabled="cancelling"
-        :aria-label="cancelling ? t('dashboard.cancelling') : t('dashboard.cancelParse')"
-        :title="cancelling ? t('dashboard.cancelling') : t('dashboard.cancelParse')"
         @click="emit('cancel')"
-      >
-        <Square />
-      </button>
+      />
     </div>
 
-    <div class="progress-bar" :class="{ 'progress-bar-indeterminate': isIndeterminate }">
+    <div
+      class="progress-bar"
+      role="progressbar"
+      :aria-label="t('parse.title')"
+      :aria-valuenow="isIndeterminate ? undefined : progressPercent"
+      :aria-valuemin="0"
+      :aria-valuemax="100"
+      :aria-valuetext="subtitleText"
+      :class="{ 'progress-bar-indeterminate': isIndeterminate }"
+    >
       <div class="progress-bar-fill" :style="{ width: `${progressPercent}%` }" />
     </div>
 
@@ -271,6 +280,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .progress-card {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -313,6 +323,7 @@ onBeforeUnmount(() => {
 }
 
 .progress-message {
+  overflow-wrap: anywhere;
   color: var(--text-secondary);
   line-height: 1.35;
 }
@@ -360,6 +371,7 @@ onBeforeUnmount(() => {
 
 .meta-left,
 .meta-right {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -398,64 +410,6 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.progress-card:not(.mobile-topbar-progress) .progress-chat {
-  display: none;
-}
-
-.cancel-button {
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast);
-}
-
-.cancel-button svg {
-  width: 14px;
-  height: 14px;
-  stroke-width: 1.8;
-}
-
-.cancel-button-icon {
-  width: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  padding: 0;
-  align-items: center;
-  justify-content: center;
-  display: inline-flex;
-  border-color: var(--border-subtle);
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
-}
-
-.cancel-button:hover:not(:disabled) {
-  border-color: rgba(248, 113, 113, 0.2);
-  background: var(--danger-subtle);
-  color: var(--danger);
-}
-
-.cancel-button:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 2px var(--accent),
-    0 0 0 3px var(--bg-base);
-}
-
-.cancel-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
 @keyframes progress-indeterminate {
   0% {
     transform: translateX(-120%);
@@ -467,7 +421,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 640px) {
-  .progress-header,
   .progress-meta {
     flex-direction: column;
     align-items: stretch;
@@ -489,9 +442,17 @@ onBeforeUnmount(() => {
     align-items: center;
   }
 
-  .mobile-topbar-progress .cancel-button-icon {
+  .mobile-topbar-progress .cancel-button {
     align-self: flex-start;
     margin-left: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar-indeterminate .progress-bar-fill {
+    animation: none;
+    width: 100% !important;
+    opacity: 0.45;
   }
 }
 
@@ -564,16 +525,5 @@ onBeforeUnmount(() => {
 .mobile-topbar-progress .t-mono {
   font-size: 11px;
   line-height: 1.1;
-}
-
-.mobile-topbar-progress .cancel-button-icon {
-  width: 28px;
-  min-width: 28px;
-  min-height: 28px;
-}
-
-.mobile-topbar-progress .cancel-button svg {
-  width: 12px;
-  height: 12px;
 }
 </style>

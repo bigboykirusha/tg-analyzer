@@ -7,8 +7,10 @@ const props = defineProps<{
   items: MonthlyActivityDto[]
 }>()
 const { formatDate } = useI18n()
+const { preference } = useTheme()
 
 const option = computed(() => {
+  void preference.value
   const theme = CHART_THEME.base()
   const labels = props.items.map((item) =>
     formatDate(`${item.month}-01T00:00:00`, {

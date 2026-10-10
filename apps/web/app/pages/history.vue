@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import type { ParseHistoryItem } from '@tg-analyzer/shared'
-import AppLayout from '../components/AppLayout.vue'
 import Container from '../components/layout/Container.vue'
 import ParseProgress from '../components/stats/ParseProgress.vue'
-import Badge from '../components/ui/Badge.vue'
 import Button from '../components/ui/Button.vue'
 import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
+import ModalDialog from '../components/ui/ModalDialog.vue'
 import Skeleton from '../components/ui/Skeleton.vue'
-import StatusDot from '../components/ui/StatusDot.vue'
-import { Clock, Trash2, X } from '../lib/icons'
+import ListSkeleton from '../components/ui/ListSkeleton.vue'
+import { Clock, Trash2 } from '../lib/icons'
 import { useI18n } from '../composables/useI18n'
 import { useParseProgress } from '../composables/useParseProgress'
 import { useStats } from '../composables/useStats'
@@ -18,26 +17,26 @@ import authMiddleware from '../middleware/auth'
 import { useStatsStore } from '../stores/stats'
 
 definePageMeta({
+  layout: 'workspace',
   middleware: [authMiddleware],
 })
 
-const { fetchHistory, clearHistory, deleteHistoryItem } = useStats()
+const { fetchHistory, deleteHistoryItem } = useStats()
 const stats = useStatsStore()
-const { progress, bootstrapped, bootstrapFromServer, connect, disconnect } = useParseProgress()
+const { progress, bootstrapped, bootstrapFromServer } = useParseProgress()
 const { t, formatNumber, formatDate: formatLocaleDate } = useI18n()
 const toast = useToast()
 const historyPageSize = 20
-const historyPage = ref(1)
-const historyTotal = ref(0)
+const historyPage = ref(stats.historyPage)
+const historyTotal = ref(stats.historyTotal)
 const loadingHistoryPage = ref(false)
 const historyPageCount = computed(() => Math.max(1, Math.ceil(historyTotal.value / historyPageSize)))
 
-const ready = ref(false)
-const clearingHistory = ref(false)
+const ready = ref(stats.historyLoaded)
 const deletingHistoryJobId = ref<string | null>(null)
 const selectedHistoryItem = ref<ParseHistoryItem | null>(null)
 const confirmState = ref<{
-  type: 'clear-history' | 'delete-history-item'
+  type: 'delete-history-item'
   title: string
   description: string
   confirmLabel: string
@@ -87,7 +86,11 @@ function formatCooldown(seconds: number) {
 }
 
 function historyDuration(item: ParseHistoryItem) {
-  const startedAt = new Date(item.createdAt).getTime()
+  if (!item.startedAt) {
+    return t('common.na')
+  }
+
+  const startedAt = new Date(item.startedAt).getTime()
   const finishedAt = item.completedAt ? new Date(item.completedAt).getTime() : Date.now()
 
   if (Number.isNaN(startedAt) || Number.isNaN(finishedAt) || finishedAt <= startedAt) {
@@ -114,41 +117,6 @@ function historyProgress(item: ParseHistoryItem) {
     return item.totalMessages ? 100 : 18
   }
   return 0
-}
-
-function statusVariant(status: string) {
-  if (status === 'completed') {
-    return 'success'
-  }
-  if (status === 'failed') {
-    return 'danger'
-  }
-  if (status === 'cancelled') {
-    return 'warning'
-  }
-  if (status === 'running') {
-    return 'info'
-  }
-  return 'default'
-}
-
-function statusLabel(status: string) {
-  if (status === 'completed') {
-    return t('common.statusCompleted')
-  }
-  if (status === 'failed') {
-    return t('common.statusFailed')
-  }
-  if (status === 'cancelled') {
-    return t('common.statusCancelled')
-  }
-  if (status === 'running') {
-    return t('common.statusRunning')
-  }
-  if (status === 'pending') {
-    return t('common.statusPending')
-  }
-  return status
 }
 
 function formatHistoryScope(item: ParseHistoryItem) {
@@ -189,15 +157,6 @@ async function loadHistoryPage(page: number) {
   }
 }
 
-function openClearHistoryConfirm() {
-  confirmState.value = {
-    type: 'clear-history',
-    title: t('dashboard.clearHistory'),
-    description: t('dashboard.clearHistoryConfirm'),
-    confirmLabel: t('dashboard.clearHistory'),
-  }
-}
-
 function openDeleteHistoryItemConfirm(jobId: string) {
   confirmState.value = {
     type: 'delete-history-item',
@@ -205,21 +164,6 @@ function openDeleteHistoryItemConfirm(jobId: string) {
     description: t('dashboard.deleteHistoryItemConfirm'),
     confirmLabel: t('dashboard.deleteHistoryItem'),
     jobId,
-  }
-}
-
-async function handleClearHistory() {
-  clearingHistory.value = true
-
-  try {
-    await clearHistory()
-    await loadHistoryPage(historyPage.value)
-    toast.success(t('dashboard.historyCleared'))
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('dashboard.clearHistoryError'))
-  } finally {
-    clearingHistory.value = false
-    confirmState.value = null
   }
 }
 
@@ -246,34 +190,30 @@ async function confirmAction() {
     return
   }
 
-  if (confirmState.value.type === 'clear-history') {
-    await handleClearHistory()
-  } else if (confirmState.value.type === 'delete-history-item' && confirmState.value.jobId) {
+  if (confirmState.value.type === 'delete-history-item' && confirmState.value.jobId) {
     await handleDeleteHistoryItem(confirmState.value.jobId)
   }
 }
 
 const confirmLoading = computed(() => {
-  if (!confirmState.value) {
-    return false
-  }
-  if (confirmState.value.type === 'delete-history-item') {
-    return deletingHistoryJobId.value === confirmState.value.jobId
-  }
-  return clearingHistory.value
+  return Boolean(confirmState.value?.jobId && deletingHistoryJobId.value === confirmState.value.jobId)
 })
 
-watch(isParseActive, (active) => {
+function historyTiming(item: ParseHistoryItem) {
+  return `${formatShortDate(item.startedAt)} — ${formatCompletedDate(item.completedAt)} · ${historyDuration(item)}`
+}
+
+const selectedReportPath = computed(() => {
+  const item = selectedHistoryItem.value
+  return item?.status === 'completed' && item.chatId ? `/chat/${item.chatId}` : ''
+})
+
+watch(isParseActive, (active, wasActive) => {
   if (!bootstrapped.value) {
     return
   }
 
-  if (active) {
-    connect()
-    return
-  }
-
-  disconnect()
+  if (!active && wasActive) void loadHistoryPage(historyPage.value).catch(() => undefined)
 })
 
 watch(isParseTerminal, async (terminal) => {
@@ -281,12 +221,7 @@ watch(isParseTerminal, async (terminal) => {
     return
   }
 
-  disconnect()
   await loadHistoryPage(historyPage.value).catch(() => undefined)
-})
-
-onBeforeUnmount(() => {
-  disconnect()
 })
 
 onMounted(async () => {
@@ -302,20 +237,17 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppLayout>
     <Container size="default">
-      <div v-if="!ready" class="page-stack">
-        <section class="card workspace-card">
+      <div v-if="!ready" class="page-stack" aria-busy="true">
+        <section class="card section-card workspace-card">
           <div class="stack-md">
             <Skeleton height="24px" width="180px" />
-            <div class="list-grid">
-              <Skeleton v-for="item in 5" :key="`history-${item}`" height="96px" radius="var(--radius-md)" />
-            </div>
+            <ListSkeleton :rows="5" :avatar="false" />
           </div>
         </section>
       </div>
 
-      <div v-else class="page-stack" :class="{ 'page-stack-with-mobile-toast': isParseActive }">
+      <div v-else class="page-stack">
         <ParseProgress
           v-if="isParseActive"
           class="dashboard-progress-inline"
@@ -330,38 +262,30 @@ onMounted(async () => {
         />
 
         <section class="card section-card workspace-card">
-          <div class="section-header">
-            <div class="section-copy">
-              <span class="t-label">{{ t('dashboard.runHistoryLabel') }}</span>
-              <div class="section-title-row">
-                <h1 class="t-h2">{{ t('dashboard.historyPageTitle') }}</h1>
-                <Badge variant="accent">{{ t('dashboard.jobsCount', { count: formatNumber(historyTotal) }) }}</Badge>
-              </div>
-              <p class="t-small section-text">{{ t('dashboard.historyPageText') }}</p>
-            </div>
-          </div>
-
           <div v-if="stats.history.length" class="history-layout">
             <div class="history-list">
               <div
                 v-for="(item, index) in stats.history"
                 :key="item.jobId"
-                class="history-row stagger-item"
+                class="history-row"
                 :style="{ '--delay': `${index * 30}ms` }"
-                role="button"
-                tabindex="0"
-                @click="openHistoryDetails(item)"
-                @keydown.enter.prevent="openHistoryDetails(item)"
-                @keydown.space.prevent="openHistoryDetails(item)"
               >
                 <div class="history-main">
-                  <div class="dialog-copy">
-                    <div class="dialog-title-row">
-                      <span class="history-title">{{ formatHistoryScope(item) }}</span>
-                      <StatusDot :variant="statusVariant(item.status)" :label="statusLabel(item.status)" />
-                    </div>
-                    <div class="history-meta t-small">
-                      <span class="selection-subline">{{ formatHistoryDates(item) }}</span>
+                  <div
+                    class="history-open"
+                    role="button"
+                    tabindex="0"
+                    @click="openHistoryDetails(item)"
+                    @keydown.enter.prevent="openHistoryDetails(item)"
+                    @keydown.space.prevent="openHistoryDetails(item)"
+                  >
+                    <div class="dialog-copy">
+                      <div class="dialog-title-row">
+                        <span class="history-title">{{ formatHistoryScope(item) }}</span>
+                      </div>
+                      <div class="history-meta t-small">
+                        <span class="selection-subline">{{ formatHistoryDates(item) }}</span>
+                      </div>
                     </div>
                   </div>
                   <Button
@@ -370,7 +294,8 @@ onMounted(async () => {
                     size="sm"
                     class="delete-btn"
                     :icon="Trash2"
-                    aria-label="Delete"
+                    icon-only
+                    :aria-label="t('dashboard.deleteHistoryItem')"
                     :loading="deletingHistoryJobId === item.jobId"
                     @click.stop="openDeleteHistoryItemConfirm(item.jobId)"
                   />
@@ -378,7 +303,10 @@ onMounted(async () => {
                 <div v-if="shouldRenderHistoryError(item)" class="detail-error t-small">
                   {{ item.errorMessage }}
                 </div>
-                <div v-else-if="item.status === 'running' || item.status === 'pending'" class="history-progress progress-bar">
+                <div
+                  v-else-if="item.status === 'running' || item.status === 'pending'"
+                  class="history-progress progress-bar"
+                >
                   <div class="progress-bar-fill" :style="{ width: `${historyProgress(item)}%` }" />
                 </div>
               </div>
@@ -406,7 +334,9 @@ onMounted(async () => {
             >
               {{ t('common.previousPage') }}
             </Button>
-            <span class="t-small">{{ t('common.pageOf', { page: formatNumber(historyPage), total: formatNumber(historyPageCount) }) }}</span>
+            <span class="t-small">{{
+              t('common.pageOf', { page: formatNumber(historyPage), total: formatNumber(historyPageCount) })
+            }}</span>
             <Button
               variant="secondary"
               size="sm"
@@ -417,11 +347,6 @@ onMounted(async () => {
             </Button>
           </nav>
 
-          <div v-if="stats.history.length" class="history-actions-footer">
-            <Button variant="secondary" size="md" class="history-clear-button" :loading="clearingHistory" @click="openClearHistoryConfirm">
-              {{ t('dashboard.clearHistory') }}
-            </Button>
-          </div>
         </section>
 
         <ConfirmDialog
@@ -436,58 +361,47 @@ onMounted(async () => {
           @confirm="confirmAction"
         />
 
-        <Teleport to="body">
-          <Transition name="dialog">
-            <div v-if="selectedHistoryItem" class="dialog-backdrop" @click.self="closeHistoryDetails">
-              <section class="dialog-panel history-dialog-panel" role="dialog" aria-modal="true">
-                <button type="button" class="dialog-close" :aria-label="t('common.close')" @click="closeHistoryDetails">
-                  <X :size="18" :stroke-width="1.5" aria-hidden="true" />
-                </button>
-                <div class="history-dialog-copy">
-                  <div class="section-title-row">
-                    <h2 class="t-h3">{{ formatHistoryScope(selectedHistoryItem) }}</h2>
-                    <Badge :variant="statusVariant(selectedHistoryItem.status)">{{ statusLabel(selectedHistoryItem.status) }}</Badge>
-                  </div>
-                  <p class="t-small">{{ selectedHistoryItem.chatName || selectedHistoryItem.chatId || selectedHistoryItem.jobId }}</p>
-                </div>
+        <ModalDialog
+          :open="Boolean(selectedHistoryItem)"
+          :close-label="t('common.close')"
+          size="lg"
+          @close="closeHistoryDetails"
+        >
+          <template v-if="selectedHistoryItem" #header>
+            <div class="history-dialog-copy">
+              <h2 class="t-h3">{{ formatHistoryScope(selectedHistoryItem) }}</h2>
+              <p class="t-small">
+                {{ selectedHistoryItem.chatName || selectedHistoryItem.chatId || selectedHistoryItem.jobId }}
+              </p>
+            </div>
+          </template>
 
-                <div class="history-dialog-grid">
-                  <div class="history-dialog-item">
-                    <span class="t-label">{{ t('dashboard.started') }}</span>
-                    <span class="t-mono">{{ formatShortDate(selectedHistoryItem.createdAt) }}</span>
-                  </div>
-                  <div class="history-dialog-item">
-                    <span class="t-label">{{ t('dashboard.finished') }}</span>
-                    <span class="t-mono">{{ formatCompletedDate(selectedHistoryItem.completedAt) }}</span>
-                  </div>
-                  <div class="history-dialog-item">
-                    <span class="t-label">{{ t('dashboard.duration') }}</span>
-                    <span class="t-mono">{{ historyDuration(selectedHistoryItem) }}</span>
-                  </div>
-                  <div class="history-dialog-item">
-                    <span class="t-label">{{ t('dashboard.progress') }}</span>
-                    <span class="t-mono">{{ t('dashboard.historyChatsCount', { parsed: formatNumber(selectedHistoryItem.parsedChats), total: formatNumber(selectedHistoryItem.totalChats) }) }}</span>
+          <template v-if="selectedHistoryItem">
+            <div class="history-dialog-grid">
+                  <div class="history-dialog-item history-dialog-item--wide">
+                    <span class="t-label">{{ t('dashboard.runTiming') }}</span>
+                    <span class="t-mono">{{ historyTiming(selectedHistoryItem) }}</span>
                   </div>
                   <div class="history-dialog-item">
                     <span class="t-label">{{ t('common.messages') }}</span>
                     <span class="t-mono">{{ formatNumber(selectedHistoryItem.totalMessages) }}</span>
                   </div>
                   <div class="history-dialog-item">
-                    <span class="t-label">Job ID</span>
+                    <span class="t-label">{{ t('dashboard.jobId') }}</span>
                     <span class="t-mono history-dialog-jobid">{{ selectedHistoryItem.jobId }}</span>
                   </div>
-                </div>
-
-                <div v-if="shouldRenderHistoryError(selectedHistoryItem)" class="detail-error t-small" role="status">
-                  {{ t('dashboard.startError') }}
-                </div>
-              </section>
             </div>
-          </Transition>
-        </Teleport>
+
+            <div v-if="shouldRenderHistoryError(selectedHistoryItem)" class="detail-error t-small" role="status">
+              {{ t('dashboard.startError') }}
+            </div>
+            <Button v-if="selectedReportPath" variant="primary" size="md" :to="selectedReportPath">
+              {{ t('common.report') }}
+            </Button>
+          </template>
+        </ModalDialog>
       </div>
     </Container>
-  </AppLayout>
 </template>
 
 <style scoped>
@@ -505,7 +419,7 @@ onMounted(async () => {
 
 .workspace-card {
   border-color: var(--border-default);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .section-card {
@@ -529,7 +443,7 @@ onMounted(async () => {
 .list-grid,
 .history-list {
   display: grid;
-  gap: var(--space-2);
+  gap: 0;
 }
 
 .dashboard-progress-inline {
@@ -542,21 +456,28 @@ onMounted(async () => {
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  cursor: pointer;
-  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: transparent;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .history-row:hover {
-  border-color: var(--accent-border);
-  background: color-mix(in srgb, var(--accent-subtle) 24%, var(--bg-surface));
+  border-color: var(--border-subtle);
+  background: color-mix(in srgb, var(--accent-subtle) 48%, transparent);
 }
 
-.history-row:focus-visible {
+.history-row:last-child {
+  border-bottom: 0;
+}
+
+.history-open:focus-visible {
   outline: none;
-  border-color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .history-main,
@@ -565,6 +486,19 @@ onMounted(async () => {
   align-items: center;
   justify-content: flex-start;
   gap: var(--space-3);
+}
+
+.history-open {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .dialog-copy,
@@ -603,56 +537,12 @@ onMounted(async () => {
   background: linear-gradient(90deg, var(--accent), var(--success));
 }
 
-.history-actions-footer {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .history-pagination {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
   flex-wrap: wrap;
-}
-
-.dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  padding: var(--space-4);
-  background: rgba(0, 0, 0, 0.62);
-  backdrop-filter: blur(6px);
-}
-
-.dialog-panel {
-  position: relative;
-  width: min(720px, 100%);
-  max-height: min(80vh, 760px);
-  overflow: auto;
-  padding: var(--space-6);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-lg);
-}
-
-.dialog-close {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
 }
 
 .history-dialog-grid {
@@ -673,25 +563,8 @@ onMounted(async () => {
   background: var(--bg-elevated);
 }
 
-.dialog-enter-active .dialog-panel,
-.dialog-leave-active .dialog-panel {
-  transition: transform var(--transition-normal), opacity var(--transition-normal);
-}
-
-.dialog-enter-active .dialog-backdrop,
-.dialog-leave-active .dialog-backdrop {
-  transition: opacity var(--transition-normal);
-}
-
-.dialog-enter-from .dialog-panel,
-.dialog-leave-to .dialog-panel {
-  opacity: 0;
-  transform: translateY(10px) scale(0.98);
-}
-
-.dialog-enter-from .dialog-backdrop,
-.dialog-leave-to .dialog-backdrop {
-  opacity: 0;
+.history-dialog-item--wide {
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 900px) {
@@ -704,4 +577,5 @@ onMounted(async () => {
     align-items: flex-start;
   }
 }
+
 </style>

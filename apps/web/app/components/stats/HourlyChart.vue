@@ -7,11 +7,13 @@ const props = defineProps<{
   activity: Record<string, DirectionalCountDto>
 }>()
 const { t } = useI18n()
+const { preference } = useTheme()
 const hasData = computed(() =>
   Object.values(props.activity).some((entry) => (entry?.sent ?? 0) > 0 || (entry?.received ?? 0) > 0),
 )
 
 const option = computed(() => {
+  void preference.value
   const theme = CHART_THEME.base()
   const hours = Array.from({ length: 24 }, (_, hour) => String(hour))
 
@@ -19,21 +21,34 @@ const option = computed(() => {
     ...theme,
     grid: {
       ...theme.grid,
-      top: 20,
+      top: 40,
       bottom: 24,
     },
     tooltip: {
       ...theme.tooltip,
       trigger: 'axis',
     },
+    legend: {
+      top: 0,
+      icon: 'circle',
+      textStyle: {
+        color: COLORS.text(),
+        fontFamily: 'Inter, system-ui, sans-serif',
+      },
+    },
     xAxis: {
       ...theme.xAxis,
       type: 'category',
       data: hours.map((hour) => `${hour}:00`),
+      axisLabel: {
+        ...theme.xAxis.axisLabel,
+        interval: 2,
+      },
     },
     yAxis: {
       ...theme.yAxis,
       type: 'value',
+      minInterval: 1,
     },
     series: [
       {

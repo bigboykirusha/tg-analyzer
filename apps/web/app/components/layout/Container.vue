@@ -27,15 +27,15 @@ const classes = computed(() => ['ui-container', `ui-container-${props.size}`])
 }
 
 .ui-container-narrow {
-  max-width: 720px;
+  max-width: calc(720px + var(--space-8) * 2);
 }
 
 .ui-container-default {
-  max-width: none;
+  max-width: calc(800px + var(--space-8) * 2);
 }
 
 .ui-container-full {
-  max-width: none;
+  max-width: calc(1000px + var(--space-8) * 2);
 }
 
 @media (min-width: 768px) {

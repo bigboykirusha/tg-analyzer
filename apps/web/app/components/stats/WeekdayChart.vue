@@ -7,9 +7,11 @@ const props = defineProps<{
   activity: Record<string, DirectionalCountDto>
 }>()
 const { t } = useI18n()
+const { preference } = useTheme()
 const hasData = computed(() => Object.values(props.activity).some((entry) => (entry?.total ?? 0) > 0))
 
 const option = computed(() => {
+  void preference.value
   const theme = CHART_THEME.base()
   const labels = t('chart.weekdays').split(',')
   return {
@@ -26,6 +28,7 @@ const option = computed(() => {
     yAxis: {
       ...theme.yAxis,
       type: 'value',
+      minInterval: 1,
     },
     series: [
       {

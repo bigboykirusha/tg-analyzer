@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync, FastifyReply, FastifySchema } from 'fastify'
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest, FastifySchema } from 'fastify'
 import { z } from 'zod'
 import { Api } from 'telegram'
 import {
@@ -48,12 +48,22 @@ import {
 import { verifyToken, type TokenClaims } from '../services/token.service'
 import { issueWsTicket } from '../services/ws-ticket.service'
 
-const authRateLimitConfig = {
-  rateLimit: {
-    max: config.AUTH_RATE_LIMIT_MAX,
-    timeWindow: config.AUTH_RATE_LIMIT_WINDOW,
-  },
-} as const
+function createAuthRateLimitConfig(scope: 'login' | 'refresh' | 'session', max = config.AUTH_RATE_LIMIT_MAX) {
+  return {
+    rateLimit: {
+      max,
+      timeWindow: config.AUTH_RATE_LIMIT_WINDOW,
+      keyGenerator: (request: FastifyRequest) => `${scope}:${request.ip}`,
+    },
+  } as const
+}
+
+// Login attempts stay deliberately strict. Refreshes and authenticated session
+// operations use separate buckets so completing 2FA cannot exhaust the budget
+// required to bootstrap the application immediately afterwards.
+const loginRateLimitConfig = createAuthRateLimitConfig('login')
+const refreshRateLimitConfig = createAuthRateLimitConfig('refresh', Math.max(30, config.AUTH_RATE_LIMIT_MAX * 6))
+const sessionRateLimitConfig = createAuthRateLimitConfig('session', Math.max(30, config.AUTH_RATE_LIMIT_MAX * 6))
 
 const jsonSchemaOptions = { target: 'draft-7' } as const
 const apiErrorSchema = z.toJSONSchema(apiErrorResponseSchema, jsonSchemaOptions)
@@ -91,7 +101,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/send-code',
     {
-      config: authRateLimitConfig,
+      config: loginRateLimitConfig,
       schema: authDocs('Send Telegram login code', {
         body: sendCodeBodyJsonSchema,
         response: {
@@ -113,7 +123,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/verify-code',
     {
-      config: authRateLimitConfig,
+      config: loginRateLimitConfig,
       schema: authDocs('Verify Telegram login code', {
         body: verifyCodeBodyJsonSchema,
         response: {
@@ -153,7 +163,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/verify-password',
     {
-      config: authRateLimitConfig,
+      config: loginRateLimitConfig,
       schema: authDocs('Verify Telegram 2FA password', {
         body: verifyPasswordBodyJsonSchema,
         security: authenticated,
@@ -186,7 +196,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/refresh',
     {
-      config: authRateLimitConfig,
+      config: refreshRateLimitConfig,
       schema: authDocs('Refresh access token', {
         security: refreshCookieAuth,
         response: { 200: authSuccessSchema, 401: apiErrorSchema, 429: apiErrorSchema },
@@ -259,7 +269,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/logout',
     {
-      config: authRateLimitConfig,
+      config: sessionRateLimitConfig,
       schema: authDocs('Log out', {
         security: refreshCookieAuth,
         response: { 200: successResponseSchema, 429: apiErrorSchema },
@@ -287,7 +297,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/ws-ticket',
     {
-      config: authRateLimitConfig,
+      config: sessionRateLimitConfig,
       preHandler: requireAuth,
       schema: authDocs('Issue one-time WebSocket ticket', {
         security: authenticated,

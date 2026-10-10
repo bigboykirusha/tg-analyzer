@@ -15,6 +15,10 @@ export const useStatsStore = defineStore('stats', {
     selectedChat: null as ChatStatsDto | null,
     activity: [] as ActivityPointDto[],
     history: [] as ParseHistoryItem[],
+    chatsLoaded: false,
+    historyLoaded: false,
+    historyPage: 1,
+    historyTotal: 0,
     parseDialogs: [] as ParseDialogDto[],
     parseDialogsTruncated: false,
     parseDialogsTotal: 0,
@@ -83,6 +87,10 @@ export const useStatsStore = defineStore('stats', {
       this.selectedChat = null
       this.activity = []
       this.history = []
+      this.chatsLoaded = false
+      this.historyLoaded = false
+      this.historyPage = 1
+      this.historyTotal = 0
       this.parseDialogs = []
       this.parseDialogsTruncated = false
       this.parseDialogsTotal = 0

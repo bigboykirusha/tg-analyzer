@@ -49,3 +49,18 @@ test('computeSessionStats uses the requested timezone for night sessions and doe
     original,
   )
 })
+
+test('computeSessionStats sorts input and ignores invalid timestamps', () => {
+  const timeline = [
+    { timestamp: new Date('2026-01-01T10:05:00Z'), outgoing: false },
+    { timestamp: new Date('invalid'), outgoing: true },
+    { timestamp: new Date('2026-01-01T10:00:00Z'), outgoing: true },
+  ]
+  const snapshot = [...timeline]
+  const result = computeSessionStats(timeline, 1, 'UTC')
+
+  assert.equal(result.totalSessions, 1)
+  assert.equal(result.averageSessionDurationSec, 300)
+  assert.equal(result.averageSessionMessages, 2)
+  assert.deepEqual(timeline, snapshot)
+})

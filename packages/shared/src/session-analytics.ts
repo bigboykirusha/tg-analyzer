@@ -14,10 +14,13 @@ export function computeSessionStats(
   timeZone: string,
   boundaryMs = DEFAULT_SESSION_BOUNDARY_MS,
 ): SessionStatsDto {
-  if (timeline.length === 0) return emptySessionStats()
+  const orderedTimeline = timeline
+    .filter((item) => !Number.isNaN(item.timestamp.getTime()))
+    .sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
+  if (orderedTimeline.length === 0) return emptySessionStats()
 
   const sessions: SessionStatsDto['highlights'] = []
-  const first = timeline[0]
+  const first = orderedTimeline[0]
   if (!first) return emptySessionStats()
 
   let currentSession = {
@@ -28,9 +31,9 @@ export function computeSessionStats(
     receivedMessages: Number(!first.outgoing),
   }
 
-  for (let index = 1; index < timeline.length; index += 1) {
-    const item = timeline[index]
-    const previous = timeline[index - 1]
+  for (let index = 1; index < orderedTimeline.length; index += 1) {
+    const item = orderedTimeline[index]
+    const previous = orderedTimeline[index - 1]
     if (!item || !previous) continue
 
     if (item.timestamp.getTime() - previous.timestamp.getTime() > boundaryMs) {
@@ -58,7 +61,7 @@ export function computeSessionStats(
     const hour = getZonedHour(new Date(startedAt), timeZone)
     return hour >= 23 || hour <= 5
   }).length
-  const activeWeeks = Math.max(activeDays / 7, 1)
+  const activeWeeks = Math.max(Math.max(0, activeDays) / 7, 1)
   const longestByDuration = [...sessions].sort((left, right) => right.durationSec - left.durationSec)[0] ?? null
   const densestByMessages = [...sessions].sort((left, right) => right.totalMessages - left.totalMessages)[0] ?? null
   const highlights = [densestByMessages, longestByDuration]

@@ -5,7 +5,7 @@ definePageMeta({ layout: false })
 
 const sections = [
   { title: 'Кнопки', description: 'Основное, вторичное и опасное действие с единым touch target.' },
-  { title: 'Состояния', description: 'Загрузка, ошибка, пустое состояние и статус-капсулы.' },
+  { title: 'Состояния', description: 'Загрузка, ошибка и пустое состояние.' },
   { title: 'Поверхности', description: 'Плотные карточки для данных и стекло для временных слоёв.' },
 ]
 </script>
@@ -32,8 +32,8 @@ const sections = [
     <section class="design-tokens" aria-label="Color tokens">
       <div class="swatch bg"><span>Background</span></div>
       <div class="swatch surface"><span>Surface</span></div>
-      <div class="swatch accent"><span>Indigo</span></div>
-      <div class="swatch teal"><span>Teal</span></div>
+      <div class="swatch accent"><span>Cobalt</span></div>
+      <div class="swatch coral"><span>Coral</span></div>
     </section>
     <section v-for="section in sections" :key="section.title" class="design-section">
       <div>
@@ -44,10 +44,7 @@ const sections = [
         <UiButton variant="primary">Анализировать</UiButton><UiButton>Отменить</UiButton
         ><UiButton variant="danger">Удалить</UiButton>
       </div>
-      <div v-else-if="section.title === 'Состояния'" class="design-row">
-        <UiBadge variant="success">Готово</UiBadge><UiBadge variant="running">В обработке</UiBadge
-        ><UiBadge variant="danger">Ошибка</UiBadge>
-      </div>
+      <div v-else-if="section.title === 'Состояния'" class="design-row t-small">Готово · В обработке · Ошибка</div>
       <div v-else class="design-row"><UiMetricCard label="Сообщения" value="12 840" sub="за выбранный период" /></div>
     </section>
   </main>
@@ -112,7 +109,7 @@ const sections = [
   background: var(--accent);
   color: var(--accent-text);
 }
-.swatch.teal {
+.swatch.coral {
   background: var(--accent-2);
   color: var(--text-inverse);
 }

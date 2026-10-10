@@ -79,9 +79,57 @@ test('hour distributions include all buckets and availability detects concentrat
     activeHoursPct: 4.17,
     concentrationIndex: 24,
     predictability: 'high',
-    peakWindow: '00:00-13:00',
-    secondaryWindow: '00:00-02:00',
+    peakWindow: '11:00-14:00',
+    secondaryWindow: null,
   })
+})
+
+test('availability ignores invalid buckets and finds compact non-overlapping peak windows', () => {
+  assert.deepEqual(computeAvailabilityProfile({}), {
+    activeHours: 0,
+    activeHoursPct: 0,
+    concentrationIndex: null,
+    predictability: 'low',
+    peakWindow: null,
+    secondaryWindow: null,
+  })
+
+  const hourly = {
+    '8': 3,
+    '9': 7,
+    '10': 4,
+    '20': 5,
+    '21': 4,
+    invalid: 999,
+    '24': 999,
+  }
+  assert.deepEqual(computeAvailabilityProfile(hourly), {
+    activeHours: 5,
+    activeHoursPct: 20.83,
+    concentrationIndex: 7.3,
+    predictability: 'high',
+    peakWindow: '08:00-11:00',
+    secondaryWindow: '19:00-22:00',
+  })
+})
+
+test('composition percentages use classified messages as the source of truth', () => {
+  assert.deepEqual(
+    computeCompositionStats({
+      totalMessages: 10,
+      totalChars: 12,
+      textMessageCount: 2,
+      messageComposition: { text: 2, media: 1, voice: 1, sticker: 0, file: 0 },
+    }),
+    {
+      textSharePct: 50,
+      mediaSharePct: 25,
+      voiceSharePct: 25,
+      stickerSharePct: 0,
+      fileSharePct: 0,
+      avgCharsPerTextMessage: 6,
+    },
+  )
 })
 
 test('relationship and health scores exclude groups and empty reports', () => {
@@ -171,6 +219,25 @@ test('relationship and health scores exclude groups and empty reports', () => {
       activeDays: 0,
       relationshipScore: null,
       trend: 'unknown',
+    }),
+    null,
+  )
+  assert.equal(
+    computeHealthScore({
+      responseRate: null,
+      sessionStats: {
+        totalSessions: 4,
+        averageSessionMessages: 6,
+        averageSessionDurationSec: 120,
+        longestSessionMessages: 12,
+        longestSessionDurationSec: 360,
+        sessionsPerActiveWeek: 2,
+        nightSessionsPct: 0,
+        highlights: [],
+      },
+      activeDays: 12,
+      relationshipScore: relationship,
+      trend: 'stable',
     }),
     null,
   )

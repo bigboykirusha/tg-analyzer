@@ -7,9 +7,11 @@ const props = defineProps<{
   received: number
 }>()
 const { t } = useI18n()
+const { preference } = useTheme()
 const hasData = computed(() => props.sent + props.received > 0)
 
 const option = computed(() => {
+  void preference.value
   const theme = CHART_THEME.base()
   return {
     ...theme,

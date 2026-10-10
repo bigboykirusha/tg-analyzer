@@ -92,21 +92,23 @@ onBeforeUnmount(() => {
   z-index: 90;
   display: flex;
   align-items: end;
-  background: color-mix(in srgb, #000 52%, transparent);
+  background: var(--scrim);
+  backdrop-filter: blur(var(--blur-sm));
 }
 .sheet {
   width: 100%;
   max-height: min(80dvh, 640px);
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 10px max(var(--space-4), env(safe-area-inset-right))
     max(calc(var(--space-5) + env(safe-area-inset-bottom)), var(--space-5))
     max(var(--space-4), env(safe-area-inset-left));
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--glass-border);
   border-bottom: 0;
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  background: var(--surface-glass);
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(var(--blur-md));
+  background: var(--glass-sheen), var(--surface-glass);
+  box-shadow: var(--glass-inset), var(--shadow-lg);
+  backdrop-filter: var(--glass-filter);
 }
 .sheet-handle {
   width: 36px;
@@ -127,7 +129,7 @@ onBeforeUnmount(() => {
 }
 .sheet-enter-active .sheet,
 .sheet-leave-active .sheet {
-  transition: transform var(--transition-normal);
+  transition: transform var(--transition-slow);
 }
 .sheet-enter-from,
 .sheet-leave-to {

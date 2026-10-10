@@ -59,4 +59,11 @@ test('monthly trend requires six months and compares the latest three-month wind
     ]),
     'growing',
   )
+  assert.equal(
+    computeTrend([
+      { month: '2026-01', sent: 30, received: 0, total: 30 },
+      { month: '2026-06', sent: 5, received: 0, total: 5 },
+    ]),
+    'fading',
+  )
 })

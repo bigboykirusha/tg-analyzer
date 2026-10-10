@@ -73,13 +73,17 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
   const directPairCounts = new Map<string, number>()
   const impliedPairCounts = new Map<string, number>()
   const hourlyParticipants = new Map<string, Set<string>>()
-  const nextDifferentMessages = findNextDifferentMessages(input.timeline)
+  const timeline = input.timeline
+    .filter((entry) => !Number.isNaN(entry.timestamp.getTime()))
+    .sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
+  const nextDifferentMessages = findNextDifferentMessages(timeline)
   const getLocalTime = createZonedDayAndHourFormatter(input.timeZone)
   let totalSessions = 0
-  let respondedMessages = 0
+  let conversationTurns = 0
+  let respondedTurns = 0
 
-  for (let index = 0; index < input.timeline.length; index += 1) {
-    const current = input.timeline[index]
+  for (let index = 0; index < timeline.length; index += 1) {
+    const current = timeline[index]
     if (!current) continue
     const currentParticipant = participantById.get(current.senderId)
     if (!currentParticipant) continue
@@ -90,7 +94,7 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
     hourParticipants.add(current.senderId)
     hourlyParticipants.set(hourKey, hourParticipants)
 
-    const previous = input.timeline[index - 1]
+    const previous = timeline[index - 1]
     if (!previous || current.timestamp.getTime() - previous.timestamp.getTime() > GROUP_SESSION_BOUNDARY_MS) {
       currentParticipant.starterCount += 1
       totalSessions += 1
@@ -111,10 +115,15 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
       }
     }
 
+    const nextMessage = timeline[index + 1]
+    const isTurnEnd = !nextMessage || nextMessage.senderId !== current.senderId
     const nextDifferent = nextDifferentMessages[index]
-    if (nextDifferent) {
+    if (isTurnEnd) {
+      conversationTurns += 1
+    }
+    if (isTurnEnd && nextDifferent) {
       const gapMs = nextDifferent.timestamp.getTime() - current.timestamp.getTime()
-      if (gapMs >= 0 && gapMs <= RESPONSE_COVERAGE_WINDOW_MS) respondedMessages += 1
+      if (gapMs >= 0 && gapMs <= RESPONSE_COVERAGE_WINDOW_MS) respondedTurns += 1
     }
   }
 
@@ -214,8 +223,8 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
         ).toFixed(1),
       )
     : 0
-  const responseCoverage = input.totalMessages
-    ? Number(((respondedMessages / input.totalMessages) * 100).toFixed(1))
+  const responseCoverage = conversationTurns
+    ? Number(((respondedTurns / conversationTurns) * 100).toFixed(1))
     : 0
   const consistency = Number(((input.activeDays / durationDays) * 100).toFixed(1))
   const peakSimultaneity = Array.from(hourlyParticipants.values()).reduce((max, set) => Math.max(max, set.size), 0)
@@ -283,19 +292,22 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
   return {
     participants: participantsDto,
     topPairs: buildGroupTopPairs(participantsDto, directPairCounts, impliedPairCounts),
-    health: {
-      score: healthScore,
-      giniCoefficient,
-      lurkerRatio,
-      retentionRate,
-      responseCoverage,
-      consistency,
-      momentum,
-      activeMembers,
-      activeMembersLast30Days,
-      churnedMembers: churnedMembers.length,
-      peakSimultaneity,
-    },
+    health:
+      input.totalMessages > 0 && activeMembers > 0
+        ? {
+            score: healthScore,
+            giniCoefficient,
+            lurkerRatio,
+            retentionRate,
+            responseCoverage,
+            consistency,
+            momentum,
+            activeMembers,
+            activeMembersLast30Days,
+            churnedMembers: churnedMembers.length,
+            peakSimultaneity,
+          }
+        : null,
     sharedVocabulary,
     uniqueGroupWords,
   }

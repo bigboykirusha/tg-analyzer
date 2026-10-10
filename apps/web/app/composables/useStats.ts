@@ -18,6 +18,7 @@ export function useStats() {
       query: { page, limit: 20, sort, order },
     })
     store.chats = result.chats
+    store.chatsLoaded = true
   }
 
   async function fetchChat(chatId: string) {
@@ -40,12 +41,10 @@ export function useStats() {
   async function fetchHistory(page = 1, limit = 20) {
     const result = await useApiEndpoint('GET /api/v1/parse/history', { query: { page, limit } })
     store.history = result.items
+    store.historyLoaded = true
+    store.historyPage = result.page
+    store.historyTotal = result.total
     return result
-  }
-
-  async function clearHistory() {
-    await useApiEndpoint('DELETE /api/v1/parse/history')
-    store.history = store.history.filter((item) => item.status === 'pending' || item.status === 'running')
   }
 
   async function deleteHistoryItem(jobId: string) {
@@ -73,7 +72,6 @@ export function useStats() {
     deleteChat,
     fetchActivity,
     fetchHistory,
-    clearHistory,
     deleteHistoryItem,
     fetchParseStatus,
     fetchParseDialogs,

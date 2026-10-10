@@ -53,13 +53,19 @@ export function computeMaxStreak(days: readonly string[]): StreakInfoDto {
 }
 
 export function computeTrend(months: readonly MonthlyActivityDto[]): ConversationFactsDto['trend'] {
-  if (months.length < 6) return 'unknown'
-
-  const totalsByMonth = new Map(months.map((item) => [item.month, item.total]))
-  const lastMonth = months[months.length - 1]?.month
+  const validMonths = months
+    .filter((item) => /^\d{4}-(0[1-9]|1[0-2])$/.test(item.month))
+    .sort((left, right) => left.month.localeCompare(right.month))
+  const firstMonth = validMonths[0]?.month
+  const lastMonth = validMonths[validMonths.length - 1]?.month
+  if (!firstMonth || !lastMonth) return 'unknown'
   if (!lastMonth || !/^\d{4}-(0[1-9]|1[0-2])$/.test(lastMonth)) return 'unknown'
 
   const monthWindow = buildMonthWindow(lastMonth, 6)
+  const windowStart = monthWindow[0]
+  if (!windowStart || firstMonth > windowStart) return 'unknown'
+
+  const totalsByMonth = new Map(validMonths.map((item) => [item.month, Math.max(0, item.total)]))
   const previousThree = monthWindow.slice(0, 3).reduce((sum, month) => sum + (totalsByMonth.get(month) ?? 0), 0)
   const lastThree = monthWindow.slice(3).reduce((sum, month) => sum + (totalsByMonth.get(month) ?? 0), 0)
   if (previousThree === 0 && lastThree === 0) return 'unknown'

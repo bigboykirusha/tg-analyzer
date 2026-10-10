@@ -197,6 +197,7 @@ export const parseHistoryItemSchema = z.object({
   parsedChats: z.number().int(),
   totalMessages: z.number().int(),
   createdAt: z.string().datetime(),
+  startedAt: z.string().datetime().nullable(),
   completedAt: z.string().datetime().nullable(),
   errorMessage: z.string().nullable().optional(),
 })

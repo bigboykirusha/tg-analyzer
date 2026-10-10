@@ -73,8 +73,14 @@ export function useReportExport<ExpandedChart>(options: ReportExportOptions<Expa
       }
 
       exportRoot = target.cloneNode(true) as HTMLElement
+      // On phones the report identity lives in the persistent navigation header.
+      const mobileIdentity = document.querySelector('#mobile-report-toolbar .report-topline')
+      if (mobileIdentity && !exportRoot.querySelector('.report-topline')) {
+        exportRoot.querySelector('.report-header')?.prepend(mobileIdentity.cloneNode(true))
+      }
       exportRoot.classList.add('pdf-export-clone')
       exportRoot.querySelectorAll('.no-print, .dialog-backdrop, .chart-overlay').forEach((node) => node.remove())
+      const exportBackground = getComputedStyle(document.documentElement).getPropertyValue('--export-background').trim()
       Object.assign(exportRoot.style, {
         position: 'fixed',
         left: '-20000px',
@@ -82,7 +88,7 @@ export function useReportExport<ExpandedChart>(options: ReportExportOptions<Expa
         width: `${Math.ceil(target.scrollWidth)}px`,
         maxWidth: 'none',
         minWidth: `${Math.ceil(target.scrollWidth)}px`,
-        background: '#ffffff',
+        background: exportBackground,
         zIndex: '-1',
         pointerEvents: 'none',
         overflow: 'visible',
@@ -93,7 +99,7 @@ export function useReportExport<ExpandedChart>(options: ReportExportOptions<Expa
       const exportHeight = Math.ceil(exportRoot.scrollHeight)
       const canvas = await html2canvas(exportRoot, {
         scale: 2,
-        backgroundColor: '#ffffff',
+        backgroundColor: exportBackground,
         useCORS: true,
         logging: false,
         width: exportWidth,
@@ -126,7 +132,7 @@ export function useReportExport<ExpandedChart>(options: ReportExportOptions<Expa
           throw new Error('Canvas is unavailable')
         }
 
-        pageContext.fillStyle = '#ffffff'
+        pageContext.fillStyle = exportBackground
         pageContext.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
         pageContext.drawImage(canvas, 0, sliceTop, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight)
 

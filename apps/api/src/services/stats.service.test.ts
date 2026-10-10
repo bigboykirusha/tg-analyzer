@@ -122,6 +122,21 @@ test('aggregateMessage buckets time consistently in requested timezone', () => {
   assert.equal(result.monthlyActivity.get('2026-02')?.received, 1)
 })
 
+test('text averages include captions without changing the primary composition type', () => {
+  const acc = createChatAccumulator('UTC')
+  aggregateMessage(
+    { message: 'photo caption', media: true, date: new Date('2026-01-01T10:00:00.000Z'), outgoing: true },
+    acc,
+  )
+  aggregateMessage({ message: '', sticker: true, date: new Date('2026-01-01T10:01:00.000Z'), outgoing: false }, acc)
+
+  const result = finalizeAccumulator(acc, 'private')
+  assert.equal(result.textMessageCount, 1)
+  assert.deepEqual(result.messageComposition, { text: 0, media: 1, voice: 0, sticker: 1, file: 0 })
+  assert.equal(result.wordsPerMessage.mine, 2)
+  assert.equal(result.compositionStats.avgCharsPerTextMessage, 13)
+})
+
 test('finalizeAccumulator computes response percentiles for uneven samples', () => {
   const acc = createChatAccumulator()
   const base = new Date('2026-01-01T08:00:00.000Z')

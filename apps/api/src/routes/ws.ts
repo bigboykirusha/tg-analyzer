@@ -3,6 +3,7 @@ import { config } from '../config'
 import type { FastifyPluginAsync } from 'fastify'
 import { createRedisSubscriber, redis } from '../services/redis.service'
 import { consumeWsTicket } from '../services/ws-ticket.service'
+import { isOriginAllowed } from '../services/origin-policy.service'
 
 export const wsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -11,7 +12,10 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
       websocket: true,
       preValidation: async (request, reply) => {
         try {
-          if (!request.headers.origin || !config.ALLOWED_ORIGINS.includes(request.headers.origin)) {
+          if (
+            !request.headers.origin ||
+            !isOriginAllowed(request.headers.origin, config.ALLOWED_ORIGINS, config.NODE_ENV)
+          ) {
             throw new Error('Origin rejected')
           }
 

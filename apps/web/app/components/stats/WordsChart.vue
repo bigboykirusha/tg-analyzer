@@ -8,6 +8,7 @@ const props = defineProps<{
   theirs: TopItemDto[]
 }>()
 const { t } = useI18n()
+const { preference } = useTheme()
 const hasData = computed(() => props.mine.length > 0 || props.theirs.length > 0)
 const isMobile = ref(false)
 
@@ -21,6 +22,7 @@ function syncMobileState() {
 }
 
 const option = computed(() => {
+  void preference.value
   const theme = CHART_THEME.base()
   const merged = new Map<string, number>()
   for (const item of props.mine) {

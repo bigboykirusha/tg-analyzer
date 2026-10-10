@@ -1,22 +1,25 @@
 # TG Analyzer — дизайн-система
 
-Дата: 2026-10-07. Направление: iOS 26 / Liquid Glass. Данные и графики остаются плотными непрозрачными поверхностями; стекло применяется только к навигации, меню, модалкам, sheet и тостам.
+Дата пересмотра: 2026-10-09. Направление: **TG Analyzer reference redesign** из `docs/design_claude`: спокойный аналитический интерфейс с чёткой иерархией, одной поверхностью списка и стеклом только на навигации и оверлеях.
+
+## Концепция
+
+- Плавающая верхняя навигация на desktop и нижняя capsule-навигация на mobile заменяют sidebar.
+- Кобальт обозначает основные действия и первую серию данных, коралловый — вторую серию. Статус всегда сопровождается текстом или знаком.
+- Chat picker — единый список с поиском и сегментом «Все / С отчётом / Без отчёта»; вложенные карточки запрещены.
+- Карточки, top bar и tab bar используют стекло с fallback без blur; остальная поверхность остаётся матовой и читаемой.
 
 ## Палитры
 
-### A — Lime graphite
+Светлая тема: bg `#F5F5F7`, surface `#FFFFFF`, surface-2 `#EDEDF0`, border `#E4E4E8`, text `#1D1D1F`, muted `#6B6B73`, accent `#0A6CFF`, accent-2 `#F2704F`.
 
-Исторический бренд: графитовый фон `#12131a`, лайм `#b7ef4a`, вторая серия `#40d9c4`. Контраст основного текста `#f5f7ff` на фоне — 17:1; вторичного `#aeb5c6` — 8.6:1.
-
-### B — Indigo glass (выбрана)
-
-Тёмная тема: фон `#11131c`, surface `#1a1d29`, текст `#f6f7ff`, secondary `#b5bad0`, accent `#9da8ff`, accent-2 `#3bd6c6`. Светлая тема: фон `#f6f7fc`, surface `#ffffff`, текст `#181b2a`, secondary `#545b73`, accent `#4455d9`, accent-2 `#067f78`. Основной текст имеет контраст выше 4.5:1, крупный и статусный — выше 3:1.
+Тёмная тема: bg `#0B0B0C`, surface `#1A1A1C`, surface-2 `#2A2A2D`, border `#2E2E32`, text `#F5F5F7`, muted `#9A9AA2`, accent `#4DA3FF`, accent-2 `#FFA38B`.
 
 ## Токены и типографика
 
-- Семантические CSS-токены покрывают цвета, поверхности, разделители, статусы, blur, радиусы, тени, z-index, spacing 4/8px и motion 120/200/320/480ms.
-- Шрифт: `Inter`, `-apple-system`, BlinkMacSystemFont, SF Pro, system-ui; цифры используют `font-variant-numeric: tabular-nums`.
-- Шкала: display `clamp(2rem, 5vw, 4.25rem)`, h1 `clamp(1.75rem, 3vw, 2.5rem)`, h2 `clamp(1.375rem, 2vw, 1.75rem)`, body 1rem, callout .9375rem, footnote .8125rem, caption .75rem.
+- Семантические CSS-токены покрывают цвета, поверхности, разделители, статусы, blur, радиусы, тени, z-index, spacing и motion.
+- Шрифт: `-apple-system`, `BlinkMacSystemFont`, `SF Pro Text`, `Manrope`, system-ui; цифры используют `font-variant-numeric: tabular-nums`.
+- Display-заголовки используют плотный интерлиньяж и отрицательный tracking; служебные labels — uppercase с разрядкой. Моноширинный шрифт оставлен только для технических идентификаторов и времени.
 
 ## Motion и доступность
 
@@ -28,7 +31,9 @@
 
 Поток пользователя: login/onboarding → dashboard/chat picker → live progress → report → history → profile/settings. Каждый экран поддерживает loading, empty, error, success и partial.
 
-Базовый набор: Button, IconButton, Input, OtpInput, Select, SegmentedControl, Card, GlassPanel, BottomSheet, Modal, Toast, Tooltip, Skeleton, EmptyState, ErrorState, Badge, Avatar, ListRow, linear/circular Progress, KPI, ChartCard, ThemeToggle, TabBar и Sidebar.
+Базовый набор: Button, IconButton, Input, OtpInput, Select, SegmentedControl, Card, BottomSheet, Modal, Toast, Skeleton, EmptyState, Badge, Avatar, ListRow, Progress, KPI, ChartCard, ThemeToggle, TabBar и TopBar.
+
+Login использует двухколоночную композицию на desktop и один безопасный flow на mobile. Dashboard, history и report имеют центровку 800/1000px, единый заголовок страницы, общие сегменты и строки.
 
 ## Зафиксированные проблемы до редизайна
 
@@ -38,4 +43,4 @@
 - Текущая тема только тёмная, вторичная типографика недостаточно контрастна, а графики используют сливающуюся вторую серию.
 - В login загружаются флаги с внешнего `flagcdn.com`; отсутствуют manifest, корректный OG image и theme-aware meta.
 
-Baseline на синтетических данных хранится в `docs/design/before/`; в финале фазы рядом будут сохранены after-снимки и visual regression fixtures.
+Baseline на синтетических данных хранится в `docs/design/before/`. After-снимки login находятся рядом, а актуальные visual regression fixtures публичных и авторизованных экранов — в `apps/web/tests/e2e/*-snapshots/`.

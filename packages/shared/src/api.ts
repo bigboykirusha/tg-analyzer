@@ -123,6 +123,7 @@ export interface ParseHistoryItem {
   parsedChats: number
   totalMessages: number
   createdAt: string
+  startedAt: string | null
   completedAt: string | null
   errorMessage?: string | null
 }

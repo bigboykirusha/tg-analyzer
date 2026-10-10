@@ -11,6 +11,12 @@ const props = withDefaults(
 
 const auth = useAuthStore()
 
+const PROFILE_AVATAR_TTL_MS = 60 * 60 * 1000
+const PROFILE_AVATAR_UNAVAILABLE_KEY = 'tg-analyzer-profile-avatar-unavailable-until'
+let cachedAvatar: { url: string; expiresAt: number } | null = null
+let avatarRequest: Promise<string | null> | null = null
+let avatarUnavailableUntil = 0
+
 const avatarUrl = ref<string | null>(null)
 const errored = ref(false)
 
@@ -32,16 +38,41 @@ async function loadAvatar() {
     return
   }
 
-  if (avatarUrl.value) {
-    URL.revokeObjectURL(avatarUrl.value)
+  const now = Date.now()
+  const storedUnavailableUntil = Number(sessionStorage.getItem(PROFILE_AVATAR_UNAVAILABLE_KEY) || 0)
+  if (cachedAvatar && cachedAvatar.expiresAt <= now) {
+    URL.revokeObjectURL(cachedAvatar.url)
+    cachedAvatar = null
+  }
+
+  if (cachedAvatar) {
+    avatarUrl.value = cachedAvatar.url
+    errored.value = false
+    return
+  }
+
+  if (Math.max(avatarUnavailableUntil, storedUnavailableUntil) > now) {
     avatarUrl.value = null
+    errored.value = true
+    return
   }
 
   try {
-    const blob = await useApiBlobEndpoint('GET /api/v1/auth/avatar')
-    avatarUrl.value = URL.createObjectURL(blob)
+    avatarRequest ??= useApiBlobEndpoint('GET /api/v1/auth/avatar')
+      .then((blob) => {
+        const url = URL.createObjectURL(blob)
+        if (cachedAvatar) URL.revokeObjectURL(cachedAvatar.url)
+        cachedAvatar = { url, expiresAt: Date.now() + PROFILE_AVATAR_TTL_MS }
+        return url
+      })
+      .finally(() => {
+        avatarRequest = null
+      })
+    avatarUrl.value = await avatarRequest
     errored.value = false
   } catch {
+    avatarUnavailableUntil = Date.now() + PROFILE_AVATAR_TTL_MS
+    sessionStorage.setItem(PROFILE_AVATAR_UNAVAILABLE_KEY, String(avatarUnavailableUntil))
     avatarUrl.value = null
     errored.value = true
   }
@@ -55,12 +86,6 @@ watch(
   },
   { immediate: true },
 )
-
-onBeforeUnmount(() => {
-  if (avatarUrl.value) {
-    URL.revokeObjectURL(avatarUrl.value)
-  }
-})
 </script>
 
 <template>

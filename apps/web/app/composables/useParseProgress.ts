@@ -108,6 +108,19 @@ export function useParseProgress() {
     }, delay)
   }
 
+  function resolveWebSocketUrl(pathWithQuery: string) {
+    const explicit = config.public.wsUrl
+    if (explicit) {
+      return `${explicit}${pathWithQuery}`
+    }
+    const directBase = config.public.wsDirectFallbackUrl
+    if (directBase) {
+      return `${directBase}${pathWithQuery}`
+    }
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${protocol}//${window.location.host}${pathWithQuery}`
+  }
+
   async function connect() {
     if (!import.meta.client || socketRef.value || connecting.value || !auth.isAuthorized || !bootstrapped.value) {
       return
@@ -128,7 +141,7 @@ export function useParseProgress() {
       }
 
       const { ticket } = await getWebSocketTicket()
-      socket = new WebSocket(`${config.public.wsUrl}/ws/parse-progress?ticket=${ticket}`)
+      socket = new WebSocket(resolveWebSocketUrl(`/ws/parse-progress?ticket=${ticket}`))
     } catch {
       scheduleReconnect()
       return
@@ -204,18 +217,10 @@ export function useParseProgress() {
   }
 
   async function bootstrapFromServer() {
-    bootstrapped.value = false
-    reset()
-    disconnect()
-
-    try {
-      const status = await useApiEndpoint('GET /api/v1/parse/status')
-      applyStatus(status)
-      return status
-    } catch (error) {
-      bootstrapped.value = true
-      throw error
-    }
+    const status = await fetchCurrentStatus()
+    bootstrapped.value = true
+    if (progress.value.status === 'pending' || progress.value.status === 'running') void connect()
+    return status
   }
 
   function clearBootstrap() {

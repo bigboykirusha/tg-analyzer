@@ -49,7 +49,7 @@ export function computeHealthScore(params: {
   relationshipScore: RelationshipScoreDto | null
   trend: ConversationFactsDto['trend']
 }): HealthScoreDto | null {
-  if (!params.relationshipScore) return null
+  if (!params.relationshipScore || params.responseRate === null) return null
 
   const fragmentation = params.activeDays
     ? Math.min(1, params.sessionStats.totalSessions / Math.max(params.activeDays, 1))
@@ -61,10 +61,9 @@ export function computeHealthScore(params: {
         (params.trend === 'growing' ? 90 : params.trend === 'stable' ? 75 : params.trend === 'fading' ? 35 : 55) * 0.3,
     ),
   )
-  const responseRateScore = params.responseRate ?? 55
   const score = clampNumber(
     Math.round(
-      responseRateScore * 0.3 +
+      params.responseRate * 0.3 +
         (100 - fragmentation * 50) * 0.2 +
         (initiativeBalance ?? 50) * 0.2 +
         longTermStability * 0.3,

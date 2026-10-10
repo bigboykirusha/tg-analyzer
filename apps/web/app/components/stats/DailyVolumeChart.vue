@@ -9,25 +9,19 @@ const props = defineProps<{
 
 const { formatDate } = useI18n()
 const { t } = useI18n()
+const { preference } = useTheme()
 const hasData = computed(() => props.items.some((item) => item.total > 0))
 
 const option = computed(() => {
+  void preference.value
   const theme = CHART_THEME.base()
-  const labels = props.items.map((item, index) => {
-    if (!props.items.length) {
-      return ''
-    }
-
-    const stride = Math.max(1, Math.ceil(props.items.length / 6))
-    if (index % stride !== 0 && index !== props.items.length - 1) {
-      return ''
-    }
-
-    return formatDate(`${item.date}T00:00:00`, {
+  const labels = props.items.map((item) =>
+    formatDate(`${item.date}T00:00:00`, {
       month: 'short',
       day: 'numeric',
-    })
-  })
+    }),
+  )
+  const labelInterval = Math.max(0, Math.ceil(props.items.length / 6) - 1)
 
   return {
     ...theme,
@@ -40,10 +34,16 @@ const option = computed(() => {
       type: 'category',
       data: labels,
       boundaryGap: false,
+      axisLabel: {
+        ...theme.xAxis.axisLabel,
+        interval: labelInterval,
+        showMaxLabel: true,
+      },
     },
     yAxis: {
       ...theme.yAxis,
       type: 'value',
+      minInterval: 1,
     },
     series: [
       {

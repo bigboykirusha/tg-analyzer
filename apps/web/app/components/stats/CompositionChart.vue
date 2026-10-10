@@ -145,7 +145,7 @@ const segments = computed(() => {
 }
 
 .segment-files {
-  background: var(--bg-overlay);
+  background: var(--warning);
 }
 
 @media (max-width: 768px) {

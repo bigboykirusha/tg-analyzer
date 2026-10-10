@@ -29,8 +29,8 @@ useHead({
   ],
   meta: [
     { charset: 'utf-8' },
-    { name: 'theme-color', content: '#11131c', media: '(prefers-color-scheme: dark)' },
-    { name: 'theme-color', content: '#f6f7fc', media: '(prefers-color-scheme: light)' },
+    { name: 'theme-color', content: '#0B0B0C', media: '(prefers-color-scheme: dark)' },
+    { name: 'theme-color', content: '#F5F5F7', media: '(prefers-color-scheme: light)' },
     { name: 'apple-mobile-web-app-title', content: 'TG Analyzer' },
     { name: 'format-detection', content: 'telephone=no' },
   ],
@@ -54,6 +54,6 @@ useSeoMeta({
 </script>
 
 <template>
-  <NuxtPage />
+  <NuxtLayout><NuxtPage :transition="false" /></NuxtLayout>
   <UiToastProvider />
 </template>

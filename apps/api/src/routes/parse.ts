@@ -613,6 +613,7 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
         parsedChats: item.parsedChats,
         totalMessages: item.totalMessages,
         createdAt: item.createdAt.toISOString(),
+        startedAt: item.startedAt?.toISOString() ?? null,
         completedAt: item.completedAt?.toISOString() ?? null,
         errorMessage: item.errorMessage ?? null,
       }))

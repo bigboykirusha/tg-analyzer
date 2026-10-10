@@ -250,6 +250,18 @@ test('cookie operations enforce Origin and auth limits are shared through Redis'
   assert.equal(preflight.headers['access-control-allow-origin'], 'http://localhost:3000')
   assert.equal(preflight.headers['access-control-allow-credentials'], 'true')
 
+  const loopbackPreflight = await app.inject({
+    method: 'OPTIONS',
+    url: '/api/v1/auth/send-code',
+    headers: {
+      origin: 'http://127.0.0.1:3000',
+      'access-control-request-method': 'POST',
+      'access-control-request-headers': 'content-type',
+    },
+  })
+  assert.equal(loopbackPreflight.statusCode, 204)
+  assert.equal(loopbackPreflight.headers['access-control-allow-origin'], 'http://127.0.0.1:3000')
+
   const userId = await createUser()
   const auth = await createAuth(userId)
   const rejectedOrigin = await app.inject({
@@ -270,6 +282,17 @@ test('cookie operations enforce Origin and auth limits are shared through Redis'
       })
     ).statusCode,
     403,
+  )
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/api/auth/logout',
+        headers: { cookie: auth.cookie, origin: 'http://127.0.0.1:3000' },
+        remoteAddress: '127.0.0.34',
+      })
+    ).statusCode,
+    200,
   )
 
   const statuses: number[] = []
