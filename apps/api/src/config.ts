@@ -4,6 +4,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   API_HOST: z.string().default('0.0.0.0'),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
+  PORT: z.coerce.number().int().min(1).max(65535).optional(),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   DATABASE_URL: z.url().refine((value) => /^postgres(?:ql)?:/.test(value)),
   REDIS_URL: z.url().refine((value) => /^rediss?:/.test(value)),
@@ -36,6 +37,7 @@ export function parseConfig(env: Record<string, string | undefined>) {
   }
 
   const raw = result.data
+  const apiPort = env.API_PORT ? Number(env.API_PORT) : raw.PORT ?? raw.API_PORT
   const secure = raw.COOKIE_SECURE ?? raw.NODE_ENV === 'production'
   const sameSite = raw.COOKIE_SAME_SITE ?? (secure ? 'none' : 'lax')
   const origins = [...new Set(raw.CORS_ORIGIN.split(',').map((value) => value.trim()))]
@@ -76,7 +78,7 @@ export function parseConfig(env: Record<string, string | undefined>) {
     throw new Error('Invalid production security configuration')
   }
 
-  return { ...raw, COOKIE_SECURE: secure, COOKIE_SAME_SITE: sameSite, ALLOWED_ORIGINS: origins }
+  return { ...raw, API_PORT: apiPort, COOKIE_SECURE: secure, COOKIE_SAME_SITE: sameSite, ALLOWED_ORIGINS: origins }
 }
 
 export const config = parseConfig(process.env)
