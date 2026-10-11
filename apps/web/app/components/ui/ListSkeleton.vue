@@ -30,6 +30,9 @@ withDefaults(defineProps<{ rows?: number; avatar?: boolean }>(), { rows: 5, avat
   padding: 16px 12px;
   border-bottom: 1px solid var(--border-subtle);
 }
+.loading-row:last-child {
+  border-bottom: 0;
+}
 .loading-copy {
   display: grid;
   flex: 1;

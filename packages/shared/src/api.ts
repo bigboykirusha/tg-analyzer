@@ -96,13 +96,7 @@ export interface ParseDialogsResponse {
   total: number
 }
 
-export type ParseProgressPhase =
-  | 'queued'
-  | 'connecting'
-  | 'loading-dialogs'
-  | 'scanning'
-  | 'saving'
-  | 'retrying'
+export type ParseProgressPhase = 'queued' | 'connecting' | 'loading-dialogs' | 'scanning' | 'saving' | 'retrying'
 
 export interface ParseProgressDto {
   jobId?: string

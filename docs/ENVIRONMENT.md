@@ -11,7 +11,7 @@ Copy `.env.example` to `.env` for local development. Never deploy that file or u
 | `JWT_SECRET`, `JWT_REFRESH_SECRET`              | yes        | Separate random strings of at least 32 characters.                     |
 | `CORS_ORIGIN`                                   | yes        | Comma-separated exact browser origins; no wildcard in production.      |
 | `COOKIE_SECURE`                                 | production | `true` behind HTTPS.                                                   |
-| `COOKIE_SAME_SITE`                              | no         | `lax` for sibling subdomains; `none` only with `COOKIE_SECURE=true`.   |
+| `COOKIE_SAME_SITE`                              | no         | Keep `lax` when browser HTTP is routed through the same-origin proxy.  |
 | `COOKIE_DOMAIN`                                 | no         | Normally unset, keeping the refresh cookie host-only.                  |
 | `API_HOST`, `API_PORT` / `PORT`                 | no         | API bind address and port; hosting platforms commonly set `PORT`.      |
 | `AUTH_RATE_LIMIT_MAX`, `AUTH_RATE_LIMIT_WINDOW` | no         | Login/refresh rate-limit policy.                                       |
@@ -19,3 +19,5 @@ Copy `.env.example` to `.env` for local development. Never deploy that file or u
 | `DATA_RETENTION_DAYS`                           | no         | Retention horizon used by cleanup work.                                |
 
 Generate secrets with a cryptographically secure source, for example `openssl rand -hex 32` for the encryption key and `openssl rand -base64 48` for JWT secrets. Set values in the secret manager of each deployment service; API and worker require the same server-side values. Variables beginning `NUXT_PUBLIC_` are visible to every browser and must never contain credentials.
+
+For a split Vercel + Railway/Render deployment, leave `NUXT_PUBLIC_API_URL` empty and set `NUXT_API_PROXY_TARGET` to the API origin. This keeps the refresh cookie first-party in Safari. `NUXT_PUBLIC_WS_URL` may still point directly to the API because WebSocket authentication uses a short-lived one-use ticket.

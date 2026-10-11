@@ -56,7 +56,7 @@ envVarGroups:
       - key: COOKIE_SECURE
         value: 'true'
       - key: COOKIE_SAME_SITE
-        value: none
+        value: lax
       - key: AUTH_RATE_LIMIT_MAX
         value: '5'
       - key: AUTH_RATE_LIMIT_WINDOW

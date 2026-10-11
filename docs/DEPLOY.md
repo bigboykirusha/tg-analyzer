@@ -4,30 +4,30 @@ The web application may run on Vercel, but it must use a custom domain that shar
 
 Use this topology after selecting a domain owned by the product:
 
-| Component            | Example hostname                            | Required behavior                                                                                       |
-| -------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Nuxt web on Vercel   | `app.example.com`                           | HTTPS; set `NUXT_PUBLIC_API_URL=https://api.example.com` and `NUXT_PUBLIC_WS_URL=wss://api.example.com` |
-| Fastify API          | `api.example.com`                           | HTTPS/WSS; allow only the exact web origin in `CORS_ORIGIN`; credentials enabled                        |
-| Worker               | private service                             | No public ingress; share PostgreSQL/Redis and Telegram credentials with API                             |
-| PostgreSQL and Redis | private managed services or private network | No public ingress; backups and Redis persistence enabled                                                |
+| Component            | Example hostname                            | Required behavior                                                                 |
+| -------------------- | ------------------------------------------- | --------------------------------------------------------------------------------- |
+| Nuxt web on Vercel   | `app.example.com`                           | HTTPS; proxy browser HTTP through `/api`; connect WebSocket with a one-use ticket |
+| Fastify API          | `api.example.com`                           | HTTPS/WSS; allow only the exact web origin in `CORS_ORIGIN`; credentials enabled  |
+| Worker               | private service                             | No public ingress; share PostgreSQL/Redis and Telegram credentials with API       |
+| PostgreSQL and Redis | private managed services or private network | No public ingress; backups and Redis persistence enabled                          |
 
 Replace `example.com` with the domain approved by the product owner before DNS or production configuration is created. This repository does not assume that the owner has selected or controls a domain yet.
 
 ## Refresh cookie and CORS
 
-For `app.example.com` calling `api.example.com`, configure the API with:
+For `app.example.com` proxying HTTP requests to `api.example.com`, configure the API with:
 
 ```dotenv
 NODE_ENV=production
 CORS_ORIGIN=https://app.example.com
 COOKIE_SECURE=true
 COOKIE_SAME_SITE=lax
-# Leave COOKIE_DOMAIN unset so the refresh cookie remains host-only to api.example.com.
+# Leave COOKIE_DOMAIN unset. Through the web proxy the browser stores it for app.example.com.
 ```
 
-The browser client must send credentialed requests (`credentials: 'include'`). `SameSite=Lax` works for these sibling HTTPS origins because they are cross-origin but same-site. The API must return the exact `Access-Control-Allow-Origin` value and `Access-Control-Allow-Credentials: true`; wildcard origins cannot be used. Keep the cookie host-only unless a reviewed requirement proves that another subdomain needs it. Never set a parent-domain cookie merely to make the browser flow work.
+Configure the web service with `NUXT_PUBLIC_API_URL=` (empty) and `NUXT_API_PROXY_TARGET=https://api.example.com`. Browser HTTP requests then stay on the web origin, so Safari does not classify the refresh cookie as third-party storage. WebSocket traffic may connect directly because it authenticates with a short-lived one-use ticket: set `NUXT_PUBLIC_WS_URL=wss://api.example.com`. The browser client must send credentialed HTTP requests (`credentials: 'include'`). The API must allow the exact web origin; wildcard origins cannot be used.
 
-Do not deploy the web at `https://tg-analyzer-web.vercel.app` while the API remains on a different registrable domain and expect silent refresh to work in every browser. A same-site reverse proxy that exposes `/api` and `/ws` under the web hostname is an alternative if the hosting setup can preserve WebSocket upgrades and route requests correctly.
+Do not point `NUXT_PUBLIC_API_URL` directly at an API on another registrable domain. Safari can block that refresh cookie even with `SameSite=None; Secure`. Keep HTTP same-origin through the Nuxt proxy; only the ticket-authenticated WebSocket needs a direct endpoint.
 
 ## Reverse proxy and WebSocket ticket logging
 

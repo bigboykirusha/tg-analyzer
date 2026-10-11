@@ -69,7 +69,6 @@ corepack pnpm --filter @tg-analyzer/web test:e2e
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security and data handling](docs/SECURITY.md)
 - [Operations runbook](docs/RUNBOOK.md)
-- [Final verification](docs/FINAL_VERIFICATION.md)
 
 The web client exposes draft Privacy Policy and Terms pages at `/privacy` and `/terms`. Account deletion is available from the authenticated account settings and removes application data and stored Telegram authorization material.
 

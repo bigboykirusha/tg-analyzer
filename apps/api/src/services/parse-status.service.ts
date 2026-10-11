@@ -21,7 +21,6 @@ export function normalizeParseStatus(input: {
         status: 'idle',
         message: '',
         scannedMessages: 0,
-        phase: undefined,
       },
     }
   }
@@ -42,7 +41,7 @@ export function normalizeParseStatus(input: {
       message: cachedProgress?.message ?? (normalizedStatus === 'pending' ? 'Queued parse job' : ''),
       scannedMessages: typeof cachedProgress?.scannedMessages === 'number' ? cachedProgress.scannedMessages : 0,
       startTime: typeof cachedProgress?.startTime === 'number' ? cachedProgress.startTime : undefined,
-      phase: cachedProgress?.phase,
+      phase: cachedProgress?.phase ?? (normalizedStatus === 'pending' ? 'queued' : undefined),
     },
   }
 }

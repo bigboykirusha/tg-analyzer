@@ -129,7 +129,8 @@ const messages: Record<Locale, Messages> = {
     'dashboard.analyze': 'Analyze',
     'dashboard.analyzeNamed': 'Analyze {name}',
     'dashboard.reloginRequired': 'Re-login required',
-    'dashboard.sessionInactive': 'Telegram session terminated. Re-login before loading dialogs or starting a parse.',
+    'dashboard.sessionInactive':
+      'Telegram needs to be reconnected. Your TG Analyzer session and saved reports are still available.',
     'dashboard.loadDialogsError': 'Could not load Telegram chats',
     'dashboard.loadDialogsDescription': 'Telegram is temporarily unavailable. This is not related to your account.',
     'dashboard.dialogsBusy':
@@ -638,7 +639,8 @@ const messages: Record<Locale, Messages> = {
     'dashboard.analyze': 'Анализ',
     'dashboard.analyzeNamed': 'Анализировать {name}',
     'dashboard.reloginRequired': 'Нужен повторный вход',
-    'dashboard.sessionInactive': 'Сессия Telegram завершена. Войдите заново перед загрузкой диалогов или парсингом.',
+    'dashboard.sessionInactive':
+      'Нужно переподключить Telegram. Сессия TG Analyzer и сохраненные отчеты остаются доступны.',
     'dashboard.loadDialogsError': 'Не удалось загрузить чаты Telegram',
     'dashboard.loadDialogsDescription': 'Telegram временно не отвечает. Это не связано с вашим аккаунтом.',
     'dashboard.dialogsBusy': 'Telegram сейчас занят другой операцией. Список чатов снова появится после ее завершения.',

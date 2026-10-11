@@ -9,10 +9,16 @@ function tryGetOrigin(value: string | undefined) {
   }
 }
 
-const publicApiUrl = process.env.NUXT_PUBLIC_API_URL ?? ''
+const configuredPublicApiUrl = process.env.NUXT_PUBLIC_API_URL ?? ''
+// Keep authenticated HTTP same-origin in production. In particular, Safari
+// may block a refresh cookie sent directly to an API on another site.
+const publicApiUrl = process.env.NODE_ENV === 'production' ? '' : configuredPublicApiUrl
 const publicWsUrl = process.env.NUXT_PUBLIC_WS_URL ?? ''
 const siteUrl = process.env.NUXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-const apiProxyTarget = process.env.NUXT_API_PROXY_TARGET ?? 'http://localhost:3001'
+const apiProxyTarget = (process.env.NUXT_API_PROXY_TARGET || configuredPublicApiUrl || 'http://localhost:3001').replace(
+  /\/$/,
+  '',
+)
 const wsProxyTarget = process.env.NUXT_WS_PROXY_TARGET ?? 'ws://localhost:3001'
 const wsDirectFallbackUrl = process.env.NUXT_PUBLIC_WS_DIRECT_URL ?? wsProxyTarget
 
@@ -65,14 +71,6 @@ export default defineNuxtConfig({
     '/dashboard': { ssr: false },
     '/history': { ssr: false },
     '/chat/**': { ssr: false },
-  },
-  hooks: {
-    'pages:extend'(pages) {
-      if (process.env.NODE_ENV === 'production') {
-        const index = pages.findIndex((page) => page.path === '/design')
-        if (index >= 0) pages.splice(index, 1)
-      }
-    },
   },
   runtimeConfig: {
     public: {

@@ -441,8 +441,9 @@ onMounted(async () => {
               :aria-label="t('dashboard.sourceTitle')"
             />
 
-            <div v-if="!telegramSessionActive" class="info-banner warning-banner">
-              {{ t('dashboard.sessionInactive') }}
+            <div v-if="!telegramSessionActive" class="info-banner warning-banner session-warning">
+              <span>{{ t('dashboard.sessionInactive') }}</span>
+              <Button variant="secondary" size="sm" @click="logout">{{ t('common.relogin') }}</Button>
             </div>
 
             <ListSkeleton v-else-if="parseDialogsLoading" :rows="6" aria-busy="true" />
@@ -771,6 +772,24 @@ onMounted(async () => {
   border-color: var(--warning);
   background: var(--warning-subtle);
   color: var(--warning);
+}
+
+.session-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.session-warning span {
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .session-warning {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 .danger-banner {

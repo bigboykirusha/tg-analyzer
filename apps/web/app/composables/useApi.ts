@@ -16,7 +16,8 @@ import { isDefinitiveAuthFailureCode, isTokenUsable } from '../utils/auth'
 let refreshPromise: Promise<RefreshResult> | null = null
 let loginRedirectInFlight = false
 const REFRESH_LOCK_KEY = 'tg-analyzer-refresh-lock'
-const REFRESH_LOCK_TTL_MS = 12_000
+const REFRESH_REQUEST_TIMEOUT_MS = 15_000
+const REFRESH_LOCK_TTL_MS = 20_000
 
 type FetchErrorLike = {
   message?: string
@@ -64,12 +65,14 @@ function setTransientAuthHealth(auth: ReturnType<typeof useAuthStore>) {
   )
 }
 
-function readRefreshLock() {
+function readRefreshLock(): { owner: string; expiresAt: number } | null {
   try {
     const value = localStorage.getItem(REFRESH_LOCK_KEY)
     if (!value) return null
     const parsed = JSON.parse(value) as { owner?: string; expiresAt?: number }
-    return typeof parsed.owner === 'string' && typeof parsed.expiresAt === 'number' ? parsed : null
+    return typeof parsed.owner === 'string' && typeof parsed.expiresAt === 'number'
+      ? { owner: parsed.owner, expiresAt: parsed.expiresAt }
+      : null
   } catch {
     return null
   }
@@ -85,10 +88,7 @@ async function withRefreshLock<T>(callback: () => Promise<T>): Promise<T> {
     const current = readRefreshLock()
     if (!current || current.expiresAt <= Date.now()) {
       try {
-        localStorage.setItem(
-          REFRESH_LOCK_KEY,
-          JSON.stringify({ owner, expiresAt: Date.now() + REFRESH_LOCK_TTL_MS }),
-        )
+        localStorage.setItem(REFRESH_LOCK_KEY, JSON.stringify({ owner, expiresAt: Date.now() + REFRESH_LOCK_TTL_MS }))
       } catch {
         return callback()
       }
@@ -109,9 +109,9 @@ async function withRefreshLock<T>(callback: () => Promise<T>): Promise<T> {
   throw error
 }
 
-async function handleTelegramReauthRequired(auth: ReturnType<typeof useAuthStore>) {
-  auth.clear()
-  await redirectToLogin()
+function handleTelegramReauthRequired(auth: ReturnType<typeof useAuthStore>) {
+  auth.setTelegramSessionActive(false)
+  auth.setAuthHealth('degraded')
 }
 
 async function redirectToLogin() {
@@ -146,6 +146,7 @@ async function doRefresh(apiUrl: string): Promise<RefreshResult> {
     const refreshResult = await $fetch<AuthSuccessResponse>(`${apiUrl}/api/v1/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
+      timeout: REFRESH_REQUEST_TIMEOUT_MS,
     })
 
     if (!refreshResult.user) {
@@ -167,7 +168,7 @@ async function doRefresh(apiUrl: string): Promise<RefreshResult> {
     const error = normalizeApiError(rawError)
 
     if (error.code === 'TELEGRAM_REAUTH_REQUIRED') {
-      await handleTelegramReauthRequired(auth)
+      handleTelegramReauthRequired(auth)
       return { accessToken: null, user: null, error, definitiveFailure: true }
     }
 
@@ -230,7 +231,7 @@ function requestApi<T, R extends ResponseType = 'json'>(
     const error = normalizeApiError(rawError)
 
     if (error.code === 'TELEGRAM_REAUTH_REQUIRED') {
-      await handleTelegramReauthRequired(auth)
+      handleTelegramReauthRequired(auth)
       throw error
     }
 

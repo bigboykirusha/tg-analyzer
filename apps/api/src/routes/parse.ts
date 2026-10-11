@@ -242,6 +242,8 @@ export const parseRoutes: FastifyPluginAsync<{ apiVersion: 0 | 1 }> = async (fas
           chatId: targetChat ? String(targetChat.id) : null,
           chatName: targetChat?.title ?? '',
           status: 'pending',
+          phase: 'queued',
+          startTime: Date.now(),
           message: chatIds?.length
             ? `Queued ${chatIds.length} selected chat${chatIds.length === 1 ? '' : 's'}`
             : 'Queued full parse',

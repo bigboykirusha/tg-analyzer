@@ -411,6 +411,7 @@ parseWorker.on('failed', async (job, error) => {
       status: 'pending',
       message: `Retrying analysis (attempt ${job.attemptsMade + 1})`,
       phase: 'retrying',
+      startTime: job.processedOn ?? job.timestamp,
     })
     return
   }
