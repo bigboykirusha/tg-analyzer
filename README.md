@@ -58,7 +58,20 @@ docker compose --profile tools up -d bull-board
 ```bash
 corepack pnpm check
 corepack pnpm build
+corepack pnpm test
+corepack pnpm --filter @tg-analyzer/web test:e2e
 ```
+
+## Documentation
+
+- [Environment reference](docs/ENVIRONMENT.md)
+- [Deployment](docs/DEPLOY.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Security and data handling](docs/SECURITY.md)
+- [Operations runbook](docs/RUNBOOK.md)
+- [Final verification](docs/FINAL_VERIFICATION.md)
+
+The web client exposes draft Privacy Policy and Terms pages at `/privacy` and `/terms`. Account deletion is available from the authenticated account settings and removes application data and stored Telegram authorization material.
 
 ## Production Notes
 

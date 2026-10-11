@@ -59,9 +59,8 @@ const RESPONSE_COVERAGE_WINDOW_MS = 30 * 60 * 1000
 const DAY_MS = 24 * 60 * 60 * 1000
 export const GROUP_RETENTION_MIN_DAYS = 180
 
-export function hasSufficientGroupRetentionPeriod(first: Date, last: Date): boolean {
-  const span = last.getTime() - first.getTime()
-  return Number.isFinite(span) && span >= 0 && Math.ceil(span / DAY_MS) + 1 >= GROUP_RETENTION_MIN_DAYS
+export function hasSufficientGroupRetentionPeriod(first: Date, last: Date, timeZone = 'UTC'): boolean {
+  return countCalendarDaysInclusive(first, last, createZonedDayAndHourFormatter(timeZone)) >= GROUP_RETENTION_MIN_DAYS
 }
 
 export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): GroupReportDto {
@@ -76,7 +75,8 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
   const activeMembers = participants.length
   const lastMessageAt = input.lastMessageAt ?? input.now
   const firstMessageAt = input.firstMessageAt ?? lastMessageAt
-  const durationDays = Math.max(1, Math.ceil((lastMessageAt.getTime() - firstMessageAt.getTime()) / DAY_MS) + 1)
+  const getLocalTime = createZonedDayAndHourFormatter(input.timeZone)
+  const durationDays = Math.max(1, countCalendarDaysInclusive(firstMessageAt, lastMessageAt, getLocalTime))
   const directPairCounts = new Map<string, number>()
   const impliedPairCounts = new Map<string, number>()
   const hourlyParticipants = new Map<string, Set<string>>()
@@ -84,7 +84,6 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
     .filter((entry) => !Number.isNaN(entry.timestamp.getTime()))
     .sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime())
   const nextDifferentMessages = findNextDifferentMessages(timeline)
-  const getLocalTime = createZonedDayAndHourFormatter(input.timeZone)
   let totalSessions = 0
   let conversationTurns = 0
   let respondedTurns = 0
@@ -184,32 +183,33 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
           ? 'growing'
           : 'stable'
 
-  const earlyWindowEnd = new Date(firstMessageAt.getTime() + 90 * DAY_MS)
-  const recentWindowStart = new Date(lastMessageAt.getTime() - 90 * DAY_MS)
+  const firstDay = new Date(`${getLocalTime(firstMessageAt).day}T00:00:00.000Z`)
+  const lastDay = new Date(`${getLocalTime(lastMessageAt).day}T00:00:00.000Z`)
+  const earlyWindowEnd = dayKeyAtOffset(firstDay, 89)
+  const recentWindowStart = dayKeyAtOffset(lastDay, -89)
   const earlyActive = new Set(
     participants
-      .filter((participant) => participant.firstSeen && participant.firstSeen <= earlyWindowEnd)
+      .filter((participant) => participant.firstSeen && getLocalTime(participant.firstSeen).day <= earlyWindowEnd)
       .map((participant) => participant.id),
   )
   const recentActive = new Set(
     participants
-      .filter((participant) => participant.lastSeen && participant.lastSeen >= recentWindowStart)
+      .filter((participant) => participant.lastSeen && getLocalTime(participant.lastSeen).day >= recentWindowStart)
       .map((participant) => participant.id),
   )
   const retained = Array.from(earlyActive).filter((participantId) => recentActive.has(participantId)).length
   const retentionRate =
-    hasSufficientGroupRetentionPeriod(firstMessageAt, lastMessageAt) && earlyActive.size
+    hasSufficientGroupRetentionPeriod(firstMessageAt, lastMessageAt, input.timeZone) && earlyActive.size
       ? Number(((retained / earlyActive.size) * 100).toFixed(1))
       : null
 
   const firstHalfBoundary = new Date(
     firstMessageAt.getTime() + (lastMessageAt.getTime() - firstMessageAt.getTime()) / 2,
   )
-  const churnCutoff = new Date(lastMessageAt.getTime() - 90 * DAY_MS)
   const churnedMembers = participants.filter(
     (participant) =>
       participant.lastSeen &&
-      participant.lastSeen < churnCutoff &&
+      getLocalTime(participant.lastSeen).day < recentWindowStart &&
       participant.firstSeen &&
       participant.firstSeen < firstHalfBoundary,
   )
@@ -324,6 +324,17 @@ export function computeGroupReportAnalytics(input: GroupReportAnalyticsInput): G
 
 function dayKeyAtOffset(day: Date, offset: number): string {
   return new Date(day.getTime() + offset * DAY_MS).toISOString().slice(0, 10)
+}
+
+function countCalendarDaysInclusive(
+  first: Date,
+  last: Date,
+  getLocalTime: ReturnType<typeof createZonedDayAndHourFormatter>,
+) {
+  if (!Number.isFinite(first.getTime()) || !Number.isFinite(last.getTime()) || last < first) return 0
+  const firstDay = Date.parse(getLocalTime(first).day)
+  const lastDay = Date.parse(getLocalTime(last).day)
+  return Math.round((lastDay - firstDay) / DAY_MS) + 1
 }
 
 function hasActivityInWindow(days: ReadonlySet<string>, start: string, end: string): boolean {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ParseProgressPhase } from '@tg-analyzer/shared'
 import { Square } from '../../lib/icons'
 import IconButton from '../ui/IconButton.vue'
 
@@ -13,6 +14,7 @@ const props = defineProps<{
   scannedMessages?: number
   startTime?: number
   compact?: boolean
+  phase?: ParseProgressPhase
 }>()
 
 const emit = defineEmits<{ cancel: [] }>()
@@ -25,12 +27,21 @@ const normalizedMessage = computed(() => props.message?.trim() ?? '')
 const isScanningMessage = computed(() => /^Scanning\s+[\d,\s]+\s+messages$/i.test(normalizedMessage.value))
 
 const phaseInfo = computed(() => {
+  const phases: Record<ParseProgressPhase, { message: string; currentStep: number }> = {
+    queued: { message: t('parse.queued'), currentStep: 1 },
+    connecting: { message: t('parse.connecting'), currentStep: 2 },
+    'loading-dialogs': { message: t('parse.loadingChats'), currentStep: 3 },
+    scanning: { message: t('parse.scanningMessages'), currentStep: 4 },
+    saving: { message: t('parse.saving'), currentStep: 5 },
+    retrying: { message: t('parse.retrying'), currentStep: 2 },
+  }
+
+  if (props.phase) {
+    return { ...phases[props.phase], totalSteps: 5 }
+  }
+
   if (props.status === 'pending') {
-    return {
-      message: t('parse.queued'),
-      currentStep: 1,
-      totalSteps: 4,
-    }
+    return { ...phases.queued, totalSteps: 5 }
   }
 
   const message = normalizedMessage.value
@@ -39,23 +50,23 @@ const phaseInfo = computed(() => {
   }
 
   if (/flood|rate.?limit|too many requests|wait\s+\d+\s*(?:s|sec|seconds)/i.test(message)) {
-    return { message: t('parse.telegramPause'), currentStep: 4, totalSteps: 4 }
+    return { message: t('parse.telegramPause'), currentStep: 4, totalSteps: 5 }
   }
 
   if (/^Connecting to Telegram$/i.test(message)) {
-    return { message: t('parse.connecting'), currentStep: 1, totalSteps: 4 }
+    return { ...phases.connecting, totalSteps: 5 }
   }
 
   if (/^Loading chat list$/i.test(message)) {
-    return { message: t('parse.loadingChats'), currentStep: 2, totalSteps: 4 }
+    return { ...phases['loading-dialogs'], totalSteps: 5 }
   }
 
   if (/^Starting message scan$/i.test(message)) {
-    return { message: t('parse.preparingScan'), currentStep: 3, totalSteps: 4 }
+    return { message: t('parse.preparingScan'), currentStep: 4, totalSteps: 5 }
   }
 
   if (isScanningMessage.value) {
-    return { message: t('parse.scanningMessages'), currentStep: 4, totalSteps: 4 }
+    return { ...phases.scanning, totalSteps: 5 }
   }
 
   return { message, currentStep: 0, totalSteps: 0 }
@@ -102,31 +113,41 @@ const phaseSummary = computed(() => {
   })
 })
 
-const isIndeterminate = computed(() => props.status === 'pending' || (props.status === 'running' && props.total <= 1))
+const phaseFraction = computed(() => {
+  switch (props.phase) {
+    case 'queued':
+      return 0.03
+    case 'connecting':
+    case 'retrying':
+      return 0.1
+    case 'loading-dialogs':
+      return 0.2
+    case 'scanning':
+      return 0.45
+    case 'saving':
+      return 0.92
+    default:
+      return props.status === 'pending' ? 0.03 : 0
+  }
+})
+
+const isIndeterminate = computed(() => props.status === 'running' && !props.phase && !props.total)
 
 const progressPercent = computed(() => {
   if (props.status === 'completed') {
     return 100
   }
 
-  if (!props.total) {
-    return 0
-  }
-
   if (props.total <= 1) {
-    return 0
+    return Math.round(phaseFraction.value * 100)
   }
 
-  return Math.round((completedChats.value / props.total) * 100)
+  return Math.min(99, Math.round(((completedChats.value + phaseFraction.value) / props.total) * 100))
 })
 
 const progressLabel = computed(() => {
   if (props.status === 'completed') {
     return '100%'
-  }
-
-  if (props.total <= 1) {
-    return null
   }
 
   return `${progressPercent.value}%`
@@ -195,7 +216,7 @@ const compactTitle = computed(() => t('parse.analysisTitle', { name: props.chatN
 const compactSubtitle = computed(() =>
   t('parse.compactSummary', {
     current: formatNumber(currentPhaseStep.value),
-    total: formatNumber(4),
+    total: formatNumber(5),
     status: displayMessage.value,
     seconds: formatNumber(elapsedSeconds.value),
   }),
@@ -209,7 +230,7 @@ const scannedLabel = computed(() => {
   return t('parse.messagesProcessed', { count: formattedScanned.value })
 })
 
-const isScanningPhase = computed(() => phaseInfo.value?.currentStep === 4 || isScanningMessage.value)
+const isScanningPhase = computed(() => props.phase === 'scanning' || isScanningMessage.value)
 
 const titleText = computed(() => (isScanningPhase.value ? displayMessage.value : t('parse.title')))
 
@@ -272,7 +293,7 @@ onBeforeUnmount(() => {
       :aria-valuemin="0"
       :aria-valuemax="100"
       :aria-valuetext="subtitleText"
-      :class="{ 'progress-bar-indeterminate': isIndeterminate }"
+      :class="{ 'progress-bar-indeterminate': isIndeterminate, 'progress-bar-active': status === 'running' }"
     >
       <div class="progress-bar-fill" :style="{ width: `${progressPercent}%` }" />
     </div>
@@ -284,9 +305,13 @@ onBeforeUnmount(() => {
       :aria-label="t('parse.title')"
       :aria-valuenow="currentPhaseStep"
       aria-valuemin="1"
-      aria-valuemax="4"
+      aria-valuemax="5"
     >
-      <span v-for="phase in 4" :key="phase" :class="{ complete: phase <= currentPhaseStep }" />
+      <span
+        v-for="phaseStep in 5"
+        :key="phaseStep"
+        :class="{ complete: phaseStep < currentPhaseStep, active: phaseStep === currentPhaseStep }"
+      />
     </div>
 
     <div v-if="!compact" class="progress-meta t-small">
@@ -383,6 +408,11 @@ onBeforeUnmount(() => {
   background: var(--accent);
 }
 
+.phase-progress span.active {
+  background: var(--status-running);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-running) 16%, transparent);
+}
+
 .cancel-button {
   width: 36px;
   min-width: 36px;
@@ -401,11 +431,21 @@ onBeforeUnmount(() => {
 }
 
 .progress-bar-fill {
+  position: relative;
   height: 100%;
   min-width: 12px;
   border-radius: inherit;
   background: var(--status-running);
   transition: width var(--transition-normal);
+}
+
+.progress-bar-active .progress-bar-fill::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 32%), transparent);
+  transform: translateX(-100%);
+  animation: progress-sheen 1.8s ease-in-out infinite;
 }
 
 .progress-bar-indeterminate .progress-bar-fill {
@@ -471,6 +511,12 @@ onBeforeUnmount(() => {
   }
 }
 
+@keyframes progress-sheen {
+  to {
+    transform: translateX(100%);
+  }
+}
+
 @media (max-width: 640px) {
   .progress-meta {
     flex-direction: column;
@@ -504,6 +550,10 @@ onBeforeUnmount(() => {
     animation: none;
     width: 100% !important;
     opacity: 0.45;
+  }
+
+  .progress-bar-active .progress-bar-fill::after {
+    animation: none;
   }
 }
 

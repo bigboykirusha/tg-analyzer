@@ -145,6 +145,7 @@ async function parseDialog(
         message: `Scanning ${scannedMessages.toLocaleString('en-US')} messages`,
         scannedMessages,
         startTime: context.startTime,
+        phase: 'scanning',
       })
       lastPublishedScannedMessages = scannedMessages
       lastProgressPublishedAt = now
@@ -152,6 +153,20 @@ async function parseDialog(
 
     await sleep(SCAN_PROGRESS_INTERVAL_MS)
   }
+
+  await publishParseProgress(userId, {
+    type: 'progress',
+    jobId,
+    current: context.chatIndex,
+    total: context.totalChats,
+    chatId: String(dialog.id),
+    chatName,
+    status: 'running',
+    message: 'Saving analysis',
+    scannedMessages,
+    startTime: context.startTime,
+    phase: 'saving',
+  })
 
   await saveAggregates({
     userId,
@@ -185,6 +200,7 @@ export const parseWorker = new Worker<ParseJobData>(
         status: 'pending',
         message: 'Connecting to Telegram',
         startTime,
+        phase: 'connecting',
       })
 
       const session = await getActiveSessionForUser(userId)
@@ -206,6 +222,7 @@ export const parseWorker = new Worker<ParseJobData>(
         status: 'running',
         message: 'Loading chat list',
         startTime,
+        phase: 'loading-dialogs',
       })
 
       const dialogs = await withTelegramReconnectRetry(
@@ -243,6 +260,7 @@ export const parseWorker = new Worker<ParseJobData>(
         status: 'running',
         message: targetDialogs.length ? 'Starting message scan' : 'No matching chats found',
         startTime,
+        phase: 'scanning',
       })
 
       let totalMessages = 0
@@ -263,6 +281,7 @@ export const parseWorker = new Worker<ParseJobData>(
           status: 'running',
           message: `Parsing chat ${index + 1} of ${targetDialogs.length}`,
           startTime,
+          phase: 'scanning',
         })
 
         const count = await parseDialog(userId, session, jobId, dialog, {
@@ -391,6 +410,7 @@ parseWorker.on('failed', async (job, error) => {
       chatName: '',
       status: 'pending',
       message: `Retrying analysis (attempt ${job.attemptsMade + 1})`,
+      phase: 'retrying',
     })
     return
   }

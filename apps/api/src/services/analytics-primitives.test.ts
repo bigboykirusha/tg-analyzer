@@ -7,6 +7,8 @@ import {
   clampNumber,
   computeMaxStreak,
   computeTrend,
+  fillDailyGaps,
+  normalizeCount,
 } from '@tg-analyzer/shared'
 
 test('analytics primitives handle empty and even-sized samples without mutating inputs', () => {
@@ -28,6 +30,10 @@ test('analytics percentiles use nearest-rank selection and clamp score bounds', 
   assert.equal(clampNumber(-5), 0)
   assert.equal(clampNumber(130), 100)
   assert.equal(clampNumber(15, 10, 20), 15)
+  assert.equal(normalizeCount(12.8), 12)
+  assert.equal(normalizeCount(-1), 0)
+  assert.equal(normalizeCount(Number.NaN), 0)
+  assert.equal(normalizeCount('12'), 0)
 })
 
 test('active day streaks deduplicate dates and remain stable across daylight-saving boundaries', () => {
@@ -44,6 +50,17 @@ test('active day streaks deduplicate dates and remain stable across daylight-sav
     else process.env.TZ = previousTimezone
   }
   assert.deepEqual(computeMaxStreak([]), { days: 0, startDate: null, endDate: null })
+})
+
+test('daily chart series includes quiet days across daylight-saving changes without mutating input', () => {
+  const items = [
+    { date: '2026-03-09', sent: 2, received: 1, total: 3 },
+    { date: '2026-03-07', sent: 1, received: 0, total: 1 },
+  ]
+
+  assert.deepEqual(fillDailyGaps(items), [items[1], { date: '2026-03-08', sent: 0, received: 0, total: 0 }, items[0]])
+  assert.equal(items[0]?.date, '2026-03-09')
+  assert.deepEqual(fillDailyGaps([]), [])
 })
 
 test('monthly trend requires six months and compares the latest three-month window', () => {

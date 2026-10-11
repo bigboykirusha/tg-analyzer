@@ -821,7 +821,6 @@ export function finalizeAccumulator(
   const sessionStats = computeSessionStats(timeline, activeDays, acc.timeZone)
   acc.activityDistribution = computeActivityDistribution(acc.hourlyActivitySplit)
   acc.compositionStats = computeCompositionStats({
-    totalMessages: acc.totalMessages,
     totalChars: acc.totalChars,
     textMessageCount: acc.textMessageCount,
     messageComposition: acc.messageComposition,

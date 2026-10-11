@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ActivityDistributionDto } from '@tg-analyzer/shared'
+import { normalizeChartCount } from '~~/utils/chart-theme'
 
 const props = defineProps<{
   distribution: ActivityDistributionDto
@@ -8,50 +9,55 @@ const props = defineProps<{
 const { t, formatNumber } = useI18n()
 
 const items = computed(() => {
+  const counts = {
+    night: normalizeChartCount(props.distribution.night.total),
+    morning: normalizeChartCount(props.distribution.morning.total),
+    afternoon: normalizeChartCount(props.distribution.afternoon.total),
+    evening: normalizeChartCount(props.distribution.evening.total),
+  }
   const total = Math.max(
-    props.distribution.night.total +
-      props.distribution.morning.total +
-      props.distribution.afternoon.total +
-      props.distribution.evening.total,
+    Object.values(counts).reduce((sum, value) => sum + value, 0),
     1,
   )
   return [
     {
       key: 'night',
       label: t('chat.bucketNight'),
-      value: props.distribution.night.total,
-      share: (props.distribution.night.total / total) * 100,
+      value: counts.night,
+      share: (counts.night / total) * 100,
     },
     {
       key: 'morning',
       label: t('chat.bucketMorning'),
-      value: props.distribution.morning.total,
-      share: (props.distribution.morning.total / total) * 100,
+      value: counts.morning,
+      share: (counts.morning / total) * 100,
     },
     {
       key: 'afternoon',
       label: t('chat.bucketAfternoon'),
-      value: props.distribution.afternoon.total,
-      share: (props.distribution.afternoon.total / total) * 100,
+      value: counts.afternoon,
+      share: (counts.afternoon / total) * 100,
     },
     {
       key: 'evening',
       label: t('chat.bucketEvening'),
-      value: props.distribution.evening.total,
-      share: (props.distribution.evening.total / total) * 100,
+      value: counts.evening,
+      share: (counts.evening / total) * 100,
     },
   ]
 })
+const hasActivity = computed(() => items.value.some((item) => item.value > 0))
 </script>
 
 <template>
-  <div class="distribution">
+  <p v-if="!hasActivity" class="t-small distribution-empty">{{ t('common.na') }}</p>
+  <div v-else class="distribution">
     <div v-for="item in items" :key="item.key" class="distribution-row">
       <div class="distribution-head">
         <span class="t-small">{{ item.label }}</span>
         <span class="t-mono">{{ formatNumber(item.value) }} · {{ Math.round(item.share) }}%</span>
       </div>
-      <div class="distribution-track">
+      <div class="distribution-track" aria-hidden="true">
         <div class="distribution-fill" :style="{ width: `${item.share}%` }" />
       </div>
     </div>
@@ -59,6 +65,10 @@ const items = computed(() => {
 </template>
 
 <style scoped>
+.distribution-empty {
+  color: var(--text-muted);
+}
+
 .distribution {
   display: flex;
   flex-direction: column;

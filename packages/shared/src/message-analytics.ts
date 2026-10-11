@@ -5,6 +5,7 @@ import type {
   DirectionalCountDto,
   MessageCompositionDto,
 } from './api'
+import { normalizeCount } from './analytics-primitives'
 
 export function computeActivityDistribution(
   activity: Readonly<Record<string, DirectionalCountDto>>,
@@ -20,8 +21,8 @@ export function computeActivityDistribution(
     const hour = Number(hourLabel)
     if (!Number.isInteger(hour) || hour < 0 || hour > 23) continue
     const bucket = bucketForHour(hour)
-    const sent = safeCount(counts?.sent)
-    const received = safeCount(counts?.received)
+    const sent = normalizeCount(counts?.sent)
+    const received = normalizeCount(counts?.received)
     result[bucket].sent += sent
     result[bucket].received += received
     result[bucket].total += sent + received
@@ -30,17 +31,16 @@ export function computeActivityDistribution(
 }
 
 export function computeCompositionStats(params: {
-  totalMessages: number
   totalChars: number
   textMessageCount: number
   messageComposition: MessageCompositionDto
 }): CompositionStatsDto {
   const composition = {
-    text: safeCount(params.messageComposition.text),
-    media: safeCount(params.messageComposition.media),
-    voice: safeCount(params.messageComposition.voice),
-    sticker: safeCount(params.messageComposition.sticker),
-    file: safeCount(params.messageComposition.file),
+    text: normalizeCount(params.messageComposition.text),
+    media: normalizeCount(params.messageComposition.media),
+    voice: normalizeCount(params.messageComposition.voice),
+    sticker: normalizeCount(params.messageComposition.sticker),
+    file: normalizeCount(params.messageComposition.file),
   }
   const classifiedMessages = Object.values(composition).reduce((sum, value) => sum + value, 0)
 
@@ -70,7 +70,7 @@ export function computeCompositionStats(params: {
 export function computeAvailabilityProfile(hourlyActivity: Readonly<Record<string, number>>): AvailabilityProfileDto {
   const entries = Array.from({ length: 24 }, (_, hour) => ({
     hour,
-    total: safeCount(hourlyActivity[String(hour)]),
+    total: normalizeCount(hourlyActivity[String(hour)]),
   }))
   const activeHours = entries.filter((entry) => entry.total > 0)
   const totalMessages = entries.reduce((sum, entry) => sum + entry.total, 0)
@@ -129,10 +129,6 @@ function formatWindow(start: number, size: number) {
 
 function padNumber(value: number): string {
   return String(value).padStart(2, '0')
-}
-
-function safeCount(value: number | null | undefined): number {
-  return Number.isFinite(value) && (value ?? 0) > 0 ? Math.floor(value ?? 0) : 0
 }
 
 function toPercentage(value: number, total: number) {

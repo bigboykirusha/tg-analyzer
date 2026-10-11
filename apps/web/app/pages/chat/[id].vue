@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ActivityDistributionDto, MessageCompositionDto } from '@tg-analyzer/shared'
+import { fillDailyGaps } from '@tg-analyzer/shared'
 import ChatAvatar from '../../components/ChatAvatar.vue'
 import Container from '../../components/layout/Container.vue'
 import EmojiGrid from '../../components/stats/EmojiGrid.vue'
@@ -177,13 +178,7 @@ const totalLongSilenceDays = computed(() => {
   )
   return Math.round(totalSeconds / 86400)
 })
-const continuousDailyActivity = computed(() => {
-  return fillDailyGaps(
-    chat.value?.dailyActivity ?? [],
-    chat.value?.firstMessageAt ?? null,
-    chat.value?.lastMessageAt ?? null,
-  )
-})
+const continuousDailyActivity = computed(() => fillDailyGaps(chat.value?.dailyActivity ?? []))
 const reportViews = computed(() => [
   { value: 'overview' as const, label: t('chat.overview') },
   { value: 'rhythm' as const, label: t('chat.rhythm') },
@@ -233,30 +228,6 @@ const relationshipSummary = computed(() => {
   return t('chat.relationshipSteady')
 })
 
-function scoreTone(value: number | null, warningThreshold = 55, successThreshold = 75) {
-  if (value === null) {
-    return 'default'
-  }
-
-  if (value < warningThreshold) {
-    return 'danger'
-  }
-
-  if (value < successThreshold) {
-    return 'warning'
-  }
-
-  return 'success'
-}
-
-function metricCardToneClass(tone: string) {
-  return {
-    'fact-card-danger': tone === 'danger',
-    'fact-card-warning': tone === 'warning',
-    'fact-card-success': tone === 'success',
-  }
-}
-
 const relationshipMetrics = computed(() => {
   const score = relationshipScore.value
   if (!score) {
@@ -269,28 +240,24 @@ const relationshipMetrics = computed(() => {
       label: t('chat.relationshipReciprocity'),
       value: score.reciprocity,
       detail: t('chat.relationshipReciprocityDetail'),
-      tone: scoreTone(score.reciprocity),
     },
     {
       key: 'responsiveness',
       label: t('chat.relationshipResponsiveness'),
       value: score.responsiveness,
       detail: t('chat.relationshipResponsivenessDetail'),
-      tone: scoreTone(score.responsiveness),
     },
     {
       key: 'stability',
       label: t('chat.relationshipStability'),
       value: score.stability,
       detail: t('chat.relationshipStabilityDetail'),
-      tone: scoreTone(score.stability),
     },
     {
       key: 'attention',
       label: t('chat.relationshipAttention'),
       value: score.attentionBalance,
       detail: t('chat.relationshipAttentionDetail'),
-      tone: scoreTone(score.attentionBalance),
     },
   ]
 })
@@ -343,7 +310,7 @@ const healthMetrics = computed(() => {
 const availabilityFacts = computed(() => {
   const value = chat.value?.availabilityProfile
   if (!value) return []
-  const predictability = {
+  const concentration = {
     low: t('chat.predictabilityLow'),
     medium: t('chat.predictabilityMedium'),
     high: t('chat.predictabilityHigh'),
@@ -359,7 +326,7 @@ const availabilityFacts = computed(() => {
     {
       key: 'predictability',
       label: t('chat.predictability'),
-      value: predictability,
+      value: value.concentrationIndex === null ? t('common.na') : concentration,
       sub: value.concentrationIndex === null ? t('common.na') : `${t('chat.concentrationIndex')} ×${formatDecimal(value.concentrationIndex)}`,
     },
     {
@@ -423,14 +390,12 @@ const sessionFacts = computed(() => {
         ? `${formatNumber(densestSessionHighlight.value.totalMessages)} ${t('common.messages')}`
         : t('common.na'),
       sub: t('chat.sessionPeakSub'),
-      tone: 'success',
     },
     {
       key: 'night-share',
       label: t('chat.nightSessions'),
       value: value.nightSessionsPct !== null ? `${value.nightSessionsPct}%` : t('common.na'),
       sub: t('chat.nightSessionsSub'),
-      tone: scoreTone(value.nightSessionsPct === null ? null : 100 - value.nightSessionsPct, 45, 70),
     },
   ]
 })
@@ -558,35 +523,6 @@ function formatDecimal(value: number | null | undefined) {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format(value)
-}
-
-function fillDailyGaps(
-  items: Array<{ date: string; sent: number; received: number; total: number }>,
-  firstMessageAt: string | null,
-  lastMessageAt: string | null,
-) {
-  if (!items.length) {
-    return items
-  }
-
-  const startDate = items[0]?.date ?? firstMessageAt?.slice(0, 10)
-  const endDate = items[items.length - 1]?.date ?? lastMessageAt?.slice(0, 10)
-  if (!startDate || !endDate) {
-    return items
-  }
-
-  const itemMap = new Map(items.map((item) => [item.date, item]))
-  const filled: typeof items = []
-  const start = new Date(`${startDate}T00:00:00`)
-  const end = new Date(`${endDate}T00:00:00`)
-
-  for (const cursor = new Date(start); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
-    const date = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`
-    const existing = itemMap.get(date)
-    filled.push(existing ?? { date, sent: 0, received: 0, total: 0 })
-  }
-
-  return filled
 }
 
 function setMobileLayout() {
@@ -767,6 +703,9 @@ onBeforeUnmount(() => {
           :chat-name="progress.chatName"
           :status="progress.status"
           :message="progress.message"
+          :scanned-messages="progress.scannedMessages"
+          :start-time="progress.startTime"
+          :phase="progress.phase"
         />
 
         <div v-else-if="reportStale" class="info-banner info-banner-tone">
@@ -924,13 +863,14 @@ onBeforeUnmount(() => {
                     }}</strong>
                   </div>
                   <div
+                    v-if="metric.value !== null && metric.value !== undefined"
                     class="relationship-meter"
-                    :style="{ '--meter-value': `${metric.value ?? 0}%` }"
+                    :style="{ '--meter-value': `${metric.value}%` }"
                     role="meter"
                     :aria-label="metric.label"
                     aria-valuemin="0"
                     aria-valuemax="100"
-                    :aria-valuenow="metric.value ?? 0"
+                    :aria-valuenow="metric.value"
                   >
                     <span />
                   </div>
@@ -976,13 +916,14 @@ onBeforeUnmount(() => {
                   <strong class="t-mono">{{ metric.value === null ? t('common.na') : `${metric.value}%` }}</strong>
                 </div>
                 <div
+                  v-if="metric.value !== null"
                   class="relationship-meter"
-                  :style="{ '--meter-value': `${metric.value ?? 0}%` }"
+                  :style="{ '--meter-value': `${metric.value}%` }"
                   role="meter"
                   :aria-label="metric.label"
                   aria-valuemin="0"
                   aria-valuemax="100"
-                  :aria-valuenow="metric.value ?? 0"
+                  :aria-valuenow="metric.value"
                 >
                   <span />
                 </div>
@@ -1169,12 +1110,7 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="facts-grid">
-              <div
-                v-for="fact in sessionFacts"
-                :key="fact.key"
-                class="fact-card"
-                :class="metricCardToneClass(fact.tone ?? 'default')"
-              >
+              <div v-for="fact in sessionFacts" :key="fact.key" class="fact-card">
                 <span class="t-label">{{ fact.label }}</span>
                 <strong class="fact-value t-mono">{{ fact.value }}</strong>
                 <span class="t-small">{{ fact.sub }}</span>
@@ -1749,21 +1685,6 @@ onBeforeUnmount(() => {
   gap: var(--space-3);
 }
 
-.fact-card-success {
-  border-color: color-mix(in srgb, var(--success) 45%, var(--border-default));
-  background: color-mix(in srgb, var(--success-subtle) 72%, var(--bg-elevated));
-}
-
-.fact-card-warning {
-  border-color: color-mix(in srgb, var(--warning) 45%, var(--border-default));
-  background: color-mix(in srgb, var(--warning-subtle) 72%, var(--bg-elevated));
-}
-
-.fact-card-danger {
-  border-color: color-mix(in srgb, var(--danger) 45%, var(--border-default));
-  background: color-mix(in srgb, var(--danger-subtle) 72%, var(--bg-elevated));
-}
-
 .fact-value,
 .gap-value {
   font-size: 20px;
@@ -1971,6 +1892,10 @@ onBeforeUnmount(() => {
   gap: var(--space-3);
 }
 
+.timeline-gap-grid > :only-child {
+  grid-column: 1 / -1;
+}
+
 .timeline-kpi-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -2110,9 +2035,11 @@ onBeforeUnmount(() => {
   }
 
   .tabs-scroll {
-    width: 100%;
-    margin-inline: 0;
+    width: calc(100% + 2 * var(--space-4));
+    max-width: none;
+    margin-inline: calc(-1 * var(--space-4));
     padding-inline: 0;
+    align-self: stretch;
   }
 
   .report-identity-row {

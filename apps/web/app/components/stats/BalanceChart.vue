@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import VChart from 'vue-echarts'
 import '../../lib/registerECharts'
-import { CHART_THEME, COLORS } from '~~/utils/chart-theme'
+import { CHART_THEME, COLORS, normalizeChartCount } from '~~/utils/chart-theme'
 
 const props = defineProps<{
   sent: number
   received: number
 }>()
-const { t } = useI18n()
+const { t, formatNumber } = useI18n()
 const { preference } = useTheme()
-const hasData = computed(() => props.sent + props.received > 0)
+const sent = computed(() => normalizeChartCount(props.sent))
+const received = computed(() => normalizeChartCount(props.received))
+const hasData = computed(() => sent.value + received.value > 0)
+const chartDescription = computed(() =>
+  t('chart.balanceSummary', { sent: formatNumber(sent.value), received: formatNumber(received.value) }),
+)
 
 const option = computed(() => {
   void preference.value
@@ -39,8 +44,8 @@ const option = computed(() => {
           borderWidth: 4,
         },
         data: [
-          { value: props.sent, name: t('chart.you'), itemStyle: { color: COLORS.sent() } },
-          { value: props.received, name: t('chart.them'), itemStyle: { color: COLORS.received() } },
+          { value: sent.value, name: t('chart.you'), itemStyle: { color: COLORS.sent() } },
+          { value: received.value, name: t('chart.them'), itemStyle: { color: COLORS.received() } },
         ],
       },
     ],
@@ -49,9 +54,9 @@ const option = computed(() => {
 </script>
 
 <template>
-  <div v-if="!hasData" class="chart-empty t-small">{{ t('heatmap.empty') }}</div>
+  <div v-if="!hasData" class="chart-empty t-small">{{ t('chart.noActivity') }}</div>
   <ClientOnly v-else>
-    <VChart class="chart chart-sm" :option="option" autoresize />
+    <VChart class="chart chart-sm" :option="option" role="img" :aria-label="chartDescription" autoresize />
   </ClientOnly>
 </template>
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { MessageCompositionDto } from '@tg-analyzer/shared'
+import { normalizeChartCount } from '~~/utils/chart-theme'
 
 const props = defineProps<{
   composition: MessageCompositionDto
@@ -8,44 +9,47 @@ const props = defineProps<{
 const { t, formatNumber } = useI18n()
 
 const segments = computed(() => {
+  const counts = {
+    text: normalizeChartCount(props.composition.text),
+    media: normalizeChartCount(props.composition.media),
+    voice: normalizeChartCount(props.composition.voice),
+    sticker: normalizeChartCount(props.composition.sticker),
+    file: normalizeChartCount(props.composition.file),
+  }
   const total = Math.max(
-    props.composition.text +
-      props.composition.media +
-      props.composition.voice +
-      props.composition.sticker +
-      props.composition.file,
+    Object.values(counts).reduce((sum, value) => sum + value, 0),
     1,
   )
 
   return [
     {
       label: t('chart.text'),
-      value: props.composition.text,
-      ratio: (props.composition.text / total) * 100,
+      value: counts.text,
+      ratio: (counts.text / total) * 100,
       className: 'segment-text',
     },
     {
       label: t('chart.media'),
-      value: props.composition.media,
-      ratio: (props.composition.media / total) * 100,
+      value: counts.media,
+      ratio: (counts.media / total) * 100,
       className: 'segment-media',
     },
     {
       label: t('chart.voice'),
-      value: props.composition.voice,
-      ratio: (props.composition.voice / total) * 100,
+      value: counts.voice,
+      ratio: (counts.voice / total) * 100,
       className: 'segment-voice',
     },
     {
       label: t('chart.sticker'),
-      value: props.composition.sticker,
-      ratio: (props.composition.sticker / total) * 100,
+      value: counts.sticker,
+      ratio: (counts.sticker / total) * 100,
       className: 'segment-sticker',
     },
     {
       label: t('chart.files'),
-      value: props.composition.file,
-      ratio: (props.composition.file / total) * 100,
+      value: counts.file,
+      ratio: (counts.file / total) * 100,
       className: 'segment-files',
     },
   ].filter((segment) => segment.value > 0)

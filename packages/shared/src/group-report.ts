@@ -1,4 +1,4 @@
-import type { GroupMemberRole, GroupParticipantDto } from './api'
+import type { GroupMemberRole } from './api'
 
 export type ProductGroupRole = 'anchor' | 'contributor' | 'newcomer' | 'inactive'
 type LegacyGroupRole = 'reactor' | 'lurker' | 'ghost' | 'catalyst'
@@ -50,8 +50,4 @@ export function resolveProductGroupRole(input: GroupRoleInput, now = new Date())
   }
 
   return 'contributor'
-}
-
-export function resolveParticipantProductRole(participant: GroupParticipantDto, now = new Date()) {
-  return resolveProductGroupRole(participant, now)
 }

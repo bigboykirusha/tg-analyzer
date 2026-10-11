@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ChatStatsDto, GroupParticipantDto } from '@tg-analyzer/shared'
-import { hasSufficientGroupRetentionPeriod, resolveParticipantProductRole } from '@tg-analyzer/shared'
+import { fillDailyGaps, hasSufficientGroupRetentionPeriod } from '@tg-analyzer/shared'
 import ActivityHeatmap from './ActivityHeatmap.vue'
 import EmojiGrid from './EmojiGrid.vue'
 import SegmentedControl from '../ui/SegmentedControl.vue'
@@ -18,6 +18,7 @@ const MonthlyChart = defineAsyncComponent(() => import('./MonthlyChart.vue'))
 const { locale, formatNumber, formatDate, formatRelative } = useI18n()
 
 const isRu = computed(() => locale.value === 'ru')
+const continuousDailyActivity = computed(() => fillDailyGaps(props.chat.dailyActivity))
 const activeTab = ref<'overview' | 'members' | 'dynamics' | 'network' | 'content'>('overview')
 const selectedParticipantId = ref<string | null>(null)
 
@@ -77,6 +78,8 @@ const copy = computed(() =>
         topEmoji: 'Популярные эмодзи',
         noGroupData: 'Для этого чата ещё нет группового отчёта.',
         noGroupDataText: 'Нужно заново распарсить чат после обновления аналитики.',
+        noParticipants: 'Нет данных об участниках за этот период.',
+        noParticipantsText: 'Распределение сообщений появится, когда в отчёте будут данные об участниках.',
         noWords: 'Недостаточно текста для содержательного контентного блока.',
         unknownParticipant: 'Участник',
         momentumGrowing: 'Активных участников стало больше',
@@ -143,6 +146,8 @@ const copy = computed(() =>
         topEmoji: 'Popular emoji',
         noGroupData: 'This chat does not have group analytics yet.',
         noGroupDataText: 'Re-parse the chat after the analytics update to generate it.',
+        noParticipants: 'No participant data is available for this period.',
+        noParticipantsText: 'The message breakdown will appear when participant data is available in the report.',
         noWords: 'Not enough text for a meaningful content view.',
         unknownParticipant: 'Participant',
         momentumGrowing: 'More members are active',
@@ -159,6 +164,9 @@ const copy = computed(() =>
 
 const groupReport = computed(() => props.chat.groupReport)
 const participants = computed(() => groupReport.value?.participants ?? [])
+const rankedParticipants = computed(() =>
+  [...participants.value].sort((left, right) => right.messageCount - left.messageCount),
+)
 const health = computed(() => groupReport.value?.health ?? null)
 const hasRetentionWindow = computed(() => {
   return hasSufficientGroupRetentionPeriod(
@@ -179,7 +187,7 @@ const tabs = computed(() => [
 ])
 
 watch(
-  participants,
+  rankedParticipants,
   (value) => {
     if (!value.length) {
       selectedParticipantId.value = null
@@ -195,14 +203,16 @@ watch(
 const selectedParticipant = computed(
   () =>
     participants.value.find((participant) => participant.id === selectedParticipantId.value) ??
-    participants.value[0] ??
+    rankedParticipants.value[0] ??
     null,
 )
 
-const topParticipants = computed(() => participants.value.slice(0, 5))
+const topParticipants = computed(() => rankedParticipants.value.slice(0, 5))
 const othersShare = computed(() => {
-  const topShare = topParticipants.value.reduce((sum, participant) => sum + participant.messageShare, 0)
-  return Math.max(0, Number((100 - topShare).toFixed(1)))
+  const remainingMessages = rankedParticipants.value
+    .slice(topParticipants.value.length)
+    .reduce((sum, participant) => sum + participant.messageCount, 0)
+  return props.chat.totalMessages > 0 ? Number(((remainingMessages / props.chat.totalMessages) * 100).toFixed(1)) : 0
 })
 
 const overviewMetrics = computed(() => [
@@ -233,7 +243,7 @@ const overviewMetrics = computed(() => [
 const healthFacts = computed(() =>
   health.value
     ? [
-        { label: copy.value.gini, value: `${health.value.giniCoefficient.toFixed(2)}` },
+        { label: copy.value.gini, value: `${formatNumber(health.value.giniCoefficient * 100)}%` },
         ...(!hasRetentionWindow.value || health.value.retentionRate === null
           ? []
           : [{ label: copy.value.retention, value: `${health.value.retentionRate}%` }]),
@@ -349,14 +359,14 @@ function roleLabel(participant: GroupParticipantDto) {
         newcomer: 'Newcomer',
         inactive: 'Long inactive',
       }
-  return labels[resolveParticipantProductRole(participant)]
+  return labels[participant.role]
 }
 
 function roleDescription(participant: GroupParticipantDto) {
   const share = participant.messageShare
   const starter = participant.starterShare
   const consistency = participant.consistencyScore
-  const role = resolveParticipantProductRole(participant)
+  const role = participant.role
 
   if (role === 'anchor') {
     return isRu.value
@@ -428,7 +438,7 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | 'unknown') {
           <p class="t-small section-text">{{ copy.pulseText }}</p>
         </div>
 
-        <div class="participant-bars">
+        <div v-if="participants.length" class="participant-bars">
           <div v-for="participant in topParticipants" :key="participant.id" class="participant-bar-row">
             <div class="participant-bar-head">
               <strong>{{ normalizeDisplayName(participant.name) }}</strong>
@@ -449,6 +459,7 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | 'unknown') {
             </div>
           </div>
         </div>
+        <EmptyState v-else :icon="LayoutGrid" :title="copy.noParticipants" :description="copy.noParticipantsText" />
       </article>
 
       <article v-if="health" class="card section-card">
@@ -506,7 +517,7 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | 'unknown') {
             </thead>
             <tbody>
               <tr
-                v-for="participant in participants"
+                v-for="participant in rankedParticipants"
                 :key="participant.id"
                 :class="{ 'member-row-active': participant.id === selectedParticipantId }"
                 @click="selectedParticipantId = participant.id"
@@ -611,7 +622,7 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | 'unknown') {
           <span class="t-label">{{ copy.dynamics }}</span>
           <h2 class="t-h2">{{ copy.dailyTitle }}</h2>
         </div>
-        <DailyVolumeChart :items="chat.dailyActivity" />
+        <DailyVolumeChart :items="continuousDailyActivity" />
       </article>
 
       <article class="card section-card">
@@ -619,7 +630,7 @@ function momentumLabel(value: 'growing' | 'stable' | 'shrinking' | 'unknown') {
           <span class="t-label">{{ copy.dynamics }}</span>
           <h2 class="t-h2">{{ copy.heatmapTitle }}</h2>
         </div>
-        <ActivityHeatmap :points="chat.dailyActivity" />
+        <ActivityHeatmap :points="continuousDailyActivity" />
       </article>
     </section>
 

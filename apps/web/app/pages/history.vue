@@ -85,7 +85,7 @@ function formatCooldown(seconds: number) {
 }
 
 function historyDuration(item: ParseHistoryItem) {
-  if (!item.startedAt) {
+  if (!item.startedAt || (!item.completedAt && item.status !== 'running' && item.status !== 'pending')) {
     return t('common.na')
   }
 
@@ -99,23 +99,11 @@ function historyDuration(item: ParseHistoryItem) {
   return formatCooldown(Math.round((finishedAt - startedAt) / 1000))
 }
 
-function historyProgress(item: ParseHistoryItem) {
-  if (item.status === 'completed') {
-    return 100
-  }
+function historyProgress(item: ParseHistoryItem): number | null {
   if (item.totalChats > 0) {
-    return Math.round((item.parsedChats / item.totalChats) * 100)
+    return Math.min(100, Math.max(0, Math.round((item.parsedChats / item.totalChats) * 100)))
   }
-  if (item.status === 'running') {
-    return item.totalMessages ? 55 : 12
-  }
-  if (item.status === 'pending') {
-    return 6
-  }
-  if (item.status === 'failed' || item.status === 'cancelled') {
-    return item.totalMessages ? 100 : 18
-  }
-  return 0
+  return null
 }
 
 function formatHistoryScope(item: ParseHistoryItem) {
@@ -259,6 +247,7 @@ onMounted(async () => {
           :message="progress.message"
           :scanned-messages="progress.scannedMessages"
           :start-time="progress.startTime"
+          :phase="progress.phase"
         />
 
         <section class="card section-card workspace-card">
@@ -306,8 +295,17 @@ onMounted(async () => {
                 <div
                   v-else-if="item.status === 'running' || item.status === 'pending'"
                   class="history-progress progress-bar"
+                  role="progressbar"
+                  :aria-label="`${t('dashboard.progress')}: ${formatHistoryScope(item)}`"
+                  :aria-valuenow="historyProgress(item) ?? undefined"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
                 >
-                  <div class="progress-bar-fill" :style="{ width: `${historyProgress(item)}%` }" />
+                  <div
+                    class="progress-bar-fill"
+                    :class="{ 'progress-bar-fill--indeterminate': historyProgress(item) === null }"
+                    :style="historyProgress(item) === null ? undefined : { width: `${historyProgress(item)}%` }"
+                  />
                 </div>
               </div>
             </div>
@@ -429,18 +427,6 @@ onMounted(async () => {
   min-width: 0;
 }
 
-.section-title-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
-.section-text {
-  color: var(--text-secondary);
-}
-
-.list-grid,
 .history-list {
   display: grid;
   gap: 0;
@@ -527,8 +513,7 @@ onMounted(async () => {
 }
 
 .history-title,
-.selection-subline,
-.history-dialog-jobid {
+.selection-subline {
   overflow-wrap: anywhere;
 }
 
@@ -550,7 +535,29 @@ onMounted(async () => {
 .progress-bar-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent), var(--success));
+  background: var(--status-running);
+}
+
+.progress-bar-fill--indeterminate {
+  width: 36%;
+  animation: progress-indeterminate 1.35s ease-in-out infinite;
+}
+
+@keyframes progress-indeterminate {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar-fill--indeterminate {
+    width: 100%;
+    opacity: 0.45;
+    animation: none;
+  }
 }
 
 .history-pagination {

@@ -1,4 +1,37 @@
-import type { ConversationFactsDto, DirectionalCountDto, MonthlyActivityDto, StreakInfoDto } from './api'
+import type {
+  ConversationFactsDto,
+  DatedActivityDto,
+  DirectionalCountDto,
+  MonthlyActivityDto,
+  StreakInfoDto,
+} from './api'
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+export function fillDailyGaps(items: readonly DatedActivityDto[]): DatedActivityDto[] {
+  const ordered = items
+    .filter((item) => isCalendarDay(item.date))
+    .sort((left, right) => left.date.localeCompare(right.date))
+  if (!ordered.length) return []
+
+  const byDate = new Map(ordered.map((item) => [item.date, item]))
+  const start = Date.parse(`${ordered[0]!.date}T00:00:00.000Z`)
+  const end = Date.parse(`${ordered[ordered.length - 1]!.date}T00:00:00.000Z`)
+  const filled: DatedActivityDto[] = []
+
+  for (let day = start; day <= end; day += DAY_MS) {
+    const date = new Date(day).toISOString().slice(0, 10)
+    filled.push(byDate.get(date) ?? { date, sent: 0, received: 0, total: 0 })
+  }
+
+  return filled
+}
+
+function isCalendarDay(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const parsed = new Date(`${value}T00:00:00.000Z`)
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
+}
 
 export function mapDailyActivity(map: ReadonlyMap<string, { sent: number; received: number }>) {
   return Array.from(map.entries())

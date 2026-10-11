@@ -76,3 +76,8 @@ export function createChartTheme() {
 export const CHART_THEME = {
   base: createChartTheme,
 }
+
+export function normalizeChartCount(value: unknown): number {
+  return normalizeCount(value)
+}
+import { normalizeCount } from '@tg-analyzer/shared'

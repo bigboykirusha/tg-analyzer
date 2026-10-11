@@ -2,13 +2,19 @@
 import VChart from 'vue-echarts'
 import '../../lib/registerECharts'
 import type { MonthlyActivityDto } from '@tg-analyzer/shared'
-import { CHART_THEME, COLORS } from '~~/utils/chart-theme'
+import { CHART_THEME, COLORS, normalizeChartCount } from '~~/utils/chart-theme'
 
 const props = defineProps<{
   items: MonthlyActivityDto[]
 }>()
-const { formatDate } = useI18n()
+const { t, formatDate, formatNumber } = useI18n()
 const { preference } = useTheme()
+const values = computed(() => props.items.map((item) => normalizeChartCount(item.total)))
+const total = computed(() => values.value.reduce((sum, value) => sum + value, 0))
+const hasData = computed(() => total.value > 0)
+const chartDescription = computed(() =>
+  t('chart.monthlySummary', { months: formatNumber(props.items.length), messages: formatNumber(total.value) }),
+)
 
 const option = computed(() => {
   void preference.value
@@ -34,13 +40,14 @@ const option = computed(() => {
     yAxis: {
       ...theme.yAxis,
       type: 'value',
+      minInterval: 1,
     },
     series: [
       {
         type: 'line',
         smooth: true,
         symbolSize: 7,
-        data: props.items.map((item) => item.total),
+        data: values.value,
         areaStyle: {
           color: COLORS.accentMuted(),
         },
@@ -58,8 +65,9 @@ const option = computed(() => {
 </script>
 
 <template>
-  <ClientOnly>
-    <VChart class="chart chart-lg" :option="option" autoresize />
+  <div v-if="!hasData" class="chart-empty t-small">{{ t('chart.noActivity') }}</div>
+  <ClientOnly v-else>
+    <VChart class="chart chart-lg" :option="option" role="img" :aria-label="chartDescription" autoresize />
   </ClientOnly>
 </template>
 
@@ -70,6 +78,14 @@ const option = computed(() => {
 
 .chart-lg {
   height: 320px;
+}
+
+.chart-empty {
+  padding: var(--space-8);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 @media (max-width: 768px) {

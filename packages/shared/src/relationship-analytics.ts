@@ -51,9 +51,8 @@ export function computeHealthScore(params: {
 }): HealthScoreDto | null {
   if (!params.relationshipScore || params.responseRate === null) return null
 
-  const fragmentation = params.activeDays
-    ? Math.min(1, params.sessionStats.totalSessions / Math.max(params.activeDays, 1))
-    : 1
+  const sessions = params.sessionStats.totalSessions
+  const fragmentation = sessions > 0 ? Math.max(0, sessions - params.activeDays) / sessions : 0
   const initiativeBalance = params.relationshipScore.attentionBalance
   const longTermStability = clampNumber(
     Math.round(

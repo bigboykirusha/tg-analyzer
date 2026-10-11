@@ -178,6 +178,7 @@ export const parseStatusResponseSchema: z.ZodType<ParseStatusResponse> = z.objec
     message: z.string().optional(),
     scannedMessages: z.number().optional(),
     startTime: z.number().optional(),
+    phase: z.enum(['queued', 'connecting', 'loading-dialogs', 'scanning', 'saving', 'retrying']).optional(),
   }),
 })
 

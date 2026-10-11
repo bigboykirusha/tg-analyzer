@@ -96,6 +96,14 @@ export interface ParseDialogsResponse {
   total: number
 }
 
+export type ParseProgressPhase =
+  | 'queued'
+  | 'connecting'
+  | 'loading-dialogs'
+  | 'scanning'
+  | 'saving'
+  | 'retrying'
+
 export interface ParseProgressDto {
   jobId?: string
   current: number
@@ -106,6 +114,7 @@ export interface ParseProgressDto {
   message?: string
   scannedMessages?: number
   startTime?: number
+  phase?: ParseProgressPhase
 }
 
 export interface ParseStatusResponse {
@@ -431,6 +440,7 @@ export interface TopResponse {
 
 export interface ParseProgressEvent {
   type: 'progress'
+  jobId?: string
   current: number
   total: number
   chatId: string | null
@@ -438,6 +448,8 @@ export interface ParseProgressEvent {
   status?: JobStatus
   message?: string
   scannedMessages?: number
+  startTime?: number
+  phase?: ParseProgressPhase
 }
 
 export interface ParseCompletedEvent {

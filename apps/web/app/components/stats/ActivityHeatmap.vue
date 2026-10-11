@@ -12,40 +12,36 @@ const heatmapWeeks = computed(() => {
     return []
   }
 
-  const first = rows[0]?.date
-  const last = rows[rows.length - 1]?.date
-  if (!first || !last) {
-    return []
-  }
-
-  const byDate = new Map(rows.map((item) => [item.date, item.total]))
-  const start = new Date(`${first}T00:00:00`)
-  const end = new Date(`${last}T00:00:00`)
-  const max = Math.max(...rows.map((item) => item.total), 1)
+  const first = rows[0]!
+  const firstDay = new Date(`${first.date}T00:00:00.000Z`).getUTCDay()
   const cells: Array<{ date: string | null; total: number; level: number }> = []
 
-  for (let index = 0; index < start.getDay(); index += 1) {
+  for (let index = 0; index < firstDay; index += 1) {
     cells.push({ date: null, total: 0, level: 0 })
   }
 
-  for (let cursor = new Date(start); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
-    const date = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`
-    const total = byDate.get(date) ?? 0
+  for (const item of rows) {
     cells.push({
-      date,
-      total,
-      level: total ? Math.max(1, Math.ceil((total / max) * 4)) : 0,
+      date: item.date,
+      total: item.total,
+      level: 0,
     })
   }
 
-  const limited = cells.slice(-371)
-  const weeks: (typeof limited)[] = []
+  const weeks: (typeof cells)[] = []
 
-  for (let index = 0; index < limited.length; index += 7) {
-    weeks.push(limited.slice(index, index + 7))
+  for (let index = 0; index < cells.length; index += 7) {
+    weeks.push(cells.slice(index, index + 7))
   }
 
-  return weeks.slice(-53)
+  const visibleWeeks = weeks.slice(-53)
+  const max = Math.max(...visibleWeeks.flat().map((day) => day.total), 1)
+  return visibleWeeks.map((week) =>
+    week.map((day) => ({
+      ...day,
+      level: day.total ? Math.max(1, Math.ceil((day.total / max) * 4)) : 0,
+    })),
+  )
 })
 const compactHeatmap = computed(() => heatmapWeeks.value.length <= 2)
 const compactDays = computed(() => heatmapWeeks.value.flat().filter((day) => day.date !== null))
@@ -96,6 +92,7 @@ function levelClass(level: number) {
           v-for="(day, dayIndex) in week"
           :key="day.date ?? `empty-${weekIndex}-${dayIndex}`"
           class="heatmap-day"
+          :data-date="day.date"
           :class="[levelClass(day.level), { 'heatmap-day-empty': !day.date }]"
           :title="
             day.date
@@ -106,7 +103,7 @@ function levelClass(level: number) {
       </div>
     </div>
   </div>
-  <div v-else class="heatmap-empty t-small">{{ t('heatmap.empty') }}</div>
+  <div v-else class="heatmap-empty t-small">{{ t('chart.noActivity') }}</div>
 </template>
 
 <style scoped>

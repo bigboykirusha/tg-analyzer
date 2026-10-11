@@ -35,7 +35,7 @@ The browser obtains an expiring, one-use ticket from the authenticated API and s
 
 Before enabling production traffic, verify from the hosting provider's actual log configuration that a request to `/ws/parse-progress?ticket=REDACTED-CANARY` is recorded only as `/ws/parse-progress`. Do not use a live ticket for this check. If a real ticket appears in logs, restrict and expire access to those logs, rotate any affected session families if exposure is plausible, and follow [RUNBOOK.md](RUNBOOK.md).
 
-The application redacts query strings in its own logs, but this does not change infrastructure access-log settings. See [SECURITY.md](SECURITY.md) for the session and cookie model and [ENVIRONMENT.md](ENVIRONMENT.md) for the service variables. The environment reference is still to be written; use the checked-in `.env.example` and validated API config until it exists.
+The application redacts query strings in its own logs, but this does not change infrastructure access-log settings. See [SECURITY.md](SECURITY.md) for the session and cookie model and [ENVIRONMENT.md](ENVIRONMENT.md) for the service variables.
 
 ## Release order
 

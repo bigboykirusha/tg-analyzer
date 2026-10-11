@@ -2,22 +2,29 @@
 import VChart from 'vue-echarts'
 import '../../lib/registerECharts'
 import type { DirectionalCountDto } from '@tg-analyzer/shared'
-import { CHART_THEME, COLORS } from '~~/utils/chart-theme'
+import { CHART_THEME, COLORS, normalizeChartCount } from '~~/utils/chart-theme'
 
 const props = defineProps<{
   activity: Record<string, DirectionalCountDto>
 }>()
-const { t } = useI18n()
+const { t, formatNumber } = useI18n()
 const { preference } = useTheme()
-const hasData = computed(() =>
-  Object.values(props.activity).some((entry) => (entry?.sent ?? 0) > 0 || (entry?.received ?? 0) > 0),
+const hours = Array.from({ length: 24 }, (_, hour) => String(hour))
+const sent = computed(() => hours.map((hour) => normalizeChartCount(props.activity[hour]?.sent)))
+const received = computed(() => hours.map((hour) => normalizeChartCount(props.activity[hour]?.received)))
+const sentTotal = computed(() => sent.value.reduce((sum, value) => sum + value, 0))
+const receivedTotal = computed(() => received.value.reduce((sum, value) => sum + value, 0))
+const hasData = computed(() => sentTotal.value + receivedTotal.value > 0)
+const chartDescription = computed(() =>
+  t('chart.hourlySummary', {
+    sent: formatNumber(sentTotal.value),
+    received: formatNumber(receivedTotal.value),
+  }),
 )
 
 const option = computed(() => {
   void preference.value
   const theme = CHART_THEME.base()
-  const hours = Array.from({ length: 24 }, (_, hour) => String(hour))
-
   return {
     ...theme,
     grid: {
@@ -55,7 +62,7 @@ const option = computed(() => {
       {
         type: 'bar',
         name: t('chart.you'),
-        data: hours.map((hour) => props.activity[hour]?.sent ?? 0),
+        data: sent.value,
         barMaxWidth: 18,
         itemStyle: {
           color: COLORS.sent(),
@@ -65,7 +72,7 @@ const option = computed(() => {
       {
         type: 'bar',
         name: t('chart.them'),
-        data: hours.map((hour) => props.activity[hour]?.received ?? 0),
+        data: received.value,
         barMaxWidth: 18,
         itemStyle: {
           color: COLORS.received(),
@@ -78,9 +85,9 @@ const option = computed(() => {
 </script>
 
 <template>
-  <div v-if="!hasData" class="chart-empty t-small">{{ t('heatmap.empty') }}</div>
+  <div v-if="!hasData" class="chart-empty t-small">{{ t('chart.noActivity') }}</div>
   <ClientOnly v-else>
-    <VChart class="chart chart-sm" :option="option" autoresize />
+    <VChart class="chart chart-sm" :option="option" role="img" :aria-label="chartDescription" autoresize />
   </ClientOnly>
 </template>
 

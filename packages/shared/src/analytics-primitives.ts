@@ -23,6 +23,10 @@ export function clampNumber(value: number, min = 0, max = 100): number {
   return Math.min(max, Math.max(min, value))
 }
 
+export function normalizeCount(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0
+}
+
 export function calculateAverage(values: readonly number[]): number {
   if (values.length === 0) return 0
   return values.reduce((sum, value) => sum + value, 0) / values.length

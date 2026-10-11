@@ -2,14 +2,19 @@
 import VChart from 'vue-echarts'
 import '../../lib/registerECharts'
 import type { DirectionalCountDto } from '@tg-analyzer/shared'
-import { CHART_THEME, COLORS } from '~~/utils/chart-theme'
+import { CHART_THEME, COLORS, normalizeChartCount } from '~~/utils/chart-theme'
 
 const props = defineProps<{
   activity: Record<string, DirectionalCountDto>
 }>()
-const { t } = useI18n()
+const { t, formatNumber } = useI18n()
 const { preference } = useTheme()
-const hasData = computed(() => Object.values(props.activity).some((entry) => (entry?.total ?? 0) > 0))
+const values = computed(() =>
+  Array.from({ length: 7 }, (_, index) => normalizeChartCount(props.activity[String(index)]?.total)),
+)
+const total = computed(() => values.value.reduce((sum, value) => sum + value, 0))
+const hasData = computed(() => total.value > 0)
+const chartDescription = computed(() => t('chart.weekdaySummary', { messages: formatNumber(total.value) }))
 
 const option = computed(() => {
   void preference.value
@@ -34,7 +39,7 @@ const option = computed(() => {
     series: [
       {
         type: 'bar',
-        data: labels.map((_, index) => props.activity[String(index)]?.total ?? 0),
+        data: values.value,
         barMaxWidth: 28,
         itemStyle: {
           color: COLORS.sent(),
@@ -47,9 +52,9 @@ const option = computed(() => {
 </script>
 
 <template>
-  <div v-if="!hasData" class="chart-empty t-small">{{ t('heatmap.empty') }}</div>
+  <div v-if="!hasData" class="chart-empty t-small">{{ t('chart.noActivity') }}</div>
   <ClientOnly v-else>
-    <VChart class="chart chart-sm" :option="option" autoresize />
+    <VChart class="chart chart-sm" :option="option" role="img" :aria-label="chartDescription" autoresize />
   </ClientOnly>
 </template>
 

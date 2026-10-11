@@ -25,7 +25,6 @@ test('response rate counts turn changes and returns null without a comparable pa
 test('message composition handles empty inputs and reports percentages', () => {
   assert.deepEqual(
     computeCompositionStats({
-      totalMessages: 0,
       totalChars: 0,
       textMessageCount: 0,
       messageComposition: { text: 0, media: 0, voice: 0, sticker: 0, file: 0 },
@@ -41,7 +40,6 @@ test('message composition handles empty inputs and reports percentages', () => {
   )
   assert.deepEqual(
     computeCompositionStats({
-      totalMessages: 4,
       totalChars: 30,
       textMessageCount: 2,
       messageComposition: { text: 2, media: 1, voice: 0, sticker: 1, file: 0 },
@@ -116,7 +114,6 @@ test('availability ignores invalid buckets and finds compact non-overlapping pea
 test('composition percentages use classified messages as the source of truth', () => {
   assert.deepEqual(
     computeCompositionStats({
-      totalMessages: 10,
       totalChars: 12,
       textMessageCount: 2,
       messageComposition: { text: 2, media: 1, voice: 1, sticker: 0, file: 0 },
@@ -241,4 +238,42 @@ test('relationship and health scores exclude groups and empty reports', () => {
     }),
     null,
   )
+})
+
+test('health fragmentation measures extra sessions beyond the first per active day', () => {
+  const relationshipScore = {
+    score: 70,
+    label: 'balanced' as const,
+    reciprocity: 70,
+    responsiveness: 70,
+    stability: 70,
+    attentionBalance: 70,
+  }
+  const sessionStats = {
+    totalSessions: 10,
+    averageSessionMessages: 4,
+    averageSessionDurationSec: 300,
+    longestSessionMessages: 8,
+    longestSessionDurationSec: 600,
+    sessionsPerActiveWeek: 7,
+    nightSessionsPct: 0,
+    highlights: [],
+  }
+  const withSessions = (totalSessions: number) =>
+    computeHealthScore({
+      responseRate: 80,
+      sessionStats: { ...sessionStats, totalSessions },
+      activeDays: 10,
+      relationshipScore,
+      trend: 'stable',
+    })
+
+  const onePerDay = withSessions(10)
+  const twoPerDay = withSessions(20)
+  const fourPerDay = withSessions(40)
+  assert.equal(onePerDay?.fragmentation, 0)
+  assert.equal(twoPerDay?.fragmentation, 50)
+  assert.equal(fourPerDay?.fragmentation, 75)
+  assert.ok((onePerDay?.score ?? 0) > (twoPerDay?.score ?? 0))
+  assert.ok((twoPerDay?.score ?? 0) > (fourPerDay?.score ?? 0))
 })

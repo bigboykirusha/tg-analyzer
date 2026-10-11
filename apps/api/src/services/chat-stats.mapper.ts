@@ -9,6 +9,7 @@ import type {
   GroupReportDto,
   HealthScoreDto,
   MessageCompositionDto,
+  RelationshipScoreDto,
   ResponseStatsDto,
   TopItemDto,
 } from '@tg-analyzer/shared'
@@ -20,23 +21,47 @@ import {
 } from '@tg-analyzer/shared'
 import { schema } from '../db'
 
-function resolveGroupRole(params: {
-  messageShare: number
-  consistencyScore: number
-  starterShare: number
-  firstSeen: Date | string | null
-  lastSeen: Date | string | null
-  messageCount: number
-  now: Date
-}): GroupParticipantDto['role'] {
-  return resolveProductGroupRole(params, params.now)
+const HEALTH_LABELS: ReadonlySet<string> = new Set<HealthScoreDto['label']>([
+  'strong',
+  'steady',
+  'fragile',
+  'imbalanced',
+])
+const RELATIONSHIP_LABELS: ReadonlySet<string> = new Set<RelationshipScoreDto['label']>([
+  'balanced',
+  'warm',
+  'cooling',
+  'one_sided',
+  'emerging',
+])
+
+function isValidScore(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100
 }
 
 function normalizeStoredGroupRole(
   participant: Omit<GroupParticipantDto, 'role'> & { role?: string | null },
-  now = new Date(),
+  reportAsOf: Date,
 ): GroupParticipantDto['role'] {
-  return resolveGroupRole({ ...participant, now })
+  if (
+    participant.role === 'anchor' ||
+    participant.role === 'contributor' ||
+    participant.role === 'newcomer' ||
+    participant.role === 'inactive'
+  ) {
+    return participant.role
+  }
+  return resolveProductGroupRole(
+    {
+      messageShare: participant.messageShare,
+      consistencyScore: participant.consistencyScore,
+      starterShare: participant.starterShare,
+      firstSeen: participant.firstSeen,
+      lastSeen: participant.lastSeen,
+      messageCount: participant.messageCount,
+    },
+    reportAsOf,
+  )
 }
 
 function normalizeConversationFacts(
@@ -65,16 +90,17 @@ function normalizeConversationFacts(
       nightSessionsPct: sessionStats?.nightSessionsPct ?? null,
       highlights: Array.isArray(sessionStats?.highlights) ? sessionStats.highlights : [],
     },
-    relationshipScore: relationshipScore
-      ? {
-          score: relationshipScore.score ?? 0,
-          label: relationshipScore.label ?? 'balanced',
-          reciprocity: relationshipScore.reciprocity ?? null,
-          responsiveness: relationshipScore.responsiveness ?? null,
-          stability: relationshipScore.stability ?? null,
-          attentionBalance: relationshipScore.attentionBalance ?? null,
-        }
-      : null,
+    relationshipScore:
+      relationshipScore && isValidScore(relationshipScore.score) && RELATIONSHIP_LABELS.has(relationshipScore.label)
+        ? {
+            score: relationshipScore.score,
+            label: relationshipScore.label,
+            reciprocity: relationshipScore.reciprocity ?? null,
+            responsiveness: relationshipScore.responsiveness ?? null,
+            stability: relationshipScore.stability ?? null,
+            attentionBalance: relationshipScore.attentionBalance ?? null,
+          }
+        : null,
     insights: Array.isArray(value?.insights) ? value.insights : [],
   }
 }
@@ -104,7 +130,6 @@ function resolveCompositionStats(
   textMessageCount: number,
 ): CompositionStatsDto {
   return computeCompositionStats({
-    totalMessages: row.totalMessages ?? 0,
     totalChars: row.totalChars ?? 0,
     textMessageCount,
     messageComposition,
@@ -116,13 +141,13 @@ function resolveAvailabilityProfile(row: typeof schema.chatStats.$inferSelect): 
 }
 
 function normalizeHealthScore(value: (typeof schema.chatStats.$inferSelect)['healthScore']): HealthScoreDto | null {
-  if (!value) {
+  if (!value || !isValidScore(value.score) || !HEALTH_LABELS.has(value.label)) {
     return null
   }
 
   return {
-    score: value.score ?? 0,
-    label: value.label ?? 'steady',
+    score: value.score,
+    label: value.label,
     responseRate: value.responseRate ?? null,
     fragmentation: value.fragmentation ?? null,
     initiativeBalance: value.initiativeBalance ?? null,
@@ -134,33 +159,54 @@ function normalizeGroupReport(row: typeof schema.chatStats.$inferSelect): GroupR
   const participants = Array.isArray(row.groupParticipants)
     ? row.groupParticipants.map((participant) => ({
         ...participant,
-        role: normalizeStoredGroupRole(participant),
+        role: normalizeStoredGroupRole(
+          participant,
+          row.parsedAt ?? row.lastMessageAt ?? (participant.lastSeen ? new Date(participant.lastSeen) : new Date(0)),
+        ),
       }))
     : []
   const topPairs = Array.isArray(row.groupTopPairs) ? row.groupTopPairs : []
   const sharedVocabulary = Array.isArray(row.sharedVocabulary) ? row.sharedVocabulary : []
   const uniqueGroupWords = Array.isArray(row.uniqueGroupWords) ? row.uniqueGroupWords : []
   const health = row.groupHealth
+  const completeHealth =
+    health &&
+    [
+      health.giniCoefficient,
+      health.lurkerRatio,
+      health.responseCoverage,
+      health.consistency,
+      health.activeMembers,
+      health.activeMembersLast30Days,
+      health.churnedMembers,
+      health.peakSimultaneity,
+    ].every(Number.isFinite)
 
-  if (!participants.length && !topPairs.length && !sharedVocabulary.length && !uniqueGroupWords.length && !health) {
+  if (
+    !participants.length &&
+    !topPairs.length &&
+    !sharedVocabulary.length &&
+    !uniqueGroupWords.length &&
+    !completeHealth
+  ) {
     return null
   }
 
   return {
     participants,
     topPairs,
-    health: health
+    health: completeHealth
       ? {
-          giniCoefficient: health.giniCoefficient ?? 0,
-          lurkerRatio: health.lurkerRatio ?? 0,
+          giniCoefficient: health.giniCoefficient,
+          lurkerRatio: health.lurkerRatio,
           retentionRate: health.retentionRate ?? null,
-          responseCoverage: health.responseCoverage ?? 0,
-          consistency: health.consistency ?? 0,
+          responseCoverage: health.responseCoverage,
+          consistency: health.consistency,
           momentum: health.momentum ?? 'unknown',
-          activeMembers: health.activeMembers ?? participants.length,
-          activeMembersLast30Days: health.activeMembersLast30Days ?? 0,
-          churnedMembers: health.churnedMembers ?? 0,
-          peakSimultaneity: health.peakSimultaneity ?? 0,
+          activeMembers: health.activeMembers,
+          activeMembersLast30Days: health.activeMembersLast30Days,
+          churnedMembers: health.churnedMembers,
+          peakSimultaneity: health.peakSimultaneity,
         }
       : null,
     sharedVocabulary,
@@ -168,25 +214,7 @@ function normalizeGroupReport(row: typeof schema.chatStats.$inferSelect): GroupR
   }
 }
 
-function resolveTextMessageCount(row: typeof schema.chatStats.$inferSelect) {
-  if ((row.textMessageCount ?? 0) > 0) {
-    return row.textMessageCount
-  }
-
-  return Math.max(
-    (row.totalMessages ?? 0) -
-      (row.mediaCount ?? 0) -
-      (row.voiceCount ?? 0) -
-      (row.stickerCount ?? 0) -
-      (row.fileCount ?? 0),
-    0,
-  )
-}
-
-function resolveMessageComposition(
-  row: typeof schema.chatStats.$inferSelect,
-  textMessageCount: number,
-): MessageCompositionDto {
+function resolveMessageComposition(row: typeof schema.chatStats.$inferSelect): MessageCompositionDto {
   const storedComposition = row.messageComposition ?? null
   const storedCompositionTotal = storedComposition
     ? storedComposition.text +
@@ -201,7 +229,14 @@ function resolveMessageComposition(
   }
 
   return {
-    text: textMessageCount,
+    text: Math.max(
+      (row.totalMessages ?? 0) -
+        (row.mediaCount ?? 0) -
+        (row.voiceCount ?? 0) -
+        (row.stickerCount ?? 0) -
+        (row.fileCount ?? 0),
+      0,
+    ),
     media: row.mediaCount ?? 0,
     voice: row.voiceCount ?? 0,
     sticker: row.stickerCount ?? 0,
@@ -210,8 +245,8 @@ function resolveMessageComposition(
 }
 
 export function toChatDto(row: typeof schema.chatStats.$inferSelect): ChatStatsDto {
-  const textMessageCount = resolveTextMessageCount(row)
-  const messageComposition = resolveMessageComposition(row, textMessageCount)
+  const textMessageCount = Math.max(0, row.textMessageCount ?? 0)
+  const messageComposition = resolveMessageComposition(row)
   const responseStats = normalizeResponseStats(row.responseStats)
 
   return {

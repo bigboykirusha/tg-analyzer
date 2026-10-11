@@ -15,6 +15,8 @@ import { isDefinitiveAuthFailureCode, isTokenUsable } from '../utils/auth'
 
 let refreshPromise: Promise<RefreshResult> | null = null
 let loginRedirectInFlight = false
+const REFRESH_LOCK_KEY = 'tg-analyzer-refresh-lock'
+const REFRESH_LOCK_TTL_MS = 12_000
 
 type FetchErrorLike = {
   message?: string
@@ -57,12 +59,54 @@ function normalizeApiError(error: unknown): ApiClientError {
 }
 
 function setTransientAuthHealth(auth: ReturnType<typeof useAuthStore>) {
-  if (!auth.isAuthorized) {
-    auth.setAuthHealth('unauthenticated')
-    return
+  auth.setAuthHealth(
+    auth.isAuthorized && isTokenUsable(auth.accessToken) && auth.telegramSessionActive ? 'ready' : 'degraded',
+  )
+}
+
+function readRefreshLock() {
+  try {
+    const value = localStorage.getItem(REFRESH_LOCK_KEY)
+    if (!value) return null
+    const parsed = JSON.parse(value) as { owner?: string; expiresAt?: number }
+    return typeof parsed.owner === 'string' && typeof parsed.expiresAt === 'number' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+async function withRefreshLock<T>(callback: () => Promise<T>): Promise<T> {
+  if (!import.meta.client) return callback()
+
+  const owner = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  const deadline = Date.now() + REFRESH_LOCK_TTL_MS
+
+  while (Date.now() < deadline) {
+    const current = readRefreshLock()
+    if (!current || current.expiresAt <= Date.now()) {
+      try {
+        localStorage.setItem(
+          REFRESH_LOCK_KEY,
+          JSON.stringify({ owner, expiresAt: Date.now() + REFRESH_LOCK_TTL_MS }),
+        )
+      } catch {
+        return callback()
+      }
+      if (readRefreshLock()?.owner === owner) {
+        try {
+          return await callback()
+        } finally {
+          if (readRefreshLock()?.owner === owner) localStorage.removeItem(REFRESH_LOCK_KEY)
+        }
+      }
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 80 + Math.floor(Math.random() * 80)))
   }
 
-  auth.setAuthHealth(isTokenUsable(auth.accessToken) && auth.telegramSessionActive ? 'ready' : 'degraded')
+  const error = new Error('Refresh is busy in another tab') as ApiClientError
+  error.code = 'AUTH_REFRESH_BUSY'
+  throw error
 }
 
 async function handleTelegramReauthRequired(auth: ReturnType<typeof useAuthStore>) {
@@ -142,9 +186,16 @@ export async function refreshAccessToken(apiUrl: string) {
     return refreshPromise
   }
 
-  refreshPromise = doRefresh(apiUrl).finally(() => {
-    refreshPromise = null
-  })
+  refreshPromise = withRefreshLock(() => doRefresh(apiUrl))
+    .catch((rawError) => {
+      const auth = useAuthStore()
+      const error = normalizeApiError(rawError)
+      setTransientAuthHealth(auth)
+      return { accessToken: null, user: null, error, definitiveFailure: false }
+    })
+    .finally(() => {
+      refreshPromise = null
+    })
 
   return refreshPromise
 }

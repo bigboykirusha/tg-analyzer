@@ -10,6 +10,9 @@ export default defineNuxtRouteMiddleware(async () => {
 
   await bootstrap()
   if (!auth.isAuthorized) {
+    if (auth.authHealth === 'degraded') {
+      return navigateTo('/offline?reason=session', { replace: true })
+    }
     return navigateTo('/login', { replace: true })
   }
 })

@@ -42,6 +42,7 @@ export function useParseProgress() {
       message: status.progress.message ?? '',
       scannedMessages: status.progress.scannedMessages ?? 0,
       startTime: status.progress.startTime,
+      phase: status.progress.phase,
     }
     bootstrapped.value = true
   }
@@ -213,6 +214,7 @@ export function useParseProgress() {
       status: 'idle',
       message: '',
       scannedMessages: 0,
+      phase: undefined,
     }
   }
 

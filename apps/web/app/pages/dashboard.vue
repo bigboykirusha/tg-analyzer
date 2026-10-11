@@ -423,6 +423,7 @@ onMounted(async () => {
           :message="progress.message"
           :scanned-messages="progress.scannedMessages"
           :start-time="progress.startTime"
+          :phase="progress.phase"
           cancellable
           :cancelling="cancelling"
           @cancel="cancelActiveParse"

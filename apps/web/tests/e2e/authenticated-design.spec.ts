@@ -552,7 +552,7 @@ const reportTabs = [
 
 // Playwright requires a destructured fixtures argument to access TestInfo.
 // eslint-disable-next-line no-empty-pattern
-test.beforeEach(({ }, testInfo) => {
+test.beforeEach(({}, testInfo) => {
   test.skip(testInfo.project.name === 'mobile', 'This suite controls its responsive viewports explicitly')
 })
 test.setTimeout(60_000)
@@ -585,9 +585,12 @@ for (const route of ['/dashboard', '/history', '/chat/102']) {
           await expect(page.locator('.composition-item')).toHaveCount(2)
           if (viewport.width <= 768) {
             const tabsBounds = await page.locator('.tabs-scroll.no-print').boundingBox()
+            const controlBounds = await page.locator('.tabs-scroll.no-print .segmented').boundingBox()
             const pageWidth = await page.evaluate(() => document.documentElement.clientWidth)
             expect(tabsBounds?.x).toBe(0)
             expect(tabsBounds?.width).toBe(pageWidth)
+            expect(controlBounds?.x).toBe(0)
+            expect(controlBounds?.width).toBe(pageWidth)
           }
         }
         await expect
@@ -705,6 +708,27 @@ test('content dialogs share one desktop interaction pattern', async ({ page }) =
   })
 })
 
+test('history uses measured progress and leaves unknown progress indeterminate', async ({ page }) => {
+  await mockApi(page)
+  const activeHistory = [
+    { ...history[0]!, jobId: 'running-unknown', status: 'running', totalChats: 0, parsedChats: 0, completedAt: null },
+    { ...history[1]!, jobId: 'running-measured', status: 'running', totalChats: 4, parsedChats: 2, completedAt: null },
+  ]
+  await page.route('**/api/v1/parse/history**', (route) =>
+    route.fulfill({ json: { items: activeHistory, total: activeHistory.length, page: 1, limit: 20 } }),
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/history')
+
+  const progressBars = page.locator('.history-progress[role="progressbar"]')
+  await expect(progressBars).toHaveCount(2)
+  await expect(progressBars.nth(0)).toHaveAttribute('aria-label', 'Прогресс: Product team')
+  await expect(progressBars.nth(0)).not.toHaveAttribute('aria-valuenow')
+  await expect(progressBars.nth(0).locator('.progress-bar-fill')).toHaveClass(/progress-bar-fill--indeterminate/)
+  await expect(progressBars.nth(1)).toHaveAttribute('aria-valuenow', '50')
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+})
+
 test('mobile share actions use the standard dialog and buttons', async ({ page }) => {
   await mockApi(page)
   await page.addInitScript(() => {
@@ -758,6 +782,7 @@ test('group overview has one indicators card and fits mobile width', async ({ pa
 
   await expect(page.getByRole('heading', { name: 'Показатели группы' })).toHaveCount(1)
   await expect(page.locator('.group-kpi-grid .metric')).toHaveCount(4)
+  await expect(page.locator('.fact-card').filter({ hasText: 'Концентрация участия' })).toContainText('10%')
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
   await expect(page).toHaveScreenshot('chat-101-overview-390-light.png', {
     fullPage: true,
@@ -771,6 +796,172 @@ test('group overview has one indicators card and fits mobile width', async ({ pa
   const dynamicsTab = page.getByRole('tab', { name: 'Динамика' })
   await dynamicsTab.click()
   await expect(page.locator('.chart.chart-lg')).toHaveCount(2)
+})
+
+test('group participant ranking does not depend on API array order', async ({ page }) => {
+  await mockApi(page)
+  await page.route(/\/api\/v1\/stats\/chats\/101(?:\?|$)/, (route) =>
+    route.fulfill({
+      json: {
+        ...groupReport,
+        groupReport: {
+          ...groupReport.groupReport,
+          participants: [...groupReport.groupReport.participants].reverse(),
+        },
+      },
+    }),
+  )
+  await page.addInitScript(() => localStorage.setItem('tg-analyzer-locale', 'ru'))
+  await page.goto('/chat/101')
+
+  await expect(page.locator('.group-kpi-grid .metric').filter({ hasText: 'Самый активный' })).toContainText('Alex')
+  await page.getByRole('tab', { name: 'Участники' }).click()
+  await expect(page.getByRole('table').locator('tbody tr').first()).toContainText('Alex')
+})
+
+test('group participant shares do not invent an Others share', async ({ page }) => {
+  await mockApi(page)
+  await page.route(/\/api\/v1\/stats\/chats\/101(?:\?|$)/, (route) =>
+    route.fulfill({
+      json: {
+        ...groupReport,
+        totalMessages: 60,
+        groupReport: {
+          ...groupReport.groupReport,
+          participants: Array.from({ length: 6 }, (_, index) => ({
+            ...groupReport.groupReport.participants[index % 2],
+            id: String(index + 1),
+            messageCount: 10,
+            messageShare: 16.7,
+          })),
+        },
+      },
+    }),
+  )
+  await page.addInitScript(() => localStorage.setItem('tg-analyzer-locale', 'ru'))
+  await page.goto('/chat/101')
+
+  await expect(page.locator('.participant-bar-row').last()).toContainText('Остальные')
+  await expect(page.locator('.participant-bar-row').last()).toContainText('16.7%')
+})
+
+test('group overview shows an empty state when no participants are available', async ({ page }) => {
+  await mockApi(page)
+  await page.route(/\/api\/v1\/stats\/chats\/101(?:\?|$)/, (route) =>
+    route.fulfill({
+      json: { ...groupReport, groupReport: { ...groupReport.groupReport, participants: [], health: null } },
+    }),
+  )
+  await page.addInitScript(() => localStorage.setItem('tg-analyzer-locale', 'ru'))
+  await page.goto('/chat/101')
+
+  await expect(page.getByText('Нет данных об участниках за этот период.')).toBeVisible()
+  await expect(page.locator('.participant-bar-row')).toHaveCount(0)
+})
+
+test('group report presents the saved participant role without recalculating it today', async ({ page }) => {
+  await mockApi(page)
+  await page.route(/\/api\/v1\/stats\/chats\/101(?:\?|$)/, (route) =>
+    route.fulfill({
+      json: {
+        ...groupReport,
+        groupReport: {
+          ...groupReport.groupReport,
+          participants: [{ ...groupReport.groupReport.participants[0], role: 'inactive' }],
+        },
+      },
+    }),
+  )
+  await page.addInitScript(() => localStorage.setItem('tg-analyzer-locale', 'ru'))
+  await page.goto('/chat/101')
+  await page.getByRole('tab', { name: 'Участники' }).click()
+
+  await expect(page.getByRole('table').getByText('Неактивен давно')).toBeVisible()
+})
+
+test('group monthly chart explains missing activity instead of rendering an empty axis', async ({ page }) => {
+  await mockApi(page)
+  await page.route(/\/api\/v1\/stats\/chats\/101(?:\?|$)/, (route) =>
+    route.fulfill({ json: { ...groupReport, monthlyActivity: [] } }),
+  )
+  await page.addInitScript(() => localStorage.setItem('tg-analyzer-locale', 'ru'))
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/chat/101')
+  await page.getByRole('tab', { name: 'Динамика' }).click()
+
+  await expect(page.getByText('Данных об активности пока нет.')).toBeVisible()
+  await expect(page.locator('.chart.chart-lg')).toHaveCount(1)
+})
+
+test('group daily chart and heatmap both include days without messages', async ({ page }) => {
+  await mockApi(page)
+  await page.route(/\/api\/v1\/stats\/chats\/101(?:\?|$)/, (route) =>
+    route.fulfill({
+      json: {
+        ...groupReport,
+        dailyActivity: [
+          { date: '2026-03-09', sent: 2, received: 1, total: 3 },
+          { date: '2026-03-07', sent: 1, received: 0, total: 1 },
+        ],
+      },
+    }),
+  )
+  await page.addInitScript(() => localStorage.setItem('tg-analyzer-locale', 'ru'))
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/chat/101')
+  await page.getByRole('tab', { name: 'Динамика' }).click()
+
+  await expect(page.getByRole('img', { name: 'Сообщений по месяцам за 6 мес.: 119 сообщ.' })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Сообщений по дням за 3 дн.: 4 сообщ.' })).toBeVisible()
+  await expect(page.locator('.heatmap-day')).toHaveCount(3)
+  await expect(page.locator('.heatmap-day.day-level-0')).toHaveCount(1)
+})
+
+test('report charts expose localized data summaries', async ({ page }) => {
+  await mockApi(page)
+  await page.addInitScript(() => localStorage.setItem('tg-analyzer-locale', 'ru'))
+  await page.goto('/chat/102')
+  await page.getByRole('tab', { name: 'Ритм' }).click()
+
+  await expect(page.getByRole('img', { name: 'Активность по дням недели: 119 сообщ.' })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Активность по часам: отправлено 64, получено 55 сообщ.' })).toBeVisible()
+})
+
+test('a single session highlight fills the report grid', async ({ page }) => {
+  await mockApi(page)
+  await page.addInitScript(() => localStorage.setItem('tg-analyzer-locale', 'ru'))
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/chat/102')
+  await page.getByRole('tab', { name: 'Таймлайн' }).click()
+
+  const gridBounds = await page.locator('.timeline-gap-grid').boundingBox()
+  const cardBounds = await page.locator('.timeline-gap-grid .gap-card').boundingBox()
+  expect(cardBounds?.width).toBe(gridBounds?.width)
+})
+
+test('long heatmaps keep their first visible week aligned to Sunday', async ({ page }) => {
+  await mockApi(page)
+  const start = Date.UTC(2025, 0, 1)
+  const dailyActivity = Array.from({ length: 400 }, (_, index) => ({
+    date: new Date(start + index * 86_400_000).toISOString().slice(0, 10),
+    sent: index === 0 ? 1_000 : index === 399 ? 3 : 1,
+    received: 0,
+    total: index === 0 ? 1_000 : index === 399 ? 3 : 1,
+  }))
+  await page.route(/\/api\/v1\/stats\/chats\/102(?:\?|$)/, (route) =>
+    route.fulfill({ json: { ...report, dailyActivity } }),
+  )
+  await page.addInitScript(() => localStorage.setItem('tg-analyzer-locale', 'ru'))
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/chat/102')
+  await page.getByRole('tab', { name: 'Ритм' }).click()
+
+  const weeks = page.locator('.heatmap-week')
+  await expect(weeks).toHaveCount(53)
+  const firstDate = await weeks.first().locator('.heatmap-day').first().getAttribute('data-date')
+  expect(firstDate).not.toBeNull()
+  expect(new Date(`${firstDate}T00:00:00.000Z`).getUTCDay()).toBe(0)
+  await expect(weeks.last().locator('.heatmap-day[data-date]').last()).toHaveClass(/day-level-4/)
 })
 
 test('avatars are fetched only when a dialog explicitly declares one', async ({ page }) => {

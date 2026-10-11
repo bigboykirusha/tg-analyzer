@@ -4,6 +4,8 @@ export function applyParseProgressEvent(current: ParseProgressDto, event: ParseP
   switch (event.type) {
     case 'progress':
       return {
+        ...current,
+        jobId: event.jobId ?? current.jobId,
         current: event.current,
         total: event.total,
         chatId: event.chatId ?? null,
@@ -11,6 +13,8 @@ export function applyParseProgressEvent(current: ParseProgressDto, event: ParseP
         status: event.status ?? 'running',
         message: event.message ?? '',
         scannedMessages: event.scannedMessages ?? 0,
+        ...(event.startTime !== undefined ? { startTime: event.startTime } : {}),
+        ...(event.phase !== undefined ? { phase: event.phase } : {}),
       }
     case 'completed':
       return {

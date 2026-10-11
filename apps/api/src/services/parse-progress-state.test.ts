@@ -24,6 +24,7 @@ test('progress events replace counters and fill protocol defaults', () => {
   })
 
   assert.deepEqual(updated, {
+    jobId: initialProgress.jobId,
     current: 3,
     total: 5,
     chatId: '43',
@@ -33,6 +34,32 @@ test('progress events replace counters and fill protocol defaults', () => {
     scannedMessages: 0,
   })
   assert.equal(initialProgress.current, 2)
+})
+
+test('progress events preserve timing and accept explicit worker phases', () => {
+  const startedAt = Date.now() - 5_000
+  const first = applyParseProgressEvent(
+    { ...initialProgress, startTime: startedAt },
+    {
+      type: 'progress',
+      current: 2,
+      total: 5,
+      chatId: '42',
+      chatName: 'Current chat',
+      phase: 'scanning',
+    },
+  )
+  const saving = applyParseProgressEvent(first, {
+    type: 'progress',
+    current: 2,
+    total: 5,
+    chatId: '42',
+    chatName: 'Current chat',
+    phase: 'saving',
+  })
+
+  assert.equal(saving.startTime, startedAt)
+  assert.equal(saving.phase, 'saving')
 })
 
 test('terminal events preserve last known progress and apply final status', () => {
