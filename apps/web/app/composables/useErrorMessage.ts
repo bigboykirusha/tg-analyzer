@@ -16,6 +16,8 @@ const MESSAGES: Partial<Record<ApiClientError['code'], MessageKey>> = {
   TELEGRAM_UNAVAILABLE: 'errors.telegramUnavailable',
   CHAT_NOT_FOUND: 'errors.chatNotFound',
   PARSE_ALREADY_RUNNING: 'errors.parseRunning',
+  PARSE_ALREADY_QUEUED: 'errors.parseQueued',
+  PARSE_QUEUE_FULL: 'errors.parseQueueFull',
   PARSE_COOLDOWN: 'errors.parseCooldown',
   QUEUE_UNAVAILABLE: 'errors.queueUnavailable',
 }

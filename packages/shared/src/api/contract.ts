@@ -7,6 +7,7 @@ import type {
   DialogsResponse,
   Page,
   ParseJobDto,
+  CancelParseBody,
   ParseProgressDto,
   PeopleOverviewDto,
   ReportDto,
@@ -48,6 +49,11 @@ export const verifyCodeBodySchema = z.object({
   code: z.string().regex(/^\d{3,10}$/),
   phoneCodeHash: z.string().min(1).max(256),
 }) satisfies z.ZodType<VerifyCodeBody, unknown>
+
+export const cancelParseBodySchema = z
+  .object({ jobId: z.uuid().optional() })
+  .optional()
+  .transform((value) => value ?? {}) satisfies z.ZodType<CancelParseBody, unknown>
 
 export const verifyPasswordBodySchema = z.object({
   tempToken: z.uuid(),
@@ -108,7 +114,7 @@ export interface ApiEndpointMap {
   'POST /api/v1/parse/avatars': Endpoint<AvatarsBody, AvatarsResponse>
   'GET /api/v1/parse/status': Endpoint<undefined, ParseProgressDto>
   'POST /api/v1/parse/start': Endpoint<StartParseBody, StartParseResponse>
-  'POST /api/v1/parse/cancel': Endpoint<undefined, SuccessResponse>
+  'POST /api/v1/parse/cancel': Endpoint<CancelParseBody, SuccessResponse>
   'GET /api/v1/parse/history': Endpoint<undefined, Page<ParseJobDto>, z.input<typeof paginationQuerySchema>>
   'DELETE /api/v1/parse/history': Endpoint<undefined, ClearHistoryResponse>
   'DELETE /api/v1/parse/history/:jobId': Endpoint<undefined, SuccessResponse>

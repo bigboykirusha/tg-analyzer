@@ -1,6 +1,7 @@
 import {
   ANALYZABLE_CHAT_TYPES,
   avatarsBodySchema,
+  cancelParseBodySchema,
   type AvatarsResponse,
   jobIdParamsSchema,
   paginationQuerySchema,
@@ -25,9 +26,9 @@ import {
   deleteFinishedJob,
   deleteFinishedJobs,
   failJob,
-  findActiveJob,
   listJobs,
   toJobDto,
+  listUserActiveJobs,
 } from './jobs'
 import { enqueueAnalysis, removeQueuedAnalysis } from './queue'
 import {
@@ -40,6 +41,9 @@ import {
   readCachedDialogs,
   readProgress,
 } from './state'
+
+/** A user may queue this many chats at once, the running one included. */
+const MAX_QUEUED_ANALYSES = 10
 
 export const parseRoutes: FastifyPluginAsync = async (app) => {
   app.addHook('preHandler', requireAuth)
@@ -95,11 +99,15 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
 
   app.get('/status', async (request): Promise<ParseProgressDto> => {
     const userId = userIdOf(request)
-    const job = await findActiveJob(userId)
+    const jobs = await listUserActiveJobs(userId)
+    const job = jobs.find((item) => item.status === 'running') ?? jobs[0]
     if (!job) return idleProgress()
 
+    const queued = jobs
+      .filter((item) => item.id !== job.id && item.chatId !== null)
+      .map((item) => ({ jobId: item.id, chatId: String(item.chatId), chatTitle: item.chatTitle }))
     const snapshot = await readProgress(userId)
-    if (snapshot?.jobId === job.id) return snapshot
+    if (snapshot?.jobId === job.id) return { ...snapshot, queued }
     return {
       ...idleProgress(),
       jobId: job.id,
@@ -108,6 +116,7 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
       chatId: job.chatId === null ? null : String(job.chatId),
       chatTitle: job.chatTitle,
       startedAt: (job.startedAt ?? job.createdAt).getTime(),
+      queued,
     }
   })
 
@@ -125,19 +134,25 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
       throw new ApiError(400, 'CHAT_NOT_FOUND', 'Only private chats and groups can be analysed')
     }
 
+    const waiting = await listUserActiveJobs(userId)
+    if (waiting.length >= MAX_QUEUED_ANALYSES) {
+      throw conflict('PARSE_QUEUE_FULL', 'Too many analyses are waiting; let some finish first')
+    }
     const job = await createJob({ userId, chatId, chatTitle: dialog?.title ?? null })
-    if (!job) throw conflict('PARSE_ALREADY_RUNNING', 'Another analysis is already running')
+    if (!job) throw conflict('PARSE_ALREADY_QUEUED', 'This chat is already being analysed or waiting')
 
     try {
-      await publishProgress(userId, {
-        ...idleProgress(),
-        jobId: job.id,
-        status: 'pending',
-        phase: 'queued',
-        chatId,
-        chatTitle: job.chatTitle,
-        startedAt: job.createdAt.getTime(),
-      })
+      // Only the first job of an empty queue changes what the progress card shows.
+      if (!waiting.length)
+        await publishProgress(userId, {
+          ...idleProgress(),
+          jobId: job.id,
+          status: 'pending',
+          phase: 'queued',
+          chatId,
+          chatTitle: job.chatTitle,
+          startedAt: job.createdAt.getTime(),
+        })
       await enqueueAnalysis({ userId, jobId: job.id })
     } catch (error) {
       request.log.error({ err: error, jobId: job.id }, 'could not queue analysis')
@@ -151,18 +166,21 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
 
   app.post('/cancel', async (request): Promise<SuccessResponse> => {
     const userId = userIdOf(request)
-    const job = await cancelActiveJob(userId)
+    const { jobId } = parse(cancelParseBodySchema, request.body)
+    const job = await cancelActiveJob(userId, jobId)
     if (!job) throw notFound('PARSE_NOT_ACTIVE', 'No active analysis')
 
     // A running job notices the cancellation on its next page and stops.
     await removeQueuedAnalysis(job.id)
-    await publishProgress(userId, {
-      ...idleProgress(),
-      jobId: job.id,
-      status: 'cancelled',
-      chatId: job.chatId === null ? null : String(job.chatId),
-      chatTitle: job.chatTitle,
-    })
+    // Cancelling a waiting job leaves the running one's progress alone.
+    if (job.startedAt)
+      await publishProgress(userId, {
+        ...idleProgress(),
+        jobId: job.id,
+        status: 'cancelled',
+        chatId: job.chatId === null ? null : String(job.chatId),
+        chatTitle: job.chatTitle,
+      })
     return { success: true }
   })
 

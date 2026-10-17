@@ -65,8 +65,12 @@ export const parseJobs = pgTable(
     createdAt: createdAt(),
   },
   (table) => [
-    uniqueIndex('parse_jobs_one_active_user_idx')
+    // One analysis runs per user at a time; others wait. A chat can be queued once.
+    uniqueIndex('parse_jobs_one_running_user_idx')
       .on(table.userId)
+      .where(sql`${table.status} = 'running'`),
+    uniqueIndex('parse_jobs_active_chat_idx')
+      .on(table.userId, table.chatId)
       .where(sql`${table.status} IN ('pending', 'running')`),
     index('parse_jobs_user_created_idx').on(table.userId, table.createdAt),
     index('parse_jobs_status_created_idx').on(table.status, table.createdAt),

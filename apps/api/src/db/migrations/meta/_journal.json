@@ -78,6 +78,13 @@
       "when": 1792252800000,
       "tag": "0010_people_overviews",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792339200000,
+      "tag": "0011_analysis_queue",
+      "breakpoints": true
     }
   ]
 }

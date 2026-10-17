@@ -33,6 +33,8 @@ export type ApiErrorCode =
   // analysis
   | 'CHAT_NOT_FOUND'
   | 'PARSE_ALREADY_RUNNING'
+  | 'PARSE_ALREADY_QUEUED'
+  | 'PARSE_QUEUE_FULL'
   | 'PARSE_COOLDOWN'
   | 'PARSE_NOT_ACTIVE'
   | 'PARSE_JOB_ACTIVE'
@@ -179,6 +181,18 @@ export type ParsePhase = 'queued' | 'connecting' | 'scanning' | 'waiting' | 'sav
 export type ParseErrorCode =
   'telegram_session_expired' | 'telegram_busy' | 'chat_unavailable' | 'interrupted' | 'internal'
 
+/** An analysis waiting for its turn; one chat is analysed at a time. */
+export interface QueuedAnalysisDto {
+  jobId: string
+  chatId: string
+  chatTitle: string | null
+}
+
+export interface CancelParseBody {
+  /** A queued or running job; without it the running analysis is cancelled. */
+  jobId?: string
+}
+
 export interface ParseProgressDto {
   jobId: string | null
   status: JobStatus | 'idle'
@@ -193,6 +207,8 @@ export interface ParseProgressDto {
   /** Seconds Telegram asked us to wait (phase `waiting`). */
   waitSeconds: number | null
   error: ParseErrorCode | null
+  /** Analyses waiting after this one, oldest first. Only in the status response. */
+  queued?: QueuedAnalysisDto[]
 }
 
 export interface StartParseBody {

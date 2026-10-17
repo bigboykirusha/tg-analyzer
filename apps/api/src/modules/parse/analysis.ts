@@ -4,7 +4,7 @@ import {
   type ParseErrorCode,
   type ParseProgressDto,
 } from '@tg-analyzer/shared'
-import { UnrecoverableError, type Job } from 'bullmq'
+import { DelayedError, UnrecoverableError, type Job } from 'bullmq'
 import { logger } from '../../lib/logger'
 import { sleep } from '../../lib/time'
 import {
@@ -49,9 +49,18 @@ class AnalysisFailedError extends UnrecoverableError {
  * {@link ChatReportBuilder}, then stores the report and completes the job in
  * one transaction. Message text never leaves process memory.
  */
-export async function runAnalysis(job: Job<AnalysisJobData>) {
+/** How long a queued analysis waits before checking again whether its turn has come. */
+const QUEUE_RECHECK_MS = 5_000
+
+export async function runAnalysis(job: Job<AnalysisJobData>, token?: string) {
   const { userId, jobId } = job.data
   const row = await markJobRunning(jobId)
+  if (row === 'busy') {
+    // One analysis per user at a time: park this job and try again shortly.
+    if (!token) throw new Error('A queued analysis needs a worker token to wait')
+    await job.moveToDelayed(Date.now() + QUEUE_RECHECK_MS, token)
+    throw new DelayedError()
+  }
   if (!row || row.chatId === null) return // cancelled or deleted before it started
 
   const chatId = String(row.chatId)

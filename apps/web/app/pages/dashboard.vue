@@ -44,9 +44,9 @@ const firstLoad = computed(
   () => !workspace.chats.length && (workspace.dialogsState === 'loading' || workspace.dialogsState === 'idle'),
 )
 const dialogsFailed = computed(() => workspace.dialogsState === 'error' && !workspace.dialogs.length)
-const analysisBlocked = computed(
-  () => !auth.telegramSessionActive || analysis.isActive.value || startingChatId.value !== null,
-)
+// Analyses queue up, so another running one does not block starting more.
+const analysisBlocked = computed(() => !auth.telegramSessionActive || startingChatId.value !== null)
+const queuedJobs = computed(() => new Map(analysis.queued.value.map((item) => [item.chatId, item.jobId])))
 
 watch([search, filter], () => {
   visibleCount.value = PAGE_SIZE
@@ -130,6 +130,7 @@ onMounted(() => {
         v-if="analysis.isActive.value"
         :progress="analysis.progress.value"
         :cancelling="cancelling"
+        :queued-count="analysis.queued.value.length"
         @cancel="requestCancel"
       />
 
@@ -195,11 +196,12 @@ onMounted(() => {
               :analysing="analysis.isActive.value && analysis.progress.value.chatId === chat.id"
               :progress="progressFraction"
               :paused="analysis.progress.value.phase === 'waiting'"
+              :queued="queuedJobs.has(chat.id)"
               :starting="startingChatId === chat.id"
               :cancelling="cancelling"
               :disabled="analysisBlocked"
               @analyse="analyse(chat.id, chat.title)"
-              @cancel="requestCancel"
+              @cancel="queuedJobs.has(chat.id) ? analysis.cancel(queuedJobs.get(chat.id)) : requestCancel()"
               @delete="deleteChatId = chat.id"
             />
           </div>

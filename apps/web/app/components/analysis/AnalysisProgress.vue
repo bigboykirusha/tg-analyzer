@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ParseProgressDto } from '@tg-analyzer/shared'
 
-const props = defineProps<{ progress: ParseProgressDto; cancelling?: boolean }>()
+const props = defineProps<{ progress: ParseProgressDto; cancelling?: boolean; queuedCount?: number }>()
 const emit = defineEmits<{ cancel: [] }>()
 const { t, tc, formatNumber, formatPercent, formatDuration, formatCountdown } = useI18n()
 
@@ -77,6 +77,7 @@ const remaining = computed(() => {
         <template v-else>{{ t('analysis.elapsed', { time: formatCountdown(elapsedSeconds) }) }}</template>
       </span>
     </div>
+    <p v-if="queuedCount" class="analysis-progress__queue">{{ tc('analysis.queuedMore', queuedCount) }}</p>
   </section>
 </template>
 
@@ -124,6 +125,11 @@ const remaining = computed(() => {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--space-2);
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.analysis-progress__queue {
   color: var(--text-muted);
   font: var(--text-small);
 }

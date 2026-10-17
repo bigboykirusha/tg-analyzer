@@ -242,7 +242,7 @@ async function openOrAnalyse(contact: ContactStatsDto) {
               <button
                 type="button"
                 class="person"
-                :disabled="startingChatId !== null || (!reportIds.has(row.contact.chatId) && analysis.isActive.value)"
+                :disabled="startingChatId !== null"
                 @click="openOrAnalyse(row.contact)"
               >
                 <ChatAvatar

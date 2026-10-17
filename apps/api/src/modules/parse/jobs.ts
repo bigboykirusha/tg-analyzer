@@ -1,5 +1,5 @@
 import type { JobStatus, ParseErrorCode, ParseJobDto } from '@tg-analyzer/shared'
-import { and, count, desc, eq, inArray, lt, notInArray, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, lt, notInArray, sql } from 'drizzle-orm'
 import { db, schema } from '../../db'
 import type { ParseJobRow } from '../../db/schema'
 
@@ -19,7 +19,7 @@ function isUniqueViolation(error: unknown) {
   )
 }
 
-/** Reserves the user's single active job slot. Returns null when another job is active. */
+/** Queues an analysis. Returns null when this chat is already queued or running. */
 export async function createJob(input: { userId: string; chatId: string; chatTitle: string | null }) {
   try {
     const [job] = await db
@@ -37,9 +37,17 @@ export function findJob(jobId: string) {
   return db.query.parseJobs.findFirst({ where: eq(schema.parseJobs.id, jobId) })
 }
 
-export function findActiveJob(userId: string) {
-  return db.query.parseJobs.findFirst({
+/** The running job, or the oldest queued one when nothing runs yet. */
+export async function findActiveJob(userId: string) {
+  const jobs = await listUserActiveJobs(userId)
+  return jobs.find((job) => job.status === 'running') ?? jobs[0]
+}
+
+/** The user's queued and running jobs, oldest first. */
+export function listUserActiveJobs(userId: string) {
+  return db.query.parseJobs.findMany({
     where: and(eq(schema.parseJobs.userId, userId), inArray(schema.parseJobs.status, ACTIVE)),
+    orderBy: [asc(schema.parseJobs.createdAt)],
   })
 }
 
@@ -48,13 +56,19 @@ export function listActiveJobs() {
 }
 
 /** Moves a pending (or retried) job to running. Returns null if it was cancelled or deleted meanwhile. */
-export async function markJobRunning(jobId: string) {
-  const [job] = await db
-    .update(schema.parseJobs)
-    .set({ status: 'running', startedAt: sql`COALESCE(${schema.parseJobs.startedAt}, now())`, errorCode: null })
-    .where(and(eq(schema.parseJobs.id, jobId), inArray(schema.parseJobs.status, ACTIVE)))
-    .returning()
-  return job ?? null
+export async function markJobRunning(jobId: string): Promise<ParseJobRow | null | 'busy'> {
+  try {
+    const [job] = await db
+      .update(schema.parseJobs)
+      .set({ status: 'running', startedAt: sql`COALESCE(${schema.parseJobs.startedAt}, now())`, errorCode: null })
+      .where(and(eq(schema.parseJobs.id, jobId), inArray(schema.parseJobs.status, ACTIVE)))
+      .returning()
+    return job ?? null
+  } catch (error) {
+    // Another analysis of this user is running: this one waits its turn.
+    if (isUniqueViolation(error)) return 'busy'
+    throw error
+  }
 }
 
 export async function setJobChatTitle(jobId: string, chatTitle: string) {
@@ -76,11 +90,20 @@ export async function failJob(jobId: string, errorCode: ParseErrorCode) {
     .where(and(eq(schema.parseJobs.id, jobId), inArray(schema.parseJobs.status, ACTIVE)))
 }
 
-export async function cancelActiveJob(userId: string) {
+/** Cancels one queued or running job; without `jobId`, the one that runs now. */
+export async function cancelActiveJob(userId: string, jobId?: string) {
+  const targetId = jobId ?? (await findActiveJob(userId))?.id
+  if (!targetId) return null
   const [job] = await db
     .update(schema.parseJobs)
     .set({ status: 'cancelled', completedAt: new Date() })
-    .where(and(eq(schema.parseJobs.userId, userId), inArray(schema.parseJobs.status, ACTIVE)))
+    .where(
+      and(
+        eq(schema.parseJobs.id, targetId),
+        eq(schema.parseJobs.userId, userId),
+        inArray(schema.parseJobs.status, ACTIVE),
+      ),
+    )
     .returning()
   return job ?? null
 }

@@ -104,21 +104,44 @@ test('a group analysis includes participants and reports are isolated per user',
   assert.equal((await app.inject({ url: '/api/v1/reports', headers: owner.headers })).json().reports.length, 0)
 })
 
-test('only one analysis runs at a time and channels are rejected', async () => {
+test('analyses queue up, one chat at a time, and channels are rejected', async () => {
   const session = await login()
   await app.inject({ url: '/api/v1/parse/dialogs', headers: session.headers })
 
   const channel = await post(session, '/api/v1/parse/start', { chatId: '-1003001' })
   assert.equal(channel.statusCode, 400)
 
-  assert.equal((await post(session, '/api/v1/parse/start', { chatId: PRIVATE_CHAT })).statusCode, 200)
+  const first = await post(session, '/api/v1/parse/start', { chatId: PRIVATE_CHAT })
+  assert.equal(first.statusCode, 200)
+  // A second chat waits in the queue instead of being refused.
   const second = await post(session, '/api/v1/parse/start', { chatId: GROUP_CHAT })
-  assert.equal(second.statusCode, 409)
-  assert.equal(second.json().code, 'PARSE_ALREADY_RUNNING')
+  assert.equal(second.statusCode, 200)
+  // The same chat cannot be queued twice.
+  const duplicate = await post(session, '/api/v1/parse/start', { chatId: PRIVATE_CHAT })
+  assert.equal(duplicate.statusCode, 409)
+  assert.equal(duplicate.json().code, 'PARSE_ALREADY_QUEUED')
 
   const status = (await app.inject({ url: '/api/v1/parse/status', headers: session.headers })).json<ParseProgressDto>()
   assert.equal(status.status, 'pending')
   assert.equal(status.chatTitle, 'Катя')
+  assert.deepEqual(
+    status.queued?.map((item) => item.chatId),
+    [GROUP_CHAT],
+  )
+
+  // Only one job of a user may run: the second one is told to wait while the first runs.
+  const { jobId: firstJob } = first.json<{ jobId: string }>()
+  const { jobId: secondJob } = second.json<{ jobId: string }>()
+  await pool.query("UPDATE parse_jobs SET status = 'running' WHERE id = $1", [firstJob])
+  const { markJobRunning } = await import('../src/modules/parse/jobs')
+  assert.equal(await markJobRunning(secondJob), 'busy')
+
+  // Cancelling a waiting job leaves the running one alone.
+  const cancelled = await post(session, '/api/v1/parse/cancel', { jobId: secondJob })
+  assert.equal(cancelled.statusCode, 200)
+  const after = (await app.inject({ url: '/api/v1/parse/status', headers: session.headers })).json<ParseProgressDto>()
+  assert.equal(after.jobId, firstJob)
+  assert.deepEqual(after.queued, [])
 })
 
 test('a cancelled analysis stores nothing', async () => {

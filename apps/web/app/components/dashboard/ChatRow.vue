@@ -10,6 +10,8 @@ const props = defineProps<{
   progress?: number | null
   /** Telegram asked to wait (flood wait). */
   paused?: boolean
+  /** Waiting for another analysis to finish. */
+  queued?: boolean
   /** Starting an analysis is not possible (another one runs, session inactive…). */
   disabled: boolean
   starting: boolean
@@ -40,7 +42,10 @@ function run(action: 'analyse' | 'delete') {
       <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" />
       <span class="chat-row__copy">
         <span class="chat-row__title">{{ chat.title }}</span>
-        <span v-if="analysing && paused" class="chat-row__sub">
+        <span v-if="queued" class="chat-row__sub">
+          <span>{{ t('dashboard.queued') }}</span>
+        </span>
+        <span v-else-if="analysing && paused" class="chat-row__sub">
           <span>{{ t('analysis.paused') }} · {{ t('dashboard.analysingNow') }}</span>
         </span>
         <span v-else-if="analysing" class="chat-row__sub">
@@ -71,7 +76,10 @@ function run(action: 'analyse' | 'delete') {
     </component>
 
     <div class="chat-row__actions">
-      <UiButton v-if="analysing" variant="ghost" size="sm" :loading="cancelling" @click="emit('cancel')">
+      <UiButton v-if="queued" variant="ghost" size="sm" @click="emit('cancel')">
+        {{ t('dashboard.removeFromQueue') }}
+      </UiButton>
+      <UiButton v-else-if="analysing" variant="ghost" size="sm" :loading="cancelling" @click="emit('cancel')">
         {{ t('analysis.cancelShort') }}
       </UiButton>
       <template v-else-if="chat.report">

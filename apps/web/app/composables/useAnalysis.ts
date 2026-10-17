@@ -1,4 +1,4 @@
-import type { ParseProgressDto } from '@tg-analyzer/shared'
+import type { ParseProgressDto, QueuedAnalysisDto } from '@tg-analyzer/shared'
 import { api, ApiClientError } from './useApi'
 
 const ACTIVE = new Set(['pending', 'running'])
@@ -34,6 +34,8 @@ export function useAnalysis() {
   const progress = useState<ParseProgressDto>('analysis-progress', idle)
   /** The last analysis that reached a final state; pages watch it to reload data. */
   const finished = useState<ParseProgressDto | null>('analysis-finished', () => null)
+  /** Chats waiting after the running one, oldest first. */
+  const queued = useState<QueuedAnalysisDto[]>('analysis-queued', () => [])
   const config = useRuntimeConfig()
   const isActive = computed(() => ACTIVE.has(progress.value.status))
 
@@ -44,8 +46,11 @@ export function useAnalysis() {
       finished.value = { ...progress.value, ...next }
     }
     progress.value = isFinal ? idle() : next
+    if (next.queued) queued.value = next.queued
     if (ACTIVE.has(progress.value.status)) connect()
     else closeSocket()
+    // When one analysis ends the next queued one starts; fetch it from the status endpoint.
+    if (isFinal && queued.value.length) void refresh()
   }
 
   async function refresh() {
@@ -123,22 +128,27 @@ export function useAnalysis() {
     closeSocket()
     progress.value = idle()
     finished.value = null
+    queued.value = []
   }
 
   async function startAnalysis(chatId: string, chatTitle: string | null) {
-    await api('POST /api/v1/parse/start', { body: { chatId } })
-    apply({ ...idle(), status: 'pending', phase: 'queued', chatId, chatTitle, startedAt: Date.now() })
+    const { jobId } = await api('POST /api/v1/parse/start', { body: { chatId } })
+    // With an analysis already running, the new one only joins the queue.
+    if (isActive.value) queued.value = [...queued.value, { jobId, chatId, chatTitle }]
+    else apply({ ...idle(), jobId, status: 'pending', phase: 'queued', chatId, chatTitle, startedAt: Date.now() })
     await refresh()
   }
 
-  async function cancel() {
+  /** Cancels a queued job, or the running one when `jobId` is omitted. */
+  async function cancel(jobId?: string) {
+    if (jobId) queued.value = queued.value.filter((item) => item.jobId !== jobId)
     try {
-      await api('POST /api/v1/parse/cancel')
+      await api('POST /api/v1/parse/cancel', { body: jobId ? { jobId } : {} })
     } catch (error) {
       if (!(error instanceof ApiClientError && error.code === 'PARSE_NOT_ACTIVE')) throw error
     }
     await refresh()
   }
 
-  return { progress, finished, isActive, start, stop, refresh, startAnalysis, cancel }
+  return { progress, finished, queued, isActive, start, stop, refresh, startAnalysis, cancel }
 }
