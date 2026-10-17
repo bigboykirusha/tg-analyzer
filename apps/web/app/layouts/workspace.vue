@@ -14,7 +14,13 @@ onMounted(() => {
 watch(analysis.finished, (job) => {
   if (!job) return
   const chat = job.chatTitle || t('analysis.untitledChat')
-  if (job.status === 'completed') toast.success(t('analysis.done.title'), t('analysis.done.text', { chat }))
+  const chatId = job.chatId
+  if (job.status === 'completed')
+    toast.success(
+      t('analysis.done.title'),
+      t('analysis.done.text', { chat }),
+      chatId ? { label: t('dashboard.openReport'), onClick: () => void navigateTo(`/chat/${chatId}`) } : undefined,
+    )
   else if (job.status === 'failed')
     toast.error(t('analysis.failed.title'), t(`analysis.error.${job.error ?? 'internal'}`))
   else if (job.status === 'cancelled') toast.info(t('analysis.cancelled'))
@@ -38,12 +44,13 @@ watch(analysis.finished, (job) => {
 
 .workspace-main {
   min-width: 0;
-  padding: var(--space-10) var(--space-4) 72px;
+  padding: var(--space-12) 0 var(--space-16);
 }
 
-@media (max-width: 768px) {
+/* Room for the bottom tab bar. */
+@media (max-width: 640px) {
   .workspace-main {
-    padding: 18px 0 calc(112px + env(safe-area-inset-bottom, 0px));
+    padding: var(--space-5) 0 calc(var(--control-lg) + var(--space-12) + env(safe-area-inset-bottom, 0px));
   }
 }
 </style>

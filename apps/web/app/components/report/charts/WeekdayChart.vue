@@ -11,7 +11,7 @@ const values = computed(() => order.map((day) => chartCount(props.weekday[day]?.
 const total = computed(() => values.value.reduce((sum, value) => sum + value, 0))
 
 const option = computed(() => {
-  const { base, colors, categoryAxis, valueAxis } = theme.value
+  const { base, colors, barRadius, categoryAxis, valueAxis } = theme.value
   const names = t('chart.weekdaysShort').split(',')
   return {
     ...base,
@@ -22,7 +22,7 @@ const option = computed(() => {
         type: 'bar',
         data: values.value,
         barMaxWidth: 28,
-        itemStyle: { color: colors.sent, borderRadius: [6, 6, 0, 0] },
+        itemStyle: { color: colors.sent, borderRadius: barRadius },
       },
     ],
   }

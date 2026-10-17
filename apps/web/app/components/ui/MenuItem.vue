@@ -6,11 +6,15 @@ defineOptions({ inheritAttrs: false })
 withDefaults(
   defineProps<{
     icon?: Component | null
+    /** Current value, shown muted on the right. */
+    meta?: string | null
+    /** Destructive item: last, after a divider; end the label with «…» if a confirmation follows. */
     danger?: boolean
     disabled?: boolean
   }>(),
   {
     icon: null,
+    meta: null,
     danger: false,
     disabled: false,
   },
@@ -18,9 +22,17 @@ withDefaults(
 </script>
 
 <template>
-  <button v-bind="$attrs" type="button" class="menu-item" :class="{ 'menu-item--danger': danger }" :disabled="disabled">
-    <span v-if="icon" class="menu-item__icon" aria-hidden="true"><component :is="icon" /></span>
+  <button
+    v-bind="$attrs"
+    type="button"
+    class="menu-item"
+    :class="{ 'menu-item--danger': danger }"
+    :disabled="disabled"
+    :aria-disabled="disabled || undefined"
+  >
+    <component :is="icon" v-if="icon" class="menu-item__icon" aria-hidden="true" />
     <span class="menu-item__label"><slot /></span>
+    <span v-if="meta" class="menu-item__meta">{{ meta }}</span>
   </button>
 </template>
 
@@ -30,71 +42,65 @@ withDefaults(
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  min-height: 44px;
-  padding: var(--space-2) var(--space-3);
+  min-height: 40px;
+  padding: 0 var(--space-3);
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text);
   cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 550;
-  line-height: 1.3;
+  font: var(--text-ui);
   text-align: left;
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast),
-    transform var(--transition-fast);
+  transition: background-color var(--transition-fast);
 }
 
 .menu-item__icon {
-  display: inline-flex;
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-}
-
-.menu-item__icon :deep(svg) {
-  width: 100%;
-  height: 100%;
-  stroke-width: 1.6;
+  color: var(--text-muted);
 }
 
 .menu-item__label {
+  flex: 1 1 auto;
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.menu-item:hover:not(:disabled) {
-  background: var(--surface-2);
+.menu-item__meta {
+  color: var(--text-muted);
+  font: var(--text-small);
 }
 
-.menu-item:active:not(:disabled) {
-  transform: scale(0.985);
+@media (hover: hover) {
+  .menu-item:hover {
+    background: var(--hover);
+  }
+}
+
+.menu-item:active {
+  background: var(--pressed);
 }
 
 .menu-item:focus-visible {
   outline: none;
-  background: var(--accent-subtle);
-  box-shadow: inset 0 0 0 1px var(--accent-border);
-  color: var(--accent);
+  background: var(--hover);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
-.menu-item--danger {
+.menu-item--danger,
+.menu-item--danger .menu-item__icon {
   color: var(--danger);
 }
 
-.menu-item--danger:hover:not(:disabled),
-.menu-item--danger:focus-visible {
-  background: var(--danger-subtle);
-  color: var(--danger);
+@media (hover: hover) {
+  .menu-item--danger:hover {
+    background: var(--danger-subtle);
+  }
 }
 
 .menu-item:disabled {
-  opacity: 0.4;
+  background: transparent;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 </style>

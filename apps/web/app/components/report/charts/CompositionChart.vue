@@ -157,6 +157,6 @@ const segments = computed(() => {
 }
 
 .segment-files {
-  background: var(--warning);
+  background: var(--accent-2);
 }
 </style>

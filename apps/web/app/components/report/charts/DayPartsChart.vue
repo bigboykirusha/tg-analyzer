@@ -90,15 +90,14 @@ const hasActivity = computed(() => items.value.some((item) => item.value > 0))
 }
 
 .distribution-track {
-  height: 10px;
+  height: 8px;
   border-radius: var(--radius-full);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--surface-2);
   overflow: hidden;
 }
 
 .distribution-fill {
   height: 100%;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 78%, var(--on-accent) 12%), var(--accent));
+  background: var(--accent);
 }
 </style>

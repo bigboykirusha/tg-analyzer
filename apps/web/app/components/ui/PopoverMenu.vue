@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import BottomSheet from './BottomSheet.vue'
 import MenuItem from './MenuItem.vue'
-import ModalDialog from './ModalDialog.vue'
+
 export interface PopoverMenuOption {
   label: string
   value: string
@@ -13,6 +14,8 @@ const props = defineProps<{
   align?: 'start' | 'end'
   matchTriggerWidth?: boolean
   ariaLabel?: string
+  /** Sheet title on phones; defaults to `ariaLabel`. */
+  title?: string
   panelRole?: 'menu' | 'dialog'
 }>()
 
@@ -21,37 +24,27 @@ const emit = defineEmits<{
   select: [option: PopoverMenuOption]
 }>()
 
+const ITEMS = '[role="menuitem"]:not([disabled]), button:not([disabled]), [href], input:not([disabled])'
+
 const menuRef = ref<HTMLElement | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
-const isMobile = ref(false)
-const { t } = useI18n()
-let media: MediaQueryList | undefined
-function syncViewport() {
-  isMobile.value = media?.matches ?? false
-  if (isMobile.value) {
-    document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
-  }
-}
+// Phones get a bottom sheet instead of the floating panel.
+const isMobile = useMediaQuery('(max-width: 640px)')
 let previouslyFocused: HTMLElement | null = null
 
 function selectOption(option: PopoverMenuOption) {
-  if (option.disabled) {
-    return
-  }
+  if (option.disabled) return
   emit('select', option)
   emit('update:open', false)
 }
 
-function handleDocumentPointerDown(event: PointerEvent) {
-  if (isMobile.value) return
-  const menu = menuRef.value
-  if (menu && !event.composedPath().includes(menu)) {
-    emit('update:open', false)
-  }
-}
-
 function closeMenu() {
   emit('update:open', false)
+}
+
+function handleDocumentPointerDown(event: PointerEvent) {
+  const menu = menuRef.value
+  if (menu && !event.composedPath().includes(menu)) closeMenu()
 }
 
 function handleKeydown(event: KeyboardEvent) {
@@ -60,15 +53,12 @@ function handleKeydown(event: KeyboardEvent) {
     closeMenu()
     return
   }
-  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key) || !panelRef.value) return
-  const items = Array.from(
-    panelRef.value.querySelectorAll<HTMLElement>(
-      '[role="menuitem"]:not([aria-disabled="true"]), button:not([disabled]), [href], input:not([disabled])',
-    ),
-  )
+  const root = (event.currentTarget as HTMLElement | null) ?? panelRef.value
+  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key) || !root) return
+  const items = Array.from(root.querySelectorAll<HTMLElement>(ITEMS))
   if (!items.length) return
   event.preventDefault()
-  const current = Math.max(0, items.indexOf(document.activeElement as HTMLElement))
+  const current = items.indexOf(document.activeElement as HTMLElement)
   const nextIndex =
     event.key === 'Home'
       ? 0
@@ -86,25 +76,19 @@ watch(
       previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
       await nextTick()
       document.addEventListener('pointerdown', handleDocumentPointerDown, true)
-      panelRef.value
-        ?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"]), button:not([disabled])')
-        ?.focus()
+      panelRef.value?.querySelector<HTMLElement>(ITEMS)?.focus()
       return
     }
     document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
-    if (panelRef.value?.contains(document.activeElement)) previouslyFocused?.focus()
+    const active = document.activeElement
+    if (!active || active === document.body || panelRef.value?.contains(active)) {
+      previouslyFocused?.focus()
+    }
   },
 )
 
-onMounted(() => {
-  media = window.matchMedia('(max-width: 768px)')
-  syncViewport()
-  media.addEventListener('change', syncViewport)
-})
-
 onBeforeUnmount(() => {
-  media?.removeEventListener('change', syncViewport)
-  document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
+  if (import.meta.client) document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
 })
 </script>
 
@@ -114,43 +98,29 @@ onBeforeUnmount(() => {
     <Transition name="popover">
       <div
         v-if="open && !isMobile"
-        class="popover-layer"
+        ref="panelRef"
+        class="popover-panel"
         :class="[align === 'start' ? 'align-start' : 'align-end', { 'match-trigger': matchTriggerWidth }]"
-        @click.self="closeMenu"
+        :role="panelRole ?? 'menu'"
+        :aria-label="ariaLabel"
+        @keydown="handleKeydown"
       >
-        <div
-          ref="panelRef"
-          class="popover-panel"
-          :role="panelRole ?? 'menu'"
-          :aria-label="ariaLabel"
-          @keydown="handleKeydown"
-        >
-          <slot>
-            <MenuItem
-              v-for="option in options ?? []"
-              :key="option.value"
-              type="button"
-              role="menuitem"
-              :disabled="option.disabled"
-              :aria-disabled="option.disabled || undefined"
-              @click="selectOption(option)"
-            >
-              {{ option.label }}
-            </MenuItem>
-          </slot>
-        </div>
+        <slot>
+          <MenuItem
+            v-for="option in options ?? []"
+            :key="option.value"
+            role="menuitem"
+            :disabled="option.disabled"
+            @click="selectOption(option)"
+          >
+            {{ option.label }}
+          </MenuItem>
+        </slot>
       </div>
     </Transition>
-    <ModalDialog
-      v-if="isMobile"
-      :open="open"
-      :title="ariaLabel"
-      :close-label="t('common.close')"
-      size="sm"
-      @close="closeMenu"
-    >
+    <BottomSheet v-if="isMobile" :open="open" :title="title ?? ariaLabel" @close="closeMenu">
       <div
-        ref="panelRef"
+        class="popover-sheet"
         :role="panelRole === 'dialog' ? undefined : 'menu'"
         :aria-label="ariaLabel"
         @keydown="handleKeydown"
@@ -167,7 +137,7 @@ onBeforeUnmount(() => {
           </MenuItem>
         </slot>
       </div>
-    </ModalDialog>
+    </BottomSheet>
   </div>
 </template>
 
@@ -175,65 +145,56 @@ onBeforeUnmount(() => {
 .popover-root {
   position: relative;
   min-width: 0;
-  width: auto;
   max-width: 100%;
 }
 
-.popover-layer {
-  position: absolute;
-  top: calc(100% + var(--space-2));
-  z-index: 30;
-}
-
 .popover-panel {
+  position: absolute;
+  z-index: var(--z-popover);
+  top: calc(100% + var(--space-2));
   display: grid;
-  min-width: 180px;
-  max-height: min(320px, 70vh);
-  overflow-y: auto;
   gap: var(--space-1);
+  min-width: 220px;
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--space-1);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--glass-inset), var(--shadow);
-  backdrop-filter: var(--glass-filter);
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.popover-panel::-webkit-scrollbar {
-  display: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-overlay);
+  scrollbar-width: thin;
 }
 
 .match-trigger {
   width: 100%;
-  min-width: 0;
 }
 
 .align-end {
   right: 0;
+  transform-origin: top right;
 }
 
 .align-start {
   left: 0;
+  transform-origin: top left;
+}
+
+.popover-sheet {
+  display: grid;
+  gap: var(--space-1);
 }
 
 .popover-enter-active,
 .popover-leave-active {
   transition:
-    opacity var(--transition-fast),
-    transform var(--transition-fast);
-}
-
-.popover-enter-active .popover-panel,
-.popover-leave-active .popover-panel {
-  transition: transform var(--transition-normal);
+    opacity var(--transition-normal),
+    transform var(--transition-normal);
 }
 
 .popover-enter-from,
 .popover-leave-to {
   opacity: 0;
-  transform: translateY(-6px) scale(0.98);
-  transform-origin: top;
+  transform: translateY(-4px) scale(0.98);
 }
 </style>

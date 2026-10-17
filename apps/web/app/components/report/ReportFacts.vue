@@ -43,15 +43,14 @@ withDefaults(defineProps<{ facts: Fact[]; columns?: 1 | 2 | 3 }>(), { columns: 2
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-4);
-  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface-2);
 }
 
 .fact__value {
+  font: var(--text-h2);
   font-size: 20px;
-  font-weight: 650;
-  line-height: 1.15;
+  line-height: 28px;
   overflow-wrap: anywhere;
 }
 

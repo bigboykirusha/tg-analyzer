@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertCircle, MessageSquare, WifiOff } from '../lib/icons'
+import { AlertCircle, AlertTriangle, Info, MessageSquare, Search, WifiOff, X } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
@@ -20,6 +20,9 @@ const filter = ref<'all' | 'reported' | 'new'>('all')
 const visibleCount = ref(PAGE_SIZE)
 const startingChatId = ref<string | null>(null)
 const cancelling = ref(false)
+const confirmCancelOpen = ref(false)
+const deleteChatId = ref<string | null>(null)
+const deleting = ref(false)
 const sentinel = ref<HTMLElement | null>(null)
 
 const filterOptions = computed(() => [
@@ -64,7 +67,39 @@ async function analyse(chatId: string, title: string) {
   }
 }
 
+/** 0–1 when Telegram reported the chat size. */
+const progressFraction = computed(() => {
+  const { scannedMessages, totalMessages, phase } = analysis.progress.value
+  if (phase === 'saving') return 1
+  if (!totalMessages || phase !== 'scanning') return null
+  return Math.min(1, scannedMessages / totalMessages)
+})
+
+// Cancelling asks for confirmation only once more than 30 s of reading would be lost.
+const CONFIRM_CANCEL_AFTER_MS = 30_000
+function requestCancel() {
+  const { startedAt } = analysis.progress.value
+  if (startedAt && Date.now() - startedAt > CONFIRM_CANCEL_AFTER_MS) confirmCancelOpen.value = true
+  else void cancel()
+}
+
+async function deleteReport() {
+  const chatId = deleteChatId.value
+  if (!chatId) return
+  deleting.value = true
+  try {
+    await workspace.deleteReport(chatId)
+    toast.success(t('report.deleted'))
+  } catch (error) {
+    toast.error(t('report.deleteError'), errorMessage(error))
+  } finally {
+    deleting.value = false
+    deleteChatId.value = null
+  }
+}
+
 async function cancel() {
+  confirmCancelOpen.value = false
   cancelling.value = true
   try {
     await analysis.cancel()
@@ -95,26 +130,48 @@ onMounted(() => {
         v-if="analysis.isActive.value"
         :progress="analysis.progress.value"
         :cancelling="cancelling"
-        @cancel="cancel"
+        @cancel="requestCancel"
       />
 
       <section class="card dashboard-card">
         <div class="dashboard-tools">
-          <input
-            v-model="search"
-            type="search"
-            class="input"
-            :placeholder="t('dashboard.search')"
-            :aria-label="t('dashboard.search')"
-          />
+          <label class="input">
+            <Search aria-hidden="true" />
+            <input
+              v-model="search"
+              type="search"
+              class="input__control"
+              :placeholder="t('dashboard.search')"
+              :aria-label="t('dashboard.search')"
+            />
+            <button
+              v-if="search"
+              type="button"
+              class="input__clear"
+              :aria-label="t('common.clear')"
+              @click="search = ''"
+            >
+              <X aria-hidden="true" />
+            </button>
+          </label>
           <UiSegmentedControl v-model="filter" :options="filterOptions" :aria-label="t('dashboard.filter.label')" />
         </div>
 
-        <div v-if="!auth.telegramSessionActive" class="banner banner--warning">
-          <span>{{ t('dashboard.sessionInactive') }}</span>
-          <UiButton variant="secondary" size="sm" @click="logout">{{ t('common.relogin') }}</UiButton>
+        <div v-if="!auth.telegramSessionActive" class="banner banner--warning" role="status">
+          <AlertTriangle aria-hidden="true" />
+          <div class="banner__copy">
+            <span class="banner__title">{{ t('dashboard.sessionInactive') }}</span>
+          </div>
+          <div class="banner__actions">
+            <UiButton variant="secondary" size="sm" @click="logout">{{ t('common.relogin') }}</UiButton>
+          </div>
         </div>
-        <div v-else-if="workspace.dialogsStale" class="banner banner--info">{{ t('dashboard.staleDialogs') }}</div>
+        <div v-else-if="workspace.dialogsStale" class="banner banner--info" role="status">
+          <Info aria-hidden="true" />
+          <div class="banner__copy">
+            <span class="banner__text">{{ t('dashboard.staleDialogs') }}</span>
+          </div>
+        </div>
 
         <UiListSkeleton v-if="firstLoad" :rows="6" />
 
@@ -136,9 +193,14 @@ onMounted(() => {
               :key="chat.id"
               :chat="chat"
               :analysing="analysis.isActive.value && analysis.progress.value.chatId === chat.id"
+              :progress="progressFraction"
+              :paused="analysis.progress.value.phase === 'waiting'"
               :starting="startingChatId === chat.id"
+              :cancelling="cancelling"
               :disabled="analysisBlocked"
               @analyse="analyse(chat.id, chat.title)"
+              @cancel="requestCancel"
+              @delete="deleteChatId = chat.id"
             />
           </div>
           <UiEmptyState
@@ -163,6 +225,28 @@ onMounted(() => {
         </template>
       </section>
     </div>
+
+    <UiConfirmDialog
+      :open="confirmCancelOpen"
+      :title="t('analysis.cancelTitle')"
+      :description="t('analysis.cancelText')"
+      :confirm-label="t('analysis.cancel')"
+      :cancel-label="t('analysis.keepGoing')"
+      variant="danger"
+      :loading="cancelling"
+      @close="confirmCancelOpen = false"
+      @confirm="cancel"
+    />
+    <UiConfirmDialog
+      :open="deleteChatId !== null"
+      :title="t('report.deleteTitle')"
+      :description="t('report.deleteText')"
+      :confirm-label="t('report.delete')"
+      variant="danger"
+      :loading="deleting"
+      @close="deleteChatId = null"
+      @confirm="deleteReport"
+    />
   </UiPageContainer>
 </template>
 
@@ -183,11 +267,23 @@ onMounted(() => {
   gap: var(--space-3);
 }
 
+/* No overflow clipping: row menus float outside the list. */
 .chat-list {
-  overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.chat-list :deep(.chat-row:first-child) {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.chat-list :deep(.chat-row:last-child) {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.chat-list :deep(.chat-row:only-child) {
+  border-radius: var(--radius-lg);
 }
 
 .list-footer {

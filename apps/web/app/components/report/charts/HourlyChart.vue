@@ -13,17 +13,17 @@ const label = computed(() =>
 )
 
 const option = computed(() => {
-  const { base, colors, categoryAxis, valueAxis } = theme.value
+  const { base, colors, barRadius, categoryAxis, valueAxis } = theme.value
   const bar = (name: string, data: number[], color: string) => ({
     type: 'bar',
     name,
     data,
     barMaxWidth: 18,
-    itemStyle: { color, borderRadius: [4, 4, 0, 0] },
+    itemStyle: { color, borderRadius: barRadius },
   })
   return {
     ...base,
-    grid: { ...base.grid, top: 40, bottom: 24 },
+    grid: { ...base.grid, bottom: 40 },
     xAxis: categoryAxis(
       props.hourly.map((_, hour) => `${hour}:00`),
       { interval: 2 },

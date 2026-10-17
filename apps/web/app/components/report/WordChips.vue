@@ -9,7 +9,7 @@ const { formatNumber } = useI18n()
   <div v-if="items.length" class="chips">
     <span v-for="item in items" :key="item.value" class="chip">
       {{ item.value }}
-      <span v-if="counts" class="chip__count t-mono">{{ formatNumber(item.count) }}</span>
+      <span v-if="counts" class="chip__count">{{ formatNumber(item.count) }}</span>
     </span>
   </div>
   <p v-else class="t-small t-muted">{{ empty }}</p>
@@ -26,15 +26,19 @@ const { formatNumber } = useI18n()
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 6px 12px;
-  border: 1px solid var(--border);
+  height: 32px;
+  padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   background: var(--surface-2);
+  color: var(--text);
   font-size: 14px;
+  line-height: 20px;
 }
 
 .chip__count {
   color: var(--text-muted);
+  font-family: var(--font-mono);
   font-size: 12px;
+  font-weight: 500;
 }
 </style>

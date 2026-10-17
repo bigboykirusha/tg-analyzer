@@ -2,50 +2,60 @@
 import Skeleton from './Skeleton.vue'
 
 withDefaults(defineProps<{ rows?: number; avatar?: boolean }>(), { rows: 5, avatar: true })
+
+// Shown only after 300 ms of loading so fast responses never flash.
+const SHOW_DELAY_MS = 300
+const visible = ref(false)
+let timer: number | undefined
+onMounted(() => {
+  timer = window.setTimeout(() => (visible.value = true), SHOW_DELAY_MS)
+})
+onBeforeUnmount(() => window.clearTimeout(timer))
 </script>
 
 <template>
   <div class="loading-list" aria-hidden="true">
-    <div v-for="row in rows" :key="row" class="loading-row">
-      <Skeleton v-if="avatar" width="40px" height="40px" radius="50%" />
-      <div class="loading-copy">
-        <Skeleton width="65%" height="16px" />
-        <Skeleton width="42%" height="12px" />
+    <template v-if="visible">
+      <div v-for="row in rows" :key="row" class="loading-row">
+        <Skeleton v-if="avatar" width="var(--control-md)" height="var(--control-md)" radius="50%" />
+        <div class="loading-copy">
+          <Skeleton width="65%" height="14px" />
+          <Skeleton width="42%" height="12px" />
+        </div>
+        <Skeleton class="loading-action" width="112px" height="var(--control-sm)" radius="var(--radius-full)" />
       </div>
-      <Skeleton class="loading-action" width="96px" height="40px" radius="var(--radius-full)" />
-    </div>
+    </template>
   </div>
 </template>
 
 <style scoped>
 .loading-list {
   min-width: 0;
-  border-top: 1px solid var(--border);
 }
+
 .loading-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   min-width: 0;
-  padding: 16px 12px;
-  border-bottom: 1px solid var(--border);
+  min-height: 72px;
+  padding: var(--space-3) var(--space-4);
 }
-.loading-row:last-child {
-  border-bottom: 0;
+
+.loading-row + .loading-row {
+  box-shadow: inset 0 1px 0 var(--border);
 }
+
 .loading-copy {
   display: grid;
   flex: 1;
   min-width: 0;
-  gap: 10px;
+  gap: var(--space-2);
 }
-@media (max-width: 380px) {
+
+@media (max-width: 640px) {
   .loading-action {
-    width: 64px !important;
-  }
-  .loading-row {
-    padding-inline: 0;
-    gap: 8px;
+    display: none;
   }
 }
 </style>

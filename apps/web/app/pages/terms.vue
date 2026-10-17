@@ -54,7 +54,7 @@ useSeoMeta({
   margin: 0 auto;
   padding: clamp(24px, 5vw, 56px);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--surface);
   box-shadow: var(--shadow);
 }

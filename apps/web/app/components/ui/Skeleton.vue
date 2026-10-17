@@ -7,8 +7,8 @@ withDefaults(
   }>(),
   {
     width: '100%',
-    height: '1rem',
-    radius: 'var(--radius-sm)',
+    height: '14px',
+    radius: 'var(--radius-xs)',
   },
 )
 </script>
@@ -25,19 +25,22 @@ withDefaults(
   overflow: hidden;
   background: var(--surface-2);
 }
+
 .skeleton::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  background: linear-gradient(90deg, transparent, var(--hover), transparent);
   transform: translateX(-100%);
-  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
 }
+
 @keyframes skeleton-shimmer {
   to {
     transform: translateX(100%);
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton::after {
     animation: none;

@@ -8,15 +8,22 @@ const props = withDefaults(
     title?: string
     description?: string
     closeLabel?: string
+    /** sm 400 · md 520 · lg 680. */
     size?: 'sm' | 'md' | 'lg'
+    /** Blocks closing while an action runs. */
     busy?: boolean
+    role?: 'dialog' | 'alertdialog'
+    /** Element to focus first, e.g. «Cancel» in confirmations. */
+    initialFocus?: () => HTMLElement | null | undefined
   }>(),
   {
     title: '',
     closeLabel: '',
     description: '',
-    size: 'md',
+    size: 'sm',
     busy: false,
+    role: 'dialog',
+    initialFocus: undefined,
   },
 )
 
@@ -25,57 +32,14 @@ const { t } = useI18n()
 const panelRef = ref<HTMLElement | null>(null)
 const titleId = useId()
 const descriptionId = useId()
-useBodyScrollLock(toRef(props, 'open'))
-let previouslyFocused: HTMLElement | null = null
+const open = toRef(props, 'open')
 
 function close() {
   if (!props.busy) emit('close')
 }
 
-function handleKeydown(event: KeyboardEvent) {
-  if (!props.open) return
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    close()
-    return
-  }
-  if (event.key !== 'Tab' || !panelRef.value) return
-
-  const focusable = Array.from(
-    panelRef.value.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-    ),
-  )
-  const first = focusable[0]
-  const last = focusable.at(-1)
-  if (!first || !last) return
-  if (event.shiftKey && document.activeElement === first) {
-    event.preventDefault()
-    last.focus()
-  } else if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault()
-    first.focus()
-  }
-}
-
-watch(
-  () => props.open,
-  async (open) => {
-    if (!import.meta.client) return
-    if (open) {
-      previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
-      await nextTick()
-      panelRef.value?.querySelector<HTMLElement>('button:not([disabled])')?.focus()
-    } else {
-      previouslyFocused?.focus()
-    }
-  },
-)
-
-onMounted(() => window.addEventListener('keydown', handleKeydown))
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleKeydown)
-})
+useBodyScrollLock(open)
+useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocus?.() })
 </script>
 
 <template>
@@ -86,29 +50,31 @@ onBeforeUnmount(() => {
           ref="panelRef"
           class="modal-panel"
           :class="`modal-panel--${size}`"
-          role="dialog"
+          :role="role"
           aria-modal="true"
           :aria-labelledby="title || $slots.header ? titleId : undefined"
           :aria-describedby="description ? descriptionId : undefined"
         >
-          <div class="modal-header">
-            <div :id="titleId" class="modal-heading">
+          <IconButton
+            class="modal-close"
+            :label="closeLabel || t('common.close')"
+            :icon="X"
+            variant="ghost"
+            size="xs"
+            :disabled="busy"
+            @click="close"
+          />
+          <header class="modal-header">
+            <slot name="media" />
+            <div :id="titleId">
               <slot name="header">
-                <h2 class="dialog-title">{{ title }}</h2>
+                <h2 class="t-title">{{ title }}</h2>
               </slot>
             </div>
-            <IconButton
-              :label="closeLabel || t('common.close')"
-              :icon="X"
-              variant="secondary"
-              size="control"
-              :disabled="busy"
-              @click="close"
-            />
-          </div>
+            <p v-if="description" :id="descriptionId" class="modal-description">{{ description }}</p>
+          </header>
 
-          <div class="modal-body">
-            <p v-if="description" :id="descriptionId" class="t-small modal-description">{{ description }}</p>
+          <div v-if="$slots.default" class="modal-body">
             <slot />
           </div>
 
@@ -122,16 +88,10 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.dialog-title {
-  font-size: 1.125rem;
-  font-weight: 650;
-  line-height: 1.4;
-}
-
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: var(--z-modal);
   display: grid;
   place-items: center;
   padding: var(--space-4);
@@ -140,61 +100,68 @@ onBeforeUnmount(() => {
 }
 
 .modal-panel {
+  position: relative;
   display: flex;
-  width: 100%;
-  max-height: min(84dvh, 760px);
   flex-direction: column;
+  width: 100%;
+  max-width: 400px;
+  max-height: min(84dvh, 760px);
   overflow: hidden;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--glass-inset), var(--shadow);
-  backdrop-filter: var(--glass-filter);
-}
-
-.modal-panel--sm {
-  max-width: 420px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-overlay);
 }
 
 .modal-panel--md {
-  max-width: 560px;
+  max-width: 520px;
 }
 
 .modal-panel--lg {
-  max-width: 720px;
+  max-width: 680px;
+}
+
+.modal-close {
+  position: absolute;
+  z-index: 1;
+  top: var(--space-4);
+  right: var(--space-4);
 }
 
 .modal-header {
-  display: flex;
+  display: grid;
   flex: 0 0 auto;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-5) var(--space-5) var(--space-3);
+  justify-items: start;
+  gap: var(--space-1);
+  padding: var(--space-6) var(--space-16) var(--space-4) var(--space-6);
 }
 
-.modal-heading {
-  min-width: 0;
-  padding-top: 6px;
-}
-
-.modal-body {
-  min-width: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 0 var(--space-5) var(--space-5);
+.modal-header :deep(.icon-tile) {
+  margin-bottom: var(--space-3);
 }
 
 .modal-description {
   color: var(--text-muted);
+  font: var(--text-ui);
+  font-weight: 400;
+}
+
+.modal-body {
+  display: grid;
+  gap: var(--space-4);
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--space-6) var(--space-2);
 }
 
 .modal-actions {
   display: flex;
   flex: 0 0 auto;
   justify-content: flex-end;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-5) var(--space-5);
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6) var(--space-6);
 }
 
 .modal-enter-active,
@@ -214,33 +181,52 @@ onBeforeUnmount(() => {
 
 .modal-enter-from .modal-panel,
 .modal-leave-to .modal-panel {
-  transform: translateY(10px) scale(0.98);
+  transform: translateY(8px) scale(0.98);
 }
 
+/* Phones: the dialog becomes a bottom sheet. */
 @media (max-width: 640px) {
   .modal-backdrop {
     align-items: end;
-    padding: var(--space-3);
-    padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+    padding: 0;
   }
 
-  .modal-panel {
-    max-height: min(86dvh, 720px);
-    border-radius: var(--radius-lg);
+  .modal-panel,
+  .modal-panel--md,
+  .modal-panel--lg {
+    max-width: none;
+    max-height: 86dvh;
+    border-width: 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   }
 
   .modal-header {
-    padding: var(--space-4) var(--space-4) var(--space-3);
+    padding: var(--space-6) var(--space-16) var(--space-4) var(--space-5);
   }
 
   .modal-body {
-    padding: 0 var(--space-4) var(--space-4);
+    padding-inline: var(--space-5);
   }
 
   .modal-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: var(--space-3) var(--space-4) var(--space-4);
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5) max(var(--space-5), env(safe-area-inset-bottom));
+  }
+
+  .modal-actions :deep(.btn) {
+    width: 100%;
+    min-height: var(--control-lg);
+  }
+
+  .modal-enter-active .modal-panel,
+  .modal-leave-active .modal-panel {
+    transition: transform var(--transition-slow);
+  }
+
+  .modal-enter-from .modal-panel,
+  .modal-leave-to .modal-panel {
+    transform: translateY(100%);
   }
 }
 </style>

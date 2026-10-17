@@ -90,12 +90,15 @@ defineProps<{ code: string }>()
 </template>
 
 <style scoped>
+/* Flag colours are data (national flags), not theme colours. */
 .country-flag-svg {
   display: block;
+  flex: 0 0 auto;
   width: 22px;
-  height: 17px;
+  height: 16px;
   overflow: hidden;
-  border-radius: 3px;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);
+  border-radius: var(--radius-xs);
+  outline: 1px solid var(--hover);
+  outline-offset: -1px;
 }
 </style>

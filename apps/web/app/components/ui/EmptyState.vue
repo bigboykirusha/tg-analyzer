@@ -1,28 +1,32 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
+import { MessageSquare } from '../../lib/icons'
 
-defineProps<{
-  title: string
-  description?: string | null
-  icon?: Component | null
-}>()
+withDefaults(
+  defineProps<{
+    /** What is empty. */
+    title: string
+    /** How to fix it. */
+    description?: string | null
+    icon?: Component | null
+    /** `danger` for a failed load. */
+    tone?: 'neutral' | 'danger'
+    compact?: boolean
+  }>(),
+  { description: null, icon: null, tone: 'neutral', compact: false },
+)
 </script>
 
 <template>
-  <div class="empty-state">
-    <div class="empty-icon">
-      <component :is="icon" v-if="icon" />
+  <div class="empty-state" :class="{ 'empty-state--compact': compact }">
+    <span class="icon-tile icon-tile--lg" :class="{ 'icon-tile--danger': tone === 'danger' }" aria-hidden="true">
       <slot name="icon">
-        <svg v-if="!icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M5 7.75A2.75 2.75 0 0 1 7.75 5h8.5A2.75 2.75 0 0 1 19 7.75v8.5A2.75 2.75 0 0 1 16.25 19h-8.5A2.75 2.75 0 0 1 5 16.25zM8.5 9.5h7m-7 5h4"
-          />
-        </svg>
+        <component :is="icon ?? MessageSquare" />
       </slot>
-    </div>
+    </span>
     <div class="empty-copy">
-      <h3 class="empty-title">{{ title }}</h3>
-      <p v-if="description" class="t-small">{{ description }}</p>
+      <h3 class="empty-title t-title">{{ title }}</h3>
+      <p v-if="description" class="empty-text">{{ description }}</p>
     </div>
     <div v-if="$slots.action" class="empty-action">
       <slot name="action" />
@@ -32,57 +36,38 @@ defineProps<{
 
 <style scoped>
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  justify-items: center;
   gap: var(--space-4);
+  padding: var(--space-10) var(--space-5);
   text-align: center;
-  padding: var(--space-8) var(--space-5);
-  border-radius: var(--radius-lg);
-  background: transparent;
 }
 
-.empty-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-full);
-  color: var(--text-muted);
-}
-
-.empty-icon :deep(svg),
-.empty-icon svg {
-  width: 24px;
-  height: 24px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.empty-state--compact {
+  padding-block: var(--space-6);
 }
 
 .empty-copy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  display: grid;
+  gap: var(--space-1);
+  max-width: 360px;
 }
 
 .empty-title {
-  color: var(--text-muted);
-  font-size: 1.0625rem;
-  font-weight: 600;
-  line-height: 1.4;
+  color: var(--text);
 }
 
-.empty-copy p {
+.empty-text {
   color: var(--text-muted);
-  max-width: 480px;
+  font: var(--text-ui);
+  font-weight: 400;
 }
 
 .empty-action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
   margin-top: var(--space-1);
 }
 </style>

@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 
+export type ButtonVariant = 'primary' | 'secondary' | 'soft' | 'ghost' | 'danger' | 'danger-soft'
+export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg'
+
 defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
-    variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
-    size?: 'sm' | 'md' | 'lg' | 'control'
+    variant?: ButtonVariant
+    /** sm 36 · md 44 · lg 48; xs 32 is for close icons only. */
+    size?: ButtonSize
     icon?: Component | null
     loading?: boolean
     disabled?: boolean
@@ -38,46 +42,164 @@ const classes = computed(() => [
 
 <template>
   <NuxtLink v-if="to" v-bind="attrs" :to="to" :class="classes" :aria-busy="loading || undefined">
-    <span v-if="icon || $slots.icon" class="btn__icon" aria-hidden="true">
-      <span v-if="loading" class="btn__spinner" />
-      <component :is="icon" v-else-if="icon" />
-      <slot v-else name="icon" />
-    </span>
+    <span v-if="loading" class="btn__spinner" aria-hidden="true" />
+    <component :is="icon" v-else-if="icon" aria-hidden="true" />
+    <slot v-else name="icon" />
     <slot />
   </NuxtLink>
   <button v-else v-bind="attrs" :class="classes" :disabled="disabled || loading" :aria-busy="loading || undefined">
-    <span v-if="loading || icon || $slots.icon" class="btn__icon" aria-hidden="true">
-      <span v-if="loading" class="btn__spinner" />
-      <component :is="icon" v-else-if="icon" />
-      <slot v-else name="icon" />
-    </span>
+    <span v-if="loading" class="btn__spinner" aria-hidden="true" />
+    <component :is="icon" v-else-if="icon" aria-hidden="true" />
+    <slot v-else name="icon" />
     <slot />
   </button>
 </template>
 
 <style scoped>
-/* ─── Base ─────────────────────────────────────────────────────────────────── */
 .btn {
+  position: relative;
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  font-family: var(--font-sans);
-  font-weight: 650;
-  border: 1px solid transparent;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  white-space: normal;
-  text-align: center;
-  line-height: 1.2;
   min-width: 0;
   max-width: 100%;
+  min-height: var(--control-md);
+  padding: 0 var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: var(--text-control);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  --icon-size: var(--icon-sm);
   transition:
-    transform var(--transition-fast),
-    opacity var(--transition-fast),
-    background var(--transition-fast),
+    background-color var(--transition-fast),
     border-color var(--transition-fast),
-    box-shadow var(--transition-fast);
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+/* ─── Sizes ────────────────────────────────────────────────────────────────── */
+.btn--sm {
+  min-height: var(--control-sm);
+  padding: 0 var(--space-4);
+  font-size: 13px;
+}
+
+.btn--lg {
+  min-height: var(--control-lg);
+  padding: 0 var(--space-6);
+  font-size: 15px;
+  --icon-size: var(--icon-md);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+/* Icon-only: circle, width equals height. */
+.btn--icon-only {
+  width: var(--control-md);
+  padding: 0;
+  --icon-size: var(--icon-md);
+}
+
+.btn--icon-only.btn--sm {
+  width: var(--control-sm);
+  --icon-size: var(--icon-sm);
+}
+
+.btn--icon-only.btn--lg {
+  width: var(--control-lg);
+}
+
+.btn--xs,
+.btn--icon-only.btn--xs {
+  width: var(--control-xs);
+  min-height: var(--control-xs);
+  padding: 0;
+  --icon-size: var(--icon-sm);
+}
+
+/* The close button stays 32px but its hit area is 44px. */
+.btn--xs::before {
+  content: '';
+  position: absolute;
+  inset: calc((var(--control-md) - var(--control-xs)) / -2);
+}
+
+/* ─── Variants ─────────────────────────────────────────────────────────────── */
+.btn--primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn--secondary {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.btn--soft {
+  background: var(--accent-subtle);
+  color: var(--accent-ink);
+}
+
+.btn--ghost {
+  color: var(--text-muted);
+}
+
+.btn--danger {
+  background: var(--danger);
+  color: var(--on-danger);
+}
+
+.btn--danger-soft {
+  background: var(--danger-subtle);
+  color: var(--danger);
+}
+
+@media (hover: hover) {
+  .btn--primary:hover {
+    background: var(--accent-hover);
+  }
+
+  .btn--secondary:hover,
+  .btn--soft:hover,
+  .btn--danger-soft:hover {
+    background-image: linear-gradient(var(--hover), var(--hover));
+  }
+
+  .btn--ghost:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
+
+  .btn--danger:hover {
+    background: var(--danger-hover);
+  }
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn--ghost:active {
+  background: var(--pressed);
+}
+
+.btn--secondary:active,
+.btn--soft:active,
+.btn--danger-soft:active {
+  background-image: linear-gradient(var(--pressed), var(--pressed));
 }
 
 .btn:focus-visible {
@@ -85,188 +207,37 @@ const classes = computed(() => [
   box-shadow: var(--focus-ring);
 }
 
-.btn:disabled {
-  opacity: 0.4;
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
   pointer-events: none;
 }
 
-.btn:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
-/* ─── Sizes ────────────────────────────────────────────────────────────────── */
-.btn--sm {
-  min-height: 36px;
-  padding: 0 var(--space-3);
-  font-size: 12px;
-}
-
-.btn--md {
-  min-height: 44px;
-  padding: 0 var(--space-4);
-  font-size: 13px;
-}
-
-.btn--lg {
-  min-height: 48px;
-  padding: 0 var(--space-5);
-  font-size: 14px;
-}
-
-.btn--control {
-  min-height: 42px;
-  padding: 0;
-  font-size: 13px;
-}
-
-.btn--block {
-  width: 100%;
-}
-
-.btn--icon-only {
-  flex: 0 0 auto;
-  padding: 0;
-  border-radius: 50%;
-}
-
-.btn--icon-only.btn--sm {
-  width: 36px;
-}
-
-.btn--icon-only.btn--md {
-  width: 44px;
-}
-
-.btn--icon-only.btn--lg {
-  width: 48px;
-}
-
-.btn--icon-only.btn--control {
-  width: 42px;
-  height: 42px;
-}
-
-/* ─── Variants ─────────────────────────────────────────────────────────────── */
-.btn--primary {
-  background: var(--accent);
-  border-color: transparent;
-  color: var(--on-accent);
-  box-shadow: none;
-}
-
-.btn--secondary {
-  background: transparent;
-  border-color: var(--border);
-  color: var(--text);
-}
-
-.btn--ghost {
-  background: transparent;
-  border-color: transparent;
-  color: var(--text-muted);
-}
-
-.btn--danger {
-  background: var(--danger-subtle);
-  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
-  color: var(--danger);
-}
-
-@media (hover: hover) {
-  .btn--primary:hover:not(:disabled) {
-    background: var(--accent-hover);
-    transform: translateY(-1px);
-  }
-
-  .btn--secondary:hover:not(:disabled) {
-    background: var(--surface-2);
-    border-color: var(--border-strong);
-    transform: translateY(-1px);
-  }
-
-  .btn--ghost:hover:not(:disabled) {
-    background: var(--surface-2);
-    color: var(--text);
-  }
-
-  .btn--danger:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--danger) 16%, transparent);
-    border-color: color-mix(in srgb, var(--danger) 42%, transparent);
-  }
-}
-
-/* ─── Icon slot ────────────────────────────────────────────────────────────── */
-.btn__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-}
-
-/* icon size follows button size */
-.btn--sm .btn__icon {
-  width: 14px;
-  height: 14px;
-}
-
-.btn--md .btn__icon {
-  width: 15px;
-  height: 15px;
-}
-
-.btn--lg .btn__icon {
-  width: 16px;
-  height: 16px;
-}
-
-.btn--control .btn__icon {
-  width: 16px;
-  height: 16px;
-}
-
-.btn__icon :deep(svg) {
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.btn[aria-busy='true'] {
+  cursor: progress;
+  pointer-events: none;
 }
 
 /* ─── Spinner ──────────────────────────────────────────────────────────────── */
 .btn__spinner {
-  width: 13px;
-  height: 13px;
-  border: 1.5px solid currentColor;
-  border-top-color: transparent;
+  flex: 0 0 auto;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  border: 2px solid currentColor;
+  border-right-color: transparent;
   border-radius: 50%;
-  animation: btn-spin 0.6s linear infinite;
+  animation: spin 0.7s linear infinite;
 }
 
-@keyframes btn-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ─── Mobile ───────────────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
+/* Touch targets stay ≥ 44px on phones. */
+@media (max-width: 640px) and (pointer: coarse) {
   .btn--sm {
-    min-height: 44px;
+    min-height: var(--control-md);
   }
 
   .btn--icon-only.btn--sm {
-    width: 44px;
-  }
-
-  .btn--md {
-    min-height: 44px;
-  }
-
-  .btn--lg {
-    min-height: 48px;
+    width: var(--control-md);
   }
 }
 </style>

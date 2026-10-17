@@ -18,7 +18,7 @@ const labels = computed(() => {
 })
 
 const option = computed(() => {
-  const { base, colors, categoryAxis, valueAxis } = theme.value
+  const { base, colors, barRadius, categoryAxis, valueAxis } = theme.value
   return {
     ...base,
     xAxis: categoryAxis(labels.value),
@@ -28,7 +28,7 @@ const option = computed(() => {
         type: 'bar',
         data: values.value,
         barMaxWidth: 28,
-        itemStyle: { color: colors.sent, borderRadius: [6, 6, 0, 0] },
+        itemStyle: { color: colors.sent, borderRadius: barRadius },
       },
     ],
   }

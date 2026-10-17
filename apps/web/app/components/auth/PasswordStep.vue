@@ -9,12 +9,12 @@ const { t } = useI18n()
 
 <template>
   <form class="auth-form" @submit.prevent="emit('submit')">
-    <label class="auth-field">
-      <span class="t-label">{{ t('login.passwordLabel') }}</span>
+    <label class="field">
+      <span class="field__label">{{ t('login.passwordLabel') }}</span>
       <input
         v-model="password"
         type="password"
-        class="input"
+        class="input input--lg"
         :placeholder="t('login.passwordPlaceholder')"
         name="current-password"
         autocomplete="current-password"
@@ -22,7 +22,7 @@ const { t } = useI18n()
         autocorrect="off"
         spellcheck="false"
       />
-      <span class="t-small t-muted">
+      <span class="field__hint">
         {{ hint ? t('login.passwordHint', { hint }) : t('login.passwordHelp') }}
       </span>
     </label>
@@ -37,11 +37,5 @@ const { t } = useI18n()
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-}
-
-.auth-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
 }
 </style>

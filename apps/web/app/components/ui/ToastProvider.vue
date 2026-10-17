@@ -1,22 +1,29 @@
 <script setup lang="ts">
 import { useI18n } from '../../composables/useI18n'
-import { useToast } from '../../composables/useToast'
-import { X } from '../../lib/icons'
+import { useToast, type ToastMessage, type ToastVariant } from '../../composables/useToast'
+import { AlertTriangle, CircleCheck, CircleX, Info, X } from '../../lib/icons'
 import IconButton from './IconButton.vue'
-const { toasts, remove } = useToast()
+
+const { toasts, remove, pause, resume } = useToast()
 const { t } = useI18n()
 const route = useRoute()
 const hasMobileNavigation = computed(() => route.path === '/dashboard' || route.path === '/history')
 
-function variantLabel(variant: string) {
-  return (
-    {
-      success: t('toast.success'),
-      error: t('toast.error'),
-      info: t('toast.info'),
-      warning: t('toast.warning'),
-    }[variant] ?? 'Info'
-  )
+// The icon tells the type without colour.
+const ICONS = { success: CircleCheck, error: CircleX, info: Info, warning: AlertTriangle } as const
+
+function variantLabel(variant: ToastVariant) {
+  return {
+    success: t('toast.success'),
+    error: t('toast.error'),
+    info: t('toast.info'),
+    warning: t('toast.warning'),
+  }[variant]
+}
+
+function runAction(toast: ToastMessage) {
+  toast.action?.onClick()
+  remove(toast.id)
 }
 </script>
 
@@ -34,21 +41,28 @@ function variantLabel(variant: string) {
           v-for="toast in toasts"
           :key="toast.id"
           class="toast"
-          :class="`toast-${toast.variant}`"
+          :class="`toast--${toast.variant}`"
           :role="toast.variant === 'error' ? 'alert' : 'status'"
+          @pointerenter="pause(toast.id)"
+          @pointerleave="resume(toast.id)"
+          @focusin="pause(toast.id)"
+          @focusout="resume(toast.id)"
         >
-          <div class="toast-indicator" aria-hidden="true" />
-          <div class="toast-copy">
+          <component :is="ICONS[toast.variant]" class="toast__icon" aria-hidden="true" />
+          <div class="toast__copy">
             <span class="sr-only">{{ variantLabel(toast.variant) }}</span>
-            <strong>{{ toast.title }}</strong>
-            <p v-if="toast.description">{{ toast.description }}</p>
+            <strong class="toast__title">{{ toast.title }}</strong>
+            <p v-if="toast.description" class="toast__text">{{ toast.description }}</p>
+            <button v-if="toast.action" type="button" class="toast__action" @click="runAction(toast)">
+              {{ toast.action.label }}
+            </button>
           </div>
           <IconButton
-            class="toast-close"
+            class="toast__close"
             :label="t('common.close')"
             :icon="X"
-            variant="secondary"
-            size="control"
+            variant="ghost"
+            size="xs"
             @click="remove(toast.id)"
           />
         </article>
@@ -60,78 +74,86 @@ function variantLabel(variant: string) {
 <style scoped>
 .toast-region {
   position: fixed;
-  top: auto;
   right: var(--space-5);
   bottom: var(--space-5);
-  z-index: 100;
-  display: grid;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
-  width: min(380px, calc(100vw - 32px));
+  width: min(380px, calc(100vw - var(--space-8)));
   pointer-events: none;
 }
 
 .toast {
   display: grid;
-  grid-template-columns: 8px minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
   gap: var(--space-3);
-  align-items: center;
   min-width: 0;
-  min-height: 68px;
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
-  border: 1px solid var(--glass-border);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--glass-inset), var(--shadow);
-  backdrop-filter: var(--glass-filter);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-overlay);
   pointer-events: auto;
 }
 
-.toast-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background: currentColor;
+.toast__icon {
+  --icon-size: var(--icon-md);
 }
 
-.toast-copy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.toast-copy strong {
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1.35;
-}
-
-.toast-copy p {
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-}
-
-.toast-close {
-  justify-self: end;
-}
-
-.toast-success {
+.toast--success .toast__icon,
+.toast--info .toast__icon {
   color: var(--accent);
 }
 
-.toast-error {
+.toast--warning .toast__icon {
+  color: var(--warning-ink);
+}
+
+.toast--error .toast__icon {
   color: var(--danger);
 }
 
-.toast-info {
-  color: var(--accent);
+.toast__copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
-.toast-warning {
-  color: var(--warning);
+.toast__title {
+  color: var(--text);
+  font: var(--text-ui);
+  font-weight: 600;
+}
+
+.toast__text {
+  color: var(--text-muted);
+  font: var(--text-small);
+  overflow-wrap: anywhere;
+}
+
+.toast__action {
+  justify-self: start;
+  margin-top: var(--space-2);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--accent-ink);
+  cursor: pointer;
+  font: var(--text-small);
+  font-weight: 600;
+}
+
+.toast__action:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* The 32px close button sits in the corner without growing the toast. */
+.toast__close {
+  margin: calc(var(--space-1) * -1.5) calc(var(--space-1) * -1.5) 0 0;
 }
 
 .toast-enter-active,
@@ -144,20 +166,20 @@ function variantLabel(variant: string) {
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateY(8px) scale(0.98);
+  transform: translateY(8px);
 }
 
 @media (max-width: 640px) {
   .toast-region {
-    top: auto;
     right: var(--space-3);
     bottom: max(var(--space-3), env(safe-area-inset-bottom));
     left: var(--space-3);
     width: auto;
   }
 
+  /* Above the bottom tab bar (48px + its padding). */
   .toast-region--with-nav {
-    bottom: calc(84px + env(safe-area-inset-bottom));
+    bottom: calc(var(--control-lg) + var(--space-8) + env(safe-area-inset-bottom));
   }
 }
 </style>

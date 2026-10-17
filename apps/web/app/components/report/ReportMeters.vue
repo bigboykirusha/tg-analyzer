@@ -16,7 +16,7 @@ const { formatPercent } = useI18n()
     <div v-for="meter in meters" :key="meter.key" class="meter">
       <div class="meter__heading">
         <span>{{ meter.label }}</span>
-        <strong class="t-mono">{{ formatPercent(meter.value) }}</strong>
+        <strong class="meter__value">{{ formatPercent(meter.value) }}</strong>
       </div>
       <div
         v-if="meter.value !== null"
@@ -29,21 +29,19 @@ const { formatPercent } = useI18n()
       >
         <span :style="{ width: `${Math.min(100, Math.max(0, meter.value))}%` }" />
       </div>
-      <span v-if="meter.detail" class="t-small t-muted">{{ meter.detail }}</span>
+      <span v-if="meter.detail" class="meter__detail">{{ meter.detail }}</span>
     </div>
   </div>
 </template>
 
 <style scoped>
 .meters {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--space-5);
 }
 
 .meter {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--space-2);
 }
 
@@ -52,10 +50,21 @@ const { formatPercent } = useI18n()
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
+  font: var(--text-ui);
+}
+
+.meter__value {
+  font: var(--text-mono);
+  font-weight: 600;
+}
+
+.meter__detail {
+  color: var(--text-muted);
+  font: var(--text-small);
 }
 
 .meter__track {
-  height: 6px;
+  height: 8px;
   overflow: hidden;
   border-radius: var(--radius-full);
   background: var(--surface-2);

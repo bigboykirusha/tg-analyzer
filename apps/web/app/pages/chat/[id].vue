@@ -171,7 +171,7 @@ onMounted(load)
     />
     <UiConfirmDialog
       :open="confirm === 'delete'"
-      :title="t('report.delete')"
+      :title="t('report.deleteTitle')"
       :description="t('report.deleteText')"
       :confirm-label="t('report.delete')"
       variant="danger"

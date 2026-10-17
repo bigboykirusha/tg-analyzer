@@ -45,7 +45,7 @@ const { t } = useI18n()
   width: 56px;
   height: 56px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--accent);
   font-family: var(--font-mono);

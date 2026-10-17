@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ApiClientError } from '../composables/useApi'
+import { AlertCircle } from '../lib/icons'
 
 definePageMeta({ middleware: ['guest'] })
 
@@ -152,7 +153,10 @@ function changeNumber() {
               />
             </Transition>
 
-            <p v-if="error" class="login-error" role="alert">{{ error }}</p>
+            <div v-if="error" class="banner banner--danger" role="alert">
+              <AlertCircle aria-hidden="true" />
+              <p class="banner__text">{{ error }}</p>
+            </div>
           </div>
         </div>
       </section>
@@ -161,15 +165,6 @@ function changeNumber() {
 </template>
 
 <style scoped>
-.login-error {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
-  border-radius: var(--radius-md);
-  background: var(--danger-subtle);
-  color: var(--danger);
-  font-size: 0.875rem;
-}
-
 .login-page {
   min-height: 100vh;
   min-height: 100dvh;
@@ -182,7 +177,7 @@ function changeNumber() {
   min-height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr);
-  grid-template-rows: 76px minmax(0, 1fr);
+  grid-template-rows: var(--topbar-height) minmax(0, 1fr);
 }
 
 .login-header {
@@ -195,7 +190,7 @@ function changeNumber() {
   gap: var(--space-6);
   padding: 0 clamp(var(--space-8), 5vw, 72px);
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  background: var(--glass);
   backdrop-filter: var(--glass-filter);
 }
 
@@ -206,24 +201,25 @@ function changeNumber() {
 }
 
 .brand {
-  gap: var(--space-3);
-  font-size: 18px;
+  gap: var(--space-2);
+  font-size: 17px;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  line-height: 24px;
+  letter-spacing: -0.02em;
 }
 
 .login-controls {
-  gap: var(--space-4);
+  gap: var(--space-1);
 }
 
 .brand-symbol {
   display: grid;
   grid-template-columns: repeat(3, 4px);
   align-items: end;
-  gap: 3px;
-  width: 42px;
-  height: 42px;
-  padding: 10px;
+  gap: 2px;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  padding: var(--space-2);
   border-radius: var(--radius-full);
   background: var(--accent);
   color: var(--on-accent);
@@ -236,13 +232,13 @@ function changeNumber() {
 }
 
 .brand-symbol i:nth-child(1) {
-  height: 7px;
+  height: 8px;
 }
 .brand-symbol i:nth-child(2) {
-  height: 18px;
+  height: 16px;
 }
 .brand-symbol i:nth-child(3) {
-  height: 12px;
+  height: 11px;
 }
 
 .login-story {
@@ -266,7 +262,7 @@ function changeNumber() {
   aspect-ratio: 1;
   border: 1px solid var(--border);
   border-radius: 50%;
-  box-shadow: 0 0 0 64px color-mix(in srgb, var(--accent-subtle) 45%, transparent);
+  box-shadow: 0 0 0 64px var(--glow);
   pointer-events: none;
 }
 
@@ -282,10 +278,9 @@ function changeNumber() {
 }
 
 .story-kicker {
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  color: var(--accent-ink);
+  font: var(--text-label);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -293,9 +288,9 @@ function changeNumber() {
   max-width: 680px;
   font-family: var(--font-sans);
   font-size: clamp(48px, 5.7vw, 76px);
-  font-weight: 720;
-  line-height: 0.98;
-  letter-spacing: -0.06em;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
 }
 
 .story-copy p {
@@ -327,8 +322,8 @@ function changeNumber() {
   gap: var(--space-6);
   padding: clamp(var(--space-6), 4vw, var(--space-10));
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
   box-shadow: var(--shadow);
 }
 
@@ -355,17 +350,13 @@ function changeNumber() {
 }
 
 .login-copy h2 {
-  font-family: var(--font-sans);
-  font-size: clamp(30px, 3vw, 40px);
-  font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: -0.045em;
+  font: var(--text-h1);
+  letter-spacing: -0.02em;
 }
 
 .login-copy p {
   color: var(--text-muted);
-  font-size: 15px;
-  line-height: 1.5;
+  font: var(--text-body);
 }
 
 .auth-step-enter-active,
@@ -392,7 +383,7 @@ function changeNumber() {
 @media (max-width: 860px) {
   .login-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: 72px minmax(0, 1fr);
+    grid-template-rows: var(--topbar-height) minmax(0, 1fr);
   }
 
   .login-header {
@@ -417,9 +408,9 @@ function changeNumber() {
     margin-bottom: var(--space-8);
     font-family: var(--font-sans);
     font-size: clamp(32px, 8vw, 44px);
-    font-weight: 720;
-    line-height: 1.06;
-    letter-spacing: -0.05em;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
   }
   .login-card {
     padding: var(--space-8);
@@ -428,24 +419,12 @@ function changeNumber() {
 
 @media (max-width: 520px) {
   .login-shell {
-    grid-template-rows: 64px minmax(0, 1fr);
+    grid-template-rows: var(--topbar-height) minmax(0, 1fr);
   }
   .login-header {
     padding: 0 var(--space-5);
     background: transparent;
     backdrop-filter: none;
-  }
-  .brand {
-    gap: 10px;
-    font-size: 16px;
-  }
-  .brand-symbol {
-    width: 42px;
-    height: 42px;
-    padding: 10px;
-  }
-  .login-controls {
-    gap: var(--space-4);
   }
   .login-panel {
     padding: var(--space-8) var(--space-5) var(--space-10);
@@ -463,7 +442,8 @@ function changeNumber() {
     box-shadow: none;
   }
   .login-copy h2 {
-    font-size: 30px;
+    font-size: 26px;
+    line-height: 32px;
   }
 }
 

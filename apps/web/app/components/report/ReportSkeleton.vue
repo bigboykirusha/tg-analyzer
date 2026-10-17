@@ -1,16 +1,16 @@
 <template>
   <div class="stack stack--lg" aria-busy="true">
     <div class="skeleton-header">
-      <UiSkeleton width="56px" height="56px" radius="50%" />
+      <UiSkeleton width="64px" height="64px" radius="50%" />
       <div class="stack skeleton-title">
-        <UiSkeleton width="50%" height="28px" />
+        <UiSkeleton width="50%" height="32px" />
         <UiSkeleton width="30%" height="14px" />
       </div>
     </div>
-    <UiSkeleton height="118px" radius="var(--radius-lg)" />
-    <UiSkeleton height="46px" radius="var(--radius-full)" />
+    <UiSkeleton height="128px" radius="var(--radius-lg)" />
+    <UiSkeleton height="var(--control-md)" radius="var(--radius-full)" />
     <div class="skeleton-grid">
-      <UiSkeleton v-for="item in 4" :key="item" height="280px" radius="var(--radius-lg)" />
+      <UiSkeleton v-for="item in 4" :key="item" height="300px" radius="var(--radius-xl)" />
     </div>
   </div>
 </template>

@@ -32,11 +32,11 @@ function retry() {
   width: min(100%, 480px);
   gap: var(--space-4);
   padding: clamp(var(--space-5), 6vw, var(--space-10));
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--glass);
   box-shadow: var(--shadow);
   text-align: center;
-  backdrop-filter: blur(var(--blur-md));
+  backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
 }
 .error-card p {
   color: var(--text-muted);
@@ -47,7 +47,7 @@ function retry() {
 .error-code {
   color: var(--accent);
   font-size: clamp(3.5rem, 15vw, 7rem);
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.06em;
   line-height: 0.9;
 }

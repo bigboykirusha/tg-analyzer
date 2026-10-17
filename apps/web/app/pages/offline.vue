@@ -32,11 +32,11 @@ function retry() {
   width: min(100%, 460px);
   gap: var(--space-4);
   padding: clamp(var(--space-5), 7vw, var(--space-10));
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--glass);
   box-shadow: var(--shadow);
   text-align: center;
-  backdrop-filter: blur(var(--blur-md));
+  backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
 }
 .offline-card p {
   color: var(--text-muted);

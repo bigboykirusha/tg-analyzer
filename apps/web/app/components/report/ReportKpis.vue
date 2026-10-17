@@ -3,6 +3,7 @@
 </template>
 
 <style scoped>
+/* Exactly four MetricCards; transparent cells divided by hairlines. */
 .kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -13,15 +14,10 @@
 }
 
 .kpis :deep(.metric) {
-  min-height: 118px;
-  border: 0;
-  border-right: 1px solid var(--border);
+  padding: var(--space-5);
   border-radius: 0;
   background: transparent;
-}
-
-.kpis :deep(.metric:last-child) {
-  border-right: 0;
+  box-shadow: 1px 0 0 var(--border);
 }
 
 .kpis :deep(.metric-sub) {
@@ -35,12 +31,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .kpis :deep(.metric:nth-child(2)) {
-    border-right: 0;
-  }
-
-  .kpis :deep(.metric:nth-child(-n + 2)) {
-    border-bottom: 1px solid var(--border);
+  .kpis :deep(.metric) {
+    box-shadow:
+      1px 0 0 var(--border),
+      0 1px 0 var(--border);
   }
 }
 </style>

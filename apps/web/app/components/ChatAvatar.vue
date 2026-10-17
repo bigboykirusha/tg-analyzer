@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { loadChatAvatar } from '../lib/avatar-loader'
+import type { AvatarSize } from './ui/Avatar.vue'
 
 const props = withDefaults(
-  defineProps<{ chatId: string; title: string | null | undefined; hasAvatar?: boolean; size?: 'sm' | 'md' | 'lg' }>(),
+  defineProps<{ chatId: string; title: string | null | undefined; hasAvatar?: boolean; size?: AvatarSize }>(),
   { hasAvatar: false, size: 'md' },
 )
 
@@ -21,5 +22,5 @@ watch(
 </script>
 
 <template>
-  <UiAvatar :title="title" :src="src" :size="size" />
+  <UiAvatar :title="title" :src="src" :size="size" :seed="chatId" />
 </template>

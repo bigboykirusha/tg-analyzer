@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ParseProgressDto } from '@tg-analyzer/shared'
-import { Square } from '../../lib/icons'
 
 const props = defineProps<{ progress: ParseProgressDto; cancelling?: boolean }>()
 const emit = defineEmits<{ cancel: [] }>()
@@ -42,27 +41,26 @@ const remaining = computed(() => {
 </script>
 
 <template>
-  <section class="analysis-progress" aria-live="polite">
-    <div class="analysis-progress__header">
+  <section class="panel analysis-progress" aria-live="polite">
+    <div class="analysis-progress__head">
+      <ChatAvatar :chat-id="progress.chatId ?? ''" :title="progress.chatTitle" size="sm" />
       <div class="analysis-progress__copy">
         <h2 class="analysis-progress__title">
           {{ t('analysis.title', { chat: progress.chatTitle || t('analysis.untitledChat') }) }}
         </h2>
-        <p class="t-small t-muted">{{ phaseLabel }}</p>
+        <p class="analysis-progress__phase">
+          <UiBadge v-if="progress.phase === 'waiting'" tone="warning">{{ t('analysis.paused') }}</UiBadge>
+          <span>{{ phaseLabel }}</span>
+        </p>
       </div>
-      <UiIconButton
-        :icon="Square"
-        :label="cancelling ? t('analysis.cancelling') : t('analysis.cancel')"
-        variant="danger"
-        size="sm"
-        :disabled="cancelling"
-        @click="emit('cancel')"
-      />
+      <UiButton variant="ghost" size="sm" :loading="cancelling" @click="emit('cancel')">
+        {{ cancelling ? t('analysis.cancelling') : t('analysis.cancelShort') }}
+      </UiButton>
     </div>
 
     <div
-      class="analysis-progress__bar"
-      :class="{ 'is-indeterminate': fraction === null }"
+      class="track"
+      :class="{ 'track--indeterminate': fraction === null }"
       role="progressbar"
       :aria-label="t('analysis.progressLabel')"
       :aria-valuenow="fraction === null ? undefined : Math.round(fraction * 100)"
@@ -72,9 +70,9 @@ const remaining = computed(() => {
       <span :style="fraction === null ? undefined : { width: `${Math.max(2, fraction * 100)}%` }" />
     </div>
 
-    <div class="analysis-progress__meta t-small">
-      <span>{{ counter ?? t('analysis.preparing') }}</span>
-      <span class="t-muted">
+    <div class="analysis-progress__meta">
+      <span class="analysis-progress__counter">{{ counter ?? t('analysis.preparing') }}</span>
+      <span>
         <template v-if="fraction !== null">{{ formatPercent(fraction * 100) }} · </template>
         <template v-if="remaining">{{ t('analysis.remaining', { time: remaining }) }}</template>
         <template v-else>{{ t('analysis.elapsed', { time: formatCountdown(elapsedSeconds) }) }}</template>
@@ -85,59 +83,41 @@ const remaining = computed(() => {
 
 <style scoped>
 .analysis-progress {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  display: grid;
+  gap: var(--space-4);
   min-width: 0;
   padding: var(--space-5);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
   animation: fade-in var(--transition-normal) both;
 }
 
-.analysis-progress__header {
+.analysis-progress__head {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .analysis-progress__copy {
-  display: flex;
+  display: grid;
+  flex: 1 1 auto;
   min-width: 0;
-  flex-direction: column;
-  gap: var(--space-1);
 }
 
 .analysis-progress__title {
   overflow: hidden;
-  font-size: 1.0625rem;
-  font-weight: 650;
-  line-height: 1.35;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.analysis-progress__bar {
-  position: relative;
-  height: 6px;
-  overflow: hidden;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--surface) 80%, var(--border));
-}
-
-.analysis-progress__bar span {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: inherit;
-  background: var(--accent);
-  transition: width var(--transition-slow);
-}
-
-.analysis-progress__bar.is-indeterminate span {
-  width: 34%;
-  animation: indeterminate 1.4s ease-in-out infinite;
+.analysis-progress__phase {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--text-muted);
+  font: var(--text-small);
 }
 
 .analysis-progress__meta {
@@ -145,6 +125,33 @@ const remaining = computed(() => {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--space-2);
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.analysis-progress__counter {
+  color: var(--text);
+}
+
+.track {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+}
+
+.track span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width var(--transition-slow);
+}
+
+.track--indeterminate span {
+  width: 34%;
+  animation: indeterminate 1.4s var(--ease-standard) infinite;
 }
 
 @keyframes indeterminate {
@@ -154,13 +161,6 @@ const remaining = computed(() => {
 
   to {
     transform: translateX(310%);
-  }
-}
-
-@media (max-width: 640px) {
-  .analysis-progress {
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
   }
 }
 </style>

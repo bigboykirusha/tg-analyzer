@@ -1,5 +1,13 @@
 <script setup lang="ts">
-withDefaults(
+import { Trash2 } from '../../lib/icons'
+import Button from './Button.vue'
+
+/**
+ * Confirmation: a question as the title, consequences as the description and
+ * a concrete verb on the main button. `danger` adds the Trash2 tile, a filled
+ * danger button and `alertdialog`; focus starts on «Cancel».
+ */
+const props = withDefaults(
   defineProps<{
     open: boolean
     title: string
@@ -22,6 +30,13 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const cancelRef = ref<InstanceType<typeof Button> | null>(null)
+const isDanger = computed(() => props.variant === 'danger')
+
+function cancelButton() {
+  const el = cancelRef.value?.$el as HTMLElement | undefined
+  return el instanceof HTMLElement ? el : null
+}
 </script>
 
 <template>
@@ -31,16 +46,21 @@ const { t } = useI18n()
     :description="description"
     :close-label="t('common.close')"
     :busy="loading"
+    :role="isDanger ? 'alertdialog' : 'dialog'"
+    :initial-focus="cancelButton"
     size="sm"
     @close="emit('close')"
   >
+    <template v-if="isDanger" #media>
+      <span class="icon-tile icon-tile--danger" aria-hidden="true"><Trash2 /></span>
+    </template>
     <template #actions>
-      <UiButton variant="secondary" :disabled="loading" @click="emit('close')">
+      <Button ref="cancelRef" variant="secondary" :disabled="loading" @click="emit('close')">
         {{ cancelLabel || t('common.cancel') }}
-      </UiButton>
-      <UiButton :variant="variant === 'danger' ? 'danger' : 'primary'" :loading="loading" @click="emit('confirm')">
+      </Button>
+      <Button :variant="isDanger ? 'danger' : 'primary'" :loading="loading" @click="emit('confirm')">
         {{ confirmLabel }}
-      </UiButton>
+      </Button>
     </template>
   </UiModalDialog>
 </template>

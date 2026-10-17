@@ -102,7 +102,7 @@ function describe(cell: Cell) {
 
 <style scoped>
 .heatmap {
-  --gap: 4px;
+  --gap: var(--space-1);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -135,8 +135,7 @@ function describe(cell: Cell) {
 .heatmap__month {
   overflow: visible;
   color: var(--text-muted);
-  font-size: 11px;
-  line-height: 16px;
+  font: var(--text-caption);
   white-space: nowrap;
 }
 
@@ -145,7 +144,7 @@ function describe(cell: Cell) {
   grid-template-rows: repeat(7, var(--cell));
   gap: var(--gap);
   color: var(--text-muted);
-  font-size: 11px;
+  font: var(--text-caption);
 }
 
 .heatmap__weekdays span {
@@ -164,7 +163,7 @@ function describe(cell: Cell) {
   display: block;
   width: var(--cell, 12px);
   height: var(--cell, 12px);
-  border-radius: calc(var(--cell, 12px) / 4);
+  border-radius: var(--radius-xs);
 }
 
 .heatmap__cell--pad {
@@ -176,15 +175,15 @@ function describe(cell: Cell) {
 }
 
 .heatmap__cell--1 {
-  background: color-mix(in srgb, var(--accent) 25%, var(--surface-2));
+  background: var(--heat-1);
 }
 
 .heatmap__cell--2 {
-  background: color-mix(in srgb, var(--accent) 50%, var(--surface-2));
+  background: var(--heat-2);
 }
 
 .heatmap__cell--3 {
-  background: color-mix(in srgb, var(--accent) 75%, var(--surface-2));
+  background: var(--heat-3);
 }
 
 .heatmap__cell--4 {

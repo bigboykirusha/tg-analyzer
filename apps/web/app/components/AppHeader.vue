@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Clock, LayoutGrid, LogOut, Trash2 } from '../lib/icons'
+import { Clock, Globe, LayoutGrid, LogOut, Moon, Sun, Trash2 } from '../lib/icons'
 
 const auth = useAuthStore()
 const route = useRoute()
 const { deleteAccount, logout } = useAuth()
-const { t } = useI18n()
+const { t, locale, setLocale } = useI18n()
+const { resolved, setPreference } = useTheme()
 const toast = useToast()
 const errorMessage = useErrorMessage()
 
@@ -22,8 +23,10 @@ watch(
 const isDashboard = computed(() => route.path.startsWith('/dashboard'))
 const isHistory = computed(() => route.path.startsWith('/history'))
 const isReport = computed(() => route.path.startsWith('/chat/'))
+const pageTitle = computed(() => (isHistory.value ? t('nav.history') : t('nav.chats')))
 const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
 const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : ''))
+const isDark = computed(() => resolved.value === 'dark')
 
 function askDeleteAccount() {
   accountOpen.value = false
@@ -53,83 +56,78 @@ function signOut() {
     <div class="topbar glass-surface">
       <NuxtLink to="/dashboard" class="brand" aria-label="TG Analyzer">
         <span class="brand-mark" aria-hidden="true"><i /><i /><i /></span>
-        <span>TG Analyzer</span>
+        <span class="brand-name">TG Analyzer</span>
       </NuxtLink>
+      <span class="mobile-title" aria-hidden="true">{{ pageTitle }}</span>
       <nav class="desktop-nav" :aria-label="t('nav.main')">
-        <NuxtLink
-          to="/dashboard"
-          class="topbar-link"
-          :class="{ active: isDashboard }"
-          :aria-current="isDashboard ? 'page' : undefined"
-        >
+        <NuxtLink to="/dashboard" class="nav-link" :aria-current="isDashboard ? 'page' : undefined">
           {{ t('nav.chats') }}
         </NuxtLink>
-        <NuxtLink
-          to="/history"
-          class="topbar-link"
-          :class="{ active: isHistory }"
-          :aria-current="isHistory ? 'page' : undefined"
-        >
+        <NuxtLink to="/history" class="nav-link" :aria-current="isHistory ? 'page' : undefined">
           {{ t('nav.history') }}
         </NuxtLink>
       </nav>
       <div class="topbar-actions">
-        <UiLocaleSwitch class="desktop-locale" />
-        <UiThemeToggle />
-        <UiPopoverMenu v-model:open="accountOpen" class="account-menu" align="end" :aria-label="displayName">
+        <div class="desktop-only">
+          <UiLocaleSwitch />
+          <UiThemeToggle />
+        </div>
+        <UiPopoverMenu v-model:open="accountOpen" align="end" :aria-label="displayName">
           <template #trigger>
             <button
               type="button"
               class="account-trigger"
+              aria-haspopup="menu"
               :aria-expanded="accountOpen"
               :aria-label="displayName"
               @click="accountOpen = !accountOpen"
             >
-              <ProfileAvatar :title="displayName" />
+              <ProfileAvatar :title="displayName" size="sm" />
             </button>
           </template>
-          <div class="account-popover">
-            <div class="account-identity">
-              <ProfileAvatar :title="displayName" />
-              <span>
-                <strong>{{ displayName }}</strong>
-                <small v-if="handle">{{ handle }}</small>
-              </span>
-            </div>
-            <div class="mobile-account-preferences"><UiLocaleSwitch /></div>
-            <UiMenuItem role="menuitem" :icon="LogOut" @click="signOut">{{ t('account.logout') }}</UiMenuItem>
-            <div class="account-divider" role="separator" />
-            <UiMenuItem role="menuitem" :icon="Trash2" danger @click="askDeleteAccount">
-              {{ t('account.delete') }}
+          <div class="menu-identity">
+            <ProfileAvatar :title="displayName" size="sm" />
+            <span class="menu-identity__copy">
+              <strong class="menu-identity__name">{{ displayName }}</strong>
+              <small v-if="handle" class="menu-identity__sub">{{ handle }}</small>
+            </span>
+          </div>
+          <div class="menu-divider" role="separator" />
+          <div class="mobile-preferences">
+            <UiMenuItem
+              role="menuitem"
+              :icon="Globe"
+              :meta="locale.toUpperCase()"
+              @click="setLocale(locale === 'ru' ? 'en' : 'ru')"
+            >
+              {{ t('nav.language') }}
+            </UiMenuItem>
+            <UiMenuItem role="menuitem" :icon="isDark ? Sun : Moon" @click="setPreference(isDark ? 'light' : 'dark')">
+              {{ isDark ? t('theme.light') : t('theme.dark') }}
             </UiMenuItem>
           </div>
+          <UiMenuItem role="menuitem" :icon="LogOut" @click="signOut">{{ t('account.logout') }}</UiMenuItem>
+          <div class="menu-divider" role="separator" />
+          <UiMenuItem role="menuitem" :icon="Trash2" danger @click="askDeleteAccount">
+            {{ t('account.deleteMenu') }}
+          </UiMenuItem>
         </UiPopoverMenu>
       </div>
     </div>
     <div id="mobile-report-toolbar" class="mobile-report-toolbar glass-surface" />
-    <nav v-if="!isReport" class="mobile-tabbar glass-surface" :aria-label="t('nav.main')">
-      <NuxtLink
-        to="/dashboard"
-        class="mobile-tab"
-        :class="{ active: isDashboard }"
-        :aria-current="isDashboard ? 'page' : undefined"
-      >
-        <LayoutGrid :size="18" aria-hidden="true" />
+    <nav v-if="!isReport" class="tabbar glass-surface" :aria-label="t('nav.main')">
+      <NuxtLink to="/dashboard" class="tab" :aria-current="isDashboard ? 'page' : undefined">
+        <LayoutGrid aria-hidden="true" />
         <span>{{ t('nav.chats') }}</span>
       </NuxtLink>
-      <NuxtLink
-        to="/history"
-        class="mobile-tab"
-        :class="{ active: isHistory }"
-        :aria-current="isHistory ? 'page' : undefined"
-      >
-        <Clock :size="18" aria-hidden="true" />
+      <NuxtLink to="/history" class="tab" :aria-current="isHistory ? 'page' : undefined">
+        <Clock aria-hidden="true" />
         <span>{{ t('nav.history') }}</span>
       </NuxtLink>
     </nav>
     <UiConfirmDialog
       :open="confirmDeleteOpen"
-      :title="t('account.delete')"
+      :title="t('account.deleteTitle')"
       :description="t('account.deleteConfirm')"
       :confirm-label="t('account.delete')"
       variant="danger"
@@ -144,240 +142,212 @@ function signOut() {
 .app-navigation {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: var(--z-header);
 }
+
 .topbar {
   display: flex;
   align-items: center;
-  min-height: 72px;
-  gap: var(--space-4);
-  margin: 0;
-  padding: 10px clamp(var(--space-4), 3vw, var(--space-8));
+  gap: var(--space-6);
+  min-height: var(--topbar-height);
+  padding: 0 var(--space-6);
   border-width: 0 0 1px;
+  border-color: var(--border);
   border-radius: 0;
+  box-shadow: none;
 }
+
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
+  border-radius: var(--radius-sm);
   color: var(--text);
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  line-height: 24px;
+  letter-spacing: -0.02em;
   white-space: nowrap;
 }
+
 .brand-mark {
   display: inline-flex;
-  align-items: end;
+  align-items: flex-end;
   justify-content: center;
-  gap: 3px;
-  width: 42px;
-  height: 42px;
-  padding: 9px;
+  gap: 2px;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  padding: var(--space-2);
   border-radius: 50%;
   background: var(--accent);
 }
+
 .brand-mark i {
   width: 4px;
   border-radius: var(--radius-full);
   background: var(--on-accent);
 }
+
 .brand-mark i:nth-child(1) {
-  height: 9px;
+  height: 8px;
 }
+
 .brand-mark i:nth-child(2) {
-  height: 18px;
+  height: 16px;
 }
+
 .brand-mark i:nth-child(3) {
-  height: 13px;
+  height: 11px;
 }
+
+.mobile-title {
+  display: none;
+}
+
 .desktop-nav {
   display: flex;
-  gap: 4px;
-  margin-left: 16px;
+  gap: var(--space-1);
 }
-.topbar-link,
-.mobile-tab {
+
+.nav-link {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 18px;
+  min-height: var(--control-sm);
+  padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   color: var(--text-muted);
-  font-weight: 600;
+  font: var(--text-control);
   transition:
-    background var(--transition-fast),
+    background-color var(--transition-fast),
     color var(--transition-fast);
 }
-.topbar-link:hover,
-.topbar-link.active {
+
+@media (hover: hover) {
+  .nav-link:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
+}
+
+.nav-link[aria-current='page'] {
   background: var(--surface-2);
   color: var(--text);
 }
-.topbar-link:focus-visible,
-.mobile-tab:focus-visible,
-.account-trigger:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
+
 .topbar-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-1);
   margin-left: auto;
 }
-.account-trigger {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-}
-.account-menu {
-  width: 42px;
-  height: 42px;
-}
-.account-trigger[aria-expanded='true'] {
-  border-color: var(--accent-border);
-  box-shadow: var(--focus-ring);
-}
-.account-menu :deep(.popover-panel) {
-  width: min(300px, calc(100vw - 32px));
-  padding: 8px;
-  background: var(--surface);
-  border-color: var(--border);
-}
-.account-popover {
-  display: grid;
-  gap: 4px;
-}
-.account-identity {
+
+.desktop-only {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 10px 16px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--border);
+  gap: var(--space-1);
 }
-.account-identity span {
+
+.account-trigger {
   display: grid;
-  min-width: 0;
-  gap: 2px;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
 }
-.account-identity strong,
-.account-identity small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
+.account-trigger:focus-visible,
+.account-trigger[aria-expanded='true'] {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
-.account-divider {
-  height: 1px;
-  margin: 4px 8px;
-  background: var(--border);
-}
-.account-identity small {
-  color: var(--text-muted);
-}
-.mobile-tabbar {
+
+.mobile-preferences {
   display: none;
 }
-.mobile-account-preferences,
+
+.tabbar,
 .mobile-report-toolbar {
   display: none;
 }
-@media (max-width: 380px) {
-  .brand > span:last-child {
-    display: none;
-  }
-}
-@media (max-width: 768px) {
+
+@media (max-width: 640px) {
   .topbar {
-    min-height: 70px;
-    margin: 0;
-    padding: 12px 16px;
-    border-width: 0 0 1px;
-    border-radius: 0;
-    background: var(--glass-sheen), color-mix(in srgb, var(--glass) 92%, var(--bg));
-    box-shadow: var(--glass-inset);
-    backdrop-filter: var(--glass-filter);
+    gap: var(--space-3);
+    padding: 0 var(--space-4);
   }
-  .brand {
-    font-size: 18px;
-  }
+
+  .brand-name,
   .desktop-nav,
-  .desktop-locale {
+  .desktop-only {
     display: none;
   }
-  .mobile-account-preferences {
-    display: flex;
-    padding: 4px 10px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 8px;
-  }
-  .mobile-report-toolbar:not(:empty) {
+
+  .mobile-title {
     display: block;
-    width: 100%;
+    flex: 1 1 auto;
     min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
-    overflow-x: clip;
-    padding: 10px 16px;
-    border-width: 0 0 1px;
-    border-radius: 0;
+    overflow: hidden;
+    font: var(--text-title);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
+
+  .mobile-preferences {
+    display: grid;
+    gap: var(--space-1);
+  }
+
   .app-navigation--report .topbar {
     display: none;
   }
-  .app-navigation--report .mobile-report-toolbar:not(:empty) {
+
+  .mobile-report-toolbar:not(:empty) {
     display: flex;
-    min-height: 70px;
     align-items: center;
-    padding: 14px 20px;
-    background: var(--glass-sheen), color-mix(in srgb, var(--glass) 92%, var(--bg));
-    box-shadow: var(--glass-inset);
-    backdrop-filter: var(--glass-filter);
-  }
-  .topbar-actions {
-    gap: 12px;
-  }
-  .mobile-tabbar {
-    position: fixed;
-    z-index: 30;
-    right: 16px;
-    bottom: max(16px, env(safe-area-inset-bottom));
-    left: 16px;
-    display: flex;
-    padding: 4px;
-    border-radius: var(--radius-full);
-    transition:
-      background-color var(--transition-normal),
-      border-color var(--transition-normal),
-      box-shadow var(--transition-normal),
-      backdrop-filter var(--transition-normal);
-  }
-  .mobile-tab {
-    flex: 1;
-    gap: 7px;
     min-width: 0;
-    padding: 0 10px;
-    font-size: 14px;
-    border-radius: calc(var(--radius-full) - 4px);
-    transition:
-      color var(--transition-fast),
-      background-color var(--transition-fast),
-      transform var(--transition-fast);
+    min-height: var(--topbar-height);
+    padding: var(--space-2) var(--space-4);
+    border-width: 0 0 1px;
+    border-color: var(--border);
+    border-radius: 0;
+    box-shadow: none;
   }
-  .mobile-tab.active {
-    background: var(--surface-2);
-    color: var(--text);
-    box-shadow: var(--shadow);
-    transform: translateY(-1px);
+
+  .tabbar {
+    position: fixed;
+    z-index: var(--z-header);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    padding: var(--space-2) var(--space-2) max(var(--space-3), env(safe-area-inset-bottom));
+    border-width: 1px 0 0;
+    border-color: var(--border);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .tab {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 2px;
+    min-height: var(--control-lg);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font: var(--text-caption);
+    --icon-size: 22px;
+  }
+
+  .tab[aria-current='page'] {
+    color: var(--accent);
+    font-weight: 600;
   }
 }
 </style>

@@ -4,17 +4,24 @@ function cssVar(name: string) {
   return import.meta.client ? getComputedStyle(document.documentElement).getPropertyValue(name).trim() : ''
 }
 
-const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", Manrope, system-ui, sans-serif'
+function px(name: string, fallback: number) {
+  return Number.parseFloat(cssVar(name)) || fallback
+}
+
+const FALLBACK_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", Manrope, system-ui, sans-serif'
 
 /**
- * ECharts settings derived from the CSS design tokens. Recomputed when the
- * theme changes so charts repaint with the right colours.
+ * ECharts settings derived from the CSS design tokens: transparent background,
+ * axes without lines, `caption` labels in `text-muted`, `border` grid lines and
+ * a `surface-raised` tooltip. Recomputed when the theme changes so charts
+ * repaint with the right colours.
  */
 export function useChartTheme() {
   const { resolved } = useTheme()
 
   return computed(() => {
     void resolved.value
+    const font = cssVar('--font-sans') || FALLBACK_FONT
     const colors = {
       sent: cssVar('--accent'),
       received: cssVar('--accent-2'),
@@ -22,25 +29,39 @@ export function useChartTheme() {
       muted: cssVar('--text-muted'),
       border: cssVar('--border'),
       surface: cssVar('--surface'),
+      raised: cssVar('--surface-raised'),
+      warning: cssVar('--warning'),
+      heat: [cssVar('--surface-2'), cssVar('--heat-1'), cssVar('--heat-2'), cssVar('--heat-3'), cssVar('--accent')],
     }
-    const axisLabel = { color: colors.muted, fontSize: 12, fontFamily: FONT }
+    const space2 = px('--space-2', 8)
+    const space3 = px('--space-3', 12)
+    const axisLabel = { color: colors.muted, fontSize: 12, lineHeight: 16, fontWeight: 500, fontFamily: font }
 
     return {
       colors,
+      /** Bar corners: 3px on the top edge only. */
+      barRadius: [3, 3, 0, 0] as [number, number, number, number],
       base: {
         backgroundColor: 'transparent',
-        textStyle: { fontFamily: FONT, color: colors.muted },
-        grid: { left: 8, right: 8, top: 12, bottom: 8, containLabel: true },
+        textStyle: { fontFamily: font, color: colors.muted },
+        grid: { left: space2, right: space2, top: space3, bottom: space2, containLabel: true },
         tooltip: {
           trigger: 'axis' as const,
-          backgroundColor: colors.surface,
+          backgroundColor: colors.raised,
           borderColor: colors.border,
           borderWidth: 1,
-          padding: [10, 12],
-          textStyle: { color: colors.text, fontSize: 13, fontFamily: FONT },
-          extraCssText: 'border-radius: 12px;',
+          padding: [space2, space3],
+          textStyle: { color: colors.text, fontSize: 13, fontFamily: font },
+          extraCssText: `border-radius: ${cssVar('--radius-sm') || '10px'}; box-shadow: ${cssVar('--shadow-overlay')};`,
         },
-        legend: { top: 0, icon: 'circle', textStyle: { color: colors.muted, fontFamily: FONT } },
+        legend: {
+          bottom: 0,
+          icon: 'circle',
+          itemWidth: 8,
+          itemHeight: 8,
+          itemGap: px('--space-4', 16),
+          textStyle: { color: colors.muted, fontSize: 13, fontFamily: font },
+        },
       },
       categoryAxis: (data: string[], extra: Record<string, unknown> = {}) => ({
         type: 'category' as const,

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
+import { Info } from '../../lib/icons'
 
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatNumber, formatDecimal } = useI18n()
@@ -67,7 +68,10 @@ const peak = computed(() => {
       />
     </ReportKpis>
 
-    <div v-if="totals.messages < 20" class="banner" role="status">{{ t('report.lowData') }}</div>
+    <div v-if="totals.messages < 20" class="banner" role="status">
+      <Info aria-hidden="true" />
+      <p class="banner__text">{{ t('report.lowData') }}</p>
+    </div>
 
     <UiSegmentedControl v-model="tab" class="no-print" :options="tabs" :aria-label="t('report.tabs.label')" />
 

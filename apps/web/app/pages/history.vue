@@ -27,6 +27,14 @@ const pageCount = computed(() => Math.max(1, Math.ceil((history.value?.total ?? 
 const reportIds = computed(() => new Set(workspace.reports.map((report) => report.chatId)))
 const hasFinishedJobs = computed(() => history.value?.items.some((job) => !isActive(job.status)) ?? false)
 
+const STATUS_TONE: Record<JobStatus, 'neutral' | 'accent' | 'danger'> = {
+  pending: 'neutral',
+  running: 'accent',
+  completed: 'accent',
+  failed: 'danger',
+  cancelled: 'neutral',
+}
+
 function isActive(status: JobStatus) {
   return status === 'pending' || status === 'running'
 }
@@ -102,7 +110,7 @@ onMounted(() => {
           <p class="t-body">{{ t('history.subtitle') }}</p>
         </div>
         <UiButton v-if="hasFinishedJobs" variant="ghost" size="sm" :icon="Trash2" @click="confirmClearOpen = true">
-          {{ t('history.clear') }}
+          {{ t('history.clearMenu') }}
         </UiButton>
       </header>
 
@@ -131,7 +139,7 @@ onMounted(() => {
             <div class="job__copy">
               <div class="job__title-row">
                 <span class="job__title">{{ job.chatTitle || (job.chatId ? job.chatId : t('history.allChats')) }}</span>
-                <span class="job__status" :class="`job__status--${job.status}`">{{ t(`status.${job.status}`) }}</span>
+                <UiBadge :tone="STATUS_TONE[job.status]" :live="job.status === 'running'">{{ t(`status.${job.status}`) }}</UiBadge>
               </div>
               <span class="t-small t-muted">{{ meta(job) }}</span>
               <span v-if="job.error" class="t-small job__error">{{ t(`analysis.error.${job.error}`) }}</span>
@@ -171,7 +179,7 @@ onMounted(() => {
 
     <UiConfirmDialog
       :open="confirmClearOpen"
-      :title="t('history.clear')"
+      :title="t('history.clearTitle')"
       :description="t('history.clearConfirm')"
       :confirm-label="t('history.clear')"
       variant="danger"
@@ -200,7 +208,8 @@ onMounted(() => {
 .job-list {
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
   list-style: none;
 }
 
@@ -209,6 +218,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  min-height: 72px;
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
 }
@@ -233,36 +243,11 @@ onMounted(() => {
 
 .job__title {
   overflow: hidden;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
+  line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.job__status {
-  flex-shrink: 0;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  background: var(--surface-2);
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.job__status--completed {
-  background: var(--accent-subtle);
-  color: var(--accent);
-}
-
-.job__status--failed {
-  background: var(--danger-subtle);
-  color: var(--danger);
-}
-
-.job__status--pending,
-.job__status--running {
-  background: var(--warning-subtle);
-  color: var(--warning);
 }
 
 .job__error {

@@ -170,7 +170,7 @@ const connections = computed(() => {
 
 .member__name {
   overflow: hidden;
-  font-weight: 560;
+  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -187,11 +187,14 @@ const connections = computed(() => {
 }
 
 .role__badge {
-  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--space-2);
   border-radius: var(--radius-full);
   background: var(--accent-subtle);
-  color: var(--accent);
-  font-size: 0.8125rem;
+  color: var(--accent-ink);
+  font: var(--text-caption);
   font-weight: 600;
 }
 

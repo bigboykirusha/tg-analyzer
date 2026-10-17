@@ -98,8 +98,8 @@ function submit() {
 
 <template>
   <form class="auth-form" @submit.prevent="submit">
-    <label class="auth-field">
-      <span class="t-label">{{ t('login.codeLabel') }}</span>
+    <label class="field">
+      <span class="field__label">{{ t('login.codeLabel') }}</span>
       <div class="otp-row" @paste="handlePaste">
         <input
           v-for="(_, index) in digits"
@@ -120,7 +120,7 @@ function submit() {
           @keydown="handleKeydown($event, index)"
         />
       </div>
-      <span class="t-small">{{ t('login.codeHelp') }}</span>
+      <span class="field__hint">{{ t('login.codeHelp') }}</span>
     </label>
     <div class="code-actions t-small">
       <button type="button" class="text-action" :disabled="resendSeconds > 0 || loading" @click="emit('resend')">
@@ -141,12 +141,6 @@ function submit() {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-}
-
-.auth-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
 }
 
 .code-actions {
@@ -170,7 +164,7 @@ function submit() {
 }
 
 .text-action-primary:not(:disabled) {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .otp-row {
@@ -181,27 +175,29 @@ function submit() {
 
 .otp-input {
   width: 100%;
-  height: 52px;
-  border: 1px solid var(--border);
+  height: var(--control-lg);
+  border: 1px solid var(--control-border);
   border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 20px;
+  font-weight: 600;
   text-align: center;
   outline: none;
   transition:
     border-color var(--transition-fast),
-    box-shadow var(--transition-fast),
-    background var(--transition-fast);
+    box-shadow var(--transition-fast);
+}
+
+@media (hover: hover) {
+  .otp-input:hover {
+    border-color: var(--text-muted);
+  }
 }
 
 .otp-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-subtle);
-}
-
-.otp-input:hover {
-  background: var(--surface-2);
+  box-shadow: var(--focus-halo);
 }
 </style>

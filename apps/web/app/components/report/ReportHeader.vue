@@ -10,7 +10,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ reanalyse: []; download: []; share: []; delete: [] }>()
 const { t, formatDay } = useI18n()
-const isMobile = useMediaQuery('(max-width: 768px)')
+const isMobile = useMediaQuery('(max-width: 640px)')
 const menuOpen = ref(false)
 
 const period = computed(() => {
@@ -31,10 +31,10 @@ function run(action: 'download' | 'share' | 'delete') {
 <template>
   <Teleport defer to="#mobile-report-toolbar" :disabled="!isMobile">
     <div class="report-header">
-      <UiIconButton :icon="ArrowLeft" :label="t('common.back')" variant="secondary" class="no-print" to="/dashboard" />
+      <UiIconButton :icon="ArrowLeft" :label="t('common.back')" variant="ghost" class="no-print" to="/dashboard" />
 
       <div class="report-header__identity">
-        <ChatAvatar :chat-id="summary.chatId" :title="summary.title" size="lg" />
+        <ChatAvatar :chat-id="summary.chatId" :title="summary.title" :size="isMobile ? 'md' : 'lg'" />
         <div class="report-header__copy">
           <h1 class="report-header__title">{{ summary.title }}</h1>
           <p class="t-small t-muted">{{ period }}</p>
@@ -55,8 +55,11 @@ function run(action: 'download' | 'share' | 'delete') {
             <UiIconButton
               :icon="MoreHorizontal"
               :label="t('report.actions')"
-              variant="secondary"
+              variant="ghost"
               :loading="exporting"
+              :no-tooltip="menuOpen"
+              aria-haspopup="menu"
+              :aria-expanded="menuOpen"
               @click="menuOpen = !menuOpen"
             />
           </template>
@@ -66,8 +69,9 @@ function run(action: 'download' | 'share' | 'delete') {
           <UiMenuItem role="menuitem" :icon="Send" :disabled="exporting" @click="run('share')">
             {{ t('report.sendToSaved') }}
           </UiMenuItem>
+          <div class="menu-divider" role="separator" />
           <UiMenuItem role="menuitem" :icon="Trash2" danger @click="run('delete')">
-            {{ t('report.delete') }}
+            {{ t('report.deleteMenu') }}
           </UiMenuItem>
         </UiPopoverMenu>
       </div>
@@ -101,10 +105,8 @@ function run(action: 'download' | 'share' | 'delete') {
 
 .report-header__title {
   overflow: hidden;
-  font-size: 34px;
-  font-weight: 720;
-  line-height: 1.05;
-  letter-spacing: -0.04em;
+  font: var(--text-h1);
+  letter-spacing: -0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -116,24 +118,27 @@ function run(action: 'download' | 'share' | 'delete') {
 }
 
 @media (max-width: 768px) {
+  .report-header__title {
+    font-size: 26px;
+    line-height: 32px;
+  }
+}
+
+@media (max-width: 640px) {
   .report-header {
     gap: var(--space-3);
   }
 
-  .report-header__title {
-    font-size: 18px;
-    letter-spacing: -0.02em;
+  .report-header__copy {
+    gap: 0;
   }
 
-  .report-header__identity :deep(.avatar) {
-    width: 40px;
-    height: 40px;
-    font-size: 14px;
+  .report-header__title {
+    font: var(--text-title);
   }
 
   .report-header__copy .t-small {
     overflow: hidden;
-    font-size: 12px;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
