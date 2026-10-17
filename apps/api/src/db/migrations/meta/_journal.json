@@ -85,6 +85,13 @@
       "when": 1792339200000,
       "tag": "0011_analysis_queue",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792425600000,
+      "tag": "0012_report_previous_snapshot",
+      "breakpoints": true
     }
   ]
 }

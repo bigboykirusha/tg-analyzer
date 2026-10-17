@@ -12,7 +12,14 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
-import type { ChatReport, ChatType, ContactStatsDto, JobStatus, PeopleOverviewStatus } from '@tg-analyzer/shared'
+import type {
+  ChatReport,
+  ChatType,
+  ContactStatsDto,
+  JobStatus,
+  PeopleOverviewStatus,
+  ReportSnapshotDto,
+} from '@tg-analyzer/shared'
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 
@@ -92,6 +99,8 @@ export const chatReports = pgTable(
     lastMessageAt: timestamp('last_message_at', { withTimezone: true }),
     analyzedAt: timestamp('analyzed_at', { withTimezone: true }).defaultNow().notNull(),
     report: jsonb('report').$type<ChatReport>().notNull(),
+    /** Headline numbers of the analysis this one replaced. */
+    previousSnapshot: jsonb('previous_snapshot').$type<ReportSnapshotDto>(),
   },
   (table) => [
     uniqueIndex('chat_reports_user_chat_idx').on(table.userId, table.tgChatId),

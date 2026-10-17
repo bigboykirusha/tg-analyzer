@@ -549,8 +549,21 @@ export interface ReportsResponse {
   reports: ReportSummaryDto[]
 }
 
+/** The headline numbers of a report, kept when the chat is analysed again. */
+export interface ReportSnapshotDto {
+  analyzedAt: string
+  messages: number
+  sent: number
+  received: number
+  medianMineSec: number | null
+  medianTheirsSec: number | null
+  iWriteFirstPct: number | null
+}
+
 export interface ReportDto {
   summary: ReportSummaryDto
   report: ChatReport
   derived: DerivedReportMetrics
+  /** The previous analysis of this chat, for «what changed»; null for the first one. */
+  previous: ReportSnapshotDto | null
 }

@@ -225,3 +225,23 @@ test('avatars are fetched in batches and cached', async () => {
   })
   assert.equal(tooMany.statusCode, 400)
 })
+
+test('a re-analysis keeps the previous headline numbers for «what changed»', async () => {
+  const session = await login()
+  await analyse(session, PRIVATE_CHAT)
+  const first = (
+    await app.inject({ url: `/api/v1/reports/${PRIVATE_CHAT}`, headers: session.headers })
+  ).json<ReportDto>()
+  assert.equal(first.previous, null)
+
+  // Skip the cooldown that normally separates two analyses of one chat.
+  await redis.del(`parse:cooldown:${session.userId}:${PRIVATE_CHAT}`)
+  await analyse(session, PRIVATE_CHAT)
+  const second = (
+    await app.inject({ url: `/api/v1/reports/${PRIVATE_CHAT}`, headers: session.headers })
+  ).json<ReportDto>()
+  assert.ok(second.previous)
+  assert.equal(second.previous.messages, first.report.totals.messages)
+  assert.equal(second.previous.sent, first.report.totals.sent)
+  assert.equal(second.previous.analyzedAt, first.summary.analyzedAt)
+})

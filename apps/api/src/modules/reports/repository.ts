@@ -9,6 +9,7 @@ import {
   type ReportDto,
   type ReportSummaryDto,
   type ResponseStatsDto,
+  snapshotReport,
 } from '@tg-analyzer/shared'
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import { db, schema } from '../../db'
@@ -54,7 +55,12 @@ export async function getReport(userId: string, chatId: string): Promise<ReportD
   if (!row) return null
 
   const report = normalizeReport(row.report, row)
-  return { summary: toSummary(row), report, derived: deriveReportMetrics(report) }
+  return {
+    summary: toSummary(row),
+    report,
+    derived: deriveReportMetrics(report),
+    previous: row.previousSnapshot ?? null,
+  }
 }
 
 export async function deleteReport(userId: string, chatId: string) {
@@ -85,7 +91,13 @@ export async function saveReportAndCompleteJob(input: {
       .returning({ id: schema.parseJobs.id })
     if (!job) return false
 
+    // The report being replaced becomes the baseline for «what changed».
+    const existing = await tx.query.chatReports.findFirst({
+      columns: { report: true, analyzedAt: true },
+      where: and(eq(schema.chatReports.userId, input.userId), eq(schema.chatReports.tgChatId, Number(input.chatId))),
+    })
     const values = {
+      previousSnapshot: existing ? snapshotReport(existing.report, existing.analyzedAt) : null,
       title: input.title,
       chatType: input.chatType,
       totalMessages: input.report.totals.messages,
