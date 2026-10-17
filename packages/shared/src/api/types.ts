@@ -495,6 +495,40 @@ export interface ReportSummaryDto {
   analyzedAt: string
 }
 
+/** Recent statistics of one private chat for the people overview. */
+export interface ContactStatsDto {
+  chatId: string
+  title: string
+  hasAvatar: boolean
+  /** Messages in the last 90 days. */
+  messages90: number
+  sent90: number
+  received90: number
+  /** Messages in the last 30 days and in the 30 days before. */
+  last30: number
+  previous30: number
+  lastMessageAt: string | null
+  medianMineSec: number | null
+  medianTheirsSec: number | null
+  mineSamples: number
+  theirsSamples: number
+  /** Share of conversations you started, 0–100. */
+  iWriteFirstPct: number | null
+  conversations: number
+}
+
+export type PeopleOverviewStatus = 'empty' | 'running' | 'ready' | 'failed'
+
+export interface PeopleOverviewDto {
+  status: PeopleOverviewStatus
+  /** When the last complete overview finished. */
+  computedAt: string | null
+  /** Progress of a running overview. */
+  scannedChats: number
+  totalChats: number
+  contacts: ContactStatsDto[]
+}
+
 export interface ReportsResponse {
   reports: ReportSummaryDto[]
 }
