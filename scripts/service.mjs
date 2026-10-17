@@ -57,9 +57,7 @@ if (!service && action === 'build') {
   console.error(`  RAILWAY_SERVICE_NAME=${process.env.RAILWAY_SERVICE_NAME ?? '(unset)'}`)
   console.error('Set START_SERVICE to api, worker or web in the service variables.')
   process.exit(2)
-}
-
-else {
+} else {
   const args = COMMANDS[action][service]
   if (!args) {
     console.log(`[service] ${action}: nothing to do for ${service}`)
