@@ -30,7 +30,12 @@ docker compose up --build        # postgres, redis, migrate, api, worker, web
 
 ## Railway
 
-`railway.json` описывает сборку API, pre-deploy миграции и запуск через `scripts/start-from-env.mjs`. Создайте сервисы `api` и `worker` из одного репозитория и задайте каждому `START_SERVICE=api|worker` (или назовите сервисы `api`/`worker`). Web разверните отдельно (Vercel, Railway с командой `pnpm --filter @tg-analyzer/web build` и `START_SERVICE=web` или Docker-образ).
+`railway.json` общий для всех сервисов: сборка, миграции и запуск идут через `scripts/service.mjs`, который выбирает процесс так:
+
+1. переменная `START_SERVICE=api|worker|web` (надёжнее всего — задайте её в каждом сервисе);
+2. иначе по имени сервиса Railway: `worker` в имени → worker, `web`/`front`/`app` → web, `api`/`back`/`server` → api.
+
+Миграции (pre-deploy) выполняются только у api. Healthcheck `/health` включайте в настройках сервиса api — у worker нет HTTP.
 
 ## Чек-лист релиза
 
