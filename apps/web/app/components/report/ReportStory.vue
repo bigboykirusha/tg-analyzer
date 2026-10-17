@@ -1,172 +1,332 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import { ChevronLeft, ChevronRight, Download, Share2, X } from '../../lib/icons'
+import { ChevronLeft, ChevronRight, Download, Eye, EyeOff, Share2, X } from '../../lib/icons'
+import type { StorySlideModel } from './StorySlide.vue'
 
 /**
- * «Итоги»: the report as vertical 9:16 story slides, in the spirit of
- * Spotify Wrapped. Each slide can be saved as a 1080×1920 PNG or shared
- * through the phone's share sheet. The other person's name is hidden
- * unless the user turns it on.
+ * «Итоги» as Instagram-style stories: full screen on phones, a 9:16 frame on
+ * wider screens; progress bars on top, auto-advance, hold to pause, tap the
+ * sides or swipe to move, swipe down to close. Slides save as 1080×1920 PNGs
+ * or go to the phone's share sheet.
  */
 const props = defineProps<{ open: boolean; data: ReportDto }>()
 const emit = defineEmits<{ close: [] }>()
 
-const { t, tc, formatNumber, formatPercent, formatDuration, formatDay } = useI18n()
+const { t, tc, formatNumber, formatPercent, formatDuration, formatDay, formatDecimal } = useI18n()
 const toast = useToast()
 const image = useCardImage()
 
-type Theme = 'accent' | 'ink' | 'paper'
-interface Slide {
-  key: string
-  theme: Theme
-  kicker: string
-  big: string
-  sub?: string
-  /** Your share 0–100 for a split bar. */
-  split?: number
-}
+/** How long one slide stays before the next, like stories. */
+const SLIDE_MS = 6000
+/** A move longer than this is a swipe, shorter is a tap. */
+const SWIPE_PX = 40
+const DAY_SECONDS = 86_400
 
 const index = ref(0)
-const showName = ref(false)
-const slideRef = ref<HTMLElement | null>(null)
-const panelRef = ref<HTMLElement | null>(null)
-const open = toRef(props, 'open')
+const paused = ref(false)
+const hideName = ref(false)
 const canShare = ref(false)
+/** Slide rendered off screen for the image; null when not exporting. */
+const exportIndex = ref<number | null>(null)
+const panelRef = ref<HTMLElement | null>(null)
+const exportRef = ref<HTMLElement | null>(null)
+const open = toRef(props, 'open')
 
 useBodyScrollLock(open)
 useFocusTrap(panelRef, open, { onEscape: () => emit('close') })
 
-const LONG_DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
 const DAY_MONTH: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' }
+const LONG_DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
+const isGroup = computed(() => props.data.summary.type === 'group')
+const mine = computed(() => t('story.you'))
+const theirs = computed(() => (hideName.value && !isGroup.value ? t('story.them') : props.data.summary.title))
+const theirsShort = computed(() => (isGroup.value ? t('story.others') : theirs.value))
 
-const slides = computed<Slide[]>(() => {
-  const { report, summary } = props.data
-  const isGroup = summary.type === 'group'
-  const list: Slide[] = []
-  const { firstMessageAt, lastMessageAt } = report.period
+const top = (items: { value: string }[], count = 5) => items.slice(0, count).map((item) => item.value)
 
+const slides = computed<StorySlideModel[]>(() => {
+  const { report } = props.data
+  const { totals, facts, responses, vocabulary, activity, sessions, composition, period } = report
+  const list: StorySlideModel[] = []
+
+  // 1. Intro
   list.push({
     key: 'intro',
-    theme: 'accent',
+    theme: 1,
     kicker: t('story.kicker'),
-    big: showName.value ? t('story.introNamed', { name: summary.title }) : t('story.intro'),
+    title: t('story.introTitle'),
     sub:
-      firstMessageAt && lastMessageAt
-        ? `${formatDay(firstMessageAt.slice(0, 10), DAY_MONTH)} — ${formatDay(lastMessageAt.slice(0, 10), LONG_DATE)}`
+      period.firstMessageAt && period.lastMessageAt
+        ? `${formatDay(period.firstMessageAt.slice(0, 10), DAY_MONTH)} — ${formatDay(period.lastMessageAt.slice(0, 10), LONG_DATE)}`
         : undefined,
+    stats: [
+      { label: t('story.activeDays'), value: formatNumber(facts.activeDays) },
+      { label: t('story.conversations'), value: formatNumber(sessions.totalSessions) },
+      ...(facts.maxStreak.days >= 2
+        ? [{ label: t('story.bestStreak'), value: tc('report.highlights.days', facts.maxStreak.days) }]
+        : []),
+    ],
   })
 
-  list.push({
-    key: 'messages',
-    theme: 'ink',
-    kicker: t('story.messagesKicker'),
-    big: formatNumber(report.totals.messages),
-    sub: t('story.messagesSub', { days: report.facts.activeDays }),
-  })
-
-  if (report.totals.messages) {
-    const mine = (report.totals.sent / report.totals.messages) * 100
+  // 2. Messages and who writes more
+  if (totals.messages) {
     list.push({
-      key: 'balance',
-      theme: 'paper',
-      kicker: t('story.balanceKicker'),
-      big: formatPercent(mine),
-      sub: isGroup ? t('story.balanceGroup') : t('story.balanceSub', { theirs: formatPercent(100 - mine) }),
-      split: Math.round(mine),
+      key: 'messages',
+      theme: 3,
+      kicker: t('story.messagesKicker'),
+      title: formatNumber(totals.messages),
+      sub: t('story.messagesSub', { perDay: formatDecimal(totals.messages / Math.max(facts.activeDays, 1)) }),
+      split: {
+        mine: Math.round((totals.sent / totals.messages) * 100),
+        mineLabel: `${mine.value} · ${formatNumber(totals.sent)}`,
+        theirsLabel: `${formatNumber(totals.received)} · ${theirsShort.value}`,
+      },
+      stats: facts.mostActiveDate
+        ? [
+            {
+              label: t('story.busiestDay'),
+              value: `${formatDay(facts.mostActiveDate.date, DAY_MONTH)} · ${formatNumber(facts.mostActiveDate.total)}`,
+            },
+          ]
+        : undefined,
     })
   }
 
-  const hourly = report.activity.hourly
-  const peakHour = hourly.reduce((best, value, hour) => (value.total > (hourly[best]?.total ?? 0) ? hour : best), 0)
-  if (hourly[peakHour]?.total) {
-    const weekday = report.activity.weekday
+  // 3. Who writes first and how
+  if (!isGroup.value && responses.iWriteFirstPct !== null) {
+    const { mine: myWords, theirs: theirWords } = vocabulary.wordsPerMessage
+    list.push({
+      key: 'starts',
+      theme: 2,
+      kicker: t('story.startsKicker'),
+      title: formatPercent(responses.iWriteFirstPct),
+      sub: t('story.startsSub', { name: theirs.value }),
+      split: { mine: responses.iWriteFirstPct, mineLabel: mine.value, theirsLabel: theirs.value },
+      stats: [
+        ...(myWords !== null && theirWords !== null
+          ? [{ label: t('story.wordsPerMessage'), value: `${formatDecimal(myWords)} / ${formatDecimal(theirWords)}` }]
+          : []),
+        ...(composition.voice ? [{ label: t('story.voice'), value: formatNumber(composition.voice) }] : []),
+        ...(composition.sticker ? [{ label: t('story.stickers'), value: formatNumber(composition.sticker) }] : []),
+      ].slice(0, 3),
+    })
+  }
+
+  // 4. Time of day
+  const hourly = activity.hourly.map((hour) => hour.total)
+  const peak = hourly.reduce((best, value, hour) => (value > (hourly[best] ?? 0) ? hour : best), 0)
+  if (hourly[peak]) {
+    const weekday = activity.weekday
     const busiest = weekday.reduce((best, value, day) => (value.total > (weekday[best]?.total ?? 0) ? day : best), 0)
     list.push({
-      key: 'peak',
-      theme: 'accent',
-      kicker: t('story.peakKicker'),
-      big: `${String(peakHour).padStart(2, '0')}:00`,
-      sub: t('story.peakSub', { day: t('chart.weekdaysLong').split(',')[busiest] ?? '' }),
+      key: 'hours',
+      theme: 5,
+      kicker: t('story.hoursKicker'),
+      title: `${String(peak).padStart(2, '0')}:00`,
+      sub: t('story.hoursSub', { day: t('chart.weekdaysLong').split(',')[busiest] ?? '' }),
+      bars: { values: hourly, highlight: peak },
+      stats:
+        sessions.nightSessionsPct !== null
+          ? [{ label: t('story.night'), value: formatPercent(sessions.nightSessionsPct) }]
+          : undefined,
     })
   }
 
-  const { medianMineSec, medianTheirsSec } = report.responses
-  if (!isGroup && medianTheirsSec !== null) {
+  // 5. Reply speed (private chats)
+  if (!isGroup.value && responses.medianTheirsSec !== null) {
+    const { medianMineSec, medianTheirsSec, responseRate } = responses
+    let verdict: string | undefined
+    if (medianMineSec !== null) {
+      const ratio = Math.max(medianMineSec, medianTheirsSec) / Math.max(Math.min(medianMineSec, medianTheirsSec), 1)
+      verdict =
+        ratio < 1.25
+          ? t('story.speedEven')
+          : t(medianMineSec < medianTheirsSec ? 'story.speedYouFaster' : 'story.speedThemFaster', {
+              ratio: formatDecimal(ratio),
+            })
+    }
     list.push({
       key: 'speed',
-      theme: 'ink',
+      theme: 4,
       kicker: t('story.speedKicker'),
-      big: formatDuration(medianTheirsSec),
+      title: formatDuration(medianTheirsSec),
+      sub: t('story.speedSub', { name: theirs.value }),
+      stats: [
+        ...(medianMineSec !== null ? [{ label: t('story.youReply'), value: formatDuration(medianMineSec) }] : []),
+        ...(responseRate !== null ? [{ label: t('story.replyRate'), value: formatPercent(responseRate) }] : []),
+        ...(verdict ? [{ label: t('story.verdict'), value: verdict }] : []),
+      ],
+    })
+  }
+
+  // 6. Records
+  const longest = [...sessions.highlights].sort((a, b) => b.durationSec - a.durationSec)[0]
+  const gap = facts.longestGap
+  const streak = facts.maxStreak
+  if (streak.days >= 2 || longest) {
+    const hasStreak = streak.days >= 2
+    list.push({
+      key: 'records',
+      theme: 1,
+      kicker: t('story.recordsKicker'),
+      title: hasStreak ? tc('report.highlights.days', streak.days) : formatDuration(longest!.durationSec),
       sub:
-        medianMineSec === null ? t('story.speedSubOnly') : t('story.speedSub', { mine: formatDuration(medianMineSec) }),
+        hasStreak && streak.startDate && streak.endDate
+          ? t('story.streakSub', {
+              from: formatDay(streak.startDate, DAY_MONTH),
+              to: formatDay(streak.endDate, DAY_MONTH),
+            })
+          : t('story.longestTalk'),
+      stats: [
+        ...(longest && hasStreak
+          ? [
+              {
+                label: t('story.longestTalk'),
+                value: `${formatDuration(longest.durationSec)} · ${formatDay(longest.startedAt.slice(0, 10), DAY_MONTH)}`,
+              },
+            ]
+          : []),
+        ...(gap && gap.seconds >= 2 * DAY_SECONDS
+          ? [
+              {
+                label:
+                  gap.brokenByMe === undefined
+                    ? t('story.longestSilence')
+                    : t(gap.brokenByMe ? 'story.silenceByYou' : 'story.silenceByThem'),
+                value: tc('report.highlights.days', Math.round(gap.seconds / DAY_SECONDS)),
+              },
+            ]
+          : []),
+      ],
     })
   }
 
-  const streak = report.facts.maxStreak
-  if (streak.days >= 3 && streak.startDate && streak.endDate) {
-    list.push({
-      key: 'streak',
-      theme: 'paper',
-      kicker: t('story.streakKicker'),
-      big: tc('report.highlights.days', streak.days),
-      sub: `${formatDay(streak.startDate, DAY_MONTH)} — ${formatDay(streak.endDate, LONG_DATE)}`,
-    })
-  }
-
-  const longest = [...report.sessions.highlights].sort((a, b) => b.durationSec - a.durationSec)[0]
-  if (longest && longest.durationSec >= 60) {
-    list.push({
-      key: 'talk',
-      theme: 'accent',
-      kicker: t('story.talkKicker'),
-      big: formatDuration(longest.durationSec),
-      sub: `${formatDay(longest.startedAt.slice(0, 10), LONG_DATE)} · ${tc('common.messagesCount', longest.totalMessages)}`,
-    })
-  }
-
-  const words = isGroup ? report.vocabulary.topWords : report.vocabulary.topWordsBySender.mine
-  if (words.length) {
-    const theirs = report.vocabulary.topWordsBySender.theirs[0]?.value
+  // 7. Words
+  const myWords = top(isGroup.value ? vocabulary.topWords : vocabulary.topWordsBySender.mine)
+  const theirWords = top(vocabulary.topWordsBySender.theirs)
+  if (myWords.length) {
     list.push({
       key: 'words',
-      theme: 'ink',
-      kicker: isGroup ? t('story.wordsGroupKicker') : t('story.wordsKicker'),
-      big: words
-        .slice(0, 3)
-        .map((item) => `«${item.value}»`)
-        .join('\n'),
-      sub: !isGroup && theirs ? t('story.wordsSub', { word: theirs }) : undefined,
+      theme: 3,
+      kicker: t('story.wordsKicker'),
+      title: `«${myWords[0]}»`,
+      sub: isGroup.value ? t('story.wordsGroupSub') : t('story.wordsSub'),
+      columns:
+        theirWords.length && vocabulary.topWordsBySender.mine.length
+          ? {
+              left: { title: mine.value, items: top(vocabulary.topWordsBySender.mine) },
+              right: { title: theirsShort.value, items: theirWords },
+            }
+          : undefined,
     })
   }
 
-  const emoji = isGroup ? report.vocabulary.topEmoji : report.vocabulary.topEmojiBySender.mine
-  if (emoji.length) {
+  // 8. Emoji
+  const myEmoji = top(
+    vocabulary.topEmojiBySender.mine.length ? vocabulary.topEmojiBySender.mine : vocabulary.topEmoji,
+    3,
+  )
+  if (myEmoji.length) {
+    const theirEmoji = top(vocabulary.topEmojiBySender.theirs, 4)
     list.push({
       key: 'emoji',
-      theme: 'paper',
+      theme: 2,
       kicker: t('story.emojiKicker'),
-      big: emoji
-        .slice(0, 3)
-        .map((item) => item.value)
-        .join(' '),
-      sub: tc('story.emojiSub', emoji[0]!.count),
+      title: t('story.emojiTitle'),
+      emoji: myEmoji,
+      sub: t('story.emojiSub'),
+      stats: theirEmoji.length ? [{ label: theirsShort.value, value: theirEmoji.join(' ') }] : undefined,
     })
   }
 
+  // 9. Outro
   list.push({
     key: 'outro',
-    theme: 'accent',
+    theme: 5,
     kicker: t('story.outroKicker'),
-    big: 'TG Analyzer',
+    title: 'TG Analyzer',
     sub: t('story.outroSub'),
+    stats: [
+      { label: t('story.messagesKicker'), value: formatNumber(totals.messages) },
+      { label: t('story.activeDays'), value: formatNumber(facts.activeDays) },
+    ],
   })
   return list
 })
 
-const slide = computed(() => slides.value[Math.min(index.value, slides.value.length - 1)]!)
+const current = computed(() => slides.value[Math.min(index.value, slides.value.length - 1)]!)
+const exportSlide = computed(() => (exportIndex.value === null ? null : slides.value[exportIndex.value]))
 
 function go(step: 1 | -1) {
-  index.value = Math.min(Math.max(index.value + step, 0), slides.value.length - 1)
+  const next = index.value + step
+  if (next < 0) return
+  if (next >= slides.value.length) {
+    paused.value = true
+    return
+  }
+  index.value = next
+}
+
+/** The active progress bar finished filling: move on, like stories. */
+function onSegmentDone() {
+  if (index.value < slides.value.length - 1) index.value += 1
+  else paused.value = true
+}
+
+// ─── Gestures: touch on phones, mouse elsewhere; holding pauses ──────────────
+let start: { x: number; y: number } | null = null
+
+function begin(x: number, y: number) {
+  start = { x, y }
+  paused.value = true
+}
+
+function end(x: number, y: number, stage: HTMLElement) {
+  paused.value = false
+  if (!start) return
+  const dx = x - start.x
+  const dy = y - start.y
+  start = null
+  if (dy > 90 && Math.abs(dy) > Math.abs(dx)) {
+    emit('close')
+    return
+  }
+  if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
+    go(dx < 0 ? 1 : -1)
+    return
+  }
+  if (Math.abs(dx) > SWIPE_PX || Math.abs(dy) > SWIPE_PX) return
+  const box = stage.getBoundingClientRect()
+  go(x - box.left < box.width / 3 ? -1 : 1)
+}
+
+function onTouchStart(event: TouchEvent) {
+  const touch = event.touches[0]
+  if (touch) begin(touch.clientX, touch.clientY)
+}
+
+function onTouchEnd(event: TouchEvent) {
+  const touch = event.changedTouches[0]
+  if (!touch) return
+  // The touch already moved the story; stop the synthetic click that follows.
+  event.preventDefault()
+  end(touch.clientX, touch.clientY, event.currentTarget as HTMLElement)
+}
+
+function onPointerDown(event: PointerEvent) {
+  if (event.pointerType === 'touch') return
+  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  begin(event.clientX, event.clientY)
+}
+
+function onPointerUp(event: PointerEvent) {
+  if (event.pointerType === 'touch') return
+  end(event.clientX, event.clientY, event.currentTarget as HTMLElement)
+}
+
+function onCancel() {
+  start = null
+  paused.value = false
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -174,378 +334,374 @@ function onKeydown(event: KeyboardEvent) {
   else if (event.key === 'ArrowLeft') go(-1)
 }
 
-/** A horizontal move longer than this is a swipe, shorter is a tap. */
-const SWIPE_PX = 40
-let pointerStart: { x: number; y: number } | null = null
-
-function onPointerCancel() {
-  pointerStart = null
-}
-
-function onPointerDown(event: PointerEvent) {
-  pointerStart = { x: event.clientX, y: event.clientY }
-}
-
-/** Swipe left or right like stories; a tap on the left third goes back, elsewhere forward. */
-function onPointerUp(event: PointerEvent) {
-  if (!pointerStart) return
-  const dx = event.clientX - pointerStart.x
-  const dy = event.clientY - pointerStart.y
-  pointerStart = null
-  if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
-    go(dx < 0 ? 1 : -1)
-    return
-  }
-  if (Math.abs(dx) > SWIPE_PX || Math.abs(dy) > SWIPE_PX) return
-  const box = (event.currentTarget as HTMLElement).getBoundingClientRect()
-  go(event.clientX - box.left < box.width / 3 ? -1 : 1)
-}
-
-async function renderCurrent() {
+// ─── Images: rendered from an exact 9:16 copy off screen ─────────────────────
+async function render(position: number) {
+  exportIndex.value = position
   await nextTick()
-  if (!slideRef.value) throw new Error('No slide')
-  return image.render(slideRef.value)
+  if (!exportRef.value) throw new Error('No slide to render')
+  return image.render(exportRef.value)
 }
 
 async function saveCurrent() {
+  paused.value = true
   try {
-    await image.run(async () => image.download(await renderCurrent(), `tg-analyzer-${slide.value.key}.png`))
+    await image.run(async () => image.download(await render(index.value), `tg-analyzer-${current.value.key}.png`))
   } catch {
     toast.error(t('story.saveError'))
+  } finally {
+    exportIndex.value = null
   }
 }
 
 async function shareAll() {
-  const start = index.value
+  paused.value = true
   try {
     await image.run(async () => {
       const files: File[] = []
       for (let position = 0; position < slides.value.length; position += 1) {
-        index.value = position
-        const blob = await renderCurrent()
+        const blob = await render(position)
         files.push(new File([blob], `tg-analyzer-${position + 1}.png`, { type: 'image/png' }))
       }
-      index.value = start
+      exportIndex.value = null
       if (canShare.value) await image.share(files)
       else files.forEach((file) => image.download(file, file.name))
     })
   } catch {
-    index.value = start
     toast.error(t('story.saveError'))
+  } finally {
+    exportIndex.value = null
   }
 }
 
 watch(open, (value) => {
-  if (value) {
-    index.value = 0
-    canShare.value = image.canShareFiles()
-  }
+  if (!value) return
+  index.value = 0
+  paused.value = false
+  canShare.value = image.canShareFiles()
 })
 </script>
 
 <template>
   <Teleport to="body">
-    <Transition name="story">
-      <div v-if="open" class="story-scrim" @click.self="emit('close')">
+    <Transition name="stories">
+      <div v-if="open" class="stories" @click.self="emit('close')">
         <section
           ref="panelRef"
-          class="story"
+          class="stories__frame"
           role="dialog"
           aria-modal="true"
           :aria-label="t('story.title')"
           @keydown="onKeydown"
         >
-          <header class="story__top">
-            <div class="story__progress" aria-hidden="true">
-              <span v-for="(item, position) in slides" :key="item.key" :class="{ 'is-done': position <= index }" />
-            </div>
-            <UiIconButton :icon="X" :label="t('common.close')" variant="ghost" size="xs" @click="emit('close')" />
-          </header>
-
-          <div class="story__stage">
-            <button
-              type="button"
-              class="story__nav"
-              :aria-label="t('story.previous')"
-              :disabled="index === 0"
-              @click="go(-1)"
-            >
-              <ChevronLeft aria-hidden="true" />
-            </button>
-
-            <div
-              ref="slideRef"
-              class="slide"
-              :class="`slide--${slide.theme}`"
-              role="img"
-              :aria-label="`${slide.kicker}. ${slide.big}. ${slide.sub ?? ''}`"
-              @pointerdown="onPointerDown"
-              @pointerup="onPointerUp"
-              @pointercancel="onPointerCancel"
-            >
-              <div class="slide__body">
-                <span class="slide__kicker">{{ slide.kicker }}</span>
-                <strong class="slide__big" :class="{ 'slide__big--long': slide.big.length > 9 }">{{
-                  slide.big
-                }}</strong>
-                <div v-if="slide.split !== undefined" class="slide__split" aria-hidden="true">
-                  <span :style="{ width: `${slide.split}%` }" />
-                </div>
-                <span v-if="slide.sub" class="slide__sub">{{ slide.sub }}</span>
-              </div>
-              <span class="slide__brand">TG Analyzer</span>
-            </div>
-
-            <button
-              type="button"
-              class="story__nav"
-              :aria-label="t('story.next')"
-              :disabled="index === slides.length - 1"
-              @click="go(1)"
-            >
-              <ChevronRight aria-hidden="true" />
-            </button>
+          <div
+            class="stories__stage"
+            role="img"
+            :aria-label="`${current.kicker}. ${current.title}. ${current.sub ?? ''}`"
+            @touchstart.passive="onTouchStart"
+            @touchend="onTouchEnd"
+            @touchcancel="onCancel"
+            @pointerdown="onPointerDown"
+            @pointerup="onPointerUp"
+            @pointercancel="onCancel"
+          >
+            <StorySlide :slide="current" :mine="mine" :theirs="theirs" />
           </div>
 
-          <footer class="story__actions">
-            <UiSwitch v-if="data.summary.type !== 'group'" v-model="showName" class="story__name">
-              {{ t('story.showName') }}
-            </UiSwitch>
-            <div class="story__buttons">
-              <UiButton variant="secondary" size="sm" :icon="Download" :loading="image.busy.value" @click="saveCurrent">
-                {{ t('story.saveSlide') }}
-              </UiButton>
-              <UiButton variant="primary" size="sm" :icon="Share2" :loading="image.busy.value" @click="shareAll">
-                {{ canShare ? t('story.shareAll') : t('story.saveAll') }}
-              </UiButton>
+          <!-- Overlays on top of the slide, like stories. -->
+          <div class="stories__top">
+            <div class="stories__progress" aria-hidden="true">
+              <span v-for="(item, position) in slides" :key="item.key" class="stories__segment">
+                <span
+                  v-if="position === index"
+                  :key="`fill-${index}`"
+                  class="stories__fill is-active"
+                  :style="{
+                    animationDuration: `${SLIDE_MS}ms`,
+                    animationPlayState: paused || image.busy.value ? 'paused' : 'running',
+                  }"
+                  @animationend="onSegmentDone"
+                />
+                <span v-else class="stories__fill" :class="{ 'is-done': position < index }" />
+              </span>
             </div>
-          </footer>
+            <div class="stories__bar">
+              <span class="stories__count">{{ index + 1 }} / {{ slides.length }}</span>
+              <button
+                v-if="!isGroup"
+                type="button"
+                class="stories__icon"
+                :aria-label="hideName ? t('story.showName') : t('story.hideName')"
+                :aria-pressed="hideName"
+                @click="hideName = !hideName"
+              >
+                <component :is="hideName ? EyeOff : Eye" aria-hidden="true" />
+              </button>
+              <button type="button" class="stories__icon" :aria-label="t('common.close')" @click="emit('close')">
+                <X aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+
+          <div class="stories__actions">
+            <button type="button" class="stories__action" :disabled="image.busy.value" @click="saveCurrent">
+              <Download aria-hidden="true" />
+              {{ t('story.saveSlide') }}
+            </button>
+            <button
+              type="button"
+              class="stories__action stories__action--primary"
+              :disabled="image.busy.value"
+              @click="shareAll"
+            >
+              <span v-if="image.busy.value" class="stories__spinner" aria-hidden="true" />
+              <Share2 v-else aria-hidden="true" />
+              {{ canShare ? t('story.shareAll') : t('story.saveAll') }}
+            </button>
+          </div>
         </section>
+
+        <button
+          type="button"
+          class="stories__arrow stories__arrow--prev"
+          :aria-label="t('story.previous')"
+          :disabled="index === 0"
+          @click="go(-1)"
+        >
+          <ChevronLeft aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          class="stories__arrow stories__arrow--next"
+          :aria-label="t('story.next')"
+          :disabled="index === slides.length - 1"
+          @click="go(1)"
+        >
+          <ChevronRight aria-hidden="true" />
+        </button>
+
+        <!-- Exact 9:16 copy for the exported image, off screen. -->
+        <div v-if="exportSlide" ref="exportRef" class="stories__export" aria-hidden="true">
+          <StorySlide :slide="exportSlide" :mine="mine" :theirs="theirs" />
+        </div>
       </div>
     </Transition>
   </Teleport>
 </template>
 
 <style scoped>
-.story-scrim {
+.stories {
+  --frame-height: min(92dvh, 860px);
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
   display: grid;
   place-items: center;
-  padding: var(--space-4);
-  background: var(--scrim);
-  backdrop-filter: blur(var(--blur-sm));
+  background: var(--story-backdrop);
 }
 
-.story {
-  display: grid;
-  gap: var(--space-3);
-  width: min(480px, 100%);
-  max-height: 100%;
-  padding: var(--space-4);
-  border: 1px solid var(--border);
+.stories__frame {
+  position: relative;
+  height: var(--frame-height);
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
   border-radius: var(--radius-xl);
-  background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
 }
 
-.story__top {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+.stories__stage {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  user-select: none;
+  /* The story handles horizontal swipes itself. */
+  touch-action: pan-y pinch-zoom;
 }
 
-.story__progress {
+/* ─── Top overlay: progress and controls ─────────────────────────────────── */
+.stories__top {
+  position: absolute;
+  inset: 0 0 auto;
+  display: grid;
+  gap: var(--space-2);
+  padding: max(var(--space-3), env(safe-area-inset-top)) var(--space-3) 0;
+  pointer-events: none;
+}
+
+.stories__progress {
   display: flex;
-  flex: 1;
   gap: var(--space-1);
 }
 
-.story__progress span {
+.stories__segment {
+  position: relative;
   flex: 1;
   height: 3px;
+  overflow: hidden;
   border-radius: var(--radius-full);
-  background: var(--surface-2);
-  transition: background-color var(--transition-normal);
+  background: var(--story-track);
 }
 
-.story__progress span.is-done {
-  background: var(--accent);
+.stories__fill {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  background: var(--story-ink);
 }
 
-.story__stage {
+.stories__fill.is-done {
+  transform: scaleX(1);
+}
+
+.stories__fill.is-active {
+  animation: story-fill linear forwards;
+}
+
+@keyframes story-fill {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.stories__bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: 0;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  color: var(--story-ink);
 }
 
-.story__nav {
+.stories__count {
+  margin-right: auto;
+  color: var(--story-ink-muted);
+  font: var(--text-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.stories__icon {
   display: inline-grid;
-  flex: 0 0 auto;
   place-items: center;
   width: var(--control-sm);
   height: var(--control-sm);
   border: 0;
   border-radius: var(--radius-full);
   background: transparent;
-  color: var(--text-muted);
+  color: var(--story-ink);
   cursor: pointer;
+  pointer-events: auto;
   --icon-size: var(--icon-md);
 }
 
 @media (hover: hover) {
-  .story__nav:hover:not(:disabled) {
-    background: var(--hover);
-    color: var(--text);
+  .stories__icon:hover {
+    background: var(--story-chip);
   }
 }
 
-.story__nav:disabled {
+/* ─── Bottom overlay: save and share ─────────────────────────────────────── */
+.stories__actions {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) max(var(--space-3), env(safe-area-inset-bottom));
+}
+
+.stories__action {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-md);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--story-chip);
+  backdrop-filter: blur(var(--blur-sm));
+  color: var(--story-ink);
+  cursor: pointer;
+  font: var(--text-control);
+}
+
+.stories__action--primary {
+  background: var(--story-ink);
+  color: var(--story-backdrop);
+}
+
+.stories__action:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: progress;
+}
+
+.stories__spinner {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ─── Arrows beside the frame on wide screens ────────────────────────────── */
+.stories__arrow {
+  position: fixed;
+  top: 50%;
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-md);
+  height: var(--control-md);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--story-chip);
+  color: var(--story-ink);
+  cursor: pointer;
+  transform: translateY(-50%);
+  --icon-size: var(--icon-md);
+}
+
+.stories__arrow--prev {
+  left: calc(50% - var(--frame-height) * 9 / 32 - var(--control-md) - var(--space-4));
+}
+
+.stories__arrow--next {
+  right: calc(50% - var(--frame-height) * 9 / 32 - var(--control-md) - var(--space-4));
+}
+
+.stories__arrow:disabled {
   opacity: var(--opacity-disabled);
   cursor: default;
 }
 
-/* ─── The slide: 9:16, sized by the viewport, text scaled with it ─────────── */
-.slide {
-  position: relative;
-  flex: 0 1 auto;
-  width: min(340px, 100%, calc((100dvh - 240px) * 9 / 16));
-  aspect-ratio: 9 / 16;
-  overflow: hidden;
-  border-radius: var(--radius-lg);
-  container-type: inline-size;
-  cursor: pointer;
-  user-select: none;
-  /* The slide handles horizontal swipes itself instead of the page. */
-  touch-action: pan-y pinch-zoom;
+.stories__export {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 360px;
+  height: 640px;
 }
 
-/* Padding lives here: cqw on .slide itself would resolve against the viewport. */
-.slide__body {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4cqw;
-  height: 100%;
-  padding: 10cqw 8cqw;
-}
-
-.slide--accent {
-  background: linear-gradient(160deg, var(--accent) 0%, var(--accent-2) 100%);
-  color: var(--on-accent);
-}
-
-.slide--ink {
-  background: var(--inverse-surface);
-  color: var(--on-inverse);
-}
-
-.slide--paper {
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: inset 0 0 0 1px var(--border);
-}
-
-.slide__kicker {
-  font-size: 5.5cqw;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  opacity: 0.8;
-}
-
-.slide__big {
-  font-size: 22cqw;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
-
-.slide__big--long {
-  font-size: 13cqw;
-  line-height: 1.1;
-}
-
-.slide__split {
-  display: flex;
-  height: 3.5cqw;
-  overflow: hidden;
-  border-radius: var(--radius-full);
-  background: var(--accent-2);
-}
-
-.slide__split span {
-  background: var(--accent);
-}
-
-.slide__sub {
-  font-size: 6cqw;
-  font-weight: 500;
-  line-height: 1.3;
-  opacity: 0.85;
-}
-
-.slide__brand {
-  position: absolute;
-  right: 8cqw;
-  bottom: 6cqw;
-  font-size: 4.5cqw;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  opacity: 0.7;
-}
-
-.story__actions {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.story__buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-}
-
-.story-enter-active,
-.story-leave-active {
+.stories-enter-active,
+.stories-leave-active {
   transition: opacity var(--transition-normal);
 }
 
-.story-enter-from,
-.story-leave-to {
+.stories-enter-from,
+.stories-leave-to {
   opacity: 0;
 }
 
-/* Phones: the story fills the screen, actions full width at the bottom. */
+/* Phones: the story is the whole screen. */
 @media (max-width: 640px) {
-  .story-scrim {
-    padding: 0;
-  }
-
-  .story {
+  .stories__frame {
     width: 100%;
     height: 100%;
-    border-width: 0;
+    aspect-ratio: auto;
     border-radius: 0;
-    padding: var(--space-3) var(--space-3) max(var(--space-3), env(safe-area-inset-bottom));
-    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
-  .story__nav {
+  .stories__arrow {
     display: none;
-  }
-
-  .slide {
-    width: min(100%, calc((100dvh - 200px) * 9 / 16));
-  }
-
-  .story__buttons :deep(.btn) {
-    flex: 1;
   }
 }
 </style>

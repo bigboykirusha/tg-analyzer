@@ -8,7 +8,7 @@
       </div>
     </div>
     <UiSkeleton height="128px" radius="var(--radius-lg)" />
-    <UiSkeleton height="var(--control-md)" radius="var(--radius-full)" />
+    <UiSkeleton class="skeleton-tabs" height="var(--control-md)" radius="var(--radius-full)" />
     <div class="skeleton-grid">
       <UiSkeleton v-for="item in 4" :key="item" height="300px" radius="var(--radius-xl)" />
     </div>
@@ -31,6 +31,13 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-5);
+}
+
+/* Phones show the report as one page, without the tab switcher. */
+@media (max-width: 640px) {
+  .skeleton-tabs {
+    display: none;
+  }
 }
 
 @media (max-width: 900px) {

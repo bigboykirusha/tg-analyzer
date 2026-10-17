@@ -340,7 +340,6 @@ function signOut() {
     padding: 0 var(--space-4);
   }
 
-  .brand-name,
   .desktop-only,
   .activity__chat {
     display: none;
