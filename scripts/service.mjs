@@ -2,7 +2,7 @@
 // whole repository, such as Railway, run this script for every service:
 //
 //   node scripts/service.mjs build     # builds only what the service needs
-//   node scripts/service.mjs migrate   # applies migrations (api only)
+//   node scripts/service.mjs migrate   # applies migrations (api, or any unknown service)
 //   node scripts/service.mjs start     # starts the process
 //
 // The service is START_SERVICE if set, otherwise it is inferred from the
@@ -51,6 +51,10 @@ if (!service && action === 'build') {
   // Build-time variables can differ per host; building everything is slower but always correct.
   console.log('[service] build: service unknown, building api and web')
   run(['pnpm', '-r', '--filter', '@tg-analyzer/api', '--filter', '@tg-analyzer/web', 'build'])
+} else if (!service && action === 'migrate') {
+  // Migrating is safe from any service; a wrong guess must not fail the deploy.
+  console.log('[service] migrate: service unknown, applying migrations')
+  run(['pnpm', '--filter', '@tg-analyzer/api', 'migrate'])
 } else if (!service) {
   console.error('[service] Cannot tell which service to run.')
   console.error(`  START_SERVICE=${process.env.START_SERVICE ?? '(unset)'}`)

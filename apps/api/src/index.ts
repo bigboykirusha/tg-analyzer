@@ -1,5 +1,6 @@
 import { config } from './config'
 import { pool } from './db'
+import { applyMigrations, assertSchema, shouldMigrateOnStart } from './db/migrations-runner'
 import { buildServer } from './http/server'
 import { logger } from './lib/logger'
 import { redis } from './lib/redis'
@@ -8,6 +9,8 @@ import { closePeopleQueue } from './modules/people/queue'
 import { telegram } from './telegram'
 
 async function main() {
+  if (shouldMigrateOnStart()) await applyMigrations(config.DATABASE_URL)
+  await assertSchema(pool)
   const app = await buildServer()
 
   let stopping = false

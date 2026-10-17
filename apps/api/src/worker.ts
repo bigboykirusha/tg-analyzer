@@ -1,5 +1,7 @@
 import { Worker } from 'bullmq'
+import { config } from './config'
 import { pool } from './db'
+import { applyMigrations, assertSchema, shouldMigrateOnStart } from './db/migrations-runner'
 import { logger } from './lib/logger'
 import { createRedisConnection, redis } from './lib/redis'
 import { runAnalysis } from './modules/parse/analysis'
@@ -15,6 +17,10 @@ const HEARTBEAT_INTERVAL_MS = 10_000
 const RECONCILE_INTERVAL_MS = 60_000
 
 async function main() {
+  // Never run analyses against an old schema: they would fail only when saving the report.
+  if (shouldMigrateOnStart()) await applyMigrations(config.DATABASE_URL)
+  await assertSchema(pool)
+
   const workerConnection = createRedisConnection()
   const analysisWorker = new Worker<AnalysisJobData>(ANALYSIS_QUEUE, runAnalysis, {
     connection: workerConnection,

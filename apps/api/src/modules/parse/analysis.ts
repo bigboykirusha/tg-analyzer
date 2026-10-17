@@ -204,6 +204,16 @@ async function waitOutFloodControl(
   progress.waitSeconds = null
 }
 
+/**
+ * A missing table or column means the database was not migrated. Retrying
+ * cannot help and would read the whole chat again, so such errors fail at once.
+ */
+function isSchemaError(error: unknown) {
+  const codeOf = (value: unknown) => (value as { code?: unknown } | null)?.code
+  const code = codeOf(error) ?? codeOf((error as { cause?: unknown } | null)?.cause)
+  return code === '42P01' || code === '42703' || code === '42704'
+}
+
 function failureCode(error: unknown): ParseErrorCode {
   if (error instanceof AnalysisFailedError) return error.code
   if (error instanceof TelegramSessionRevokedError) return 'telegram_session_expired'
@@ -220,7 +230,7 @@ async function handleFailure(job: Job<AnalysisJobData>, error: unknown, progress
   const code = failureCode(error)
   if (code === 'telegram_session_expired') await deactivateTelegramSession(userId)
 
-  const retryable = code === 'telegram_busy' || code === 'internal'
+  const retryable = (code === 'telegram_busy' || code === 'internal') && !isSchemaError(error)
   const attemptsLeft = job.attemptsMade + 1 < (job.opts.attempts ?? 1)
   if (retryable && attemptsLeft) {
     logger.warn({ err: error, jobId, attempt: job.attemptsMade + 1 }, 'analysis attempt failed, retrying')
