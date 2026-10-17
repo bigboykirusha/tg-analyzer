@@ -80,7 +80,7 @@ function submit() {
           variant="addon"
           trigger-class="dial-code"
           :aria-label="t('login.countryLabel')"
-          :search-placeholder="t('login.selectCountry')"
+          :searchable="false"
           @update:model-value="selectCountry"
         />
         <input

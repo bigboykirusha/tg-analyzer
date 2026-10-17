@@ -268,7 +268,6 @@ export const ru: Record<MessageKey, string> = {
   'login.resendCall': 'Позвонить вместо этого',
   'login.resendIn': 'Отправить ещё раз через {time}',
   'login.resendSms': 'Отправить по SMS',
-  'login.selectCountry': 'Выберите страну',
   'login.sendingCode': 'Отправляем код...',
   'login.seoTitle': 'Вход',
   'login.signIn': 'Войти',

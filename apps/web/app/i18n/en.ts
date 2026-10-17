@@ -267,7 +267,6 @@ export const en = {
   'login.resendCall': 'Call me instead',
   'login.resendIn': 'Send again in {time}',
   'login.resendSms': 'Send by SMS',
-  'login.selectCountry': 'Select country',
   'login.sendingCode': 'Sending code...',
   'login.seoTitle': 'Sign in',
   'login.signIn': 'Sign in',
