@@ -26,6 +26,9 @@ const PROGRESS_INTERVAL_MS = 1_000
 const CANCELLATION_CHECK_INTERVAL_MS = 2_000
 /** Longest single flood wait we sit through before giving up on the attempt. */
 const MAX_FLOOD_WAIT_SECONDS = 15 * 60
+/** Saving is retried on its own so a transient database error never rescans the chat. */
+const SAVE_ATTEMPTS = 4
+const SAVE_RETRY_DELAY_MS = 2_000
 
 class AnalysisStoppedError extends Error {
   constructor() {
@@ -93,22 +96,43 @@ export async function runAnalysis(job: Job<AnalysisJobData>) {
 
     progress.phase = 'saving'
     await publish(true)
-    await setJobChatTitle(jobId, result.dialog.title)
-    const saved = await saveReportAndCompleteJob({
-      userId,
-      jobId,
-      chatId,
-      title: result.dialog.title,
-      chatType: result.dialog.type,
-      report: result.builder.finish(result.dialog.type),
+    const report = result.builder.finish(result.dialog.type)
+    const saved = await withRetries(async () => {
+      await setJobChatTitle(jobId, result.dialog.title)
+      return saveReportAndCompleteJob({
+        userId,
+        jobId,
+        chatId,
+        title: result.dialog.title,
+        chatType: result.dialog.type,
+        report,
+      })
     })
     if (!saved) throw new AnalysisStoppedError()
-
-    await startCooldown(userId, chatId)
-    await publishProgress(userId, { ...progress, status: 'completed', phase: null })
-    logger.info({ jobId, messages: result.builder.messageCount }, 'analysis completed')
   } catch (error) {
     await handleFailure(job, error, progress)
+    return
+  }
+
+  // The report is committed: nothing below may turn the job into a failure or a retry.
+  try {
+    await startCooldown(userId, chatId)
+    await publishProgress(userId, { ...progress, status: 'completed', phase: null })
+  } catch (error) {
+    logger.warn({ err: error, jobId }, 'analysis completed, but announcing it failed')
+  }
+  logger.info({ jobId, messages: progress.scannedMessages }, 'analysis completed')
+}
+
+async function withRetries<T>(work: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await work()
+    } catch (error) {
+      if (attempt >= SAVE_ATTEMPTS) throw error
+      logger.warn({ err: error, attempt }, 'saving the report failed, retrying')
+      await sleep(SAVE_RETRY_DELAY_MS * attempt)
+    }
   }
 }
 
