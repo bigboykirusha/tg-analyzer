@@ -11,6 +11,7 @@ import { authRoutes } from '../modules/auth/routes'
 import { parseRoutes } from '../modules/parse/routes'
 import { progressSocketRoutes } from '../modules/parse/progress-socket'
 import { reportRoutes } from '../modules/reports/routes'
+import { peopleRoutes } from '../modules/people/routes'
 import { systemRoutes } from '../modules/system/routes'
 import { isOriginAllowed } from './origin'
 
@@ -74,6 +75,7 @@ export async function buildServer() {
   await app.register(authRoutes, { prefix: '/api/v1/auth' })
   await app.register(parseRoutes, { prefix: '/api/v1/parse' })
   await app.register(reportRoutes, { prefix: '/api/v1/reports' })
+  await app.register(peopleRoutes, { prefix: '/api/v1/people' })
   await app.register(progressSocketRoutes, { prefix: '/ws' })
 
   return app

@@ -4,6 +4,7 @@ import { buildServer } from './http/server'
 import { logger } from './lib/logger'
 import { redis } from './lib/redis'
 import { closeAnalysisQueue } from './modules/parse/queue'
+import { closePeopleQueue } from './modules/people/queue'
 import { telegram } from './telegram'
 
 async function main() {
@@ -15,7 +16,7 @@ async function main() {
     stopping = true
     app.log.info({ signal }, 'api shutting down')
     await app.close()
-    await Promise.allSettled([closeAnalysisQueue(), telegram.close()])
+    await Promise.allSettled([closeAnalysisQueue(), closePeopleQueue(), telegram.close()])
     await Promise.allSettled([redis.quit(), pool.end()])
     process.exit(0)
   }

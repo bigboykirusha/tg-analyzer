@@ -9,9 +9,16 @@ const { redis } = await import('../src/lib/redis')
 const { buildServer } = await import('../src/http/server')
 const { closeAnalysisQueue, analysisQueue } = await import('../src/modules/parse/queue')
 const { runAnalysis } = await import('../src/modules/parse/analysis')
+const { closePeopleQueue, peopleQueue } = await import('../src/modules/people/queue')
+const { runPeopleOverview } = await import('../src/modules/people/overview')
 const { REFRESH_COOKIE_NAME } = await import('../src/config')
 
 export { db, pool, redis, REFRESH_COOKIE_NAME, analysisQueue }
+
+/** Jobs waiting in the people overview queue. */
+export async function peopleJobs() {
+  return peopleQueue().getJobCountByTypes('waiting', 'delayed', 'active')
+}
 
 export const ORIGIN = 'http://localhost:3000'
 export let app: Awaited<ReturnType<typeof buildServer>>
@@ -29,10 +36,12 @@ export function useTestServer() {
     await pool.query('TRUNCATE users CASCADE')
     await redis.flushdb()
     await analysisQueue().obliterate({ force: true })
+    await peopleQueue().obliterate({ force: true })
   })
   after(async () => {
     await app?.close()
     await closeAnalysisQueue()
+    await closePeopleQueue()
     await redis.quit()
     await pool.end()
   })
@@ -77,4 +86,10 @@ export async function processJob(userId: string, jobId: string, attemptsMade = 0
     jobId: string
   }>
   await runAnalysis(job)
+}
+
+/** Runs the people overview job inline, as the worker would. */
+export async function processPeopleOverview(userId: string) {
+  const job = { data: { userId }, attemptsMade: 0, opts: { attempts: 2 } } as unknown as Job<{ userId: string }>
+  await runPeopleOverview(job)
 }

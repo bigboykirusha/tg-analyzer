@@ -71,6 +71,13 @@
       "when": 1792195200000,
       "tag": "0009_chat_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792252800000,
+      "tag": "0010_people_overviews",
+      "breakpoints": true
     }
   ]
 }
