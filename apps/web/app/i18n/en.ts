@@ -407,6 +407,8 @@ export const en = {
   'report.highlights.months.many': '{count} months',
   'report.highlights.months.one': '{count} month',
   'report.highlights.months.other': '{count} months',
+  'report.highlights.save': 'Save as image',
+  'report.highlights.saveError': 'Could not save the card',
   'report.highlights.silence': 'Longest silence',
   'report.highlights.silenceBrokenByMe': 'You broke it on {date}',
   'report.highlights.silenceBrokenByThem': 'They broke it on {date}',

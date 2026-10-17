@@ -406,6 +406,8 @@ export const ru: Record<MessageKey, string> = {
   'report.highlights.months.many': '{count} месяцев',
   'report.highlights.months.one': '{count} месяц',
   'report.highlights.months.other': '{count} месяца',
+  'report.highlights.save': 'Сохранить картинкой',
+  'report.highlights.saveError': 'Не удалось сохранить карточку',
   'report.highlights.silence': 'Самая долгая пауза',
   'report.highlights.silenceBrokenByMe': 'Прервали её вы — {date}',
   'report.highlights.silenceBrokenByThem': 'Прервал её собеседник — {date}',

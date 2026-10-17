@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
+import type { ComponentPublicInstance } from 'vue'
+import { Download } from '../../lib/icons'
 
 /**
  * «Главное»: a handful of dated facts that read as a story of the chat.
@@ -7,6 +9,25 @@ import type { ReportDto } from '@tg-analyzer/shared'
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, tc, formatDay, formatDuration } = useI18n()
+const toast = useToast()
+const cardImage = useCardImage()
+const cards = ref<Record<string, HTMLElement | null>>({})
+
+function cardRef(key: string) {
+  return (element: Element | ComponentPublicInstance | null) => {
+    cards.value[key] = element instanceof HTMLElement ? element : null
+  }
+}
+
+async function saveCard(key: string) {
+  const card = cards.value[key]
+  if (!card) return
+  try {
+    await cardImage.save(card, `tg-analyzer-${key}.png`)
+  } catch {
+    toast.error(t('report.highlights.saveError'))
+  }
+}
 
 interface Highlight {
   key: string
@@ -124,7 +145,21 @@ const highlights = computed(() =>
   <section v-if="highlights.length" class="highlights" :aria-label="t('report.highlights.title')">
     <h2 class="t-label">{{ t('report.highlights.title') }}</h2>
     <ul class="highlights__list">
-      <li v-for="card in highlights" :key="card.key" class="highlight" :data-highlight="card.key">
+      <li
+        v-for="card in highlights"
+        :key="card.key"
+        :ref="cardRef(card.key)"
+        class="highlight"
+        :data-highlight="card.key"
+      >
+        <UiIconButton
+          class="highlight__save no-print"
+          :icon="Download"
+          :label="t('report.highlights.save')"
+          size="xs"
+          :disabled="cardImage.saving.value"
+          @click="saveCard(card.key)"
+        />
         <span class="highlight__label">{{ card.label }}</span>
         <strong class="highlight__value">{{ card.value }}</strong>
         <span v-if="card.sub" class="highlight__sub">{{ card.sub }}</span>
@@ -148,6 +183,7 @@ const highlights = computed(() =>
 }
 
 .highlight {
+  position: relative;
   display: grid;
   align-content: start;
   gap: var(--space-1);
@@ -158,7 +194,27 @@ const highlights = computed(() =>
   background: var(--surface);
 }
 
+/* Saving is secondary: the button stays quiet until the card is hovered or focused. */
+.highlight__save {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+}
+
+@media (hover: hover) {
+  .highlight__save {
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+  }
+
+  .highlight:hover .highlight__save,
+  .highlight__save:focus-within {
+    opacity: 1;
+  }
+}
+
 .highlight__label {
+  padding-right: var(--space-8);
   color: var(--text-muted);
   font: var(--text-small);
 }
