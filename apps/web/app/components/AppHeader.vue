@@ -53,7 +53,7 @@ function signOut() {
 <template>
   <header class="app-navigation" :class="{ 'app-navigation--report': isReport }">
     <div class="topbar glass-surface">
-      <NuxtLink to="/dashboard" class="brand" aria-label="TG Analyzer">
+      <NuxtLink to="/people" class="brand" aria-label="TG Analyzer">
         <span class="brand-mark" aria-hidden="true"><i /><i /><i /></span>
         <span class="brand-name">TG Analyzer</span>
       </NuxtLink>

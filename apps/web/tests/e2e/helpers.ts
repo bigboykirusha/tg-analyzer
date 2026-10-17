@@ -31,7 +31,9 @@ export async function signIn(page: Page) {
   await page.locator('.otp-input').first().click()
   await page.keyboard.type('12345')
   await page.getByRole('button', { name: 'Подтвердить код' }).click()
-  await page.waitForURL('**/dashboard')
+  // Signing in lands on «Мои люди»; flows below start from the chats list.
+  await page.waitForURL('**/people')
+  await gotoHydrated(page, '/dashboard')
 }
 
 export async function backendAvailable(baseURL: string) {

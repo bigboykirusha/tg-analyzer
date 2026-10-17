@@ -60,6 +60,7 @@ export default defineNuxtConfig({
   // HttpOnly and only the API can read it), so they render on the client only.
   routeRules: {
     '/dashboard': { ssr: false },
+    '/people': { ssr: false },
     // The job log page was removed; old links land on the chats list.
     '/history': { redirect: '/dashboard' },
     '/chat/**': { ssr: false },

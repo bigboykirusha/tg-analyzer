@@ -107,14 +107,14 @@ function submitCode() {
       step.value = 'password'
       return
     }
-    await navigateTo('/dashboard', { replace: true })
+    await navigateTo('/people', { replace: true })
   })
 }
 
 function submitPassword() {
   return run(async () => {
     await verifyPassword({ tempToken: tempToken.value, password: password.value })
-    await navigateTo('/dashboard', { replace: true })
+    await navigateTo('/people', { replace: true })
   })
 }
 

@@ -49,3 +49,13 @@ test('logging out returns to the login page', async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Выйти' }).click()
   await page.waitForURL('**/login')
 })
+
+test('people shows who you talk to most, from recent chats', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/people')
+  await expect(page.getByRole('heading', { name: 'Мои люди' })).toBeVisible()
+  // The overview is built in the background; the page polls until it is ready.
+  await expect(page.getByRole('heading', { name: 'Ближе всего сейчас' })).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('.person').first()).toBeVisible()
+  await expect.poll(() => noHorizontalScroll(page)).toBe(true)
+})
