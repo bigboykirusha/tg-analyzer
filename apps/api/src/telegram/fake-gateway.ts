@@ -152,8 +152,14 @@ export class FakeTelegramGateway implements TelegramGateway {
           .toString(36)
           .slice(2)}`,
         session: `pending:${phone}`,
+        delivery: { type: 'app' as const, emailPattern: null, length: 5, nextType: 'sms' as const, timeoutSec: 60 },
       }
     },
+    resendCode: async (input: { session: string; phone: string; phoneCodeHash: string }) => ({
+      phoneCodeHash: input.phoneCodeHash,
+      session: input.session,
+      delivery: { type: 'sms' as const, emailPattern: null, length: 5, nextType: null, timeoutSec: null },
+    }),
     signIn: async (input: { session: string; phone: string; code: string }) => {
       if (input.code !== FAKE_LOGIN_CODE) throw new TelegramLoginError('code_invalid')
       if (input.phone.endsWith('9')) {

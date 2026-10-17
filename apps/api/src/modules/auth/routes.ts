@@ -8,6 +8,7 @@ import type {
   WsTicketResponse,
 } from '@tg-analyzer/shared'
 import {
+  resendCodeBodySchema,
   sendCodeBodySchema,
   updateProfileBodySchema,
   verifyCodeBodySchema,
@@ -125,9 +126,34 @@ function validTimeZone(value: string) {
 export const authRoutes: FastifyPluginAsync = async (app) => {
   app.post('/send-code', { config: LOGIN_RATE_LIMIT }, async (request): Promise<SendCodeResponse> => {
     const { phone } = parse(sendCodeBodySchema, request.body)
-    const { phoneCodeHash, session } = await loginStep(() => telegram.login.sendCode(phone))
-    await savePendingCode({ phone, phoneCodeHash, session })
-    return { phoneCodeHash }
+    const sent = await loginStep(() => telegram.login.sendCode(phone))
+    await savePendingCode({
+      phone,
+      phoneCodeHash: sent.phoneCodeHash,
+      session: sent.session,
+      viaEmail: sent.delivery.type === 'email',
+    })
+    request.log.info({ delivery: sent.delivery.type, next: sent.delivery.nextType }, 'login code sent')
+    return { phoneCodeHash: sent.phoneCodeHash, delivery: sent.delivery }
+  })
+
+  // Uses auth.resendCode on the same attempt: a second auth.sendCode from a new
+  // connection is what makes Telegram stop delivering codes.
+  app.post('/resend-code', { config: LOGIN_RATE_LIMIT }, async (request): Promise<SendCodeResponse> => {
+    const { phone, phoneCodeHash } = parse(resendCodeBodySchema, request.body)
+    const pending = await readPendingCode(phoneCodeHash)
+    if (!pending || pending.phone !== phone) throw loginSessionExpired()
+
+    const sent = await loginStep(() => telegram.login.resendCode({ session: pending.session, phone, phoneCodeHash }))
+    await clearPendingCode(phoneCodeHash)
+    await savePendingCode({
+      phone,
+      phoneCodeHash: sent.phoneCodeHash,
+      session: sent.session,
+      viaEmail: sent.delivery.type === 'email',
+    })
+    request.log.info({ delivery: sent.delivery.type, next: sent.delivery.nextType }, 'login code resent')
+    return { phoneCodeHash: sent.phoneCodeHash, delivery: sent.delivery }
   })
 
   app.post('/verify-code', { config: LOGIN_RATE_LIMIT }, async (request, reply): Promise<VerifyCodeResponse> => {
@@ -136,7 +162,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     if (!pending || pending.phone !== phone) throw loginSessionExpired()
 
     const result = await loginStep(() =>
-      telegram.login.signIn({ session: pending.session, phone, phoneCodeHash, code }),
+      telegram.login.signIn({ session: pending.session, phone, phoneCodeHash, code, viaEmail: pending.viaEmail }),
     )
     await clearPendingCode(phoneCodeHash)
 

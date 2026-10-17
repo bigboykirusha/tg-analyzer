@@ -269,3 +269,46 @@ test('deleting the account removes every row of the user', async () => {
   assert.equal(remaining.rows[0].n, 0)
   assert.equal((await refresh(session.cookie)).statusCode, 401)
 })
+
+test('send-code reports where the code went and resend switches channel on the same attempt', async () => {
+  const phone = '+79990000077'
+  const sent = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/send-code',
+    payload: { phone },
+    remoteAddress: nextIp(),
+  })
+  assert.equal(sent.statusCode, 200)
+  const first = sent.json<{ phoneCodeHash: string; delivery: { type: string; nextType: string | null } }>()
+  assert.equal(first.delivery.type, 'app')
+  assert.equal(first.delivery.nextType, 'sms')
+
+  const resent = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/resend-code',
+    payload: { phone, phoneCodeHash: first.phoneCodeHash },
+    remoteAddress: nextIp(),
+  })
+  assert.equal(resent.statusCode, 200)
+  const second = resent.json<{ phoneCodeHash: string; delivery: { type: string } }>()
+  assert.equal(second.delivery.type, 'sms')
+
+  // The resent code still signs in.
+  const verified = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/verify-code',
+    payload: { phone, code: '12345', phoneCodeHash: second.phoneCodeHash },
+    remoteAddress: nextIp(),
+  })
+  assert.equal(verified.statusCode, 200)
+
+  // Resending for an unknown attempt asks to start over.
+  const unknown = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/resend-code',
+    payload: { phone, phoneCodeHash: 'missing' },
+    remoteAddress: nextIp(),
+  })
+  assert.equal(unknown.statusCode, 401)
+  assert.equal(unknown.json<{ code: string }>().code, 'LOGIN_SESSION_EXPIRED')
+})

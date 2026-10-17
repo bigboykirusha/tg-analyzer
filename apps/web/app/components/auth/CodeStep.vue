@@ -3,11 +3,21 @@ import type { ComponentPublicInstance } from 'vue'
 import Button from '../ui/Button.vue'
 
 const code = defineModel<string>('code', { required: true })
-defineProps<{ loading: boolean; resendSeconds: number }>()
+const props = withDefaults(
+  defineProps<{
+    loading: boolean
+    resendSeconds: number
+    /** Digits in the code; email codes are longer than the usual five. */
+    length?: number
+    resendLabel?: string
+  }>(),
+  { length: 5, resendLabel: '' },
+)
 const emit = defineEmits<{ submit: []; resend: []; changeNumber: [] }>()
 
 const { t } = useI18n()
-const digits = ref(['', '', '', '', ''])
+const size = computed(() => Math.min(Math.max(props.length, 4), 8))
+const digits = ref<string[]>(Array.from({ length: props.length }, () => ''))
 const inputs = ref<HTMLInputElement[]>([])
 
 function formatCountdown(seconds: number) {
@@ -17,8 +27,8 @@ function formatCountdown(seconds: number) {
 watch(
   code,
   (value) => {
-    const next = value.replace(/\D/g, '').slice(0, 5).split('')
-    digits.value = Array.from({ length: 5 }, (_, index) => next[index] ?? '')
+    const next = value.replace(/\D/g, '').slice(0, size.value).split('')
+    digits.value = Array.from({ length: size.value }, (_, index) => next[index] ?? '')
   },
   { immediate: true },
 )
@@ -52,11 +62,11 @@ function handleInput(event: Event, index: number) {
     return
   }
 
-  const chars = value.slice(0, 5 - index).split('')
+  const chars = value.slice(0, size.value - index).split('')
   chars.forEach((char, offset) => {
     digits.value[index + offset] = char
   })
-  focusInput(Math.min(index + chars.length, 4))
+  focusInput(Math.min(index + chars.length, size.value - 1))
 }
 
 function handleKeydown(event: KeyboardEvent, index: number) {
@@ -67,23 +77,23 @@ function handleKeydown(event: KeyboardEvent, index: number) {
   if (event.key === 'ArrowLeft' && index > 0) {
     focusInput(index - 1)
   }
-  if (event.key === 'ArrowRight' && index < 4) {
+  if (event.key === 'ArrowRight' && index < size.value - 1) {
     focusInput(index + 1)
   }
 }
 
 function handlePaste(event: ClipboardEvent) {
-  const value = event.clipboardData?.getData('text')?.replace(/\D/g, '').slice(0, 5)
+  const value = event.clipboardData?.getData('text')?.replace(/\D/g, '').slice(0, size.value)
   if (!value) {
     return
   }
   event.preventDefault()
-  digits.value = Array.from({ length: 5 }, (_, index) => value[index] ?? '')
-  focusInput(Math.min(value.length, 5) - 1)
+  digits.value = Array.from({ length: size.value }, (_, index) => value[index] ?? '')
+  focusInput(Math.min(value.length, size.value) - 1)
 }
 
 function submit() {
-  if (code.value.length !== 5) {
+  if (code.value.length !== size.value) {
     focusInput(
       Math.max(
         0,
@@ -100,7 +110,7 @@ function submit() {
   <form class="auth-form" @submit.prevent="submit">
     <label class="field">
       <span class="field__label">{{ t('login.codeLabel') }}</span>
-      <div class="otp-row" @paste="handlePaste">
+      <div class="otp-row" :style="{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }" @paste="handlePaste">
         <input
           v-for="(_, index) in digits"
           :key="index"
@@ -124,13 +134,17 @@ function submit() {
     </label>
     <div class="code-actions t-small">
       <button type="button" class="text-action" :disabled="resendSeconds > 0 || loading" @click="emit('resend')">
-        {{ resendSeconds > 0 ? t('login.resendIn', { time: formatCountdown(resendSeconds) }) : t('login.resend') }}
+        {{
+          resendSeconds > 0
+            ? t('login.resendIn', { time: formatCountdown(resendSeconds) })
+            : resendLabel || t('login.resend')
+        }}
       </button>
       <button type="button" class="text-action text-action-primary" :disabled="loading" @click="emit('changeNumber')">
         {{ t('login.changeNumber') }}
       </button>
     </div>
-    <Button variant="primary" size="lg" :loading="loading" :disabled="code.length !== 5" block>
+    <Button variant="primary" size="lg" :loading="loading" :disabled="code.length !== size" block>
       {{ loading ? t('login.checkingCode') : t('login.confirmCode') }}
     </Button>
   </form>

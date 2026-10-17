@@ -267,6 +267,16 @@ export const ru: Record<MessageKey, string> = {
   'login.codeTitle': 'Подтвердите код Telegram',
   'login.confirmCode': 'Подтвердить код',
   'login.countryLabel': 'Страна',
+  'login.delivery.app': 'Код отправлен в Telegram: откройте чат «Telegram» в приложении, где вы уже вошли.',
+  'login.delivery.call': 'Telegram позвонит на номер {phone} и продиктует код.',
+  'login.delivery.email': 'Telegram отправил код на почту для входа {email}.',
+  'login.delivery.emailSetupRequired':
+    'Telegram просит привязать почту для входа, прежде чем отправить код. Войдите в официальное приложение Telegram, привяжите почту в Настройках → Конфиденциальность, затем запросите код снова.',
+  'login.delivery.missedCall':
+    'Telegram позвонит на номер {phone}. Код — последние цифры номера, с которого звонят; отвечать не нужно.',
+  'login.delivery.sms': 'Код отправлен по SMS на номер {phone}.',
+  'login.delivery.unsupported':
+    'Telegram выбрал способ отправки, который поддерживают только официальные приложения. Запросите код ещё раз, чтобы получить его другим способом.',
   'login.getCode': 'Получить код',
   'login.heroText': 'Ритм, слова, баланс и динамика общения по любому чату Telegram.',
   'login.heroTitle': 'Узнайте, как устроена ваша переписка',
@@ -281,7 +291,9 @@ export const ru: Record<MessageKey, string> = {
   'login.phoneLabel': 'Номер телефона',
   'login.phoneTitle': 'Введите телефон',
   'login.resend': 'Отправить ещё раз',
+  'login.resendCall': 'Позвонить вместо этого',
   'login.resendIn': 'Отправить ещё раз через {time}',
+  'login.resendSms': 'Отправить по SMS',
   'login.selectCountry': 'Выберите страну',
   'login.sendingCode': 'Отправляем код...',
   'login.seoTitle': 'Вход',

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
 import { ApiClientError } from '../composables/useApi'
 import { AlertCircle } from '../lib/icons'
 
@@ -6,7 +7,7 @@ definePageMeta({ middleware: ['guest'] })
 
 const RESEND_DELAY_SECONDS = 60
 
-const { sendCode, verifyCode, verifyPassword } = useAuth()
+const { sendCode, resendCode, verifyCode, verifyPassword } = useAuth()
 const { t } = useI18n()
 const errorMessage = useErrorMessage()
 
@@ -15,6 +16,7 @@ const phone = ref('')
 const code = ref('')
 const password = ref('')
 const phoneCodeHash = ref('')
+const delivery = ref<CodeDeliveryDto | null>(null)
 const tempToken = ref('')
 const passwordHint = ref<string | null>(null)
 const loading = ref(false)
@@ -47,15 +49,54 @@ async function run(action: () => Promise<void>) {
   }
 }
 
+function applyDelivery(result: { phoneCodeHash: string; delivery: CodeDeliveryDto }) {
+  phoneCodeHash.value = result.phoneCodeHash
+  delivery.value = result.delivery
+  code.value = ''
+  resendAvailableAt.value = Date.now() + (result.delivery.timeoutSec ?? RESEND_DELAY_SECONDS) * 1000
+}
+
 function requestCode() {
   return run(async () => {
-    const result = await sendCode(phone.value)
-    phoneCodeHash.value = result.phoneCodeHash
-    code.value = ''
-    resendAvailableAt.value = Date.now() + RESEND_DELAY_SECONDS * 1000
+    applyDelivery(await sendCode(phone.value))
     step.value = 'code'
   })
 }
+
+/** Next channel on the same attempt; a brand-new auth.sendCode is what Telegram throttles. */
+function requestResend() {
+  return run(async () => {
+    applyDelivery(await resendCode({ phone: phone.value, phoneCodeHash: phoneCodeHash.value }))
+  })
+}
+
+const DESCRIPTION: Record<CodeDeliveryType, string> = {
+  app: 'login.delivery.app',
+  sms: 'login.delivery.sms',
+  call: 'login.delivery.call',
+  missed_call: 'login.delivery.missedCall',
+  email: 'login.delivery.email',
+  email_setup_required: 'login.delivery.emailSetupRequired',
+  unsupported: 'login.delivery.unsupported',
+}
+const RESEND_LABEL: Partial<Record<CodeDeliveryType, string>> = {
+  sms: 'login.resendSms',
+  call: 'login.resendCall',
+  missed_call: 'login.resendCall',
+}
+const codeDescription = computed(() => {
+  const value = delivery.value
+  if (!value) return t('login.codeDescription')
+  return t(DESCRIPTION[value.type] as 'login.delivery.app', { phone: phone.value, email: value.emailPattern ?? '' })
+})
+/** Telegram did not send a code this app can receive; the user has to act. */
+const deliveryBlocked = computed(
+  () => delivery.value?.type === 'email_setup_required' || delivery.value?.type === 'unsupported',
+)
+const resendLabel = computed(() => {
+  const next = delivery.value?.nextType
+  return next && RESEND_LABEL[next] ? t(RESEND_LABEL[next] as 'login.resendSms') : ''
+})
 
 function submitCode() {
   return run(async () => {
@@ -80,6 +121,7 @@ function submitPassword() {
 function changeNumber() {
   step.value = 'phone'
   code.value = ''
+  delivery.value = null
   resendAvailableAt.value = 0
 }
 </script>
@@ -120,7 +162,7 @@ function changeNumber() {
               </h2>
               <p>
                 <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
-                <template v-else-if="step === 'code'">{{ t('login.codeDescription') }}</template>
+                <template v-else-if="step === 'code'">{{ codeDescription }}</template>
                 <template v-else>{{ t('login.passwordDescription') }}</template>
               </p>
             </div>
@@ -138,9 +180,11 @@ function changeNumber() {
                 key="code"
                 v-model:code="code"
                 :loading="loading"
-                :resend-seconds="resendSeconds"
+                :resend-seconds="deliveryBlocked ? 0 : resendSeconds"
+                :resend-label="resendLabel"
+                :length="delivery?.length ?? 5"
                 @submit="submitCode"
-                @resend="requestCode"
+                @resend="requestResend"
                 @change-number="changeNumber"
               />
               <PasswordStep

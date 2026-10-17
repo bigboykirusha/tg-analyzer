@@ -265,6 +265,17 @@ export const en = {
   'login.codeTitle': 'Confirm Telegram code',
   'login.confirmCode': 'Confirm code',
   'login.countryLabel': 'Country',
+  'login.delivery.app':
+    'We sent the code to Telegram: open the «Telegram» chat in an app where you are already signed in.',
+  'login.delivery.call': 'Telegram will call {phone} and read out the code.',
+  'login.delivery.email': 'Telegram sent the code to your login email {email}.',
+  'login.delivery.emailSetupRequired':
+    'Telegram asks to set up a login email before it sends a code. Sign in with the official Telegram app, add a login email in Settings → Privacy and Security, then request the code again.',
+  'login.delivery.missedCall':
+    'Telegram will call {phone}. The code is the last digits of the calling number; you do not need to answer.',
+  'login.delivery.sms': 'We sent the code by SMS to {phone}.',
+  'login.delivery.unsupported':
+    'Telegram chose a way to send the code that only official apps support. Request the code again to get it another way.',
   'login.getCode': 'Get code',
   'login.heroText': 'Rhythm, words, balance, and interaction dynamics for any Telegram chat.',
   'login.heroTitle': 'See how your conversations work',
@@ -279,7 +290,9 @@ export const en = {
   'login.phoneLabel': 'Phone number',
   'login.phoneTitle': 'Enter your phone',
   'login.resend': 'Send again',
+  'login.resendCall': 'Call me instead',
   'login.resendIn': 'Send again in {time}',
+  'login.resendSms': 'Send by SMS',
   'login.selectCountry': 'Select country',
   'login.sendingCode': 'Sending code...',
   'login.seoTitle': 'Sign in',

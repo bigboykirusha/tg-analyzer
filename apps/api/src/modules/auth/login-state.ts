@@ -13,6 +13,8 @@ export interface PendingCode {
   phone: string
   phoneCodeHash: string
   session: string
+  /** The code went to the login email; it is then verified differently. */
+  viaEmail?: boolean
 }
 
 export interface PendingPassword {

@@ -10,6 +10,7 @@ import type {
   ParseProgressDto,
   ReportDto,
   ReportsResponse,
+  ResendCodeBody,
   SendCodeBody,
   SendCodeResponse,
   StartParseBody,
@@ -35,6 +36,11 @@ export const phoneSchema = z
   .pipe(z.string().regex(/^\+?[1-9]\d{6,14}$/, 'Expected an international phone number'))
 
 export const sendCodeBodySchema = z.object({ phone: phoneSchema }) satisfies z.ZodType<SendCodeBody, unknown>
+
+export const resendCodeBodySchema = z.object({
+  phone: phoneSchema,
+  phoneCodeHash: z.string().min(1).max(256),
+}) satisfies z.ZodType<ResendCodeBody, unknown>
 
 export const verifyCodeBodySchema = z.object({
   phone: phoneSchema,
@@ -87,6 +93,7 @@ type Endpoint<Request, Response, Query = never> = { request: Request; response: 
 
 export interface ApiEndpointMap {
   'POST /api/v1/auth/send-code': Endpoint<SendCodeBody, SendCodeResponse>
+  'POST /api/v1/auth/resend-code': Endpoint<ResendCodeBody, SendCodeResponse>
   'POST /api/v1/auth/verify-code': Endpoint<VerifyCodeBody, VerifyCodeResponse>
   'POST /api/v1/auth/verify-password': Endpoint<VerifyPasswordBody, AuthSuccessResponse>
   'POST /api/v1/auth/refresh': Endpoint<undefined, AuthSuccessResponse>

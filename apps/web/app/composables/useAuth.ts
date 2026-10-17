@@ -21,6 +21,10 @@ export function useAuth() {
     return api('POST /api/v1/auth/send-code', { body: { phone } })
   }
 
+  async function resendCode(body: { phone: string; phoneCodeHash: string }) {
+    return api('POST /api/v1/auth/resend-code', { body })
+  }
+
   async function verifyCode(body: { phone: string; code: string; phoneCodeHash: string }): Promise<VerifyCodeResponse> {
     const result = await api('POST /api/v1/auth/verify-code', { body })
     if ('accessToken' in result) auth.signIn(result)
@@ -61,5 +65,5 @@ export function useAuth() {
     auth.updateUser(user)
   }
 
-  return { restoreSession, sendCode, verifyCode, verifyPassword, logout, deleteAccount, syncTimeZone }
+  return { restoreSession, sendCode, resendCode, verifyCode, verifyPassword, logout, deleteAccount, syncTimeZone }
 }

@@ -63,7 +63,32 @@ export interface SendCodeBody {
   phone: string
 }
 
+/**
+ * Where Telegram delivered the login code. Telegram picks the channel itself:
+ * usually the app, but for third-party clients it may switch to SMS, a call,
+ * the login email, or demand that a login email is set up first.
+ */
+export type CodeDeliveryType = 'app' | 'sms' | 'call' | 'missed_call' | 'email' | 'email_setup_required' | 'unsupported'
+
+export interface CodeDeliveryDto {
+  type: CodeDeliveryType
+  /** Masked login email, e.g. `a***@gmail.com`, when `type` is `email`. */
+  emailPattern: string | null
+  /** Number of digits when Telegram reports it. */
+  length: number | null
+  /** Channel of the next code after a resend, when Telegram offers one. */
+  nextType: CodeDeliveryType | null
+  /** Seconds before a resend is allowed, when Telegram reports it. */
+  timeoutSec: number | null
+}
+
 export interface SendCodeResponse {
+  phoneCodeHash: string
+  delivery: CodeDeliveryDto
+}
+
+export interface ResendCodeBody {
+  phone: string
   phoneCodeHash: string
 }
 

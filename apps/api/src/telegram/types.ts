@@ -1,4 +1,4 @@
-import type { ChatType, MessageInput } from '@tg-analyzer/shared'
+import type { ChatType, CodeDeliveryDto, MessageInput } from '@tg-analyzer/shared'
 
 export interface TelegramUser {
   id: string
@@ -27,10 +27,25 @@ export type SignInResult =
   | { status: 'authorized'; session: string; user: TelegramUser }
   | { status: 'password_required'; session: string; hint: string | null }
 
+export interface SentLoginCode {
+  phoneCodeHash: string
+  session: string
+  delivery: CodeDeliveryDto
+}
+
 /** Stateless login steps. The unauthorised session string carries state between requests. */
 export interface TelegramLoginApi {
-  sendCode(phone: string): Promise<{ phoneCodeHash: string; session: string }>
-  signIn(input: { session: string; phone: string; phoneCodeHash: string; code: string }): Promise<SignInResult>
+  sendCode(phone: string): Promise<SentLoginCode>
+  /** Asks Telegram for the next delivery channel (usually SMS or a call) on the same login attempt. */
+  resendCode(input: { session: string; phone: string; phoneCodeHash: string }): Promise<SentLoginCode>
+  signIn(input: {
+    session: string
+    phone: string
+    phoneCodeHash: string
+    code: string
+    /** The code came to the login email: Telegram expects it as an email verification. */
+    viaEmail?: boolean
+  }): Promise<SignInResult>
   checkPassword(input: { session: string; password: string }): Promise<{ session: string; user: TelegramUser }>
 }
 

@@ -4,6 +4,7 @@ import { Logger, LogLevel } from 'telegram/extensions/Logger.js'
 import { computeCheck } from 'telegram/Password.js'
 import { StringSession } from 'telegram/sessions/index.js'
 import { CustomFile } from 'telegram/client/uploads.js'
+import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
 import type { Redis } from 'ioredis'
 import { sleep } from '../lib/time'
 import { normalizeTelegramError, TelegramLoginError } from './errors'
@@ -11,6 +12,7 @@ import { isSystemDialog, toMessageInput, toTelegramDialog } from './mapping'
 import { acquireSessionLease } from './session-lease'
 import type {
   HistoryPage,
+  SentLoginCode,
   SignInResult,
   TelegramAccountApi,
   TelegramDialog,
@@ -38,6 +40,53 @@ async function attempt<T>(work: () => Promise<T>): Promise<T> {
   } catch (error) {
     throw normalizeTelegramError(error)
   }
+}
+
+function codeDeliveryType(
+  type: Api.auth.TypeSentCodeType | Api.auth.TypeCodeType | undefined,
+): CodeDeliveryType | null {
+  if (!type) return null
+  if (type instanceof Api.auth.SentCodeTypeApp) return 'app'
+  if (
+    type instanceof Api.auth.SentCodeTypeSms ||
+    type instanceof Api.auth.SentCodeTypeSmsWord ||
+    type instanceof Api.auth.SentCodeTypeSmsPhrase ||
+    type instanceof Api.auth.SentCodeTypeFragmentSms ||
+    type instanceof Api.auth.CodeTypeSms ||
+    type instanceof Api.auth.CodeTypeFragmentSms
+  ) {
+    return 'sms'
+  }
+  if (type instanceof Api.auth.SentCodeTypeCall || type instanceof Api.auth.CodeTypeCall) return 'call'
+  if (
+    type instanceof Api.auth.SentCodeTypeFlashCall ||
+    type instanceof Api.auth.SentCodeTypeMissedCall ||
+    type instanceof Api.auth.CodeTypeFlashCall ||
+    type instanceof Api.auth.CodeTypeMissedCall
+  ) {
+    return 'missed_call'
+  }
+  if (type instanceof Api.auth.SentCodeTypeEmailCode) return 'email'
+  if (type instanceof Api.auth.SentCodeTypeSetUpEmailRequired) return 'email_setup_required'
+  // Firebase SMS needs app attestation that only official mobile apps can pass.
+  return 'unsupported'
+}
+
+function toSentLoginCode(sent: Api.auth.TypeSentCode, session: string): SentLoginCode {
+  if (!(sent instanceof Api.auth.SentCode)) {
+    // SentCodeSuccess (already authorised) or a paid-SMS requirement: not a code flow this app supports.
+    throw new Error(`Unexpected auth.sendCode result: ${sent.className}`)
+  }
+  const { type } = sent
+  const length = 'length' in type && typeof type.length === 'number' ? type.length : null
+  const delivery: CodeDeliveryDto = {
+    type: codeDeliveryType(type) ?? 'unsupported',
+    emailPattern: type instanceof Api.auth.SentCodeTypeEmailCode ? type.emailPattern : null,
+    length,
+    nextType: codeDeliveryType(sent.nextType),
+    timeoutSec: typeof sent.timeout === 'number' ? sent.timeout : null,
+  }
+  return { phoneCodeHash: sent.phoneCodeHash, session, delivery }
 }
 
 function toTelegramUser(user: Api.User): TelegramUser {
@@ -73,20 +122,39 @@ export class LiveTelegramGateway implements TelegramGateway {
   }
 
   readonly login = {
+    // Raw auth.sendCode instead of client.sendCode: the helper drops the delivery
+    // type, and the user must know whether to look in the app, SMS or email.
     sendCode: (phone: string) =>
       this.withClient('', async (client) => {
-        const { phoneCodeHash } = await client.sendCode(this.credentials, phone)
-        return { phoneCodeHash, session: String(client.session.save()) }
+        const sent = await client.invoke(
+          new Api.auth.SendCode({
+            phoneNumber: phone,
+            apiId: this.credentials.apiId,
+            apiHash: this.credentials.apiHash,
+            settings: new Api.CodeSettings({}),
+          }),
+        )
+        return toSentLoginCode(sent, String(client.session.save()))
       }),
 
-    signIn: (input: { session: string; phone: string; phoneCodeHash: string; code: string }) =>
+    resendCode: (input: { session: string; phone: string; phoneCodeHash: string }) =>
+      this.withClient(input.session, async (client) => {
+        const sent = await client.invoke(
+          new Api.auth.ResendCode({ phoneNumber: input.phone, phoneCodeHash: input.phoneCodeHash }),
+        )
+        return toSentLoginCode(sent, String(client.session.save()))
+      }),
+
+    signIn: (input: { session: string; phone: string; phoneCodeHash: string; code: string; viaEmail?: boolean }) =>
       this.withClient(input.session, async (client): Promise<SignInResult> => {
         try {
           const result = await client.invoke(
             new Api.auth.SignIn({
               phoneNumber: input.phone,
               phoneCodeHash: input.phoneCodeHash,
-              phoneCode: input.code,
+              ...(input.viaEmail
+                ? { emailVerification: new Api.EmailVerificationCode({ code: input.code }) }
+                : { phoneCode: input.code }),
             }),
           )
           if (!(result instanceof Api.auth.Authorization) || !(result.user instanceof Api.User)) {
