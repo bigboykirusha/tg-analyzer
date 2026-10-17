@@ -26,6 +26,18 @@ const now = useNow(1000)
 const resendSeconds = computed(() => Math.max(0, Math.ceil((resendAvailableAt.value - now.value) / 1000)))
 const stepIndex = computed(() => ({ phone: 0, code: 1, password: 2 })[step.value])
 
+// The policy opens over the login page; old /privacy links land here with #privacy.
+const route = useRoute()
+const privacyOpen = ref(false)
+onMounted(() => {
+  if (route.hash === '#privacy') privacyOpen.value = true
+})
+
+function closePrivacy() {
+  privacyOpen.value = false
+  if (route.hash) void navigateTo({ hash: '' }, { replace: true })
+}
+
 useSeoMeta({ title: () => t('login.seoTitle'), description: () => t('seo.description') })
 
 watch(step, () => {
@@ -205,11 +217,13 @@ function changeNumber() {
 
           <p class="trust">
             {{ t('login.trust.short') }}
-            <NuxtLink to="/privacy" class="trust__link">{{ t('login.trust.more') }}</NuxtLink>
+            <button type="button" class="trust__link" @click="privacyOpen = true">{{ t('login.trust.more') }}</button>
           </p>
         </div>
       </section>
     </section>
+
+    <PrivacyDialog :open="privacyOpen" @close="closePrivacy" />
   </main>
 </template>
 
@@ -386,7 +400,11 @@ function changeNumber() {
 }
 
 .trust__link {
+  padding: 0;
+  border: 0;
   border-radius: var(--radius-xs);
+  background: none;
+  cursor: pointer;
   color: var(--accent-ink);
   font: var(--text-small);
   font-weight: 600;

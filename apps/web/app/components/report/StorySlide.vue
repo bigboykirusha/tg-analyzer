@@ -1,10 +1,16 @@
 <script setup lang="ts">
 /**
- * One «Итоги» story slide. Purely presentational so the same slide renders on
- * screen (any size) and off screen at 9:16 for the exported image. Every size
- * is in cqmin, so the layout scales with the slide.
+ * One «Итоги» story slide, dense with facts. Purely presentational so the same
+ * slide renders on screen (any size) and off screen at 9:16 for the exported
+ * image. Sizes are in cqmin, so the layout scales with the slide.
  */
-export interface StoryStat {
+export interface StoryPerson {
+  name: string
+  /** Photo URL (blob: or data:), or null for initials. */
+  avatar: string | null
+}
+
+export interface StoryTile {
   label: string
   value: string
 }
@@ -16,16 +22,15 @@ export interface StorySlideModel {
   kicker: string
   title: string
   sub?: string
-  stats?: StoryStat[]
-  /** Your share 0–100 with labels for both sides. */
+  /** Share of the first person, 0–100, with a label for each side. */
   split?: { mine: number; mineLabel: string; theirsLabel: string }
   /** 24 hourly values; `highlight` is the peak hour. */
   bars?: { values: number[]; highlight: number }
   columns?: { left: { title: string; items: string[] }; right: { title: string; items: string[] } }
-  emoji?: string[]
+  tiles?: StoryTile[]
 }
 
-defineProps<{ slide: StorySlideModel; mine: string; theirs: string }>()
+defineProps<{ slide: StorySlideModel; me: StoryPerson; them: StoryPerson }>()
 
 const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase() ?? '?'
 </script>
@@ -36,14 +41,20 @@ const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase(
     <span class="story-slide__blob story-slide__blob--b" aria-hidden="true" />
 
     <header class="story-slide__people">
-      <span class="story-slide__face">{{ initial(mine) }}</span>
-      <span class="story-slide__face story-slide__face--them">{{ initial(theirs) }}</span>
-      <span class="story-slide__names">{{ mine }} × {{ theirs }}</span>
+      <span v-for="(person, position) in [me, them]" :key="position" class="story-slide__face">
+        <img v-if="person.avatar" :src="person.avatar" alt="" />
+        <span v-else>{{ initial(person.name) }}</span>
+      </span>
+      <span class="story-slide__names">
+        <strong>{{ me.name }}</strong>
+        <span>&amp;</span>
+        <strong>{{ them.name }}</strong>
+      </span>
     </header>
 
     <div class="story-slide__body">
       <span class="story-slide__kicker">{{ slide.kicker }}</span>
-      <strong class="story-slide__title" :class="{ 'story-slide__title--long': slide.title.length > 10 }">
+      <strong class="story-slide__title" :class="{ 'story-slide__title--long': slide.title.length > 8 }">
         {{ slide.title }}
       </strong>
       <p v-if="slide.sub" class="story-slide__sub">{{ slide.sub }}</p>
@@ -58,16 +69,16 @@ const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase(
         </div>
       </div>
 
-      <div v-if="slide.bars" class="story-slide__bars" aria-hidden="true">
-        <span
-          v-for="(value, hour) in slide.bars.values"
-          :key="hour"
-          :class="{ 'is-peak': hour === slide.bars.highlight }"
-          :style="{ height: `${Math.max(4, (value / Math.max(...slide.bars.values, 1)) * 100)}%` }"
-        />
-      </div>
-      <div v-if="slide.bars" class="story-slide__bar-axis" aria-hidden="true">
-        <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
+      <div v-if="slide.bars" class="story-slide__chart" aria-hidden="true">
+        <div class="story-slide__bars">
+          <span
+            v-for="(value, hour) in slide.bars.values"
+            :key="hour"
+            :class="{ 'is-peak': hour === slide.bars.highlight }"
+            :style="{ height: `${Math.max(4, (value / Math.max(...slide.bars.values, 1)) * 100)}%` }"
+          />
+        </div>
+        <div class="story-slide__axis"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
       </div>
 
       <div v-if="slide.columns" class="story-slide__columns">
@@ -79,16 +90,12 @@ const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase(
         </div>
       </div>
 
-      <div v-if="slide.emoji?.length" class="story-slide__emoji">
-        <span v-for="symbol in slide.emoji" :key="symbol">{{ symbol }}</span>
-      </div>
-
-      <dl v-if="slide.stats?.length" class="story-slide__stats">
-        <div v-for="stat in slide.stats" :key="stat.label">
-          <dt>{{ stat.label }}</dt>
-          <dd>{{ stat.value }}</dd>
+      <div v-if="slide.tiles?.length" class="story-slide__tiles">
+        <div v-for="tile in slide.tiles" :key="tile.label" class="story-slide__tile">
+          <span>{{ tile.label }}</span>
+          <strong>{{ tile.value }}</strong>
         </div>
-      </dl>
+      </div>
     </div>
 
     <footer class="story-slide__brand">TG Analyzer</footer>
@@ -100,10 +107,11 @@ const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase(
   position: relative;
   display: flex;
   flex-direction: column;
+  gap: 4cqmin;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  padding: 16cqmin 7cqmin 7cqmin;
+  padding: 18cqmin 6cqmin 6cqmin;
   color: var(--story-ink);
   container-type: size;
   font-family: var(--font-sans);
@@ -151,58 +159,80 @@ const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase(
   height: 110cqmin;
 }
 
+/* ─── Who: both avatars and both names ───────────────────────────────────── */
 .story-slide__people {
   position: relative;
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .story-slide__face {
   display: inline-grid;
+  flex: 0 0 auto;
   place-items: center;
-  width: 9cqmin;
-  height: 9cqmin;
-  border: 0.6cqmin solid var(--story-ink);
+  width: 13cqmin;
+  height: 13cqmin;
+  overflow: hidden;
+  border: 0.8cqmin solid var(--story-ink);
   border-radius: 50%;
   background: var(--story-chip);
-  font-size: 4cqmin;
+  font-size: 5.5cqmin;
   font-weight: 700;
 }
 
-.story-slide__face--them {
-  margin-left: -2.5cqmin;
+.story-slide__face + .story-slide__face {
+  margin-left: -3.5cqmin;
+}
+
+.story-slide__face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .story-slide__names {
+  display: flex;
+  align-items: baseline;
+  gap: 1.6cqmin;
   min-width: 0;
   margin-left: 3cqmin;
   overflow: hidden;
-  font-size: 4.4cqmin;
-  font-weight: 600;
-  text-overflow: ellipsis;
+  font-size: 5cqmin;
   white-space: nowrap;
 }
 
+.story-slide__names strong {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.story-slide__names span {
+  color: var(--story-ink-muted);
+}
+
+/* ─── Content ────────────────────────────────────────────────────────────── */
 .story-slide__body {
   position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
   justify-content: center;
-  gap: 3.5cqmin;
+  gap: 3cqmin;
   min-height: 0;
 }
 
 .story-slide__kicker {
   color: var(--story-ink-muted);
-  font-size: 4.2cqmin;
+  font-size: 3.8cqmin;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .story-slide__title {
-  font-size: 20cqmin;
+  font-size: 19cqmin;
   font-weight: 700;
   line-height: 0.95;
   letter-spacing: -0.04em;
@@ -212,25 +242,24 @@ const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase(
 .story-slide__title--long {
   font-size: 12cqmin;
   line-height: 1.02;
-  letter-spacing: -0.03em;
 }
 
 .story-slide__sub {
   margin: 0;
   color: var(--story-ink-muted);
-  font-size: 4.8cqmin;
+  font-size: 4.4cqmin;
   font-weight: 500;
   line-height: 1.3;
 }
 
 .story-slide__split {
   display: grid;
-  gap: 2cqmin;
+  gap: 1.6cqmin;
 }
 
 .story-slide__split-bar {
   display: flex;
-  height: 4cqmin;
+  height: 3.6cqmin;
   overflow: hidden;
   border-radius: var(--radius-full);
   background: var(--story-track);
@@ -245,15 +274,20 @@ const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase(
   display: flex;
   justify-content: space-between;
   gap: 3cqmin;
-  font-size: 3.8cqmin;
+  font-size: 3.6cqmin;
   font-weight: 600;
+}
+
+.story-slide__chart {
+  display: grid;
+  gap: 1.2cqmin;
 }
 
 .story-slide__bars {
   display: flex;
   align-items: flex-end;
   gap: 0.8cqmin;
-  height: 26cqmin;
+  height: 22cqmin;
 }
 
 .story-slide__bars span {
@@ -266,12 +300,11 @@ const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase(
   background: var(--story-ink);
 }
 
-.story-slide__bar-axis {
+.story-slide__axis {
   display: flex;
   justify-content: space-between;
-  margin-top: -2cqmin;
   color: var(--story-ink-muted);
-  font-size: 3cqmin;
+  font-size: 2.8cqmin;
   font-variant-numeric: tabular-nums;
 }
 
@@ -283,20 +316,24 @@ const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase(
 
 .story-slide__column-title {
   display: block;
-  margin-bottom: 1.5cqmin;
+  margin-bottom: 1.4cqmin;
+  overflow: hidden;
   color: var(--story-ink-muted);
-  font-size: 3.6cqmin;
+  font-size: 3.4cqmin;
   font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .story-slide__columns ol {
   display: grid;
-  gap: 1.2cqmin;
+  gap: 1cqmin;
   margin: 0;
-  padding-left: 5cqmin;
-  font-size: 5.4cqmin;
+  padding: 0;
+  font-size: 5cqmin;
+  list-style: none;
   font-weight: 700;
 }
 
@@ -306,48 +343,42 @@ const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase(
   white-space: nowrap;
 }
 
-.story-slide__emoji {
-  display: flex;
-  gap: 4cqmin;
-  font-size: 16cqmin;
-  line-height: 1;
-}
-
-.story-slide__stats {
+/* Facts as a two-column grid of glass tiles. */
+.story-slide__tiles {
   display: grid;
-  gap: 1.6cqmin;
-  margin: 2cqmin 0 0;
+  grid-template-columns: 1fr 1fr;
+  gap: 2cqmin;
 }
 
-.story-slide__stats div {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 3cqmin;
-  padding: 2.4cqmin 3.6cqmin;
-  border-radius: 3cqmin;
+.story-slide__tile {
+  display: grid;
+  align-content: start;
+  gap: 0.8cqmin;
+  min-width: 0;
+  padding: 2.8cqmin 3.2cqmin;
+  border-radius: 3.2cqmin;
   background: var(--story-chip);
 }
 
-.story-slide__stats dt {
-  min-width: 0;
+.story-slide__tile span {
   color: var(--story-ink-muted);
-  font-size: 3.8cqmin;
+  font-size: 3.1cqmin;
   font-weight: 500;
+  line-height: 1.25;
 }
 
-.story-slide__stats dd {
-  margin: 0;
+.story-slide__tile strong {
   font-size: 4.6cqmin;
   font-weight: 700;
+  line-height: 1.15;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .story-slide__brand {
   position: relative;
   align-self: flex-end;
-  font-size: 3.8cqmin;
+  font-size: 3.6cqmin;
   font-weight: 700;
   letter-spacing: -0.02em;
   opacity: 0.8;

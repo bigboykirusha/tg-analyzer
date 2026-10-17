@@ -49,3 +49,33 @@ test('logging out returns to the login page', async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Выйти' }).click()
   await page.waitForURL('**/login')
 })
+
+test('the recap opens as stories with both names and saves a slide', async ({ page }) => {
+  await signIn(page)
+  const row = page.locator('.chat-row').filter({ hasText: 'Катя' })
+  await row.getByRole('button', { name: 'Анализ' }).click()
+  await expect(page.getByText('Отчёт готов')).toBeVisible({ timeout: 30_000 })
+  await page.goto('/chat/1006')
+  await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible({ timeout: 15_000 })
+
+  const recap = page.getByRole('button', { name: 'Итоги' })
+  if (await recap.isVisible()) await recap.click()
+  else {
+    await page.getByRole('button', { name: 'Действия с отчётом' }).last().click()
+    await page.getByRole('menuitem', { name: 'Итоги' }).click()
+  }
+
+  const stories = page.getByRole('dialog', { name: 'Итоги переписки' })
+  await expect(stories.locator('.stories__segment')).toHaveCount(3)
+  await expect(stories.locator('.stories__stage .story-slide__names')).toHaveText(/Demo\s*&\s*Катя/)
+
+  await stories.getByRole('button', { name: 'Поделиться' }).click()
+  for (const option of ['Сторис в Instagram', 'Сторис в Telegram', 'Отправить в чат']) {
+    await expect(stories.getByRole('menuitem', { name: new RegExp(option) })).toBeVisible()
+  }
+  await stories.getByRole('button', { name: 'Отмена' }).click()
+
+  const download = page.waitForEvent('download')
+  await stories.getByRole('button', { name: 'Сохранить' }).click()
+  expect((await download).suggestedFilename()).toBe('tg-analyzer-overview.png')
+})

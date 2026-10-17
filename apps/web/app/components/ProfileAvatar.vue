@@ -1,20 +1,14 @@
 <script setup lang="ts">
-import { api } from '../composables/useApi'
+import { loadProfileAvatar } from '../lib/avatar-loader'
 
 withDefaults(defineProps<{ title: string | null | undefined; size?: 'sm' | 'md' }>(), { size: 'sm' })
-
-// One request per page load; the photo rarely changes.
-let request: Promise<string | null> | null = null
 
 const auth = useAuthStore()
 const src = ref<string | null>(null)
 
 onMounted(async () => {
   if (!auth.telegramSessionActive) return
-  request ??= api('GET /api/v1/auth/avatar')
-    .then((blob) => URL.createObjectURL(blob))
-    .catch(() => null)
-  src.value = await request
+  src.value = await loadProfileAvatar()
 })
 </script>
 

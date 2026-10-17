@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import { ChevronLeft, ChevronRight, Download, Eye, EyeOff, Share2, X } from '../../lib/icons'
-import type { StorySlideModel } from './StorySlide.vue'
+import { loadChatAvatar, loadProfileAvatar } from '../../lib/avatar-loader'
+import { ChevronLeft, ChevronRight, Download, Share2, X } from '../../lib/icons'
+import type { StoryPerson, StorySlideModel, StoryTile } from './StorySlide.vue'
 
 /**
  * «Итоги» as Instagram-style stories: full screen on phones, a 9:16 frame on
  * wider screens; progress bars on top, auto-advance, hold to pause, tap the
- * sides or swipe to move, swipe down to close. Slides save as 1080×1920 PNGs
- * or go to the phone's share sheet.
+ * sides or swipe to move, swipe down to close. Three dense slides that save as
+ * 1080×1920 PNGs or go to the phone's share sheet (Instagram, Telegram, a chat).
  */
 const props = defineProps<{ open: boolean; data: ReportDto }>()
 const emit = defineEmits<{ close: [] }>()
@@ -15,17 +16,22 @@ const emit = defineEmits<{ close: [] }>()
 const { t, tc, formatNumber, formatPercent, formatDuration, formatDay, formatDecimal } = useI18n()
 const toast = useToast()
 const image = useCardImage()
+const auth = useAuthStore()
 
 /** How long one slide stays before the next, like stories. */
-const SLIDE_MS = 6000
+const SLIDE_MS = 8000
 /** A move longer than this is a swipe, shorter is a tap. */
 const SWIPE_PX = 40
 const DAY_SECONDS = 86_400
 
+type ShareTarget = 'instagram' | 'telegram' | 'chat'
+
 const index = ref(0)
 const paused = ref(false)
-const hideName = ref(false)
+const shareOpen = ref(false)
 const canShare = ref(false)
+const myAvatar = ref<string | null>(null)
+const theirAvatar = ref<string | null>(null)
 /** Slide rendered off screen for the image; null when not exporting. */
 const exportIndex = ref<number | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
@@ -33,224 +39,146 @@ const exportRef = ref<HTMLElement | null>(null)
 const open = toRef(props, 'open')
 
 useBodyScrollLock(open)
-useFocusTrap(panelRef, open, { onEscape: () => emit('close') })
+useFocusTrap(panelRef, open, {
+  onEscape: () => {
+    if (shareOpen.value) shareOpen.value = false
+    else emit('close')
+  },
+})
 
 const DAY_MONTH: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' }
 const LONG_DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
 const isGroup = computed(() => props.data.summary.type === 'group')
-const mine = computed(() => t('story.you'))
-const theirs = computed(() => (hideName.value && !isGroup.value ? t('story.them') : props.data.summary.title))
-const theirsShort = computed(() => (isGroup.value ? t('story.others') : theirs.value))
+
+const me = computed<StoryPerson>(() => ({
+  name: auth.user?.firstName?.trim() || auth.user?.username || t('story.you'),
+  avatar: myAvatar.value,
+}))
+const them = computed<StoryPerson>(() => ({ name: props.data.summary.title, avatar: theirAvatar.value }))
+/** The other side in labels: the person, or «Остальные» in a group. */
+const theirName = computed(() => (isGroup.value ? t('story.others') : them.value.name))
 
 const top = (items: { value: string }[], count = 5) => items.slice(0, count).map((item) => item.value)
+const days = (seconds: number) => tc('report.highlights.days', Math.round(seconds / DAY_SECONDS))
 
 const slides = computed<StorySlideModel[]>(() => {
   const { report } = props.data
   const { totals, facts, responses, vocabulary, activity, sessions, composition, period } = report
   const list: StorySlideModel[] = []
+  const myName = me.value.name
+  const otherName = theirName.value
 
-  // 1. Intro
+  // 1. The chat in numbers: volume, balance, who starts, reply times.
+  const overview: StoryTile[] = []
+  if (!isGroup.value && responses.iWriteFirstPct !== null) {
+    const iStart = responses.iWriteFirstPct >= 50
+    overview.push({
+      label: t('story.firstWriter'),
+      value: `${iStart ? myName : otherName} · ${formatPercent(iStart ? responses.iWriteFirstPct : 100 - responses.iWriteFirstPct)}`,
+    })
+  }
+  if (!isGroup.value && responses.medianMineSec !== null)
+    overview.push({ label: t('story.replies', { name: myName }), value: formatDuration(responses.medianMineSec) })
+  if (!isGroup.value && responses.medianTheirsSec !== null)
+    overview.push({ label: t('story.replies', { name: otherName }), value: formatDuration(responses.medianTheirsSec) })
+  overview.push({ label: t('story.activeDays'), value: formatNumber(facts.activeDays) })
+  if (facts.maxStreak.days >= 2)
+    overview.push({ label: t('story.bestStreak'), value: tc('report.highlights.days', facts.maxStreak.days) })
+  overview.push({ label: t('story.conversations'), value: formatNumber(sessions.totalSessions) })
+
   list.push({
-    key: 'intro',
+    key: 'overview',
     theme: 1,
-    kicker: t('story.kicker'),
-    title: t('story.introTitle'),
-    sub:
+    kicker:
       period.firstMessageAt && period.lastMessageAt
         ? `${formatDay(period.firstMessageAt.slice(0, 10), DAY_MONTH)} — ${formatDay(period.lastMessageAt.slice(0, 10), LONG_DATE)}`
-        : undefined,
-    stats: [
-      { label: t('story.activeDays'), value: formatNumber(facts.activeDays) },
-      { label: t('story.conversations'), value: formatNumber(sessions.totalSessions) },
-      ...(facts.maxStreak.days >= 2
-        ? [{ label: t('story.bestStreak'), value: tc('report.highlights.days', facts.maxStreak.days) }]
-        : []),
-    ],
+        : t('story.kicker'),
+    title: formatNumber(totals.messages),
+    sub: t('story.overviewSub', { perDay: formatDecimal(totals.messages / Math.max(facts.activeDays, 1)) }),
+    split: totals.messages
+      ? {
+          mine: Math.round((totals.sent / totals.messages) * 100),
+          mineLabel: `${myName} · ${formatNumber(totals.sent)}`,
+          theirsLabel: `${formatNumber(totals.received)} · ${otherName}`,
+        }
+      : undefined,
+    tiles: overview.slice(0, 6),
   })
 
-  // 2. Messages and who writes more
-  if (totals.messages) {
-    list.push({
-      key: 'messages',
-      theme: 3,
-      kicker: t('story.messagesKicker'),
-      title: formatNumber(totals.messages),
-      sub: t('story.messagesSub', { perDay: formatDecimal(totals.messages / Math.max(facts.activeDays, 1)) }),
-      split: {
-        mine: Math.round((totals.sent / totals.messages) * 100),
-        mineLabel: `${mine.value} · ${formatNumber(totals.sent)}`,
-        theirsLabel: `${formatNumber(totals.received)} · ${theirsShort.value}`,
-      },
-      stats: facts.mostActiveDate
-        ? [
-            {
-              label: t('story.busiestDay'),
-              value: `${formatDay(facts.mostActiveDate.date, DAY_MONTH)} · ${formatNumber(facts.mostActiveDate.total)}`,
-            },
-          ]
-        : undefined,
-    })
-  }
-
-  // 3. Who writes first and how
-  if (!isGroup.value && responses.iWriteFirstPct !== null) {
-    const { mine: myWords, theirs: theirWords } = vocabulary.wordsPerMessage
-    list.push({
-      key: 'starts',
-      theme: 2,
-      kicker: t('story.startsKicker'),
-      title: formatPercent(responses.iWriteFirstPct),
-      sub: t('story.startsSub', { name: theirs.value }),
-      split: { mine: responses.iWriteFirstPct, mineLabel: mine.value, theirsLabel: theirs.value },
-      stats: [
-        ...(myWords !== null && theirWords !== null
-          ? [{ label: t('story.wordsPerMessage'), value: `${formatDecimal(myWords)} / ${formatDecimal(theirWords)}` }]
-          : []),
-        ...(composition.voice ? [{ label: t('story.voice'), value: formatNumber(composition.voice) }] : []),
-        ...(composition.sticker ? [{ label: t('story.stickers'), value: formatNumber(composition.sticker) }] : []),
-      ].slice(0, 3),
-    })
-  }
-
-  // 4. Time of day
+  // 2. Rhythm and records: the peak hour, the busiest day, the longest talk and silence.
   const hourly = activity.hourly.map((hour) => hour.total)
   const peak = hourly.reduce((best, value, hour) => (value > (hourly[best] ?? 0) ? hour : best), 0)
   if (hourly[peak]) {
     const weekday = activity.weekday
     const busiest = weekday.reduce((best, value, day) => (value.total > (weekday[best]?.total ?? 0) ? day : best), 0)
+    const longest = [...sessions.highlights].sort((a, b) => b.durationSec - a.durationSec)[0]
+    const gap = facts.longestGap
+    const rhythm: StoryTile[] = []
+    if (facts.mostActiveDate)
+      rhythm.push({
+        label: t('story.busiestDay'),
+        value: `${formatDay(facts.mostActiveDate.date, DAY_MONTH)} · ${formatNumber(facts.mostActiveDate.total)}`,
+      })
+    if (longest)
+      rhythm.push({
+        label: t('story.longestTalk'),
+        value: `${formatDuration(longest.durationSec)} · ${formatDay(longest.startedAt.slice(0, 10), DAY_MONTH)}`,
+      })
+    if (gap && gap.seconds >= 2 * DAY_SECONDS)
+      rhythm.push(
+        gap.brokenByMe === undefined || isGroup.value
+          ? { label: t('story.longestSilence'), value: days(gap.seconds) }
+          : {
+              label: t('story.silenceBroken'),
+              value: t('story.silenceAfter', { name: gap.brokenByMe ? myName : otherName, days: days(gap.seconds) }),
+            },
+      )
+    if (sessions.nightSessionsPct !== null)
+      rhythm.push({ label: t('story.night'), value: formatPercent(sessions.nightSessionsPct) })
+
     list.push({
-      key: 'hours',
+      key: 'rhythm',
       theme: 5,
       kicker: t('story.hoursKicker'),
       title: `${String(peak).padStart(2, '0')}:00`,
       sub: t('story.hoursSub', { day: t('chart.weekdaysLong').split(',')[busiest] ?? '' }),
       bars: { values: hourly, highlight: peak },
-      stats:
-        sessions.nightSessionsPct !== null
-          ? [{ label: t('story.night'), value: formatPercent(sessions.nightSessionsPct) }]
-          : undefined,
+      tiles: rhythm.slice(0, 4),
     })
   }
 
-  // 5. Reply speed (private chats)
-  if (!isGroup.value && responses.medianTheirsSec !== null) {
-    const { medianMineSec, medianTheirsSec, responseRate } = responses
-    let verdict: string | undefined
-    if (medianMineSec !== null) {
-      const ratio = Math.max(medianMineSec, medianTheirsSec) / Math.max(Math.min(medianMineSec, medianTheirsSec), 1)
-      verdict =
-        ratio < 1.25
-          ? t('story.speedEven')
-          : t(medianMineSec < medianTheirsSec ? 'story.speedYouFaster' : 'story.speedThemFaster', {
-              ratio: formatDecimal(ratio),
-            })
-    }
-    list.push({
-      key: 'speed',
-      theme: 4,
-      kicker: t('story.speedKicker'),
-      title: formatDuration(medianTheirsSec),
-      sub: t('story.speedSub', { name: theirs.value }),
-      stats: [
-        ...(medianMineSec !== null ? [{ label: t('story.youReply'), value: formatDuration(medianMineSec) }] : []),
-        ...(responseRate !== null ? [{ label: t('story.replyRate'), value: formatPercent(responseRate) }] : []),
-        ...(verdict ? [{ label: t('story.verdict'), value: verdict }] : []),
-      ],
-    })
-  }
-
-  // 6. Records
-  const longest = [...sessions.highlights].sort((a, b) => b.durationSec - a.durationSec)[0]
-  const gap = facts.longestGap
-  const streak = facts.maxStreak
-  if (streak.days >= 2 || longest) {
-    const hasStreak = streak.days >= 2
-    list.push({
-      key: 'records',
-      theme: 1,
-      kicker: t('story.recordsKicker'),
-      title: hasStreak ? tc('report.highlights.days', streak.days) : formatDuration(longest!.durationSec),
-      sub:
-        hasStreak && streak.startDate && streak.endDate
-          ? t('story.streakSub', {
-              from: formatDay(streak.startDate, DAY_MONTH),
-              to: formatDay(streak.endDate, DAY_MONTH),
-            })
-          : t('story.longestTalk'),
-      stats: [
-        ...(longest && hasStreak
-          ? [
-              {
-                label: t('story.longestTalk'),
-                value: `${formatDuration(longest.durationSec)} · ${formatDay(longest.startedAt.slice(0, 10), DAY_MONTH)}`,
-              },
-            ]
-          : []),
-        ...(gap && gap.seconds >= 2 * DAY_SECONDS
-          ? [
-              {
-                label:
-                  gap.brokenByMe === undefined
-                    ? t('story.longestSilence')
-                    : t(gap.brokenByMe ? 'story.silenceByYou' : 'story.silenceByThem'),
-                value: tc('report.highlights.days', Math.round(gap.seconds / DAY_SECONDS)),
-              },
-            ]
-          : []),
-      ],
-    })
-  }
-
-  // 7. Words
-  const myWords = top(isGroup.value ? vocabulary.topWords : vocabulary.topWordsBySender.mine)
+  // 3. How you write: favourite words, emoji, voice notes and stickers.
+  const myWords = top(vocabulary.topWordsBySender.mine)
   const theirWords = top(vocabulary.topWordsBySender.theirs)
-  if (myWords.length) {
+  const chatWord = top(vocabulary.topWords, 1)[0]
+  if (chatWord || myWords.length) {
+    const myEmoji = top(vocabulary.topEmojiBySender.mine, 4)
+    const theirEmoji = top(vocabulary.topEmojiBySender.theirs, 4)
+    const style: StoryTile[] = []
+    if (myEmoji.length) style.push({ label: t('story.emojiOf', { name: myName }), value: myEmoji.join(' ') })
+    if (theirEmoji.length) style.push({ label: t('story.emojiOf', { name: otherName }), value: theirEmoji.join(' ') })
+    const { mine: myLength, theirs: theirLength } = vocabulary.wordsPerMessage
+    if (myLength !== null && theirLength !== null)
+      style.push({
+        label: t('story.wordsPerMessage'),
+        value: `${formatDecimal(myLength)} / ${formatDecimal(theirLength)}`,
+      })
+    if (composition.voice) style.push({ label: t('story.voice'), value: formatNumber(composition.voice) })
+    if (composition.sticker) style.push({ label: t('story.stickers'), value: formatNumber(composition.sticker) })
+
     list.push({
       key: 'words',
-      theme: 3,
-      kicker: t('story.wordsKicker'),
-      title: `«${myWords[0]}»`,
-      sub: isGroup.value ? t('story.wordsGroupSub') : t('story.wordsSub'),
-      columns:
-        theirWords.length && vocabulary.topWordsBySender.mine.length
-          ? {
-              left: { title: mine.value, items: top(vocabulary.topWordsBySender.mine) },
-              right: { title: theirsShort.value, items: theirWords },
-            }
-          : undefined,
-    })
-  }
-
-  // 8. Emoji
-  const myEmoji = top(
-    vocabulary.topEmojiBySender.mine.length ? vocabulary.topEmojiBySender.mine : vocabulary.topEmoji,
-    3,
-  )
-  if (myEmoji.length) {
-    const theirEmoji = top(vocabulary.topEmojiBySender.theirs, 4)
-    list.push({
-      key: 'emoji',
       theme: 2,
-      kicker: t('story.emojiKicker'),
-      title: t('story.emojiTitle'),
-      emoji: myEmoji,
-      sub: t('story.emojiSub'),
-      stats: theirEmoji.length ? [{ label: theirsShort.value, value: theirEmoji.join(' ') }] : undefined,
+      kicker: t('story.wordsKicker'),
+      title: `«${chatWord ?? myWords[0]}»`,
+      sub: t('story.wordsSub'),
+      columns:
+        myWords.length && theirWords.length
+          ? { left: { title: myName, items: myWords }, right: { title: otherName, items: theirWords } }
+          : undefined,
+      tiles: style.slice(0, 4),
     })
   }
-
-  // 9. Outro
-  list.push({
-    key: 'outro',
-    theme: 5,
-    kicker: t('story.outroKicker'),
-    title: 'TG Analyzer',
-    sub: t('story.outroSub'),
-    stats: [
-      { label: t('story.messagesKicker'), value: formatNumber(totals.messages) },
-      { label: t('story.activeDays'), value: formatNumber(facts.activeDays) },
-    ],
-  })
   return list
 })
 
@@ -330,6 +258,7 @@ function onCancel() {
 }
 
 function onKeydown(event: KeyboardEvent) {
+  if (shareOpen.value) return
   if (event.key === 'ArrowRight') go(1)
   else if (event.key === 'ArrowLeft') go(-1)
 }
@@ -342,29 +271,22 @@ async function render(position: number) {
   return image.render(exportRef.value)
 }
 
+async function renderFiles(positions: number[]) {
+  const files: File[] = []
+  for (const position of positions) {
+    const blob = await render(position)
+    files.push(new File([blob], `tg-analyzer-${slides.value[position]!.key}.png`, { type: 'image/png' }))
+  }
+  exportIndex.value = null
+  return files
+}
+
 async function saveCurrent() {
   paused.value = true
   try {
-    await image.run(async () => image.download(await render(index.value), `tg-analyzer-${current.value.key}.png`))
-  } catch {
-    toast.error(t('story.saveError'))
-  } finally {
-    exportIndex.value = null
-  }
-}
-
-async function shareAll() {
-  paused.value = true
-  try {
     await image.run(async () => {
-      const files: File[] = []
-      for (let position = 0; position < slides.value.length; position += 1) {
-        const blob = await render(position)
-        files.push(new File([blob], `tg-analyzer-${position + 1}.png`, { type: 'image/png' }))
-      }
-      exportIndex.value = null
-      if (canShare.value) await image.share(files)
-      else files.forEach((file) => image.download(file, file.name))
+      const [file] = await renderFiles([index.value])
+      image.download(file!, file!.name)
     })
   } catch {
     toast.error(t('story.saveError'))
@@ -373,11 +295,62 @@ async function shareAll() {
   }
 }
 
+function openShare() {
+  paused.value = true
+  shareOpen.value = true
+}
+
+function closeShare() {
+  shareOpen.value = false
+  paused.value = false
+}
+
+/**
+ * A story takes one 9:16 picture, so Instagram and Telegram get the current
+ * slide; a chat gets all of them. The phone's share sheet lists the apps;
+ * without one (desktop) the images are saved with a hint where to add them.
+ */
+async function shareTo(target: ShareTarget) {
+  shareOpen.value = false
+  paused.value = true
+  try {
+    await image.run(async () => {
+      const positions = target === 'chat' ? slides.value.map((_, position) => position) : [index.value]
+      const files = await renderFiles(positions)
+      if (canShare.value) {
+        await image.share(files)
+        return
+      }
+      files.forEach((file) => image.download(file, file.name))
+      toast.success(
+        target === 'chat'
+          ? t('story.savedForChat')
+          : t('story.savedForApp', { app: target === 'instagram' ? 'Instagram' : 'Telegram' }),
+      )
+    })
+  } catch {
+    toast.error(t('story.saveError'))
+  } finally {
+    exportIndex.value = null
+  }
+}
+
+async function loadAvatars() {
+  const [mine, theirs] = await Promise.all([
+    auth.telegramSessionActive ? loadProfileAvatar() : Promise.resolve(null),
+    loadChatAvatar(props.data.summary.chatId).catch(() => null),
+  ])
+  myAvatar.value = mine
+  theirAvatar.value = theirs
+}
+
 watch(open, (value) => {
   if (!value) return
   index.value = 0
   paused.value = false
+  shareOpen.value = false
   canShare.value = image.canShareFiles()
+  void loadAvatars()
 })
 </script>
 
@@ -404,7 +377,7 @@ watch(open, (value) => {
             @pointerup="onPointerUp"
             @pointercancel="onCancel"
           >
-            <StorySlide :slide="current" :mine="mine" :theirs="theirs" />
+            <StorySlide :slide="current" :me="me" :them="them" />
           </div>
 
           <!-- Overlays on top of the slide, like stories. -->
@@ -426,16 +399,6 @@ watch(open, (value) => {
             </div>
             <div class="stories__bar">
               <span class="stories__count">{{ index + 1 }} / {{ slides.length }}</span>
-              <button
-                v-if="!isGroup"
-                type="button"
-                class="stories__icon"
-                :aria-label="hideName ? t('story.showName') : t('story.hideName')"
-                :aria-pressed="hideName"
-                @click="hideName = !hideName"
-              >
-                <component :is="hideName ? EyeOff : Eye" aria-hidden="true" />
-              </button>
               <button type="button" class="stories__icon" :aria-label="t('common.close')" @click="emit('close')">
                 <X aria-hidden="true" />
               </button>
@@ -451,13 +414,39 @@ watch(open, (value) => {
               type="button"
               class="stories__action stories__action--primary"
               :disabled="image.busy.value"
-              @click="shareAll"
+              :aria-expanded="shareOpen"
+              @click="openShare"
             >
               <span v-if="image.busy.value" class="stories__spinner" aria-hidden="true" />
               <Share2 v-else aria-hidden="true" />
-              {{ canShare ? t('story.shareAll') : t('story.saveAll') }}
+              {{ t('story.share') }}
             </button>
           </div>
+
+          <!-- Where to share: a story takes the current slide, a chat gets all. -->
+          <Transition name="stories-sheet">
+            <div v-if="shareOpen" class="stories__share" @click.self="closeShare">
+              <div class="stories__sheet" role="menu" :aria-label="t('story.shareTitle')">
+                <strong class="stories__sheet-title">{{ t('story.shareTitle') }}</strong>
+                <button
+                  v-for="target in ['instagram', 'telegram', 'chat'] as const"
+                  :key="target"
+                  type="button"
+                  role="menuitem"
+                  class="stories__option"
+                  @click="shareTo(target)"
+                >
+                  <span>{{ t(`story.share.${target}`) }}</span>
+                  <small>{{
+                    target === 'chat' ? t('story.shareAllSlides', { count: slides.length }) : t('story.shareThisSlide')
+                  }}</small>
+                </button>
+                <button type="button" class="stories__option stories__option--cancel" @click="closeShare">
+                  {{ t('common.cancel') }}
+                </button>
+              </div>
+            </div>
+          </Transition>
         </section>
 
         <button
@@ -481,7 +470,7 @@ watch(open, (value) => {
 
         <!-- Exact 9:16 copy for the exported image, off screen. -->
         <div v-if="exportSlide" ref="exportRef" class="stories__export" aria-hidden="true">
-          <StorySlide :slide="exportSlide" :mine="mine" :theirs="theirs" />
+          <StorySlide :slide="exportSlide" :me="me" :them="them" />
         </div>
       </div>
     </Transition>
@@ -632,6 +621,83 @@ watch(open, (value) => {
 .stories__action:disabled {
   opacity: var(--opacity-disabled);
   cursor: progress;
+}
+
+/* ─── Share sheet over the slide ─────────────────────────────────────────── */
+.stories__share {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-3) var(--space-3) max(var(--space-3), env(safe-area-inset-bottom));
+  background: var(--scrim);
+}
+
+.stories__sheet {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-4);
+  border-radius: var(--radius-xl);
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-overlay);
+}
+
+.stories__sheet-title {
+  padding: 0 var(--space-1) var(--space-1);
+  font: var(--text-title);
+}
+
+.stories__option {
+  display: grid;
+  gap: 2px;
+  min-height: var(--control-lg);
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  font: var(--text-control);
+  text-align: left;
+}
+
+.stories__option small {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.stories__option--cancel {
+  place-items: center;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .stories__option:hover {
+    background: var(--surface);
+  }
+}
+
+.stories-sheet-enter-active,
+.stories-sheet-leave-active {
+  transition: opacity var(--transition-fast);
+}
+
+.stories-sheet-enter-active .stories__sheet,
+.stories-sheet-leave-active .stories__sheet {
+  transition: transform var(--transition-fast);
+}
+
+.stories-sheet-enter-from,
+.stories-sheet-leave-to {
+  opacity: 0;
+}
+
+.stories-sheet-enter-from .stories__sheet,
+.stories-sheet-leave-to .stories__sheet {
+  transform: translateY(var(--space-4));
 }
 
 .stories__spinner {

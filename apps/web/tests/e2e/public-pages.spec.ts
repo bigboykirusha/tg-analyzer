@@ -33,7 +33,21 @@ test('locale switch changes the interface language', async ({ page, context }) =
   await expect(page.getByRole('button', { name: 'Get code' })).toBeVisible()
 })
 
-for (const path of ['/privacy', '/terms']) {
+test('the privacy policy opens full screen over the login page', async ({ page, context }) => {
+  await usePreferences(context, 'light')
+  await gotoHydrated(page, '/login')
+  await page.getByRole('button', { name: 'Как это устроено' }).click()
+  const policy = page.getByRole('dialog', { name: 'Политика конфиденциальности' })
+  await expect(policy).toBeVisible()
+  await expect(policy.getByText('Коротко')).toHaveCount(0)
+  await policy.getByRole('button', { name: 'Закрыть' }).click()
+  await expect(policy).toBeHidden()
+
+  await page.goto('/privacy')
+  await expect(page.getByRole('dialog', { name: 'Политика конфиденциальности' })).toBeVisible()
+})
+
+for (const path of ['/terms']) {
   test(`${path} is reachable without signing in`, async ({ page }) => {
     await page.goto(path)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()

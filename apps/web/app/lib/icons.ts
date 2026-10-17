@@ -18,8 +18,6 @@ export {
   CircleX,
   Clock,
   Download,
-  Eye,
-  EyeOff,
   Globe,
   Info,
   LayoutGrid,

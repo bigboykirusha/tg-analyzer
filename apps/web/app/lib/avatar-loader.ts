@@ -49,3 +49,16 @@ export function loadChatAvatar(chatId: string): Promise<string | null> {
 export function clearAvatarCache() {
   cache.clear()
 }
+
+let profileRequest: Promise<string | null> | null = null
+
+/** The signed-in user's own photo as a blob URL; one request per page load. */
+export function loadProfileAvatar() {
+  profileRequest ??= api('GET /api/v1/auth/avatar')
+    .then((blob) => URL.createObjectURL(blob))
+    .catch(() => {
+      profileRequest = null
+      return null
+    })
+  return profileRequest
+}
