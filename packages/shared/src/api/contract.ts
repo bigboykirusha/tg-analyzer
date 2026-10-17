@@ -9,7 +9,6 @@ import type {
   ParseJobDto,
   CancelParseBody,
   ParseProgressDto,
-  PeopleOverviewDto,
   ReportDto,
   ReportsResponse,
   ResendCodeBody,
@@ -110,8 +109,6 @@ export interface ApiEndpointMap {
   'DELETE /api/v1/parse/history': Endpoint<undefined, ClearHistoryResponse>
   'DELETE /api/v1/parse/history/:jobId': Endpoint<undefined, SuccessResponse>
 
-  'GET /api/v1/people': Endpoint<undefined, PeopleOverviewDto>
-  'POST /api/v1/people/refresh': Endpoint<undefined, PeopleOverviewDto>
   'GET /api/v1/reports': Endpoint<undefined, ReportsResponse>
   'GET /api/v1/reports/:chatId': Endpoint<undefined, ReportDto>
   'DELETE /api/v1/reports/:chatId': Endpoint<undefined, SuccessResponse>

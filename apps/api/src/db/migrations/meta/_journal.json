@@ -92,6 +92,13 @@
       "when": 1792425600000,
       "tag": "0012_report_previous_snapshot",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792512000000,
+      "tag": "0013_drop_people_overviews",
+      "breakpoints": true
     }
   ]
 }

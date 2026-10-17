@@ -24,12 +24,7 @@ const sections = computed(() => [
   {
     key: 'store',
     title: t('privacy.store.title'),
-    items: [
-      t('privacy.store.reports'),
-      t('privacy.store.people'),
-      t('privacy.store.session'),
-      t('privacy.store.technical'),
-    ],
+    items: [t('privacy.store.reports'), t('privacy.store.session'), t('privacy.store.technical')],
   },
   { key: 'use', title: t('privacy.use.title'), paragraphs: [t('privacy.use.text')] },
   { key: 'share', title: t('privacy.share.title'), paragraphs: [t('privacy.share.text'), t('privacy.share.hosting')] },
@@ -53,7 +48,7 @@ const summary = computed(() => [
   <main class="legal-page">
     <UiPageContainer size="narrow">
       <article class="legal">
-        <NuxtLink class="legal__back" :to="auth.isAuthenticated ? '/people' : '/login'">
+        <NuxtLink class="legal__back" :to="auth.isAuthenticated ? '/dashboard' : '/login'">
           <ArrowLeft aria-hidden="true" />
           {{ t('common.back') }}
         </NuxtLink>

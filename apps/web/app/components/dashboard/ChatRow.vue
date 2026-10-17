@@ -69,9 +69,6 @@ function run(action: 'analyse' | 'delete') {
         <span v-else-if="chat.report" class="chat-row__sub">
           <span>{{ reportMeta }}</span>
         </span>
-        <span v-else class="chat-row__sub">
-          <span>{{ t(`chatType.${chat.type}`) }} · {{ t('dashboard.notAnalysed') }}</span>
-        </span>
       </span>
     </component>
 

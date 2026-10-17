@@ -119,20 +119,8 @@ onMounted(() => {
 <template>
   <UiPageContainer>
     <div class="stack stack--lg">
-      <header class="dashboard-header">
-        <div class="section-copy">
-          <h1 class="t-h1">{{ t('dashboard.title') }}</h1>
-          <p class="t-body">{{ t('dashboard.subtitle') }}</p>
-        </div>
-      </header>
-
-      <AnalysisProgress
-        v-if="analysis.isActive.value"
-        :progress="analysis.progress.value"
-        :cancelling="cancelling"
-        :queued-count="analysis.queued.value.length"
-        @cancel="requestCancel"
-      />
+      <!-- The list speaks for itself; the heading stays for screen readers. -->
+      <h1 class="sr-only">{{ t('dashboard.title') }}</h1>
 
       <section class="card dashboard-card">
         <div class="dashboard-tools">
@@ -253,10 +241,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.dashboard-header {
-  padding-inline: var(--space-1);
-}
-
 .dashboard-card {
   display: flex;
   flex-direction: column;
@@ -293,9 +277,4 @@ onMounted(() => {
   text-align: center;
 }
 
-@media (max-width: 768px) {
-  .dashboard-header {
-    padding-inline: var(--space-2);
-  }
-}
 </style>

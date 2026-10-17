@@ -8,6 +8,7 @@ const nameOf = useParticipantName()
 
 type Tab = 'overview' | 'members' | 'dynamics' | 'network' | 'content'
 const tab = ref<Tab>('overview')
+const isPhone = useMediaQuery('(max-width: 640px)')
 const tabs = computed(() =>
   (['overview', 'members', 'dynamics', 'network', 'content'] as const).map((value) => ({
     value,
@@ -66,12 +67,22 @@ const momentum = computed(() =>
       />
     </ReportKpis>
 
-    <UiSegmentedControl v-model="tab" class="no-print" :options="tabs" :aria-label="t('report.tabs.label')" />
+    <!-- Phones read the whole report as one long page; wider screens switch tabs. -->
+    <template v-if="isPhone">
+      <GroupOverviewTab :data="data" :group="group" />
+      <GroupMembersTab :group="group" />
+      <GroupDynamicsTab :data="data" />
+      <GroupNetworkTab :group="group" />
+      <GroupContentTab :data="data" :group="group" />
+    </template>
+    <template v-else>
+      <UiSegmentedControl v-model="tab" class="no-print" :options="tabs" :aria-label="t('report.tabs.label')" />
 
-    <GroupOverviewTab v-if="tab === 'overview'" :data="data" :group="group" />
-    <GroupMembersTab v-else-if="tab === 'members'" :group="group" />
-    <GroupDynamicsTab v-else-if="tab === 'dynamics'" :data="data" />
-    <GroupNetworkTab v-else-if="tab === 'network'" :group="group" />
-    <GroupContentTab v-else :data="data" :group="group" />
+      <GroupOverviewTab v-if="tab === 'overview'" :data="data" :group="group" />
+      <GroupMembersTab v-else-if="tab === 'members'" :group="group" />
+      <GroupDynamicsTab v-else-if="tab === 'dynamics'" :data="data" />
+      <GroupNetworkTab v-else-if="tab === 'network'" :group="group" />
+      <GroupContentTab v-else :data="data" :group="group" />
+    </template>
   </div>
 </template>

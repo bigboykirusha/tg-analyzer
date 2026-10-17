@@ -12,14 +12,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
-import type {
-  ChatReport,
-  ChatType,
-  ContactStatsDto,
-  JobStatus,
-  PeopleOverviewStatus,
-  ReportSnapshotDto,
-} from '@tg-analyzer/shared'
+import type { ChatReport, ChatType, JobStatus, ReportSnapshotDto } from '@tg-analyzer/shared'
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 
@@ -107,20 +100,6 @@ export const chatReports = pgTable(
     index('chat_reports_user_analyzed_idx').on(table.userId, table.analyzedAt),
   ],
 )
-
-/** Recent statistics of the user's private chats for the «Мои люди» page; one row per user. */
-export const peopleOverviews = pgTable('people_overviews', {
-  userId: uuid('user_id')
-    .primaryKey()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  status: varchar('status', { length: 20 }).$type<PeopleOverviewStatus>().notNull(),
-  scannedChats: integer('scanned_chats').default(0).notNull(),
-  totalChats: integer('total_chats').default(0).notNull(),
-  contacts: jsonb('contacts').$type<ContactStatsDto[]>().default([]).notNull(),
-  /** When the last complete overview finished; null until the first one does. */
-  computedAt: timestamp('computed_at', { withTimezone: true }),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-})
 
 export const refreshSessions = pgTable(
   'refresh_sessions',

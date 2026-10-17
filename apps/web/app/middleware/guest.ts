@@ -7,6 +7,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const signedIn = await useAuth()
     .restoreSession()
     .catch(() => false)
-  if (signedIn) return navigateTo('/people', { replace: true })
+  if (signedIn) return navigateTo('/dashboard', { replace: true })
   if (to.path === '/') return navigateTo('/login', { replace: true })
 })

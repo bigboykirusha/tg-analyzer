@@ -20,12 +20,10 @@ const notFound = ref(false)
 const reanalysing = ref(false)
 const confirm = ref<'reanalyse' | 'delete' | null>(null)
 const deleting = ref(false)
-const cancelling = ref(false)
 const storyOpen = ref(false)
 
 useSeoMeta({ title: () => data.value?.summary.title ?? t('report.title') })
 
-const analysingThisChat = computed(() => analysis.isActive.value && analysis.progress.value.chatId === chatId.value)
 const canReanalyse = computed(() => auth.telegramSessionActive && !analysis.isActive.value && !reanalysing.value)
 
 async function load() {
@@ -51,16 +49,6 @@ async function reanalyse() {
   }
 }
 
-async function cancel() {
-  cancelling.value = true
-  try {
-    await analysis.cancel()
-  } catch (error) {
-    toast.error(t('analysis.cancelError'), errorMessage(error))
-  } finally {
-    cancelling.value = false
-  }
-}
 
 async function deleteReport() {
   deleting.value = true
@@ -100,14 +88,6 @@ onMounted(load)
         @reanalyse="confirm = 'reanalyse'"
         @story="storyOpen = true"
         @delete="confirm = 'delete'"
-      />
-
-      <AnalysisProgress
-        v-if="analysingThisChat"
-        class="no-print"
-        :progress="analysis.progress.value"
-        :cancelling="cancelling"
-        @cancel="cancel"
       />
 
       <GroupReport v-if="data.summary.type === 'group'" :data="data" />

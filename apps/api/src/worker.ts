@@ -7,8 +7,6 @@ import { createRedisConnection, redis } from './lib/redis'
 import { runAnalysis } from './modules/parse/analysis'
 import { ANALYSIS_QUEUE, closeAnalysisQueue, type AnalysisJobData } from './modules/parse/queue'
 import { reconcileActiveJobs } from './modules/parse/reconcile'
-import { runPeopleOverview } from './modules/people/overview'
-import { closePeopleQueue, PEOPLE_QUEUE, type PeopleJobData } from './modules/people/queue'
 import { beatWorkerHeartbeat, clearWorkerHeartbeat } from './modules/system/heartbeat'
 import { startMaintenance } from './modules/system/maintenance'
 import { telegram } from './telegram'
@@ -29,14 +27,6 @@ async function main() {
     lockDuration: 2 * 60 * 1000,
   })
   analysisWorker.on('error', (error) => logger.error({ err: error }, 'analysis worker error'))
-  // Overviews only read recent pages in short batches; two at a time keep the queue moving.
-  const peopleConnection = createRedisConnection()
-  const peopleWorker = new Worker<PeopleJobData>(PEOPLE_QUEUE, runPeopleOverview, {
-    connection: peopleConnection,
-    concurrency: 2,
-    lockDuration: 2 * 60 * 1000,
-  })
-  peopleWorker.on('error', (error) => logger.error({ err: error }, 'people worker error'))
   const maintenanceWorker = await startMaintenance()
 
   await reconcileActiveJobs()
@@ -55,10 +45,10 @@ async function main() {
     logger.info({ signal }, 'worker shutting down')
     clearInterval(heartbeat)
     clearInterval(reconcile)
-    await Promise.allSettled([analysisWorker.close(), peopleWorker.close(), maintenanceWorker.close()])
-    await Promise.allSettled([workerConnection.quit(), peopleConnection.quit()])
+    await Promise.allSettled([analysisWorker.close(), maintenanceWorker.close()])
+    await workerConnection.quit().catch(() => undefined)
     await clearWorkerHeartbeat().catch(() => undefined)
-    await Promise.allSettled([closeAnalysisQueue(), closePeopleQueue(), telegram.close()])
+    await Promise.allSettled([closeAnalysisQueue(), telegram.close()])
     await Promise.allSettled([redis.quit(), pool.end()])
     process.exit(0)
   }

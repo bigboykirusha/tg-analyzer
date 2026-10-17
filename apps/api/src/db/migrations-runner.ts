@@ -9,7 +9,7 @@ import pg from 'pg'
 const MIGRATION_LOCK_ID = 7_351_046_021
 
 /** Tables the current code writes to; a database without them has not been migrated. */
-const REQUIRED_TABLES = ['users', 'parse_jobs', 'chat_reports', 'people_overviews']
+const REQUIRED_TABLES = ['users', 'parse_jobs', 'chat_reports']
 
 /** Finds the SQL migrations both from sources (tsx) and from the bundle in dist/. */
 function migrationsFolder() {

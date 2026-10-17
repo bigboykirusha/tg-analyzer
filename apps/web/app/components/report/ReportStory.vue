@@ -174,8 +174,29 @@ function onKeydown(event: KeyboardEvent) {
   else if (event.key === 'ArrowLeft') go(-1)
 }
 
-/** Tapping the left third goes back, the rest goes forward, like stories. */
-function onTap(event: MouseEvent) {
+/** A horizontal move longer than this is a swipe, shorter is a tap. */
+const SWIPE_PX = 40
+let pointerStart: { x: number; y: number } | null = null
+
+function onPointerCancel() {
+  pointerStart = null
+}
+
+function onPointerDown(event: PointerEvent) {
+  pointerStart = { x: event.clientX, y: event.clientY }
+}
+
+/** Swipe left or right like stories; a tap on the left third goes back, elsewhere forward. */
+function onPointerUp(event: PointerEvent) {
+  if (!pointerStart) return
+  const dx = event.clientX - pointerStart.x
+  const dy = event.clientY - pointerStart.y
+  pointerStart = null
+  if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
+    go(dx < 0 ? 1 : -1)
+    return
+  }
+  if (Math.abs(dx) > SWIPE_PX || Math.abs(dy) > SWIPE_PX) return
   const box = (event.currentTarget as HTMLElement).getBoundingClientRect()
   go(event.clientX - box.left < box.width / 3 ? -1 : 1)
 }
@@ -258,7 +279,9 @@ watch(open, (value) => {
               :class="`slide--${slide.theme}`"
               role="img"
               :aria-label="`${slide.kicker}. ${slide.big}. ${slide.sub ?? ''}`"
-              @click="onTap"
+              @pointerdown="onPointerDown"
+              @pointerup="onPointerUp"
+              @pointercancel="onPointerCancel"
             >
               <div class="slide__body">
                 <span class="slide__kicker">{{ slide.kicker }}</span>
@@ -396,6 +419,8 @@ watch(open, (value) => {
   container-type: inline-size;
   cursor: pointer;
   user-select: none;
+  /* The slide handles horizontal swipes itself instead of the page. */
+  touch-action: pan-y pinch-zoom;
 }
 
 /* Padding lives here: cqw on .slide itself would resolve against the viewport. */
