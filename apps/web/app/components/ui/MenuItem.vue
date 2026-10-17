@@ -35,7 +35,7 @@ withDefaults(
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text-primary);
+  color: var(--text);
   cursor: pointer;
   font: inherit;
   font-size: 13px;

@@ -46,17 +46,17 @@ useSeoMeta({
 .legal-page {
   min-height: 100dvh;
   padding: clamp(24px, 6vw, 80px) 16px;
-  background: var(--bg-base);
-  color: var(--text-primary);
+  background: var(--bg);
+  color: var(--text);
 }
 .legal-card {
   width: min(100%, 760px);
   margin: 0 auto;
   padding: clamp(24px, 5vw, 56px);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-xl);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 .legal-card h1 {
   margin: 8px 0 20px;
@@ -67,7 +67,7 @@ useSeoMeta({
   font-size: 1.2rem;
 }
 .legal-card p {
-  color: var(--text-secondary);
+  color: var(--text-muted);
   line-height: 1.65;
 }
 .legal-kicker,

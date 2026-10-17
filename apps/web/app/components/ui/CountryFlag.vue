@@ -96,6 +96,6 @@ defineProps<{ code: string }>()
   height: 17px;
   overflow: hidden;
   border-radius: 3px;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 12%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);
 }
 </style>

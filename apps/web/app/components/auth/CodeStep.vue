@@ -160,12 +160,12 @@ function submit() {
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
 }
 
 .text-action:disabled {
-  color: var(--text-tertiary);
+  color: var(--text-muted);
   cursor: default;
 }
 
@@ -182,10 +182,10 @@ function submit() {
 .otp-input {
   width: 100%;
   height: 52px;
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  color: var(--text-primary);
+  background: var(--surface);
+  color: var(--text);
   font-family: var(--font-mono);
   font-size: 20px;
   text-align: center;
@@ -202,6 +202,6 @@ function submit() {
 }
 
 .otp-input:hover {
-  background: var(--bg-elevated);
+  background: var(--surface-2);
 }
 </style>

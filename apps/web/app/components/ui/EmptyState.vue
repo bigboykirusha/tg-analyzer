@@ -3,7 +3,7 @@ import type { Component } from 'vue'
 
 defineProps<{
   title: string
-  description: string
+  description?: string | null
   icon?: Component | null
 }>()
 </script>
@@ -21,8 +21,8 @@ defineProps<{
       </slot>
     </div>
     <div class="empty-copy">
-      <h3 class="t-h3 empty-title">{{ title }}</h3>
-      <p class="t-small">{{ description }}</p>
+      <h3 class="empty-title">{{ title }}</h3>
+      <p v-if="description" class="t-small">{{ description }}</p>
     </div>
     <div v-if="$slots.action" class="empty-action">
       <slot name="action" />
@@ -50,7 +50,7 @@ defineProps<{
   width: 56px;
   height: 56px;
   border-radius: var(--radius-full);
-  color: var(--text-tertiary);
+  color: var(--text-muted);
 }
 
 .empty-icon :deep(svg),
@@ -71,11 +71,14 @@ defineProps<{
 }
 
 .empty-title {
-  color: var(--text-secondary);
+  color: var(--text-muted);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .empty-copy p {
-  color: var(--text-tertiary);
+  color: var(--text-muted);
   max-width: 480px;
 }
 

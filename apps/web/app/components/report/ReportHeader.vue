@@ -1,0 +1,141 @@
+<script setup lang="ts">
+import type { ReportSummaryDto } from '@tg-analyzer/shared'
+import { ArrowLeft, Download, MoreHorizontal, RotateCw, Send, Trash2 } from '../../lib/icons'
+
+const props = defineProps<{
+  summary: ReportSummaryDto
+  exporting: boolean
+  canReanalyse: boolean
+  reanalysing: boolean
+}>()
+const emit = defineEmits<{ reanalyse: []; download: []; share: []; delete: [] }>()
+const { t, formatDay } = useI18n()
+const isMobile = useMediaQuery('(max-width: 768px)')
+const menuOpen = ref(false)
+
+const period = computed(() => {
+  const { firstMessageAt, lastMessageAt } = props.summary
+  if (!firstMessageAt || !lastMessageAt) return t('common.na')
+  const format = (value: string) => formatDay(value.slice(0, 10))
+  return `${format(firstMessageAt)} – ${format(lastMessageAt)}`
+})
+
+function run(action: 'download' | 'share' | 'delete') {
+  menuOpen.value = false
+  if (action === 'download') emit('download')
+  else if (action === 'share') emit('share')
+  else emit('delete')
+}
+</script>
+
+<template>
+  <Teleport defer to="#mobile-report-toolbar" :disabled="!isMobile">
+    <div class="report-header">
+      <UiIconButton :icon="ArrowLeft" :label="t('common.back')" variant="secondary" class="no-print" to="/dashboard" />
+
+      <div class="report-header__identity">
+        <ChatAvatar :chat-id="summary.chatId" :title="summary.title" size="lg" />
+        <div class="report-header__copy">
+          <h1 class="report-header__title">{{ summary.title }}</h1>
+          <p class="t-small t-muted">{{ period }}</p>
+        </div>
+      </div>
+
+      <div class="report-header__actions no-print">
+        <UiIconButton
+          :icon="RotateCw"
+          :label="t('report.reanalyse')"
+          variant="secondary"
+          :loading="reanalysing"
+          :disabled="!canReanalyse"
+          @click="emit('reanalyse')"
+        />
+        <UiPopoverMenu v-model:open="menuOpen" align="end" :aria-label="t('report.actions')">
+          <template #trigger>
+            <UiIconButton
+              :icon="MoreHorizontal"
+              :label="t('report.actions')"
+              variant="secondary"
+              :loading="exporting"
+              @click="menuOpen = !menuOpen"
+            />
+          </template>
+          <UiMenuItem role="menuitem" :icon="Download" :disabled="exporting" @click="run('download')">
+            {{ t('report.downloadPdf') }}
+          </UiMenuItem>
+          <UiMenuItem role="menuitem" :icon="Send" :disabled="exporting" @click="run('share')">
+            {{ t('report.sendToSaved') }}
+          </UiMenuItem>
+          <UiMenuItem role="menuitem" :icon="Trash2" danger @click="run('delete')">
+            {{ t('report.delete') }}
+          </UiMenuItem>
+        </UiPopoverMenu>
+      </div>
+    </div>
+  </Teleport>
+</template>
+
+<style scoped>
+.report-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+}
+
+.report-header__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.report-header__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.report-header__title {
+  overflow: hidden;
+  font-size: 34px;
+  font-weight: 720;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .report-header {
+    gap: var(--space-3);
+  }
+
+  .report-header__title {
+    font-size: 18px;
+    letter-spacing: -0.02em;
+  }
+
+  .report-header__identity :deep(.avatar) {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+
+  .report-header__copy .t-small {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+</style>

@@ -81,7 +81,7 @@ function variantLabel(variant: string) {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: var(--glass-inset), var(--shadow-md);
+  box-shadow: var(--glass-inset), var(--shadow);
   backdrop-filter: var(--glass-filter);
   pointer-events: auto;
 }
@@ -101,14 +101,14 @@ function variantLabel(variant: string) {
 }
 
 .toast-copy strong {
-  color: var(--text-primary);
+  color: var(--text);
   font-size: 14px;
   font-weight: 650;
   line-height: 1.35;
 }
 
 .toast-copy p {
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 12px;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -119,7 +119,7 @@ function variantLabel(variant: string) {
 }
 
 .toast-success {
-  color: var(--success);
+  color: var(--accent);
 }
 
 .toast-error {
@@ -127,7 +127,7 @@ function variantLabel(variant: string) {
 }
 
 .toast-info {
-  color: var(--info);
+  color: var(--accent);
 }
 
 .toast-warning {

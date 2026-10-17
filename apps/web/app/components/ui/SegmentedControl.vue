@@ -92,7 +92,7 @@ function handleKeydown(event: KeyboardEvent) {
   border: 1px solid color-mix(in srgb, var(--glass-border) 72%, transparent);
   border-radius: var(--radius-full);
   background: var(--surface);
-  box-shadow: var(--glass-inset), var(--shadow-sm);
+  box-shadow: var(--glass-inset), var(--shadow);
   transition:
     left var(--transition-slow),
     background var(--transition-normal),
@@ -113,7 +113,7 @@ function handleKeydown(event: KeyboardEvent) {
   border: 0;
   border-radius: var(--radius-full);
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
@@ -126,12 +126,12 @@ function handleKeydown(event: KeyboardEvent) {
 
 .segment:hover {
   background: color-mix(in srgb, var(--surface) 58%, transparent);
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .segment-active {
   background: transparent;
-  color: var(--text-primary);
+  color: var(--text);
   box-shadow: none;
 }
 
@@ -139,7 +139,7 @@ function handleKeydown(event: KeyboardEvent) {
   outline: none;
   box-shadow:
     0 0 0 2px var(--accent),
-    0 0 0 3px var(--bg-base);
+    0 0 0 3px var(--bg);
 }
 
 .segment:disabled {

@@ -10,6 +10,7 @@ export {
   Lock,
   LogOut,
   MessageSquare,
+  MoreHorizontal,
   Moon,
   RefreshCw,
   RotateCw,

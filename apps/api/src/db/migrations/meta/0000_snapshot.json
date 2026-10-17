@@ -190,12 +190,8 @@
           "name": "chat_stats_user_id_users_id_fk",
           "tableFrom": "chat_stats",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -272,12 +268,8 @@
           "name": "daily_activity_user_id_users_id_fk",
           "tableFrom": "daily_activity",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -392,12 +384,8 @@
           "name": "global_stats_user_id_users_id_fk",
           "tableFrom": "global_stats",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -407,9 +395,7 @@
         "global_stats_user_id_unique": {
           "name": "global_stats_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         }
       },
       "policies": {},
@@ -499,12 +485,8 @@
           "name": "parse_jobs_user_id_users_id_fk",
           "tableFrom": "parse_jobs",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -558,12 +540,8 @@
           "name": "refresh_sessions_user_id_users_id_fk",
           "tableFrom": "refresh_sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -573,9 +551,7 @@
         "refresh_sessions_token_id_unique": {
           "name": "refresh_sessions_token_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token_id"
-          ]
+          "columns": ["token_id"]
         }
       },
       "policies": {},
@@ -650,12 +626,8 @@
           "name": "telegram_sessions_user_id_users_id_fk",
           "tableFrom": "telegram_sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -722,9 +694,7 @@
         "users_tg_user_id_unique": {
           "name": "users_tg_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "tg_user_id"
-          ]
+          "columns": ["tg_user_id"]
         }
       },
       "policies": {},

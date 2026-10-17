@@ -1,29 +1,18 @@
 <script setup lang="ts">
 import { Moon, Sun } from '../../lib/icons'
 
-const { preference, apply, hydrate } = useTheme()
+const { resolved, setPreference } = useTheme()
 const { t } = useI18n()
-const mounted = ref(false)
-
-onMounted(() => {
-  hydrate()
-  mounted.value = true
-})
-
-const isDark = computed(
-  () =>
-    preference.value === 'dark' ||
-    (mounted.value && preference.value === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches),
-)
+const isDark = computed(() => resolved.value === 'dark')
 
 function toggle() {
-  apply(isDark.value ? 'light' : 'dark')
+  setPreference(isDark.value ? 'light' : 'dark')
 }
 </script>
 
 <template>
   <button
-    class="theme-toggle interactive-surface"
+    class="theme-toggle"
     type="button"
     :aria-label="isDark ? t('theme.light') : t('theme.dark')"
     :aria-pressed="isDark"
@@ -41,12 +30,17 @@ function toggle() {
   width: 42px;
   height: 42px;
   place-items: center;
-  border: 1px solid var(--separator);
+  border: 1px solid var(--border);
   border-radius: 50%;
-  background: var(--glass-sheen), var(--surface-glass);
-  color: var(--text-primary);
+  background: var(--glass-sheen), var(--glass);
+  color: var(--text);
   cursor: pointer;
   overflow: hidden;
+  transition: transform var(--transition-fast);
+}
+
+.theme-toggle:active {
+  transform: scale(0.94);
 }
 
 .theme-toggle:focus-visible {

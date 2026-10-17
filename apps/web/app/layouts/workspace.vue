@@ -1,29 +1,49 @@
 <script setup lang="ts">
-import AppLayout from '../components/AppLayout.vue'
+const analysis = useAnalysis()
+const workspace = useWorkspaceStore()
+const { syncTimeZone } = useAuth()
+const { t } = useI18n()
+const toast = useToast()
 
-const { progress, connect, disconnect, fetchCurrentStatus } = useParseProgress()
-watch(
-  () => progress.value.status,
-  (status) => {
-    if (status === 'pending' || status === 'running') void connect()
-    else disconnect()
-  },
-)
-let poll: ReturnType<typeof setInterval> | undefined
 onMounted(() => {
-  poll = setInterval(() => {
-    if (['pending', 'running'].includes(progress.value.status)) {
-      void fetchCurrentStatus()
-      void connect()
-    }
-  }, 5000)
+  analysis.start()
+  void syncTimeZone().catch(() => undefined)
 })
-onBeforeUnmount(() => {
-  clearInterval(poll)
-  disconnect()
+
+// Announce finished analyses wherever the user is, and refresh the report list.
+watch(analysis.finished, (job) => {
+  if (!job) return
+  const chat = job.chatTitle || t('analysis.untitledChat')
+  if (job.status === 'completed') toast.success(t('analysis.done.title'), t('analysis.done.text', { chat }))
+  else if (job.status === 'failed')
+    toast.error(t('analysis.failed.title'), t(`analysis.error.${job.error ?? 'internal'}`))
+  else if (job.status === 'cancelled') toast.info(t('analysis.cancelled'))
+  void workspace.loadReports().catch(() => undefined)
 })
 </script>
 
 <template>
-  <AppLayout><slot /></AppLayout>
+  <div class="workspace">
+    <AppHeader />
+    <main class="workspace-main">
+      <slot />
+    </main>
+  </div>
 </template>
+
+<style scoped>
+.workspace {
+  min-height: 100dvh;
+}
+
+.workspace-main {
+  min-width: 0;
+  padding: var(--space-10) var(--space-4) 72px;
+}
+
+@media (max-width: 768px) {
+  .workspace-main {
+    padding: 18px 0 calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+}
+</style>

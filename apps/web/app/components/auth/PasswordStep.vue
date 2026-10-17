@@ -2,7 +2,7 @@
 import Button from '../ui/Button.vue'
 
 const password = defineModel<string>('password', { required: true })
-defineProps<{ loading: boolean }>()
+defineProps<{ loading: boolean; hint?: string | null }>()
 const emit = defineEmits<{ submit: [] }>()
 const { t } = useI18n()
 </script>
@@ -22,7 +22,9 @@ const { t } = useI18n()
         autocorrect="off"
         spellcheck="false"
       />
-      <span class="t-small">{{ t('login.passwordHelp') }}</span>
+      <span class="t-small t-muted">
+        {{ hint ? t('login.passwordHint', { hint }) : t('login.passwordHelp') }}
+      </span>
     </label>
     <Button variant="primary" size="lg" :loading="loading" block>
       {{ loading ? t('login.signingIn') : t('login.signIn') }}

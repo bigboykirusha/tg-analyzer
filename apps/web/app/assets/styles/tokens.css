@@ -1,0 +1,108 @@
+/*
+ * Design tokens. One set of names for the whole app; light is the default,
+ * dark applies by system preference or an explicit [data-theme='dark'].
+ */
+:root {
+  color-scheme: light;
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #ededf0;
+  --border: #e4e4e8;
+  --border-strong: #cfcfd6;
+  --text: #1d1d1f;
+  --text-muted: #6b6b73;
+  --accent: #0a6cff;
+  --accent-2: #f2704f;
+  --on-accent: #ffffff;
+  --danger: #c4311f;
+  --glass: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.95);
+  --glow: rgba(10, 108, 255, 0.1);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+
+  --accent-hover: color-mix(in srgb, var(--accent) 84%, var(--text));
+  --accent-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
+  --accent-border: color-mix(in srgb, var(--accent) 32%, transparent);
+  --success: var(--accent);
+  --warning: var(--accent-2);
+  --warning-subtle: color-mix(in srgb, var(--warning) 12%, transparent);
+  --danger-subtle: color-mix(in srgb, var(--danger) 12%, transparent);
+  --scrim: color-mix(in srgb, var(--bg) 64%, transparent);
+  --glass-filter: blur(24px) saturate(1.4);
+  --glass-sheen: linear-gradient(145deg, color-mix(in srgb, var(--glass-border) 42%, transparent), transparent 38%);
+  --glass-inset: inset 0 1px 0 color-mix(in srgb, var(--glass-border) 72%, transparent);
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  --blur-sm: 10px;
+  --blur-md: 18px;
+
+  /* PDF export always renders on a light page. */
+  --export-background: #ffffff;
+  --export-text: #1d1d1f;
+  --export-muted: #6b6b73;
+  --export-border: #e4e4e8;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', Manrope, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+  --radius-full: 999px;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 120ms var(--ease-standard);
+  --transition-normal: 200ms var(--ease-standard);
+  --transition-slow: 320ms var(--ease-out-expo);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0b0b0c;
+  --surface: #1a1a1c;
+  --surface-2: #2a2a2d;
+  --border: #2e2e32;
+  --border-strong: #48484e;
+  --text: #f5f5f7;
+  --text-muted: #9a9aa2;
+  --accent: #4da3ff;
+  --accent-2: #ffa38b;
+  --on-accent: #0b0b0c;
+  --danger: #ff8f80;
+  --glass: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.13);
+  --glow: rgba(77, 163, 255, 0.16);
+  --shadow: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #0b0b0c;
+    --surface: #1a1a1c;
+    --surface-2: #2a2a2d;
+    --border: #2e2e32;
+    --border-strong: #48484e;
+    --text: #f5f5f7;
+    --text-muted: #9a9aa2;
+    --accent: #4da3ff;
+    --accent-2: #ffa38b;
+    --on-accent: #0b0b0c;
+    --danger: #ff8f80;
+    --glass: rgba(255, 255, 255, 0.07);
+    --glass-border: rgba(255, 255, 255, 0.13);
+    --glow: rgba(77, 163, 255, 0.16);
+    --shadow: none;
+  }
+}

@@ -1,0 +1,319 @@
+/* Reset, typography and the few shared building blocks used across pages. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+  touch-action: manipulation;
+  background: var(--bg);
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background-color: var(--bg);
+  background-image: radial-gradient(70% 380px at 85% 0, var(--glow), transparent);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  user-select: none;
+}
+
+button:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-full);
+  background: var(--border);
+}
+
+/* Prevent iOS from zooming into focused inputs. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* ─── Typography ─────────────────────────────────────────────────────────── */
+
+.t-h1 {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 720;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.t-h2 {
+  font-size: clamp(1.375rem, 2vw, 1.75rem);
+  font-weight: 680;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.t-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.t-small {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.t-label {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.t-muted {
+  color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .t-h1 {
+    font-size: 24px;
+  }
+
+  .t-h2 {
+    font-size: 20px;
+  }
+}
+
+/* ─── Surfaces ───────────────────────────────────────────────────────────── */
+
+.card,
+.glass-surface {
+  border: 1px solid var(--glass-border);
+  background: var(--glass-sheen), var(--glass);
+  box-shadow: var(--glass-inset), var(--shadow);
+  backdrop-filter: var(--glass-filter);
+}
+
+.card {
+  border-radius: var(--radius-lg);
+  padding: clamp(var(--space-5), 2.2vw, var(--space-8));
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: var(--space-4);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .card,
+  .glass-surface {
+    background: var(--surface);
+    backdrop-filter: none;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .card,
+  .glass-surface {
+    background: var(--surface);
+  }
+}
+
+.input {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 92%, var(--surface-2));
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px var(--accent-subtle);
+}
+
+.input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-muted);
+}
+
+.banner--warning {
+  border-color: var(--warning);
+  background: var(--warning-subtle);
+  color: var(--warning);
+}
+
+.banner--info {
+  border-color: var(--accent-border);
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+@media (max-width: 520px) {
+  .banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ─── Layout ─────────────────────────────────────────────────────────────── */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.stack--lg {
+  gap: var(--space-6);
+}
+
+.section-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.section-copy p {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  margin: -1px;
+  padding: 0;
+}
+
+/* ─── Motion ─────────────────────────────────────────────────────────────── */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in var(--transition-normal) both;
+}
+
+.stagger-item {
+  animation: fade-in-up 300ms ease both;
+  animation-delay: var(--delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

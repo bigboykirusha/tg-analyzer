@@ -1,152 +1,65 @@
-import type { AuthSuccessResponse, VerifyCodeBody, VerifyPasswordBody } from '@tg-analyzer/shared'
-import { refreshAccessToken, useApiEndpoint } from './useApi'
-import { isDefinitiveAuthFailureCode, isTokenExpiringSoon, isTokenUsable } from '../utils/auth'
+import type { AuthSuccessResponse, VerifyCodeResponse } from '@tg-analyzer/shared'
+import { api, refreshSession } from './useApi'
 
-let bootstrapPromise: Promise<AuthSuccessResponse | null> | null = null
+let restoring: Promise<boolean> | null = null
 
 export function useAuth() {
   const auth = useAuthStore()
-  const config = useRuntimeConfig()
-  const parseProgress = useParseProgress()
 
-  function getPersistedSession() {
-    if (!auth.isAuthorized || !auth.user || !isTokenUsable(auth.accessToken)) {
-      return null
-    }
-
-    return {
-      accessToken: auth.accessToken,
-      user: auth.user,
-    } satisfies AuthSuccessResponse
-  }
-
-  async function restoreSession(allowPersistedFallback = false) {
-    const result = await refreshAccessToken(config.public.apiUrl)
-
-    if (result.accessToken && result.user) {
-      return {
-        accessToken: result.accessToken,
-        user: result.user,
-      } satisfies AuthSuccessResponse
-    }
-
-    if (result.definitiveFailure && result.error?.code && isDefinitiveAuthFailureCode(result.error.code)) {
-      return null
-    }
-
-    if (allowPersistedFallback) {
-      return getPersistedSession()
-    }
-
-    return null
-  }
-
-  async function runBootstrap() {
-    auth.loadPersisted()
-    const persistedSession = getPersistedSession()
-
-    if (persistedSession) {
-      auth.setAuthHealth(auth.telegramSessionActive ? 'ready' : 'degraded')
-
-      if (!isTokenExpiringSoon(auth.accessToken)) {
-        return persistedSession
-      }
-
-      return (await restoreSession(true)) ?? persistedSession
-    }
-
-    return restoreSession(false)
-  }
-
-  async function bootstrap() {
-    if (bootstrapPromise) {
-      return bootstrapPromise
-    }
-
-    bootstrapPromise = runBootstrap().finally(() => {
-      bootstrapPromise = null
-    })
-
-    return bootstrapPromise
+  /** Restores the session from the refresh cookie once per page load. Throws when offline. */
+  function restoreSession(): Promise<boolean> {
+    if (auth.status !== 'unknown') return Promise.resolve(auth.isAuthenticated)
+    restoring ??= refreshSession()
+      .then((result) => Boolean(result))
+      .finally(() => {
+        restoring = null
+      })
+    return restoring
   }
 
   async function sendCode(phone: string) {
-    const result = await useApiEndpoint('POST /api/v1/auth/send-code', {
-      body: { phone },
-    })
-    auth.phoneCodeHash = result.phoneCodeHash
+    return api('POST /api/v1/auth/send-code', { body: { phone } })
+  }
+
+  async function verifyCode(body: { phone: string; code: string; phoneCodeHash: string }): Promise<VerifyCodeResponse> {
+    const result = await api('POST /api/v1/auth/verify-code', { body })
+    if ('accessToken' in result) auth.signIn(result)
     return result
   }
 
-  async function verifyCode(payload: VerifyCodeBody) {
-    const result = await useApiEndpoint('POST /api/v1/auth/verify-code', {
-      body: payload,
-    })
-
-    if ('isPasswordRequired' in result && result.isPasswordRequired) {
-      auth.tempToken = result.tempToken
-      return result
-    }
-
-    if (!('accessToken' in result)) {
-      throw new Error('Unexpected Telegram authentication response')
-    }
-
-    auth.setAccess(result.accessToken, result.user)
+  async function verifyPassword(body: { tempToken: string; password: string }): Promise<AuthSuccessResponse> {
+    const result = await api('POST /api/v1/auth/verify-password', { body })
+    auth.signIn(result)
     return result
   }
 
-  async function verifyPassword(payload: VerifyPasswordBody) {
-    const result = await useApiEndpoint('POST /api/v1/auth/verify-password', {
-      body: payload,
-      headers: {
-        Authorization: `Bearer ${auth.tempToken}`,
-      },
-    })
-    auth.setAccess(result.accessToken, result.user)
-    auth.tempToken = ''
-    return result
-  }
-
-  async function refresh() {
-    return restoreSession()
+  async function finishSession() {
+    useAnalysis().stop()
+    useWorkspaceStore().reset()
+    auth.signOut()
+    await navigateTo('/login', { replace: true })
   }
 
   async function logout() {
     try {
-      await useApiEndpoint('POST /api/v1/auth/logout')
+      await api('POST /api/v1/auth/logout')
     } finally {
-      parseProgress.disconnect()
-      parseProgress.reset()
-      auth.clear()
-      await navigateTo('/login', { replace: true })
+      await finishSession()
     }
   }
 
   async function deleteAccount() {
-    await useApiEndpoint('DELETE /api/v1/auth/account')
-    parseProgress.disconnect()
-    parseProgress.reset()
-    auth.clear()
-    await navigateTo('/login', { replace: true })
+    await api('DELETE /api/v1/auth/account')
+    await finishSession()
   }
 
-  async function updateProfile(timezone: string) {
-    const result = await useApiEndpoint('PATCH /api/v1/auth/profile', {
-      body: { timezone },
-    })
-    auth.updateUser(result.user)
-    return result.user
+  /** Keeps report bucketing aligned with the browser's time zone. */
+  async function syncTimeZone() {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (!auth.user || !timezone || timezone === auth.user.timezone) return
+    const { user } = await api('PATCH /api/v1/auth/profile', { body: { timezone } })
+    auth.updateUser(user)
   }
 
-  return {
-    bootstrap,
-    sendCode,
-    verifyCode,
-    verifyPassword,
-    refresh,
-    updateProfile,
-    logout,
-    deleteAccount,
-  }
+  return { restoreSession, sendCode, verifyCode, verifyPassword, logout, deleteAccount, syncTimeZone }
 }

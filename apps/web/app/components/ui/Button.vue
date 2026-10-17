@@ -151,20 +151,20 @@ const classes = computed(() => [
 .btn--primary {
   background: var(--accent);
   border-color: transparent;
-  color: var(--accent-text);
-  box-shadow: var(--shadow-accent);
+  color: var(--on-accent);
+  box-shadow: none;
 }
 
 .btn--secondary {
   background: transparent;
-  border-color: var(--border-default);
-  color: var(--text-primary);
+  border-color: var(--border);
+  color: var(--text);
 }
 
 .btn--ghost {
   background: transparent;
   border-color: transparent;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .btn--danger {
@@ -180,14 +180,14 @@ const classes = computed(() => [
   }
 
   .btn--secondary:hover:not(:disabled) {
-    background: var(--bg-elevated);
+    background: var(--surface-2);
     border-color: var(--border-strong);
     transform: translateY(-1px);
   }
 
   .btn--ghost:hover:not(:disabled) {
-    background: var(--bg-elevated);
-    color: var(--text-primary);
+    background: var(--surface-2);
+    color: var(--text);
   }
 
   .btn--danger:hover:not(:disabled) {

@@ -26,8 +26,8 @@ const { t } = useI18n()
   min-height: 100dvh;
   align-items: center;
   justify-content: center;
-  background: var(--bg-base);
-  color: var(--text-secondary);
+  background: var(--bg);
+  color: var(--text-muted);
   padding: var(--space-6);
 }
 
@@ -44,13 +44,13 @@ const { t } = useI18n()
   justify-content: center;
   width: 56px;
   height: 56px;
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: var(--bg-surface);
+  background: var(--surface);
   color: var(--accent);
   font-family: var(--font-mono);
   font-size: 18px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow);
 }
 
 .redirect-copy {

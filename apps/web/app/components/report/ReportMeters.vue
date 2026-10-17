@@ -1,0 +1,71 @@
+<script setup lang="ts">
+export interface Meter {
+  key: string
+  label: string
+  /** 0–100, or null when unknown. */
+  value: number | null
+  detail?: string
+}
+
+defineProps<{ meters: Meter[] }>()
+const { formatPercent } = useI18n()
+</script>
+
+<template>
+  <div class="meters">
+    <div v-for="meter in meters" :key="meter.key" class="meter">
+      <div class="meter__heading">
+        <span>{{ meter.label }}</span>
+        <strong class="t-mono">{{ formatPercent(meter.value) }}</strong>
+      </div>
+      <div
+        v-if="meter.value !== null"
+        class="meter__track"
+        role="meter"
+        :aria-label="meter.label"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        :aria-valuenow="meter.value"
+      >
+        <span :style="{ width: `${Math.min(100, Math.max(0, meter.value))}%` }" />
+      </div>
+      <span v-if="meter.detail" class="t-small t-muted">{{ meter.detail }}</span>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.meters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.meter__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.meter__track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+}
+
+.meter__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width var(--transition-slow);
+}
+</style>

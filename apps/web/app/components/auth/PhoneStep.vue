@@ -167,9 +167,9 @@ function submit() {
   align-items: center;
   gap: 0;
   min-height: 48px;
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--bg-elevated);
+  background: var(--surface-2);
   transition: border-color var(--transition-fast);
 }
 
@@ -186,10 +186,10 @@ function submit() {
   min-height: 48px;
   padding: 0 var(--space-3);
   border: 0;
-  border-right: 1px solid var(--border-default);
+  border-right: 1px solid var(--border);
   border-radius: calc(var(--radius-sm) - 1px) 0 0 calc(var(--radius-sm) - 1px);
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -200,8 +200,8 @@ function submit() {
 
 .dial-code:hover,
 .dial-code[aria-expanded='true'] {
-  background: var(--bg-overlay);
-  color: var(--text-primary);
+  background: var(--surface);
+  color: var(--text);
 }
 
 .phone-input {
@@ -223,7 +223,7 @@ function submit() {
 
 .chevron {
   flex: 0 0 auto;
-  color: var(--text-tertiary);
+  color: var(--text-muted);
   transition: transform var(--transition-normal);
 }
 
@@ -259,7 +259,7 @@ function submit() {
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   text-align: left;
   transition:
@@ -276,7 +276,7 @@ function submit() {
 .country-name {
   min-width: 0;
   overflow: hidden;
-  color: var(--text-primary);
+  color: var(--text);
   font-size: 14px;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -284,7 +284,7 @@ function submit() {
 }
 
 .country-dial {
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
@@ -315,7 +315,7 @@ function submit() {
   .country-option {
     min-height: 52px;
     padding: 0 var(--space-3);
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border);
     border-radius: 0;
   }
 

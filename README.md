@@ -1,80 +1,45 @@
 # TG Analyzer
 
-Dashboard for analyzing Telegram chats: Nuxt web app, Fastify API, PostgreSQL, Redis, BullMQ worker.
+Веб-приложение, которое превращает Telegram-чат в понятный отчёт: баланс переписки, скорость и доля ответов, ритм по часам и дням, словарь и эмодзи, сессии общения; для групп — роли участников, динамика, связи и общий словарь. Тексты сообщений не сохраняются: в базе лежит только агрегированный отчёт.
 
-## Requirements
+Стек: Nuxt 4 (web) · Fastify 5 (API) · BullMQ worker · PostgreSQL · Redis · gramjs.
 
-- Node.js 22+
-- Corepack
-- Docker and Docker Compose
-- Telegram API credentials from `https://my.telegram.org`
+```text
+apps/api         API (src/index.ts), worker (src/worker.ts), миграции (src/migrate.ts)
+apps/web         Nuxt-клиент
+packages/shared  контракт API, типы и вся аналитика отчёта (чистые функции + тесты)
+```
 
-## Setup
+## Быстрый старт (без Telegram)
+
+Нужны Node.js 22, Corepack и Docker.
 
 ```bash
 corepack enable
-corepack pnpm install
-cp .env.example .env
-```
-
-Fill `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, and replace auth/session secrets in `.env`.
-
-Start storage:
-
-```bash
+pnpm install
+cp .env.example .env          # заполните три секрета: openssl rand -hex 32
 docker compose up -d postgres redis
+pnpm db:migrate
+pnpm dev                      # web :3000, API :3001, worker
 ```
 
-Apply database schema:
+В `.env.example` стоит `TELEGRAM_MODE=fake`: встроенный демо-аккаунт с готовыми чатами. Войти можно с любым номером, код `12345` (номер на `9` дополнительно спросит пароль `secret`). Для настоящего Telegram задайте `TELEGRAM_MODE=live`, `TELEGRAM_API_ID` и `TELEGRAM_API_HASH` с https://my.telegram.org.
+
+## Проверки
 
 ```bash
-corepack pnpm db:migrate
+pnpm lint && pnpm format:check && pnpm check   # ESLint, Prettier, TypeScript
+pnpm services:test                             # Postgres :55432 и Redis :56379 для тестов
+pnpm test                                      # аналитика + API (интеграционные)
+pnpm test:e2e                                  # Playwright; полный сценарий требует API и worker в fake-режиме
+pnpm build
 ```
 
-For local schema iteration you can use:
+## Документация
 
-```bash
-corepack pnpm db:push
-```
-
-Run the app:
-
-```bash
-corepack pnpm dev
-corepack pnpm dev:worker
-corepack pnpm dev:web
-```
-
-The web app runs on `http://localhost:3000`, the API on `http://localhost:3001`.
-
-Optional queue dashboard:
-
-```bash
-docker compose --profile tools up -d bull-board
-```
-
-## Checks
-
-```bash
-corepack pnpm check
-corepack pnpm build
-corepack pnpm test
-corepack pnpm --filter @tg-analyzer/web test:e2e
-```
-
-## Documentation
-
-- [Environment reference](docs/ENVIRONMENT.md)
-- [Deployment](docs/DEPLOY.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Security and data handling](docs/SECURITY.md)
-- [Operations runbook](docs/RUNBOOK.md)
-
-The web client exposes draft Privacy Policy and Terms pages at `/privacy` and `/terms`. Account deletion is available from the authenticated account settings and removes application data and stored Telegram authorization material.
-
-## Production Notes
-
-- Do not reuse values from `.env.example` for secrets.
-- Run migrations with `corepack pnpm db:migrate`.
-- Keep `COOKIE_SECURE=true` behind HTTPS.
-- Restrict `CORS_ORIGIN` to the deployed web origin.
+- [Архитектура](docs/ARCHITECTURE.md)
+- [Переменные окружения](docs/ENVIRONMENT.md)
+- [Деплой](docs/DEPLOY.md)
+- [Безопасность](docs/SECURITY.md)
+- [Runbook](docs/RUNBOOK.md)
+- [Миграция 0009](docs/migrations/0009-chat-reports.md)

@@ -1,23 +1,35 @@
-# Environment reference
+# Переменные окружения
 
-Copy `.env.example` to `.env` for local development. Never deploy that file or use its illustrative values as production credentials.
+Локально всё читается из корневого `.env` (шаблон — `.env.example`). В деплое задавайте значения в секретах платформы; API и worker используют одинаковые серверные переменные.
 
-| Variable                                        | Required   | Purpose                                                                |
-| ----------------------------------------------- | ---------- | ---------------------------------------------------------------------- |
-| `DATABASE_URL`                                  | yes        | PostgreSQL connection string, private to API and worker.               |
-| `REDIS_URL`                                     | yes        | Redis connection string, private to API and worker.                    |
-| `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`          | yes        | Credentials issued at my.telegram.org.                                 |
-| `SESSION_ENCRYPTION_KEY`                        | yes        | Exactly 64 hexadecimal characters; encrypts Telegram session material. |
-| `JWT_SECRET`, `JWT_REFRESH_SECRET`              | yes        | Separate random strings of at least 32 characters.                     |
-| `CORS_ORIGIN`                                   | yes        | Comma-separated exact browser origins; no wildcard in production.      |
-| `COOKIE_SECURE`                                 | production | `true` behind HTTPS.                                                   |
-| `COOKIE_SAME_SITE`                              | no         | Keep `lax` when browser HTTP is routed through the same-origin proxy.  |
-| `COOKIE_DOMAIN`                                 | no         | Normally unset, keeping the refresh cookie host-only.                  |
-| `API_HOST`, `API_PORT` / `PORT`                 | no         | API bind address and port; hosting platforms commonly set `PORT`.      |
-| `AUTH_RATE_LIMIT_MAX`, `AUTH_RATE_LIMIT_WINDOW` | no         | Login/refresh rate-limit policy.                                       |
-| `FULL_PARSE_COOLDOWN_HOURS`                     | no         | Cooldown for full chat reparses.                                       |
-| `DATA_RETENTION_DAYS`                           | no         | Retention horizon used by cleanup work.                                |
+## API и worker
 
-Generate secrets with a cryptographically secure source, for example `openssl rand -hex 32` for the encryption key and `openssl rand -base64 48` for JWT secrets. Set values in the secret manager of each deployment service; API and worker require the same server-side values. Variables beginning `NUXT_PUBLIC_` are visible to every browser and must never contain credentials.
+| Переменная                                      | Обязательна           | Назначение                                                            |
+| ----------------------------------------------- | --------------------- | --------------------------------------------------------------------- |
+| `DATABASE_URL`                                  | да                    | PostgreSQL.                                                           |
+| `REDIS_URL`                                     | да                    | Redis (очереди, лимиты, прогресс). Политика памяти — `noeviction`.    |
+| `SESSION_ENCRYPTION_KEY`                        | да                    | 64 hex-символа (`openssl rand -hex 32`), шифрует Telegram-сессии.     |
+| `JWT_SECRET`, `JWT_REFRESH_SECRET`              | да                    | Разные случайные строки ≥ 32 символов.                                |
+| `TELEGRAM_MODE`                                 | нет (`live`)          | `fake` — демо-аккаунт без Telegram; в production запрещён.            |
+| `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`          | при `live`            | Ключи приложения с my.telegram.org.                                   |
+| `CORS_ORIGIN`                                   | да                    | Точные origin веб-клиента через запятую; в production только `https`. |
+| `COOKIE_SECURE`                                 | нет                   | По умолчанию `true` в production.                                     |
+| `COOKIE_SAME_SITE`                              | нет (`lax`)           | `none` требует `COOKIE_SECURE=true`.                                  |
+| `COOKIE_DOMAIN`                                 | нет                   | Обычно не задаётся: cookie остаётся host-only.                        |
+| `API_HOST`, `API_PORT` / `PORT`                 | нет                   | Адрес и порт API; платформы обычно задают `PORT`.                     |
+| `LOG_LEVEL`                                     | нет (`info`)          | Уровень логов pino.                                                   |
+| `AUTH_RATE_LIMIT_MAX`, `AUTH_RATE_LIMIT_WINDOW` | нет (`5`, `1 minute`) | Лимит попыток входа.                                                  |
+| `CHAT_REPARSE_COOLDOWN_MINUTES`                 | нет (`60`)            | Пауза перед повторным анализом того же чата.                          |
+| `DATA_RETENTION_DAYS`                           | нет (`365`)           | Сколько хранить историю запусков.                                     |
 
-For a split Vercel + Railway/Render deployment, leave `NUXT_PUBLIC_API_URL` empty and set `NUXT_API_PROXY_TARGET` to the API origin. This keeps the refresh cookie first-party in Safari. `NUXT_PUBLIC_WS_URL` may still point directly to the API because WebSocket authentication uses a short-lived one-use ticket.
+В production API отказывается стартовать с `TELEGRAM_MODE=fake`, http-origin в `CORS_ORIGIN`, выключенным `COOKIE_SECURE` или секретами-заглушками.
+
+## Web
+
+| Переменная              | Когда читается | Назначение                                                                            |
+| ----------------------- | -------------- | ------------------------------------------------------------------------------------- |
+| `NUXT_API_PROXY_TARGET` | runtime        | Адрес API, на который web-сервер проксирует `/api/*`.                                 |
+| `NUXT_PUBLIC_WS_URL`    | build          | Прямой `wss://` адрес API для прогресса. Попадает в CSP, поэтому задаётся при сборке. |
+| `NUXT_PUBLIC_SITE_URL`  | build          | Канонический адрес сайта (SEO).                                                       |
+
+Переменные `NUXT_PUBLIC_*` видны в браузере — секретов в них быть не должно.

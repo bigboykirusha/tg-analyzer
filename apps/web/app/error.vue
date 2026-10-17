@@ -32,14 +32,14 @@ function retry() {
   width: min(100%, 480px);
   gap: var(--space-4);
   padding: clamp(var(--space-5), 6vw, var(--space-10));
-  border-radius: var(--radius-xl);
-  background: var(--surface-glass);
-  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  box-shadow: var(--shadow);
   text-align: center;
   backdrop-filter: blur(var(--blur-md));
 }
 .error-card p {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 .error-card :deep(.btn) {
   justify-self: center;

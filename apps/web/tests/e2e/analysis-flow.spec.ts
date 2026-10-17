@@ -1,0 +1,49 @@
+import { expect, test } from '@playwright/test'
+import { backendAvailable, noHorizontalScroll, signIn, usePreferences } from './helpers'
+
+// Needs the API and worker running with TELEGRAM_MODE=fake. All sign-ins come
+// from one IP, so run the API with a higher AUTH_RATE_LIMIT_MAX (CI uses 100).
+test.beforeEach(async ({ baseURL, context }) => {
+  test.skip(!(await backendAvailable(baseURL!)), 'API is not running in fake Telegram mode')
+  await usePreferences(context, 'light')
+})
+
+test('sign in, analyse a private chat and read the report', async ({ page }) => {
+  await signIn(page)
+  const row = page.locator('.chat-row').filter({ hasText: 'Катя' })
+  await row.getByRole('button', { name: 'Анализ' }).click()
+  await expect(page.getByText('Отчёт готов')).toBeVisible({ timeout: 30_000 })
+
+  await row.getByRole('link', { name: 'Открыть отчёт' }).click()
+  await page.waitForURL('**/chat/1006')
+  await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible()
+
+  for (const tab of ['Ритм', 'Слова', 'Таймлайн', 'Обзор']) {
+    await page.getByRole('tab', { name: tab }).click()
+    await expect(page.locator('.report-section').first()).toBeVisible()
+  }
+  await expect.poll(() => noHorizontalScroll(page)).toBe(true)
+
+  await page.goto('/history')
+  await expect(page.getByText('Катя').first()).toBeVisible()
+})
+
+test('group chats get the group report', async ({ page }) => {
+  await signIn(page)
+  const row = page.locator('.chat-row').filter({ hasText: 'Weekend plans' })
+  await row.getByRole('button', { name: 'Анализ' }).click()
+  await expect(page.getByText('Отчёт готов')).toBeVisible({ timeout: 60_000 })
+
+  await page.goto('/chat/-1002004')
+  for (const tab of ['Участники', 'Динамика', 'Взаимодействия', 'Контент']) {
+    await page.getByRole('tab', { name: tab }).click()
+    await expect(page.locator('.report-section').first()).toBeVisible()
+  }
+})
+
+test('logging out returns to the login page', async ({ page }) => {
+  await signIn(page)
+  await page.locator('.account-trigger').click()
+  await page.getByRole('menuitem', { name: 'Выйти' }).click()
+  await page.waitForURL('**/login')
+})

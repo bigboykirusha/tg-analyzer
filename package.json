@@ -13,16 +13,17 @@
     "dev:web": "corepack pnpm --filter @tg-analyzer/web dev",
     "dev:worker": "corepack pnpm --filter @tg-analyzer/api dev:worker",
     "check": "corepack pnpm -r check",
-    "test": "corepack pnpm --filter @tg-analyzer/api test",
-    "db:push": "corepack pnpm --filter @tg-analyzer/api db:push",
+    "test": "corepack pnpm --filter @tg-analyzer/shared test && corepack pnpm --filter @tg-analyzer/api test",
     "db:migrate": "corepack pnpm --filter @tg-analyzer/api db:migrate",
-    "test:integration": "corepack pnpm --filter @tg-analyzer/api test:integration",
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "start": "node scripts/start-from-env.mjs",
     "start:api": "corepack pnpm --filter @tg-analyzer/api start",
     "start:web": "corepack pnpm --filter @tg-analyzer/web start",
-    "start:worker": "corepack pnpm --filter @tg-analyzer/api worker"
+    "start:worker": "corepack pnpm --filter @tg-analyzer/api worker",
+    "test:unit": "corepack pnpm --filter @tg-analyzer/shared test",
+    "test:e2e": "corepack pnpm --filter @tg-analyzer/web test:e2e",
+    "services:test": "docker compose -f docker-compose.test.yml up -d --wait"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -195,7 +195,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: var(--glass-inset), var(--shadow-lg);
+  box-shadow: var(--glass-inset), var(--shadow);
   backdrop-filter: var(--glass-filter);
   scrollbar-width: none;
   -ms-overflow-style: none;

@@ -9,3 +9,10 @@ node_modules
 *.log
 .env
 .env.*
+**/node_modules
+**/dist
+**/.output
+**/.nuxt
+**/test-results
+**/playwright-report
+dump.rdb

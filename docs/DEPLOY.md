@@ -1,48 +1,40 @@
-# Production deployment shape
+# Деплой
 
-The web application may run on Vercel, but it must use a custom domain that shares the registered site with the API. The default `*.vercel.app` hostname and an API on another site are not an acceptable production pairing: browsers can treat the refresh cookie as third-party storage and silently block startup refresh.
+Три процесса из одного репозитория:
 
-Use this topology after selecting a domain owned by the product:
+| Процесс | Команда                                  | Примечание                               |
+| ------- | ---------------------------------------- | ---------------------------------------- |
+| API     | `node apps/api/dist/index.js`            | HTTP + WebSocket, healthcheck `/health`  |
+| Worker  | `node apps/api/dist/worker.js`           | без HTTP; живость видна в `/ready` у API |
+| Web     | `node apps/web/.output/server/index.mjs` | Nuxt SSR + прокси `/api`                 |
 
-| Component            | Example hostname                            | Required behavior                                                                 |
-| -------------------- | ------------------------------------------- | --------------------------------------------------------------------------------- |
-| Nuxt web on Vercel   | `app.example.com`                           | HTTPS; proxy browser HTTP through `/api`; connect WebSocket with a one-use ticket |
-| Fastify API          | `api.example.com`                           | HTTPS/WSS; allow only the exact web origin in `CORS_ORIGIN`; credentials enabled  |
-| Worker               | private service                             | No public ingress; share PostgreSQL/Redis and Telegram credentials with API       |
-| PostgreSQL and Redis | private managed services or private network | No public ingress; backups and Redis persistence enabled                          |
+Миграции перед выкладкой: `pnpm --filter @tg-analyzer/api migrate` (`dist/migrate.js`, нужен только `DATABASE_URL`).
 
-Replace `example.com` with the domain approved by the product owner before DNS or production configuration is created. This repository does not assume that the owner has selected or controls a domain yet.
+## Домены и cookie
 
-## Refresh cookie and CORS
+Web и API должны быть на поддоменах одного сайта, например `app.example.com` и `api.example.com`:
 
-For `app.example.com` proxying HTTP requests to `api.example.com`, configure the API with:
+- браузер ходит в API только через `/api` на домене web, поэтому refresh-cookie остаётся first-party (Safari блокирует сторонние cookie);
+- WebSocket подключается напрямую к `wss://api.example.com` с одноразовым ticket — задайте `NUXT_PUBLIC_WS_URL` при сборке web;
+- `CORS_ORIGIN=https://app.example.com`, `COOKIE_DOMAIN` не задавайте.
 
-```dotenv
-NODE_ENV=production
-CORS_ORIGIN=https://app.example.com
-COOKIE_SECURE=true
-COOKIE_SAME_SITE=lax
-# Leave COOKIE_DOMAIN unset. Through the web proxy the browser stores it for app.example.com.
+Ticket передаётся в query handshake, поэтому на всех прокси/CDN отключите запись query string в логи.
+
+## Docker
+
+```bash
+docker compose up --build        # postgres, redis, migrate, api, worker, web
 ```
 
-Configure the web service with `NUXT_PUBLIC_API_URL=` (empty) and `NUXT_API_PROXY_TARGET=https://api.example.com`. Browser HTTP requests then stay on the web origin, so Safari does not classify the refresh cookie as third-party storage. WebSocket traffic may connect directly because it authenticates with a short-lived one-use ticket: set `NUXT_PUBLIC_WS_URL=wss://api.example.com`. The browser client must send credentialed HTTP requests (`credentials: 'include'`). The API must allow the exact web origin; wildcard origins cannot be used.
+Образ `apps/api/Dockerfile` общий для API, worker и миграций (`node dist/worker.js`, `node dist/migrate.js`). Образ web получает `NUXT_PUBLIC_WS_URL` как build-arg, а `NUXT_API_PROXY_TARGET` — в runtime.
 
-Do not point `NUXT_PUBLIC_API_URL` directly at an API on another registrable domain. Safari can block that refresh cookie even with `SameSite=None; Secure`. Keep HTTP same-origin through the Nuxt proxy; only the ticket-authenticated WebSocket needs a direct endpoint.
+## Railway
 
-## Reverse proxy and WebSocket ticket logging
+`railway.json` описывает сборку API, pre-deploy миграции и запуск через `scripts/start-from-env.mjs`. Создайте сервисы `api` и `worker` из одного репозитория и задайте каждому `START_SERVICE=api|worker` (или назовите сервисы `api`/`worker`). Web разверните отдельно (Vercel, Railway с командой `pnpm --filter @tg-analyzer/web build` и `START_SERVICE=web` или Docker-образ).
 
-The browser obtains an expiring, one-use ticket from the authenticated API and sends it in the WebSocket handshake query because the browser WebSocket API does not allow arbitrary authorization headers. Treat the complete handshake URL as a credential. Configure every layer that can record requests (CDN, Vercel/proxy integration, load balancer, ingress, API gateway, and application host) to omit query strings from access logs, error logs, traces, analytics, and support exports. Log the request path without its query component, status, duration, and a generated request/job identifier instead.
+## Чек-лист релиза
 
-Before enabling production traffic, verify from the hosting provider's actual log configuration that a request to `/ws/parse-progress?ticket=REDACTED-CANARY` is recorded only as `/ws/parse-progress`. Do not use a live ticket for this check. If a real ticket appears in logs, restrict and expire access to those logs, rotate any affected session families if exposure is plausible, and follow [RUNBOOK.md](RUNBOOK.md).
-
-The application redacts query strings in its own logs, but this does not change infrastructure access-log settings. See [SECURITY.md](SECURITY.md) for the session and cookie model and [ENVIRONMENT.md](ENVIRONMENT.md) for the service variables.
-
-## Release order
-
-1. Provision private PostgreSQL and Redis with backups/persistence; restrict network access to API and worker.
-2. Set secrets independently in API and worker. Never copy `.env` into a public image or expose server secrets as Nuxt public runtime config.
-3. Apply `corepack pnpm db:migrate` against the intended production database before deploying API code that depends on the migration.
-4. Deploy API and worker, verify readiness, then publish the web build with the custom API and WebSocket URLs.
-5. In a real browser, verify login, reload-triggered refresh, logout, and WebSocket progress on the chosen domain and supported browsers. Local tests do not prove third-party-cookie behavior at the production host.
-
-Rollback and recovery procedures are described in [RUNBOOK.md](RUNBOOK.md). Do not roll back application code across an irreversible schema change without first applying the documented migration down script and stopping API/worker writes.
+1. Секреты заданы в платформе, `.env` не деплоится.
+2. Применены миграции (см. [0009](migrations/0009-chat-reports.md) — перед ней сделайте бэкап).
+3. API `/ready` возвращает `ok` по Postgres, Redis и worker.
+4. В браузере на боевом домене проверены вход, перезагрузка страницы (тихий refresh), прогресс анализа и выход.

@@ -1,7 +1,12 @@
 import { spawn } from 'node:child_process'
 import process from 'node:process'
 
-const service = (process.env.RAILWAY_SERVICE || process.env.START_SERVICE || '').trim().toLowerCase()
+// One repository, three processes. Hosts that build the whole repo (e.g. Railway)
+// pick the process with START_SERVICE (or the Railway service name).
+const service = (process.env.START_SERVICE || process.env.RAILWAY_SERVICE_NAME || process.env.RAILWAY_SERVICE || '')
+  .trim()
+  .toLowerCase()
+  .replace(/^tga-/, '')
 const isWindows = process.platform === 'win32'
 const corepack = isWindows ? 'corepack.cmd' : 'corepack'
 

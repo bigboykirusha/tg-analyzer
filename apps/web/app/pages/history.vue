@@ -1,608 +1,299 @@
 <script setup lang="ts">
-import type { ParseHistoryItem } from '@tg-analyzer/shared'
-import Container from '../components/layout/Container.vue'
-import ParseProgress from '../components/stats/ParseProgress.vue'
-import Button from '../components/ui/Button.vue'
-import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
-import EmptyState from '../components/ui/EmptyState.vue'
-import ModalDialog from '../components/ui/ModalDialog.vue'
-import Skeleton from '../components/ui/Skeleton.vue'
-import ListSkeleton from '../components/ui/ListSkeleton.vue'
+import type { JobStatus, Page, ParseJobDto } from '@tg-analyzer/shared'
 import { Clock, Trash2 } from '../lib/icons'
-import { useI18n } from '../composables/useI18n'
-import { useParseProgress } from '../composables/useParseProgress'
-import { useStats } from '../composables/useStats'
-import { useToast } from '../composables/useToast'
-import { useStatsStore } from '../stores/stats'
+import { api } from '../composables/useApi'
 
-definePageMeta({
-  layout: 'workspace',
-  middleware: ['auth'],
-})
+definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
-const { fetchHistory, deleteHistoryItem } = useStats()
-const stats = useStatsStore()
-const { progress, bootstrapped, bootstrapFromServer } = useParseProgress()
-const { t, formatNumber, formatDate: formatLocaleDate } = useI18n()
+const PAGE_SIZE = 20
+
+const { t, tc, formatDate, formatDuration } = useI18n()
+useSeoMeta({ title: () => t('nav.history') })
+
+const analysis = useAnalysis()
+const workspace = useWorkspaceStore()
 const toast = useToast()
-const historyPageSize = 20
-const historyPage = ref(stats.historyPage)
-const historyTotal = ref(stats.historyTotal)
-const loadingHistoryPage = ref(false)
-const historyPageCount = computed(() => Math.max(1, Math.ceil(historyTotal.value / historyPageSize)))
+const errorMessage = useErrorMessage()
 
-const ready = ref(stats.historyLoaded)
-const deletingHistoryJobId = ref<string | null>(null)
-const selectedHistoryItem = ref<ParseHistoryItem | null>(null)
-const confirmState = ref<{
-  type: 'delete-history-item'
-  title: string
-  description: string
-  confirmLabel: string
-  jobId?: string
-} | null>(null)
+const page = ref(1)
+const history = ref<Page<ParseJobDto> | null>(null)
+const loading = ref(false)
+const failed = ref(false)
+const deletingJobId = ref<string | null>(null)
+const confirmClearOpen = ref(false)
+const clearing = ref(false)
 
-const isParseActive = computed(() => progress.value.status === 'running' || progress.value.status === 'pending')
-const isParseTerminal = computed(() => ['completed', 'failed', 'cancelled'].includes(progress.value.status))
+const pageCount = computed(() => Math.max(1, Math.ceil((history.value?.total ?? 0) / PAGE_SIZE)))
+const reportIds = computed(() => new Set(workspace.reports.map((report) => report.chatId)))
+const hasFinishedJobs = computed(() => history.value?.items.some((job) => !isActive(job.status)) ?? false)
 
-function formatShortDate(value: string | null) {
-  if (!value) {
-    return t('common.na')
-  }
-
-  return formatLocaleDate(value, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+function isActive(status: JobStatus) {
+  return status === 'pending' || status === 'running'
 }
 
-function formatHistoryDates(item: ParseHistoryItem) {
-  return `${formatShortDate(item.createdAt)} · ${formatNumber(item.totalMessages)} ${t('dashboard.messagesShort')}`
-}
-
-function formatCompletedDate(value: string | null) {
-  if (!value) {
-    return t('common.na')
-  }
-
-  return formatShortDate(value)
-}
-
-function formatCooldown(seconds: number) {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const remainingSeconds = seconds % 60
-
-  if (hours) {
-    return t('common.durationHours', { hours, minutes })
-  }
-  if (minutes) {
-    return t('common.durationMinutes', { minutes, seconds: remainingSeconds })
-  }
-  return t('common.durationSeconds', { seconds: remainingSeconds })
-}
-
-function historyDuration(item: ParseHistoryItem) {
-  if (!item.startedAt || (!item.completedAt && item.status !== 'running' && item.status !== 'pending')) {
-    return t('common.na')
-  }
-
-  const startedAt = new Date(item.startedAt).getTime()
-  const finishedAt = item.completedAt ? new Date(item.completedAt).getTime() : Date.now()
-
-  if (Number.isNaN(startedAt) || Number.isNaN(finishedAt) || finishedAt <= startedAt) {
-    return t('common.na')
-  }
-
-  return formatCooldown(Math.round((finishedAt - startedAt) / 1000))
-}
-
-function historyProgress(item: ParseHistoryItem): number | null {
-  if (item.totalChats > 0) {
-    return Math.min(100, Math.max(0, Math.round((item.parsedChats / item.totalChats) * 100)))
-  }
-  return null
-}
-
-function formatHistoryScope(item: ParseHistoryItem) {
-  if (item.totalChats > 1) {
-    return `${formatNumber(item.parsedChats)} / ${formatNumber(item.totalChats)}`
-  }
-  if (item.chatName) {
-    return item.chatName
-  }
-  return item.jobId
-}
-
-function shouldRenderHistoryError(item: ParseHistoryItem) {
-  if (!item.errorMessage) {
-    return false
-  }
-
-  return !/busy with another operation|transient duplicate-auth conflict/i.test(item.errorMessage)
-}
-
-function openHistoryDetails(item: ParseHistoryItem) {
-  selectedHistoryItem.value = item
-}
-
-function closeHistoryDetails() {
-  selectedHistoryItem.value = null
-}
-
-async function loadHistoryPage(page: number) {
-  loadingHistoryPage.value = true
+async function load(nextPage = page.value) {
+  loading.value = true
   try {
-    const result = await fetchHistory(page, historyPageSize)
-    historyPage.value = result.page
-    historyTotal.value = result.total
-    return result
-  } finally {
-    loadingHistoryPage.value = false
-  }
-}
-
-function openDeleteHistoryItemConfirm(jobId: string) {
-  confirmState.value = {
-    type: 'delete-history-item',
-    title: t('dashboard.deleteHistoryItem'),
-    description: t('dashboard.deleteHistoryItemConfirm'),
-    confirmLabel: t('dashboard.deleteHistoryItem'),
-    jobId,
-  }
-}
-
-async function handleDeleteHistoryItem(jobId: string) {
-  deletingHistoryJobId.value = jobId
-
-  try {
-    await deleteHistoryItem(jobId)
-    const result = await loadHistoryPage(historyPage.value)
-    if (!result.items.length && historyPage.value > 1) {
-      await loadHistoryPage(historyPage.value - 1)
-    }
-    toast.success(t('dashboard.historyItemDeleted'))
+    history.value = await api('GET /api/v1/parse/history', { query: { page: nextPage, limit: PAGE_SIZE } })
+    page.value = nextPage
+    failed.value = false
+    // A deletion can leave the current page empty.
+    if (!history.value.items.length && nextPage > 1) await load(nextPage - 1)
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('dashboard.deleteHistoryItemError'))
+    failed.value = !history.value
+    toast.error(t('history.loadError'), errorMessage(error))
   } finally {
-    deletingHistoryJobId.value = null
-    confirmState.value = null
+    loading.value = false
   }
 }
 
-async function confirmAction() {
-  if (!confirmState.value) {
-    return
-  }
-
-  if (confirmState.value.type === 'delete-history-item' && confirmState.value.jobId) {
-    await handleDeleteHistoryItem(confirmState.value.jobId)
-  }
-}
-
-const confirmLoading = computed(() => {
-  return Boolean(confirmState.value?.jobId && deletingHistoryJobId.value === confirmState.value.jobId)
-})
-
-function historyTiming(item: ParseHistoryItem) {
-  return `${formatShortDate(item.startedAt)} — ${formatCompletedDate(item.completedAt)} · ${historyDuration(item)}`
-}
-
-const selectedReportPath = computed(() => {
-  const item = selectedHistoryItem.value
-  return item?.status === 'completed' && item.chatId ? `/chat/${item.chatId}` : ''
-})
-
-watch(isParseActive, (active, wasActive) => {
-  if (!bootstrapped.value) {
-    return
-  }
-
-  if (!active && wasActive) void loadHistoryPage(historyPage.value).catch(() => undefined)
-})
-
-watch(isParseTerminal, async (terminal) => {
-  if (!bootstrapped.value || !terminal) {
-    return
-  }
-
-  await loadHistoryPage(historyPage.value).catch(() => undefined)
-})
-
-onMounted(async () => {
+async function remove(jobId: string) {
+  deletingJobId.value = jobId
   try {
-    await bootstrapFromServer().catch(() => undefined)
-    await loadHistoryPage(1)
+    await api('DELETE /api/v1/parse/history/:jobId', { params: { jobId } })
+    await load()
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : t('dashboard.loadStatsError'))
+    toast.error(t('history.deleteError'), errorMessage(error))
   } finally {
-    ready.value = true
+    deletingJobId.value = null
   }
+}
+
+async function clearAll() {
+  clearing.value = true
+  try {
+    await api('DELETE /api/v1/parse/history')
+    await load(1)
+    confirmClearOpen.value = false
+  } catch (error) {
+    toast.error(t('history.deleteError'), errorMessage(error))
+  } finally {
+    clearing.value = false
+  }
+}
+
+function duration(job: ParseJobDto) {
+  if (!job.startedAt || !job.completedAt) return null
+  return formatDuration((Date.parse(job.completedAt) - Date.parse(job.startedAt)) / 1000)
+}
+
+function meta(job: ParseJobDto) {
+  const parts = [formatDate(job.createdAt, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })]
+  if (job.status === 'completed') parts.push(tc('common.messagesCount', job.totalMessages))
+  const took = duration(job)
+  if (took && job.status === 'completed') parts.push(took)
+  return parts.join(' · ')
+}
+
+watch(analysis.finished, () => void load())
+
+onMounted(() => {
+  void load(1)
+  if (workspace.reportsState === 'idle') void workspace.loadReports().catch(() => undefined)
 })
 </script>
 
 <template>
-    <Container size="default">
-      <div v-if="!ready" class="page-stack" aria-busy="true">
-        <section class="card section-card workspace-card">
-          <div class="stack-md">
-            <Skeleton height="24px" width="180px" />
-            <ListSkeleton :rows="5" :avatar="false" />
-          </div>
-        </section>
-      </div>
+  <UiPageContainer>
+    <div class="stack stack--lg">
+      <header class="history-header">
+        <div class="section-copy">
+          <h1 class="t-h1">{{ t('history.title') }}</h1>
+          <p class="t-body">{{ t('history.subtitle') }}</p>
+        </div>
+        <UiButton v-if="hasFinishedJobs" variant="ghost" size="sm" :icon="Trash2" @click="confirmClearOpen = true">
+          {{ t('history.clear') }}
+        </UiButton>
+      </header>
 
-      <div v-else class="page-stack">
-        <h1 class="sr-only">{{ t('common.history') }}</h1>
-        <ParseProgress
-          v-if="isParseActive"
-          class="dashboard-progress-inline"
-          compact
-          :current="progress.current"
-          :total="progress.total"
-          :chat-name="progress.chatName"
-          :status="progress.status"
-          :message="progress.message"
-          :scanned-messages="progress.scannedMessages"
-          :start-time="progress.startTime"
-          :phase="progress.phase"
-        />
+      <section class="card history-card" :aria-busy="loading">
+        <UiListSkeleton v-if="!history && !failed" :rows="5" :avatar="false" />
 
-        <section class="card section-card workspace-card">
-          <div v-if="stats.history.length" class="history-layout">
-            <div class="history-list">
-              <div
-                v-for="(item, index) in stats.history"
-                :key="item.jobId"
-                class="history-row"
-                :style="{ '--delay': `${index * 30}ms` }"
-              >
-                <div class="history-main">
-                  <div
-                    class="history-open"
-                    role="button"
-                    tabindex="0"
-                    @click="openHistoryDetails(item)"
-                    @keydown.enter.prevent="openHistoryDetails(item)"
-                    @keydown.space.prevent="openHistoryDetails(item)"
-                  >
-                    <div class="dialog-copy">
-                      <div class="dialog-title-row">
-                        <span class="history-title">{{ formatHistoryScope(item) }}</span>
-                      </div>
-                      <div class="history-meta t-small">
-                        <span class="selection-subline">{{ formatHistoryDates(item) }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    v-if="item.status !== 'running' && item.status !== 'pending'"
-                    variant="ghost"
-                    size="sm"
-                    class="delete-btn"
-                    :icon="Trash2"
-                    icon-only
-                    :aria-label="t('dashboard.deleteHistoryItem')"
-                    :loading="deletingHistoryJobId === item.jobId"
-                    @click.stop="openDeleteHistoryItemConfirm(item.jobId)"
-                  />
-                </div>
-                <div v-if="shouldRenderHistoryError(item)" class="detail-error t-small">
-                  {{ item.errorMessage }}
-                </div>
-                <div
-                  v-else-if="item.status === 'running' || item.status === 'pending'"
-                  class="history-progress progress-bar"
-                  role="progressbar"
-                  :aria-label="`${t('dashboard.progress')}: ${formatHistoryScope(item)}`"
-                  :aria-valuenow="historyProgress(item) ?? undefined"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                >
-                  <div
-                    class="progress-bar-fill"
-                    :class="{ 'progress-bar-fill--indeterminate': historyProgress(item) === null }"
-                    :style="historyProgress(item) === null ? undefined : { width: `${historyProgress(item)}%` }"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+        <UiEmptyState v-else-if="failed" :icon="Clock" :title="t('history.loadError')">
+          <template #action>
+            <UiButton variant="secondary" @click="load()">{{ t('common.retry') }}</UiButton>
+          </template>
+        </UiEmptyState>
 
-          <EmptyState
-            v-else
-            :icon="Clock"
-            :title="t('dashboard.noJobsTitle')"
-            :description="t('dashboard.noJobsDescription')"
-          />
-
-          <nav
-            v-if="historyTotal > historyPageSize"
-            class="history-pagination"
-            :aria-label="t('dashboard.historyPagination')"
-            aria-live="polite"
-          >
-            <Button
-              variant="secondary"
-              size="sm"
-              :disabled="loadingHistoryPage || historyPage <= 1"
-              @click="loadHistoryPage(historyPage - 1)"
-            >
-              {{ t('common.previousPage') }}
-            </Button>
-            <span class="t-small">{{
-              t('common.pageOf', { page: formatNumber(historyPage), total: formatNumber(historyPageCount) })
-            }}</span>
-            <Button
-              variant="secondary"
-              size="sm"
-              :disabled="loadingHistoryPage || historyPage >= historyPageCount"
-              @click="loadHistoryPage(historyPage + 1)"
-            >
-              {{ t('common.nextPage') }}
-            </Button>
-          </nav>
-
-        </section>
-
-        <ConfirmDialog
-          :open="Boolean(confirmState)"
-          :title="confirmState?.title ?? ''"
-          :description="confirmState?.description ?? ''"
-          :confirm-label="confirmState?.confirmLabel ?? ''"
-          :cancel-label="t('common.cancel')"
-          variant="danger"
-          :loading="confirmLoading"
-          @close="confirmState = null"
-          @confirm="confirmAction"
-        />
-
-        <ModalDialog
-          :open="Boolean(selectedHistoryItem)"
-          :close-label="t('common.close')"
-          size="lg"
-          @close="closeHistoryDetails"
+        <UiEmptyState
+          v-else-if="!history?.items.length"
+          :icon="Clock"
+          :title="t('history.emptyTitle')"
+          :description="t('history.emptyText')"
         >
-          <template v-if="selectedHistoryItem" #header>
-            <div class="history-dialog-copy">
-              <h2 class="t-h3">{{ formatHistoryScope(selectedHistoryItem) }}</h2>
-            </div>
+          <template #action>
+            <UiButton variant="primary" to="/dashboard">{{ t('history.goToChats') }}</UiButton>
           </template>
+        </UiEmptyState>
 
-          <template v-if="selectedHistoryItem">
-            <div class="history-dialog-grid">
-                  <div class="history-dialog-item history-dialog-item--wide">
-                    <span class="t-label">{{ t('dashboard.runTiming') }}</span>
-                    <span class="t-mono">{{ historyTiming(selectedHistoryItem) }}</span>
-                  </div>
-                  <div class="history-dialog-item">
-                    <span class="t-label">{{ t('common.messages') }}</span>
-                    <span class="t-mono">{{ formatNumber(selectedHistoryItem.totalMessages) }}</span>
-                  </div>
+        <ul v-else class="job-list">
+          <li v-for="job in history.items" :key="job.jobId" class="job">
+            <div class="job__copy">
+              <div class="job__title-row">
+                <span class="job__title">{{ job.chatTitle || (job.chatId ? job.chatId : t('history.allChats')) }}</span>
+                <span class="job__status" :class="`job__status--${job.status}`">{{ t(`status.${job.status}`) }}</span>
+              </div>
+              <span class="t-small t-muted">{{ meta(job) }}</span>
+              <span v-if="job.error" class="t-small job__error">{{ t(`analysis.error.${job.error}`) }}</span>
             </div>
+            <div class="job__actions">
+              <UiButton
+                v-if="job.status === 'completed' && job.chatId && reportIds.has(job.chatId)"
+                :to="`/chat/${job.chatId}`"
+                variant="secondary"
+                size="sm"
+              >
+                {{ t('dashboard.openReport') }}
+              </UiButton>
+              <UiIconButton
+                v-if="!isActive(job.status)"
+                :icon="Trash2"
+                :label="t('history.delete')"
+                size="sm"
+                :loading="deletingJobId === job.jobId"
+                @click="remove(job.jobId)"
+              />
+            </div>
+          </li>
+        </ul>
 
-            <div v-if="shouldRenderHistoryError(selectedHistoryItem)" class="detail-error t-small" role="status">
-              {{ t('dashboard.startError') }}
-            </div>
-            <Button
-              v-if="selectedReportPath"
-              variant="primary"
-              size="md"
-              class="history-dialog-open-report"
-              :to="selectedReportPath"
-              block
-            >
-              {{ t('dashboard.openReport') }}
-            </Button>
-          </template>
-        </ModalDialog>
-      </div>
-    </Container>
+        <nav v-if="pageCount > 1" class="pagination" :aria-label="t('history.pagination')">
+          <UiButton variant="secondary" size="sm" :disabled="loading || page <= 1" @click="load(page - 1)">
+            {{ t('common.previous') }}
+          </UiButton>
+          <span class="t-small t-muted">{{ t('common.pageOf', { page, total: pageCount }) }}</span>
+          <UiButton variant="secondary" size="sm" :disabled="loading || page >= pageCount" @click="load(page + 1)">
+            {{ t('common.next') }}
+          </UiButton>
+        </nav>
+      </section>
+    </div>
+
+    <UiConfirmDialog
+      :open="confirmClearOpen"
+      :title="t('history.clear')"
+      :description="t('history.clearConfirm')"
+      :confirm-label="t('history.clear')"
+      variant="danger"
+      :loading="clearing"
+      @close="confirmClearOpen = false"
+      @confirm="clearAll"
+    />
+  </UiPageContainer>
 </template>
 
 <style scoped>
-.page-stack {
+.history-header {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-inline: var(--space-1);
 }
 
-.stack-md {
+.history-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
 }
 
-.workspace-card {
-  border-color: var(--border-default);
-  box-shadow: none;
+.job-list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  list-style: none;
 }
 
-.section-card {
+.job {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  min-width: 0;
-}
-
-.history-list {
-  display: grid;
-  gap: 0;
-}
-
-.dashboard-progress-inline {
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.history-row {
-  display: grid;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-4);
-  border: 0;
-  border-bottom: 1px solid var(--border-subtle);
-  border-radius: 0;
-  background: transparent;
-  transition:
-    border-color var(--transition-fast),
-    background var(--transition-fast),
-    transform var(--transition-fast);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
-.history-row:hover {
-  border-color: var(--border-subtle);
-  background: color-mix(in srgb, var(--accent-subtle) 48%, transparent);
-}
-
-.history-row:last-child {
+.job:last-child {
   border-bottom: 0;
 }
 
-.history-open:focus-visible {
-  outline: none;
-  box-shadow: inset 3px 0 0 var(--accent);
-}
-
-.history-main,
-.dialog-title-row {
+.job__copy {
   display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: var(--space-3);
-}
-
-.history-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
-.delete-btn {
-  width: 42px;
-  min-width: 42px;
-  height: 42px;
-  min-height: 42px;
-  border-color: var(--border-default);
-  border-radius: var(--radius-full);
-}
-
-.history-open {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.dialog-copy,
-.history-dialog-copy {
-  display: flex;
-  flex: 1;
   min-width: 0;
   flex-direction: column;
+  gap: 2px;
+}
+
+.job__title-row {
+  display: flex;
+  align-items: center;
   gap: var(--space-2);
+  min-width: 0;
 }
 
-.history-title,
-.selection-subline {
-  overflow-wrap: anywhere;
+.job__title {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.detail-error {
-  padding: var(--space-3);
-  border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--border-default));
-  border-radius: var(--radius-sm);
+.job__status {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.job__status--completed {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.job__status--failed {
   background: var(--danger-subtle);
   color: var(--danger);
 }
 
-.progress-bar {
-  overflow: hidden;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background: var(--bg-elevated);
+.job__status--pending,
+.job__status--running {
+  background: var(--warning-subtle);
+  color: var(--warning);
 }
 
-.progress-bar-fill {
-  height: 100%;
-  border-radius: inherit;
-  background: var(--status-running);
+.job__error {
+  color: var(--danger);
 }
 
-.progress-bar-fill--indeterminate {
-  width: 36%;
-  animation: progress-indeterminate 1.35s ease-in-out infinite;
+.job__actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-@keyframes progress-indeterminate {
-  from {
-    transform: translateX(-120%);
-  }
-  to {
-    transform: translateX(320%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .progress-bar-fill--indeterminate {
-    width: 100%;
-    opacity: 0.45;
-    animation: none;
-  }
-}
-
-.history-pagination {
+.pagination {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  flex-wrap: wrap;
 }
 
-.history-dialog-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-  margin-top: var(--space-5);
-}
-
-.history-dialog-item {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-}
-
-.history-dialog-item--wide {
-  grid-column: 1 / -1;
-}
-
-.history-dialog-open-report {
-  margin-top: var(--space-4);
-}
-
-@media (max-width: 900px) {
-  .history-dialog-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .history-main,
-  .dialog-title-row {
+@media (max-width: 640px) {
+  .history-header {
     align-items: flex-start;
+    flex-direction: column;
+    padding-inline: var(--space-2);
+  }
+
+  .job {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: var(--space-3);
   }
 }
-
 </style>

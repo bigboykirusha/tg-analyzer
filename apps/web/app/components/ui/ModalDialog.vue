@@ -7,12 +7,13 @@ const props = withDefaults(
     open: boolean
     title?: string
     description?: string
-    closeLabel: string
+    closeLabel?: string
     size?: 'sm' | 'md' | 'lg'
     busy?: boolean
   }>(),
   {
     title: '',
+    closeLabel: '',
     description: '',
     size: 'md',
     busy: false,
@@ -20,6 +21,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{ close: [] }>()
+const { t } = useI18n()
 const panelRef = ref<HTMLElement | null>(null)
 const titleId = useId()
 const descriptionId = useId()
@@ -92,11 +94,11 @@ onBeforeUnmount(() => {
           <div class="modal-header">
             <div :id="titleId" class="modal-heading">
               <slot name="header">
-                <h2 class="t-h3">{{ title }}</h2>
+                <h2 class="dialog-title">{{ title }}</h2>
               </slot>
             </div>
             <IconButton
-              :label="closeLabel"
+              :label="closeLabel || t('common.close')"
               :icon="X"
               variant="secondary"
               size="control"
@@ -120,6 +122,12 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.dialog-title {
+  font-size: 1.125rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -140,7 +148,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: var(--glass-inset), var(--shadow-lg);
+  box-shadow: var(--glass-inset), var(--shadow);
   backdrop-filter: var(--glass-filter);
 }
 
@@ -178,7 +186,7 @@ onBeforeUnmount(() => {
 }
 
 .modal-description {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .modal-actions {

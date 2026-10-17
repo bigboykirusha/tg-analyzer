@@ -1,7 +1,5 @@
-function tryGetOrigin(value: string | undefined) {
-  if (!value) {
-    return null
-  }
+function originOf(value: string | undefined) {
+  if (!value) return null
   try {
     return new URL(value).origin
   } catch {
@@ -9,24 +7,19 @@ function tryGetOrigin(value: string | undefined) {
   }
 }
 
-const configuredPublicApiUrl = process.env.NUXT_PUBLIC_API_URL ?? ''
-// Keep authenticated HTTP same-origin in production. In particular, Safari
-// may block a refresh cookie sent directly to an API on another site.
-const publicApiUrl = process.env.NODE_ENV === 'production' ? '' : configuredPublicApiUrl
-const publicWsUrl = process.env.NUXT_PUBLIC_WS_URL ?? ''
+/**
+ * Browser HTTP traffic always goes through this app's own `/api` proxy
+ * (server/routes/api) so the refresh cookie stays first-party.
+ */
+const apiProxyTarget = (process.env.NUXT_API_PROXY_TARGET || 'http://localhost:3001').replace(/\/$/, '')
+// Nitro's proxy does not upgrade WebSockets, so the socket connects to the API directly.
+// Set NUXT_PUBLIC_WS_URL at build time (it also feeds the CSP); locally it defaults to the API.
+const wsUrl = (
+  process.env.NUXT_PUBLIC_WS_URL || (process.env.NODE_ENV === 'production' ? '' : apiProxyTarget.replace(/^http/, 'ws'))
+).replace(/\/$/, '')
 const siteUrl = process.env.NUXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-const apiProxyTarget = (process.env.NUXT_API_PROXY_TARGET || configuredPublicApiUrl || 'http://localhost:3001').replace(
-  /\/$/,
-  '',
-)
-const wsProxyTarget = process.env.NUXT_WS_PROXY_TARGET ?? 'ws://localhost:3001'
-const wsDirectFallbackUrl = process.env.NUXT_PUBLIC_WS_DIRECT_URL ?? wsProxyTarget
 
-const publicApiOrigin = tryGetOrigin(publicApiUrl)
-const publicWsOrigin = tryGetOrigin(publicWsUrl)
-const wsDirectOrigin = tryGetOrigin(wsDirectFallbackUrl)
-const connectSrcOrigins = [publicApiOrigin, publicWsOrigin, wsDirectOrigin].filter(Boolean).join(' ')
-const webSecurityHeaders = {
+const securityHeaders = {
   'content-security-policy': [
     "default-src 'self'",
     "base-uri 'self'",
@@ -34,10 +27,10 @@ const webSecurityHeaders = {
     "frame-ancestors 'none'",
     "form-action 'self'",
     "img-src 'self' data: blob:",
-    "font-src 'self' data: https://fonts.gstatic.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' data:",
+    "style-src 'self' 'unsafe-inline'",
     "script-src 'self' 'unsafe-inline'",
-    `connect-src 'self' ${connectSrcOrigins}`.trim(),
+    `connect-src 'self' ${originOf(wsUrl) ?? ''}`.trim(),
     "worker-src 'self' blob:",
   ].join('; '),
   'permissions-policy': 'camera=(), geolocation=(), microphone=()',
@@ -50,51 +43,35 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   srcDir: 'app',
   devtools: { enabled: process.env.NUXT_DEVTOOLS === 'true' },
-  css: ['~/assets/main.css', '~/assets/css/animations.css'],
+  modules: ['@pinia/nuxt'],
+  // UI kit components are prefixed (`UiButton`); feature components use their file name.
+  components: [
+    { path: '~/components/ui', prefix: 'Ui' },
+    { path: '~/components', pathPrefix: false },
+  ],
+  css: ['~/assets/styles/tokens.css', '~/assets/styles/base.css'],
   app: {
     head: {
-      meta: [
-        {
-          name: 'viewport',
-          content: 'width=device-width, initial-scale=1, viewport-fit=cover',
-        },
-      ],
+      meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' }],
       link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
     },
   },
-  modules: ['@pinia/nuxt', '@nuxtjs/tailwindcss'],
+  // Signed-in screens restore the session in the browser (the refresh cookie is
+  // HttpOnly and only the API can read it), so they render on the client only.
   routeRules: {
-    // Authenticated screens are client-only: the refresh cookie is owned by the
-    // API and cannot be restored during SSR on split-origin deployments.
-    // Rendering their shell on the server caused route hydration mismatches
-    // whenever the client middleware had to restore or reject a session.
     '/dashboard': { ssr: false },
     '/history': { ssr: false },
     '/chat/**': { ssr: false },
   },
   runtimeConfig: {
-    public: {
-      apiUrl: publicApiUrl,
-      wsUrl: publicWsUrl,
-      wsDirectFallbackUrl,
-      siteUrl,
-    },
+    // Overridden at runtime by NUXT_API_PROXY_TARGET.
+    apiProxyTarget,
+    public: { wsUrl, siteUrl },
   },
   nitro: {
     routeRules: {
-      '/**': {
-        headers: webSecurityHeaders,
-      },
-      '/api/**': {
-        proxy: `${apiProxyTarget}/api/**`,
-      },
-      '/ws/**': {
-        proxy: `${wsProxyTarget}/ws/**`,
-      },
+      '/**': { headers: securityHeaders },
     },
   },
-  typescript: {
-    strict: true,
-    typeCheck: true,
-  },
+  typescript: { strict: true },
 })

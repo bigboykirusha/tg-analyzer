@@ -1,311 +1,172 @@
-import type {
-  ApiErrorResponse,
-  ApiOperation,
-  ApiParams,
-  ApiQuery,
-  ApiRequest,
-  ApiResponse,
-  AuthSuccessResponse,
-  UserDto,
+import {
+  buildApiPath,
+  type ApiErrorCode,
+  type ApiErrorResponse,
+  type ApiOperation,
+  type ApiParams,
+  type ApiQuery,
+  type ApiRequest,
+  type ApiResponse,
+  type AuthSuccessResponse,
 } from '@tg-analyzer/shared'
-import { buildApiPath } from '@tg-analyzer/shared'
-import type { FetchOptions, MappedResponseType, ResponseType } from 'ofetch'
-import { $fetch as apiFetch } from 'ofetch'
-import { isDefinitiveAuthFailureCode, isTokenUsable } from '../utils/auth'
+import { FetchError, ofetch } from 'ofetch'
 
-let refreshPromise: Promise<RefreshResult> | null = null
-let loginRedirectInFlight = false
-const REFRESH_LOCK_KEY = 'tg-analyzer-refresh-lock'
-const REFRESH_REQUEST_TIMEOUT_MS = 15_000
-const REFRESH_LOCK_TTL_MS = 20_000
+/** A failed API call with the server's machine-readable error code. */
+export class ApiClientError extends Error {
+  constructor(
+    message: string,
+    readonly status: number | null,
+    readonly code: ApiErrorCode | 'NETWORK_ERROR',
+    readonly retryAfter: number | null = null,
+  ) {
+    super(message)
+    this.name = 'ApiClientError'
+  }
 
-type FetchErrorLike = {
-  message?: string
-  status?: number
-  data?: (ApiErrorResponse & Record<string, unknown>) | undefined
-  response?: {
-    status?: number
-    _data?: (ApiErrorResponse & Record<string, unknown>) | undefined
+  get isNetworkError() {
+    return this.code === 'NETWORK_ERROR'
   }
 }
 
-export type ApiClientError = Error & {
-  statusCode?: number
-  code?: string
-  data?: (ApiErrorResponse & Record<string, unknown>) | undefined
-}
-
-export function isApiClientError(error: unknown): error is ApiClientError {
-  return error instanceof Error && ('statusCode' in error || 'code' in error || 'data' in error)
-}
-
-type RefreshResult = {
-  accessToken: string | null
-  user: UserDto | null
-  error: ApiClientError | null
-  definitiveFailure: boolean
-}
-
-function normalizeApiError(error: unknown): ApiClientError {
-  const source = (error ?? {}) as FetchErrorLike
-  const data = source.data ?? source.response?._data
-  const message = data?.message ?? source.message ?? 'Request failed'
-  const normalized = new Error(message) as ApiClientError
-
-  normalized.statusCode = source.status ?? source.response?.status
-  normalized.code = typeof data?.code === 'string' ? data.code : undefined
-  normalized.data = data
-
-  return normalized
-}
-
-function setTransientAuthHealth(auth: ReturnType<typeof useAuthStore>) {
-  auth.setAuthHealth(
-    auth.isAuthorized && isTokenUsable(auth.accessToken) && auth.telegramSessionActive ? 'ready' : 'degraded',
-  )
-}
-
-function readRefreshLock(): { owner: string; expiresAt: number } | null {
-  try {
-    const value = localStorage.getItem(REFRESH_LOCK_KEY)
-    if (!value) return null
-    const parsed = JSON.parse(value) as { owner?: string; expiresAt?: number }
-    return typeof parsed.owner === 'string' && typeof parsed.expiresAt === 'number'
-      ? { owner: parsed.owner, expiresAt: parsed.expiresAt }
-      : null
-  } catch {
-    return null
-  }
-}
-
-async function withRefreshLock<T>(callback: () => Promise<T>): Promise<T> {
-  if (!import.meta.client) return callback()
-
-  const owner = `${Date.now()}-${Math.random().toString(36).slice(2)}`
-  const deadline = Date.now() + REFRESH_LOCK_TTL_MS
-
-  while (Date.now() < deadline) {
-    const current = readRefreshLock()
-    if (!current || current.expiresAt <= Date.now()) {
-      try {
-        localStorage.setItem(REFRESH_LOCK_KEY, JSON.stringify({ owner, expiresAt: Date.now() + REFRESH_LOCK_TTL_MS }))
-      } catch {
-        return callback()
-      }
-      if (readRefreshLock()?.owner === owner) {
-        try {
-          return await callback()
-        } finally {
-          if (readRefreshLock()?.owner === owner) localStorage.removeItem(REFRESH_LOCK_KEY)
-        }
-      }
+function toClientError(error: unknown): ApiClientError {
+  if (error instanceof ApiClientError) return error
+  if (error instanceof FetchError) {
+    const data = error.data as Partial<ApiErrorResponse> | undefined
+    if (error.status && data?.code) {
+      return new ApiClientError(data.message ?? error.message, error.status, data.code, data.retryAfter ?? null)
     }
-
-    await new Promise((resolve) => window.setTimeout(resolve, 80 + Math.floor(Math.random() * 80)))
+    if (error.status && error.status < 500) {
+      return new ApiClientError(error.message, error.status, 'INVALID_REQUEST')
+    }
+    if (error.status) return new ApiClientError(error.message, error.status, 'INTERNAL_ERROR')
   }
-
-  const error = new Error('Refresh is busy in another tab') as ApiClientError
-  error.code = 'AUTH_REFRESH_BUSY'
-  throw error
+  return new ApiClientError(error instanceof Error ? error.message : 'Network error', null, 'NETWORK_ERROR')
 }
 
-function handleTelegramReauthRequired(auth: ReturnType<typeof useAuthStore>) {
-  auth.setTelegramSessionActive(false)
-  auth.setAuthHealth('degraded')
+const SESSION_ENDED: ReadonlySet<string> = new Set(['AUTH_REFRESH_INVALID', 'AUTH_REFRESH_REPLAYED'])
+
+// ─── Access token refresh ──────────────────────────────────────────────────
+
+let refreshInFlight: Promise<AuthSuccessResponse | null> | null = null
+
+async function requestRefresh(): Promise<AuthSuccessResponse | null> {
+  try {
+    return await ofetch<AuthSuccessResponse>('/api/v1/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+      timeout: 15_000,
+    })
+  } catch (rawError) {
+    const error = toClientError(rawError)
+    if (error.status === 401) return null
+    throw error
+  }
+}
+
+/**
+ * Exchanges the refresh cookie for a new access token. Concurrent callers
+ * share one request, and tabs coordinate through the Web Locks API so that
+ * two tabs never rotate the same refresh token at once.
+ *
+ * Resolves to null when the session has ended; throws on network failures.
+ */
+export function refreshSession(): Promise<AuthSuccessResponse | null> {
+  if (refreshInFlight) return refreshInFlight
+
+  const auth = useAuthStore()
+  const tokenBefore = auth.accessToken
+  const run = async () => {
+    // Another tab may have refreshed while this one waited for the lock.
+    if (auth.accessToken && auth.accessToken !== tokenBefore) {
+      return { accessToken: auth.accessToken, user: auth.user! }
+    }
+    const result = await requestRefresh()
+    if (result) auth.signIn(result)
+    else auth.signOut()
+    return result
+  }
+
+  const locks = import.meta.client ? navigator.locks : undefined
+  const pending: Promise<AuthSuccessResponse | null> = locks
+    ? (locks.request('tg-analyzer-refresh', run) as unknown as Promise<AuthSuccessResponse | null>)
+    : run()
+  const shared = pending.finally(() => {
+    refreshInFlight = null
+  })
+  refreshInFlight = shared
+  return shared
+}
+
+// ─── Typed requests ────────────────────────────────────────────────────────
+
+type RequestOptions<K extends ApiOperation> = {
+  query?: ApiQuery<K>
+  signal?: AbortSignal
+} & ([ApiRequest<K>] extends [undefined] ? { body?: never } : { body: ApiRequest<K> }) &
+  ([ApiParams<K>] extends [never] ? { params?: never } : { params: ApiParams<K> })
+
+type OptionalArgs<K extends ApiOperation> = [ApiRequest<K>] extends [undefined]
+  ? [ApiParams<K>] extends [never]
+    ? [options?: RequestOptions<K>]
+    : [options: RequestOptions<K>]
+  : [options: RequestOptions<K>]
+
+/**
+ * Calls an endpoint of the shared API contract. Adds the access token,
+ * refreshes it once on 401 and signs the user out when the session is gone.
+ */
+export async function api<K extends ApiOperation>(operation: K, ...args: OptionalArgs<K>): Promise<ApiResponse<K>> {
+  const options = (args[0] ?? {}) as {
+    body?: unknown
+    query?: Record<string, unknown>
+    params?: Record<string, string>
+    signal?: AbortSignal
+  }
+  const separator = operation.indexOf(' ')
+  const method = operation.slice(0, separator) as 'GET' | 'POST' | 'PATCH' | 'DELETE'
+  const path = buildApiPath(operation.slice(separator + 1), options.params)
+  const auth = useAuthStore()
+  const isBinaryBody = options.body instanceof Blob
+
+  const send = () =>
+    ofetch<ApiResponse<K>>(path, {
+      method,
+      body: options.body as BodyInit | Record<string, unknown> | undefined,
+      query: options.query,
+      signal: options.signal,
+      credentials: 'include',
+      headers: {
+        ...(auth.accessToken ? { Authorization: `Bearer ${auth.accessToken}` } : {}),
+        ...(isBinaryBody ? { 'Content-Type': (options.body as Blob).type || 'application/octet-stream' } : {}),
+      },
+    })
+
+  try {
+    return await send()
+  } catch (rawError) {
+    const error = toClientError(rawError)
+    if (error.code === 'TELEGRAM_REAUTH_REQUIRED') auth.markTelegramSessionInactive()
+    if (error.status !== 401 || error.code !== 'AUTH_UNAUTHORIZED' || !auth.accessToken) throw error
+  }
+
+  // The access token expired: refresh once and retry.
+  const refreshed = await refreshSession()
+  if (!refreshed) {
+    await redirectToLogin()
+    throw new ApiClientError('Session expired', 401, 'AUTH_REFRESH_INVALID')
+  }
+  try {
+    return await send()
+  } catch (rawError) {
+    throw toClientError(rawError)
+  }
+}
+
+export function isSessionEnded(error: unknown) {
+  return error instanceof ApiClientError && SESSION_ENDED.has(error.code)
 }
 
 async function redirectToLogin() {
-  if (!import.meta.client) {
-    return
-  }
-
-  if (window.location.pathname === '/login' || loginRedirectInFlight) {
-    return
-  }
-
-  loginRedirectInFlight = true
-
-  try {
-    await navigateTo('/login', { replace: true })
-  } catch {
-    // Fall through to a hard redirect when navigation is triggered from a background request.
-  }
-
-  if (window.location.pathname !== '/login') {
-    window.location.replace('/login')
-    return
-  }
-
-  loginRedirectInFlight = false
-}
-
-async function doRefresh(apiUrl: string): Promise<RefreshResult> {
-  const auth = useAuthStore()
-
-  try {
-    const refreshResult = await $fetch<AuthSuccessResponse>(`${apiUrl}/api/v1/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-      timeout: REFRESH_REQUEST_TIMEOUT_MS,
-    })
-
-    if (!refreshResult.user) {
-      const error = new Error('Refresh session invalid') as ApiClientError
-      error.statusCode = 401
-      error.code = 'AUTH_REFRESH_INVALID'
-      auth.clear()
-      return { accessToken: null, user: null, error, definitiveFailure: true }
-    }
-
-    auth.setAccess(refreshResult.accessToken, refreshResult.user)
-    return {
-      accessToken: refreshResult.accessToken,
-      user: refreshResult.user,
-      error: null,
-      definitiveFailure: false,
-    }
-  } catch (rawError) {
-    const error = normalizeApiError(rawError)
-
-    if (error.code === 'TELEGRAM_REAUTH_REQUIRED') {
-      handleTelegramReauthRequired(auth)
-      return { accessToken: null, user: null, error, definitiveFailure: true }
-    }
-
-    if (isDefinitiveAuthFailureCode(error.code)) {
-      auth.clear()
-      return { accessToken: null, user: null, error, definitiveFailure: true }
-    }
-
-    setTransientAuthHealth(auth)
-    return { accessToken: null, user: null, error, definitiveFailure: false }
-  }
-}
-
-export async function refreshAccessToken(apiUrl: string) {
-  if (refreshPromise) {
-    return refreshPromise
-  }
-
-  refreshPromise = withRefreshLock(() => doRefresh(apiUrl))
-    .catch((rawError) => {
-      const auth = useAuthStore()
-      const error = normalizeApiError(rawError)
-      setTransientAuthHealth(auth)
-      return { accessToken: null, user: null, error, definitiveFailure: false }
-    })
-    .finally(() => {
-      refreshPromise = null
-    })
-
-  return refreshPromise
-}
-
-function requestApi<T, R extends ResponseType = 'json'>(
-  path: string,
-  options: FetchOptions<R> = {},
-): Promise<MappedResponseType<R, T>> {
-  const config = useRuntimeConfig()
-  const auth = useAuthStore()
-  const versionedPath = path.replace(/^\/api\/(?!v\d+\/)/, '/api/v1/')
-  const requestUrl = `${config.public.apiUrl}${versionedPath}`
-
-  const createHeaders = () => {
-    const headers = new Headers(options.headers as HeadersInit | undefined)
-
-    if (auth.accessToken && !headers.has('Authorization')) {
-      headers.set('Authorization', `Bearer ${auth.accessToken}`)
-    }
-
-    return headers
-  }
-
-  const execute = (): Promise<MappedResponseType<R, T>> =>
-    apiFetch<T, R>(requestUrl, {
-      credentials: 'include',
-      ...options,
-      headers: createHeaders(),
-    })
-
-  return execute().catch(async (rawError) => {
-    const error = normalizeApiError(rawError)
-
-    if (error.code === 'TELEGRAM_REAUTH_REQUIRED') {
-      handleTelegramReauthRequired(auth)
-      throw error
-    }
-
-    if (path === '/api/v1/auth/refresh' || error.statusCode !== 401) {
-      throw error
-    }
-
-    if (error.code === 'AUTH_TEMP_TOKEN_INVALID') {
-      throw error
-    }
-
-    if (isDefinitiveAuthFailureCode(error.code)) {
-      auth.clear()
-      await redirectToLogin()
-      throw error
-    }
-
-    const refreshResult = await refreshAccessToken(config.public.apiUrl)
-    if (refreshResult.accessToken) {
-      return execute()
-    }
-
-    if (refreshResult.definitiveFailure) {
-      await redirectToLogin()
-    }
-
-    throw refreshResult.error ?? error
-  })
-}
-
-type EndpointOptions<K extends ApiOperation, R extends ResponseType = 'json'> = Omit<
-  FetchOptions<R>,
-  'method' | 'body'
-> & {
-  body?: ApiRequest<K>
-  query?: ApiQuery<K>
-} & ([ApiParams<K>] extends [never] ? { params?: never } : { params: ApiParams<K> })
-
-type BlobApiOperation = {
-  [K in ApiOperation]: ApiResponse<K> extends Blob ? K : never
-}[ApiOperation]
-
-export function useApiEndpoint<K extends ApiOperation>(
-  operation: K,
-  ...args: [ApiParams<K>] extends [never] ? [options?: EndpointOptions<K>] : [options: EndpointOptions<K>]
-) {
-  const options = (args[0] ?? {}) as Omit<FetchOptions<'json'>, 'method' | 'body'> & {
-    body?: ApiRequest<K>
-    query?: ApiQuery<K>
-    params?: Record<string, string>
-  }
-  const separator = operation.indexOf(' ')
-  const method = operation.slice(0, separator) as FetchOptions<'json'>['method']
-  const { params, ...fetchOptions } = options
-  const path = buildApiPath(operation.slice(separator + 1), params)
-
-  return requestApi<ApiResponse<K>>(path, { ...fetchOptions, method })
-}
-
-export function useApiBlobEndpoint<K extends BlobApiOperation>(
-  operation: K,
-  ...args: [ApiParams<K>] extends [never]
-    ? [options?: EndpointOptions<K, 'blob'>]
-    : [options: EndpointOptions<K, 'blob'>]
-) {
-  const options = (args[0] ?? {}) as Omit<FetchOptions<'blob'>, 'method' | 'body'> & {
-    body?: ApiRequest<K>
-    query?: ApiQuery<K>
-    params?: Record<string, string>
-  }
-  const separator = operation.indexOf(' ')
-  const method = operation.slice(0, separator) as FetchOptions<'blob'>['method']
-  const { params, ...fetchOptions } = options
-  const path = buildApiPath(operation.slice(separator + 1), params)
-
-  return requestApi<never, 'blob'>(path, { ...fetchOptions, method, responseType: 'blob' })
+  if (!import.meta.client || useRoute().path === '/login') return
+  await navigateTo('/login', { replace: true })
 }

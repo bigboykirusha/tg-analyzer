@@ -8,31 +8,33 @@ on:
 permissions:
   contents: read
 
+env:
+  NODE_ENV: test
+
 jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
-          run_install: false
-      - run: corepack pnpm install --frozen-lockfile
-      - run: corepack pnpm lint
-      - run: corepack pnpm format:check
-      - run: corepack pnpm check
-      - run: corepack pnpm test
-      - run: corepack pnpm build
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm check
+      - run: pnpm test:unit
+      - run: pnpm build
 
-  integration:
+  api:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    services:
+    services: &services
       postgres:
         image: postgres:16-alpine
         env:
@@ -51,36 +53,59 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
-          run_install: false
-      - run: corepack pnpm install --frozen-lockfile
-      - run: corepack pnpm test:integration
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @tg-analyzer/api test
 
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    services: *services
+    env:
+      NODE_ENV: development
+      TELEGRAM_MODE: fake
+      DATABASE_URL: postgresql://test:integration-only@127.0.0.1:55432/tganalyzer_test
+      REDIS_URL: redis://127.0.0.1:56379/0
+      SESSION_ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000001
+      JWT_SECRET: ci-only-access-secret-0123456789abcdef
+      JWT_REFRESH_SECRET: ci-only-refresh-secret-0123456789abcdef
+      CORS_ORIGIN: http://127.0.0.1:3000,http://localhost:3000
+      CHAT_REPARSE_COOLDOWN_MINUTES: '0'
+      AUTH_RATE_LIMIT_MAX: '100'
+      NUXT_API_PROXY_TARGET: http://127.0.0.1:3001
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
-          run_install: false
-      - run: corepack pnpm install --frozen-lockfile
-      - run: corepack pnpm --filter @tg-analyzer/web exec playwright install --with-deps chromium
-      - run: corepack pnpm --filter @tg-analyzer/web test:e2e
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @tg-analyzer/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @tg-analyzer/api build
+      - run: pnpm --filter @tg-analyzer/api migrate
+      - name: Start API and worker
+        working-directory: apps/api
+        run: |
+          nohup node dist/index.js > ../../api.log 2>&1 &
+          nohup node dist/worker.js > ../../worker.log 2>&1 &
+          for i in $(seq 1 30); do curl -fs http://127.0.0.1:3001/ready && exit 0; sleep 1; done
+          cat ../../api.log ../../worker.log; exit 1
+      - run: pnpm test:e2e
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-results
-          path: apps/web/test-results
+          path: |
+            apps/web/test-results
+            api.log
+            worker.log
           if-no-files-found: ignore

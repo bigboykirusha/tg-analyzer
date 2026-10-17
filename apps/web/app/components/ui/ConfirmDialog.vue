@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import Button from './Button.vue'
-import ModalDialog from './ModalDialog.vue'
-
 withDefaults(
   defineProps<{
     open: boolean
     title: string
     description: string
     confirmLabel: string
-    cancelLabel: string
+    cancelLabel?: string
     variant?: 'default' | 'danger'
     loading?: boolean
   }>(),
   {
+    cancelLabel: '',
     variant: 'default',
     loading: false,
   },
@@ -27,7 +25,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <ModalDialog
+  <UiModalDialog
     :open="open"
     :title="title"
     :description="description"
@@ -37,12 +35,12 @@ const { t } = useI18n()
     @close="emit('close')"
   >
     <template #actions>
-      <Button variant="secondary" :disabled="loading" @click="emit('close')">
-        {{ cancelLabel }}
-      </Button>
-      <Button :variant="variant === 'danger' ? 'danger' : 'primary'" :loading="loading" @click="emit('confirm')">
+      <UiButton variant="secondary" :disabled="loading" @click="emit('close')">
+        {{ cancelLabel || t('common.cancel') }}
+      </UiButton>
+      <UiButton :variant="variant === 'danger' ? 'danger' : 'primary'" :loading="loading" @click="emit('confirm')">
         {{ confirmLabel }}
-      </Button>
+      </UiButton>
     </template>
-  </ModalDialog>
+  </UiModalDialog>
 </template>

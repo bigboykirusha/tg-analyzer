@@ -2,44 +2,15 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "corepack pnpm install && corepack pnpm --filter @tg-analyzer/shared build && corepack pnpm --filter @tg-analyzer/api build",
-    "watchPatterns": ["apps/api/**", "packages/**", "pnpm-lock.yaml", "package.json", "railway.json"]
+    "buildCommand": "corepack pnpm install --frozen-lockfile && corepack pnpm --filter @tg-analyzer/api build",
+    "watchPatterns": ["apps/api/**", "packages/shared/**", "pnpm-lock.yaml", "package.json", "railway.json"]
   },
   "deploy": {
+    "preDeployCommand": ["corepack pnpm --filter @tg-analyzer/api migrate"],
+    "startCommand": "node scripts/start-from-env.mjs",
     "healthcheckPath": "/health",
-    "healthcheckTimeout": 300,
+    "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10,
-    "startCommand": "corepack pnpm start:api"
-  },
-  "services": {
-    "$service-api": {
-      "name": "tga-api",
-      "build": {
-        "builder": "NIXPACKS",
-        "buildCommand": "corepack pnpm install && corepack pnpm --filter @tg-analyzer/shared build && corepack pnpm --filter @tg-analyzer/api build"
-      },
-      "deploy": {
-        "startCommand": "corepack pnpm start:api",
-        "healthcheckPath": "/health",
-        "healthcheckTimeout": 300,
-        "restartPolicyType": "ON_FAILURE",
-        "restartPolicyMaxRetries": 10
-      }
-    },
-    "$service-worker": {
-      "name": "tga-worker",
-      "build": {
-        "builder": "NIXPACKS",
-        "buildCommand": "corepack pnpm install && corepack pnpm --filter @tg-analyzer/shared build && corepack pnpm --filter @tg-analyzer/api build"
-      },
-      "deploy": {
-        "startCommand": "corepack pnpm start:worker",
-        "restartPolicyType": "ON_FAILURE",
-        "restartPolicyMaxRetries": 10,
-        "healthcheckPath": "",
-        "healthcheckTimeout": 0
-      }
-    }
+    "restartPolicyMaxRetries": 10
   }
 }

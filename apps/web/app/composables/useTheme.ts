@@ -1,31 +1,41 @@
 export type ThemePreference = 'system' | 'light' | 'dark'
 
-const THEME_STORAGE_KEY = 'tg-analyzer-theme'
+const THEME_COOKIE = 'tg-analyzer-theme'
 
+/**
+ * Theme preference is kept in a cookie so the server renders the right
+ * `data-theme` and the page never flashes. `resolved` follows the system
+ * setting live, which charts use to repaint.
+ */
 export function useTheme() {
-  const preference = useState<ThemePreference>('theme-preference', () => 'system')
+  const cookie = useCookie<ThemePreference>(THEME_COOKIE, {
+    default: () => 'system',
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: 'lax',
+  })
+  const systemDark = useState('theme-system-dark', () => false)
+  const preference = computed<ThemePreference>(() =>
+    cookie.value === 'light' || cookie.value === 'dark' ? cookie.value : 'system',
+  )
+  const resolved = computed<'light' | 'dark'>(() =>
+    preference.value === 'system' ? (systemDark.value ? 'dark' : 'light') : preference.value,
+  )
 
-  function apply(next: ThemePreference) {
-    preference.value = next
-    if (!import.meta.client) {
-      return
-    }
-
-    if (next === 'system') {
-      document.documentElement.removeAttribute('data-theme')
-    } else {
-      document.documentElement.dataset.theme = next
-    }
-    localStorage.setItem(THEME_STORAGE_KEY, next)
+  function setPreference(next: ThemePreference) {
+    cookie.value = next
   }
 
-  function hydrate() {
-    if (!import.meta.client) {
-      return
-    }
-    const stored = localStorage.getItem(THEME_STORAGE_KEY)
-    apply(stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system')
+  /** Call once from the app root. */
+  function install() {
+    useHead({ htmlAttrs: { 'data-theme': () => (preference.value === 'system' ? undefined : preference.value) } })
+    onMounted(() => {
+      const media = window.matchMedia('(prefers-color-scheme: dark)')
+      systemDark.value = media.matches
+      media.addEventListener('change', (event) => {
+        systemDark.value = event.matches
+      })
+    })
   }
 
-  return { preference, apply, hydrate }
+  return { preference, resolved, setPreference, install }
 }

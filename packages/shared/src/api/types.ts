@@ -1,0 +1,479 @@
+/**
+ * Data transfer objects shared by the API and the web client.
+ * Everything here is serialisable JSON: dates are ISO strings, ids are strings.
+ */
+
+// ---------------------------------------------------------------------------
+// Errors
+// ---------------------------------------------------------------------------
+
+export type ApiErrorCode =
+  // generic
+  | 'INVALID_REQUEST'
+  | 'NOT_FOUND'
+  | 'RATE_LIMITED'
+  | 'ORIGIN_FORBIDDEN'
+  | 'INTERNAL_ERROR'
+  // app session
+  | 'AUTH_UNAUTHORIZED'
+  | 'AUTH_REFRESH_INVALID'
+  | 'AUTH_REFRESH_REPLAYED'
+  // telegram login
+  | 'LOGIN_PHONE_INVALID'
+  | 'LOGIN_PHONE_BANNED'
+  | 'LOGIN_CODE_INVALID'
+  | 'LOGIN_CODE_EXPIRED'
+  | 'LOGIN_PASSWORD_INVALID'
+  | 'LOGIN_SESSION_EXPIRED'
+  // telegram runtime
+  | 'TELEGRAM_FLOOD_WAIT'
+  | 'TELEGRAM_REAUTH_REQUIRED'
+  | 'TELEGRAM_BUSY'
+  | 'TELEGRAM_UNAVAILABLE'
+  // analysis
+  | 'CHAT_NOT_FOUND'
+  | 'PARSE_ALREADY_RUNNING'
+  | 'PARSE_COOLDOWN'
+  | 'PARSE_NOT_ACTIVE'
+  | 'PARSE_JOB_ACTIVE'
+  | 'QUEUE_UNAVAILABLE'
+
+export interface ApiErrorResponse {
+  code: ApiErrorCode
+  message: string
+  requestId?: string
+  /** Seconds until the request may be retried (rate limits, flood waits, cooldowns). */
+  retryAfter?: number
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+export interface UserDto {
+  id: string
+  tgUserId: string
+  username: string | null
+  firstName: string | null
+  timezone: string
+  telegramSessionActive: boolean
+}
+
+export interface SendCodeBody {
+  phone: string
+}
+
+export interface SendCodeResponse {
+  phoneCodeHash: string
+}
+
+export interface VerifyCodeBody {
+  phone: string
+  code: string
+  phoneCodeHash: string
+}
+
+export interface VerifyPasswordBody {
+  /** Token returned by verify-code when two-step verification is enabled. */
+  tempToken: string
+  password: string
+}
+
+export interface AuthSuccessResponse {
+  accessToken: string
+  user: UserDto
+}
+
+export interface PasswordRequiredResponse {
+  passwordRequired: true
+  tempToken: string
+  passwordHint: string | null
+}
+
+export type VerifyCodeResponse = AuthSuccessResponse | PasswordRequiredResponse
+
+export interface UpdateProfileBody {
+  timezone: string
+}
+
+export interface UserResponse {
+  user: UserDto
+}
+
+export interface WsTicketResponse {
+  ticket: string
+}
+
+export interface SuccessResponse {
+  success: true
+}
+
+// ---------------------------------------------------------------------------
+// Telegram dialogs
+// ---------------------------------------------------------------------------
+
+export type ChatType = 'private' | 'group' | 'channel' | 'bot' | 'unknown'
+
+/** Chat types that can be analysed. Channels and bots are not conversations. */
+export const ANALYZABLE_CHAT_TYPES = ['private', 'group'] as const satisfies readonly ChatType[]
+export type AnalyzableChatType = (typeof ANALYZABLE_CHAT_TYPES)[number]
+
+export interface DialogDto {
+  id: string
+  title: string
+  type: ChatType
+  hasAvatar: boolean
+}
+
+export interface DialogsResponse {
+  dialogs: DialogDto[]
+  /** True when Telegram returned more dialogs than the API lists. */
+  truncated: boolean
+  /** True when Telegram was busy and the response comes from the short-lived cache. */
+  stale: boolean
+}
+
+export interface AvatarsBody {
+  chatIds: string[]
+}
+
+export interface AvatarsResponse {
+  /** `data:` URLs keyed by chat id; null when the chat has no photo. */
+  avatars: Record<string, string | null>
+}
+
+// ---------------------------------------------------------------------------
+// Analysis jobs
+// ---------------------------------------------------------------------------
+
+export type JobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+
+export type ParsePhase = 'queued' | 'connecting' | 'scanning' | 'waiting' | 'saving' | 'retrying'
+
+/** Machine-readable failure reason; the UI localises it. */
+export type ParseErrorCode =
+  'telegram_session_expired' | 'telegram_busy' | 'chat_unavailable' | 'interrupted' | 'internal'
+
+export interface ParseProgressDto {
+  jobId: string | null
+  status: JobStatus | 'idle'
+  phase: ParsePhase | null
+  chatId: string | null
+  chatTitle: string | null
+  scannedMessages: number
+  /** Total messages in the chat as reported by Telegram, when known. */
+  totalMessages: number | null
+  /** Unix epoch milliseconds. */
+  startedAt: number | null
+  /** Seconds Telegram asked us to wait (phase `waiting`). */
+  waitSeconds: number | null
+  error: ParseErrorCode | null
+}
+
+export interface StartParseBody {
+  chatId: string
+}
+
+export interface StartParseResponse {
+  jobId: string
+}
+
+export interface ParseJobDto {
+  jobId: string
+  /** Null for legacy "all chats" jobs. */
+  chatId: string | null
+  chatTitle: string | null
+  status: JobStatus
+  totalMessages: number
+  createdAt: string
+  startedAt: string | null
+  completedAt: string | null
+  error: ParseErrorCode | null
+}
+
+export interface Page<T> {
+  items: T[]
+  total: number
+  page: number
+  limit: number
+}
+
+export interface ClearHistoryResponse extends SuccessResponse {
+  deleted: number
+}
+
+// ---------------------------------------------------------------------------
+// Reports
+// ---------------------------------------------------------------------------
+
+export interface TopItemDto {
+  value: string
+  count: number
+}
+
+export interface DirectionalCountDto {
+  sent: number
+  received: number
+  total: number
+}
+
+export interface DirectionalTopItemsDto {
+  mine: TopItemDto[]
+  theirs: TopItemDto[]
+}
+
+export interface DatedActivityDto extends DirectionalCountDto {
+  /** Local calendar day, `YYYY-MM-DD`. */
+  date: string
+}
+
+export interface MonthlyActivityDto extends DirectionalCountDto {
+  /** Local calendar month, `YYYY-MM`. */
+  month: string
+}
+
+export interface GapDto {
+  seconds: number
+  from: string | null
+  to: string | null
+}
+
+export interface StreakDto {
+  days: number
+  startDate: string | null
+  endDate: string | null
+}
+
+export interface MessageCompositionDto {
+  text: number
+  media: number
+  voice: number
+  sticker: number
+  file: number
+}
+
+export interface ResponseStatsDto {
+  medianMineSec: number | null
+  medianTheirsSec: number | null
+  mineSamples: number
+  theirsSamples: number
+  mineP25Sec: number | null
+  mineP75Sec: number | null
+  mineP95Sec: number | null
+  theirsP25Sec: number | null
+  theirsP75Sec: number | null
+  theirsP95Sec: number | null
+  /** Share of conversational turns that received a reply within the same session, 0–100. */
+  responseRate: number | null
+  /** Share of sessions started by the current user, 0–100. */
+  iWriteFirstPct: number | null
+}
+
+export interface SessionHighlightDto {
+  startedAt: string
+  endedAt: string
+  durationSec: number
+  totalMessages: number
+  sentMessages: number
+  receivedMessages: number
+}
+
+export interface SessionStatsDto {
+  totalSessions: number
+  averageSessionMessages: number
+  averageSessionDurationSec: number | null
+  longestSessionMessages: number
+  longestSessionDurationSec: number | null
+  sessionsPerActiveWeek: number
+  nightSessionsPct: number | null
+  highlights: SessionHighlightDto[]
+}
+
+export type Trend = 'growing' | 'stable' | 'fading' | 'unknown'
+
+export interface ConversationFactsDto {
+  activeDays: number
+  longestGap: GapDto | null
+  mostActiveDate: { date: string; total: number } | null
+  maxStreak: StreakDto
+  silencesOver30Days: GapDto[]
+  trend: Trend
+  mostActiveMonth: string | null
+}
+
+export interface RelationshipScoreDto {
+  score: number
+  label: 'balanced' | 'warm' | 'cooling' | 'one_sided' | 'emerging'
+  reciprocity: number | null
+  responsiveness: number | null
+  stability: number | null
+  attentionBalance: number | null
+}
+
+export interface HealthScoreDto {
+  score: number
+  label: 'strong' | 'steady' | 'fragile' | 'imbalanced'
+  responseRate: number | null
+  /** Share of sessions beyond the first one per active day, 0–100. Lower is better. */
+  fragmentation: number | null
+  initiativeBalance: number | null
+  longTermStability: number | null
+}
+
+export type GroupMemberRole = 'anchor' | 'contributor' | 'newcomer' | 'inactive'
+
+export interface GroupParticipantDto {
+  id: string
+  name: string
+  isSelf: boolean
+  role: GroupMemberRole
+  messageCount: number
+  messageShare: number
+  wordCount: number
+  avgWordsPerMessage: number | null
+  mediaCount: number
+  mediaShare: number
+  firstSeen: string | null
+  lastSeen: string | null
+  activeDays: number
+  consistencyScore: number
+  starterCount: number
+  starterShare: number
+  replyCount: number
+  repliesReceived: number
+  magnetScore: number | null
+  replyRatio: number | null
+  topWords: TopItemDto[]
+  topEmoji: TopItemDto[]
+  topicSignature: TopItemDto[]
+}
+
+export interface GroupPairDto {
+  leftParticipantId: string
+  leftParticipantName: string
+  rightParticipantId: string
+  rightParticipantName: string
+  symmetricScore: number
+  directReplies: number
+  impliedReplies: number
+}
+
+export interface GroupHealthDto {
+  giniCoefficient: number
+  lurkerRatio: number
+  retentionRate: number | null
+  responseCoverage: number
+  consistency: number
+  momentum: 'growing' | 'stable' | 'shrinking' | 'unknown'
+  activeMembers: number
+  activeMembersLast30Days: number
+  churnedMembers: number
+  peakSimultaneity: number
+}
+
+export interface GroupReportDto {
+  participants: GroupParticipantDto[]
+  topPairs: GroupPairDto[]
+  health: GroupHealthDto | null
+  sharedVocabulary: TopItemDto[]
+  uniqueGroupWords: TopItemDto[]
+}
+
+export interface ActivityDistributionDto {
+  night: DirectionalCountDto
+  morning: DirectionalCountDto
+  afternoon: DirectionalCountDto
+  evening: DirectionalCountDto
+}
+
+export interface CompositionStatsDto {
+  textSharePct: number | null
+  mediaSharePct: number | null
+  voiceSharePct: number | null
+  stickerSharePct: number | null
+  fileSharePct: number | null
+  avgCharsPerTextMessage: number | null
+}
+
+export interface AvailabilityProfileDto {
+  activeHours: number
+  activeHoursPct: number
+  concentrationIndex: number | null
+  predictability: 'low' | 'medium' | 'high'
+  peakWindow: string | null
+  secondaryWindow: string | null
+}
+
+export const CHAT_REPORT_VERSION = 2
+
+/**
+ * The persisted analysis document of one chat. It holds only aggregated
+ * counters: no message text is ever stored.
+ */
+export interface ChatReport {
+  version: typeof CHAT_REPORT_VERSION
+  /** IANA time zone used to bucket hours, days and months. */
+  timeZone: string
+  totals: {
+    messages: number
+    sent: number
+    received: number
+    chars: number
+    words: number
+    textMessages: number
+  }
+  composition: MessageCompositionDto
+  period: {
+    firstMessageAt: string | null
+    lastMessageAt: string | null
+  }
+  activity: {
+    /** 24 buckets, index = local hour. */
+    hourly: DirectionalCountDto[]
+    /** 7 buckets, index = local weekday (0 = Sunday). */
+    weekday: DirectionalCountDto[]
+    daily: DatedActivityDto[]
+    monthly: MonthlyActivityDto[]
+  }
+  vocabulary: {
+    topWords: TopItemDto[]
+    topWordsBySender: DirectionalTopItemsDto
+    uniqueWordsBySender: DirectionalTopItemsDto
+    topEmoji: TopItemDto[]
+    topEmojiBySender: DirectionalTopItemsDto
+    wordsPerMessage: { mine: number | null; theirs: number | null }
+  }
+  responses: ResponseStatsDto
+  facts: ConversationFactsDto
+  sessions: SessionStatsDto
+  relationship: RelationshipScoreDto | null
+  health: HealthScoreDto | null
+  group: GroupReportDto | null
+}
+
+/** Metrics that are cheap to recompute from a report and therefore not persisted. */
+export interface DerivedReportMetrics {
+  activityDistribution: ActivityDistributionDto
+  compositionStats: CompositionStatsDto
+  availabilityProfile: AvailabilityProfileDto
+}
+
+export interface ReportSummaryDto {
+  chatId: string
+  title: string
+  type: ChatType
+  totalMessages: number
+  firstMessageAt: string | null
+  lastMessageAt: string | null
+  analyzedAt: string
+}
+
+export interface ReportsResponse {
+  reports: ReportSummaryDto[]
+}
+
+export interface ReportDto {
+  summary: ReportSummaryDto
+  report: ChatReport
+  derived: DerivedReportMetrics
+}

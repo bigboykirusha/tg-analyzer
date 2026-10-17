@@ -1,142 +1,97 @@
 <script setup lang="ts">
-import PhoneStep from '../components/auth/PhoneStep.vue'
-import CodeStep from '../components/auth/CodeStep.vue'
-import PasswordStep from '../components/auth/PasswordStep.vue'
-import LocaleSwitch from '../components/ui/LocaleSwitch.vue'
-import ThemeToggle from '../components/ui/ThemeToggle.vue'
-import { useToast } from '../composables/useToast'
+import { ApiClientError } from '../composables/useApi'
+
 definePageMeta({ middleware: ['guest'] })
 
-const auth = useAuthStore()
+const RESEND_DELAY_SECONDS = 60
+
 const { sendCode, verifyCode, verifyPassword } = useAuth()
-const { locale, t } = useI18n()
-const toast = useToast()
+const { t } = useI18n()
+const errorMessage = useErrorMessage()
 
 const step = ref<'phone' | 'code' | 'password'>('phone')
 const phone = ref('')
 const code = ref('')
 const password = ref('')
+const phoneCodeHash = ref('')
+const tempToken = ref('')
+const passwordHint = ref<string | null>(null)
 const loading = ref(false)
-const codeAttemptsLeft = ref(3)
-const resendSeconds = ref(0)
-let resendTimer: number | null = null
-
-onBeforeUnmount(() => {
-  if (resendTimer) window.clearInterval(resendTimer)
-})
-
-function startResendTimer() {
-  resendSeconds.value = 42
-  if (resendTimer) window.clearInterval(resendTimer)
-  resendTimer = window.setInterval(() => {
-    resendSeconds.value = Math.max(0, resendSeconds.value - 1)
-    if (!resendSeconds.value && resendTimer) {
-      window.clearInterval(resendTimer)
-      resendTimer = null
-    }
-  }, 1000)
-}
-
-const seoTitle = computed(() =>
-  locale.value === 'ru' ? 'TG Analyzer - вход в Telegram-аналитику' : 'TG Analyzer - Telegram analytics login',
-)
-const seoDescription = computed(() =>
-  locale.value === 'ru'
-    ? 'Войдите в TG Analyzer и анализируйте Telegram-чаты: динамика общения, активность, слова, эмодзи и подробные отчеты.'
-    : 'Sign in to TG Analyzer to explore Telegram chat analytics, activity patterns, vocabulary, emoji usage, and focused reports.',
-)
-const seoKeywords = computed(() =>
-  locale.value === 'ru'
-    ? 'telegram analytics, анализ telegram чатов, статистика telegram, tg analyzer, аналитика переписок'
-    : 'telegram analytics, telegram chat analysis, telegram stats, tg analyzer, chat insights',
-)
+const error = ref('')
+const resendAvailableAt = ref(0)
+const now = useNow(1000)
+const resendSeconds = computed(() => Math.max(0, Math.ceil((resendAvailableAt.value - now.value) / 1000)))
 const stepIndex = computed(() => ({ phone: 0, code: 1, password: 2 })[step.value])
 
-useSeoMeta({
-  title: () => seoTitle.value,
-  description: () => seoDescription.value,
-  ogTitle: () => seoTitle.value,
-  ogDescription: () => seoDescription.value,
-  twitterTitle: () => seoTitle.value,
-  twitterDescription: () => seoDescription.value,
-})
-useHead({ meta: [{ name: 'keywords', content: () => seoKeywords.value }] })
+useSeoMeta({ title: () => t('login.seoTitle'), description: () => t('seo.description') })
 
-async function handlePhone() {
+watch(step, () => {
+  error.value = ''
+})
+
+async function run(action: () => Promise<void>) {
   loading.value = true
+  error.value = ''
   try {
-    await sendCode(phone.value)
-    codeAttemptsLeft.value = 3
-    startResendTimer()
-    step.value = 'code'
-  } catch {
-    toast.error(t('login.sendCodeError'))
+    await action()
+  } catch (caught) {
+    error.value = errorMessage(caught)
+    // An expired login cannot be continued; start over from the phone step.
+    if (caught instanceof ApiClientError && caught.code === 'LOGIN_SESSION_EXPIRED') {
+      step.value = 'phone'
+      error.value = errorMessage(caught)
+    }
   } finally {
     loading.value = false
   }
 }
 
-async function handleCode() {
-  loading.value = true
-  try {
-    const result = await verifyCode({ phone: phone.value, code: code.value, phoneCodeHash: auth.phoneCodeHash })
-    if ('isPasswordRequired' in result && result.isPasswordRequired) {
+function requestCode() {
+  return run(async () => {
+    const result = await sendCode(phone.value)
+    phoneCodeHash.value = result.phoneCodeHash
+    code.value = ''
+    resendAvailableAt.value = Date.now() + RESEND_DELAY_SECONDS * 1000
+    step.value = 'code'
+  })
+}
+
+function submitCode() {
+  return run(async () => {
+    const result = await verifyCode({ phone: phone.value, code: code.value, phoneCodeHash: phoneCodeHash.value })
+    if ('passwordRequired' in result) {
+      tempToken.value = result.tempToken
+      passwordHint.value = result.passwordHint
       step.value = 'password'
       return
     }
     await navigateTo('/dashboard', { replace: true })
-  } catch {
-    codeAttemptsLeft.value = Math.max(0, codeAttemptsLeft.value - 1)
-    toast.error(t('login.invalidCodeError', { count: codeAttemptsLeft.value }))
-  } finally {
-    loading.value = false
-  }
+  })
 }
 
-async function handleResendCode() {
-  if (loading.value || resendSeconds.value > 0) return
-  loading.value = true
-  try {
-    await sendCode(phone.value)
-    codeAttemptsLeft.value = 3
-    startResendTimer()
-  } catch {
-    toast.error(t('login.sendCodeError'))
-  } finally {
-    loading.value = false
-  }
+function submitPassword() {
+  return run(async () => {
+    await verifyPassword({ tempToken: tempToken.value, password: password.value })
+    await navigateTo('/dashboard', { replace: true })
+  })
 }
 
-function handleChangeNumber() {
+function changeNumber() {
   step.value = 'phone'
   code.value = ''
-  if (resendTimer) window.clearInterval(resendTimer)
-  resendTimer = null
-  resendSeconds.value = 0
-}
-
-async function handlePassword() {
-  loading.value = true
-  try {
-    await verifyPassword({ password: password.value })
-    await navigateTo('/dashboard', { replace: true })
-  } catch {
-    toast.error(t('login.invalidPasswordError'))
-  } finally {
-    loading.value = false
-  }
+  resendAvailableAt.value = 0
 }
 </script>
 
 <template>
   <main class="login-page">
-    <section class="login-shell animate-scale-in">
+    <section class="login-shell">
       <header class="login-header">
         <div class="brand">
           <span class="brand-symbol" aria-hidden="true"><i /><i /><i /></span>
           <span>{{ t('login.title') }}</span>
         </div>
-        <div class="login-controls"><LocaleSwitch /><ThemeToggle /></div>
+        <div class="login-controls"><UiLocaleSwitch /><UiThemeToggle /></div>
       </header>
 
       <aside class="login-story">
@@ -175,7 +130,7 @@ async function handlePassword() {
                 key="phone"
                 v-model:phone="phone"
                 :loading="loading"
-                @submit="handlePhone"
+                @submit="requestCode"
               />
               <CodeStep
                 v-else-if="step === 'code'"
@@ -183,18 +138,21 @@ async function handlePassword() {
                 v-model:code="code"
                 :loading="loading"
                 :resend-seconds="resendSeconds"
-                @submit="handleCode"
-                @resend="handleResendCode"
-                @change-number="handleChangeNumber"
+                @submit="submitCode"
+                @resend="requestCode"
+                @change-number="changeNumber"
               />
               <PasswordStep
                 v-else
                 key="password"
                 v-model:password="password"
+                :hint="passwordHint"
                 :loading="loading"
-                @submit="handlePassword"
+                @submit="submitPassword"
               />
             </Transition>
+
+            <p v-if="error" class="login-error" role="alert">{{ error }}</p>
           </div>
         </div>
       </section>
@@ -203,11 +161,20 @@ async function handlePassword() {
 </template>
 
 <style scoped>
+.login-error {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  border-radius: var(--radius-md);
+  background: var(--danger-subtle);
+  color: var(--danger);
+  font-size: 0.875rem;
+}
+
 .login-page {
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--bg);
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .login-shell {
@@ -324,7 +291,7 @@ async function handlePassword() {
 
 .story-copy h1 {
   max-width: 680px;
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: clamp(48px, 5.7vw, 76px);
   font-weight: 720;
   line-height: 0.98;
@@ -333,7 +300,7 @@ async function handlePassword() {
 
 .story-copy p {
   max-width: 560px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: clamp(17px, 1.6vw, 21px);
   line-height: 1.55;
 }
@@ -388,7 +355,7 @@ async function handlePassword() {
 }
 
 .login-copy h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: clamp(30px, 3vw, 40px);
   font-weight: 700;
   line-height: 1.08;
@@ -396,7 +363,7 @@ async function handlePassword() {
 }
 
 .login-copy p {
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 15px;
   line-height: 1.5;
 }
@@ -448,7 +415,7 @@ async function handlePassword() {
   .mobile-hero {
     display: block;
     margin-bottom: var(--space-8);
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
     font-size: clamp(32px, 8vw, 44px);
     font-weight: 720;
     line-height: 1.06;

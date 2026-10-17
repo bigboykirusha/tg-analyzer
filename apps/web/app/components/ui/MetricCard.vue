@@ -9,7 +9,7 @@ defineProps<{
 <template>
   <div class="metric">
     <span class="metric-label t-label">{{ label }}</span>
-    <span class="metric-value t-metric">{{ value }}</span>
+    <span class="metric-value">{{ value }}</span>
     <span v-if="sub" class="metric-sub t-small">{{ sub }}</span>
   </div>
 </template>
@@ -21,29 +21,30 @@ defineProps<{
   gap: var(--space-2);
   min-height: 86px;
   padding: var(--space-3) var(--space-4);
-  background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
-  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: none;
   min-width: 0;
 }
 
 .metric-label {
-  /* inherits t-label: uppercase, tertiary color */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .metric-value {
-  /* inherits t-metric: mono, 28px */
-  color: var(--text-primary);
+  color: var(--text);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
 
 .metric-sub {
-  /* inherits t-small: 12px */
-  color: var(--text-secondary);
+  color: var(--text-muted);
   overflow-wrap: anywhere;
 }
 

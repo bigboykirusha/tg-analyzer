@@ -20,7 +20,7 @@ withDefaults(defineProps<{ rows?: number; avatar?: boolean }>(), { rows: 5, avat
 <style scoped>
 .loading-list {
   min-width: 0;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--border);
 }
 .loading-row {
   display: flex;
@@ -28,7 +28,7 @@ withDefaults(defineProps<{ rows?: number; avatar?: boolean }>(), { rows: 5, avat
   gap: 12px;
   min-width: 0;
   padding: 16px 12px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border);
 }
 .loading-row:last-child {
   border-bottom: 0;

@@ -48,7 +48,7 @@ function toggleLocale() {
 }
 
 .locale-switch button:hover {
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .locale-switch button:active {
