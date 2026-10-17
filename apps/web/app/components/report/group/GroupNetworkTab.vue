@@ -25,9 +25,12 @@ const starters = computed<Meter[]>(() =>
     .map((p) => ({ key: p.id, label: nameOf(p), value: p.starterShare })),
 )
 
+const MIN_MAGNET_MESSAGES = 10
+
 const magnets = computed(() =>
   [...props.group.participants]
-    .filter((p) => p.magnetScore !== null)
+    // A member with one message and two replies would top the list; require a real sample.
+    .filter((p) => p.magnetScore !== null && p.messageCount >= MIN_MAGNET_MESSAGES)
     .sort((a, b) => (b.magnetScore ?? 0) - (a.magnetScore ?? 0))
     .slice(0, 6),
 )

@@ -72,7 +72,7 @@ function signOut() {
           <UiLocaleSwitch />
           <UiThemeToggle />
         </div>
-        <UiPopoverMenu v-model:open="accountOpen" align="end" :aria-label="displayName">
+        <UiPopoverMenu v-model:open="accountOpen" align="end" :aria-label="displayName" title="">
           <template #trigger>
             <button
               type="button"

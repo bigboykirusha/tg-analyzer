@@ -65,7 +65,6 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
             @click="close"
           />
           <header class="modal-header">
-            <slot name="media" />
             <div :id="titleId">
               <slot name="header">
                 <h2 class="t-title">{{ title }}</h2>
@@ -134,10 +133,6 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   justify-items: start;
   gap: var(--space-1);
   padding: var(--space-6) var(--space-16) var(--space-4) var(--space-6);
-}
-
-.modal-header :deep(.icon-tile) {
-  margin-bottom: var(--space-3);
 }
 
 .modal-description {

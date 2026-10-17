@@ -71,7 +71,7 @@ test('sessions split on long silences and use the local hour for night sessions'
       { ts: start + 8 * HOUR, outgoing: false },
       { ts: start + 16 * HOUR + 1, outgoing: true },
     ],
-    7,
+    1,
     utcHour,
   )
   assert.equal(result.totalSessions, 2)
@@ -83,7 +83,7 @@ test('sessions split on long silences and use the local hour for night sessions'
   const moscow = createZonedClock('Europe/Moscow')
   const night = computeSessionStats(
     [at('2026-01-01T22:00:00Z', false), at('2026-01-02T12:00:00Z', true)],
-    14,
+    2,
     (ts) => moscow(ts).hour,
   )
   assert.equal(night.nightSessionsPct, 50)

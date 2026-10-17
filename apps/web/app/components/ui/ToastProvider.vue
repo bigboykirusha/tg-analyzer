@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { useI18n } from '../../composables/useI18n'
 import { useToast, type ToastMessage, type ToastVariant } from '../../composables/useToast'
-import { AlertTriangle, CircleCheck, CircleX, Info, X } from '../../lib/icons'
+import { X } from '../../lib/icons'
 import IconButton from './IconButton.vue'
 
 const { toasts, remove, pause, resume } = useToast()
 const { t } = useI18n()
 const route = useRoute()
 const hasMobileNavigation = computed(() => route.path === '/dashboard' || route.path === '/history')
-
-// The icon tells the type without colour.
-const ICONS = { success: CircleCheck, error: CircleX, info: Info, warning: AlertTriangle } as const
 
 function variantLabel(variant: ToastVariant) {
   return {
@@ -48,7 +45,6 @@ function runAction(toast: ToastMessage) {
           @focusin="pause(toast.id)"
           @focusout="resume(toast.id)"
         >
-          <component :is="ICONS[toast.variant]" class="toast__icon" aria-hidden="true" />
           <div class="toast__copy">
             <span class="sr-only">{{ variantLabel(toast.variant) }}</span>
             <strong class="toast__title">{{ toast.title }}</strong>
@@ -86,7 +82,7 @@ function runAction(toast: ToastMessage) {
 
 .toast {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: var(--space-3);
   min-width: 0;
@@ -96,23 +92,6 @@ function runAction(toast: ToastMessage) {
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
   pointer-events: auto;
-}
-
-.toast__icon {
-  --icon-size: var(--icon-md);
-}
-
-.toast--success .toast__icon,
-.toast--info .toast__icon {
-  color: var(--accent);
-}
-
-.toast--warning .toast__icon {
-  color: var(--warning-ink);
-}
-
-.toast--error .toast__icon {
-  color: var(--danger);
 }
 
 .toast__copy {

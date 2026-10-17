@@ -63,6 +63,17 @@ export function computeMaxStreak(days: Iterable<string>): StreakDto {
   return best
 }
 
+/** Number of distinct Monday-based calendar weeks that contain at least one of the days. */
+export function countActiveWeeks(days: Iterable<string>): number {
+  const weeks = new Set<number>()
+  for (const day of days) {
+    if (!isCalendarDay(day)) continue
+    // 1970-01-01 was a Thursday; shift by 3 so weeks start on Monday.
+    weeks.add(Math.floor((dayIndex(day) + 3) / 7))
+  }
+  return weeks.size
+}
+
 /**
  * Compares the last three complete months with the three before them.
  * Requires six months of history; `incompleteMonth` (the current month) is ignored.

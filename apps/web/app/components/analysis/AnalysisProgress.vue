@@ -49,7 +49,6 @@ const remaining = computed(() => {
           {{ t('analysis.title', { chat: progress.chatTitle || t('analysis.untitledChat') }) }}
         </h2>
         <p class="analysis-progress__phase">
-          <UiBadge v-if="progress.phase === 'waiting'" tone="warning">{{ t('analysis.paused') }}</UiBadge>
           <span>{{ phaseLabel }}</span>
         </p>
       </div>

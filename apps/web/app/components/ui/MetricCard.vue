@@ -4,7 +4,7 @@ defineProps<{
   /** Already formatted, with a non-breaking space between digit groups. */
   value: string | number
   sub?: string | null
-  /** Change, shown as an accent badge — more messages is neither good nor bad. */
+  /** Change, as neutral text: more messages is neither good nor bad. */
   delta?: string | null
 }>()
 </script>
@@ -14,7 +14,7 @@ defineProps<{
     <span class="metric-label t-label">{{ label }}</span>
     <span class="metric-value t-display">{{ value }}</span>
     <span v-if="sub || delta" class="metric-foot">
-      <UiBadge v-if="delta" tone="accent">{{ delta }}</UiBadge>
+      <span v-if="delta" class="metric-delta">{{ delta }}</span>
       <span v-if="sub" class="metric-sub">{{ sub }}</span>
     </span>
   </div>
@@ -50,6 +50,11 @@ defineProps<{
   min-width: 0;
   color: var(--text-muted);
   font: var(--text-small);
+}
+
+.metric-delta {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .metric-sub {

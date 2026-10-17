@@ -27,14 +27,6 @@ const pageCount = computed(() => Math.max(1, Math.ceil((history.value?.total ?? 
 const reportIds = computed(() => new Set(workspace.reports.map((report) => report.chatId)))
 const hasFinishedJobs = computed(() => history.value?.items.some((job) => !isActive(job.status)) ?? false)
 
-const STATUS_TONE: Record<JobStatus, 'neutral' | 'accent' | 'danger'> = {
-  pending: 'neutral',
-  running: 'accent',
-  completed: 'accent',
-  failed: 'danger',
-  cancelled: 'neutral',
-}
-
 function isActive(status: JobStatus) {
   return status === 'pending' || status === 'running'
 }
@@ -139,7 +131,7 @@ onMounted(() => {
             <div class="job__copy">
               <div class="job__title-row">
                 <span class="job__title">{{ job.chatTitle || (job.chatId ? job.chatId : t('history.allChats')) }}</span>
-                <UiBadge :tone="STATUS_TONE[job.status]" :live="job.status === 'running'">{{ t(`status.${job.status}`) }}</UiBadge>
+                <span class="job__status" :class="`job__status--${job.status}`">{{ t(`status.${job.status}`) }}</span>
               </div>
               <span class="t-small t-muted">{{ meta(job) }}</span>
               <span v-if="job.error" class="t-small job__error">{{ t(`analysis.error.${job.error}`) }}</span>
@@ -248,6 +240,16 @@ onMounted(() => {
   line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.job__status {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.job__status--failed {
+  color: var(--danger);
 }
 
 .job__error {

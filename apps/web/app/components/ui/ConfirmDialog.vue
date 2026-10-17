@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { Trash2 } from '../../lib/icons'
 import Button from './Button.vue'
 
 /**
  * Confirmation: a question as the title, consequences as the description and
- * a concrete verb on the main button. `danger` adds the Trash2 tile, a filled
+ * a concrete verb on the main button. `danger` adds a filled
  * danger button and `alertdialog`; focus starts on «Cancel».
  */
 const props = withDefaults(
@@ -51,9 +50,6 @@ function cancelButton() {
     size="sm"
     @close="emit('close')"
   >
-    <template v-if="isDanger" #media>
-      <span class="icon-tile icon-tile--danger" aria-hidden="true"><Trash2 /></span>
-    </template>
     <template #actions>
       <Button ref="cancelRef" variant="secondary" :disabled="loading" @click="emit('close')">
         {{ cancelLabel || t('common.cancel') }}

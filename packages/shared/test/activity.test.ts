@@ -6,6 +6,7 @@ import {
   computeCompositionStats,
   computeMaxStreak,
   computeTrend,
+  countActiveWeeks,
   fillDailyGaps,
 } from '../src'
 
@@ -121,4 +122,14 @@ test('composition percentages use classified messages', () => {
       avgCharsPerTextMessage: 15,
     },
   )
+})
+
+test('active weeks count calendar weeks, not active days divided by seven', () => {
+  // Seven active days spread over seven different weeks: seven weeks, not one.
+  const sparse = ['2026-01-05', '2026-01-12', '2026-01-19', '2026-01-26', '2026-02-02', '2026-02-09', '2026-02-16']
+  assert.equal(countActiveWeeks(sparse), 7)
+  // Monday 5 Jan to Sunday 11 Jan 2026 is one week; Monday 12 Jan starts the next.
+  assert.equal(countActiveWeeks(['2026-01-05', '2026-01-08', '2026-01-11']), 1)
+  assert.equal(countActiveWeeks(['2026-01-11', '2026-01-12']), 2)
+  assert.equal(countActiveWeeks(['not-a-day']), 0)
 })

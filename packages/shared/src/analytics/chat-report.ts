@@ -5,7 +5,7 @@ import {
   type DirectionalCountDto,
   type MessageCompositionDto,
 } from '../api/types'
-import { computeMaxStreak, computeTrend } from './activity'
+import { computeMaxStreak, computeTrend, countActiveWeeks } from './activity'
 import { computeGroupReport, type GroupParticipantInput, type GroupTimelineEntry } from './group-report'
 import { addDirectional, createDirectionalCount, increment, roundTo, topItems } from './primitives'
 import { computeHealthScore, computeRelationshipScore } from './relationship'
@@ -145,7 +145,7 @@ export class ChatReportBuilder {
     const maxStreak = computeMaxStreak(this.daily.keys())
     const trend = computeTrend(monthly, this.clock(now.getTime()).month)
     const gaps = computeGaps(timeline)
-    const sessions = computeSessionStats(timeline, activeDays, (ts) => this.clock(ts).hour)
+    const sessions = computeSessionStats(timeline, countActiveWeeks(this.daily.keys()), (ts) => this.clock(ts).hour)
     const responses = computeResponseStats(isPrivate ? timeline : [])
 
     const relationship = isPrivate

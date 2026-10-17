@@ -86,23 +86,6 @@ const responseFacts = computed<Fact[]>(() => [
     sub: t('report.responses.firstMoveHint'),
   },
 ])
-
-const health = computed(() => report.value.health)
-const healthMeters = computed<Meter[]>(() => {
-  const score = health.value
-  if (!score) return []
-  return [
-    { key: 'response', label: t('report.health.responseRate'), value: score.responseRate },
-    // Shown as continuity so that every bar reads "higher is better".
-    {
-      key: 'continuity',
-      label: t('report.health.continuity'),
-      value: score.fragmentation === null ? null : 100 - score.fragmentation,
-    },
-    { key: 'initiative', label: t('report.health.initiative'), value: score.initiativeBalance },
-    { key: 'stability', label: t('report.health.stability'), value: score.longTermStability },
-  ]
-})
 </script>
 
 <template>
@@ -135,19 +118,6 @@ const healthMeters = computed<Meter[]>(() => {
       :text="t('report.responses.text')"
     >
       <ReportFacts :facts="responseFacts" :columns="2" />
-    </ReportSection>
-
-    <ReportSection
-      :label="t('report.health.label')"
-      :title="
-        health
-          ? t('report.health.score', { score: health.score, label: t(`report.health.labels.${health.label}`) })
-          : t('report.health.title')
-      "
-      :text="t('report.health.text')"
-    >
-      <ReportMeters v-if="health" :meters="healthMeters" />
-      <p v-else class="t-small t-muted">{{ t('report.health.empty') }}</p>
     </ReportSection>
 
     <ReportSection

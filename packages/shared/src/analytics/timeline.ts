@@ -149,11 +149,12 @@ interface Session {
 
 /**
  * Splits the conversation into sessions separated by long silences.
+ * `activeWeeks` is the number of calendar weeks with at least one message;
  * `localHour` converts a timestamp into the user's local hour (night = 23:00–05:59).
  */
 export function computeSessionStats(
   timeline: readonly TimelinePoint[],
-  activeDays: number,
+  activeWeeks: number,
   localHour: (ts: number) => number,
   boundaryMs = SESSION_BOUNDARY_MS,
 ): SessionStatsDto {
@@ -192,7 +193,7 @@ export function computeSessionStats(
     averageSessionDurationSec: Math.round(calculateAverage(durations)),
     longestSessionMessages: Math.max(...sizes),
     longestSessionDurationSec: Math.max(...durations),
-    sessionsPerActiveWeek: roundTo(sessions.length / Math.max(activeDays / 7, 1), 1),
+    sessionsPerActiveWeek: roundTo(sessions.length / Math.max(activeWeeks, 1), 1),
     nightSessionsPct: Math.round((nightSessions / sessions.length) * 100),
     highlights,
   }

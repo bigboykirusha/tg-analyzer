@@ -91,7 +91,7 @@ const connections = computed(() => {
       :text="window(selected) ?? undefined"
     >
       <div class="role">
-        <span class="role__badge">{{ t(`group.roles.${selected.role}`) }}</span>
+        <span class="role__name">{{ t(`group.roles.${selected.role}`) }}</span>
         <p class="t-small t-muted">
           {{
             t(`group.roleReasons.${selected.role}`, {
@@ -186,15 +186,9 @@ const connections = computed(() => {
   gap: var(--space-2);
 }
 
-.role__badge {
-  display: inline-flex;
-  align-items: center;
-  height: 22px;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--accent-subtle);
-  color: var(--accent-ink);
-  font: var(--text-caption);
+.role__name {
+  color: var(--text);
+  font: var(--text-ui);
   font-weight: 600;
 }
 

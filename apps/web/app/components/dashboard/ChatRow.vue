@@ -24,7 +24,7 @@ const reportPath = computed(() => (props.chat.report ? `/chat/${props.chat.id}` 
 const reportMeta = computed(() => {
   const report = props.chat.report
   if (!report) return ''
-  return `${formatRelative(report.analyzedAt)} · ${tc('common.messagesCount', report.totalMessages)}`
+  return `${t('dashboard.analysed', { time: formatRelative(report.analyzedAt) })} · ${tc('common.messagesCount', report.totalMessages)}`
 })
 
 function run(action: 'analyse' | 'delete') {
@@ -41,8 +41,7 @@ function run(action: 'analyse' | 'delete') {
       <span class="chat-row__copy">
         <span class="chat-row__title">{{ chat.title }}</span>
         <span v-if="analysing && paused" class="chat-row__sub">
-          <UiBadge tone="warning">{{ t('analysis.paused') }}</UiBadge>
-          <span>{{ t('dashboard.analysingNow') }}</span>
+          <span>{{ t('analysis.paused') }} · {{ t('dashboard.analysingNow') }}</span>
         </span>
         <span v-else-if="analysing" class="chat-row__sub">
           <span
@@ -63,12 +62,10 @@ function run(action: 'analyse' | 'delete') {
           }}</span>
         </span>
         <span v-else-if="chat.report" class="chat-row__sub">
-          <UiBadge tone="accent">{{ t('dashboard.ready') }}</UiBadge>
           <span>{{ reportMeta }}</span>
         </span>
         <span v-else class="chat-row__sub">
-          <UiBadge>{{ t(`chatType.${chat.type}`) }}</UiBadge>
-          <span>{{ t('dashboard.notAnalysed') }}</span>
+          <span>{{ t(`chatType.${chat.type}`) }} · {{ t('dashboard.notAnalysed') }}</span>
         </span>
       </span>
     </component>
