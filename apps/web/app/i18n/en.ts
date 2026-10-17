@@ -306,7 +306,6 @@ export const en = {
   'privacy.store.technical': 'Sign-in records and the history of analyses, to keep the service secure and working.',
   'privacy.store.title': 'What we store',
   'privacy.title': 'Privacy policy',
-  'privacy.updated': 'Last updated: 17 October 2026',
   'privacy.use.text':
     'Only to sign you in, build the reports you ask for and protect the service from abuse. We do not use your data for advertising and do not train models on it.',
   'privacy.use.title': 'How we use it',

@@ -52,8 +52,6 @@ const sections = computed(() => [
 
         <UiPageContainer size="narrow">
           <article class="privacy__body">
-            <p class="privacy__updated">{{ t('privacy.updated') }}</p>
-
             <section v-for="section in sections" :key="section.key" class="privacy__section">
               <h2 class="t-title">{{ section.title }}</h2>
               <p v-for="paragraph in section.paragraphs ?? []" :key="paragraph" class="privacy__text">
@@ -105,11 +103,6 @@ const sections = computed(() => [
 .privacy__body {
   display: grid;
   gap: var(--space-8);
-}
-
-.privacy__updated {
-  color: var(--text-muted);
-  font: var(--text-small);
 }
 
 .privacy__section {
