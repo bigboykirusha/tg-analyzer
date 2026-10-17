@@ -31,10 +31,10 @@ const summaryFacts = computed<Fact[]>(() => [
 
 const sessionFacts = computed<Fact[]>(() => [
   {
-    key: 'total',
-    label: t('report.sessions.count'),
-    value: formatNumber(sessions.value.totalSessions),
-    sub: t('report.sessions.countHint'),
+    key: 'perWeek',
+    label: t('report.sessions.perWeek'),
+    value: formatDecimal(sessions.value.sessionsPerActiveWeek),
+    sub: t('report.sessions.perWeekHint'),
   },
   {
     key: 'size',
@@ -43,26 +43,15 @@ const sessionFacts = computed<Fact[]>(() => [
     sub: t('report.sessions.averageSizeHint'),
   },
   {
-    key: 'duration',
-    label: t('report.sessions.averageDuration'),
-    value: formatDuration(sessions.value.averageSessionDurationSec),
-  },
-  {
-    key: 'perWeek',
-    label: t('report.sessions.perWeek'),
-    value: formatDecimal(sessions.value.sessionsPerActiveWeek),
-    sub: t('report.sessions.perWeekHint'),
+    key: 'longest',
+    label: t('report.sessions.longest'),
+    value: formatDuration(sessions.value.longestSessionDurationSec),
   },
   {
     key: 'night',
     label: t('report.sessions.night'),
     value: formatPercent(sessions.value.nightSessionsPct),
     sub: t('report.sessions.nightHint'),
-  },
-  {
-    key: 'longest',
-    label: t('report.sessions.longest'),
-    value: formatDuration(sessions.value.longestSessionDurationSec),
   },
 ])
 
@@ -97,7 +86,7 @@ function range(session: SessionHighlightDto) {
       :text="t('report.sessions.text')"
       wide
     >
-      <ReportFacts :facts="sessionFacts" :columns="3" />
+      <ReportFacts :facts="sessionFacts" :columns="2" />
       <div v-if="sessions.highlights.length" class="highlights">
         <div v-for="(session, index) in sessions.highlights" :key="session.startedAt" class="highlight">
           <span class="t-label">{{ highlightLabel(index) }}</span>
@@ -130,13 +119,12 @@ function range(session: SessionHighlightDto) {
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-4);
-  border: 1px solid var(--accent-border);
   border-radius: var(--radius-md);
-  background: var(--accent-subtle);
+  background: var(--surface-2);
 }
 
 .highlight strong {
-  font-size: 20px;
+  font: var(--text-title);
 }
 
 @media (max-width: 640px) {

@@ -24,8 +24,10 @@ test('sign in, analyse a private chat and read the report', async ({ page }) => 
   }
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
 
-  await page.goto('/history')
-  await expect(page.getByText('Катя').first()).toBeVisible()
+  await page.goto('/dashboard')
+  await expect(
+    page.locator('.chat-row').filter({ hasText: 'Катя' }).getByRole('link', { name: 'Открыть отчёт' }),
+  ).toBeVisible()
 })
 
 test('group chats get the group report', async ({ page }) => {

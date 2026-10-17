@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import type { Fact } from '../ReportFacts.vue'
-import type { Meter } from '../ReportMeters.vue'
+import type { Comparison } from '../ReportCompare.vue'
 
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatNumber, formatDecimal, formatDuration, formatPercent } = useI18n()
+const { t, formatNumber, formatDecimal, formatDuration, formatPercent } = useI18n()
+
+/** Below this many replies on either side a speed comparison is noise. */
+const MIN_REPLY_SAMPLES = 5
+/** Differences smaller than this ratio read as «about the same». */
+const EVEN_RATIO = 1.25
 
 const report = computed(() => props.data.report)
 const responses = computed(() => report.value.responses)
@@ -17,75 +21,69 @@ const balanceVerdict = computed(() => {
   return t(sent > received ? 'report.balance.youMore' : 'report.balance.theyMore', { ratio: formatDecimal(ratio) })
 })
 
-const relationship = computed(() => report.value.relationship)
-const relationshipTitle = computed(() =>
-  relationship.value ? t(`report.relationship.label.${relationship.value.label}`) : t('report.relationship.title'),
-)
-const relationshipMeters = computed<Meter[]>(() => {
-  const score = relationship.value
-  if (!score) return []
-  return [
-    {
-      key: 'reciprocity',
-      label: t('report.relationship.reciprocity'),
-      value: score.reciprocity,
-      detail: t('report.relationship.reciprocityHint'),
-    },
-    {
-      key: 'responsiveness',
-      label: t('report.relationship.responsiveness'),
-      value: score.responsiveness,
-      detail: t('report.relationship.responsivenessHint'),
-    },
-    {
-      key: 'stability',
-      label: t('report.relationship.stability'),
-      value: score.stability,
-      detail: t('report.relationship.stabilityHint'),
-    },
-    {
-      key: 'attention',
-      label: t('report.relationship.attention'),
-      value: score.attentionBalance,
-      detail: t('report.relationship.attentionHint'),
-    },
-  ]
-})
-
-function spread(p25: number | null, p75: number | null, samples: number) {
-  const confidence = t(
-    samples >= 20 ? 'report.confidence.high' : samples >= 5 ? 'report.confidence.medium' : 'report.confidence.low',
-  )
-  const range = p25 !== null && p75 !== null ? `${formatDuration(p25)}–${formatDuration(p75)} · ` : ''
-  return `${range}${tc('report.responses.samples', samples)} · ${confidence}`
+function startsRow(): Comparison | null {
+  const mine = responses.value.iWriteFirstPct
+  if (mine === null) return null
+  const theirs = 100 - mine
+  let verdict = t('report.compare.startsEven')
+  if (mine - 50 > 10) verdict = t('report.compare.startsMine', { share: formatPercent(mine) })
+  else if (50 - mine > 10) verdict = t('report.compare.startsTheirs', { share: formatPercent(theirs) })
+  return {
+    key: 'starts',
+    label: t('report.compare.starts'),
+    mine: formatPercent(mine),
+    theirs: formatPercent(theirs),
+    minePct: mine,
+    verdict,
+  }
 }
 
-const responseFacts = computed<Fact[]>(() => [
-  {
-    key: 'rate',
-    label: t('report.responses.rate'),
-    value: formatPercent(responses.value.responseRate, 1),
-    sub: t('report.responses.rateHint'),
-  },
-  {
-    key: 'mine',
-    label: t('report.responses.mine'),
-    value: formatDuration(responses.value.medianMineSec),
-    sub: spread(responses.value.mineP25Sec, responses.value.mineP75Sec, responses.value.mineSamples),
-  },
-  {
-    key: 'theirs',
-    label: t('report.responses.theirs'),
-    value: formatDuration(responses.value.medianTheirsSec),
-    sub: spread(responses.value.theirsP25Sec, responses.value.theirsP75Sec, responses.value.theirsSamples),
-  },
-  {
-    key: 'first',
-    label: t('report.responses.firstMove'),
-    value: formatPercent(responses.value.iWriteFirstPct),
-    sub: t('report.responses.firstMoveHint'),
-  },
-])
+function speedRow(): Comparison | null {
+  const { medianMineSec: mine, medianTheirsSec: theirs, mineSamples, theirsSamples } = responses.value
+  if (mine === null && theirs === null) return null
+  const enough =
+    mine !== null && theirs !== null && mineSamples >= MIN_REPLY_SAMPLES && theirsSamples >= MIN_REPLY_SAMPLES
+  let verdict = t('report.compare.speedFew')
+  if (enough) {
+    const ratio = Math.max(mine, theirs) / Math.max(Math.min(mine, theirs), 1)
+    if (ratio < EVEN_RATIO) verdict = t('report.compare.speedEven')
+    else
+      verdict = t(mine < theirs ? 'report.compare.speedMine' : 'report.compare.speedTheirs', {
+        ratio: formatDecimal(ratio),
+      })
+  }
+  // Time is not a share, so this row has no bar.
+  return {
+    key: 'speed',
+    label: t('report.compare.speed'),
+    mine: formatDuration(mine),
+    theirs: formatDuration(theirs),
+    minePct: null,
+    verdict,
+  }
+}
+
+function lengthRow(): Comparison | null {
+  const { mine, theirs } = report.value.vocabulary.wordsPerMessage
+  if (!mine || !theirs) return null
+  const ratio = Math.max(mine, theirs) / Math.min(mine, theirs)
+  const verdict =
+    ratio < EVEN_RATIO
+      ? t('report.compare.lengthEven')
+      : t(mine > theirs ? 'report.compare.lengthMine' : 'report.compare.lengthTheirs', { ratio: formatDecimal(ratio) })
+  return {
+    key: 'length',
+    label: t('report.compare.length'),
+    mine: t('report.compare.words', { value: formatDecimal(mine) }),
+    theirs: t('report.compare.words', { value: formatDecimal(theirs) }),
+    minePct: Math.round((mine / (mine + theirs)) * 100),
+    verdict,
+  }
+}
+
+const comparisons = computed(() =>
+  [startsRow(), speedRow(), lengthRow()].filter((row): row is Comparison => row !== null),
+)
 </script>
 
 <template>
@@ -107,17 +105,12 @@ const responseFacts = computed<Fact[]>(() => [
       </div>
     </ReportSection>
 
-    <ReportSection :label="t('report.relationship.label')" :title="relationshipTitle">
-      <ReportMeters v-if="relationship" :meters="relationshipMeters" />
-      <p v-else class="t-small t-muted">{{ t('report.relationship.empty') }}</p>
-    </ReportSection>
-
-    <ReportSection
-      :label="t('report.responses.label')"
-      :title="t('report.responses.title')"
-      :text="t('report.responses.text')"
-    >
-      <ReportFacts :facts="responseFacts" :columns="2" />
+    <ReportSection :label="t('report.compare.label')" :title="t('report.compare.title')">
+      <ReportCompare v-if="comparisons.length" :rows="comparisons" />
+      <p v-else class="t-small t-muted">{{ t('report.compare.empty') }}</p>
+      <p v-if="responses.responseRate !== null" class="t-small t-muted">
+        {{ t('report.compare.replyRate', { rate: formatPercent(responses.responseRate) }) }}
+      </p>
     </ReportSection>
 
     <ReportSection

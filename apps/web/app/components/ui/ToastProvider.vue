@@ -6,8 +6,7 @@ import IconButton from './IconButton.vue'
 
 const { toasts, remove, pause, resume } = useToast()
 const { t } = useI18n()
-const route = useRoute()
-const hasMobileNavigation = computed(() => route.path === '/dashboard' || route.path === '/history')
+const { hasTabBar: hasMobileNavigation } = useNavigation()
 
 function variantLabel(variant: ToastVariant) {
   return {

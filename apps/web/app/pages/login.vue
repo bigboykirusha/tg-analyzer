@@ -202,6 +202,16 @@ function changeNumber() {
               <p class="banner__text">{{ error }}</p>
             </div>
           </div>
+
+          <section class="trust" :aria-label="t('login.trust.title')">
+            <h2 class="trust__title">{{ t('login.trust.title') }}</h2>
+            <ul class="trust__list">
+              <li>{{ t('login.trust.reads') }}</li>
+              <li>{{ t('login.trust.stores') }}</li>
+              <li>{{ t('login.trust.delete') }}</li>
+            </ul>
+            <NuxtLink to="/privacy" class="trust__link">{{ t('login.trust.more') }}</NuxtLink>
+          </section>
         </div>
       </section>
     </section>
@@ -369,6 +379,41 @@ function changeNumber() {
   border-radius: var(--radius-xl);
   background: var(--surface);
   box-shadow: var(--shadow);
+}
+
+/* What the app reads and keeps: answered before the user types a number. */
+.trust {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding: 0 var(--space-2);
+}
+
+.trust__title {
+  color: var(--text);
+  font: var(--text-ui);
+  font-weight: 600;
+}
+
+.trust__list {
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-5);
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.trust__link {
+  justify-self: start;
+  border-radius: var(--radius-xs);
+  color: var(--accent-ink);
+  font: var(--text-small);
+  font-weight: 600;
+}
+
+.trust__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .login-progress {

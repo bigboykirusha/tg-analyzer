@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Clock, Globe, LayoutGrid, LogOut, Moon, Sun, Trash2 } from '../lib/icons'
+import { Globe, LogOut, Moon, Sun, Trash2 } from '../lib/icons'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -20,10 +20,9 @@ watch(
   },
 )
 
-const isDashboard = computed(() => route.path.startsWith('/dashboard'))
-const isHistory = computed(() => route.path.startsWith('/history'))
+const navigation = useNavigation()
 const isReport = computed(() => route.path.startsWith('/chat/'))
-const pageTitle = computed(() => (isHistory.value ? t('nav.history') : t('nav.chats')))
+const pageTitle = computed(() => navigation.current.value?.label ?? t('nav.chats'))
 const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
 const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : ''))
 const isDark = computed(() => resolved.value === 'dark')
@@ -60,11 +59,14 @@ function signOut() {
       </NuxtLink>
       <span class="mobile-title" aria-hidden="true">{{ pageTitle }}</span>
       <nav class="desktop-nav" :aria-label="t('nav.main')">
-        <NuxtLink to="/dashboard" class="nav-link" :aria-current="isDashboard ? 'page' : undefined">
-          {{ t('nav.chats') }}
-        </NuxtLink>
-        <NuxtLink to="/history" class="nav-link" :aria-current="isHistory ? 'page' : undefined">
-          {{ t('nav.history') }}
+        <NuxtLink
+          v-for="item in navigation.items.value"
+          :key="item.to"
+          :to="item.to"
+          class="nav-link"
+          :aria-current="navigation.current.value?.to === item.to ? 'page' : undefined"
+        >
+          {{ item.label }}
         </NuxtLink>
       </nav>
       <div class="topbar-actions">
@@ -115,14 +117,16 @@ function signOut() {
       </div>
     </div>
     <div id="mobile-report-toolbar" class="mobile-report-toolbar glass-surface" />
-    <nav v-if="!isReport" class="tabbar glass-surface" :aria-label="t('nav.main')">
-      <NuxtLink to="/dashboard" class="tab" :aria-current="isDashboard ? 'page' : undefined">
-        <LayoutGrid aria-hidden="true" />
-        <span>{{ t('nav.chats') }}</span>
-      </NuxtLink>
-      <NuxtLink to="/history" class="tab" :aria-current="isHistory ? 'page' : undefined">
-        <Clock aria-hidden="true" />
-        <span>{{ t('nav.history') }}</span>
+    <nav v-if="navigation.hasTabBar.value" class="tabbar glass-surface" :aria-label="t('nav.main')">
+      <NuxtLink
+        v-for="item in navigation.items.value"
+        :key="item.to"
+        :to="item.to"
+        class="tab"
+        :aria-current="navigation.current.value?.to === item.to ? 'page' : undefined"
+      >
+        <component :is="item.icon" aria-hidden="true" />
+        <span>{{ item.label }}</span>
       </NuxtLink>
     </nav>
     <UiConfirmDialog
