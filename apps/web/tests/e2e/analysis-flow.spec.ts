@@ -18,7 +18,7 @@ test('sign in, analyse a private chat and read the report', async ({ page }) => 
   await page.waitForURL('**/chat/1006')
   await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible()
 
-  for (const tab of ['Ритм', 'Слова', 'Таймлайн', 'Обзор']) {
+  for (const tab of ['Когда', 'О чём', 'Динамика', 'Кто кому']) {
     await page.getByRole('tab', { name: tab }).click()
     await expect(page.locator('.report-section').first()).toBeVisible()
   }

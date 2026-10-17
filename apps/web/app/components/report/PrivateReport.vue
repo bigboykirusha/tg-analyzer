@@ -73,6 +73,8 @@ const peak = computed(() => {
       <p class="banner__text">{{ t('report.lowData') }}</p>
     </div>
 
+    <ReportHighlights :data="data" />
+
     <UiSegmentedControl v-model="tab" class="no-print" :options="tabs" :aria-label="t('report.tabs.label')" />
 
     <OverviewTab v-if="tab === 'overview'" :data="data" />

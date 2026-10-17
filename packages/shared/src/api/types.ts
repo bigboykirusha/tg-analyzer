@@ -261,6 +261,8 @@ export interface GapDto {
   seconds: number
   from: string | null
   to: string | null
+  /** Whether the user sent the message that ended the silence; absent in older reports. */
+  brokenByMe?: boolean
 }
 
 export interface StreakDto {

@@ -34,20 +34,23 @@ export interface GapAnalytics {
 
 export function computeGaps(timeline: readonly TimelinePoint[]): GapAnalytics {
   const ordered = chronological(timeline)
-  let longest: { from: number; to: number } | null = null
-  const silences: { from: number; to: number }[] = []
+  type Span = { from: number; to: number; brokenByMe: boolean }
+  let longest: Span | null = null
+  const silences: Span[] = []
 
   for (let index = 1; index < ordered.length; index += 1) {
     const from = ordered[index - 1]!.ts
     const to = ordered[index]!.ts
-    if (!longest || to - from > longest.to - longest.from) longest = { from, to }
-    if (to - from > LONG_SILENCE_MS) silences.push({ from, to })
+    const span = { from, to, brokenByMe: ordered[index]!.outgoing }
+    if (!longest || to - from > longest.to - longest.from) longest = span
+    if (to - from > LONG_SILENCE_MS) silences.push(span)
   }
 
-  const toGap = ({ from, to }: { from: number; to: number }): GapDto => ({
+  const toGap = ({ from, to, brokenByMe }: Span): GapDto => ({
     seconds: Math.round((to - from) / 1000),
     from: iso(from),
     to: iso(to),
+    brokenByMe,
   })
 
   return {

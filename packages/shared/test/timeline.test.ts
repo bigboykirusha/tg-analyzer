@@ -26,6 +26,7 @@ test('response stats and gaps follow the conversation turns', () => {
 
   const gaps = computeGaps(timeline)
   assert.equal(gaps.longestGap?.seconds, (42 * 24 - 10) * 3600)
+  assert.equal(typeof gaps.longestGap?.brokenByMe, 'boolean')
   assert.equal(gaps.silencesOver30Days.length, 1)
   assert.deepEqual(timeline, snapshot)
 })
