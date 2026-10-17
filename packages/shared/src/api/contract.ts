@@ -83,15 +83,6 @@ export const paginationQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 })
 
-export const shareReportQuerySchema = z.object({
-  fileName: z
-    .string()
-    .min(1)
-    .max(120)
-    // eslint-disable-next-line no-control-regex -- control characters are exactly what is rejected
-    .regex(/^[^\\/:*?"<>|\u0000-\u001F]+\.pdf$/i, 'Expected a PDF file name'),
-})
-
 // ---------------------------------------------------------------------------
 // Endpoint map — the single source of truth for the typed client.
 // ---------------------------------------------------------------------------
@@ -124,7 +115,6 @@ export interface ApiEndpointMap {
   'GET /api/v1/reports': Endpoint<undefined, ReportsResponse>
   'GET /api/v1/reports/:chatId': Endpoint<undefined, ReportDto>
   'DELETE /api/v1/reports/:chatId': Endpoint<undefined, SuccessResponse>
-  'POST /api/v1/reports/:chatId/share': Endpoint<Blob, SuccessResponse, z.input<typeof shareReportQuerySchema>>
 }
 
 export type ApiOperation = keyof ApiEndpointMap

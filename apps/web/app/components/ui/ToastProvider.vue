@@ -6,7 +6,6 @@ import IconButton from './IconButton.vue'
 
 const { toasts, remove, pause, resume } = useToast()
 const { t } = useI18n()
-const { hasTabBar: hasMobileNavigation } = useNavigation()
 
 function variantLabel(variant: ToastVariant) {
   return {
@@ -25,13 +24,7 @@ function runAction(toast: ToastMessage) {
 
 <template>
   <Teleport to="body">
-    <div
-      class="toast-region"
-      :class="{ 'toast-region--with-nav': hasMobileNavigation }"
-      role="region"
-      aria-live="polite"
-      :aria-label="t('toast.notifications')"
-    >
+    <div class="toast-region" role="region" aria-live="polite" :aria-label="t('toast.notifications')">
       <TransitionGroup name="toast">
         <article
           v-for="toast in toasts"
@@ -153,11 +146,6 @@ function runAction(toast: ToastMessage) {
     bottom: max(var(--space-3), env(safe-area-inset-bottom));
     left: var(--space-3);
     width: auto;
-  }
-
-  /* Above the bottom tab bar (48px + its padding). */
-  .toast-region--with-nav {
-    bottom: calc(var(--control-lg) + var(--space-8) + env(safe-area-inset-bottom));
   }
 }
 </style>

@@ -15,7 +15,6 @@
     "@tg-analyzer/shared": "workspace:*",
     "echarts": "^6.1.0",
     "html2canvas": "^1.4.1",
-    "jspdf": "^4.2.1",
     "@lucide/vue": "^1.52.0",
     "pinia": "^3.0.3",
     "vue-echarts": "^8.0.1"

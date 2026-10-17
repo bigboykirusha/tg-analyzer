@@ -22,7 +22,19 @@ watch(
 
 const navigation = useNavigation()
 const isReport = computed(() => route.path.startsWith('/chat/'))
-const pageTitle = computed(() => navigation.current.value?.label ?? t('nav.chats'))
+const analysis = useAnalysis()
+/** The running analysis, shown in the header on every page. */
+const activity = computed(() => {
+  if (!analysis.isActive.value) return null
+  const { scannedMessages, totalMessages, phase, chatTitle } = analysis.progress.value
+  const percent =
+    phase === 'saving'
+      ? 100
+      : totalMessages && phase === 'scanning'
+        ? Math.min(99, Math.round((scannedMessages / totalMessages) * 100))
+        : null
+  return { chat: chatTitle || t('analysis.untitledChat'), percent, queued: analysis.queued.value.length }
+})
 const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
 const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : ''))
 const isDark = computed(() => resolved.value === 'dark')
@@ -57,8 +69,7 @@ function signOut() {
         <span class="brand-mark" aria-hidden="true"><i /><i /><i /></span>
         <span class="brand-name">TG Analyzer</span>
       </NuxtLink>
-      <span class="mobile-title" aria-hidden="true">{{ pageTitle }}</span>
-      <nav class="desktop-nav" :aria-label="t('nav.main')">
+      <nav class="main-nav" :aria-label="t('nav.main')">
         <NuxtLink
           v-for="item in navigation.items.value"
           :key="item.to"
@@ -70,6 +81,18 @@ function signOut() {
         </NuxtLink>
       </nav>
       <div class="topbar-actions">
+        <NuxtLink
+          v-if="activity"
+          to="/dashboard"
+          class="activity"
+          :aria-label="t('header.activityLabel', { chat: activity.chat })"
+          aria-live="polite"
+        >
+          <span class="activity__spinner" aria-hidden="true" />
+          <span class="activity__chat">{{ activity.chat }}</span>
+          <span v-if="activity.percent !== null" class="activity__percent">{{ activity.percent }}%</span>
+          <span v-if="activity.queued" class="activity__queued">+{{ activity.queued }}</span>
+        </NuxtLink>
         <div class="desktop-only">
           <UiLocaleSwitch />
           <UiThemeToggle />
@@ -117,18 +140,6 @@ function signOut() {
       </div>
     </div>
     <div id="mobile-report-toolbar" class="mobile-report-toolbar glass-surface" />
-    <nav v-if="navigation.hasTabBar.value" class="tabbar glass-surface" :aria-label="t('nav.main')">
-      <NuxtLink
-        v-for="item in navigation.items.value"
-        :key="item.to"
-        :to="item.to"
-        class="tab"
-        :aria-current="navigation.current.value?.to === item.to ? 'page' : undefined"
-      >
-        <component :is="item.icon" aria-hidden="true" />
-        <span>{{ item.label }}</span>
-      </NuxtLink>
-    </nav>
     <UiConfirmDialog
       :open="confirmDeleteOpen"
       :title="t('account.deleteTitle')"
@@ -204,11 +215,7 @@ function signOut() {
   height: 11px;
 }
 
-.mobile-title {
-  display: none;
-}
-
-.desktop-nav {
+.main-nav {
   display: flex;
   gap: var(--space-1);
 }
@@ -251,6 +258,56 @@ function signOut() {
   gap: var(--space-1);
 }
 
+/* Background work: a quiet pill while an analysis runs. */
+.activity {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  max-width: 240px;
+  min-height: var(--control-sm);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--accent-subtle);
+  color: var(--accent-ink);
+  font: var(--text-small);
+  font-weight: 600;
+  transition: background-color var(--transition-fast);
+}
+
+@media (hover: hover) {
+  .activity:hover {
+    background-image: linear-gradient(var(--hover), var(--hover));
+  }
+}
+
+.activity__spinner {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.activity__chat {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity__percent,
+.activity__queued {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.activity__queued {
+  opacity: 0.75;
+}
+
 .account-trigger {
   display: grid;
   width: var(--control-sm);
@@ -273,7 +330,6 @@ function signOut() {
   display: none;
 }
 
-.tabbar,
 .mobile-report-toolbar {
   display: none;
 }
@@ -285,19 +341,13 @@ function signOut() {
   }
 
   .brand-name,
-  .desktop-nav,
-  .desktop-only {
+  .desktop-only,
+  .activity__chat {
     display: none;
   }
 
-  .mobile-title {
-    display: block;
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    font: var(--text-title);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .nav-link {
+    padding: 0 var(--space-3);
   }
 
   .mobile-preferences {
@@ -319,39 +369,6 @@ function signOut() {
     border-color: var(--border);
     border-radius: 0;
     box-shadow: none;
-  }
-
-  .tabbar {
-    position: fixed;
-    z-index: var(--z-header);
-    right: 0;
-    bottom: 0;
-    left: 0;
-    display: grid;
-    grid-auto-columns: 1fr;
-    grid-auto-flow: column;
-    padding: var(--space-2) var(--space-2) max(var(--space-3), env(safe-area-inset-bottom));
-    border-width: 1px 0 0;
-    border-color: var(--border);
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .tab {
-    display: grid;
-    justify-items: center;
-    align-content: center;
-    gap: 2px;
-    min-height: var(--control-lg);
-    border-radius: var(--radius-md);
-    color: var(--text-muted);
-    font: var(--text-caption);
-    --icon-size: 22px;
-  }
-
-  .tab[aria-current='page'] {
-    color: var(--accent);
-    font-weight: 600;
   }
 }
 </style>

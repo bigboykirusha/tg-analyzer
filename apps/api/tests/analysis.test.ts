@@ -200,19 +200,6 @@ test('reconciliation re-queues active jobs that lost their queue entry', async (
   assert.ok(await analysisQueue().getJob(jobId))
 })
 
-test('reports can be shared to Saved Messages as a PDF', async () => {
-  const session = await login()
-  const share = (body: Buffer) =>
-    app.inject({
-      method: 'POST',
-      url: `/api/v1/reports/${PRIVATE_CHAT}/share?fileName=report.pdf`,
-      headers: { ...session.headers, origin: ORIGIN, 'content-type': 'application/pdf' },
-      payload: body,
-    })
-  assert.equal((await share(Buffer.from('%PDF-1.7 test'))).statusCode, 200)
-  assert.equal((await share(Buffer.from('not a pdf'))).statusCode, 400)
-})
-
 test('avatars are fetched in batches and cached', async () => {
   const session = await login()
   const response = await post(session, '/api/v1/parse/avatars', { chatIds: [PRIVATE_CHAT, GROUP_CHAT] })

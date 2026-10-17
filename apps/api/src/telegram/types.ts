@@ -56,7 +56,6 @@ export interface TelegramAccountApi {
   getHistory(chatId: string, offsetId: number): Promise<HistoryPage>
   /** JPEG bytes of the chat photo, or of the user's own photo when `chatId` is null. */
   downloadAvatar(chatId: string | null): Promise<Buffer | null>
-  sendDocumentToSavedMessages(file: { name: string; data: Buffer }): Promise<void>
   logOut(): Promise<void>
 }
 

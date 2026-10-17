@@ -47,10 +47,9 @@ watch(analysis.finished, (job) => {
   padding: var(--space-12) 0 var(--space-16);
 }
 
-/* Room for the bottom tab bar. */
 @media (max-width: 640px) {
   .workspace-main {
-    padding: var(--space-5) 0 calc(var(--control-lg) + var(--space-12) + env(safe-area-inset-bottom, 0px));
+    padding: var(--space-5) 0 max(var(--space-10), env(safe-area-inset-bottom, 0px));
   }
 }
 </style>

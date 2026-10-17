@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { ArrowLeft, Download, MoreHorizontal, RotateCw, Send, Trash2 } from '../../lib/icons'
+import { ArrowLeft, MoreHorizontal, RotateCw, Share2, Trash2 } from '../../lib/icons'
 
 const props = defineProps<{
   summary: ReportSummaryDto
-  exporting: boolean
   canReanalyse: boolean
   reanalysing: boolean
 }>()
-const emit = defineEmits<{ reanalyse: []; download: []; share: []; delete: [] }>()
+const emit = defineEmits<{ reanalyse: []; story: []; delete: [] }>()
 const { t, formatDay } = useI18n()
 const isMobile = useMediaQuery('(max-width: 640px)')
 const menuOpen = ref(false)
@@ -20,10 +19,9 @@ const period = computed(() => {
   return `${format(firstMessageAt)} – ${format(lastMessageAt)}`
 })
 
-function run(action: 'download' | 'share' | 'delete') {
+function run(action: 'story' | 'delete') {
   menuOpen.value = false
-  if (action === 'download') emit('download')
-  else if (action === 'share') emit('share')
+  if (action === 'story') emit('story')
   else emit('delete')
 }
 </script>
@@ -42,6 +40,9 @@ function run(action: 'download' | 'share' | 'delete') {
       </div>
 
       <div class="report-header__actions no-print">
+        <UiButton class="report-header__story" variant="soft" size="sm" :icon="Share2" @click="emit('story')">
+          {{ t('story.open') }}
+        </UiButton>
         <UiIconButton
           :icon="RotateCw"
           :label="t('report.reanalyse')"
@@ -56,20 +57,16 @@ function run(action: 'download' | 'share' | 'delete') {
               :icon="MoreHorizontal"
               :label="t('report.actions')"
               variant="ghost"
-              :loading="exporting"
               :no-tooltip="menuOpen"
               aria-haspopup="menu"
               :aria-expanded="menuOpen"
               @click="menuOpen = !menuOpen"
             />
           </template>
-          <UiMenuItem role="menuitem" :icon="Download" :disabled="exporting" @click="run('download')">
-            {{ t('report.downloadPdf') }}
+          <UiMenuItem role="menuitem" class="report-header__story-item" :icon="Share2" @click="run('story')">
+            {{ t('story.open') }}
           </UiMenuItem>
-          <UiMenuItem role="menuitem" :icon="Send" :disabled="exporting" @click="run('share')">
-            {{ t('report.sendToSaved') }}
-          </UiMenuItem>
-          <div class="menu-divider" role="separator" />
+          <div class="menu-divider report-header__story-item" role="separator" />
           <UiMenuItem role="menuitem" :icon="Trash2" danger @click="run('delete')">
             {{ t('report.deleteMenu') }}
           </UiMenuItem>
@@ -80,6 +77,21 @@ function run(action: 'download' | 'share' | 'delete') {
 </template>
 
 <style scoped>
+/* «Итоги» is a button on wide screens and a menu item on phones. */
+.report-header__story-item {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .report-header__story {
+    display: none;
+  }
+
+  .report-header__story-item {
+    display: flex;
+  }
+}
+
 .report-header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

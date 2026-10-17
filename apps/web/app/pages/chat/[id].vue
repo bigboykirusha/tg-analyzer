@@ -21,17 +21,12 @@ const reanalysing = ref(false)
 const confirm = ref<'reanalyse' | 'delete' | null>(null)
 const deleting = ref(false)
 const cancelling = ref(false)
-const reportElement = ref<HTMLElement | null>(null)
+const storyOpen = ref(false)
 
 useSeoMeta({ title: () => data.value?.summary.title ?? t('report.title') })
 
 const analysingThisChat = computed(() => analysis.isActive.value && analysis.progress.value.chatId === chatId.value)
 const canReanalyse = computed(() => auth.telegramSessionActive && !analysis.isActive.value && !reanalysing.value)
-const exporter = useReportExport({
-  element: reportElement,
-  chatId,
-  title: computed(() => data.value?.summary.title ?? chatId.value),
-})
 
 async function load() {
   loadError.value = null
@@ -81,22 +76,6 @@ async function deleteReport() {
   }
 }
 
-async function download() {
-  try {
-    await exporter.download()
-  } catch (error) {
-    toast.error(t('report.exportError'), errorMessage(error))
-  }
-}
-
-async function share() {
-  try {
-    await exporter.sendToSavedMessages()
-    toast.success(t('report.sentToSaved'))
-  } catch (error) {
-    toast.error(t('report.exportError'), errorMessage(error))
-  }
-}
 
 // Reload the report as soon as a fresh analysis of this chat completes.
 watch(analysis.finished, (job) => {
@@ -113,15 +92,13 @@ onMounted(load)
 
 <template>
   <UiPageContainer size="wide">
-    <div v-if="data" ref="reportElement" class="stack stack--lg report-page">
+    <div v-if="data" class="stack stack--lg report-page">
       <ReportHeader
         :summary="data.summary"
-        :exporting="exporter.exporting.value"
         :can-reanalyse="canReanalyse"
         :reanalysing="reanalysing"
         @reanalyse="confirm = 'reanalyse'"
-        @download="download"
-        @share="share"
+        @story="storyOpen = true"
         @delete="confirm = 'delete'"
       />
 
@@ -135,6 +112,7 @@ onMounted(load)
 
       <GroupReport v-if="data.summary.type === 'group'" :data="data" />
       <PrivateReport v-else :data="data" />
+      <ReportStory :open="storyOpen" :data="data" @close="storyOpen = false" />
     </div>
 
     <UiEmptyState
@@ -196,9 +174,4 @@ onMounted(load)
   }
 }
 
-.report-page.pdf-export :deep(.card) {
-  background: var(--export-background);
-  box-shadow: none;
-  backdrop-filter: none;
-}
 </style>

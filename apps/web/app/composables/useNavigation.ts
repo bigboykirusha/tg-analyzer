@@ -8,8 +8,7 @@ export interface NavItem {
 }
 
 /**
- * Main sections of the signed-in app. The header, the mobile tab bar and the
- * toast offset read this list; the tab bar only appears with two or more items.
+ * Main sections of the signed-in app, shown in the header on every screen size.
  */
 export function useNavigation() {
   const { t } = useI18n()
@@ -20,7 +19,6 @@ export function useNavigation() {
     { to: '/dashboard', label: t('nav.chats'), icon: LayoutGrid },
   ])
   const current = computed(() => items.value.find((item) => route.path.startsWith(item.to)) ?? null)
-  const hasTabBar = computed(() => items.value.length > 1 && current.value !== null)
 
-  return { items, current, hasTabBar }
+  return { items, current }
 }

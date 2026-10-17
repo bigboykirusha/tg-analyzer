@@ -217,7 +217,6 @@ export class FakeTelegramGateway implements TelegramGateway {
         return { messages: page, total: all.length, nextOffsetId: start > 0 ? start + 1 : null }
       },
       downloadAvatar: async () => null,
-      sendDocumentToSavedMessages: async () => undefined,
       logOut: async () => undefined,
     }
   }

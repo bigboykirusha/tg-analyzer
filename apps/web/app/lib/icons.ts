@@ -12,6 +12,7 @@ export {
   BarChart2,
   Check,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   CircleCheck,
   CircleX,

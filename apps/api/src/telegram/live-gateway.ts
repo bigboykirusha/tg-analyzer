@@ -3,7 +3,6 @@ import type { Dialog } from 'telegram/tl/custom/dialog.js'
 import { Logger, LogLevel } from 'telegram/extensions/Logger.js'
 import { computeCheck } from 'telegram/Password.js'
 import { StringSession } from 'telegram/sessions/index.js'
-import { CustomFile } from 'telegram/client/uploads.js'
 import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
 import type { Redis } from 'ioredis'
 import { sleep } from '../lib/time'
@@ -266,17 +265,6 @@ export class LiveTelegramGateway implements TelegramGateway {
         if (!target) return null
         const photo = await attempt(() => client.downloadProfilePhoto(target as never, { isBig: false }))
         return Buffer.isBuffer(photo) && photo.length > 0 ? photo : null
-      },
-
-      sendDocumentToSavedMessages: async (file) => {
-        guard()
-        await attempt(() =>
-          client.sendFile('me', {
-            file: new CustomFile(file.name, file.data.length, '', file.data),
-            forceDocument: true,
-            workers: 1,
-          }),
-        )
       },
 
       logOut: async () => {

@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import type { ComponentPublicInstance } from 'vue'
-import { Download } from '../../lib/icons'
 
 /**
  * «Главное»: a handful of dated facts that read as a story of the chat.
@@ -9,25 +7,6 @@ import { Download } from '../../lib/icons'
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, tc, formatDay, formatDuration } = useI18n()
-const toast = useToast()
-const cardImage = useCardImage()
-const cards = ref<Record<string, HTMLElement | null>>({})
-
-function cardRef(key: string) {
-  return (element: Element | ComponentPublicInstance | null) => {
-    cards.value[key] = element instanceof HTMLElement ? element : null
-  }
-}
-
-async function saveCard(key: string) {
-  const card = cards.value[key]
-  if (!card) return
-  try {
-    await cardImage.save(card, `tg-analyzer-${key}.png`)
-  } catch {
-    toast.error(t('report.highlights.saveError'))
-  }
-}
 
 interface Highlight {
   key: string
@@ -40,31 +19,6 @@ const DAY_SECONDS = 86_400
 const LONG_DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
 
 const report = computed(() => props.data.report)
-
-/** «3 года 4 месяца», «5 месяцев», «12 дней» between two dates. */
-function span(fromIso: string, toIso: string) {
-  const from = new Date(fromIso)
-  const to = new Date(toIso)
-  let months = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth())
-  if (to.getDate() < from.getDate()) months -= 1
-  if (months <= 0) return tc('report.highlights.days', Math.max(1, Math.round((+to - +from) / DAY_SECONDS / 1000)))
-  const years = Math.floor(months / 12)
-  const rest = months % 12
-  return [years ? tc('report.highlights.years', years) : '', rest ? tc('report.highlights.months', rest) : '']
-    .filter(Boolean)
-    .join(' ')
-}
-
-const sinceCard = (): Highlight | null => {
-  const { firstMessageAt, lastMessageAt } = report.value.period
-  if (!firstMessageAt || !lastMessageAt) return null
-  return {
-    key: 'since',
-    label: t('report.highlights.since'),
-    value: formatDay(firstMessageAt.slice(0, 10), LONG_DATE),
-    sub: t('report.highlights.sinceSub', { span: span(firstMessageAt, lastMessageAt) }),
-  }
-}
 
 const busiestDayCard = (): Highlight | null => {
   const day = report.value.facts.mostActiveDate
@@ -135,7 +89,7 @@ const wordsCard = (): Highlight | null => {
 }
 
 const highlights = computed(() =>
-  [sinceCard(), busiestDayCard(), longestTalkCard(), streakCard(), silenceCard(), wordsCard()].filter(
+  [busiestDayCard(), longestTalkCard(), streakCard(), silenceCard(), wordsCard()].filter(
     (card): card is Highlight => card !== null,
   ),
 )
@@ -145,21 +99,7 @@ const highlights = computed(() =>
   <section v-if="highlights.length" class="highlights" :aria-label="t('report.highlights.title')">
     <h2 class="t-label">{{ t('report.highlights.title') }}</h2>
     <ul class="highlights__list">
-      <li
-        v-for="card in highlights"
-        :key="card.key"
-        :ref="cardRef(card.key)"
-        class="highlight"
-        :data-highlight="card.key"
-      >
-        <UiIconButton
-          class="highlight__save no-print"
-          :icon="Download"
-          :label="t('report.highlights.save')"
-          size="xs"
-          :disabled="cardImage.saving.value"
-          @click="saveCard(card.key)"
-        />
+      <li v-for="card in highlights" :key="card.key" class="highlight" :data-highlight="card.key">
         <span class="highlight__label">{{ card.label }}</span>
         <strong class="highlight__value">{{ card.value }}</strong>
         <span v-if="card.sub" class="highlight__sub">{{ card.sub }}</span>
@@ -194,27 +134,7 @@ const highlights = computed(() =>
   background: var(--surface);
 }
 
-/* Saving is secondary: the button stays quiet until the card is hovered or focused. */
-.highlight__save {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
-}
-
-@media (hover: hover) {
-  .highlight__save {
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-  }
-
-  .highlight:hover .highlight__save,
-  .highlight__save:focus-within {
-    opacity: 1;
-  }
-}
-
 .highlight__label {
-  padding-right: var(--space-8);
   color: var(--text-muted);
   font: var(--text-small);
 }
