@@ -5,10 +5,11 @@ import { ChevronLeft, ChevronRight, Download, Share2, X } from '../../lib/icons'
 import type { StoryPerson, StorySlideModel, StoryTile } from './StorySlide.vue'
 
 /**
- * «Итоги» as Instagram-style stories: full screen on phones, a 9:16 frame on
- * wider screens; progress bars on top, auto-advance, hold to pause, tap the
- * sides or swipe to move, swipe down to close. Three dense slides that save as
- * 1080×1920 PNGs or go to the phone's share sheet (Instagram, Telegram, a chat).
+ * «Итоги» as Wrapped-style stories: one idea per slide, building up from who
+ * talks to how, when and in which words, and ending with a summary poster made
+ * for sharing. Full screen on phones, a 9:16 frame on wider screens; progress
+ * bars on top, auto-advance, hold to pause, tap the sides or swipe to move,
+ * swipe down to close. Slides save as 1080×1920 PNGs or go to the share sheet.
  */
 const props = defineProps<{ open: boolean; data: ReportDto }>()
 const emit = defineEmits<{ close: [] }>()
@@ -17,14 +18,18 @@ const { t, tc, formatNumber, formatPercent, formatDuration, formatDay, formatDec
 const toast = useToast()
 const image = useCardImage()
 const auth = useAuthStore()
+const nameOf = useParticipantName()
 
-/** How long one slide stays before the next, like stories. */
-const SLIDE_MS = 8000
 /** A move longer than this is a swipe, shorter is a tap. */
 const SWIPE_PX = 40
 const DAY_SECONDS = 86_400
+/** Below this many replies on either side a speed comparison is noise. */
+const MIN_REPLY_SAMPLES = 5
+/** Differences smaller than this ratio read as «about the same». */
+const EVEN_RATIO = 1.25
 
 type ShareTarget = 'instagram' | 'telegram' | 'chat'
+type Persona = 'morning' | 'day' | 'evening' | 'night'
 
 const index = ref(0)
 const paused = ref(false)
@@ -49,6 +54,7 @@ useFocusTrap(panelRef, open, {
 const DAY_MONTH: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' }
 const LONG_DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
 const isGroup = computed(() => props.data.summary.type === 'group')
+const group = computed(() => props.data.report.group ?? null)
 
 const me = computed<StoryPerson>(() => ({
   name: auth.user?.firstName?.trim() || auth.user?.username || t('story.you'),
@@ -58,127 +64,258 @@ const them = computed<StoryPerson>(() => ({ name: props.data.summary.title, avat
 /** The other side in labels: the person, or «Остальные» in a group. */
 const theirName = computed(() => (isGroup.value ? t('story.others') : them.value.name))
 
+/** Who the story is about: the two of you, or the group itself. */
+const people = computed(() => (isGroup.value ? [them.value] : [me.value, them.value]))
+const heading = computed(() => (isGroup.value ? them.value.name : `${me.value.name} & ${them.value.name}`))
+const period = computed(() => {
+  const { firstMessageAt, lastMessageAt } = props.data.report.period
+  if (!firstMessageAt || !lastMessageAt) return null
+  return `${formatDay(firstMessageAt.slice(0, 10), DAY_MONTH)} — ${formatDay(lastMessageAt.slice(0, 10), LONG_DATE)}`
+})
+const headingSub = computed(() =>
+  isGroup.value && group.value ? tc('story.members', group.value.participants.length) : period.value,
+)
+
 const top = (items: { value: string }[], count = 5) => items.slice(0, count).map((item) => item.value)
 const days = (seconds: number) => tc('report.highlights.days', Math.round(seconds / DAY_SECONDS))
+const hour = (value: number) => String(value).padStart(2, '0')
+
+/** «Вечерние собеседники» from the middle of the usual window. */
+function personaOf(from: number, length: number): Persona {
+  const middle = (from + length / 2) % 24
+  if (middle >= 5 && middle < 11) return 'morning'
+  if (middle >= 11 && middle < 17) return 'day'
+  if (middle >= 17 && middle < 22) return 'evening'
+  return 'night'
+}
+
+/** The usual window, the same one the report shows in Activity. */
+const usual = computed(() => {
+  const span = props.data.derived.availabilityProfile.peakWindow
+  if (!span) return null
+  const [from = 0, to = 0] = span.split('-').map((time) => Number.parseInt(time, 10))
+  const length = (to - from + 24) % 24 || 24
+  const weekday = props.data.report.activity.weekday
+  const busiest = weekday.reduce((best, value, day) => (value.total > (weekday[best]?.total ?? 0) ? day : best), 0)
+  return {
+    from,
+    to,
+    persona: personaOf(from, length),
+    day: weekday[busiest]?.total ? (t('chart.weekdaysLong').split(',')[busiest] ?? '') : '',
+  }
+})
 
 const slides = computed<StorySlideModel[]>(() => {
   const { report } = props.data
-  const { totals, facts, responses, vocabulary, activity, sessions, composition, period } = report
+  const { totals, facts, responses, vocabulary, activity, sessions, composition } = report
   const list: StorySlideModel[] = []
   const myName = me.value.name
   const otherName = theirName.value
+  const poster: StoryTile[] = [{ label: t('story.posterMessages'), value: formatNumber(totals.messages) }]
 
-  // 1. The chat in numbers: volume, balance, who starts, reply times.
-  const overview: StoryTile[] = []
-  if (!isGroup.value && responses.iWriteFirstPct !== null) {
-    const iStart = responses.iWriteFirstPct >= 50
-    overview.push({
-      label: t('story.firstWriter'),
-      value: `${iStart ? myName : otherName} · ${formatPercent(iStart ? responses.iWriteFirstPct : 100 - responses.iWriteFirstPct)}`,
-    })
-  }
-  if (!isGroup.value && responses.medianMineSec !== null)
-    overview.push({ label: t('story.replies', { name: myName }), value: formatDuration(responses.medianMineSec) })
-  if (!isGroup.value && responses.medianTheirsSec !== null)
-    overview.push({ label: t('story.replies', { name: otherName }), value: formatDuration(responses.medianTheirsSec) })
-  overview.push({ label: t('story.activeDays'), value: formatNumber(facts.activeDays) })
-  if (facts.maxStreak.days >= 2)
-    overview.push({ label: t('story.bestStreak'), value: tc('report.highlights.days', facts.maxStreak.days) })
-  overview.push({ label: t('story.conversations'), value: formatNumber(sessions.totalSessions) })
-
+  // 1. Who: the two of you (or the group) and how long the chat goes back.
   list.push({
-    key: 'overview',
-    theme: 1,
-    kicker:
-      period.firstMessageAt && period.lastMessageAt
-        ? `${formatDay(period.firstMessageAt.slice(0, 10), DAY_MONTH)} — ${formatDay(period.lastMessageAt.slice(0, 10), LONG_DATE)}`
-        : t('story.kicker'),
-    title: formatNumber(totals.messages),
-    sub: t('story.overviewSub', { perDay: formatDecimal(totals.messages / Math.max(facts.activeDays, 1)) }),
-    split: totals.messages
-      ? {
-          mine: Math.round((totals.sent / totals.messages) * 100),
-          mineLabel: `${myName} · ${formatNumber(totals.sent)}`,
-          theirsLabel: `${formatNumber(totals.received)} · ${otherName}`,
-        }
-      : undefined,
-    tiles: overview.slice(0, 6),
+    key: 'intro',
+    theme: 3,
+    durationMs: 4500,
+    intro: true,
+    kicker: t('story.introKicker'),
+    title: heading.value,
+    sub: [
+      isGroup.value && group.value ? tc('story.members', group.value.participants.length) : null,
+      period.value,
+      tc('story.activeDaysCount', facts.activeDays),
+    ]
+      .filter(Boolean)
+      .join(' · '),
   })
 
-  // 2. Rhythm and records: the peak hour, the busiest day, the longest talk and silence.
-  const hourly = activity.hourly.map((hour) => hour.total)
-  const peak = hourly.reduce((best, value, hour) => (value > (hourly[best] ?? 0) ? hour : best), 0)
-  if (hourly[peak]) {
-    const weekday = activity.weekday
-    const busiest = weekday.reduce((best, value, day) => (value.total > (weekday[best]?.total ?? 0) ? day : best), 0)
-    const longest = [...sessions.highlights].sort((a, b) => b.durationSec - a.durationSec)[0]
-    const gap = facts.longestGap
-    const rhythm: StoryTile[] = []
-    if (facts.mostActiveDate)
-      rhythm.push({
-        label: t('story.busiestDay'),
-        value: `${formatDay(facts.mostActiveDate.date, DAY_MONTH)} · ${formatNumber(facts.mostActiveDate.total)}`,
+  // 2. How much: the total and who carries the conversation.
+  if (totals.messages) {
+    const mine = (totals.sent / totals.messages) * 100
+    let note: string
+    if (isGroup.value) note = t('story.groupShare', { share: formatPercent(mine) })
+    else if (Math.abs(mine - 50) <= 5) note = t('story.balanceEven')
+    else
+      note = t('story.balanceMore', {
+        name: mine > 50 ? myName : otherName,
+        share: formatPercent(mine > 50 ? mine : 100 - mine),
       })
-    if (longest)
-      rhythm.push({
-        label: t('story.longestTalk'),
-        value: `${formatDuration(longest.durationSec)} · ${formatDay(longest.startedAt.slice(0, 10), DAY_MONTH)}`,
-      })
-    if (gap && gap.seconds >= 2 * DAY_SECONDS)
-      rhythm.push(
-        gap.brokenByMe === undefined || isGroup.value
-          ? { label: t('story.longestSilence'), value: days(gap.seconds) }
-          : {
-              label: t('story.silenceBroken'),
-              value: t('story.silenceAfter', { name: gap.brokenByMe ? myName : otherName, days: days(gap.seconds) }),
-            },
-      )
-    if (sessions.nightSessionsPct !== null)
-      rhythm.push({ label: t('story.night'), value: formatPercent(sessions.nightSessionsPct) })
-
     list.push({
-      key: 'rhythm',
-      theme: 5,
-      kicker: t('story.hoursKicker'),
-      title: `${String(peak).padStart(2, '0')}:00`,
-      sub: t('story.hoursSub', { day: t('chart.weekdaysLong').split(',')[busiest] ?? '' }),
-      bars: { values: hourly, highlight: peak },
-      tiles: rhythm.slice(0, 4),
+      key: 'volume',
+      theme: 1,
+      durationMs: 6500,
+      kicker: t(isGroup.value ? 'story.volumeKickerGroup' : 'story.volumeKicker'),
+      title: formatNumber(totals.messages),
+      sub: t('story.volumeSub', { perDay: formatDecimal(totals.messages / Math.max(facts.activeDays, 1)) }),
+      split: {
+        mine: Math.round(mine),
+        mineLabel: `${myName} · ${formatNumber(totals.sent)}`,
+        theirsLabel: `${formatNumber(totals.received)} · ${otherName}`,
+      },
+      note,
     })
   }
 
-  // 3. How you write: favourite words, emoji, voice notes and stickers.
+  // 3. The dynamic: who starts and who replies faster — or, in a group, whose voice carries.
+  if (isGroup.value && group.value?.participants.length) {
+    const voices = group.value.participants.slice(0, 5)
+    const leader = voices[0]!
+    const most = Math.max(...voices.map((person) => person.messageShare), 1)
+    list.push({
+      key: 'voices',
+      theme: 4,
+      durationMs: 7000,
+      kicker: t('story.voicesKicker'),
+      title: nameOf(leader),
+      sub: t('story.voicesSub', { share: formatPercent(leader.messageShare) }),
+      ranking: voices.map((person) => ({
+        name: nameOf(person),
+        value: formatPercent(person.messageShare),
+        share: (person.messageShare / most) * 100,
+      })),
+    })
+    poster.push({ label: t('story.posterVoice'), value: nameOf(leader) })
+  } else if (!isGroup.value && responses.iWriteFirstPct !== null) {
+    const mine = responses.iWriteFirstPct
+    const even = Math.abs(mine - 50) <= 5
+    const starter = mine >= 50 ? myName : otherName
+    const { medianMineSec, medianTheirsSec, mineSamples, theirsSamples } = responses
+    let note: string | undefined
+    if (
+      medianMineSec !== null &&
+      medianTheirsSec !== null &&
+      mineSamples >= MIN_REPLY_SAMPLES &&
+      theirsSamples >= MIN_REPLY_SAMPLES
+    ) {
+      const ratio = Math.max(medianMineSec, medianTheirsSec) / Math.max(Math.min(medianMineSec, medianTheirsSec), 1)
+      note =
+        ratio < EVEN_RATIO
+          ? t('story.speedEven')
+          : t('story.speedFaster', {
+              name: medianMineSec < medianTheirsSec ? myName : otherName,
+              ratio: formatDecimal(ratio),
+            })
+    }
+    list.push({
+      key: 'starts',
+      theme: 4,
+      durationMs: 7000,
+      kicker: t('story.startsKicker'),
+      title: even ? t('story.startsEvenTitle') : starter,
+      sub: even
+        ? t('story.startsEvenSub')
+        : t('story.startsSub', { share: formatPercent(mine >= 50 ? mine : 100 - mine) }),
+      duel:
+        medianMineSec !== null && medianTheirsSec !== null
+          ? {
+              left: { label: t('story.replyOf', { name: myName }), value: formatDuration(medianMineSec) },
+              right: { label: t('story.replyOf', { name: otherName }), value: formatDuration(medianTheirsSec) },
+            }
+          : undefined,
+      note,
+    })
+    poster.push({ label: t('story.posterStarts'), value: even ? t('story.startsEvenTitle') : starter })
+  }
+
+  // 4. When: the usual window as a persona, with the day on the hour bars.
+  const time = usual.value
+  if (time) {
+    const tiles: StoryTile[] = []
+    if (sessions.nightSessionsPct !== null)
+      tiles.push({ label: t('story.night'), value: formatPercent(sessions.nightSessionsPct) })
+    if (sessions.totalSessions)
+      tiles.push({ label: t('story.conversations'), value: formatNumber(sessions.totalSessions) })
+    list.push({
+      key: 'time',
+      theme: 5,
+      durationMs: 7000,
+      kicker: t('story.timeKicker'),
+      title: t(`story.persona.${time.persona}`),
+      sub: time.day
+        ? t('story.timeSubDay', { from: hour(time.from), to: hour(time.to), day: time.day })
+        : t('story.timeSub', { from: hour(time.from), to: hour(time.to) }),
+      bars: { values: activity.hourly.map((value) => value.total), from: time.from, to: (time.to + 23) % 24 },
+      tiles,
+    })
+    poster.push({ label: t('story.posterTime'), value: t(`story.persona.${time.persona}`) })
+  }
+
+  // 5. Records: the streak, the busiest day, the longest talk and silence.
+  const streak = facts.maxStreak.days
+  const busiest = facts.mostActiveDate
+  if (streak >= 3 || busiest) {
+    const longest = [...sessions.highlights].sort((a, b) => b.durationSec - a.durationSec)[0]
+    const gap = facts.longestGap
+    const tiles: StoryTile[] = []
+    if (busiest && streak >= 3)
+      tiles.push({
+        label: t('story.busiestDayOn', { date: formatDay(busiest.date, DAY_MONTH) }),
+        value: tc('common.messagesCount', busiest.total),
+      })
+    if (longest)
+      tiles.push({
+        label: t('story.longestTalkOn', { date: formatDay(longest.startedAt.slice(0, 10), DAY_MONTH) }),
+        value: formatDuration(longest.durationSec),
+      })
+    if (gap && gap.seconds >= 2 * DAY_SECONDS) {
+      tiles.push({ label: t('story.longestSilence'), value: days(gap.seconds) })
+      if (!isGroup.value && gap.brokenByMe !== undefined)
+        tiles.push({ label: t('story.silenceBroken'), value: gap.brokenByMe ? myName : otherName })
+    }
+    list.push({
+      key: 'records',
+      theme: 3,
+      durationMs: 7000,
+      kicker: t('story.recordsKicker'),
+      title: streak >= 3 ? tc('report.highlights.days', streak) : formatNumber(busiest!.total),
+      sub: streak >= 3 ? t('story.streakSub') : t('story.busiestSub', { date: formatDay(busiest!.date, DAY_MONTH) }),
+      tiles: tiles.slice(0, 4),
+    })
+    if (streak >= 3) poster.push({ label: t('story.posterStreak'), value: tc('report.highlights.days', streak) })
+  }
+
+  // 6. Words: the word of the chat, each side's favourites and emoji.
   const myWords = top(vocabulary.topWordsBySender.mine)
   const theirWords = top(vocabulary.topWordsBySender.theirs)
-  const chatWord = top(vocabulary.topWords, 1)[0]
-  if (chatWord || myWords.length) {
+  const chatWord = top(vocabulary.topWords, 1)[0] ?? myWords[0]
+  if (chatWord) {
     const myEmoji = top(vocabulary.topEmojiBySender.mine, 4)
     const theirEmoji = top(vocabulary.topEmojiBySender.theirs, 4)
-    const style: StoryTile[] = []
-    if (myEmoji.length) style.push({ label: t('story.emojiOf', { name: myName }), value: myEmoji.join(' ') })
-    if (theirEmoji.length) style.push({ label: t('story.emojiOf', { name: otherName }), value: theirEmoji.join(' ') })
-    const { mine: myLength, theirs: theirLength } = vocabulary.wordsPerMessage
-    if (myLength !== null && theirLength !== null)
-      style.push({
-        label: t('story.wordsPerMessage'),
-        value: `${formatDecimal(myLength)} / ${formatDecimal(theirLength)}`,
-      })
-    if (composition.voice) style.push({ label: t('story.voice'), value: formatNumber(composition.voice) })
-    if (composition.sticker) style.push({ label: t('story.stickers'), value: formatNumber(composition.sticker) })
-
+    const tiles: StoryTile[] = []
+    if (myEmoji.length) tiles.push({ label: t('story.emojiOf', { name: myName }), value: myEmoji.join(' ') })
+    if (theirEmoji.length) tiles.push({ label: t('story.emojiOf', { name: otherName }), value: theirEmoji.join(' ') })
+    if (composition.voice) tiles.push({ label: t('story.voice'), value: formatNumber(composition.voice) })
+    if (composition.sticker) tiles.push({ label: t('story.stickers'), value: formatNumber(composition.sticker) })
     list.push({
       key: 'words',
       theme: 2,
+      durationMs: 7500,
       kicker: t('story.wordsKicker'),
-      title: `«${chatWord ?? myWords[0]}»`,
+      title: `«${chatWord}»`,
       sub: t('story.wordsSub'),
       columns:
         myWords.length && theirWords.length
           ? { left: { title: myName, items: myWords }, right: { title: otherName, items: theirWords } }
           : undefined,
-      tiles: style.slice(0, 4),
+      tiles: tiles.slice(0, 4),
     })
+    poster.push({ label: t('story.posterWord'), value: `«${chatWord}»` })
   }
+
+  // Tiles come in pairs; days with messages fill an odd gap.
+  if (poster.length % 2) poster.push({ label: t('story.activeDays'), value: formatNumber(facts.activeDays) })
+
+  // 7. The short version: one card with the headline of every slide, made to be shared.
+  list.push({
+    key: 'summary',
+    theme: 1,
+    durationMs: 10_000,
+    poster: true,
+    kicker: t('story.introKicker'),
+    title: t('story.posterTitle'),
+    tiles: poster.slice(0, 6),
+  })
   return list
 })
 
@@ -377,7 +514,14 @@ watch(open, (value) => {
             @pointerup="onPointerUp"
             @pointercancel="onCancel"
           >
-            <StorySlide :slide="current" :me="me" :them="them" />
+            <StorySlide
+              :key="current.key"
+              :slide="current"
+              :people="people"
+              :heading="heading"
+              :heading-sub="headingSub"
+              chrome
+            />
           </div>
 
           <!-- Overlays on top of the slide, like stories. -->
@@ -389,7 +533,7 @@ watch(open, (value) => {
                   :key="`fill-${index}`"
                   class="stories__fill is-active"
                   :style="{
-                    animationDuration: `${SLIDE_MS}ms`,
+                    animationDuration: `${current.durationMs}ms`,
                     animationPlayState: paused || image.busy.value ? 'paused' : 'running',
                   }"
                   @animationend="onSegmentDone"
@@ -470,7 +614,7 @@ watch(open, (value) => {
 
         <!-- Exact 9:16 copy for the exported image, off screen. -->
         <div v-if="exportSlide" ref="exportRef" class="stories__export" aria-hidden="true">
-          <StorySlide :slide="exportSlide" :me="me" :them="them" />
+          <StorySlide :slide="exportSlide" :people="people" :heading="heading" :heading-sub="headingSub" still />
         </div>
       </div>
     </Transition>
@@ -580,6 +724,12 @@ watch(open, (value) => {
   cursor: pointer;
   pointer-events: auto;
   --icon-size: var(--icon-md);
+}
+
+.stories__icon:focus-visible,
+.stories__action:focus-visible,
+.stories__arrow:focus-visible {
+  box-shadow: 0 0 0 2px var(--story-ink);
 }
 
 @media (hover: hover) {

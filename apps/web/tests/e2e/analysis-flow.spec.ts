@@ -66,8 +66,11 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
   }
 
   const stories = page.getByRole('dialog', { name: 'Итоги переписки' })
-  await expect(stories.locator('.stories__segment')).toHaveCount(3)
-  await expect(stories.locator('.stories__stage .story-slide__names')).toHaveText(/Demo\s*&\s*Катя/)
+  // Intro first and the summary poster last; the slides between depend on the data.
+  await expect.poll(() => stories.locator('.stories__segment').count()).toBeGreaterThanOrEqual(4)
+  await expect(stories.locator('.stories__stage .story-slide__title')).toHaveText(/Demo\s*&\s*Катя/)
+  await page.keyboard.press('ArrowRight')
+  await expect(stories.locator('.stories__stage .story-slide__heading strong')).toHaveText(/Demo\s*&\s*Катя/)
 
   await stories.getByRole('button', { name: 'Поделиться' }).click()
   for (const option of ['Сторис в Instagram', 'Сторис в Telegram', 'Отправить в чат']) {
@@ -77,5 +80,5 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
 
   const download = page.waitForEvent('download')
   await stories.getByRole('button', { name: 'Сохранить' }).click()
-  expect((await download).suggestedFilename()).toBe('tg-analyzer-overview.png')
+  expect((await download).suggestedFilename()).toBe('tg-analyzer-volume.png')
 })
