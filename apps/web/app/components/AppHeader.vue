@@ -165,7 +165,8 @@ function signOut() {
   align-items: center;
   gap: var(--space-6);
   min-height: var(--topbar-height);
-  padding: 0 var(--space-6);
+  /* Same column as the page below, so the logo lines up with the content. */
+  padding-inline: max(var(--page-gutter), calc((100% - var(--page-max)) / 2));
   border-width: 0 0 1px;
   border-color: var(--border);
   border-radius: 0;
@@ -337,7 +338,6 @@ function signOut() {
 @media (max-width: 640px) {
   .topbar {
     gap: var(--space-3);
-    padding: 0 var(--space-4);
   }
 
   .desktop-only,

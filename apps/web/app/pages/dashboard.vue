@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { AlertCircle, AlertTriangle, Info, MessageSquare, Search, WifiOff, X } from '../lib/icons'
+import { AlertCircle, AlertTriangle, BarChart2, Info, Lock, MessageSquare, Search, WifiOff, X } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 const PAGE_SIZE = 30
+/** Report cards shown before «All reports». */
+const REPORTS_PREVIEW = 6
 
 const { t, tc } = useI18n()
-useSeoMeta({ title: () => t('nav.chats') })
+useSeoMeta({ title: () => t('dashboard.title') })
 
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
@@ -16,7 +18,8 @@ const toast = useToast()
 const errorMessage = useErrorMessage()
 
 const search = ref('')
-const filter = ref<'all' | 'reported' | 'new'>('all')
+const filter = ref<'all' | 'private' | 'groups'>('all')
+const showAllReports = ref(false)
 const visibleCount = ref(PAGE_SIZE)
 const startingChatId = ref<string | null>(null)
 const cancelling = ref(false)
@@ -27,19 +30,41 @@ const sentinel = ref<HTMLElement | null>(null)
 
 const filterOptions = computed(() => [
   { value: 'all' as const, label: t('dashboard.filter.all') },
-  { value: 'reported' as const, label: t('dashboard.filter.reported') },
-  { value: 'new' as const, label: t('dashboard.filter.new') },
+  { value: 'private' as const, label: t('dashboard.filter.private') },
+  { value: 'groups' as const, label: t('dashboard.filter.groups') },
 ])
 
 const filteredChats = computed(() => {
   const query = search.value.trim().toLocaleLowerCase()
   return workspace.chats.filter((chat) => {
-    if (filter.value === 'reported' && !chat.report) return false
-    if (filter.value === 'new' && chat.report) return false
+    if (filter.value === 'private' && chat.type !== 'private') return false
+    if (filter.value === 'groups' && chat.type === 'private') return false
     return !query || chat.title.toLocaleLowerCase().includes(query)
   })
 })
 const visibleChats = computed(() => filteredChats.value.slice(0, visibleCount.value))
+
+/** Finished reports, newest first: what the user has already learned. */
+const reports = computed(() =>
+  workspace.chats
+    .filter((chat) => chat.report)
+    .sort((left, right) => Date.parse(right.report!.analyzedAt) - Date.parse(left.report!.analyzedAt)),
+)
+const shownReports = computed(() =>
+  showAllReports.value ? reports.value : reports.value.slice(0, REPORTS_PREVIEW),
+)
+/** Newcomers see how it works until the first report exists. */
+const showIntro = computed(
+  () => workspace.reportsState !== 'loading' && !reports.value.length && !analysis.isActive.value,
+)
+const introSteps = computed(() => [
+  { icon: MessageSquare, title: t('dashboard.intro.step1Title'), text: t('dashboard.intro.step1Text') },
+  { icon: Lock, title: t('dashboard.intro.step2Title'), text: t('dashboard.intro.step2Text') },
+  { icon: BarChart2, title: t('dashboard.intro.step3Title'), text: t('dashboard.intro.step3Text') },
+])
+function isUpdating(chatId: string) {
+  return (analysis.isActive.value && analysis.progress.value.chatId === chatId) || queuedJobs.value.has(chatId)
+}
 const firstLoad = computed(
   () => !workspace.chats.length && (workspace.dialogsState === 'loading' || workspace.dialogsState === 'idle'),
 )
@@ -118,11 +143,65 @@ onMounted(() => {
 
 <template>
   <UiPageContainer>
-    <div class="stack stack--lg">
-      <!-- The list speaks for itself; the heading stays for screen readers. -->
-      <h1 class="sr-only">{{ t('dashboard.title') }}</h1>
+    <div class="dashboard">
+      <header class="dashboard-head">
+        <h1 class="t-h1">{{ t('dashboard.title') }}</h1>
+      </header>
 
-      <section class="card dashboard-card">
+      <div v-if="!auth.telegramSessionActive" class="banner banner--warning" role="status">
+        <AlertTriangle aria-hidden="true" />
+        <div class="banner__copy">
+          <span class="banner__title">{{ t('dashboard.sessionInactive') }}</span>
+        </div>
+        <div class="banner__actions">
+          <UiButton variant="secondary" size="sm" @click="logout">{{ t('common.relogin') }}</UiButton>
+        </div>
+      </div>
+
+      <section v-if="reports.length" class="dashboard-section" aria-labelledby="reports-title">
+        <div class="dashboard-section__head">
+          <h2 id="reports-title" class="dashboard-section__title">{{ t('dashboard.reportsTitle') }}</h2>
+          <UiButton
+            v-if="reports.length > REPORTS_PREVIEW"
+            variant="ghost"
+            size="sm"
+            @click="showAllReports = !showAllReports"
+          >
+            {{ showAllReports ? t('dashboard.showFewerReports') : t('dashboard.showAllReports', { count: reports.length }) }}
+          </UiButton>
+        </div>
+        <div class="report-cards">
+          <ReportCard
+            v-for="chat in shownReports"
+            :key="chat.id"
+            :report="chat.report!"
+            :has-avatar="chat.hasAvatar"
+            :updating="isUpdating(chat.id)"
+          />
+        </div>
+      </section>
+
+      <section v-else-if="showIntro" class="intro" aria-labelledby="intro-title">
+        <h2 id="intro-title" class="dashboard-section__title">{{ t('dashboard.intro.title') }}</h2>
+        <ol class="intro__steps">
+          <li v-for="(step, index) in introSteps" :key="index" class="intro__step">
+            <span class="icon-tile icon-tile--accent" aria-hidden="true"><component :is="step.icon" /></span>
+            <span class="intro__copy">
+              <strong>{{ index + 1 }}. {{ step.title }}</strong>
+              <span>{{ step.text }}</span>
+            </span>
+          </li>
+        </ol>
+      </section>
+
+      <section class="dashboard-section" aria-labelledby="chats-title">
+        <div class="dashboard-section__head">
+          <div class="dashboard-section__copy">
+            <h2 id="chats-title" class="dashboard-section__title">{{ t('dashboard.chatsTitle') }}</h2>
+            <p class="dashboard-section__hint">{{ t('dashboard.chatsHint') }}</p>
+          </div>
+        </div>
+
         <div class="dashboard-tools">
           <label class="input">
             <Search aria-hidden="true" />
@@ -143,19 +222,15 @@ onMounted(() => {
               <X aria-hidden="true" />
             </button>
           </label>
-          <UiSegmentedControl v-model="filter" :options="filterOptions" :aria-label="t('dashboard.filter.label')" />
+          <UiSegmentedControl
+            v-model="filter"
+            class="dashboard-filter"
+            :options="filterOptions"
+            :aria-label="t('dashboard.filter.label')"
+          />
         </div>
 
-        <div v-if="!auth.telegramSessionActive" class="banner banner--warning" role="status">
-          <AlertTriangle aria-hidden="true" />
-          <div class="banner__copy">
-            <span class="banner__title">{{ t('dashboard.sessionInactive') }}</span>
-          </div>
-          <div class="banner__actions">
-            <UiButton variant="secondary" size="sm" @click="logout">{{ t('common.relogin') }}</UiButton>
-          </div>
-        </div>
-        <div v-else-if="workspace.dialogsStale" class="banner banner--info" role="status">
+        <div v-if="auth.telegramSessionActive && workspace.dialogsStale" class="banner banner--info" role="status">
           <Info aria-hidden="true" />
           <div class="banner__copy">
             <span class="banner__text">{{ t('dashboard.staleDialogs') }}</span>
@@ -166,6 +241,8 @@ onMounted(() => {
 
         <UiEmptyState
           v-else-if="dialogsFailed"
+          class="panel"
+          tone="danger"
           :icon="workspace.dialogsError?.code === 'TELEGRAM_BUSY' ? WifiOff : AlertCircle"
           :title="t('dashboard.dialogsError')"
           :description="errorMessage(workspace.dialogsError)"
@@ -195,9 +272,10 @@ onMounted(() => {
           </div>
           <UiEmptyState
             v-else
+            class="panel"
             :icon="MessageSquare"
-            :title="search ? t('dashboard.noMatchesTitle') : t('dashboard.emptyTitle')"
-            :description="search ? t('dashboard.noMatchesText') : t('dashboard.emptyText')"
+            :title="search || filter !== 'all' ? t('dashboard.noMatchesTitle') : t('dashboard.emptyTitle')"
+            :description="search || filter !== 'all' ? t('dashboard.noMatchesText') : t('dashboard.emptyText')"
           />
 
           <p
@@ -241,15 +319,96 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.dashboard-card {
+.dashboard {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+.dashboard-head {
+  margin-bottom: calc(var(--space-4) * -1);
+}
+
+.dashboard-section {
+  display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: var(--space-4);
 }
 
-.dashboard-tools {
+.dashboard-section__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.dashboard-section__copy {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.dashboard-section__title {
+  font: var(--text-h2);
+  font-size: 20px;
+  line-height: 28px;
+  letter-spacing: -0.01em;
+}
+
+.dashboard-section__hint {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.report-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.intro {
   display: flex;
   flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-lg);
+  background: var(--accent-subtle);
+}
+
+.intro__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+  list-style: none;
+}
+
+.intro__step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.intro__step .icon-tile {
+  background: var(--surface);
+}
+
+.intro__copy {
+  display: grid;
+  gap: 2px;
+  font: var(--text-small);
+  color: var(--text-muted);
+}
+
+.intro__copy strong {
+  color: var(--text);
+  font: var(--text-ui);
+  font-weight: 600;
+}
+
+.dashboard-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
   gap: var(--space-3);
 }
 
@@ -277,4 +436,48 @@ onMounted(() => {
   text-align: center;
 }
 
+@media (max-width: 900px) {
+  .report-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .intro__steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard {
+    gap: var(--space-8);
+  }
+
+  .dashboard-tools {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .intro {
+    padding: var(--space-5);
+  }
+
+  /* Phones: report cards scroll sideways instead of pushing the chat list down. */
+  .report-cards {
+    display: flex;
+    margin-inline: calc(var(--page-gutter) * -1);
+    padding: 2px var(--page-gutter) var(--space-2);
+    overflow-x: auto;
+    scroll-padding-inline: var(--page-gutter);
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .report-cards::-webkit-scrollbar {
+    display: none;
+  }
+
+  .report-cards > * {
+    flex: 0 0 min(260px, 75%);
+    scroll-snap-align: start;
+  }
+}
 </style>

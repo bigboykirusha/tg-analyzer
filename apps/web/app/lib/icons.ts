@@ -34,6 +34,8 @@ export {
   Share2,
   Sun,
   Trash2,
+  User,
+  Users,
   WifiOff,
   X,
 } from '@lucide/vue'

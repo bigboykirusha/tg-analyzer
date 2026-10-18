@@ -40,7 +40,9 @@ export type AppConfig = ReturnType<typeof parseConfig>
 const PLACEHOLDER_SECRET = /change|example|placeholder|0123456789abcdef/i
 
 export function parseConfig(env: Record<string, string | undefined>) {
-  const result = envSchema.safeParse(env)
+  // `KEY=` in an env file means «not set», like a missing line (.env.example ships them empty).
+  const present = Object.fromEntries(Object.entries(env).filter(([, value]) => value !== ''))
+  const result = envSchema.safeParse(present)
   if (!result.success) {
     const fields = [...new Set(result.error.issues.map((issue) => issue.path.join('.')))]
     throw new Error(`Invalid configuration: ${fields.join(', ')}`)

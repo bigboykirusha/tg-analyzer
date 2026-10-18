@@ -1,20 +1,16 @@
 <script setup lang="ts">
-const props = withDefaults(
+withDefaults(
   defineProps<{
-    size?: 'narrow' | 'default' | 'wide'
+    /** `narrow` for reading pages (terms); everything else shares the header's column. */
+    size?: 'narrow' | 'default'
     as?: string
   }>(),
-  {
-    size: 'default',
-    as: 'div',
-  },
+  { size: 'default', as: 'div' },
 )
-
-const classes = computed(() => ['page-container', `page-container-${props.size}`])
 </script>
 
 <template>
-  <component :is="as" :class="classes">
+  <component :is="as" class="page-container" :class="{ 'page-container--narrow': size === 'narrow' }">
     <slot />
   </component>
 </template>
@@ -22,37 +18,12 @@ const classes = computed(() => ['page-container', `page-container-${props.size}`
 <style scoped>
 .page-container {
   width: 100%;
+  max-width: calc(var(--page-max) + var(--page-gutter) * 2);
   margin-inline: auto;
-  padding-inline: var(--space-4);
+  padding-inline: var(--page-gutter);
 }
 
-.page-container-narrow {
-  max-width: calc(720px + var(--space-8) * 2);
-}
-
-.page-container-default {
-  max-width: calc(800px + var(--space-8) * 2);
-}
-
-.page-container-wide {
-  max-width: calc(1000px + var(--space-8) * 2);
-}
-
-@media (min-width: 768px) {
-  .page-container {
-    padding-inline: var(--space-6);
-  }
-}
-
-@media (min-width: 1024px) {
-  .page-container {
-    padding-inline: var(--space-8);
-  }
-}
-
-@media (max-width: 768px) {
-  .page-container {
-    padding-inline: var(--space-4);
-  }
+.page-container--narrow {
+  max-width: calc(var(--page-max-narrow) + var(--page-gutter) * 2);
 }
 </style>

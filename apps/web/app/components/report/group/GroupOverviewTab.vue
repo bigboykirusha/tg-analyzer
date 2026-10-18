@@ -109,28 +109,23 @@ const insights = computed(() => {
 
 <template>
   <div class="report-grid">
-    <ReportSection :label="t('group.overview')" :title="t('group.pulseTitle')" :text="t('group.pulseText')">
+    <ReportSection :title="t('group.pulseTitle')" :text="t('group.pulseText')">
       <ReportMeters v-if="shareMeters.length" :meters="shareMeters" />
       <p v-else class="t-small t-muted">{{ t('group.noParticipants') }}</p>
     </ReportSection>
 
-    <ReportSection :label="t('group.healthLabel')" :title="t('group.healthTitle')">
+    <ReportSection :title="t('group.healthTitle')">
       <template v-if="health">
         <ReportMeters :meters="healthMeters" />
       </template>
       <p v-else class="t-small t-muted">{{ t('group.insightsEmpty') }}</p>
     </ReportSection>
 
-    <ReportSection
-      v-if="healthFacts.length"
-      wide
-      :label="t('group.compositionLabel')"
-      :title="t('group.compositionTitle')"
-    >
+    <ReportSection v-if="healthFacts.length" wide :title="t('group.compositionTitle')">
       <ReportFacts :facts="healthFacts" :columns="3" />
     </ReportSection>
 
-    <ReportSection wide :label="t('group.insightsLabel')" :title="t('group.insightsTitle')">
+    <ReportSection wide :title="t('group.insightsTitle')">
       <ul v-if="insights.length" class="insights">
         <li v-for="item in insights" :key="item">{{ item }}</li>
       </ul>

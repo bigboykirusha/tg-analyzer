@@ -28,16 +28,17 @@ const shareHint = computed(() => {
   return t('report.kpi.even')
 })
 
-const peak = computed(() => {
-  const hourly = props.data.report.activity.hourly
-  const hour = hourly.reduce((best, value, index) => (value.total > (hourly[best]?.total ?? 0) ? index : best), 0)
-  if (!hourly[hour]?.total) return null
+/** The same window as «When you're usually around» in Activity, so the two never disagree. */
+const usually = computed(() => {
+  const span = props.data.derived.availabilityProfile.peakWindow
+  if (!span) return null
   const weekday = props.data.report.activity.weekday
   const day = weekday.reduce((best, value, index) => (value.total > (weekday[best]?.total ?? 0) ? index : best), 0)
+  // «20–23 h»: whole hours are what people say; minutes appear only when present.
+  const [from = '', to = ''] = span.split('-').map((time) => time.replace(/:00$/, ''))
   return {
-    hour: `${String(hour).padStart(2, '0')}:00`,
-    range: `${String(hour).padStart(2, '0')}:00–${String((hour + 1) % 24).padStart(2, '0')}:00`,
-    day: t('chart.weekdaysLong').split(',')[day] ?? '',
+    window: t('report.kpi.hoursRange', { from, to }),
+    day: weekday[day]?.total ? (t('chart.weekdaysLong').split(',')[day] ?? '') : '',
   }
 })
 </script>
@@ -63,9 +64,9 @@ const peak = computed(() => {
         :sub="t('report.kpi.textOnly')"
       />
       <UiMetricCard
-        :label="t('report.kpi.peakHour')"
-        :value="peak?.hour ?? t('common.na')"
-        :sub="peak ? t('report.kpi.peakHint', { range: peak.range, day: peak.day }) : null"
+        :label="t('report.kpi.usually')"
+        :value="usually?.window ?? t('common.na')"
+        :sub="usually?.day ? t('report.kpi.usuallyHint', { day: usually.day }) : null"
       />
     </ReportKpis>
 
@@ -77,15 +78,14 @@ const peak = computed(() => {
     <ReportChanges :data="data" />
 
     <!-- Phones read the whole report as one long page; wider screens switch tabs. -->
+    <ReportNav v-model="tab" :options="tabs" :label="t('report.tabs.label')" :scroll="isPhone" />
     <template v-if="isPhone">
-      <OverviewTab :data="data" />
-      <RhythmTab :data="data" />
-      <WordsTab :data="data" />
-      <TimelineTab :data="data" />
+      <ReportPart id="overview" :title="tabs[0]!.label"><OverviewTab :data="data" /></ReportPart>
+      <ReportPart id="rhythm" :title="tabs[1]!.label"><RhythmTab :data="data" /></ReportPart>
+      <ReportPart id="words" :title="tabs[2]!.label"><WordsTab :data="data" /></ReportPart>
+      <ReportPart id="timeline" :title="tabs[3]!.label"><TimelineTab :data="data" /></ReportPart>
     </template>
     <template v-else>
-      <UiSegmentedControl v-model="tab" class="no-print" :options="tabs" :aria-label="t('report.tabs.label')" />
-
       <OverviewTab v-if="tab === 'overview'" :data="data" />
       <RhythmTab v-else-if="tab === 'rhythm'" :data="data" />
       <WordsTab v-else-if="tab === 'words'" :data="data" />

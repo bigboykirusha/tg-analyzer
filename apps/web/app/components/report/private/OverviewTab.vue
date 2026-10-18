@@ -88,24 +88,24 @@ const comparisons = computed(() =>
 
 <template>
   <div class="report-grid">
-    <ReportSection :label="t('report.balance.label')" :title="t('report.balance.title')">
+    <ReportSection :title="t('report.balance.title')">
       <div class="balance">
         <BalanceDonut :sent="report.totals.sent" :received="report.totals.received" />
         <div class="balance__legend">
           <div class="balance__row">
             <span><i class="dot dot--sent" />{{ t('report.you') }}</span>
-            <strong class="t-mono">{{ formatNumber(report.totals.sent) }}</strong>
+            <strong class="t-num">{{ formatNumber(report.totals.sent) }}</strong>
           </div>
           <div class="balance__row">
             <span><i class="dot dot--received" />{{ t('report.them') }}</span>
-            <strong class="t-mono">{{ formatNumber(report.totals.received) }}</strong>
+            <strong class="t-num">{{ formatNumber(report.totals.received) }}</strong>
           </div>
           <p v-if="balanceVerdict" class="t-small t-muted">{{ balanceVerdict }}</p>
         </div>
       </div>
     </ReportSection>
 
-    <ReportSection :label="t('report.compare.label')" :title="t('report.compare.title')">
+    <ReportSection :title="t('report.compare.title')">
       <ReportCompare v-if="comparisons.length" :rows="comparisons" />
       <p v-else class="t-small t-muted">{{ t('report.compare.empty') }}</p>
       <p v-if="responses.responseRate !== null" class="t-small t-muted">
@@ -113,12 +113,7 @@ const comparisons = computed(() =>
       </p>
     </ReportSection>
 
-    <ReportSection
-      :label="t('report.composition.label')"
-      :title="t('report.composition.title')"
-      :text="t('report.composition.text')"
-      wide
-    >
+    <ReportSection :title="t('report.composition.title')" :text="t('report.composition.text')" wide>
       <CompositionChart :composition="report.composition" />
     </ReportSection>
   </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { WorkspaceChat } from '../../stores/workspace'
-import { MoreHorizontal, RotateCw, Trash2 } from '../../lib/icons'
+import { MoreHorizontal, RotateCw, Trash2, User, Users } from '../../lib/icons'
 
 const props = defineProps<{
   chat: WorkspaceChat
@@ -62,12 +62,16 @@ function run(action: 'analyse' | 'delete') {
               :style="progress == null ? undefined : { width: `${Math.max(2, progress * 100)}%` }"
             />
           </span>
-          <span class="chat-row__percent t-mono">{{
+          <span class="chat-row__percent t-num">{{
             progress == null ? t('dashboard.analysingNow') : formatPercent(progress * 100)
           }}</span>
         </span>
         <span v-else-if="chat.report" class="chat-row__sub">
           <span>{{ reportMeta }}</span>
+        </span>
+        <span v-else class="chat-row__sub">
+          <component :is="chat.type === 'private' ? User : Users" class="chat-row__type-icon" aria-hidden="true" />
+          <span>{{ t(chat.type === 'private' ? 'chatType.private' : 'chatType.group') }}</span>
         </span>
       </span>
     </component>
@@ -106,7 +110,7 @@ function run(action: 'analyse' | 'delete') {
           </UiMenuItem>
         </UiPopoverMenu>
       </template>
-      <UiButton v-else variant="primary" size="sm" :loading="starting" :disabled="disabled" @click="emit('analyse')">
+      <UiButton v-else variant="soft" size="sm" :loading="starting" :disabled="disabled" @click="emit('analyse')">
         {{ t('dashboard.analyse') }}
       </UiButton>
     </div>
@@ -170,6 +174,10 @@ function run(action: 'analyse' | 'delete') {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.chat-row__type-icon {
+  --icon-size: 14px;
 }
 
 .chat-row__track {

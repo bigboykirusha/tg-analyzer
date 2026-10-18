@@ -54,8 +54,8 @@ const { formatPercent } = useI18n()
 }
 
 .meter__value {
-  font: var(--text-mono);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .meter__detail {

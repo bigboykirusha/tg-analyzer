@@ -38,7 +38,7 @@ const magnets = computed(() =>
 
 <template>
   <div class="report-grid">
-    <ReportSection wide :label="t('group.network')" :title="t('group.networkTitle')" :text="t('group.networkText')">
+    <ReportSection wide :title="t('group.networkTitle')" :text="t('group.networkText')">
       <ul v-if="pairs.length" class="pairs">
         <li v-for="pair in pairs" :key="pair.key" class="pair">
           <div class="pair__head">
@@ -55,15 +55,15 @@ const magnets = computed(() =>
       <p v-else class="t-small t-muted">{{ t('group.topPairsEmpty') }}</p>
     </ReportSection>
 
-    <ReportSection :label="t('group.network')" :title="t('group.starterLeaders')" :text="t('group.startersHint')">
+    <ReportSection :title="t('group.starterLeaders')" :text="t('group.startersHint')">
       <ReportMeters :meters="starters" />
     </ReportSection>
 
-    <ReportSection :label="t('group.network')" :title="t('group.replyMagnets')" :text="t('group.magnetHint')">
+    <ReportSection :title="t('group.replyMagnets')" :text="t('group.magnetHint')">
       <ul v-if="magnets.length" class="ranking">
         <li v-for="p in magnets" :key="p.id">
           <span>{{ nameOf(p) }}</span>
-          <strong class="t-mono">{{ formatDecimal(p.magnetScore ?? 0) }}</strong>
+          <strong class="t-num">{{ formatDecimal(p.magnetScore ?? 0) }}</strong>
         </li>
       </ul>
       <p v-else class="t-small t-muted">{{ t('report.relationship.empty') }}</p>

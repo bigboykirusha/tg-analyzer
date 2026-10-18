@@ -8,24 +8,19 @@ const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
 
 <template>
   <div class="report-grid">
-    <ReportSection wide :label="t('group.dynamics')" :title="t('group.dailyTitle')">
+    <ReportSection wide :title="t('group.dailyTitle')">
       <DailyVolumeChart :days="days" />
     </ReportSection>
-    <ReportSection
-      wide
-      :label="t('report.rhythm.heatmapLabel')"
-      :title="t('report.rhythm.heatmapTitle')"
-      :text="t('report.rhythm.heatmapText')"
-    >
+    <ReportSection wide :title="t('report.rhythm.heatmapTitle')" :text="t('report.rhythm.heatmapText')">
       <ActivityHeatmap :points="days" />
     </ReportSection>
-    <ReportSection :label="t('group.dynamics')" :title="t('group.monthlyTitle')">
+    <ReportSection :title="t('group.monthlyTitle')">
       <MonthlyChart :months="data.report.activity.monthly" />
     </ReportSection>
-    <ReportSection :label="t('report.rhythm.weekdaysLabel')" :title="t('report.rhythm.weekdaysTitle')">
+    <ReportSection :title="t('report.rhythm.weekdaysTitle')">
       <WeekdayChart :weekday="data.report.activity.weekday" />
     </ReportSection>
-    <ReportSection wide :label="t('report.rhythm.hoursLabel')" :title="t('group.hoursTitle')">
+    <ReportSection wide :title="t('group.hoursTitle')">
       <HourlyChart :hourly="data.report.activity.hourly" :received-label="t('group.others')" />
     </ReportSection>
   </div>

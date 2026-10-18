@@ -220,6 +220,10 @@
   --icon-md: 20px;
   --icon-lg: 24px;
   --topbar-height: 64px;
+  /* One content column for the header and every page; the gutter follows the screen. */
+  --page-max: 1040px;
+  --page-max-narrow: 720px;
+  --page-gutter: var(--space-8);
   --opacity-disabled: 0.4;
   --z-header: 20;
   --z-popover: 30;
@@ -263,4 +267,17 @@
   --story-gradient-3: linear-gradient(160deg, #0b1026 0%, #1f3fb8 100%);
   --story-gradient-4: linear-gradient(160deg, #00a88f 0%, #0a6cff 100%);
   --story-gradient-5: linear-gradient(160deg, #7b3cff 0%, #ff4fa3 100%);
+}
+
+/* After the scales above, so the narrower gutters win. */
+@media (max-width: 1024px) {
+  :root {
+    --page-gutter: var(--space-6);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --page-gutter: var(--space-4);
+  }
 }

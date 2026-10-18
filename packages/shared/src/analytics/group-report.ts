@@ -192,8 +192,10 @@ export function computeGroupReport(input: GroupReportInput): GroupReportDto {
     15,
   )
 
-  // Momentum: active members in the last 30 days vs. the 30 days before.
-  const today = clock(input.now).day
+  // Momentum: active members in the chat's last 30 days vs. the 30 days before.
+  // Measured from the last message, not from today: a report describes the chat
+  // as it was, so a group that went quiet still shows who carried it.
+  const today = clock(lastMessageAt).day
   const currentWindowStart = dayAtOffset(today, -29)
   const previousWindowStart = dayAtOffset(today, -59)
   const tomorrow = dayAtOffset(today, 1)
@@ -263,7 +265,7 @@ export function computeGroupReport(input: GroupReportInput): GroupReportDto {
             lastSeen: participant.lastSeen,
             messageCount: participant.messageCount,
           },
-          input.now,
+          lastMessageAt,
         ),
         messageCount: participant.messageCount,
         messageShare,

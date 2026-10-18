@@ -4,6 +4,8 @@ import type { DirectionalCountDto } from '@tg-analyzer/shared'
 const props = defineProps<{ hourly: DirectionalCountDto[]; receivedLabel?: string }>()
 const { t, formatNumber } = useI18n()
 const theme = useChartTheme()
+// Phones fit a label every six hours; wider screens every three.
+const isPhone = useMediaQuery('(max-width: 640px)')
 
 const sent = computed(() => props.hourly.map((hour) => chartCount(hour.sent)))
 const received = computed(() => props.hourly.map((hour) => chartCount(hour.received)))
@@ -26,7 +28,7 @@ const option = computed(() => {
     grid: { ...base.grid, bottom: 40 },
     xAxis: categoryAxis(
       props.hourly.map((_, hour) => `${hour}:00`),
-      { interval: 2 },
+      { interval: isPhone.value ? 5 : 2 },
     ),
     yAxis: valueAxis,
     series: [

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-defineProps<{ label?: string; title: string; text?: string; wide?: boolean }>()
+/** A report card: one title, an optional plain-language explanation, then the content. */
+defineProps<{ title: string; text?: string; wide?: boolean }>()
 </script>
 
 <template>
   <article class="card report-section" :class="{ 'report-section--wide': wide }">
     <header class="report-section__head">
       <div class="report-section__copy">
-        <span v-if="label" class="t-label">{{ label }}</span>
-        <h2 class="t-h2">{{ title }}</h2>
+        <h2 class="report-section__title">{{ title }}</h2>
         <p v-if="text" class="report-section__text">{{ text }}</p>
       </div>
       <div v-if="$slots.actions" class="report-section__actions no-print">
@@ -23,7 +23,7 @@ defineProps<{ label?: string; title: string; text?: string; wide?: boolean }>()
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-5);
   overflow: hidden;
 }
 
@@ -44,6 +44,13 @@ defineProps<{ label?: string; title: string; text?: string; wide?: boolean }>()
   gap: var(--space-1);
   min-width: 0;
   max-width: 560px;
+}
+
+.report-section__title {
+  font: var(--text-h2);
+  font-size: 20px;
+  line-height: 28px;
+  letter-spacing: -0.01em;
 }
 
 .report-section__text {

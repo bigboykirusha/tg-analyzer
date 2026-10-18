@@ -365,6 +365,8 @@ function changeNumber() {
 
 .login-panel {
   display: grid;
+  /* An explicit track: an implicit `auto` column grows with the content and overflows phones. */
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   place-items: center;
   padding: clamp(var(--space-8), 7vw, 96px);

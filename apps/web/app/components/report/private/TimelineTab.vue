@@ -43,11 +43,6 @@ const sessionFacts = computed<Fact[]>(() => [
     sub: t('report.sessions.averageSizeHint'),
   },
   {
-    key: 'longest',
-    label: t('report.sessions.longest'),
-    value: formatDuration(sessions.value.longestSessionDurationSec),
-  },
-  {
     key: 'night',
     label: t('report.sessions.night'),
     value: formatPercent(sessions.value.nightSessionsPct),
@@ -67,26 +62,17 @@ function range(session: SessionHighlightDto) {
 
 <template>
   <div class="report-grid">
-    <ReportSection
-      :label="t('report.timeline.label')"
-      :title="t('report.timeline.title')"
-      :text="t('report.timeline.text')"
-      wide
-    >
+    <ReportSection :title="t('report.timeline.title')" :text="t('report.timeline.text')" wide>
       <DailyVolumeChart :days="days" />
     </ReportSection>
 
-    <ReportSection :label="t('report.timeline.factsLabel')" :title="t('report.timeline.factsTitle')" wide>
+    <ReportSection :title="t('report.timeline.factsTitle')" wide>
       <ReportFacts :facts="summaryFacts" :columns="2" />
     </ReportSection>
 
-    <ReportSection
-      :label="t('report.sessions.label')"
-      :title="t('report.sessions.title')"
-      :text="t('report.sessions.text')"
-      wide
-    >
-      <ReportFacts :facts="sessionFacts" :columns="2" />
+    <ReportSection :title="t('report.sessions.title')" :text="t('report.sessions.text')" wide>
+      <!-- The longest conversation is a highlight below, with its dates. -->
+      <ReportFacts :facts="sessionFacts" :columns="3" />
       <div v-if="sessions.highlights.length" class="highlights">
         <div v-for="(session, index) in sessions.highlights" :key="session.startedAt" class="highlight">
           <span class="t-label">{{ highlightLabel(index) }}</span>
@@ -110,6 +96,8 @@ function range(session: SessionHighlightDto) {
 <style scoped>
 .highlights {
   display: grid;
+  /* One block of tiles with the facts above: the same 12px gap, not the section's 20px. */
+  margin-top: calc(var(--space-2) * -1);
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
 }

@@ -79,7 +79,7 @@ onMounted(load)
 </script>
 
 <template>
-  <UiPageContainer size="wide">
+  <UiPageContainer>
     <div v-if="data" class="stack stack--lg report-page">
       <ReportHeader
         :summary="data.summary"

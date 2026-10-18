@@ -26,20 +26,15 @@ const usually = computed(() => {
 
 <template>
   <div class="report-grid">
-    <ReportSection
-      :label="t('report.rhythm.heatmapLabel')"
-      :title="t('report.rhythm.heatmapTitle')"
-      :text="t('report.rhythm.heatmapText')"
-      wide
-    >
+    <ReportSection :title="t('report.rhythm.heatmapTitle')" :text="t('report.rhythm.heatmapText')" wide>
       <ActivityHeatmap :points="days" />
     </ReportSection>
 
-    <ReportSection :label="t('report.rhythm.dayPartsLabel')" :title="t('report.rhythm.dayPartsTitle')">
+    <ReportSection :title="t('report.rhythm.dayPartsTitle')">
       <DayPartsChart :distribution="data.derived.activityDistribution" />
     </ReportSection>
 
-    <ReportSection :label="t('report.rhythm.availabilityLabel')" :title="t('report.rhythm.availabilityTitle')">
+    <ReportSection :title="t('report.rhythm.availabilityTitle')">
       <div v-if="usually" class="usually">
         <p class="usually__main">{{ usually.main }}</p>
         <p v-if="usually.second" class="usually__more">{{ usually.second }}</p>
@@ -48,11 +43,11 @@ const usually = computed(() => {
       <p v-else class="t-small t-muted">{{ t('common.na') }}</p>
     </ReportSection>
 
-    <ReportSection :label="t('report.rhythm.weekdaysLabel')" :title="t('report.rhythm.weekdaysTitle')">
+    <ReportSection :title="t('report.rhythm.weekdaysTitle')">
       <WeekdayChart :weekday="report.activity.weekday" />
     </ReportSection>
 
-    <ReportSection :label="t('report.rhythm.hoursLabel')" :title="t('report.rhythm.hoursTitle')">
+    <ReportSection :title="t('report.rhythm.hoursTitle')">
       <HourlyChart :hourly="report.activity.hourly" />
     </ReportSection>
   </div>

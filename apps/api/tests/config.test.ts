@@ -49,3 +49,17 @@ test('fake Telegram mode works without API credentials outside production', () =
   })
   assert.equal(config.TELEGRAM_MODE, 'fake')
 })
+
+test('empty values from .env.example count as not set', () => {
+  const config = parseConfig({
+    ...base,
+    NODE_ENV: 'development',
+    TELEGRAM_MODE: 'fake',
+    TELEGRAM_API_ID: '',
+    TELEGRAM_API_HASH: '',
+    API_PORT: '',
+  })
+  assert.equal(config.TELEGRAM_MODE, 'fake')
+  assert.equal(config.API_PORT, 3001)
+  assert.throws(() => parseConfig({ ...base, TELEGRAM_API_ID: '', TELEGRAM_API_HASH: '' }), /Invalid configuration/)
+})

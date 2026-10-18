@@ -63,7 +63,7 @@ const connections = computed(() => {
 
 <template>
   <div class="members">
-    <ReportSection :label="t('group.members')" :title="t('group.membersTitle')" :text="t('group.membersText')">
+    <ReportSection :title="t('group.membersTitle')" :text="t('group.membersText')">
       <ul class="member-list">
         <li v-for="participant in ranked" :key="participant.id">
           <button
@@ -78,18 +78,13 @@ const connections = computed(() => {
               <span class="member__name">{{ nameOf(participant) }}</span>
               <span class="t-small t-muted">{{ t(`group.roles.${participant.role}`) }}</span>
             </span>
-            <span class="member__share t-mono">{{ formatPercent(participant.messageShare) }}</span>
+            <span class="member__share t-num">{{ formatPercent(participant.messageShare) }}</span>
           </button>
         </li>
       </ul>
     </ReportSection>
 
-    <ReportSection
-      v-if="selected"
-      :label="t('group.spotlight')"
-      :title="nameOf(selected)"
-      :text="window(selected) ?? undefined"
-    >
+    <ReportSection v-if="selected" :title="nameOf(selected)" :text="window(selected) ?? undefined">
       <div class="role">
         <span class="role__name">{{ t(`group.roles.${selected.role}`) }}</span>
         <p class="t-small t-muted">
@@ -112,7 +107,7 @@ const connections = computed(() => {
         <ul v-if="connections.length" class="connections">
           <li v-for="item in connections" :key="item.name">
             <span>{{ item.name }}</span>
-            <strong class="t-mono">{{ formatNumber(item.score) }}</strong>
+            <strong class="t-num">{{ formatNumber(item.score) }}</strong>
           </li>
         </ul>
         <p v-else class="t-small t-muted">{{ t('group.topPairsEmpty') }}</p>

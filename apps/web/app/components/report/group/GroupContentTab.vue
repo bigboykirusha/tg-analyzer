@@ -15,23 +15,18 @@ const signatures = computed(() =>
 
 <template>
   <div class="report-grid">
-    <ReportSection
-      :label="t('group.content')"
-      :title="t('group.sharedVocabulary')"
-      :text="t('group.sharedVocabularyHint')"
-    >
+    <ReportSection :title="t('group.sharedVocabulary')" :text="t('group.sharedVocabularyHint')">
       <WordChips :items="group.sharedVocabulary" :empty="t('group.noWords')" />
     </ReportSection>
     <ReportSection
       v-if="group.uniqueGroupWords.length"
-      :label="t('group.content')"
       :title="t('group.uniqueWords')"
       :text="t('group.uniqueWordsHint')"
     >
       <WordChips :items="group.uniqueGroupWords" :empty="t('group.noWords')" />
     </ReportSection>
 
-    <ReportSection v-if="signatures.length" wide :label="t('group.signatureWords')" :title="t('group.signatures')">
+    <ReportSection v-if="signatures.length" wide :title="t('group.signatures')">
       <div class="signatures">
         <div v-for="p in signatures" :key="p.id" class="signature">
           <strong>{{ nameOf(p) }}</strong>
@@ -40,7 +35,7 @@ const signatures = computed(() =>
       </div>
     </ReportSection>
 
-    <ReportSection wide :label="t('report.words.emojiLabel')" :title="t('group.topEmoji')">
+    <ReportSection wide :title="t('group.topEmoji')">
       <EmojiGrid :items="data.report.vocabulary.topEmoji.slice(0, 12)" />
     </ReportSection>
   </div>

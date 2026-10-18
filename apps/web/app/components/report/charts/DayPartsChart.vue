@@ -54,7 +54,7 @@ const hasActivity = computed(() => items.value.some((item) => item.value > 0))
     <div v-for="item in items" :key="item.key" class="distribution-row">
       <div class="distribution-head">
         <span class="t-small">{{ item.label }}</span>
-        <span class="t-mono">{{ formatNumber(item.value) }} · {{ Math.round(item.share) }}%</span>
+        <span class="t-num">{{ formatNumber(item.value) }} · {{ Math.round(item.share) }}%</span>
       </div>
       <div class="distribution-track" aria-hidden="true">
         <div class="distribution-fill" :style="{ width: `${item.share}%` }" />

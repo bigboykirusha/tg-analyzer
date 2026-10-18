@@ -72,7 +72,7 @@ const segments = computed(() => {
         <div class="composition-marker" :class="segment.className" />
         <div class="composition-copy">
           <span class="t-small">{{ segment.label }}</span>
-          <span class="t-small t-mono">{{ formatNumber(segment.value) }}</span>
+          <span class="t-small t-num">{{ formatNumber(segment.value) }}</span>
         </div>
       </div>
     </div>

@@ -37,7 +37,7 @@ const { formatNumber } = useI18n()
 
 .chip__count {
   color: var(--text-muted);
-  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
   font-weight: 500;
 }
