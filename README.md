@@ -37,6 +37,8 @@ pnpm build
 
 ## Документация
 
+- [Roadmap](docs/ROADMAP.md) — что сделано и что дальше
+- [UX-ревизия](docs/UX-REVIEW.md)
 - [Архитектура](docs/ARCHITECTURE.md)
 - [Переменные окружения](docs/ENVIRONMENT.md)
 - [Деплой](docs/DEPLOY.md)
