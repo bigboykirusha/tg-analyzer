@@ -141,7 +141,7 @@ const segments = computed(() => {
 }
 
 .segment-text {
-  background: var(--accent);
+  background: var(--you);
 }
 
 .segment-media {
@@ -157,6 +157,6 @@ const segments = computed(() => {
 }
 
 .segment-files {
-  background: var(--accent-2);
+  background: var(--them);
 }
 </style>

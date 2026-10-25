@@ -29,7 +29,7 @@ const sentShare = computed(() => (total.value ? (props.sent / total.value) * 100
   flex-shrink: 0;
   place-items: center;
   border-radius: 50%;
-  background: conic-gradient(var(--accent) 0 var(--sent-angle), var(--accent-2) var(--sent-angle) 360deg);
+  background: conic-gradient(var(--you) 0 var(--sent-angle), var(--them) var(--sent-angle) 360deg);
 }
 
 .donut--empty {

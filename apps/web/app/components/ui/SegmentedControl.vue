@@ -76,17 +76,16 @@ function handleKeydown(event: KeyboardEvent) {
 </template>
 
 <style scoped>
+/* Tabs set like a table of contents: a hairline rule and an ink underline that slides. */
 .segmented {
-  --gap: var(--space-1);
+  --gap: 0px;
   position: relative;
   display: flex;
   width: 100%;
   max-width: 100%;
   gap: var(--gap);
   overflow-x: auto;
-  padding: var(--gap);
-  border-radius: var(--radius-full);
-  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
   scrollbar-width: none;
 }
 
@@ -97,19 +96,18 @@ function handleKeydown(event: KeyboardEvent) {
 .segmented--inline {
   display: inline-flex;
   width: auto;
+  gap: var(--space-4);
 }
 
 .segment-indicator {
-  --slot: calc((100% - var(--gap) * (var(--count) + 1)) / var(--count));
+  --slot: calc(100% / var(--count));
   position: absolute;
   z-index: 0;
-  top: var(--gap);
-  bottom: var(--gap);
-  left: calc(var(--gap) + var(--index) * (var(--slot) + var(--gap)));
+  bottom: -1px;
+  left: calc(var(--index) * var(--slot));
   width: var(--slot);
-  border-radius: var(--radius-full);
-  background: var(--thumb);
-  box-shadow: var(--shadow-sm);
+  height: 2px;
+  background: var(--text);
   transition: left var(--transition-slow);
   pointer-events: none;
 }
@@ -119,10 +117,10 @@ function handleKeydown(event: KeyboardEvent) {
   z-index: 1;
   flex: 1 1 0;
   min-width: 0;
-  min-height: var(--control-sm);
-  padding: 0 var(--space-4);
+  min-height: var(--control-md);
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
@@ -131,11 +129,12 @@ function handleKeydown(event: KeyboardEvent) {
   white-space: nowrap;
   transition:
     color var(--transition-fast),
-    box-shadow var(--transition-fast);
+    background-color var(--transition-fast);
 }
 
 .segmented--inline .segment {
   flex: 0 0 auto;
+  padding-inline: 0;
 }
 
 @media (hover: hover) {
@@ -149,10 +148,9 @@ function handleKeydown(event: KeyboardEvent) {
   font-weight: 600;
 }
 
-/* Inline variant has no sliding thumb: the selected segment carries it. */
+/* Inline variant has no sliding bar: the selected segment carries it. */
 .segmented--inline .segment-active {
-  background: var(--thumb);
-  box-shadow: var(--shadow-sm);
+  box-shadow: inset 0 -2px 0 var(--text);
 }
 
 .segment:focus-visible {

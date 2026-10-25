@@ -110,7 +110,7 @@ const magnets = computed(() =>
 .pair__fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(90deg, var(--you), var(--them));
 }
 
 .ranking li {

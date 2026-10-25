@@ -187,7 +187,7 @@ function describe(cell: Cell) {
 }
 
 .heatmap__cell--4 {
-  background: var(--accent);
+  background: var(--text);
 }
 
 .heatmap__legend {

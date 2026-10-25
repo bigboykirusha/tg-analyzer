@@ -68,7 +68,7 @@ const classes = computed(() => [
   min-height: var(--control-md);
   padding: 0 var(--space-5);
   border: 1px solid transparent;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text);
   cursor: pointer;
@@ -105,10 +105,11 @@ const classes = computed(() => [
   width: 100%;
 }
 
-/* Icon-only: circle, width equals height. */
+/* Icon-only: a circle, width equals height. */
 .btn--icon-only {
   width: var(--control-md);
   padding: 0;
+  border-radius: var(--radius-full);
   --icon-size: var(--icon-md);
 }
 
@@ -144,13 +145,15 @@ const classes = computed(() => [
 
 .btn--secondary {
   border-color: var(--border-strong);
-  background: var(--surface);
+  background: transparent;
   color: var(--text);
 }
 
+/* Soft: a quiet action that repeats down a list («Анализ»). */
 .btn--soft {
-  background: var(--accent-subtle);
-  color: var(--accent-ink);
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
 }
 
 .btn--ghost {

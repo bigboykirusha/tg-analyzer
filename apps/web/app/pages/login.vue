@@ -2,6 +2,7 @@
 import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
 import { ApiClientError } from '../composables/useApi'
 import { AlertCircle } from '../lib/icons'
+import { sampleConversationDays } from '../lib/sample-conversation'
 
 definePageMeta({ middleware: ['guest'] })
 
@@ -39,6 +40,18 @@ function closePrivacy() {
 }
 
 useSeoMeta({ title: () => t('login.seoTitle'), description: () => t('seo.description') })
+
+const sampleDays = sampleConversationDays()
+/** The headline with its emphasised words set in italic. */
+const heroParts = computed(() => {
+  const title = t('login.heroTitle')
+  const em = t('login.heroTitleEm')
+  const at = title.indexOf(em)
+  return at < 0
+    ? { before: title, em: '', after: '' }
+    : { before: title.slice(0, at), em, after: title.slice(at + em.length) }
+})
+const promises = computed(() => [t('login.promise.texts'), t('login.promise.delete'), t('login.promise.noAi')])
 
 watch(step, () => {
   error.value = ''
@@ -140,79 +153,92 @@ function changeNumber() {
 
 <template>
   <main class="login-page">
-    <section class="login-shell">
-      <header class="login-header">
-        <div class="brand">
-          <span class="brand-symbol" aria-hidden="true"><i /><i /><i /></span>
-          <span>{{ t('login.title') }}</span>
-        </div>
-        <div class="login-controls"><UiLocaleSwitch /><UiThemeToggle /></div>
-      </header>
+    <header class="login-header">
+      <div class="brand">
+        <BrandMark :size="30" />
+        <span class="brand-name">{{ t('login.title') }}</span>
+      </div>
+      <div class="login-controls"><UiLocaleSwitch /><UiThemeToggle /></div>
+    </header>
 
-      <aside class="login-story">
-        <div class="story-copy">
-          <span class="story-kicker">{{ t('login.brandLabel') }}</span>
-          <h1>{{ t('login.heroTitle') }}</h1>
-          <p>{{ t('login.heroText') }}</p>
-        </div>
-      </aside>
+    <div class="login-shell">
+      <section class="login-story" aria-labelledby="login-hero">
+        <p class="t-label story-kicker">{{ t('login.brandLabel') }}</p>
+        <h1 id="login-hero" class="story-title">
+          {{ heroParts.before }}<em>{{ heroParts.em }}</em
+          >{{ heroParts.after }}
+        </h1>
+        <p class="story-text">{{ t('login.heroText') }}</p>
+
+        <figure class="story-figure">
+          <div class="story-legend" aria-hidden="true">
+            <span class="t-you">{{ t('login.legendYou') }}</span>
+            <span class="t-them">{{ t('login.legendThem') }}</span>
+          </div>
+          <Seismograph :days="sampleDays" :height="112" animate />
+          <figcaption class="story-caption">{{ t('login.sampleCaption') }}</figcaption>
+        </figure>
+
+        <ul class="story-promises">
+          <li v-for="(promise, index) in promises" :key="index">
+            <span class="story-promises__index t-num">{{ String(index + 1).padStart(2, '0') }}</span>
+            {{ promise }}
+          </li>
+        </ul>
+      </section>
 
       <section class="login-panel">
-        <div class="login-content">
-          <h1 class="mobile-hero">{{ t('login.mobileHeroTitle') }}</h1>
+        <div class="login-card">
+          <div class="login-progress" aria-hidden="true">
+            <span v-for="index in 3" :key="index" :class="{ active: stepIndex >= index - 1 }" />
+          </div>
 
-          <div class="login-card">
-            <div class="login-progress" aria-hidden="true">
-              <span v-for="index in 3" :key="index" :class="{ active: stepIndex >= index - 1 }" />
-            </div>
+          <div class="login-copy">
+            <h2>
+              <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
+              <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
+              <template v-else>{{ t('login.passwordTitle') }}</template>
+            </h2>
+            <p>
+              <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
+              <template v-else-if="step === 'code'">{{ codeDescription }}</template>
+              <template v-else>{{ t('login.passwordDescription') }}</template>
+            </p>
+          </div>
 
-            <div class="login-copy">
-              <h2>
-                <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
-                <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
-                <template v-else>{{ t('login.passwordTitle') }}</template>
-              </h2>
-              <p>
-                <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
-                <template v-else-if="step === 'code'">{{ codeDescription }}</template>
-                <template v-else>{{ t('login.passwordDescription') }}</template>
-              </p>
-            </div>
+          <Transition name="auth-step" mode="out-in">
+            <PhoneStep
+              v-if="step === 'phone'"
+              key="phone"
+              v-model:phone="phone"
+              :loading="loading"
+              @submit="requestCode"
+            />
+            <CodeStep
+              v-else-if="step === 'code'"
+              key="code"
+              v-model:code="code"
+              :loading="loading"
+              :resend-seconds="deliveryBlocked ? 0 : resendSeconds"
+              :resend-label="resendLabel"
+              :length="delivery?.length ?? 5"
+              @submit="submitCode"
+              @resend="requestResend"
+              @change-number="changeNumber"
+            />
+            <PasswordStep
+              v-else
+              key="password"
+              v-model:password="password"
+              :hint="passwordHint"
+              :loading="loading"
+              @submit="submitPassword"
+            />
+          </Transition>
 
-            <Transition name="auth-step" mode="out-in">
-              <PhoneStep
-                v-if="step === 'phone'"
-                key="phone"
-                v-model:phone="phone"
-                :loading="loading"
-                @submit="requestCode"
-              />
-              <CodeStep
-                v-else-if="step === 'code'"
-                key="code"
-                v-model:code="code"
-                :loading="loading"
-                :resend-seconds="deliveryBlocked ? 0 : resendSeconds"
-                :resend-label="resendLabel"
-                :length="delivery?.length ?? 5"
-                @submit="submitCode"
-                @resend="requestResend"
-                @change-number="changeNumber"
-              />
-              <PasswordStep
-                v-else
-                key="password"
-                v-model:password="password"
-                :hint="passwordHint"
-                :loading="loading"
-                @submit="submitPassword"
-              />
-            </Transition>
-
-            <div v-if="error" class="banner banner--danger" role="alert">
-              <AlertCircle aria-hidden="true" />
-              <p class="banner__text">{{ error }}</p>
-            </div>
+          <div v-if="error" class="banner banner--danger" role="alert">
+            <AlertCircle aria-hidden="true" />
+            <p class="banner__text">{{ error }}</p>
           </div>
 
           <p class="trust">
@@ -221,7 +247,7 @@ function changeNumber() {
           </p>
         </div>
       </section>
-    </section>
+    </div>
 
     <PrivacyDialog :open="privacyOpen" @close="closePrivacy" />
   </main>
@@ -229,32 +255,27 @@ function changeNumber() {
 
 <style scoped>
 .login-page {
-  min-height: 100vh;
   min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
 }
 
+/* Header and both columns share the page column, like every signed-in page. */
 .login-shell {
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr);
-  grid-template-rows: var(--topbar-height) minmax(0, 1fr);
+  width: 100%;
+  max-width: calc(var(--page-max) + 2 * var(--page-gutter));
+  margin: 0 auto;
+  padding-inline: var(--page-gutter);
 }
 
 .login-header {
-  position: relative;
-  z-index: 2;
-  grid-column: 1 / -1;
+  padding-inline: max(var(--page-gutter), calc((100% - var(--page-max)) / 2));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-6);
-  padding: 0 clamp(var(--space-8), 5vw, 72px);
+  min-height: var(--topbar-height);
   border-bottom: 1px solid var(--border);
-  background: var(--glass);
-  backdrop-filter: var(--glass-filter);
 }
 
 .brand,
@@ -264,141 +285,118 @@ function changeNumber() {
 }
 
 .brand {
-  gap: var(--space-2);
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 24px;
-  letter-spacing: -0.02em;
+  gap: var(--space-3);
+  font: 600 19px/24px var(--font-display);
+  letter-spacing: -0.015em;
 }
 
 .login-controls {
   gap: var(--space-1);
 }
 
-.brand-symbol {
+.login-shell {
   display: grid;
-  grid-template-columns: repeat(3, 4px);
-  align-items: end;
-  gap: 2px;
-  width: var(--control-sm);
-  height: var(--control-sm);
-  padding: var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.brand-symbol i {
-  width: 4px;
-  border-radius: var(--radius-full);
-  background: currentColor;
-}
-
-.brand-symbol i:nth-child(1) {
-  height: 8px;
-}
-.brand-symbol i:nth-child(2) {
-  height: 16px;
-}
-.brand-symbol i:nth-child(3) {
-  height: 11px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+  gap: clamp(var(--space-10), 6vw, 88px);
+  align-items: start;
+  padding-block: clamp(var(--space-10), 7vh, 88px) var(--space-16);
 }
 
 .login-story {
-  position: relative;
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--space-12);
-  padding: clamp(var(--space-10), 7vw, 96px);
-  overflow: hidden;
-  background: radial-gradient(circle at 12% 15%, var(--accent-subtle), transparent 30rem), var(--bg);
-}
-
-.login-story::after {
-  content: '';
-  position: absolute;
-  right: -160px;
-  bottom: -220px;
-  width: 480px;
-  aspect-ratio: 1;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  box-shadow: 0 0 0 64px var(--glow);
-  pointer-events: none;
-}
-
-.story-copy {
-  position: relative;
-  z-index: 1;
-}
-
-.story-copy {
   display: grid;
-  gap: var(--space-5);
-  max-width: 680px;
+  gap: var(--space-6);
+  min-width: 0;
 }
 
 .story-kicker {
   color: var(--accent-ink);
+}
+
+.story-title {
+  font: var(--text-display);
+  font-size: clamp(44px, 5vw, 64px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.story-title em {
+  color: var(--you-ink);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.story-text {
+  max-width: 34em;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 28px;
+}
+
+.story-figure {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-block: var(--space-4);
+  border-block: 1px solid var(--border);
+}
+
+.story-legend {
+  display: flex;
+  justify-content: space-between;
   font: var(--text-label);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.story-copy h1 {
-  max-width: 680px;
-  font-family: var(--font-sans);
-  font-size: clamp(48px, 5.7vw, 76px);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.04em;
+.story-caption {
+  color: var(--text-muted);
+  font: var(--text-small);
 }
 
-.story-copy p {
-  max-width: 560px;
+.story-promises {
+  display: grid;
+  gap: 0;
+  list-style: none;
+}
+
+.story-promises li {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font: var(--text-ui);
+}
+
+.story-promises__index {
   color: var(--text-muted);
-  font-size: clamp(17px, 1.6vw, 21px);
-  line-height: 1.55;
+  font: var(--text-label);
+  line-height: 20px;
 }
 
 .login-panel {
-  display: grid;
-  /* An explicit track: an implicit `auto` column grows with the content and overflows phones. */
-  grid-template-columns: minmax(0, 1fr);
+  position: sticky;
+  top: var(--space-8);
   min-width: 0;
-  place-items: center;
-  padding: clamp(var(--space-8), 7vw, 96px);
-  border-left: 1px solid var(--border);
-  background: radial-gradient(circle at 100% 0%, var(--accent-subtle), transparent 26rem), var(--surface);
-}
-
-.login-content {
-  width: min(100%, 460px);
-}
-.mobile-hero {
-  display: none;
 }
 
 .login-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: clamp(var(--space-6), 4vw, var(--space-10));
+  padding: clamp(var(--space-6), 3vw, var(--space-10));
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: var(--shadow);
 }
 
 /* One quiet line about privacy, with the policy one tap away. */
 .trust {
-  margin-top: var(--space-5);
-  padding: 0 var(--space-2);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
   color: var(--text-muted);
   font: var(--text-small);
-  text-align: center;
 }
 
 .trust__link {
@@ -410,10 +408,8 @@ function changeNumber() {
   color: var(--accent-ink);
   font: var(--text-small);
   font-weight: 600;
-}
-
-.trust__link:hover {
   text-decoration: underline;
+  text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
 
@@ -424,29 +420,29 @@ function changeNumber() {
 }
 
 .login-progress span {
-  height: 4px;
-  border-radius: var(--radius-full);
+  height: 3px;
   background: var(--surface-2);
   transition: background var(--transition-normal);
 }
 
 .login-progress span.active {
-  background: var(--accent);
+  background: var(--you);
 }
 
 .login-copy {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .login-copy h2 {
-  font: var(--text-h1);
-  letter-spacing: -0.02em;
+  font: var(--text-h2);
+  letter-spacing: -0.012em;
 }
 
 .login-copy p {
   color: var(--text-muted);
-  font: var(--text-body);
+  font: var(--text-ui);
+  font-weight: 400;
 }
 
 .auth-step-enter-active,
@@ -464,88 +460,56 @@ function changeNumber() {
   transform: translateY(-6px);
 }
 
-@media (max-width: 1040px) {
+@media (max-width: 900px) {
   .login-shell {
-    grid-template-columns: minmax(0, 1fr) minmax(400px, 0.9fr);
-  }
-}
-
-@media (max-width: 860px) {
-  .login-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: var(--topbar-height) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-10);
+    padding-block: var(--space-8) var(--space-12);
   }
 
-  .login-header {
-    padding: 0 var(--space-6);
-  }
+  /* On phones: the promise, then the form, then the picture and the details. */
   .login-story {
-    display: none;
+    display: contents;
+  }
+
+  .story-kicker,
+  .story-title,
+  .story-text {
+    margin-bottom: calc(var(--space-6) * -1);
   }
 
   .login-panel {
-    place-items: start center;
-    padding: clamp(var(--space-8), 8vw, var(--space-16)) var(--space-6) var(--space-12);
-    border-left: 0;
-    background: radial-gradient(circle at 100% 0%, var(--accent-subtle), transparent 24rem), var(--bg);
+    position: static;
   }
 
-  .login-content {
-    width: min(100%, 520px);
+  .story-figure {
+    order: 1;
+    margin-top: 0;
   }
-  .mobile-hero {
-    display: block;
-    margin-bottom: var(--space-8);
-    font-family: var(--font-sans);
-    font-size: clamp(32px, 8vw, 44px);
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
+
+  .story-promises {
+    order: 2;
   }
-  .login-card {
-    padding: var(--space-8);
+
+  .story-title {
+    font-size: clamp(34px, 9vw, 52px);
   }
 }
 
 @media (max-width: 520px) {
-  .login-shell {
-    grid-template-rows: var(--topbar-height) minmax(0, 1fr);
-  }
-  .login-header {
-    padding: 0 var(--space-5);
-    background: transparent;
-    backdrop-filter: none;
-  }
-  .login-panel {
-    padding: var(--space-8) var(--space-5) var(--space-10);
-  }
-  .mobile-hero {
-    margin-bottom: var(--space-8);
-    font-size: clamp(30px, 8.4vw, 38px);
-  }
   .login-card {
-    gap: var(--space-6);
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
+    padding: var(--space-5);
   }
-  .login-copy h2 {
-    font-size: 26px;
-    line-height: 32px;
+
+  .story-text {
+    font-size: 16px;
+    line-height: 26px;
   }
 }
 
 @media (max-width: 380px) {
-  .brand > span:last-child {
+  .brand-name {
     display: none;
-  }
-  .login-panel {
-    padding-inline: var(--space-4);
-  }
-  .mobile-hero {
-    font-size: 29px;
   }
 }
 </style>

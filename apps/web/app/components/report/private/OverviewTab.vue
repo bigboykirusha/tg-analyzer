@@ -157,11 +157,11 @@ const comparisons = computed(() =>
 }
 
 .dot--sent {
-  background: var(--accent);
+  background: var(--you);
 }
 
 .dot--received {
-  background: var(--accent-2);
+  background: var(--them);
 }
 
 @media (max-width: 480px) {

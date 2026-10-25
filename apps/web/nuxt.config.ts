@@ -49,7 +49,14 @@ export default defineNuxtConfig({
     { path: '~/components/ui', prefix: 'Ui' },
     { path: '~/components', pathPrefix: false },
   ],
-  css: ['~/assets/styles/tokens.css', '~/assets/styles/base.css'],
+  css: [
+    // Self-hosted variable fonts; unicode-range keeps downloads to the scripts a page uses.
+    '@fontsource-variable/onest/index.css',
+    '@fontsource-variable/literata/opsz.css',
+    '@fontsource-variable/literata/opsz-italic.css',
+    '~/assets/styles/tokens.css',
+    '~/assets/styles/base.css',
+  ],
   app: {
     head: {
       meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' }],

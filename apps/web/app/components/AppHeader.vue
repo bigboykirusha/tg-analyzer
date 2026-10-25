@@ -66,7 +66,7 @@ function signOut() {
   <header class="app-navigation" :class="{ 'app-navigation--report': isReport }">
     <div class="topbar glass-surface">
       <NuxtLink to="/dashboard" class="brand" aria-label="TG Analyzer">
-        <span class="brand-mark" aria-hidden="true"><i /><i /><i /></span>
+        <BrandMark :size="30" />
         <span class="brand-name">TG Analyzer</span>
       </NuxtLink>
       <nav v-if="navigation.items.value.length > 1" class="main-nav" :aria-label="t('nav.main')">
@@ -176,44 +176,12 @@ function signOut() {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   border-radius: var(--radius-sm);
   color: var(--text);
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 24px;
-  letter-spacing: -0.02em;
+  font: 600 19px/24px var(--font-display);
+  letter-spacing: -0.015em;
   white-space: nowrap;
-}
-
-.brand-mark {
-  display: inline-flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 2px;
-  width: var(--control-sm);
-  height: var(--control-sm);
-  padding: var(--space-2);
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-.brand-mark i {
-  width: 4px;
-  border-radius: var(--radius-full);
-  background: var(--on-accent);
-}
-
-.brand-mark i:nth-child(1) {
-  height: 8px;
-}
-
-.brand-mark i:nth-child(2) {
-  height: 16px;
-}
-
-.brand-mark i:nth-child(3) {
-  height: 11px;
 }
 
 .main-nav {

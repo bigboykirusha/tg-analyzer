@@ -60,9 +60,10 @@ function runAction(toast: ToastMessage) {
 </template>
 
 <style scoped>
+/* Bottom left: row actions live on the right edge, so toasts never cover them. */
 .toast-region {
   position: fixed;
-  right: var(--space-5);
+  left: var(--space-5);
   bottom: var(--space-5);
   z-index: var(--z-toast);
   display: flex;
@@ -79,10 +80,10 @@ function runAction(toast: ToastMessage) {
   gap: var(--space-3);
   min-width: 0;
   padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface-raised);
+  border-radius: var(--radius-md);
+  background: var(--inverse-surface);
   box-shadow: var(--shadow-overlay);
+  color: var(--on-inverse);
   pointer-events: auto;
 }
 
@@ -93,13 +94,14 @@ function runAction(toast: ToastMessage) {
 }
 
 .toast__title {
-  color: var(--text);
+  color: var(--on-inverse);
   font: var(--text-ui);
   font-weight: 600;
 }
 
 .toast__text {
-  color: var(--text-muted);
+  color: var(--on-inverse);
+  opacity: 0.72;
   font: var(--text-small);
   overflow-wrap: anywhere;
 }
@@ -111,20 +113,23 @@ function runAction(toast: ToastMessage) {
   border: 0;
   border-radius: var(--radius-xs);
   background: none;
-  color: var(--accent-ink);
+  color: var(--on-inverse);
   cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
   font: var(--text-small);
   font-weight: 600;
 }
 
 .toast__action:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
 }
 
 /* The 32px close button sits in the corner without growing the toast. */
-.toast__close {
+.toast .toast__close {
   margin: calc(var(--space-1) * -1.5) calc(var(--space-1) * -1.5) 0 0;
+  color: var(--on-inverse);
 }
 
 .toast-enter-active,

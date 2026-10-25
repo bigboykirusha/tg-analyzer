@@ -78,13 +78,13 @@ const { t } = useI18n()
 
 .compare__mine {
   flex: 0 0 auto;
-  background: var(--accent);
+  background: var(--you);
   transition: width var(--transition-slow);
 }
 
 .compare__theirs {
   flex: 1 1 auto;
-  background: var(--accent-2);
+  background: var(--them);
 }
 
 .compare__values {
@@ -108,10 +108,10 @@ const { t } = useI18n()
 }
 
 .dot--mine {
-  background: var(--accent);
+  background: var(--you);
 }
 
 .dot--theirs {
-  background: var(--accent-2);
+  background: var(--them);
 }
 </style>

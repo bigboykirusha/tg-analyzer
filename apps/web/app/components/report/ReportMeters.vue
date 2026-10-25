@@ -74,7 +74,7 @@ const { formatPercent } = useI18n()
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--accent);
+  background: var(--text);
   transition: width var(--transition-slow);
 }
 </style>

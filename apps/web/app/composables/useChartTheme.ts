@@ -8,7 +8,7 @@ function px(name: string, fallback: number) {
   return Number.parseFloat(cssVar(name)) || fallback
 }
 
-const FALLBACK_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", Manrope, system-ui, sans-serif'
+const FALLBACK_FONT = 'Onest Variable, system-ui, sans-serif'
 
 /**
  * ECharts settings derived from the CSS design tokens: transparent background,
@@ -23,15 +23,15 @@ export function useChartTheme() {
     void resolved.value
     const font = cssVar('--font-sans') || FALLBACK_FONT
     const colors = {
-      sent: cssVar('--accent'),
-      received: cssVar('--accent-2'),
+      sent: cssVar('--you'),
+      received: cssVar('--them'),
       text: cssVar('--text'),
       muted: cssVar('--text-muted'),
       border: cssVar('--border'),
       surface: cssVar('--surface'),
       raised: cssVar('--surface-raised'),
       warning: cssVar('--warning'),
-      heat: [cssVar('--surface-2'), cssVar('--heat-1'), cssVar('--heat-2'), cssVar('--heat-3'), cssVar('--accent')],
+      heat: [cssVar('--surface-2'), cssVar('--heat-1'), cssVar('--heat-2'), cssVar('--heat-3'), cssVar('--text')],
     }
     const space2 = px('--space-2', 8)
     const space3 = px('--space-3', 12)

@@ -23,10 +23,10 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   background-color: var(--bg);
-  background-image: radial-gradient(70% 380px at 85% 0, var(--glow), transparent);
   color: var(--text);
   font: var(--text-body);
   font-variant-numeric: tabular-nums;
+  font-optical-sizing: auto;
 }
 
 a {
@@ -60,8 +60,8 @@ button:disabled,
 }
 
 ::selection {
-  background: var(--accent-subtle);
-  color: var(--accent-ink);
+  background: var(--you-subtle);
+  color: var(--text);
 }
 
 ::-webkit-scrollbar {
@@ -107,17 +107,40 @@ svg.lucide {
 
 .t-display {
   font: var(--text-display);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
 }
 
 .t-h1 {
   font: var(--text-h1);
   letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 .t-h2 {
   font: var(--text-h2);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+
+/* Editorial emphasis inside a serif headline: «Мила <em>и вы</em>». */
+.t-display em,
+.t-h1 em,
+.t-h2 em {
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Big figures in reports: Literata lining numerals. */
+.t-figure {
+  font: var(--text-figure);
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.t-figure--sm {
+  font: var(--text-figure-sm);
 }
 
 .t-title {
@@ -148,8 +171,17 @@ svg.lucide {
 .t-label {
   color: var(--text-muted);
   font: var(--text-label);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+/* The two voices: text that names «you» or «them» carries their colour. */
+.t-you {
+  color: var(--you-ink);
+}
+
+.t-them {
+  color: var(--them-ink);
 }
 
 .t-mono {
@@ -169,20 +201,25 @@ svg.lucide {
 
 @media (max-width: 768px) {
   .t-h1 {
-    font-size: 26px;
-    line-height: 32px;
+    font-size: 30px;
+    line-height: 36px;
   }
 
   .t-h2 {
-    font-size: 20px;
+    font-size: 22px;
     line-height: 28px;
+  }
+
+  .t-figure {
+    font-size: 36px;
+    line-height: 40px;
   }
 }
 
 @media (max-width: 640px) {
   .t-display {
-    font-size: 28px;
-    line-height: 32px;
+    font-size: 38px;
+    line-height: 42px;
   }
 }
 
@@ -202,17 +239,19 @@ svg.lucide {
 
 /* ─── Surfaces ───────────────────────────────────────────────────────────── */
 
-.card,
+/* A card is a sheet of paper on the desk: a hairline edge, no glow, no blur. */
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: var(--space-8);
+}
+
+/* Sticky bars: the page colour, nearly opaque, with a slight blur for what scrolls under. */
 .glass-surface {
   border: 1px solid var(--glass-border);
   background: var(--glass);
-  box-shadow: var(--glass-inset), var(--shadow);
-  backdrop-filter: var(--glass-filter);
-}
-
-.card {
-  border-radius: var(--radius-xl);
-  padding: var(--space-8);
+  backdrop-filter: blur(var(--blur-sm));
 }
 
 @media (max-width: 768px) {
@@ -222,18 +261,17 @@ svg.lucide {
 }
 
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .card,
   .glass-surface {
-    background: var(--surface);
+    background: var(--bg);
     backdrop-filter: none;
   }
 }
 
-@supports not (backdrop-filter: blur(1px)) {
-  .card,
-  .glass-surface {
-    background: var(--surface);
-  }
+/* A hairline rule between parts of a page, like in print. */
+.rule {
+  height: 1px;
+  border: 0;
+  background: var(--border);
 }
 
 .panel {

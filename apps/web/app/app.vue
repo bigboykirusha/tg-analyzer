@@ -17,8 +17,8 @@ useHead({
   ],
   meta: [
     { charset: 'utf-8' },
-    { name: 'theme-color', content: '#0B0B0C', media: '(prefers-color-scheme: dark)' },
-    { name: 'theme-color', content: '#F5F5F7', media: '(prefers-color-scheme: light)' },
+    { name: 'theme-color', content: '#14130F', media: '(prefers-color-scheme: dark)' },
+    { name: 'theme-color', content: '#F2EEE5', media: '(prefers-color-scheme: light)' },
     { name: 'format-detection', content: 'telephone=no' },
   ],
 })

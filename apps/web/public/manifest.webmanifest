@@ -1,12 +1,12 @@
 {
   "name": "TG Analyzer",
   "short_name": "TG Analyzer",
-  "description": "Private Telegram chat analytics",
+  "description": "Ритм, баланс и слова вашей переписки — без хранения текстов",
   "lang": "ru",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#11131c",
-  "theme_color": "#11131c",
+  "background_color": "#f2eee5",
+  "theme_color": "#f2eee5",
   "icons": [
     {
       "src": "/logo.svg",
