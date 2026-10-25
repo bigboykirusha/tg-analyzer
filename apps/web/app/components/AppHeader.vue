@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import { Globe, LogOut, Moon, Sun, Trash2 } from '../lib/icons'
+import { Globe, LogOut, Moon, Settings, Sun } from '../lib/icons'
 
 const auth = useAuthStore()
 const route = useRoute()
-const { deleteAccount, logout } = useAuth()
+const { logout } = useAuth()
 const { t, locale, setLocale } = useI18n()
 const { resolved, setPreference } = useTheme()
-const toast = useToast()
-const errorMessage = useErrorMessage()
 
 const accountOpen = ref(false)
-const confirmDeleteOpen = ref(false)
-const deleting = ref(false)
 
 watch(
   () => route.path,
@@ -39,21 +35,9 @@ const displayName = computed(() => auth.user?.firstName || auth.user?.username |
 const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : ''))
 const isDark = computed(() => resolved.value === 'dark')
 
-function askDeleteAccount() {
+function openAccount() {
   accountOpen.value = false
-  confirmDeleteOpen.value = true
-}
-
-async function confirmDeleteAccount() {
-  deleting.value = true
-  try {
-    await deleteAccount()
-  } catch (error) {
-    toast.error(t('account.deleteError'), errorMessage(error))
-  } finally {
-    deleting.value = false
-    confirmDeleteOpen.value = false
-  }
+  void navigateTo('/account')
 }
 
 function signOut() {
@@ -131,25 +115,13 @@ function signOut() {
               {{ isDark ? t('theme.light') : t('theme.dark') }}
             </UiMenuItem>
           </div>
-          <UiMenuItem role="menuitem" :icon="LogOut" @click="signOut">{{ t('account.logout') }}</UiMenuItem>
+          <UiMenuItem role="menuitem" :icon="Settings" @click="openAccount">{{ t('account.settings') }}</UiMenuItem>
           <div class="menu-divider" role="separator" />
-          <UiMenuItem role="menuitem" :icon="Trash2" danger @click="askDeleteAccount">
-            {{ t('account.deleteMenu') }}
-          </UiMenuItem>
+          <UiMenuItem role="menuitem" :icon="LogOut" @click="signOut">{{ t('account.logout') }}</UiMenuItem>
         </UiPopoverMenu>
       </div>
     </div>
     <div id="mobile-report-toolbar" class="mobile-report-toolbar glass-surface" />
-    <UiConfirmDialog
-      :open="confirmDeleteOpen"
-      :title="t('account.deleteTitle')"
-      :description="t('account.deleteConfirm')"
-      :confirm-label="t('account.delete')"
-      variant="danger"
-      :loading="deleting"
-      @close="confirmDeleteOpen = false"
-      @confirm="confirmDeleteAccount"
-    />
   </header>
 </template>
 

@@ -50,6 +50,22 @@ test('logging out returns to the login page', async ({ page }) => {
   await page.waitForURL('**/login')
 })
 
+test('account settings disconnect Telegram but keep the account', async ({ page }) => {
+  await signIn(page)
+  await page.locator('.account-trigger').click()
+  await page.getByRole('menuitem', { name: 'Аккаунт и приватность' }).click()
+  await page.waitForURL('**/account')
+
+  const autoDisconnect = page.getByRole('switch', { name: /Отключаться после каждого анализа/ })
+  await autoDisconnect.check({ force: true })
+  await expect(autoDisconnect).toBeChecked()
+
+  await page.getByRole('button', { name: 'Отключить Telegram' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Отключить Telegram' }).click()
+  await expect(page.getByText('Не подключён')).toBeVisible()
+  expect(await noHorizontalScroll(page)).toBe(true)
+})
+
 test('the recap opens as stories with both names and saves a slide', async ({ page }) => {
   await signIn(page)
   const row = page.locator('.chat-row').filter({ hasText: 'Катя' })

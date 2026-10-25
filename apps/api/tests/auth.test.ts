@@ -257,6 +257,38 @@ test('timezone updates are validated', async () => {
   assert.equal(invalid.statusCode, 400)
 })
 
+test('profile toggles signing out after analysis and rejects empty updates', async () => {
+  const session = await login()
+  const headers = { ...session.headers, origin: ORIGIN }
+  const on = await app.inject({
+    method: 'PATCH',
+    url: '/api/v1/auth/profile',
+    headers,
+    payload: { disconnectAfterAnalysis: true },
+  })
+  assert.equal(on.json().user.disconnectAfterAnalysis, true)
+
+  const empty = await app.inject({ method: 'PATCH', url: '/api/v1/auth/profile', headers, payload: {} })
+  assert.equal(empty.statusCode, 400)
+})
+
+test('disconnecting Telegram forgets the session but keeps the account', async () => {
+  const session = await login()
+  const response = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/telegram/disconnect',
+    headers: { ...session.headers, origin: ORIGIN },
+  })
+  assert.equal(response.statusCode, 200)
+  assert.equal(response.json().user.telegramSessionActive, false)
+  assert.equal(await getTelegramSession(response.json().user.id), null)
+  const users = await pool.query('SELECT count(*)::int AS n FROM users')
+  assert.equal(users.rows[0].n, 1)
+
+  const dialogs = await app.inject({ url: '/api/v1/parse/dialogs', headers: session.headers })
+  assert.notEqual(dialogs.statusCode, 200)
+})
+
 test('deleting the account removes every row of the user', async () => {
   const session = await login()
   const response = await app.inject({

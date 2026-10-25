@@ -58,6 +58,8 @@ export interface UserDto {
   username: string | null
   firstName: string | null
   timezone: string
+  /** Sign out of Telegram after every analysis. */
+  disconnectAfterAnalysis: boolean
   telegramSessionActive: boolean
 }
 
@@ -120,7 +122,8 @@ export interface PasswordRequiredResponse {
 export type VerifyCodeResponse = AuthSuccessResponse | PasswordRequiredResponse
 
 export interface UpdateProfileBody {
-  timezone: string
+  timezone?: string
+  disconnectAfterAnalysis?: boolean
 }
 
 export interface UserResponse {
@@ -150,6 +153,8 @@ export interface DialogDto {
   title: string
   type: ChatType
   hasAvatar: boolean
+  /** ISO time of the newest message; null when unknown (or cached by an older version). */
+  lastMessageAt: string | null
 }
 
 export interface DialogsResponse {
@@ -501,6 +506,16 @@ export interface DerivedReportMetrics {
   availabilityProfile: AvailabilityProfileDto
 }
 
+/** Headline numbers of one chat, for overviews that compare chats. */
+export interface ReportHeadlineDto {
+  /** Share of messages you sent, 0–100. */
+  sentSharePct: number | null
+  /** Share of conversations you started, 0–100. */
+  iWriteFirstPct: number | null
+  medianMineSec: number | null
+  medianTheirsSec: number | null
+}
+
 export interface ReportSummaryDto {
   chatId: string
   title: string
@@ -509,6 +524,9 @@ export interface ReportSummaryDto {
   firstMessageAt: string | null
   lastMessageAt: string | null
   analyzedAt: string
+  /** Weekly sent/received counts for up to the last 26 weeks of the chat, oldest first. */
+  pulse: { sent: number; received: number }[]
+  headline: ReportHeadlineDto
 }
 
 export interface ReportsResponse {

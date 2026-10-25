@@ -20,7 +20,7 @@ import { parse } from '../../http/validation'
 import { ApiError, badRequest, notFound, unauthorized } from '../../lib/errors'
 import { telegram, TelegramFloodWaitError, TelegramLoginError, type TelegramUser } from '../../telegram'
 import type { TelegramLoginErrorReason } from '../../telegram/errors'
-import { deleteAccount } from '../account/account.service'
+import { deleteAccount, disconnectTelegram } from '../account/account.service'
 import { withUserTelegram } from '../account/telegram-access'
 import {
   deactivateTelegramSession,
@@ -28,7 +28,7 @@ import {
   logOutTelegramSession,
   saveTelegramSession,
 } from '../account/telegram-sessions'
-import { findUser, toUserDto, updateUserTimezone, upsertTelegramUser } from '../account/users'
+import { findUser, toUserDto, updateUserSettings, upsertTelegramUser } from '../account/users'
 import { requireAuth, userIdOf } from './guard'
 import { clearRefreshCookie, setRefreshCookie } from './cookies'
 import {
@@ -236,11 +236,26 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   )
 
   app.patch('/profile', { preHandler: requireAuth }, async (request): Promise<UserResponse> => {
-    const { timezone } = parse(updateProfileBodySchema, request.body)
-    const user = await updateUserTimezone(userIdOf(request), validTimeZone(timezone))
+    const { timezone, disconnectAfterAnalysis } = parse(updateProfileBodySchema, request.body)
+    const user = await updateUserSettings(userIdOf(request), {
+      ...(timezone === undefined ? {} : { timezone: validTimeZone(timezone) }),
+      ...(disconnectAfterAnalysis === undefined ? {} : { disconnectAfterAnalysis }),
+    })
     if (!user) throw notFound()
     return { user: await toUserDto(user) }
   })
+
+  app.post(
+    '/telegram/disconnect',
+    { config: SESSION_RATE_LIMIT, preHandler: requireAuth },
+    async (request): Promise<UserResponse> => {
+      const userId = userIdOf(request)
+      await disconnectTelegram(userId)
+      const user = await findUser(userId)
+      if (!user) throw notFound()
+      return { user: await toUserDto(user, false) }
+    },
+  )
 
   app.delete('/account', { preHandler: requireAuth }, async (request, reply): Promise<SuccessResponse> => {
     await deleteAccount(userIdOf(request))

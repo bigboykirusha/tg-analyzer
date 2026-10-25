@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { loadProfileAvatar } from '../lib/avatar-loader'
 
-withDefaults(defineProps<{ title: string | null | undefined; size?: 'sm' | 'md' }>(), { size: 'sm' })
+withDefaults(defineProps<{ title: string | null | undefined; size?: 'sm' | 'md' | 'lg' }>(), { size: 'sm' })
 
 const auth = useAuthStore()
 const src = ref<string | null>(null)

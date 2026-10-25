@@ -108,6 +108,21 @@ export async function cancelActiveJob(userId: string, jobId?: string) {
   return job ?? null
 }
 
+/** Cancels every queued and running analysis of the user; returns the cancelled job ids. */
+export async function cancelAllActiveJobs(userId: string) {
+  const jobs = await db
+    .update(schema.parseJobs)
+    .set({ status: 'cancelled', completedAt: new Date() })
+    .where(and(eq(schema.parseJobs.userId, userId), inArray(schema.parseJobs.status, ACTIVE)))
+    .returning({ id: schema.parseJobs.id })
+  return jobs.map((job) => job.id)
+}
+
+/** Whether the user has analyses that are still queued or running. */
+export async function hasActiveJobs(userId: string) {
+  return Boolean(await findActiveJob(userId))
+}
+
 export async function listJobs(userId: string, page: number, limit: number) {
   const where = eq(schema.parseJobs.userId, userId)
   const [items, [total]] = await Promise.all([

@@ -15,6 +15,8 @@ export interface WorkspaceChat {
   title: string
   type: ChatType
   hasAvatar: boolean
+  /** Missing in dialog lists cached by older versions. */
+  lastMessageAt?: string | null
   report: ReportSummaryDto | null
 }
 

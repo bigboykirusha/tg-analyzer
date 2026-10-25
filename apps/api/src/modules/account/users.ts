@@ -26,8 +26,11 @@ export function findUser(userId: string) {
   return db.query.users.findFirst({ where: eq(schema.users.id, userId) })
 }
 
-export async function updateUserTimezone(userId: string, timezone: string) {
-  const [row] = await db.update(schema.users).set({ timezone }).where(eq(schema.users.id, userId)).returning()
+export async function updateUserSettings(
+  userId: string,
+  settings: { timezone?: string; disconnectAfterAnalysis?: boolean },
+) {
+  const [row] = await db.update(schema.users).set(settings).where(eq(schema.users.id, userId)).returning()
   return row ?? null
 }
 
@@ -38,6 +41,7 @@ export async function toUserDto(user: UserRow, telegramSessionActive?: boolean):
     username: user.username,
     firstName: user.firstName,
     timezone: user.timezone,
+    disconnectAfterAnalysis: user.disconnectAfterAnalysis,
     telegramSessionActive: telegramSessionActive ?? (await hasActiveTelegramSession(user.id)),
   }
 }

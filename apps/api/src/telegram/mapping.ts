@@ -39,6 +39,7 @@ export function toTelegramDialog(dialog: Dialog): TelegramDialog {
     id,
     title: (dialog.title ?? dialog.name ?? '').trim() || id,
     type: dialogType(dialog),
+    lastMessageAt: dialog.date ? new Date(dialog.date * 1000).toISOString() : null,
     hasAvatar: Boolean(
       entity.photo && entity.photo.className !== 'ChatPhotoEmpty' && entity.photo.className !== 'UserProfilePhotoEmpty',
     ),

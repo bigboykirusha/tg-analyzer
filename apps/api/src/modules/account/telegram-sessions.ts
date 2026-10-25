@@ -42,6 +42,11 @@ export async function hasActiveTelegramSession(userId: string) {
   return Boolean(row)
 }
 
+/** Removes the stored authorization altogether, ciphertext included. */
+export async function deleteTelegramSession(userId: string) {
+  await db.delete(schema.telegramSessions).where(eq(schema.telegramSessions.userId, userId))
+}
+
 export async function deactivateTelegramSession(userId: string) {
   await db.update(schema.telegramSessions).set({ isActive: false }).where(eq(schema.telegramSessions.userId, userId))
 }

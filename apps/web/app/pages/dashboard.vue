@@ -53,6 +53,12 @@ const reports = computed(() =>
 const shownReports = computed(() =>
   showAllReports.value ? reports.value : reports.value.slice(0, REPORTS_PREVIEW),
 )
+/** At least two private reports: compare the people side by side. */
+const privateReports = computed(() =>
+  reports.value.filter((chat) => chat.type === 'private' && chat.report?.headline).map((chat) => chat.report!),
+)
+const avatars = computed(() => new Map(workspace.chats.map((chat) => [chat.id, chat.hasAvatar])))
+
 /** Newcomers see how it works until the first report exists. */
 const showIntro = computed(
   () => workspace.reportsState !== 'loading' && !reports.value.length && !analysis.isActive.value,
@@ -181,7 +187,17 @@ onMounted(() => {
         </div>
       </section>
 
-      <section v-else-if="showIntro" class="intro" aria-labelledby="intro-title">
+      <section v-if="privateReports.length >= 2" class="dashboard-section" aria-labelledby="people-title">
+        <div class="dashboard-section__head">
+          <div class="dashboard-section__copy">
+            <h2 id="people-title" class="dashboard-section__title">{{ t('people.title') }}</h2>
+            <p class="dashboard-section__hint">{{ t('people.hint') }}</p>
+          </div>
+        </div>
+        <PeopleTable :reports="privateReports" :avatars="avatars" />
+      </section>
+
+      <section v-if="!reports.length && showIntro" class="intro" aria-labelledby="intro-title">
         <h2 id="intro-title" class="dashboard-section__title">{{ t('dashboard.intro.title') }}</h2>
         <ol class="intro__steps">
           <li v-for="(step, index) in introSteps" :key="index" class="intro__step">

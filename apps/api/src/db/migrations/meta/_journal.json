@@ -99,6 +99,13 @@
       "when": 1792512000000,
       "tag": "0013_drop_people_overviews",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792598400000,
+      "tag": "0014_user_privacy_settings",
+      "breakpoints": true
     }
   ]
 }

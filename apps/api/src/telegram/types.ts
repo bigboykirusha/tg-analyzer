@@ -12,6 +12,8 @@ export interface TelegramDialog {
   title: string
   type: ChatType
   hasAvatar: boolean
+  /** ISO time of the newest message, when Telegram reports it. */
+  lastMessageAt: string | null
 }
 
 export interface HistoryPage {

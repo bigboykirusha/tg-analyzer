@@ -29,6 +29,12 @@ const reportMeta = computed(() => {
   return `${t('dashboard.analysed', { time: formatRelative(report.analyzedAt) })} · ${tc('common.messagesCount', report.totalMessages)}`
 })
 
+/** Chat type and how long ago the last message arrived. */
+const typeMeta = computed(() => {
+  const type = t(props.chat.type === 'private' ? 'chatType.private' : 'chatType.group')
+  return props.chat.lastMessageAt ? `${type} · ${formatRelative(props.chat.lastMessageAt)}` : type
+})
+
 function run(action: 'analyse' | 'delete') {
   menuOpen.value = false
   if (action === 'analyse') emit('analyse')
@@ -71,7 +77,7 @@ function run(action: 'analyse' | 'delete') {
         </span>
         <span v-else class="chat-row__sub">
           <component :is="chat.type === 'private' ? User : Users" class="chat-row__type-icon" aria-hidden="true" />
-          <span>{{ t(chat.type === 'private' ? 'chatType.private' : 'chatType.group') }}</span>
+          <span>{{ typeMeta }}</span>
         </span>
       </span>
     </component>

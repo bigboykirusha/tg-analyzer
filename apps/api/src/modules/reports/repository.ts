@@ -5,29 +5,47 @@ import {
   resolveGroupRole,
   type ChatReport,
   type ChatType,
+  type DatedActivityDto,
   type GroupReportDto,
   type ReportDto,
   type ReportSummaryDto,
   type ResponseStatsDto,
+  reportHeadline,
   snapshotReport,
+  weeklyPulse,
 } from '@tg-analyzer/shared'
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db, schema } from '../../db'
 import type { ChatReportRow } from '../../db/schema'
 
-const summaryColumns = {
-  tgChatId: true,
-  title: true,
-  chatType: true,
-  totalMessages: true,
-  firstMessageAt: true,
-  lastMessageAt: true,
-  analyzedAt: true,
-} as const
+const EMPTY_RESPONSES: ResponseStatsDto = {
+  medianMineSec: null,
+  medianTheirsSec: null,
+  mineSamples: 0,
+  theirsSamples: 0,
+  mineP25Sec: null,
+  mineP75Sec: null,
+  mineP95Sec: null,
+  theirsP25Sec: null,
+  theirsP75Sec: null,
+  theirsP95Sec: null,
+  responseRate: null,
+  iWriteFirstPct: null,
+}
 
-type SummaryRow = Pick<ChatReportRow, keyof typeof summaryColumns>
+type SummaryRow = Pick<
+  ChatReportRow,
+  'tgChatId' | 'title' | 'chatType' | 'totalMessages' | 'firstMessageAt' | 'lastMessageAt' | 'analyzedAt'
+>
+/** The parts of the stored report a summary reads; older reports may miss any of them. */
+type SummaryReportParts = {
+  daily: DatedActivityDto[] | null
+  totals: Partial<ChatReport['totals']> | null
+  responses: Partial<ResponseStatsDto> | null
+}
 
-function toSummary(row: SummaryRow): ReportSummaryDto {
+function toSummary(row: SummaryRow, parts: SummaryReportParts): ReportSummaryDto {
+  const totals = { messages: 0, sent: 0, received: 0, chars: 0, words: 0, textMessages: 0, ...parts.totals }
   return {
     chatId: String(row.tgChatId),
     title: row.title,
@@ -36,16 +54,31 @@ function toSummary(row: SummaryRow): ReportSummaryDto {
     firstMessageAt: row.firstMessageAt?.toISOString() ?? null,
     lastMessageAt: row.lastMessageAt?.toISOString() ?? null,
     analyzedAt: row.analyzedAt.toISOString(),
+    pulse: weeklyPulse(Array.isArray(parts.daily) ? parts.daily : []),
+    headline: reportHeadline({ totals, responses: { ...EMPTY_RESPONSES, ...parts.responses } }),
   }
 }
 
 export async function listReportSummaries(userId: string): Promise<ReportSummaryDto[]> {
-  const rows = await db.query.chatReports.findMany({
-    columns: summaryColumns,
-    where: eq(schema.chatReports.userId, userId),
-    orderBy: [desc(schema.chatReports.analyzedAt)],
-  })
-  return rows.map(toSummary)
+  const report = schema.chatReports.report
+  // Only the slices a summary needs leave the database, not the whole document.
+  const rows = await db
+    .select({
+      tgChatId: schema.chatReports.tgChatId,
+      title: schema.chatReports.title,
+      chatType: schema.chatReports.chatType,
+      totalMessages: schema.chatReports.totalMessages,
+      firstMessageAt: schema.chatReports.firstMessageAt,
+      lastMessageAt: schema.chatReports.lastMessageAt,
+      analyzedAt: schema.chatReports.analyzedAt,
+      daily: sql<DatedActivityDto[] | null>`${report}->'activity'->'daily'`,
+      totals: sql<Partial<ChatReport['totals']> | null>`${report}->'totals'`,
+      responses: sql<Partial<ResponseStatsDto> | null>`${report}->'responses'`,
+    })
+    .from(schema.chatReports)
+    .where(eq(schema.chatReports.userId, userId))
+    .orderBy(desc(schema.chatReports.analyzedAt))
+  return rows.map((row) => toSummary(row, row))
 }
 
 export async function getReport(userId: string, chatId: string): Promise<ReportDto | null> {
@@ -56,7 +89,7 @@ export async function getReport(userId: string, chatId: string): Promise<ReportD
 
   const report = normalizeReport(row.report, row)
   return {
-    summary: toSummary(row),
+    summary: toSummary(row, { daily: report.activity.daily, totals: report.totals, responses: report.responses }),
     report,
     derived: deriveReportMetrics(report),
     previous: row.previousSnapshot ?? null,
@@ -196,23 +229,7 @@ function normalizeReport(raw: ChatReport, row: ChatReportRow): ChatReport {
       topEmojiBySender: raw.vocabulary?.topEmojiBySender ?? directional,
       wordsPerMessage: raw.vocabulary?.wordsPerMessage ?? { mine: null, theirs: null },
     },
-    responses: withDefaults<ResponseStatsDto>(
-      {
-        medianMineSec: null,
-        medianTheirsSec: null,
-        mineSamples: 0,
-        theirsSamples: 0,
-        mineP25Sec: null,
-        mineP75Sec: null,
-        mineP95Sec: null,
-        theirsP25Sec: null,
-        theirsP75Sec: null,
-        theirsP95Sec: null,
-        responseRate: null,
-        iWriteFirstPct: null,
-      },
-      raw.responses,
-    ),
+    responses: withDefaults<ResponseStatsDto>(EMPTY_RESPONSES, raw.responses),
     facts: {
       activeDays: facts.activeDays ?? 0,
       longestGap: facts.longestGap ?? null,

@@ -27,6 +27,8 @@ interface FakeChatSpec {
   days: number
   /** Share of messages written by the current user. */
   myShare: number
+  /** Days since the last message, so the demo list has old and fresh chats. */
+  quietDays?: number
   members?: string[]
 }
 
@@ -34,11 +36,11 @@ interface FakeChatSpec {
 const CHATS: FakeChatSpec[] = [
   { id: '1001', title: 'Мила', type: 'private', messages: 4800, days: 420, myShare: 0.52 },
   { id: '1002', title: 'Мама', type: 'private', messages: 1900, days: 700, myShare: 0.38 },
-  { id: '1003', title: 'Артём Ковалёв', type: 'private', messages: 820, days: 260, myShare: 0.61 },
-  { id: '1004', title: 'Sofia Martins', type: 'private', messages: 350, days: 90, myShare: 0.47 },
+  { id: '1003', title: 'Артём Ковалёв', type: 'private', messages: 820, days: 260, myShare: 0.61, quietDays: 3 },
+  { id: '1004', title: 'Sofia Martins', type: 'private', messages: 350, days: 90, myShare: 0.47, quietDays: 12 },
   { id: '1005', title: 'Дима (работа)', type: 'private', messages: 2600, days: 300, myShare: 0.44 },
   { id: '1006', title: 'Катя', type: 'private', messages: 130, days: 40, myShare: 0.7 },
-  { id: '1007', title: 'Олег Смирнов', type: 'private', messages: 60, days: 600, myShare: 0.5 },
+  { id: '1007', title: 'Олег Смирнов', type: 'private', messages: 60, days: 600, myShare: 0.5, quietDays: 140 },
   { id: '1008', title: 'Анна Петрова', type: 'private', messages: 1200, days: 180, myShare: 0.55 },
   { id: '-1002001', title: 'Продуктовая команда', type: 'group', messages: 9000, days: 365, myShare: 0.12,
     members: ['Алексей', 'Мария', 'Игорь', 'Наташа', 'Сергей', 'Юля', 'Павел'] },
@@ -135,8 +137,14 @@ function userFromPhone(phone: string): TelegramUser {
   }
 }
 
-function toDialog(spec: FakeChatSpec): TelegramDialog {
-  return { id: spec.id, title: spec.title, type: spec.type, hasAvatar: false }
+function toDialog(spec: FakeChatSpec, lastMessage: MessageInput | undefined): TelegramDialog {
+  return {
+    id: spec.id,
+    title: spec.title,
+    type: spec.type,
+    hasAvatar: false,
+    lastMessageAt: lastMessage?.date.toISOString() ?? null,
+  }
 }
 
 export class FakeTelegramGateway implements TelegramGateway {
@@ -192,7 +200,8 @@ export class FakeTelegramGateway implements TelegramGateway {
     let messages = this.generated.get(spec.id)
     if (!messages) {
       // Anchor generation to the current day so reports always look recent.
-      messages = generateChat(spec, Math.floor(Date.now() / DAY_MS) * DAY_MS + 20 * HOUR_MS)
+      const today = Math.floor(Date.now() / DAY_MS) * DAY_MS + 20 * HOUR_MS
+      messages = generateChat(spec, today - (spec.quietDays ?? 0) * DAY_MS)
       this.generated.set(spec.id, messages)
     }
     return messages
@@ -200,10 +209,13 @@ export class FakeTelegramGateway implements TelegramGateway {
 
   private accountApi(): TelegramAccountApi {
     return {
-      listDialogs: async () => ({ dialogs: CHATS.map(toDialog), truncated: false }),
+      listDialogs: async () => ({
+        dialogs: CHATS.map((spec) => toDialog(spec, this.messagesOf(spec).at(-1))),
+        truncated: false,
+      }),
       getDialog: async (chatId) => {
         const spec = CHATS.find((chat) => chat.id === chatId)
-        return spec ? toDialog(spec) : null
+        return spec ? toDialog(spec, this.messagesOf(spec).at(-1)) : null
       },
       getHistory: async (chatId, offsetId): Promise<HistoryPage> => {
         const spec = CHATS.find((chat) => chat.id === chatId)

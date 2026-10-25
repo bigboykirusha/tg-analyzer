@@ -59,9 +59,12 @@ export const verifyPasswordBodySchema = z.object({
   password: z.string().min(1).max(1024),
 }) satisfies z.ZodType<VerifyPasswordBody, unknown>
 
-export const updateProfileBodySchema = z.object({
-  timezone: z.string().min(1).max(64),
-}) satisfies z.ZodType<UpdateProfileBody, unknown>
+export const updateProfileBodySchema = z
+  .object({
+    timezone: z.string().min(1).max(64).optional(),
+    disconnectAfterAnalysis: z.boolean().optional(),
+  })
+  .refine((body) => Object.keys(body).length > 0, 'Nothing to update') satisfies z.ZodType<UpdateProfileBody, unknown>
 
 export const startParseBodySchema = z.object({
   chatId: telegramIdSchema,
@@ -98,6 +101,7 @@ export interface ApiEndpointMap {
   'POST /api/v1/auth/ws-ticket': Endpoint<undefined, WsTicketResponse>
   'PATCH /api/v1/auth/profile': Endpoint<UpdateProfileBody, UserResponse>
   'DELETE /api/v1/auth/account': Endpoint<undefined, SuccessResponse>
+  'POST /api/v1/auth/telegram/disconnect': Endpoint<undefined, UserResponse>
   'GET /api/v1/auth/avatar': Endpoint<undefined, Blob>
 
   'GET /api/v1/parse/dialogs': Endpoint<undefined, DialogsResponse>

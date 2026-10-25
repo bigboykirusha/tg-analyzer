@@ -1,4 +1,4 @@
-import type { AuthSuccessResponse, VerifyCodeResponse } from '@tg-analyzer/shared'
+import type { AuthSuccessResponse, UpdateProfileBody, VerifyCodeResponse } from '@tg-analyzer/shared'
 import { api, refreshSession } from './useApi'
 
 let restoring: Promise<boolean> | null = null
@@ -57,6 +57,18 @@ export function useAuth() {
     await finishSession()
   }
 
+  async function updateSettings(body: UpdateProfileBody) {
+    const { user } = await api('PATCH /api/v1/auth/profile', { body })
+    auth.updateUser(user)
+  }
+
+  /** Signs the app out of Telegram; the account and its reports stay. */
+  async function disconnectTelegram() {
+    const { user } = await api('POST /api/v1/auth/telegram/disconnect')
+    void useAnalysis().refresh()
+    auth.updateUser(user)
+  }
+
   /** Keeps report bucketing aligned with the browser's time zone. */
   async function syncTimeZone() {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -65,5 +77,16 @@ export function useAuth() {
     auth.updateUser(user)
   }
 
-  return { restoreSession, sendCode, resendCode, verifyCode, verifyPassword, logout, deleteAccount, syncTimeZone }
+  return {
+    restoreSession,
+    sendCode,
+    resendCode,
+    verifyCode,
+    verifyPassword,
+    logout,
+    deleteAccount,
+    syncTimeZone,
+    updateSettings,
+    disconnectTelegram,
+  }
 }

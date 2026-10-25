@@ -8,7 +8,7 @@ const props = defineProps<{
   /** A fresh analysis of this chat is running or queued. */
   updating?: boolean
 }>()
-const { t, tc, formatRelative, formatDay } = useI18n()
+const { t, tc, formatRelative, formatDay, formatPercent } = useI18n()
 
 const period = computed(() => {
   const { firstMessageAt, lastMessageAt } = props.report
@@ -16,6 +16,11 @@ const period = computed(() => {
   return `${formatDay(firstMessageAt.slice(0, 10))} – ${formatDay(lastMessageAt.slice(0, 10))}`
 })
 const isGroup = computed(() => props.report.type === 'group')
+/** Summaries cached before pulses existed have none. */
+const pulse = computed(() =>
+  props.report.pulse?.some((week) => week.sent || week.received) ? props.report.pulse : null,
+)
+const share = computed(() => (isGroup.value ? null : (props.report.headline?.sentSharePct ?? null)))
 </script>
 
 <template>
@@ -28,8 +33,20 @@ const isGroup = computed(() => props.report.type === 'group')
       </span>
     </span>
     <span class="report-card__title">{{ report.title }}</span>
-    <span class="report-card__count">{{ tc('common.messagesCount', report.totalMessages) }}</span>
+    <span class="report-card__count">
+      {{ tc('common.messagesCount', report.totalMessages) }}
+      <template v-if="share !== null">
+        · <span class="t-you">{{ t('dashboard.yourShare', { share: formatPercent(share) }) }}</span>
+      </template>
+    </span>
     <span v-if="period" class="report-card__meta">{{ period }}</span>
+    <Seismograph
+      v-if="pulse"
+      class="report-card__pulse"
+      :days="pulse"
+      :height="40"
+      :label="t('dashboard.pulseLabel')"
+    />
     <span class="report-card__foot">
       <span v-if="updating" class="report-card__updating">
         <span class="report-card__spinner" aria-hidden="true" />{{ t('dashboard.analysingNow') }}
@@ -110,6 +127,11 @@ const isGroup = computed(() => props.report.type === 'group')
   font: var(--text-small);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.report-card__pulse {
+  width: 100%;
+  margin-top: var(--space-4);
 }
 
 .report-card__foot {
