@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ReportDto } from '@tg-analyzer/shared'
+import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 import { loadChatAvatar, loadProfileAvatar } from '../../lib/avatar-loader'
 import { ChevronLeft, ChevronRight, Download, Share2, X } from '../../lib/icons'
 import type { StoryPerson, StorySlideModel, StoryTile } from './StorySlide.vue'
@@ -27,6 +27,8 @@ const DAY_SECONDS = 86_400
 const MIN_REPLY_SAMPLES = 5
 /** Differences smaller than this ratio read as «about the same». */
 const EVEN_RATIO = 1.25
+/** The intro seismograph stays legible at story size with this many ticks at most. */
+const PULSE_TICKS = 90
 
 type ShareTarget = 'instagram' | 'telegram' | 'chat'
 type Persona = 'morning' | 'day' | 'evening' | 'night'
@@ -113,10 +115,21 @@ const slides = computed<StorySlideModel[]>(() => {
   const otherName = theirName.value
   const poster: StoryTile[] = [{ label: t('story.posterMessages'), value: formatNumber(totals.messages) }]
 
+  // The whole chat as the signature seismograph, bucketed to stay legible.
+  const daily = fillDailyGaps(activity.daily)
+  const size = Math.max(1, Math.ceil(daily.length / PULSE_TICKS))
+  const pulse: { sent: number; received: number }[] = []
+  daily.forEach((day, index) => {
+    if (index % size === 0) pulse.push({ sent: 0, received: 0 })
+    pulse[pulse.length - 1]!.sent += day.sent
+    pulse[pulse.length - 1]!.received += day.received
+  })
+
   // 1. Who: the two of you (or the group) and how long the chat goes back.
   list.push({
     key: 'intro',
-    theme: 3,
+    theme: 4,
+    pulse: pulse.length > 1 ? pulse : undefined,
     durationMs: 4500,
     intro: true,
     kicker: t('story.introKicker'),
@@ -164,7 +177,7 @@ const slides = computed<StorySlideModel[]>(() => {
     const most = Math.max(...voices.map((person) => person.messageShare), 1)
     list.push({
       key: 'voices',
-      theme: 4,
+      theme: 3,
       durationMs: 7000,
       kicker: t('story.voicesKicker'),
       title: nameOf(leader),
@@ -199,7 +212,7 @@ const slides = computed<StorySlideModel[]>(() => {
     }
     list.push({
       key: 'starts',
-      theme: 4,
+      theme: 3,
       durationMs: 7000,
       kicker: t('story.startsKicker'),
       title: even ? t('story.startsEvenTitle') : starter,
@@ -498,6 +511,7 @@ watch(open, (value) => {
         <section
           ref="panelRef"
           class="stories__frame"
+          :class="{ 'is-paper': current.theme === 4 }"
           role="dialog"
           aria-modal="true"
           :aria-label="t('story.title')"
@@ -622,6 +636,15 @@ watch(open, (value) => {
 </template>
 
 <style scoped>
+/* Controls over a paper slide switch to ink, like the slide itself. */
+.stories__frame.is-paper {
+  --story-ink: var(--story-paper-ink);
+  --story-ink-muted: var(--story-paper-ink-muted);
+  --story-track: var(--story-paper-track);
+  --story-chip: var(--story-paper-chip);
+  --story-backdrop: var(--story-gradient-4);
+}
+
 .stories {
   --frame-height: min(92dvh, 860px);
   position: fixed;

@@ -31,6 +31,8 @@ export interface StorySlideModel {
   kicker: string
   title: string
   sub?: string
+  /** The whole chat as a seismograph: yours up, theirs down (paper slides only). */
+  pulse?: { sent: number; received: number }[]
   /** A one-line verdict under the picture. */
   note?: string
   /** Share of the first person, 0–100, with a label for each side. */
@@ -92,9 +94,6 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
     :class="[`story-slide--${slide.theme}`, { 'is-still': still, 'has-chrome': chrome, 'is-poster': slide.poster }]"
   >
     <div class="story-slide__canvas">
-      <span class="story-slide__blob story-slide__blob--a" aria-hidden="true" />
-      <span class="story-slide__blob story-slide__blob--b" aria-hidden="true" />
-
       <header v-if="!slide.intro" class="story-slide__people">
         <span class="story-slide__faces">
           <span v-for="(person, position) in people" :key="position" class="story-slide__face">
@@ -119,6 +118,10 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
         <span class="story-slide__kicker">{{ slide.kicker }}</span>
         <strong class="story-slide__title" :class="`story-slide__title--${titleSize}`">{{ slide.title }}</strong>
         <p v-if="slide.sub" class="story-slide__sub">{{ slide.sub }}</p>
+
+        <div v-if="slide.pulse" class="story-slide__pulse" aria-hidden="true">
+          <Seismograph :days="slide.pulse" :height="1" />
+        </div>
 
         <div v-if="slide.split" class="story-slide__split">
           <div class="story-slide__split-bar">
@@ -211,7 +214,19 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 .story-slide--4 {
+  --story-ink: var(--story-paper-ink);
+  --story-ink-muted: var(--story-paper-ink-muted);
+  --story-track: var(--story-paper-track);
+  --story-chip: var(--story-paper-chip);
+  --story-backdrop: var(--story-gradient-4);
+
   background: var(--story-gradient-4);
+}
+
+/* On paper the lit bars and your share keep the vermilion of the app. */
+.story-slide--4 .story-slide__bars span.is-lit,
+.story-slide--4 .story-slide__split-bar span {
+  background: var(--story-paper-accent);
 }
 
 .story-slide--5 {
@@ -232,28 +247,6 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   padding-bottom: 22cqmin;
 }
 
-/* Soft light shapes give depth without competing with the numbers. */
-.story-slide__blob {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--story-glow) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.story-slide__blob--a {
-  top: -20cqmin;
-  right: -25cqmin;
-  width: 90cqmin;
-  height: 90cqmin;
-}
-
-.story-slide__blob--b {
-  bottom: -30cqmin;
-  left: -30cqmin;
-  width: 110cqmin;
-  height: 110cqmin;
-}
-
 /* ─── Who: avatars and the names ─────────────────────────────────────────── */
 .story-slide__people {
   position: relative;
@@ -270,6 +263,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-slide__face {
   display: inline-grid;
+  font-family: var(--font-display);
   flex: 0 0 auto;
   place-items: center;
   width: 12cqmin;
@@ -280,6 +274,10 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   background: var(--story-chip);
   font-size: 5cqmin;
   font-weight: 700;
+}
+
+.story-slide--4 .story-slide__face {
+  border-color: var(--story-gradient-4);
 }
 
 .story-slide__face + .story-slide__face {
@@ -352,8 +350,10 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 .story-slide__title {
-  font-weight: 800;
-  letter-spacing: -0.04em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variant-numeric: lining-nums;
+  letter-spacing: -0.03em;
   overflow-wrap: break-word;
 }
 
@@ -379,6 +379,20 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   font-size: 4.6cqmin;
   font-weight: 500;
   line-height: 1.3;
+}
+
+/* Sized in cq units by its box; the chart fills it. */
+.story-slide__pulse {
+  height: 22cqmin;
+  margin-top: 2cqmin;
+}
+
+.story-slide__pulse :deep(.seismograph) {
+  height: 100% !important;
+}
+
+.story-slide__pulse :deep(line) {
+  stroke-width: 0.9cqmin;
 }
 
 .story-slide__split {
@@ -419,9 +433,8 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   display: grid;
   gap: 1cqmin;
   min-width: 0;
-  padding: 4cqmin;
-  border-radius: 4cqmin;
-  background: var(--story-chip);
+  padding-top: 2.6cqmin;
+  border-top: 0.4cqmin solid var(--story-track);
 }
 
 .story-slide__duel-side span {
@@ -434,8 +447,9 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 .story-slide__duel-side strong {
+  font-family: var(--font-display);
   font-size: 9cqmin;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
@@ -558,27 +572,29 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-slide__note {
   margin: 0;
-  font-size: 5cqmin;
-  font-weight: 700;
-  line-height: 1.25;
+  font-family: var(--font-display);
+  font-size: 5.2cqmin;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.3;
 }
 
-/* Facts as a two-column grid of glass tiles. */
+/* Facts as a two-column ledger. */
 .story-slide__tiles {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2.2cqmin;
+  gap: 3cqmin 5cqmin;
   margin-top: 1cqmin;
 }
 
+/* Ruled like a ledger, the way facts look in the app. */
 .story-slide__tile {
   display: grid;
   align-content: start;
   gap: 1cqmin;
   min-width: 0;
-  padding: 3cqmin 3.4cqmin;
-  border-radius: 3.4cqmin;
-  background: var(--story-chip);
+  padding-top: 2.4cqmin;
+  border-top: 0.4cqmin solid var(--story-track);
 }
 
 .story-slide__tile span {
@@ -589,8 +605,9 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 .story-slide__tile strong {
-  font-size: 5cqmin;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: 5.4cqmin;
+  font-weight: 600;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
   overflow-wrap: break-word;
@@ -598,12 +615,11 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 /* The summary poster: everything is a tile, numbers carry the slide. */
 .is-poster .story-slide__tiles {
-  gap: 2.6cqmin;
+  gap: 3.4cqmin 5cqmin;
 }
 
 .is-poster .story-slide__tile {
-  min-height: 21cqmin;
-  padding: 3.6cqmin 4cqmin;
+  min-height: 17cqmin;
 }
 
 .is-poster .story-slide__tile strong {
@@ -621,9 +637,10 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   align-items: center;
   align-self: flex-start;
   gap: 1.6cqmin;
-  font-size: 3.8cqmin;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: 4cqmin;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 .story-slide__brand-mark {
@@ -634,7 +651,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   width: 6.4cqmin;
   height: 6.4cqmin;
   padding: 1.4cqmin;
-  border-radius: 50%;
+  border-radius: 1.2cqmin;
   background: var(--story-ink);
 }
 
