@@ -39,6 +39,8 @@ const momentum = computed(() =>
   />
 
   <div v-else class="stack stack--lg">
+    <ReportPulse :data="data" />
+
     <ReportKpis>
       <UiMetricCard
         :label="t('report.kpi.messages')"

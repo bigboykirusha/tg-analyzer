@@ -38,7 +38,8 @@ const range = computed(() => {
   const last = days.value[days.value.length - 1]?.date
   return first && last ? { from: formatMonth(first.slice(0, 7)), to: formatMonth(last.slice(0, 7)) } : null
 })
-const partner = computed(() => props.data.summary.title)
+/** In a group the lower ticks are everyone else together. */
+const partner = computed(() => (props.data.report.group ? t('report.pulse.others') : props.data.summary.title))
 </script>
 
 <template>
@@ -54,7 +55,7 @@ const partner = computed(() => props.data.summary.title)
       :days="ticks"
       :height="isPhone ? 88 : 128"
       animate
-      :label="t('report.pulse.label', { name: partner })"
+      :label="data.report.group ? t('report.pulse.labelGroup') : t('report.pulse.label', { name: partner })"
     />
     <div v-if="range" class="pulse__axis t-small">
       <span>{{ range.from }}</span>

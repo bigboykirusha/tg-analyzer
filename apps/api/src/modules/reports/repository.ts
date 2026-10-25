@@ -193,6 +193,10 @@ function normalizeGroup(group: GroupReportDto | null | undefined, asOf: number):
       topicSignature: withoutStopWords(participant.topicSignature ?? []),
     })),
     topPairs: Array.isArray(group.topPairs) ? group.topPairs : [],
+    replyMap:
+      group.replyMap && Array.isArray(group.replyMap.participantIds) && Array.isArray(group.replyMap.cells)
+        ? group.replyMap
+        : null,
     health: completeHealth
       ? { ...health, retentionRate: health.retentionRate ?? null, momentum: health.momentum ?? 'unknown' }
       : null,

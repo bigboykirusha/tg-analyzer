@@ -106,6 +106,14 @@ test('group reports track participants, replies and pairs', () => {
   assert.equal(report.group.participants[0]?.starterCount, 1)
   assert.equal(report.group.participants[0]?.repliesReceived, 1)
   assert.equal(report.group.topPairs[0]?.directReplies, 1)
+  // Sam answered Alex once; Alex never answered Sam.
+  assert.deepEqual(report.group.replyMap, {
+    participantIds: ['u1', 'u2'],
+    cells: [
+      [0, 0],
+      [1, 0],
+    ],
+  })
   assert.equal(report.relationship, null)
   assert.equal(report.health, null)
   assert.equal(report.responses.iWriteFirstPct, null)

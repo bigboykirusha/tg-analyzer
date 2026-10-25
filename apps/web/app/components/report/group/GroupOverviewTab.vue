@@ -18,6 +18,7 @@ const shareMeters = computed<Meter[]>(() => {
     key: participant.id,
     label: nameOf(participant),
     value: participant.messageShare,
+    self: participant.isSelf,
     detail: t('group.memberMeta', {
       role: t(`group.roles.${participant.role}`),
       messages: formatNumber(participant.messageCount),
@@ -135,18 +136,23 @@ const insights = computed(() => {
 </template>
 
 <style scoped>
+/* Ruled lines, like «Главное» in private reports. */
 .insights {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--space-8);
   list-style: none;
 }
 
 .insights li {
-  padding: var(--space-4);
-  border: 1px solid var(--accent-border);
-  border-radius: var(--radius-md);
-  background: var(--accent-subtle);
-  font-size: 0.9375rem;
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--border);
+  font: var(--text-body);
+}
+
+@media (max-width: 640px) {
+  .insights {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

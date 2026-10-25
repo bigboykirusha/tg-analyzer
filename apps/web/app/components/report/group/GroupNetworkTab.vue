@@ -38,6 +38,10 @@ const magnets = computed(() =>
 
 <template>
   <div class="report-grid">
+    <ReportSection wide :title="t('group.replyMapTitle')" :text="t('group.replyMapText')">
+      <ReplyMap :group="group" />
+    </ReportSection>
+
     <ReportSection wide :title="t('group.networkTitle')" :text="t('group.networkText')">
       <ul v-if="pairs.length" class="pairs">
         <li v-for="pair in pairs" :key="pair.key" class="pair">
@@ -110,7 +114,7 @@ const magnets = computed(() =>
 .pair__fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--you), var(--them));
+  background: var(--text);
 }
 
 .ranking li {

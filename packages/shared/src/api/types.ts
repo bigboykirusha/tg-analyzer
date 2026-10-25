@@ -454,9 +454,21 @@ export interface GroupHealthDto {
   peakSimultaneity: number
 }
 
+/**
+ * Who answers whom among the most active members. `cells[row][column]` counts
+ * the replies of `participantIds[row]` to `participantIds[column]`: explicit
+ * replies plus messages written within minutes after the other person.
+ */
+export interface GroupReplyMapDto {
+  participantIds: string[]
+  cells: number[][]
+}
+
 export interface GroupReportDto {
   participants: GroupParticipantDto[]
   topPairs: GroupPairDto[]
+  /** Null for reports made before the map existed. */
+  replyMap: GroupReplyMapDto | null
   health: GroupHealthDto | null
   sharedVocabulary: TopItemDto[]
   uniqueGroupWords: TopItemDto[]

@@ -5,6 +5,8 @@ export interface Meter {
   /** 0–100, or null when unknown. */
   value: number | null
   detail?: string
+  /** The bar of the current user, drawn in «your» colour. */
+  self?: boolean
 }
 
 defineProps<{ meters: Meter[] }>()
@@ -13,7 +15,7 @@ const { formatPercent } = useI18n()
 
 <template>
   <div class="meters">
-    <div v-for="meter in meters" :key="meter.key" class="meter">
+    <div v-for="meter in meters" :key="meter.key" class="meter" :class="{ 'meter--self': meter.self }">
       <div class="meter__heading">
         <span>{{ meter.label }}</span>
         <strong class="meter__value">{{ formatPercent(meter.value) }}</strong>
@@ -56,6 +58,15 @@ const { formatPercent } = useI18n()
 .meter__value {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.meter--self .meter__track span {
+  background: var(--you);
+}
+
+.meter--self .meter__heading span {
+  color: var(--you-ink);
+  font-weight: 600;
 }
 
 .meter__detail {
