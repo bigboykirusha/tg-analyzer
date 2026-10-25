@@ -337,6 +337,42 @@ export interface SessionStatsDto {
   highlights: SessionHighlightDto[]
 }
 
+/** Habits of a one-to-one chat, counted per side. */
+export interface ConversationHabitsDto {
+  /** Writing again after 30+ minutes without an answer. */
+  doubleTexts: { mine: number; theirs: number }
+  /** Share of conversations in which you sent the last message, 0–100. */
+  lastWordMinePct: number | null
+  /** Messages with a question mark. */
+  questions: { mine: number; theirs: number }
+  /** Messages that laugh: «ахах», «хаха», «lol», 😂, 🤣. */
+  laughs: { mine: number; theirs: number }
+}
+
+export type InsightId =
+  | 'initiative'
+  | 'reply_speed'
+  | 'share'
+  | 'double_texts'
+  | 'last_word'
+  | 'questions'
+  | 'laughs'
+  | 'night_talks'
+  | 'long_silence'
+  | 'streak'
+  | 'trend'
+
+/**
+ * One notable pattern of a chat, ready to be put into words by the client.
+ * `side` names who the sentence is about; `strength` (0–1) ranks insights.
+ */
+export interface InsightDto {
+  id: InsightId
+  side: 'mine' | 'theirs' | 'both'
+  strength: number
+  values: Record<string, number | string>
+}
+
 export type Trend = 'growing' | 'stable' | 'fading' | 'unknown'
 
 export interface ConversationFactsDto {
@@ -496,6 +532,8 @@ export interface ChatReport {
   sessions: SessionStatsDto
   relationship: RelationshipScoreDto | null
   health: HealthScoreDto | null
+  /** Private chats only; null for groups and for reports made before habits were counted. */
+  habits: ConversationHabitsDto | null
   group: GroupReportDto | null
 }
 
@@ -504,6 +542,8 @@ export interface DerivedReportMetrics {
   activityDistribution: ActivityDistributionDto
   compositionStats: CompositionStatsDto
   availabilityProfile: AvailabilityProfileDto
+  /** Strongest patterns first; empty for groups. */
+  insights: InsightDto[]
 }
 
 /** Headline numbers of one chat, for overviews that compare chats. */

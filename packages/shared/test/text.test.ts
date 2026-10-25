@@ -1,19 +1,53 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { analyzeMessageText, createZonedClock } from '../src'
+import { analyzeMessageText, createZonedClock, withoutStopWords } from '../src'
 
 test('text analysis counts raw words, filters stop words and normalises tokens', () => {
   assert.deepEqual(analyzeMessageText('HELLO hello the привет и данных Ёлка', new Set(['the', 'и'])), {
     wordCount: 6,
     keywords: ['hello', 'hello', 'привет', 'данных', 'елка'],
     emojis: [],
+    asks: false,
+    laughs: false,
   })
+})
+
+test('laughter and questions are noticed, and laughter never becomes a top word', () => {
+  const laugh = analyzeMessageText('ахахах ну ты даёшь, правда?')
+  assert.equal(laugh.laughs, true)
+  assert.equal(laugh.asks, true)
+  assert.ok(!laugh.keywords.includes('ахахах'))
+  assert.equal(analyzeMessageText('хахаха').laughs, true)
+  assert.equal(analyzeMessageText('lol').laughs, true)
+  assert.equal(analyzeMessageText('ну 😂').laughs, true)
+  // «аха» means «I see», and «хата» is a flat, not a laugh.
+  assert.equal(analyzeMessageText('аха понял').laughs, false)
+  assert.equal(analyzeMessageText('хата').laughs, false)
+})
+
+test('filler words stay out of the vocabulary, also in reports stored earlier', () => {
+  const { keywords } = analyzeMessageText('Короче щас типа будет кино, наверное, вообщем ок')
+  assert.deepEqual(keywords, ['кино'])
+  assert.deepEqual(
+    withoutStopWords([
+      { value: 'короче', count: 9 },
+      { value: 'ахаха', count: 5 },
+      { value: 'кино', count: 3 },
+    ]),
+    [{ value: 'кино', count: 3 }],
+  )
 })
 
 test('joined emoji count as one grapheme and text symbols are not emoji', () => {
   assert.deepEqual(analyzeMessageText('семья 👨‍👩‍👧‍👦 ❤️ 👍🏽 #️⃣', new Set()).emojis, ['👨‍👩‍👧‍👦', '❤️', '👍🏽', '#️⃣'])
-  assert.deepEqual(analyzeMessageText('a 12 _- -- ... ♥︎ ☆', new Set()), { wordCount: 3, keywords: [], emojis: [] })
-  assert.deepEqual(analyzeMessageText(''), { wordCount: 0, keywords: [], emojis: [] })
+  assert.deepEqual(analyzeMessageText('a 12 _- -- ... ♥︎ ☆', new Set()), {
+    wordCount: 3,
+    keywords: [],
+    emojis: [],
+    asks: false,
+    laughs: false,
+  })
+  assert.deepEqual(analyzeMessageText(''), { wordCount: 0, keywords: [], emojis: [], asks: false, laughs: false })
 })
 
 test('zoned clock resolves local parts across offsets and DST', () => {

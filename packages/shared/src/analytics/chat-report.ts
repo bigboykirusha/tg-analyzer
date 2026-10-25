@@ -10,7 +10,14 @@ import { computeGroupReport, type GroupParticipantInput, type GroupTimelineEntry
 import { addDirectional, createDirectionalCount, increment, roundTo, topItems } from './primitives'
 import { computeHealthScore, computeRelationshipScore } from './relationship'
 import { analyzeMessageText } from './text'
-import { computeGaps, computeResponseStats, computeSessionStats, emptySessionStats } from './timeline'
+import {
+  computeGaps,
+  computeHabits,
+  computeResponseStats,
+  computeSessionStats,
+  emptySessionStats,
+  sessionSplit,
+} from './timeline'
 import { createZonedClock, resolveTimeZone, type ZonedClock } from './zoned-clock'
 
 /** Metadata of one Telegram message. The text is analysed in memory and never stored. */
@@ -71,6 +78,8 @@ export class ChatReportBuilder {
   private emoji = createDirectionalCounts()
   private textMessagesBySide = { mine: 0, theirs: 0 }
   private wordsBySide = { mine: 0, theirs: 0 }
+  private questions = { mine: 0, theirs: 0 }
+  private laughs = { mine: 0, theirs: 0 }
   private participants = new Map<string, ParticipantState>()
   private timeline: TimelineEntry[] = []
   private messageSenders = new Map<string, string>()
@@ -124,7 +133,10 @@ export class ChatReportBuilder {
 
     const analysis = analyzeMessageText(text)
     this.totals.words += analysis.wordCount
-    this.wordsBySide[outgoing ? 'mine' : 'theirs'] += analysis.wordCount
+    const side = outgoing ? 'mine' : 'theirs'
+    this.wordsBySide[side] += analysis.wordCount
+    if (analysis.asks) this.questions[side] += 1
+    if (analysis.laughs) this.laughs[side] += 1
     participant.wordCount += analysis.wordCount
     for (const word of analysis.keywords) {
       recordDirectional(this.words, word, outgoing)
@@ -145,8 +157,14 @@ export class ChatReportBuilder {
     const maxStreak = computeMaxStreak(this.daily.keys())
     const trend = computeTrend(monthly, this.clock(now.getTime()).month)
     const gaps = computeGaps(timeline)
-    const sessions = computeSessionStats(timeline, countActiveWeeks(this.daily.keys()), (ts) => this.clock(ts).hour)
-    const responses = computeResponseStats(isPrivate ? timeline : [])
+    const split = sessionSplit((ts) => this.clock(ts).day)
+    const sessions = computeSessionStats(
+      timeline,
+      countActiveWeeks(this.daily.keys()),
+      (ts) => this.clock(ts).hour,
+      split,
+    )
+    const responses = computeResponseStats(isPrivate ? timeline : [], split)
 
     const relationship = isPrivate
       ? computeRelationshipScore({
@@ -210,6 +228,7 @@ export class ChatReportBuilder {
         relationship,
         trend,
       }),
+      habits: isPrivate ? computeHabits(timeline, { questions: this.questions, laughs: this.laughs }, split) : null,
       group:
         chatType === 'group'
           ? computeGroupReport({

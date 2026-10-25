@@ -1,6 +1,14 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { computeGaps, computeResponseRate, computeResponseStats, computeSessionStats, createZonedClock } from '../src'
+import {
+  computeGaps,
+  computeHabits,
+  computeResponseRate,
+  computeResponseStats,
+  computeSessionStats,
+  createZonedClock,
+  sessionSplit,
+} from '../src'
 
 const at = (iso: string, outgoing: boolean) => ({ ts: Date.parse(iso), outgoing })
 const HOUR = 60 * 60 * 1000
@@ -101,4 +109,40 @@ test('sessions tolerate unsorted input and invalid timestamps', () => {
   assert.equal(result.totalSessions, 1)
   assert.equal(result.averageSessionDurationSec, 300)
   assert.deepEqual(timeline, snapshot)
+})
+
+test('a silence across local midnight ends the session even under eight hours', () => {
+  const moscow = createZonedClock('Europe/Moscow')
+  const split = sessionSplit((ts) => moscow(ts).day)
+  // 23:00 and 03:30 the next night in Moscow: 4.5 hours apart, two talks.
+  const overnight = [at('2026-01-01T20:00:00Z', true), at('2026-01-02T00:30:00Z', false)]
+  assert.equal(computeSessionStats(overnight, 1, utcHour, split).totalSessions, 2)
+  assert.equal(computeSessionStats(overnight, 1, utcHour).totalSessions, 1)
+  // A short pause across midnight keeps one talk going.
+  const lateChat = [at('2026-01-01T20:50:00Z', true), at('2026-01-01T21:20:00Z', false)]
+  assert.equal(computeSessionStats(lateChat, 1, utcHour, split).totalSessions, 1)
+})
+
+test('habits count double texts and who has the last word', () => {
+  const start = Date.parse('2026-01-01T10:00:00Z')
+  const MIN = 60_000
+  const habits = computeHabits(
+    [
+      { ts: start, outgoing: true },
+      { ts: start + 45 * MIN, outgoing: true }, // no answer for 45 minutes: a double text
+      { ts: start + 46 * MIN, outgoing: false },
+      { ts: start + 47 * MIN, outgoing: false }, // a quick follow-up is not
+      { ts: start + 20 * HOUR, outgoing: true },
+      { ts: start + 20 * HOUR + MIN, outgoing: false },
+      { ts: start + 20 * HOUR + 2 * MIN, outgoing: true },
+    ],
+    { questions: { mine: 2, theirs: 1 }, laughs: { mine: 0, theirs: 3 } },
+  )
+  assert.deepEqual(habits.doubleTexts, { mine: 1, theirs: 0 })
+  assert.equal(habits.lastWordMinePct, 50)
+  assert.deepEqual(habits.laughs, { mine: 0, theirs: 3 })
+  assert.equal(
+    computeHabits([], { questions: { mine: 0, theirs: 0 }, laughs: { mine: 0, theirs: 0 } }).lastWordMinePct,
+    null,
+  )
 })

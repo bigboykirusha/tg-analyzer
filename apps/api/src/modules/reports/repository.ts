@@ -13,6 +13,8 @@ import {
   reportHeadline,
   snapshotReport,
   weeklyPulse,
+  withoutStopWords,
+  type DirectionalTopItemsDto,
 } from '@tg-analyzer/shared'
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db, schema } from '../../db'
@@ -187,14 +189,20 @@ function normalizeGroup(group: GroupReportDto | null | undefined, asOf: number):
       role: ['anchor', 'contributor', 'newcomer', 'inactive'].includes(participant.role)
         ? participant.role
         : resolveGroupRole(participant, asOf),
+      topWords: withoutStopWords(participant.topWords ?? []),
+      topicSignature: withoutStopWords(participant.topicSignature ?? []),
     })),
     topPairs: Array.isArray(group.topPairs) ? group.topPairs : [],
     health: completeHealth
       ? { ...health, retentionRate: health.retentionRate ?? null, momentum: health.momentum ?? 'unknown' }
       : null,
-    sharedVocabulary: Array.isArray(group.sharedVocabulary) ? group.sharedVocabulary : [],
-    uniqueGroupWords: Array.isArray(group.uniqueGroupWords) ? group.uniqueGroupWords : [],
+    sharedVocabulary: withoutStopWords(Array.isArray(group.sharedVocabulary) ? group.sharedVocabulary : []),
+    uniqueGroupWords: withoutStopWords(Array.isArray(group.uniqueGroupWords) ? group.uniqueGroupWords : []),
   }
+}
+
+function cleanDirectional(items: DirectionalTopItemsDto): DirectionalTopItemsDto {
+  return { mine: withoutStopWords(items.mine ?? []), theirs: withoutStopWords(items.theirs ?? []) }
 }
 
 function withDefaults<T extends object>(defaults: T, value: Partial<T> | null | undefined): T {
@@ -221,10 +229,11 @@ function normalizeReport(raw: ChatReport, row: ChatReportRow): ChatReport {
       daily: Array.isArray(raw.activity?.daily) ? raw.activity.daily : [],
       monthly: Array.isArray(raw.activity?.monthly) ? raw.activity.monthly : [],
     },
+    // Stop words are filtered again on read, so older reports benefit from a longer list.
     vocabulary: {
-      topWords: raw.vocabulary?.topWords ?? [],
-      topWordsBySender: raw.vocabulary?.topWordsBySender ?? directional,
-      uniqueWordsBySender: raw.vocabulary?.uniqueWordsBySender ?? directional,
+      topWords: withoutStopWords(raw.vocabulary?.topWords ?? []),
+      topWordsBySender: cleanDirectional(raw.vocabulary?.topWordsBySender ?? directional),
+      uniqueWordsBySender: cleanDirectional(raw.vocabulary?.uniqueWordsBySender ?? directional),
       topEmoji: raw.vocabulary?.topEmoji ?? [],
       topEmojiBySender: raw.vocabulary?.topEmojiBySender ?? directional,
       wordsPerMessage: raw.vocabulary?.wordsPerMessage ?? { mine: null, theirs: null },
@@ -242,6 +251,7 @@ function normalizeReport(raw: ChatReport, row: ChatReportRow): ChatReport {
     sessions: { ...sessions, highlights: Array.isArray(sessions.highlights) ? sessions.highlights : [] },
     relationship: raw.relationship ?? null,
     health: raw.health ?? null,
+    habits: raw.habits ?? null,
     group: normalizeGroup(raw.group, row.analyzedAt.getTime()),
   }
 }

@@ -1,4 +1,4 @@
-import type { GapDto, ResponseStatsDto, SessionStatsDto } from '../api/types'
+import type { ConversationHabitsDto, GapDto, ResponseStatsDto, SessionStatsDto } from '../api/types'
 import { calculateAverage, calculateMedian, calculatePercentile, roundTo } from './primitives'
 
 export interface TimelinePoint {
@@ -9,8 +9,29 @@ export interface TimelinePoint {
 
 /** Silence longer than this starts a new conversation session. */
 export const SESSION_BOUNDARY_MS = 8 * 60 * 60 * 1000
+/** A shorter silence also ends the session when it crosses local midnight. */
+export const OVERNIGHT_BOUNDARY_MS = 3 * 60 * 60 * 1000
 const LONG_SILENCE_MS = 30 * 24 * 60 * 60 * 1000
 const MAX_SILENCES = 8
+/** Writing again after this long without an answer counts as a double text. */
+export const DOUBLE_TEXT_MS = 30 * 60 * 1000
+
+/** Decides whether the message at `next` starts a new session after `previous`. */
+export type SessionSplit = (previous: number, next: number) => boolean
+
+/**
+ * Sessions end after 8 hours of silence, or after 3 hours when the silence
+ * spans local midnight: a late evening chat and the next morning are two talks.
+ */
+export function sessionSplit(localDay?: (ts: number) => string): SessionSplit {
+  return (previous, next) => {
+    const gap = next - previous
+    if (gap > SESSION_BOUNDARY_MS) return true
+    return Boolean(localDay) && gap > OVERNIGHT_BOUNDARY_MS && localDay!(previous) !== localDay!(next)
+  }
+}
+
+const bySilence = sessionSplit()
 
 /** Returns the points in chronological order without invalid timestamps; sorts only when needed. */
 export function chronological<T extends TimelinePoint>(timeline: readonly T[]): readonly T[] {
@@ -66,7 +87,10 @@ export function computeGaps(timeline: readonly TimelinePoint[]): GapAnalytics {
  * Reply tempo of a one-to-one conversation. A reply is the first message after
  * the other side spoke, within the same session.
  */
-export function computeResponseStats(timeline: readonly TimelinePoint[]): ResponseStatsDto {
+export function computeResponseStats(
+  timeline: readonly TimelinePoint[],
+  split: SessionSplit = bySilence,
+): ResponseStatsDto {
   const ordered = chronological(timeline)
   const mine: number[] = []
   const theirs: number[] = []
@@ -78,7 +102,7 @@ export function computeResponseStats(timeline: readonly TimelinePoint[]): Respon
     const previous = ordered[index - 1]
     const gapMs = previous ? current.ts - previous.ts : Number.POSITIVE_INFINITY
 
-    if (gapMs > SESSION_BOUNDARY_MS) {
+    if (!previous || split(previous.ts, current.ts)) {
       sessions += 1
       if (current.outgoing) sessionsStartedByMe += 1
       continue
@@ -99,13 +123,16 @@ export function computeResponseStats(timeline: readonly TimelinePoint[]): Respon
     theirsP25Sec: calculatePercentile(theirs, 25),
     theirsP75Sec: calculatePercentile(theirs, 75),
     theirsP95Sec: calculatePercentile(theirs, 95),
-    responseRate: computeResponseRate(ordered),
+    responseRate: computeResponseRate(ordered, split),
     iWriteFirstPct: sessions ? Math.round((sessionsStartedByMe / sessions) * 100) : null,
   }
 }
 
 /** Share (0–100) of conversational turns that got an answer within the same session. */
-export function computeResponseRate(timeline: readonly TimelinePoint[]): number | null {
+export function computeResponseRate(
+  timeline: readonly TimelinePoint[],
+  split: SessionSplit = bySilence,
+): number | null {
   const ordered = chronological(timeline)
   if (ordered.length < 2) return null
 
@@ -115,7 +142,7 @@ export function computeResponseRate(timeline: readonly TimelinePoint[]): number 
 
   for (let index = 1; index < ordered.length; index += 1) {
     const current = ordered[index]!
-    if (current.ts - ordered[index - 1]!.ts > SESSION_BOUNDARY_MS) {
+    if (split(ordered[index - 1]!.ts, current.ts)) {
       turns += 1
       turnOutgoing = current.outgoing
     } else if (current.outgoing !== turnOutgoing) {
@@ -159,7 +186,7 @@ export function computeSessionStats(
   timeline: readonly TimelinePoint[],
   activeWeeks: number,
   localHour: (ts: number) => number,
-  boundaryMs = SESSION_BOUNDARY_MS,
+  split: SessionSplit = bySilence,
 ): SessionStatsDto {
   const ordered = chronological(timeline)
   if (!ordered.length) return emptySessionStats()
@@ -167,7 +194,7 @@ export function computeSessionStats(
   const sessions: Session[] = []
   let current: Session | null = null
   for (const point of ordered) {
-    if (!current || point.ts - current.endedAt > boundaryMs) {
+    if (!current || split(current.endedAt, point.ts)) {
       current = { startedAt: point.ts, endedAt: point.ts, totalMessages: 0, sentMessages: 0, receivedMessages: 0 }
       sessions.push(current)
     }
@@ -210,5 +237,42 @@ function toHighlight(session: Session) {
     totalMessages: session.totalMessages,
     sentMessages: session.sentMessages,
     receivedMessages: session.receivedMessages,
+  }
+}
+
+/**
+ * Habits of a one-to-one conversation that need the message order: double
+ * texts and who has the last word. Questions and laughs are counted per
+ * message by the report builder and passed in.
+ */
+export function computeHabits(
+  timeline: readonly TimelinePoint[],
+  counts: Pick<ConversationHabitsDto, 'questions' | 'laughs'>,
+  split: SessionSplit = bySilence,
+): ConversationHabitsDto {
+  const ordered = chronological(timeline)
+  const doubleTexts = { mine: 0, theirs: 0 }
+  let sessions = 0
+  let lastWordMine = 0
+
+  for (let index = 0; index < ordered.length; index += 1) {
+    const current = ordered[index]!
+    const previous = ordered[index - 1]
+    const next = ordered[index + 1]
+    if (!next || split(current.ts, next.ts)) {
+      sessions += 1
+      if (current.outgoing) lastWordMine += 1
+    }
+    if (!previous || split(previous.ts, current.ts)) continue
+    if (previous.outgoing === current.outgoing && current.ts - previous.ts >= DOUBLE_TEXT_MS) {
+      doubleTexts[current.outgoing ? 'mine' : 'theirs'] += 1
+    }
+  }
+
+  return {
+    doubleTexts,
+    lastWordMinePct: sessions ? Math.round((lastWordMine / sessions) * 100) : null,
+    questions: { ...counts.questions },
+    laughs: { ...counts.laughs },
   }
 }

@@ -75,6 +75,8 @@ const usually = computed(() => {
       <p class="banner__text">{{ t('report.lowData') }}</p>
     </div>
 
+    <ReportInsights :data="data" />
+
     <ReportChanges :data="data" />
 
     <!-- Phones read the whole report as one long page; wider screens switch tabs. -->

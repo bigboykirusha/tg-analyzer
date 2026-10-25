@@ -1,5 +1,6 @@
 import type { ChatReport, DerivedReportMetrics, ReportSnapshotDto } from '../api/types'
 import { computeActivityDistribution, computeAvailabilityProfile, computeCompositionStats } from './activity'
+import { deriveInsights } from './insights'
 
 /** Headline numbers of a stored report, so a re-analysis can show what changed. */
 export function snapshotReport(report: ChatReport, analyzedAt: Date): ReportSnapshotDto {
@@ -23,5 +24,6 @@ export function deriveReportMetrics(report: ChatReport): DerivedReportMetrics {
       composition: report.composition,
     }),
     availabilityProfile: computeAvailabilityProfile(report.activity.hourly.map((hour) => hour.total)),
+    insights: deriveInsights(report),
   }
 }
