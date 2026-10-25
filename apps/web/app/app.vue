@@ -13,7 +13,7 @@ useHead({
   link: [
     { rel: 'canonical', href: () => pageUrl.value },
     { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' },
-    { rel: 'apple-touch-icon', href: '/logo.svg' },
+    { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
   ],
   meta: [
     { charset: 'utf-8' },
@@ -29,7 +29,9 @@ useSeoMeta({
   ogSiteName: 'TG Analyzer',
   ogLocale: () => (locale.value === 'ru' ? 'ru_RU' : 'en_US'),
   ogUrl: () => pageUrl.value,
-  ogImage: () => `${siteUrl.value}/og-image.svg`,
+  ogImage: () => `${siteUrl.value}/og-image.png`,
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
   twitterCard: 'summary_large_image',
 })
 </script>

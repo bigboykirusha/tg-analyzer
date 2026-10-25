@@ -186,6 +186,18 @@ export const en = {
   'errors.telegramBusy': 'Telegram is busy with the running analysis. Try again in a moment.',
   'errors.telegramReauth': 'The Telegram session has ended. Sign in again to continue.',
   'errors.telegramUnavailable': 'Telegram is not responding right now. Try again later.',
+  'example.back': 'Home',
+  'example.cta': 'See yours',
+  'example.description':
+    'What a chat report looks like: balance, reply speed, rhythm, words and the recap, on a made-up chat.',
+  'example.endText':
+    'Sign in with Telegram, pick a chat and get the same report in a minute. We never store message texts.',
+  'example.endTitle': 'Now, your own chats',
+  'example.kicker': 'Example',
+  'example.note':
+    'This is a made-up chat, built by the same engine as real reports. Nobody but you ever sees your chats.',
+  'example.partner': 'Anna',
+  'example.title': 'Example report',
   'group.activeMembers': 'Members',
   'group.activeMembersSub': 'wrote at least once',
   'group.activeNow': 'Active in the last month',
@@ -334,6 +346,7 @@ export const en = {
   'login.delivery.sms': 'We sent the code by SMS to {phone}.',
   'login.delivery.unsupported':
     'Telegram chose a way to send the code that only official apps support. Request the code again to get it another way.',
+  'login.exampleLink': 'See an example report →',
   'login.getCode': 'Get code',
   'login.heroText':
     'Who texts first, who replies faster, when you talk and what about. A report on any private chat or group in a couple of minutes.',
@@ -358,7 +371,7 @@ export const en = {
   'login.resendCall': 'Call me instead',
   'login.resendIn': 'Send again in {time}',
   'login.resendSms': 'Send by SMS',
-  'login.sampleCaption': 'Four months of a conversation: every stroke is a day',
+  'login.sampleCaption': 'Four months of a conversation: every stroke is a day.',
   'login.sendingCode': 'Sending code...',
   'login.seoTitle': 'Sign in',
   'login.signIn': 'Sign in',
@@ -615,6 +628,36 @@ export const en = {
   'story.activeDaysCount.few': '{count} days of messages',
   'story.activeDaysCount.many': '{count} days of messages',
   'story.introKicker': 'Your chat, wrapped',
+  'terms.account.text':
+    "You analyse only chats you have lawful access to, and you decide who sees your reports and recaps. Do not use the service to watch other people, send bulk messages or get around Telegram's limits.",
+  'terms.account.title': 'Your account and responsibility',
+  'terms.back': 'Home',
+  'terms.changes.text': 'If the terms change materially, we will tell you in the app before the changes take effect.',
+  'terms.changes.title': 'Changes to these terms',
+  'terms.contact.text':
+    "The operator's contact details for questions about these terms and your data will appear here before launch.",
+  'terms.contact.title': 'Contact',
+  'terms.data.text':
+    "We read a chat's history only while analysing it and never store message texts, only computed statistics and the most frequent words. The privacy policy explains what we keep and for how long.",
+  'terms.data.title': 'Data',
+  'terms.description': 'Terms of use of TG Analyzer, an unofficial app that analyses chats through the Telegram API.',
+  'terms.draft':
+    'Draft. A lawyer must review this text before the public launch: operator details, governing law and personal data processing under Russian Federal Law 152-FZ.',
+  'terms.kicker': 'TG Analyzer',
+  'terms.limits.text':
+    'The service is provided as is. An analysis may not finish when Telegram limits requests or a chat is very large. We may suspend access to protect the service or comply with the law.',
+  'terms.limits.title': 'Availability and limits',
+  'terms.reports.text':
+    'You can disconnect Telegram, delete a single report or your whole account at any time on the Account and privacy page. Deleting the account erases every report and ends the Telegram session.',
+  'terms.reports.title': 'Disconnecting and deleting',
+  'terms.service.text':
+    'TG Analyzer builds reports about your chats: how much and when you write, who starts the conversation, how fast you reply, which words and emoji you use. Reports are for information only and do not judge relationships or people.',
+  'terms.service.title': 'What the service is',
+  'terms.telegram.text':
+    "The service is not affiliated with or endorsed by Telegram. It works through the official Telegram API and follows its terms: you sign in with your number, and the app's session is listed in Telegram under Settings → Devices, where you can end it at any time.",
+  'terms.telegram.title': 'An unofficial app',
+  'terms.title': 'Terms of use',
+  'terms.updated': 'Version of October 25, 2026.',
   'theme.dark': 'Dark theme',
   'theme.light': 'Light theme',
   'toast.error': 'Error',

@@ -58,3 +58,15 @@ test('protected pages redirect to login', async ({ page }) => {
   await page.goto('/dashboard')
   await page.waitForURL('**/login')
 })
+
+test('the example report opens from the login page without signing in', async ({ page }) => {
+  await gotoHydrated(page, '/login')
+  await page.getByRole('link', { name: 'Открыть пример отчёта →' }).click()
+  await page.waitForURL('**/example')
+  await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeVisible()
+  await expect(page.getByText('Главное')).toBeVisible()
+  await expect.poll(() => noHorizontalScroll(page)).toBe(true)
+
+  await page.getByRole('button', { name: 'Итоги' }).click()
+  await expect(page.getByRole('dialog', { name: 'Итоги переписки' })).toBeVisible()
+})

@@ -11,7 +11,12 @@ import type { StoryPerson, StorySlideModel, StoryTile } from './StorySlide.vue'
  * bars on top, auto-advance, hold to pause, tap the sides or swipe to move,
  * swipe down to close. Slides save as 1080×1920 PNGs or go to the share sheet.
  */
-const props = defineProps<{ open: boolean; data: ReportDto }>()
+const props = defineProps<{
+  open: boolean
+  data: ReportDto
+  /** The public example: no account, so no photos to fetch. */
+  offline?: boolean
+}>()
 const emit = defineEmits<{ close: [] }>()
 
 const { t, tc, formatNumber, formatPercent, formatDuration, formatDay, formatDecimal } = useI18n()
@@ -486,6 +491,7 @@ async function shareTo(target: ShareTarget) {
 }
 
 async function loadAvatars() {
+  if (props.offline) return
   const [mine, theirs] = await Promise.all([
     auth.telegramSessionActive ? loadProfileAvatar() : Promise.resolve(null),
     loadChatAvatar(props.data.summary.chatId).catch(() => null),

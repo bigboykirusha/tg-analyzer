@@ -176,7 +176,10 @@ function changeNumber() {
             <span class="t-them">{{ t('login.legendThem') }}</span>
           </div>
           <Seismograph :days="sampleDays" :height="112" animate />
-          <figcaption class="story-caption">{{ t('login.sampleCaption') }}</figcaption>
+          <figcaption class="story-caption">
+            {{ t('login.sampleCaption') }}
+            <NuxtLink to="/example" class="story-example">{{ t('login.exampleLink') }}</NuxtLink>
+          </figcaption>
         </figure>
 
         <ul class="story-promises">
@@ -352,6 +355,21 @@ function changeNumber() {
 .story-caption {
   color: var(--text-muted);
   font: var(--text-small);
+}
+
+.story-example {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  .story-example:hover {
+    text-decoration-color: currentColor;
+  }
 }
 
 .story-promises {

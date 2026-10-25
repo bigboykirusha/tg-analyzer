@@ -68,6 +68,8 @@ export default defineNuxtConfig({
   routeRules: {
     '/dashboard': { ssr: false },
     '/account': { ssr: false },
+    // Built in the browser from a made-up chat; nothing to render on the server.
+    '/example': { ssr: false },
     // «Мои люди» was removed; old links land on the chats list.
     '/people': { redirect: '/dashboard' },
     // The job log page was removed; old links land on the chats list.
