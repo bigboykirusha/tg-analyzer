@@ -41,14 +41,13 @@ function shareInsight(id: InsightDto['id'], minePct: number | null, threshold = 
 export function deriveInsights(report: ChatReport): InsightDto[] {
   if (report.group || report.totals.messages < MIN_MESSAGES) return []
   const insights: (InsightDto | null)[] = []
-  const { responses, sessions, facts, habits, totals } = report
+  // The share of messages is a headline number of the report itself, not an insight.
+  const { responses, sessions, facts, habits } = report
 
   if (sessions.totalSessions >= MIN_SESSIONS) {
     insights.push(shareInsight('initiative', responses.iWriteFirstPct))
     if (habits) insights.push(shareInsight('last_word', habits.lastWordMinePct))
   }
-
-  insights.push(shareInsight('share', totals.messages ? Math.round((totals.sent / totals.messages) * 100) : null, 60))
 
   const { medianMineSec: mine, medianTheirsSec: theirs } = responses
   if (

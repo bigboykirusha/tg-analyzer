@@ -28,7 +28,7 @@ const option = computed(() => {
         type: 'bar',
         data: values.value,
         barMaxWidth: 28,
-        itemStyle: { color: colors.sent, borderRadius: barRadius },
+        itemStyle: { color: colors.text, borderRadius: barRadius },
       },
     ],
   }

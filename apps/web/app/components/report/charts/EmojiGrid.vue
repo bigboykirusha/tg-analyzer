@@ -19,38 +19,28 @@ const { t, formatNumber } = useI18n()
 
 <style scoped>
 .emoji-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-  gap: var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
 }
 
 .emoji-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: inline-flex;
+  align-items: baseline;
   gap: var(--space-2);
-  justify-content: center;
-  min-height: 84px;
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface);
 }
 
 .emoji-value {
-  font-size: 32px;
-  line-height: 1;
+  font-size: 28px;
+  line-height: 36px;
 }
 
 .emoji-count {
-  color: var(--text);
+  color: var(--text-muted);
+  font: var(--text-ui);
 }
 
 .emoji-empty {
-  padding: var(--space-6);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-md);
-  text-align: center;
   color: var(--text-muted);
 }
 </style>

@@ -31,10 +31,18 @@ const hasText = computed(
       <WordChips :items="vocabulary.topWordsBySender.theirs.slice(0, 15)" :empty="t('report.words.none')" />
     </ReportSection>
 
-    <ReportSection :title="t('report.words.distinctiveMine')" :text="t('report.words.distinctiveText')">
+    <ReportSection
+      v-if="vocabulary.uniqueWordsBySender.mine.length"
+      :title="t('report.words.distinctiveMine')"
+      :text="t('report.words.distinctiveText')"
+    >
       <WordChips :items="vocabulary.uniqueWordsBySender.mine.slice(0, 12)" :empty="t('report.words.none')" />
     </ReportSection>
-    <ReportSection :title="t('report.words.distinctiveTheirs')" :text="t('report.words.distinctiveText')">
+    <ReportSection
+      v-if="vocabulary.uniqueWordsBySender.theirs.length"
+      :title="t('report.words.distinctiveTheirs')"
+      :text="t('report.words.distinctiveText')"
+    >
       <WordChips :items="vocabulary.uniqueWordsBySender.theirs.slice(0, 12)" :empty="t('report.words.none')" />
     </ReportSection>
 

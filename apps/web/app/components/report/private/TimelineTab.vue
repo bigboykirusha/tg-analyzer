@@ -96,19 +96,17 @@ function range(session: SessionHighlightDto) {
 <style scoped>
 .highlights {
   display: grid;
-  /* One block of tiles with the facts above: the same 12px gap, not the section's 20px. */
-  margin-top: calc(var(--space-2) * -1);
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
+  gap: var(--space-5) var(--space-6);
 }
 
+/* Ruled like the facts above. */
 .highlight {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
 }
 
 .highlight strong {

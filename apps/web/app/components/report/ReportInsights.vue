@@ -22,7 +22,6 @@ function describe(insight: InsightDto): { figure: string; text: string } | null 
   switch (insight.id) {
     case 'initiative':
     case 'last_word':
-    case 'share':
       return {
         figure: formatPercent(num(insight, 'pct')),
         text: t(`insight.${insight.id}.${mine ? 'mine' : 'theirs'}`, params),

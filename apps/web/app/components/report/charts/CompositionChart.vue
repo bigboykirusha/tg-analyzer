@@ -102,7 +102,7 @@ const segments = computed(() => {
 
 .composition-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
   gap: var(--space-3);
 }
 
@@ -141,22 +141,22 @@ const segments = computed(() => {
 }
 
 .segment-text {
-  background: var(--you);
+  background: var(--text);
 }
 
 .segment-media {
-  background: var(--border-strong);
+  background: var(--heat-3);
 }
 
 .segment-voice {
-  background: var(--border);
+  background: var(--heat-2);
 }
 
 .segment-sticker {
-  background: var(--text-muted);
+  background: var(--border-strong);
 }
 
 .segment-files {
-  background: var(--them);
+  background: var(--text-muted);
 }
 </style>

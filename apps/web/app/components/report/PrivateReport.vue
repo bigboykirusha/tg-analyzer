@@ -45,6 +45,8 @@ const usually = computed(() => {
 
 <template>
   <div class="stack stack--lg">
+    <ReportPulse :data="data" />
+
     <ReportKpis>
       <UiMetricCard
         :label="t('report.kpi.messages')"

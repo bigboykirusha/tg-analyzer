@@ -22,6 +22,9 @@ const usually = computed(() => {
     scattered: profile.predictability === 'low' ? t('report.rhythm.scattered') : null,
   }
 })
+const usuallyText = computed(() =>
+  usually.value ? [usually.value.main, usually.value.second, usually.value.scattered].filter(Boolean).join(' ') : '',
+)
 </script>
 
 <template>
@@ -30,17 +33,9 @@ const usually = computed(() => {
       <ActivityHeatmap :points="days" />
     </ReportSection>
 
-    <ReportSection :title="t('report.rhythm.dayPartsTitle')">
+    <!-- When you are usually around reads as the caption of the day parts, not a card of its own. -->
+    <ReportSection :title="t('report.rhythm.dayPartsTitle')" :text="usuallyText">
       <DayPartsChart :distribution="data.derived.activityDistribution" />
-    </ReportSection>
-
-    <ReportSection :title="t('report.rhythm.availabilityTitle')">
-      <div v-if="usually" class="usually">
-        <p class="usually__main">{{ usually.main }}</p>
-        <p v-if="usually.second" class="usually__more">{{ usually.second }}</p>
-        <p v-if="usually.scattered" class="usually__more">{{ usually.scattered }}</p>
-      </div>
-      <p v-else class="t-small t-muted">{{ t('common.na') }}</p>
     </ReportSection>
 
     <ReportSection :title="t('report.rhythm.weekdaysTitle')">
@@ -52,21 +47,3 @@ const usually = computed(() => {
     </ReportSection>
   </div>
 </template>
-
-<style scoped>
-.usually {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.usually__main {
-  color: var(--text);
-  font: var(--text-title);
-}
-
-.usually__more {
-  color: var(--text-muted);
-  font: var(--text-ui);
-  font-weight: 400;
-}
-</style>

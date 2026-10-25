@@ -352,7 +352,6 @@ export interface ConversationHabitsDto {
 export type InsightId =
   | 'initiative'
   | 'reply_speed'
-  | 'share'
   | 'double_texts'
   | 'last_word'
   | 'questions'

@@ -49,7 +49,7 @@ const width = computed(() => Math.max(1, props.days.length))
         :x2="tick.x"
         y1="49"
         :y2="49 - tick.up"
-        :style="animate ? { '--i': index } : undefined"
+        :style="animate ? { '--i': index, '--n': ticks.length } : undefined"
       />
     </g>
     <g class="seismograph__them">
@@ -61,7 +61,7 @@ const width = computed(() => Math.max(1, props.days.length))
         :x2="tick.x"
         y1="51"
         :y2="51 + tick.down"
-        :style="animate ? { '--i': index } : undefined"
+        :style="animate ? { '--i': index, '--n': ticks.length } : undefined"
       />
     </g>
   </svg>
@@ -96,7 +96,8 @@ const width = computed(() => Math.max(1, props.days.length))
 .seismograph--animate .seismograph__you line,
 .seismograph--animate .seismograph__them line {
   animation: seismograph-in var(--duration-slow) var(--ease-out-expo) both;
-  animation-delay: calc(var(--i, 0) * 6ms);
+  /* The sweep takes the same 0.7 s however many ticks there are. */
+  animation-delay: calc(var(--i, 0) * 700ms / var(--n, 100));
   transform-box: fill-box;
 }
 
