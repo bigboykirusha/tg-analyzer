@@ -372,9 +372,10 @@ onMounted(() => {
   font: var(--text-small);
 }
 
+/* As many cards per row as fit, so four reports never leave one orphan below three. */
 .report-cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--space-3);
 }
 
@@ -451,10 +452,6 @@ onMounted(() => {
 }
 
 @media (max-width: 900px) {
-  .report-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .intro__steps {
     grid-template-columns: minmax(0, 1fr);
   }
