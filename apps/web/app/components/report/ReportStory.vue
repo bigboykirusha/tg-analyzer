@@ -51,7 +51,9 @@ const exportRef = ref<HTMLElement | null>(null)
 const open = toRef(props, 'open')
 
 useBodyScrollLock(open)
+// Focus starts on the frame itself, so no button opens with a focus ring.
 useFocusTrap(panelRef, open, {
+  initial: () => panelRef.value,
   onEscape: () => {
     if (shareOpen.value) shareOpen.value = false
     else emit('close')
@@ -134,7 +136,7 @@ function paired(blocks: StoryBlock[]) {
 
 const slides = computed<StorySlideModel[]>(() => {
   const { report } = props.data
-  const { totals, facts, responses, vocabulary, activity, sessions, composition, habits } = report
+  const { totals, facts, responses, vocabulary, activity, sessions, habits } = report
   const list: StorySlideModel[] = []
   const myName = me.value.name
   const otherName = theirName.value
@@ -252,11 +254,17 @@ const slides = computed<StorySlideModel[]>(() => {
         note,
       })
     }
-    if (gap && gap.seconds >= 2 * DAY_SECONDS) {
-      blocks.push({ kind: 'stat', label: t('story.longestSilence'), value: days(gap.seconds), accent: true })
-      if (gap.brokenByMe !== undefined)
-        blocks.push({ kind: 'stat', label: t('story.silenceBroken'), value: gap.brokenByMe ? myName : otherName })
-    }
+    if (gap && gap.seconds >= 2 * DAY_SECONDS)
+      blocks.push({
+        kind: 'stat',
+        label: t('story.longestSilence'),
+        value: days(gap.seconds),
+        note:
+          gap.brokenByMe === undefined
+            ? undefined
+            : t('story.silenceBrokenBy', { name: gap.brokenByMe ? myName : otherName }),
+        accent: true,
+      })
     if (habits?.lastWordMinePct != null) {
       const lastMine = habits.lastWordMinePct
       blocks.push({
@@ -266,8 +274,6 @@ const slides = computed<StorySlideModel[]>(() => {
         note: t('story.lastWordNote', { share: formatPercent(lastMine > 50 ? lastMine : 100 - lastMine) }),
       })
     }
-    const double = habits ? whoMore(t('story.doubleTexts'), habits.doubleTexts) : null
-    if (double) blocks.push(double)
     list.push({
       key: 'starts',
       theme: 3,
@@ -293,10 +299,12 @@ const slides = computed<StorySlideModel[]>(() => {
         values: activity.hourly.map((value) => value.total),
         from: time.from,
         to: (time.to + 23) % 24,
+        note:
+          sessions.nightSessionsPct !== null
+            ? t('story.nightNote', { share: formatPercent(sessions.nightSessionsPct) })
+            : undefined,
       },
     ]
-    if (sessions.nightSessionsPct !== null)
-      blocks.push({ kind: 'stat', label: t('story.night'), value: formatPercent(sessions.nightSessionsPct) })
     const longest = [...sessions.highlights].sort((a, b) => b.durationSec - a.durationSec)[0]
     if (longest)
       blocks.push({
@@ -326,7 +334,7 @@ const slides = computed<StorySlideModel[]>(() => {
     })
   }
 
-  // 4. Words: the word of the chat, each side's favourites, emoji and voice.
+  // 4. Words: the word of the chat, each side's favourites, emoji and habits.
   const myWords = top(vocabulary.topWordsBySender.mine, 3)
   const theirWords = top(vocabulary.topWordsBySender.theirs, 3)
   const chatWord = top(vocabulary.topWords, 1)[0] ?? myWords[0]
@@ -340,23 +348,23 @@ const slides = computed<StorySlideModel[]>(() => {
       })
     const myEmoji = top(vocabulary.topEmojiBySender.mine, 3)
     const theirEmoji = top(vocabulary.topEmojiBySender.theirs, 3)
-    if (myEmoji.length)
-      blocks.push({ kind: 'stat', label: t('story.emojiOf', { name: myName }), value: myEmoji.join(' ') })
-    if (theirEmoji.length)
-      blocks.push({ kind: 'stat', label: t('story.emojiOf', { name: otherName }), value: theirEmoji.join(' ') })
+    if (myEmoji.length && theirEmoji.length)
+      blocks.push({
+        kind: 'duel',
+        label: t('story.emoji'),
+        left: { label: myName, value: myEmoji.join(' ') },
+        right: { label: otherName, value: theirEmoji.join(' ') },
+      })
     const laughs = habits ? whoMore(t('story.laughs'), habits.laughs, true) : null
     if (laughs) blocks.push(laughs)
     const questions = habits ? whoMore(t('story.questions'), habits.questions) : null
     if (questions) blocks.push(questions)
-    if (composition.voice)
-      blocks.push({ kind: 'stat', label: t('story.voice'), value: formatNumber(composition.voice) })
     list.push({
       key: 'words',
       theme: 6,
       durationMs: 9000,
       kicker: t('story.wordsKicker'),
       title: `«${chatWord}»`,
-      sub: t('story.wordsSub'),
       blocks: paired(blocks.slice(0, 6)),
     })
   }
@@ -545,6 +553,7 @@ watch(open, (value) => {
       <div v-if="open" class="stories" @click.self="emit('close')">
         <section
           ref="panelRef"
+          tabindex="-1"
           class="stories__frame"
           :class="{ 'is-paper': current.theme !== 1 }"
           role="dialog"
@@ -591,7 +600,6 @@ watch(open, (value) => {
               </span>
             </div>
             <div class="stories__bar">
-              <span class="stories__count">{{ index + 1 }} / {{ slides.length }}</span>
               <button type="button" class="stories__icon" :aria-label="t('common.close')" @click="emit('close')">
                 <X aria-hidden="true" />
               </button>
@@ -762,14 +770,6 @@ watch(open, (value) => {
   color: var(--story-ink);
 }
 
-.stories__count {
-  margin-right: auto;
-  color: var(--story-ink-muted);
-  font: var(--text-small);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
 .stories__icon {
   display: inline-grid;
   place-items: center;
@@ -777,11 +777,15 @@ watch(open, (value) => {
   height: var(--control-sm);
   border: 0;
   border-radius: var(--radius-full);
-  background: transparent;
+  background: var(--story-chip);
   color: var(--story-ink);
   cursor: pointer;
   pointer-events: auto;
   --icon-size: var(--icon-md);
+}
+
+.stories__frame:focus {
+  outline: none;
 }
 
 .stories__icon:focus-visible,

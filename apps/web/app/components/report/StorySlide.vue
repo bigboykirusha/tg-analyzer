@@ -36,7 +36,7 @@ export type StoryBlock = BlockBase &
     /** Two sides of one measure, side by side. */
     | { kind: 'duel'; label: string; left: StoryTile; right: StoryTile; note?: string }
     /** 24 hourly values; hours from `from` to `to` (inclusive, may wrap past midnight) are lit. */
-    | { kind: 'bars'; label: string; values: number[]; from: number; to: number }
+    | { kind: 'bars'; label: string; values: number[]; from: number; to: number; note?: string }
     /** Top people with their share, 0–100. */
     | { kind: 'ranking'; label: string; items: { name: string; value: string; share: number }[] }
     | { kind: 'columns'; left: { title: string; items: string[] }; right: { title: string; items: string[] } }
@@ -94,7 +94,7 @@ const titleSize = computed(() => {
 })
 
 /** Tile values with long words drop a size instead of breaking the word. */
-const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => Array.from(word).length)) > 9
+const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => Array.from(word).length)) > 8
 </script>
 
 <template>
@@ -276,18 +276,18 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   background: var(--story-gradient-6);
 }
 
-/* Top 12% and bottom stay clear: the story apps draw their own controls there. */
+/*
+ * Telegram and Instagram draw the author and progress over the top ~13% of a
+ * story and the reply bar over the bottom ~13%: nothing important goes there.
+ * The screen uses the same frame, so what you see is what you share.
+ */
 .story-slide__canvas {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 4cqmin;
   height: 100%;
-  padding: 12cqmin 6cqmin 6cqmin;
-}
-
-.has-chrome .story-slide__canvas {
-  padding-bottom: 19cqmin;
+  padding: 24cqmin 6cqmin 24cqmin;
 }
 
 /* ─── Who: avatars and the names ─────────────────────────────────────────── */
@@ -307,13 +307,13 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 10cqmin;
-  height: 10cqmin;
+  width: 8cqmin;
+  height: 8cqmin;
   overflow: hidden;
   border-radius: 50%;
   background: var(--story-chip);
   box-shadow: 0 0 0 0.7cqmin var(--story-gradient-1);
-  font-size: 4.6cqmin;
+  font-size: 3.6cqmin;
   font-weight: 600;
 }
 
@@ -338,7 +338,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 .story-slide__face + .story-slide__face {
-  margin-left: -3cqmin;
+  margin-left: -2cqmin;
 }
 
 .story-slide__face img {
@@ -376,7 +376,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 4cqmin;
+  gap: 3cqmin;
   min-height: 0;
 }
 
@@ -423,11 +423,13 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 /* ─── Tiles: a two-column bento, like the report in the app ─────────────── */
 .story-slide__grid {
   display: grid;
-  flex: 1;
+  /* Pinned to the bottom; if a slide ever overflows it pushes down, never over the headline. */
+  flex: 0 0 auto;
+  margin-top: auto;
   grid-template-columns: 1fr 1fr;
   grid-auto-rows: minmax(min-content, auto);
   align-content: end;
-  gap: 2cqmin;
+  gap: 1.8cqmin;
   min-height: 0;
 }
 
@@ -436,7 +438,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   flex-direction: column;
   gap: 1.2cqmin;
   min-width: 0;
-  padding: 3.4cqmin 3.8cqmin;
+  padding: 3cqmin 3.6cqmin;
   border-radius: 4cqmin;
   background: var(--tile-bg);
   color: var(--tile-ink);
@@ -552,7 +554,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 .story-tile__duel strong {
-  font-size: 7cqmin;
+  font-size: 6.4cqmin;
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.035em;
