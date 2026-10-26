@@ -3,6 +3,7 @@ const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
 const { locale, t } = useI18n()
 useTheme().install()
+// Visit analytics: add a self-hosted Plausible or Umami script here (see docs/ROADMAP.md); no Yandex Metrica.
 
 const siteUrl = computed(() => String(runtimeConfig.public.siteUrl ?? '').replace(/\/$/, ''))
 const pageUrl = computed(() => `${siteUrl.value}${route.path}`)
@@ -17,8 +18,8 @@ useHead({
   ],
   meta: [
     { charset: 'utf-8' },
-    { name: 'theme-color', content: '#14130F', media: '(prefers-color-scheme: dark)' },
-    { name: 'theme-color', content: '#F2EEE5', media: '(prefers-color-scheme: light)' },
+    { name: 'theme-color', content: '#0A0A0B', media: '(prefers-color-scheme: dark)' },
+    { name: 'theme-color', content: '#F2F3F5', media: '(prefers-color-scheme: light)' },
     { name: 'format-detection', content: 'telephone=no' },
   ],
 })

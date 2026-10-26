@@ -49,7 +49,6 @@ async function reanalyse() {
   }
 }
 
-
 async function deleteReport() {
   deleting.value = true
   try {
@@ -63,7 +62,6 @@ async function deleteReport() {
     confirm.value = null
   }
 }
-
 
 // Reload the report as soon as a fresh analysis of this chat completes.
 watch(analysis.finished, (job) => {
@@ -150,5 +148,4 @@ onMounted(load)
     grid-template-columns: minmax(0, 1fr);
   }
 }
-
 </style>

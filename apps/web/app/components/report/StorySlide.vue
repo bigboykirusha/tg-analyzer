@@ -47,6 +47,8 @@ export interface StorySlideModel {
   tiles?: StoryTile[]
 }
 
+const { t } = useI18n()
+
 const props = withDefaults(
   defineProps<{
     slide: StorySlideModel
@@ -185,6 +187,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
       <footer class="story-slide__brand">
         <span class="story-slide__brand-mark" aria-hidden="true"><i /><i /><i /></span>
         TG Analyzer
+        <span v-if="slide.poster" class="story-slide__site">{{ t('story.site') }}</span>
       </footer>
     </div>
   </div>
@@ -649,6 +652,14 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .is-poster .story-slide__tile strong.is-long {
   font-size: 4.8cqmin;
+}
+
+.story-slide__site {
+  margin-left: 1.6cqmin;
+  font-family: var(--font-sans);
+  font-size: 3.2cqmin;
+  font-weight: 500;
+  opacity: 0.6;
 }
 
 .story-slide__brand {

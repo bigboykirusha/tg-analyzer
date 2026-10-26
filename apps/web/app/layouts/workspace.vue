@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// Signed-in screens are personal: keep them out of search.
+useSeoMeta({ robots: 'noindex, nofollow' })
 const analysis = useAnalysis()
 const workspace = useWorkspaceStore()
 const { syncTimeZone } = useAuth()

@@ -1,12 +1,12 @@
 {
   "name": "TG Analyzer",
   "short_name": "TG Analyzer",
-  "description": "Ритм, баланс и слова вашей переписки — без хранения текстов",
+  "description": "Статистика переписки в Telegram: кто пишет первым, кто быстрее отвечает и когда вы ближе всего. Тексты сообщений не сохраняются.",
   "lang": "ru",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f2eee5",
-  "theme_color": "#f2eee5",
+  "background_color": "#f2f3f5",
+  "theme_color": "#f2f3f5",
   "icons": [
     {
       "src": "/logo.svg",

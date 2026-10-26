@@ -38,7 +38,7 @@ function closePrivacy() {
   if (route.hash) void navigateTo({ hash: '' }, { replace: true })
 }
 
-useSeoMeta({ title: () => t('login.seoTitle'), description: () => t('seo.description') })
+useSeoMeta({ title: () => t('login.seoTitle'), description: () => t('seo.description'), robots: 'noindex' })
 
 watch(step, () => {
   error.value = ''

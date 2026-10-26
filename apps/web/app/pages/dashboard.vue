@@ -25,9 +25,7 @@ const reports = computed(() =>
     .filter((chat) => chat.report)
     .sort((left, right) => Date.parse(right.report!.analyzedAt) - Date.parse(left.report!.analyzedAt)),
 )
-const shownReports = computed(() =>
-  showAllReports.value ? reports.value : reports.value.slice(0, REPORTS_PREVIEW),
-)
+const shownReports = computed(() => (showAllReports.value ? reports.value : reports.value.slice(0, REPORTS_PREVIEW)))
 /** At least two private reports: compare the people side by side. */
 const privateReports = computed(() =>
   reports.value.filter((chat) => chat.type === 'private' && chat.report?.headline).map((chat) => chat.report!),
@@ -35,7 +33,9 @@ const privateReports = computed(() =>
 const avatars = computed(() => new Map(workspace.chats.map((chat) => [chat.id, chat.hasAvatar])))
 
 /** Returning users wait for their reports instead of seeing the newcomer screen flash by. */
-const loadingReports = computed(() => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error')
+const loadingReports = computed(
+  () => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
+)
 /** Newcomers pick their first chat right here; everyone else gets the summary. */
 const newcomer = computed(() => !reports.value.length && !loadingReports.value)
 
@@ -112,7 +112,9 @@ onMounted(() => {
               @click="showAllReports = !showAllReports"
             >
               {{
-                showAllReports ? t('dashboard.showFewerReports') : t('dashboard.showAllReports', { count: reports.length })
+                showAllReports
+                  ? t('dashboard.showFewerReports')
+                  : t('dashboard.showAllReports', { count: reports.length })
               }}
             </UiButton>
           </div>

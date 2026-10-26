@@ -66,6 +66,7 @@ export default defineNuxtConfig({
   // HttpOnly and only the API can read it), so they render on the client only.
   routeRules: {
     '/dashboard': { ssr: false },
+    '/new': { ssr: false },
     '/account': { ssr: false },
     // Built in the browser from a made-up chat; nothing to render on the server.
     '/example': { ssr: false },

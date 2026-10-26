@@ -112,6 +112,19 @@ const usual = computed(() => {
   }
 })
 
+/**
+ * The caption that goes with shared pictures: real numbers and the address,
+ * so whoever sees it can make their own.
+ */
+const shareText = computed(() => {
+  const { totals, responses } = props.data.report
+  const values = { count: formatNumber(totals.messages), site: t('story.site') }
+  if (isGroup.value) return tc('story.shareText.group', totals.messages, { ...values, name: them.value.name })
+  const mine = responses.iWriteFirstPct
+  if (mine === null || Math.abs(mine - 50) <= 5) return tc('story.shareText.even', totals.messages, values)
+  return tc(mine > 50 ? 'story.shareText.me' : 'story.shareText.them', totals.messages, values)
+})
+
 const slides = computed<StorySlideModel[]>(() => {
   const { report } = props.data
   const { totals, facts, responses, vocabulary, activity, sessions, composition } = report
@@ -472,7 +485,7 @@ async function shareTo(target: ShareTarget) {
       const positions = target === 'chat' ? slides.value.map((_, position) => position) : [index.value]
       const files = await renderFiles(positions)
       if (canShare.value) {
-        await image.share(files)
+        await image.share(files, shareText.value)
         return
       }
       files.forEach((file) => image.download(file, file.name))

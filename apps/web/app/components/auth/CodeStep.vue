@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ComponentPublicInstance } from 'vue'
 import Button from '../ui/Button.vue'
+import { Lock } from '../../lib/icons'
 
 const code = defineModel<string>('code', { required: true })
 const props = withDefaults(
@@ -147,10 +148,29 @@ function submit() {
     <Button variant="primary" size="lg" :loading="loading" :disabled="code.length !== size" block>
       {{ loading ? t('login.checkingCode') : t('login.confirmCode') }}
     </Button>
+    <p class="code-trust">
+      <Lock class="code-trust__icon" aria-hidden="true" />
+      <span>{{ t('login.codeTrust') }}</span>
+    </p>
   </form>
 </template>
 
 <style scoped>
+/* The moment people hesitate most: say plainly what the code lets us do. */
+.code-trust {
+  display: flex;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.code-trust__icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;

@@ -205,14 +205,52 @@ export const en = {
   'example.cta': 'See yours',
   'example.description':
     'What a chat report looks like: balance, reply speed, rhythm, words and the recap, on a made-up chat.',
-  'example.endText':
-    'Sign in with Telegram, pick a chat and get the same report in a minute. We never store message texts.',
-  'example.endTitle': 'Now, your own chats',
+  'example.endText': 'Sign in with Telegram, get the report in a minute. Message texts are never stored.',
+  'example.endTitle': 'Make one for your own chat',
   'example.kicker': 'Example',
   'example.note':
     'This is a made-up chat, built by the same engine as real reports. Nobody but you ever sees your chats.',
   'example.partner': 'Anna',
   'example.title': 'Example report',
+  'faq.a.groups': 'Yes. For groups we show member roles, who replies to whom and the shared vocabulary.',
+  'faq.a.notice': 'No. We never write to the chat or send notifications. Only you see the report until you share it.',
+  'faq.a.official': "No. It's an independent service built on the open Telegram API.",
+  'faq.a.phone':
+    "That is how sign-in works in the Telegram API: without it a chat can't be read. It's the same way you sign in to Telegram on a new device.",
+  'faq.a.price': "It's free.",
+  'faq.a.safe':
+    'You sign in through the official Telegram API, like other clients. Message texts are processed in memory and never stored. You can end the session in Telegram Settings → Devices.',
+  'faq.a.store':
+    'Only statistics: message counts, reply times, activity by hour, top words and emoji. You can delete everything with one button in your account.',
+  'faq.cta': 'Sign in with Telegram',
+  'faq.delete.text': 'Account & privacy → Delete account. All reports are erased and the Telegram session ends.',
+  'faq.delete.title': 'Delete everything',
+  'faq.example': 'See an example',
+  'faq.keep.text': 'The finished statistics: numbers, hours, top words and emoji.',
+  'faq.keep.title': 'We keep',
+  'faq.lede': 'Short and with no fine print: what happens to your chat when you build a report.',
+  'faq.never.text': 'Write on your behalf, read other chats or share data with third parties.',
+  'faq.never.title': 'We never',
+  'faq.notKeep.text':
+    'Message texts, photos, voice messages or files. Your two-step verification password, if you have one, goes straight to Telegram and never stays with us.',
+  'faq.notKeep.title': "We don't keep",
+  'faq.off.text': 'Telegram → Settings → Devices → TG Analyzer → Terminate session. It takes 10 seconds.',
+  'faq.off.title': 'Switch us off',
+  'faq.policy': 'Full privacy policy',
+  'faq.q.groups': 'Does it work with groups?',
+  'faq.q.notice': 'Will the other person find out?',
+  'faq.q.official': 'Are you an official Telegram service?',
+  'faq.q.phone': 'Why sign in with a phone number?',
+  'faq.q.price': 'How much does it cost?',
+  'faq.q.safe': 'Is it safe?',
+  'faq.q.store': 'What do you keep?',
+  'faq.questions': 'Frequent questions',
+  'faq.read.text': 'Messages of the chat you pick, only while it is analysed and only in server memory.',
+  'faq.read.title': 'We read',
+  'faq.seoDescription':
+    'What TG Analyzer reads, what it keeps and what it never does. How to switch it off in 10 seconds and delete everything with one button.',
+  'faq.seoTitle': 'What we see and what we keep',
+  'faq.title': 'What we see and what we keep',
   'group.activeMembers': 'Members',
   'group.activeMembersSub': 'wrote at least once',
   'group.activeNow': 'Active in the last month',
@@ -350,7 +388,8 @@ export const en = {
   'insight.trend.fading': 'You have written to each other less over the last months.',
   'insight.trend.growing': 'The chat has grown livelier over the last months.',
   'landing.cta': 'Sign in with Telegram',
-  'landing.example': 'Example report',
+  'landing.dataLink': 'How we handle data',
+  'landing.example': 'See an example report',
   'landing.eyebrow': 'Recap stories for personal chats and groups',
   'landing.feature.groups.text': 'For groups: who keeps the chat alive, who replies to whom and the shared vocabulary.',
   'landing.feature.groups.title': 'Personal chats and groups',
@@ -361,27 +400,30 @@ export const en = {
   'landing.feature.story.title': 'Recap stories',
   'landing.featuresLabel': 'Features',
   'landing.footerNav': 'Documents',
+  'landing.free': 'Free. An unofficial service built on the Telegram API.',
   'landing.lede':
-    'Who writes first, who replies faster and when you talk the most. A report on any Telegram chat in a minute; message texts are never stored.',
+    'Who writes first, who replies faster and when you are closest. A report on any Telegram chat in a minute. Message texts are never stored.',
   'landing.mockChats': 'Alex Smith,Kate,Mom',
   'landing.nav.example': 'Example report',
+  'landing.nav.faq': 'FAQ',
   'landing.nav.privacy': 'Privacy',
   'landing.nav.terms': 'Terms',
   'landing.phoneLabel': 'Example report on a phone',
-  'landing.seoTitle': 'Your Telegram chats in numbers',
+  'landing.seoTitle': 'Telegram chat statistics: who writes first',
   'landing.signIn': 'Sign in',
   'landing.start': 'Get started',
   'landing.title': 'Your chats.',
   'landing.titleSoft': 'In numbers.',
-  'landing.unofficial': 'Unofficial client, works via the Telegram API',
   'landing.windowLabel': 'Example report in a browser',
   'login.brandLabel': 'Unofficial app · built on the Telegram API',
   'login.changeNumber': 'Change number',
   'login.checkingCode': 'Checking code...',
-  'login.codeDescription': 'Enter the 5-digit code Telegram sent to your account.',
+  'login.codeDescription': 'Telegram sent a code to your app. Enter it here so we can read the chat you pick.',
   'login.codeHelp': 'Paste the full code or type one digit per cell.',
   'login.codeLabel': 'Telegram code',
   'login.codeTitle': 'Confirm Telegram code',
+  'login.codeTrust':
+    'We never write on your behalf and read only the chat you pick. You can end the session in Telegram Settings → Devices.',
   'login.confirmCode': 'Confirm code',
   'login.countryLabel': 'Country',
   'login.delivery.app':
@@ -635,7 +677,7 @@ export const en = {
   'report.words.topTheirs': 'Their most used words',
   'report.you': 'You',
   'seo.description':
-    'TG Analyzer turns any Telegram chat into a clear report: rhythm, balance, response tempo, words and emoji. Message texts are never stored.',
+    'A report on any Telegram chat in a minute: who writes first, who replies faster, activity by hour, top words and a story recap. Message texts are never stored.',
   'sidebar.empty': 'Chats you analyse will appear here.',
   'sidebar.groups': 'Groups',
   'sidebar.label': 'Your reports',
@@ -661,9 +703,38 @@ export const en = {
   'story.share.instagram': 'Instagram story',
   'story.share.telegram': 'Telegram story',
   'story.shareAllSlides': 'All {count} slides',
+  'story.shareText.even.few':
+    'Counted our chat: {count} messages, and we write first equally often 🤝 Make yours: {site}',
+  'story.shareText.even.many':
+    'Counted our chat: {count} messages, and we write first equally often 🤝 Make yours: {site}',
+  'story.shareText.even.one':
+    'Counted our chat: {count} message, and we write first equally often 🤝 Make yours: {site}',
+  'story.shareText.even.other':
+    'Counted our chat: {count} messages, and we write first equally often 🤝 Make yours: {site}',
+  'story.shareText.group.few': 'Counted our chat «{name}»: {count} messages. Make yours: {site}',
+  'story.shareText.group.many': 'Counted our chat «{name}»: {count} messages. Make yours: {site}',
+  'story.shareText.group.one': 'Counted our chat «{name}»: {count} message. Make yours: {site}',
+  'story.shareText.group.other': 'Counted our chat «{name}»: {count} messages. Make yours: {site}',
+  'story.shareText.me.few':
+    'Counted our chat: {count} messages, and I’m usually the one who writes first 😅 Make yours: {site}',
+  'story.shareText.me.many':
+    'Counted our chat: {count} messages, and I’m usually the one who writes first 😅 Make yours: {site}',
+  'story.shareText.me.one':
+    'Counted our chat: {count} message, and I’m usually the one who writes first 😅 Make yours: {site}',
+  'story.shareText.me.other':
+    'Counted our chat: {count} messages, and I’m usually the one who writes first 😅 Make yours: {site}',
+  'story.shareText.them.few':
+    'Counted our chat: {count} messages, and I’m not the one who writes first 👀 Make yours: {site}',
+  'story.shareText.them.many':
+    'Counted our chat: {count} messages, and I’m not the one who writes first 👀 Make yours: {site}',
+  'story.shareText.them.one':
+    'Counted our chat: {count} message, and I’m not the one who writes first 👀 Make yours: {site}',
+  'story.shareText.them.other':
+    'Counted our chat: {count} messages, and I’m not the one who writes first 👀 Make yours: {site}',
   'story.shareThisSlide': 'This slide as a 9:16 picture',
   'story.shareTitle': 'Share the recap',
   'story.silenceBroken': 'Broke the silence',
+  'story.site': 'tganalyzer.app',
   'story.speedFasterYou': 'You reply {ratio}× faster.',
   'story.stickers': 'Stickers',
   'story.title': 'Chat recap',

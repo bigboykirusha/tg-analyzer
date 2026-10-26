@@ -4,12 +4,33 @@ import { Lock, Send, Share2, Users } from '../lib/icons'
 definePageMeta({ middleware: ['guest'] })
 
 const { t } = useI18n()
+const runtimeConfig = useRuntimeConfig()
 useSeoMeta({ title: () => t('landing.seoTitle'), description: () => t('seo.description') })
+// Lets search engines show the app as free software rather than a plain page.
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: () =>
+        JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebApplication',
+          name: 'TG Analyzer',
+          url: String(runtimeConfig.public.siteUrl ?? ''),
+          description: t('seo.description'),
+          applicationCategory: 'UtilitiesApplication',
+          operatingSystem: 'Web',
+          inLanguage: ['ru', 'en'],
+          offers: { '@type': 'Offer', price: '0', priceCurrency: 'RUB' },
+        }),
+    },
+  ],
+})
 
 const features = computed(() => [
   { icon: Lock, title: t('landing.feature.privacy.title'), text: t('landing.feature.privacy.text') },
-  { icon: Users, title: t('landing.feature.groups.title'), text: t('landing.feature.groups.text') },
   { icon: Share2, title: t('landing.feature.story.title'), text: t('landing.feature.story.text') },
+  { icon: Users, title: t('landing.feature.groups.title'), text: t('landing.feature.groups.text') },
 ])
 
 /** The header gets its hairline once the page scrolls under it. */
@@ -31,8 +52,8 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
         <NuxtLink to="/" class="brand" aria-label="TG Analyzer"><BrandMark />TG Analyzer</NuxtLink>
         <nav class="top__links" :aria-label="t('nav.main')">
           <NuxtLink to="/example">{{ t('landing.nav.example') }}</NuxtLink>
+          <NuxtLink to="/faq">{{ t('landing.nav.faq') }}</NuxtLink>
           <NuxtLink to="/login#privacy">{{ t('landing.nav.privacy') }}</NuxtLink>
-          <NuxtLink to="/terms">{{ t('landing.nav.terms') }}</NuxtLink>
         </nav>
         <div class="top__actions">
           <UiButton class="top__signin" variant="secondary" size="sm" to="/login">{{ t('landing.signIn') }}</UiButton>
@@ -55,6 +76,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
               {{ t('landing.example') }}
             </UiButton>
           </div>
+          <p class="hero__free">{{ t('landing.free') }}</p>
         </div>
         <div class="hero__visual">
           <ProductWindow class="hero__window" />
@@ -75,11 +97,11 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
       <div class="wrap foot__in">
         <NuxtLink to="/" class="brand brand--muted" aria-label="TG Analyzer"><BrandMark />TG Analyzer</NuxtLink>
         <nav :aria-label="t('landing.footerNav')">
-          <NuxtLink to="/login#privacy">{{ t('landing.nav.privacy') }}</NuxtLink>
+          <NuxtLink to="/login#privacy">{{ t('landing.dataLink') }}</NuxtLink>
+          <NuxtLink to="/faq">{{ t('landing.nav.faq') }}</NuxtLink>
           <NuxtLink to="/terms">{{ t('landing.nav.terms') }}</NuxtLink>
-          <NuxtLink to="/example">{{ t('landing.nav.example') }}</NuxtLink>
         </nav>
-        <span>{{ t('landing.unofficial') }} · © {{ new Date().getFullYear() }}</span>
+        <span>© {{ new Date().getFullYear() }} TG Analyzer</span>
       </div>
     </footer>
   </div>
@@ -204,6 +226,12 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.hero__free {
+  margin-top: calc(var(--space-2) * -1);
+  color: var(--text-muted);
+  font: var(--text-small);
 }
 
 .hero__phone {

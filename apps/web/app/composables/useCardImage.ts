@@ -42,9 +42,9 @@ export function useCardImage() {
   }
 
   /** Shares through the system sheet; returns false when the user closed it. */
-  async function share(files: File[]) {
+  async function share(files: File[], text?: string) {
     try {
-      await navigator.share({ files })
+      await navigator.share(text ? { files, text } : { files })
       return true
     } catch (error) {
       if ((error as DOMException)?.name === 'AbortError') return false
