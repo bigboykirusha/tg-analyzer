@@ -39,7 +39,4 @@ docker compose up --build        # postgres, redis, migrate, api, worker, web
 
 ## Чек-лист релиза
 
-1. Секреты заданы в платформе, `.env` не деплоится.
-2. Применены миграции (см. [0009](migrations/0009-chat-reports.md) — перед ней сделайте бэкап).
-3. API `/ready` возвращает `ok` по Postgres, Redis и worker.
-4. В браузере на боевом домене проверены вход, перезагрузка страницы (тихий refresh), прогресс анализа и выход.
+Полный чек-лист, откат и бэкапы — в [RELEASE.md](RELEASE.md).
