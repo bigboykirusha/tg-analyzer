@@ -625,6 +625,7 @@ export const en = {
   'story.shareThisSlide': 'This slide as a 9:16 picture',
   'story.shareTitle': 'Share the recap',
   'story.silenceBroken': 'Broke the silence',
+  'story.speedFasterYou': 'You reply {ratio}× faster.',
   'story.stickers': 'Stickers',
   'story.title': 'Chat recap',
   'story.voice': 'Voice and video notes',

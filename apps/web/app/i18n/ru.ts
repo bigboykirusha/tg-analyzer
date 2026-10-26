@@ -627,6 +627,7 @@ export const ru: Record<MessageKey, string> = {
   'story.shareThisSlide': 'Этот слайд картинкой 9:16',
   'story.shareTitle': 'Поделиться итогами',
   'story.silenceBroken': 'Тишину нарушил',
+  'story.speedFasterYou': 'Вы отвечаете в {ratio} раза быстрее.',
   'story.stickers': 'Стикеров',
   'story.title': 'Итоги переписки',
   'story.voice': 'Голосовых и кружков',

@@ -210,10 +210,9 @@ const slides = computed<StorySlideModel[]>(() => {
       note =
         ratio < EVEN_RATIO
           ? t('story.speedEven')
-          : t('story.speedFaster', {
-              name: medianMineSec < medianTheirsSec ? myName : otherName,
-              ratio: formatDecimal(ratio),
-            })
+          : medianMineSec < medianTheirsSec
+            ? t('story.speedFasterYou', { ratio: formatDecimal(ratio) })
+            : t('story.speedFaster', { name: otherName, ratio: formatDecimal(ratio) })
     }
     list.push({
       key: 'starts',
