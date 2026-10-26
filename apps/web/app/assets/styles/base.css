@@ -92,7 +92,7 @@ svg.lucide {
   flex: 0 0 auto;
   width: var(--icon-size, var(--icon-sm));
   height: var(--icon-size, var(--icon-sm));
-  stroke-width: 1.75;
+  stroke-width: 1.6;
 }
 
 .icon-md {
@@ -107,35 +107,35 @@ svg.lucide {
 
 .t-display {
   font: var(--text-display);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.045em;
   text-wrap: balance;
 }
 
 .t-h1 {
   font: var(--text-h1);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
   text-wrap: balance;
 }
 
 .t-h2 {
   font: var(--text-h2);
-  letter-spacing: -0.012em;
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 
-/* Editorial emphasis inside a serif headline: «Мила <em>и вы</em>». */
+/* The quiet second half of a headline: «Ваши переписки. <em>В цифрах.</em>» */
 .t-display em,
 .t-h1 em,
 .t-h2 em {
-  font-style: italic;
-  font-weight: 400;
+  color: var(--text-faint);
+  font-style: normal;
 }
 
-/* Big figures in reports: Literata lining numerals. */
+/* Big figures in reports: tight, even-width digits. */
 .t-figure {
   font: var(--text-figure);
   font-variant-numeric: lining-nums tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
   white-space: nowrap;
 }
 
@@ -171,8 +171,6 @@ svg.lucide {
 .t-label {
   color: var(--text-muted);
   font: var(--text-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 /* The two voices: text that names «you» or «them» carries their colour. */
@@ -239,12 +237,11 @@ svg.lucide {
 
 /* ─── Surfaces ───────────────────────────────────────────────────────────── */
 
-/* A card is a sheet of paper on the desk: a hairline edge, no glow, no blur. */
+/* A card is a white tile on the grey canvas: no edge, no shadow, soft corners. */
 .card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface);
-  padding: var(--space-8);
+  padding: var(--space-6);
 }
 
 /* Sticky bars: the page colour, nearly opaque, with a slight blur for what scrolls under. */
@@ -256,7 +253,7 @@ svg.lucide {
 
 @media (max-width: 768px) {
   .card {
-    padding: var(--space-5);
+    padding: var(--space-4);
   }
 }
 
@@ -267,7 +264,7 @@ svg.lucide {
   }
 }
 
-/* A hairline rule between parts of a page, like in print. */
+/* A hairline rule between rows inside a card. */
 .rule {
   height: 1px;
   border: 0;
@@ -275,8 +272,7 @@ svg.lucide {
 }
 
 .panel {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface);
 }
 
@@ -351,7 +347,7 @@ svg.lucide {
   min-height: var(--control-md);
   padding: 0 var(--space-4);
   border: 1px solid var(--control-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--text);
   font-size: 16px;
@@ -468,7 +464,7 @@ svg.lucide {
   gap: var(--space-3);
   padding: var(--space-4);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--surface-2);
   color: var(--text);
   --icon-size: var(--icon-md);
@@ -622,7 +618,7 @@ svg.lucide {
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(8px);
   }
 }
 
@@ -656,5 +652,150 @@ svg.lucide {
 @media print {
   .no-print {
     display: none !important;
+  }
+}
+
+/* ─── Bento ──────────────────────────────────────────────────────────────── */
+
+/* Report tiles sit on a 12-column grid; phones stack them, small tiles pair up. */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.bento > * {
+  grid-column: span 12;
+  min-width: 0;
+}
+
+.span-3 {
+  grid-column: span 3;
+}
+
+.span-4 {
+  grid-column: span 4;
+}
+
+.span-5 {
+  grid-column: span 5;
+}
+
+.span-6 {
+  grid-column: span 6;
+}
+
+.span-7 {
+  grid-column: span 7;
+}
+
+.span-8 {
+  grid-column: span 8;
+}
+
+/* Under 900: two per row, wide tiles take the row. At 640: one per row, but small stat tiles still pair up. */
+@media (max-width: 900px) {
+  .bento > .span-3,
+  .bento > .span-4,
+  .bento > .span-5,
+  .bento > .span-6 {
+    grid-column: span 6;
+  }
+
+  .bento > .span-7,
+  .bento > .span-8 {
+    grid-column: span 12;
+  }
+}
+
+@media (max-width: 640px) {
+  .bento > *,
+  .bento > .span-3,
+  .bento > .span-4,
+  .bento > .span-5,
+  .bento > .span-6 {
+    grid-column: span 12;
+  }
+
+  .bento > .metric {
+    grid-column: span 6;
+  }
+}
+
+/* A tile is a card; ink and lime tiles carry the emphasis of a screen. */
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-5);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.tile--ink {
+  --you: var(--on-tile-ink);
+  --you-ink: var(--on-tile-ink);
+  --them: var(--them-on-ink);
+  --them-ink: var(--them-on-ink);
+  --text: var(--on-tile-ink);
+  --text-muted: var(--on-tile-ink-muted);
+  --text-faint: var(--on-tile-ink-muted);
+  --border: var(--on-tile-ink-muted);
+  background: var(--tile-ink);
+  color: var(--on-tile-ink);
+}
+
+.tile--lime {
+  --text: var(--on-lime);
+  --text-muted: var(--on-lime-muted);
+  --text-faint: var(--on-lime-muted);
+  --you: var(--on-lime);
+  --you-ink: var(--on-lime);
+  --them: var(--on-lime-muted);
+  --them-ink: var(--on-lime);
+  background: var(--lime);
+  color: var(--on-lime);
+}
+
+.tile__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font: var(--text-label);
+}
+
+.tile__figure {
+  font: 600 44px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+}
+
+.tile__figure small {
+  color: var(--text-muted);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.tile__note {
+  color: var(--text-muted);
+  font: var(--text-small);
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .tile {
+    padding: var(--space-4);
+    border-radius: var(--radius-xl);
+  }
+
+  .tile__figure {
+    font-size: 34px;
   }
 }

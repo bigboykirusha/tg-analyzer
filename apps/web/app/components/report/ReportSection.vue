@@ -4,7 +4,7 @@ defineProps<{ title: string; text?: string; wide?: boolean }>()
 </script>
 
 <template>
-  <article class="card report-section" :class="{ 'report-section--wide': wide }">
+  <article class="tile report-section" :class="{ 'report-section--wide': wide }">
     <header class="report-section__head">
       <div class="report-section__copy">
         <h2 class="report-section__title">{{ title }}</h2>
@@ -20,10 +20,7 @@ defineProps<{ title: string; text?: string; wide?: boolean }>()
 
 <style scoped>
 .report-section {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
   overflow: hidden;
 }
 
@@ -46,17 +43,15 @@ defineProps<{ title: string; text?: string; wide?: boolean }>()
   max-width: 560px;
 }
 
+/* Tiles are named quietly; the numbers inside carry the weight. */
 .report-section__title {
-  font: var(--text-h2);
-  font-size: 20px;
-  line-height: 28px;
+  font: var(--text-title);
   letter-spacing: -0.01em;
 }
 
 .report-section__text {
   color: var(--text-muted);
-  font: var(--text-ui);
-  font-weight: 400;
+  font: var(--text-small);
   overflow-wrap: anywhere;
 }
 </style>

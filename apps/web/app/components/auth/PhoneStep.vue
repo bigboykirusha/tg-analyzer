@@ -110,6 +110,11 @@ function submit() {
 </template>
 
 <style scoped>
+/* Breathing room after the country divider. */
+.phone-field .phone-input {
+  padding-left: var(--space-3);
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;

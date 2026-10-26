@@ -76,16 +76,19 @@ function handleKeydown(event: KeyboardEvent) {
 </template>
 
 <style scoped>
-/* Tabs set like a table of contents: a hairline rule and an ink underline that slides. */
+/* An iOS-style segmented control: a grey pill track and a white thumb that slides. */
 .segmented {
   --gap: 0px;
+  --pad: 3px;
   position: relative;
   display: flex;
   width: 100%;
   max-width: 100%;
   gap: var(--gap);
+  padding: var(--pad);
   overflow-x: auto;
-  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
   scrollbar-width: none;
 }
 
@@ -96,19 +99,20 @@ function handleKeydown(event: KeyboardEvent) {
 .segmented--inline {
   display: inline-flex;
   width: auto;
-  gap: var(--space-4);
 }
 
 .segment-indicator {
-  --slot: calc(100% / var(--count));
+  --slot: calc((100% - 2 * var(--pad)) / var(--count));
   position: absolute;
   z-index: 0;
-  bottom: -1px;
-  left: calc(var(--index) * var(--slot));
+  top: var(--pad);
+  bottom: var(--pad);
+  left: calc(var(--pad) + var(--index) * var(--slot));
   width: var(--slot);
-  height: 2px;
-  background: var(--text);
-  transition: left var(--transition-slow);
+  border-radius: var(--radius-full);
+  background: var(--segment-thumb);
+  box-shadow: var(--shadow-segment);
+  transition: left 250ms var(--ease-standard);
   pointer-events: none;
 }
 
@@ -117,24 +121,24 @@ function handleKeydown(event: KeyboardEvent) {
   z-index: 1;
   flex: 1 1 0;
   min-width: 0;
-  min-height: var(--control-md);
+  min-height: 30px;
   padding: 0 var(--space-3);
   border: 0;
-  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
   font: var(--text-control);
-  font-weight: 500;
+  font-size: 13px;
   white-space: nowrap;
   transition:
     color var(--transition-fast),
-    background-color var(--transition-fast);
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .segmented--inline .segment {
   flex: 0 0 auto;
-  padding-inline: 0;
 }
 
 @media (hover: hover) {
@@ -145,12 +149,12 @@ function handleKeydown(event: KeyboardEvent) {
 
 .segment-active {
   color: var(--text);
-  font-weight: 600;
 }
 
-/* Inline variant has no sliding bar: the selected segment carries it. */
+/* Inline variant sizes to content, so the selected segment carries its own thumb. */
 .segmented--inline .segment-active {
-  box-shadow: inset 0 -2px 0 var(--text);
+  background: var(--segment-thumb);
+  box-shadow: var(--shadow-segment);
 }
 
 .segment:focus-visible {
@@ -163,17 +167,15 @@ function handleKeydown(event: KeyboardEvent) {
   cursor: not-allowed;
 }
 
-/* Phones: four tabs must fit 343px without scrolling. */
 @media (max-width: 640px) {
   .segment {
-    padding-inline: var(--space-1);
-    font-size: 13px;
+    padding-inline: var(--space-2);
   }
 }
 
 @media (max-width: 640px) and (pointer: coarse) {
   .segment {
-    min-height: var(--control-md);
+    min-height: 36px;
   }
 }
 </style>

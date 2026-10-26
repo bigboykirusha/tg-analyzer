@@ -1,5 +1,5 @@
 /*
- * The only place Lucide icons are imported from. Stroke (1.75) and size
+ * The only place Lucide icons are imported from. Stroke (1.6) and size
  * (--icon-sm / --icon-md / --icon-lg) come from base.css, colour from
  * `currentColor`. Fixed meanings: CircleCheck — success, AlertTriangle —
  * warning, CircleX / AlertCircle — error, Info — help, Check — selected,
@@ -25,6 +25,7 @@ export {
   LogOut,
   MessageSquare,
   MoreHorizontal,
+  Plus,
   Moon,
   RefreshCw,
   RotateCw,

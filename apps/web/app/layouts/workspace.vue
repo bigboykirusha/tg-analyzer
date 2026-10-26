@@ -4,6 +4,12 @@ const workspace = useWorkspaceStore()
 const { syncTimeZone } = useAuth()
 const { t } = useI18n()
 const toast = useToast()
+const route = useRoute()
+const isReport = computed(() => route.path.startsWith('/chat/'))
+
+onMounted(() => {
+  if (!workspace.reports.length) void workspace.loadReports().catch(() => undefined)
+})
 
 onMounted(() => {
   analysis.start()
@@ -30,26 +36,64 @@ watch(analysis.finished, (job) => {
 
 <template>
   <div class="workspace">
-    <AppHeader />
-    <main class="workspace-main">
-      <slot />
-    </main>
+    <div class="workspace-sidebar"><AppSidebar /></div>
+    <div class="workspace-column">
+      <AppHeader />
+      <main class="workspace-main">
+        <UiPageContainer v-if="isReport" class="workspace-chips">
+          <ReportChips />
+        </UiPageContainer>
+        <slot />
+      </main>
+    </div>
   </div>
 </template>
 
 <style scoped>
+/* Wide screens: the chat list on the left, the page on the right. Phones: one column. */
 .workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100dvh;
+}
+
+.workspace-sidebar,
+.workspace-chips {
+  display: none;
+}
+
+.workspace-column {
+  min-width: 0;
 }
 
 .workspace-main {
   min-width: 0;
-  padding: var(--space-12) 0 var(--space-16);
+  padding: var(--space-6) 0 var(--space-16);
+}
+
+@media (min-width: 901px) {
+  .workspace {
+    grid-template-columns: 248px minmax(0, 1fr);
+  }
+
+  /* The rail runs the full page height; the list inside stays pinned. */
+  .workspace-sidebar {
+    display: block;
+    border-right: 1px solid var(--border);
+    background: var(--sidebar);
+  }
+}
+
+@media (max-width: 900px) {
+  .workspace-chips {
+    display: block;
+    margin-bottom: var(--space-4);
+  }
 }
 
 @media (max-width: 640px) {
   .workspace-main {
-    padding: var(--space-5) 0 max(var(--space-10), env(safe-area-inset-bottom, 0px));
+    padding: var(--space-2) 0 max(var(--space-12), env(safe-area-inset-bottom, 0px));
   }
 }
 </style>

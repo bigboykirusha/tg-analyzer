@@ -39,35 +39,39 @@ const momentum = computed(() =>
   />
 
   <div v-else class="stack stack--lg">
-    <ReportPulse :data="data" />
-
-    <ReportKpis>
+    <ReportHero
+      :data="data"
+      :label="t('report.kpi.messages')"
+      :value="formatNumber(data.report.totals.messages)"
+      :note="
+        t('report.kpi.sentReceived', {
+          sent: formatNumber(data.report.totals.sent),
+          received: formatNumber(data.report.totals.received),
+        })
+      "
+    >
+      <template #accent>
+        <div class="tile__label">{{ t('group.mostActive') }}</div>
+        <div class="leader">
+          <div class="leader__name">{{ leader ? nameOf(leader) : t('common.na') }}</div>
+          <p v-if="leader" class="tile__note">
+            {{ t('group.shareOfMessages', { value: formatPercent(leader.messageShare) }) }}
+          </p>
+        </div>
+      </template>
       <UiMetricCard
-        :label="t('report.kpi.messages')"
-        :value="formatNumber(data.report.totals.messages)"
-        :sub="
-          t('report.kpi.sentReceived', {
-            sent: formatNumber(data.report.totals.sent),
-            received: formatNumber(data.report.totals.received),
-          })
-        "
-      />
-      <UiMetricCard
+        class="span-6"
         :label="t('group.activeMembers')"
         :value="formatNumber(health?.activeMembers ?? group.participants.length)"
         :sub="t('group.activeMembersSub')"
       />
       <UiMetricCard
+        class="span-6"
         :label="t('group.activeNow')"
         :value="health ? formatNumber(health.activeMembersLast30Days) : t('common.na')"
         :sub="momentum"
       />
-      <UiMetricCard
-        :label="t('group.mostActive')"
-        :value="leader ? nameOf(leader) : t('common.na')"
-        :sub="leader ? t('group.shareOfMessages', { value: formatPercent(leader.messageShare) }) : null"
-      />
-    </ReportKpis>
+    </ReportHero>
 
     <!-- Phones read the whole report as one long page; wider screens switch tabs. -->
     <ReportNav v-model="tab" :options="tabs" :label="t('report.tabs.label')" :scroll="isPhone" />
@@ -87,3 +91,26 @@ const momentum = computed(() =>
     </template>
   </div>
 </template>
+
+<style scoped>
+.leader {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.leader__name {
+  overflow: hidden;
+  font: 600 40px/1.05 var(--font-sans);
+  letter-spacing: -0.04em;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (max-width: 640px) {
+  .leader__name {
+    font-size: 32px;
+  }
+}
+</style>

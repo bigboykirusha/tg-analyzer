@@ -141,7 +141,7 @@ const period = computed(() => {
 .report-page :deep(.report-grid) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-5);
+  gap: var(--space-3);
   min-width: 0;
 }
 

@@ -384,7 +384,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   min-height: var(--control-md);
   padding: 0 var(--space-3) 0 var(--space-4);
   border: 1px solid var(--control-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
@@ -459,7 +459,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   padding: 0 var(--space-3) 0 var(--space-4);
   border: 0;
   border-right: 1px solid var(--border);
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   background: transparent;
   color: var(--text);
   cursor: pointer;
@@ -499,8 +499,8 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   max-height: 320px;
   overflow: hidden;
   padding: var(--space-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border: 0;
+  border-radius: var(--radius-lg);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
 }
@@ -528,7 +528,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   min-height: var(--control-sm);
   margin-bottom: var(--space-1);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--surface-2);
   color: var(--text-muted);
 }

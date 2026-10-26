@@ -95,6 +95,7 @@ onBeforeUnmount(() => observer?.disconnect())
     </nav>
     <UiSegmentedControl
       v-else
+      inline
       :model-value="model"
       :options="options"
       :aria-label="label"
@@ -130,9 +131,10 @@ onBeforeUnmount(() => observer?.disconnect())
   flex: 0 0 auto;
   min-height: var(--control-sm);
   padding: 0 var(--space-4);
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: var(--radius-full);
   background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
   color: var(--text-muted);
   font: var(--text-control);
   cursor: pointer;
@@ -143,8 +145,8 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 .report-nav__chip[aria-current='true'] {
-  border-color: var(--inverse-surface);
   background: var(--inverse-surface);
+  box-shadow: none;
   color: var(--on-inverse);
 }
 </style>

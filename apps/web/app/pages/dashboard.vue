@@ -194,7 +194,7 @@ onMounted(() => {
             <p class="dashboard-section__hint">{{ t('people.hint') }}</p>
           </div>
         </div>
-        <PeopleTable :reports="privateReports" :avatars="avatars" />
+        <div class="tile"><PeopleTable :reports="privateReports" :avatars="avatars" /></div>
       </section>
 
       <section v-if="!reports.length && showIntro" class="intro" aria-labelledby="intro-title">
@@ -240,6 +240,7 @@ onMounted(() => {
           </label>
           <UiSegmentedControl
             v-model="filter"
+            inline
             class="dashboard-filter"
             :options="filterOptions"
             :aria-label="t('dashboard.filter.label')"
@@ -365,10 +366,8 @@ onMounted(() => {
 }
 
 .dashboard-section__title {
-  font: var(--text-h2);
-  font-size: 20px;
-  line-height: 28px;
-  letter-spacing: -0.01em;
+  font: 600 20px/26px var(--font-sans);
+  letter-spacing: -0.02em;
 }
 
 .dashboard-section__hint {
@@ -379,34 +378,47 @@ onMounted(() => {
 .report-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .intro {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  padding: var(--space-6);
-  border: 1px solid var(--accent-border);
-  border-radius: var(--radius-lg);
-  background: var(--accent-subtle);
 }
 
+/* Three white step tiles; the first one is lime, like the first tile of a report. */
 .intro__steps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-5);
+  gap: var(--space-3);
   list-style: none;
 }
 
 .intro__step {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.intro__step:first-child {
+  background: var(--lime);
+  --text: var(--on-lime);
+  --text-muted: var(--on-lime-muted);
 }
 
 .intro__step .icon-tile {
-  background: var(--surface);
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.intro__step:first-child .icon-tile {
+  background: var(--tile-ink);
+  color: var(--on-tile-ink);
 }
 
 .intro__copy {
@@ -424,27 +436,16 @@ onMounted(() => {
 
 .dashboard-tools {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: var(--space-3);
 }
 
 /* No overflow clipping: row menus float outside the list. */
 .chat-list {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  padding: var(--space-1) 0;
+  border-radius: var(--radius-card);
   background: var(--surface);
-}
-
-.chat-list :deep(.chat-row:first-child) {
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-}
-
-.chat-list :deep(.chat-row:last-child) {
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-}
-
-.chat-list :deep(.chat-row:only-child) {
-  border-radius: var(--radius-lg);
 }
 
 .list-footer {
@@ -459,7 +460,6 @@ onMounted(() => {
 
   .intro__steps {
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-4);
   }
 }
 
@@ -470,10 +470,6 @@ onMounted(() => {
 
   .dashboard-tools {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .intro {
-    padding: var(--space-5);
   }
 
   /* Phones: report cards scroll sideways instead of pushing the chat list down. */

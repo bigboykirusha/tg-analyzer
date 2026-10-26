@@ -13,7 +13,7 @@ const props = withDefaults(
     /** Blocks closing while an action runs. */
     busy?: boolean
     role?: 'dialog' | 'alertdialog'
-    /** Element to focus first, e.g. «Cancel» in confirmations. */
+    /** Element to focus first; by default the dialog itself, so no button looks pre-selected. */
     initialFocus?: () => HTMLElement | null | undefined
   }>(),
   {
@@ -39,7 +39,7 @@ function close() {
 }
 
 useBodyScrollLock(open)
-useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocus?.() })
+useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocus?.() ?? panelRef.value })
 </script>
 
 <template>
@@ -48,6 +48,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
       <div v-if="open" class="modal-backdrop" @click.self="close">
         <section
           ref="panelRef"
+          tabindex="-1"
           class="modal-panel"
           :class="`modal-panel--${size}`"
           :role="role"
@@ -106,8 +107,8 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   max-width: 400px;
   max-height: min(84dvh, 760px);
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border: 0;
+  border-radius: var(--radius-card);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
 }
@@ -180,10 +181,17 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
 }
 
 /* Phones: the dialog becomes a bottom sheet. */
+/* The dialog takes focus on open without drawing a ring around itself. */
+.modal-panel:focus {
+  outline: none;
+  box-shadow: var(--shadow-overlay);
+}
+
 @media (max-width: 640px) {
+  /* Phones: the dialog becomes a sheet floating just above the bottom edge. */
   .modal-backdrop {
     align-items: end;
-    padding: 0;
+    padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
   }
 
   .modal-panel,
@@ -192,7 +200,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
     max-width: none;
     max-height: 86dvh;
     border-width: 0;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-radius: var(--radius-sheet);
   }
 
   .modal-header {
@@ -206,7 +214,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   .modal-actions {
     flex-direction: column-reverse;
     gap: var(--space-2);
-    padding: var(--space-3) var(--space-5) max(var(--space-5), env(safe-area-inset-bottom));
+    padding: var(--space-3) var(--space-5) var(--space-5);
   }
 
   .modal-actions :deep(.btn) {
@@ -216,12 +224,12 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
 
   .modal-enter-active .modal-panel,
   .modal-leave-active .modal-panel {
-    transition: transform var(--transition-slow);
+    transition: transform var(--duration-sheet) var(--ease-drawer);
   }
 
   .modal-enter-from .modal-panel,
   .modal-leave-to .modal-panel {
-    transform: translateY(100%);
+    transform: translateY(calc(100% + var(--space-4)));
   }
 }
 </style>

@@ -8,7 +8,7 @@ function px(name: string, fallback: number) {
   return Number.parseFloat(cssVar(name)) || fallback
 }
 
-const FALLBACK_FONT = 'Onest Variable, system-ui, sans-serif'
+const FALLBACK_FONT = 'Geist Variable, system-ui, sans-serif'
 
 /**
  * ECharts settings derived from the CSS design tokens: transparent background,

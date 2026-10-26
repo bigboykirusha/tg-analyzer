@@ -45,7 +45,7 @@ withDefaults(
   min-height: 40px;
   padding: 0 var(--space-3);
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text);
   cursor: pointer;

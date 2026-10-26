@@ -4,7 +4,7 @@ import Button from './Button.vue'
 /**
  * Confirmation: a question as the title, consequences as the description and
  * a concrete verb on the main button. `danger` adds a filled
- * danger button and `alertdialog`; focus starts on «Cancel».
+ * danger button and `alertdialog`; focus starts on the dialog itself.
  */
 const props = withDefaults(
   defineProps<{
@@ -29,13 +29,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const cancelRef = ref<InstanceType<typeof Button> | null>(null)
 const isDanger = computed(() => props.variant === 'danger')
-
-function cancelButton() {
-  const el = cancelRef.value?.$el as HTMLElement | undefined
-  return el instanceof HTMLElement ? el : null
-}
 </script>
 
 <template>
@@ -46,12 +40,11 @@ function cancelButton() {
     :close-label="t('common.close')"
     :busy="loading"
     :role="isDanger ? 'alertdialog' : 'dialog'"
-    :initial-focus="cancelButton"
     size="sm"
     @close="emit('close')"
   >
     <template #actions>
-      <Button ref="cancelRef" variant="secondary" :disabled="loading" @click="emit('close')">
+      <Button variant="secondary" :disabled="loading" @click="emit('close')">
         {{ cancelLabel || t('common.cancel') }}
       </Button>
       <Button :variant="isDanger ? 'danger' : 'primary'" :loading="loading" @click="emit('confirm')">

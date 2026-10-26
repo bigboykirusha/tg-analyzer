@@ -80,7 +80,7 @@ function runAction(toast: ToastMessage) {
   gap: var(--space-3);
   min-width: 0;
   padding: var(--space-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--inverse-surface);
   box-shadow: var(--shadow-overlay);
   color: var(--on-inverse);

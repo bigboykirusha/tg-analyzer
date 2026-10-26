@@ -159,8 +159,8 @@ onBeforeUnmount(() => {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--space-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border: 0;
+  border-radius: var(--radius-lg);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
   scrollbar-width: thin;
@@ -195,6 +195,6 @@ onBeforeUnmount(() => {
 .popover-enter-from,
 .popover-leave-to {
   opacity: 0;
-  transform: translateY(-4px) scale(0.98);
+  transform: translateY(-4px) scale(0.97);
 }
 </style>

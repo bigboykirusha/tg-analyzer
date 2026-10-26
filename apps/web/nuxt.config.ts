@@ -51,9 +51,8 @@ export default defineNuxtConfig({
   ],
   css: [
     // Self-hosted variable fonts; unicode-range keeps downloads to the scripts a page uses.
-    '@fontsource-variable/onest/index.css',
-    '@fontsource-variable/literata/opsz.css',
-    '@fontsource-variable/literata/opsz-italic.css',
+    '@fontsource-variable/geist/index.css',
+    '@fontsource-variable/geist-mono/index.css',
     '~/assets/styles/tokens.css',
     '~/assets/styles/base.css',
   ],

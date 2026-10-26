@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { ArrowLeft, MoreHorizontal, RotateCw, Share2, Trash2 } from '../../lib/icons'
+import { MoreHorizontal, RotateCw, Share2, Trash2 } from '../../lib/icons'
 
 const props = defineProps<{
   summary: ReportSummaryDto
@@ -27,53 +27,49 @@ function run(action: 'story' | 'delete') {
 </script>
 
 <template>
-  <Teleport defer to="#mobile-report-toolbar" :disabled="!isMobile">
-    <div class="report-header">
-      <UiIconButton :icon="ArrowLeft" :label="t('common.back')" variant="ghost" class="no-print" to="/dashboard" />
-
-      <div class="report-header__identity">
-        <ChatAvatar :chat-id="summary.chatId" :title="summary.title" :size="isMobile ? 'md' : 'lg'" />
-        <div class="report-header__copy">
-          <h1 class="report-header__title">{{ summary.title }}</h1>
-          <p class="t-small t-muted">{{ period }}</p>
-        </div>
-      </div>
-
-      <div class="report-header__actions no-print">
-        <UiButton class="report-header__story" variant="soft" size="sm" :icon="Share2" @click="emit('story')">
-          {{ t('story.open') }}
-        </UiButton>
-        <UiIconButton
-          :icon="RotateCw"
-          :label="t('report.reanalyse')"
-          variant="secondary"
-          :loading="reanalysing"
-          :disabled="!canReanalyse"
-          @click="emit('reanalyse')"
-        />
-        <UiPopoverMenu v-model:open="menuOpen" align="end" :aria-label="t('report.actions')">
-          <template #trigger>
-            <UiIconButton
-              :icon="MoreHorizontal"
-              :label="t('report.actions')"
-              variant="ghost"
-              :no-tooltip="menuOpen"
-              aria-haspopup="menu"
-              :aria-expanded="menuOpen"
-              @click="menuOpen = !menuOpen"
-            />
-          </template>
-          <UiMenuItem role="menuitem" class="report-header__story-item" :icon="Share2" @click="run('story')">
-            {{ t('story.open') }}
-          </UiMenuItem>
-          <div class="menu-divider report-header__story-item" role="separator" />
-          <UiMenuItem role="menuitem" :icon="Trash2" danger @click="run('delete')">
-            {{ t('report.deleteMenu') }}
-          </UiMenuItem>
-        </UiPopoverMenu>
+  <div class="report-header">
+    <div class="report-header__identity">
+      <ChatAvatar :chat-id="summary.chatId" :title="summary.title" :size="isMobile ? 'md' : 'lg'" />
+      <div class="report-header__copy">
+        <h1 class="report-header__title">{{ summary.title }}</h1>
+        <p class="t-small t-muted">{{ period }}</p>
       </div>
     </div>
-  </Teleport>
+
+    <div class="report-header__actions no-print">
+      <UiButton class="report-header__story" variant="soft" size="sm" :icon="Share2" @click="emit('story')">
+        {{ t('story.open') }}
+      </UiButton>
+      <UiIconButton
+        :icon="RotateCw"
+        :label="t('report.reanalyse')"
+        variant="secondary"
+        :loading="reanalysing"
+        :disabled="!canReanalyse"
+        @click="emit('reanalyse')"
+      />
+      <UiPopoverMenu v-model:open="menuOpen" align="end" :aria-label="t('report.actions')">
+        <template #trigger>
+          <UiIconButton
+            :icon="MoreHorizontal"
+            :label="t('report.actions')"
+            variant="ghost"
+            :no-tooltip="menuOpen"
+            aria-haspopup="menu"
+            :aria-expanded="menuOpen"
+            @click="menuOpen = !menuOpen"
+          />
+        </template>
+        <UiMenuItem role="menuitem" class="report-header__story-item" :icon="Share2" @click="run('story')">
+          {{ t('story.open') }}
+        </UiMenuItem>
+        <div class="menu-divider report-header__story-item" role="separator" />
+        <UiMenuItem role="menuitem" :icon="Trash2" danger @click="run('delete')">
+          {{ t('report.deleteMenu') }}
+        </UiMenuItem>
+      </UiPopoverMenu>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -94,7 +90,7 @@ function run(action: 'story' | 'delete') {
 
 .report-header {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-4);
   width: 100%;
@@ -117,8 +113,8 @@ function run(action: 'story' | 'delete') {
 
 .report-header__title {
   overflow: hidden;
-  font: var(--text-h1);
-  letter-spacing: -0.02em;
+  font: 600 30px/1.05 var(--font-sans);
+  letter-spacing: -0.04em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -131,8 +127,7 @@ function run(action: 'story' | 'delete') {
 
 @media (max-width: 768px) {
   .report-header__title {
-    font-size: 26px;
-    line-height: 32px;
+    font-size: 24px;
   }
 }
 
@@ -146,7 +141,7 @@ function run(action: 'story' | 'delete') {
   }
 
   .report-header__title {
-    font: var(--text-title);
+    font-size: 22px;
   }
 
   .report-header__copy .t-small {

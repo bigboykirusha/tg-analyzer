@@ -2,7 +2,6 @@
 import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
 import { ApiClientError } from '../composables/useApi'
 import { AlertCircle } from '../lib/icons'
-import { sampleConversationDays } from '../lib/sample-conversation'
 
 definePageMeta({ middleware: ['guest'] })
 
@@ -40,18 +39,6 @@ function closePrivacy() {
 }
 
 useSeoMeta({ title: () => t('login.seoTitle'), description: () => t('seo.description') })
-
-const sampleDays = sampleConversationDays()
-/** The headline with its emphasised words set in italic. */
-const heroParts = computed(() => {
-  const title = t('login.heroTitle')
-  const em = t('login.heroTitleEm')
-  const at = title.indexOf(em)
-  return at < 0
-    ? { before: title, em: '', after: '' }
-    : { before: title.slice(0, at), em, after: title.slice(at + em.length) }
-})
-const promises = computed(() => [t('login.promise.texts'), t('login.promise.delete'), t('login.promise.noAi')])
 
 watch(step, () => {
   error.value = ''
@@ -154,42 +141,14 @@ function changeNumber() {
 <template>
   <main class="login-page">
     <header class="login-header">
-      <div class="brand">
-        <BrandMark :size="30" />
+      <NuxtLink to="/" class="brand" aria-label="TG Analyzer">
+        <BrandMark />
         <span class="brand-name">{{ t('login.title') }}</span>
-      </div>
+      </NuxtLink>
       <div class="login-controls"><UiLocaleSwitch /><UiThemeToggle /></div>
     </header>
 
     <div class="login-shell">
-      <section class="login-story" aria-labelledby="login-hero">
-        <p class="t-label story-kicker">{{ t('login.brandLabel') }}</p>
-        <h1 id="login-hero" class="story-title">
-          {{ heroParts.before }}<em>{{ heroParts.em }}</em
-          >{{ heroParts.after }}
-        </h1>
-        <p class="story-text">{{ t('login.heroText') }}</p>
-
-        <figure class="story-figure">
-          <div class="story-legend" aria-hidden="true">
-            <span class="t-you">{{ t('login.legendYou') }}</span>
-            <span class="t-them">{{ t('login.legendThem') }}</span>
-          </div>
-          <Seismograph :days="sampleDays" :height="112" animate />
-          <figcaption class="story-caption">
-            {{ t('login.sampleCaption') }}
-            <NuxtLink to="/example" class="story-example">{{ t('login.exampleLink') }}</NuxtLink>
-          </figcaption>
-        </figure>
-
-        <ul class="story-promises">
-          <li v-for="(promise, index) in promises" :key="index">
-            <span class="story-promises__index t-num">{{ String(index + 1).padStart(2, '0') }}</span>
-            {{ promise }}
-          </li>
-        </ul>
-      </section>
-
       <section class="login-panel">
         <div class="login-card">
           <div class="login-progress" aria-hidden="true">
@@ -249,6 +208,7 @@ function changeNumber() {
             <button type="button" class="trust__link" @click="privacyOpen = true">{{ t('login.trust.more') }}</button>
           </p>
         </div>
+        <NuxtLink to="/example" class="login-example">{{ t('login.exampleLink') }}</NuxtLink>
       </section>
     </div>
 
@@ -258,27 +218,24 @@ function changeNumber() {
 
 <style scoped>
 .login-page {
+  display: flex;
+  flex-direction: column;
   min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
 }
 
-/* Header and both columns share the page column, like every signed-in page. */
-.login-shell {
-  width: 100%;
-  max-width: calc(var(--page-max) + 2 * var(--page-gutter));
-  margin: 0 auto;
-  padding-inline: var(--page-gutter);
-}
-
 .login-header {
-  padding-inline: max(var(--page-gutter), calc((100% - var(--page-max)) / 2));
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-6);
   min-height: var(--topbar-height);
-  border-bottom: 1px solid var(--border);
+  padding: env(safe-area-inset-top, 0px) max(20px, env(safe-area-inset-left, 0px)) 0;
+  background: var(--bg);
 }
 
 .brand,
@@ -288,125 +245,51 @@ function changeNumber() {
 }
 
 .brand {
-  gap: var(--space-3);
-  font: 600 19px/24px var(--font-display);
-  letter-spacing: -0.015em;
+  gap: 10px;
+  font: 600 16px/1 var(--font-sans);
+  letter-spacing: -0.02em;
 }
 
 .login-controls {
   gap: var(--space-1);
 }
 
+/* One card in the middle of the screen; on phones it fills the width. */
 .login-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
-  gap: clamp(var(--space-10), 6vw, 88px);
-  align-items: start;
-  padding-block: clamp(var(--space-10), 7vh, 88px) var(--space-16);
-}
-
-.login-story {
-  display: grid;
-  gap: var(--space-6);
-  min-width: 0;
-}
-
-.story-kicker {
-  color: var(--accent-ink);
-}
-
-.story-title {
-  font: var(--text-display);
-  font-size: clamp(44px, 5vw, 64px);
-  line-height: 1.02;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
-}
-
-.story-title em {
-  color: var(--you-ink);
-  font-style: italic;
-  font-weight: 400;
-}
-
-.story-text {
-  max-width: 34em;
-  color: var(--text-muted);
-  font-size: 18px;
-  line-height: 28px;
-}
-
-.story-figure {
-  display: grid;
-  gap: var(--space-2);
-  margin-top: var(--space-4);
-  padding-block: var(--space-4);
-  border-block: 1px solid var(--border);
-}
-
-.story-legend {
-  display: flex;
-  justify-content: space-between;
-  font: var(--text-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.story-caption {
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-
-.story-example {
-  color: var(--text);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: var(--border-strong);
-  text-underline-offset: 3px;
-  white-space: nowrap;
-}
-
-@media (hover: hover) {
-  .story-example:hover {
-    text-decoration-color: currentColor;
-  }
-}
-
-.story-promises {
-  display: grid;
-  gap: 0;
-  list-style: none;
-}
-
-.story-promises li {
-  display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
-  gap: var(--space-3);
-  padding-block: var(--space-3);
-  border-bottom: 1px solid var(--border);
-  font: var(--text-ui);
-}
-
-.story-promises__index {
-  color: var(--text-muted);
-  font: var(--text-label);
-  line-height: 20px;
+  flex: 1;
+  place-items: start center;
+  padding: clamp(var(--space-8), 10vh, 120px) max(20px, env(safe-area-inset-left, 0px)) var(--space-16);
 }
 
 .login-panel {
-  position: sticky;
-  top: var(--space-8);
-  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-5);
+  width: 100%;
+  max-width: 440px;
 }
 
 .login-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: clamp(var(--space-6), 3vw, var(--space-10));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  width: 100%;
+  padding: var(--space-8);
+  border-radius: var(--radius-modal);
   background: var(--surface);
+}
+
+.login-example {
+  color: var(--text-muted);
+  font: var(--text-ui);
+  transition: color var(--transition-fast);
+}
+
+@media (hover: hover) {
+  .login-example:hover {
+    color: var(--text);
+  }
 }
 
 /* One quiet line about privacy, with the policy one tap away. */
@@ -423,28 +306,29 @@ function changeNumber() {
   border-radius: var(--radius-xs);
   background: none;
   cursor: pointer;
-  color: var(--accent-ink);
+  color: var(--text);
   font: var(--text-small);
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: underline;
-  text-decoration-thickness: 1px;
+  text-decoration-color: var(--border-strong);
   text-underline-offset: 3px;
 }
 
 .login-progress {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .login-progress span {
-  height: 3px;
+  height: 4px;
+  border-radius: var(--radius-full);
   background: var(--surface-2);
-  transition: background var(--transition-normal);
+  transition: background-color var(--transition-normal);
 }
 
 .login-progress span.active {
-  background: var(--you);
+  background: var(--lime);
 }
 
 .login-copy {
@@ -453,8 +337,8 @@ function changeNumber() {
 }
 
 .login-copy h2 {
-  font: var(--text-h2);
-  letter-spacing: -0.012em;
+  font: 600 26px/1.1 var(--font-sans);
+  letter-spacing: -0.035em;
 }
 
 .login-copy p {
@@ -469,65 +353,25 @@ function changeNumber() {
     opacity var(--transition-normal),
     transform var(--transition-normal);
 }
+
 .auth-step-enter-from {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(8px);
 }
+
 .auth-step-leave-to {
   opacity: 0;
   transform: translateY(-6px);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 640px) {
   .login-shell {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-10);
-    padding-block: var(--space-8) var(--space-12);
+    padding-top: var(--space-4);
   }
 
-  /* On phones: the promise, then the form, then the picture and the details. */
-  .login-story {
-    display: contents;
-  }
-
-  .story-kicker,
-  .story-title,
-  .story-text {
-    margin-bottom: calc(var(--space-6) * -1);
-  }
-
-  .login-panel {
-    position: static;
-  }
-
-  .story-figure {
-    order: 1;
-    margin-top: 0;
-  }
-
-  .story-promises {
-    order: 2;
-  }
-
-  .story-title {
-    font-size: clamp(34px, 9vw, 52px);
-  }
-}
-
-@media (max-width: 520px) {
   .login-card {
     padding: var(--space-5);
-  }
-
-  .story-text {
-    font-size: 16px;
-    line-height: 26px;
-  }
-}
-
-@media (max-width: 380px) {
-  .brand-name {
-    display: none;
+    border-radius: var(--radius-card);
   }
 }
 </style>

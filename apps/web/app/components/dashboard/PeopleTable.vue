@@ -87,11 +87,9 @@ const rows = computed(() =>
 
 .people thead th {
   padding-block: 0 var(--space-3);
-  border-bottom: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border);
   color: var(--text-muted);
   font: var(--text-label);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .people tbody tr + tr > * {

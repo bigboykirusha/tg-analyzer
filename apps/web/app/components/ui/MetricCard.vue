@@ -12,7 +12,7 @@ defineProps<{
 <template>
   <div class="metric">
     <span class="metric-label t-label">{{ label }}</span>
-    <span class="metric-value t-display">{{ value }}</span>
+    <span class="metric-value">{{ value }}</span>
     <span v-if="sub || delta" class="metric-foot">
       <span v-if="delta" class="metric-delta">{{ delta }}</span>
       <span v-if="sub" class="metric-sub">{{ sub }}</span>
@@ -21,14 +21,15 @@ defineProps<{
 </template>
 
 <style scoped>
+/* A small number tile of the report's bento grid. */
 .metric {
   display: grid;
   align-content: start;
-  gap: var(--space-2);
+  gap: var(--space-3);
   min-width: 0;
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
+  padding: var(--space-5);
+  border-radius: var(--radius-card);
+  background: var(--surface);
 }
 
 .metric-label {
@@ -38,8 +39,24 @@ defineProps<{
 }
 
 .metric-value {
+  overflow: hidden;
   color: var(--text);
-  overflow-wrap: anywhere;
+  font: 600 36px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .metric {
+    padding: var(--space-4);
+    border-radius: var(--radius-xl);
+  }
+
+  .metric-value {
+    font-size: 28px;
+  }
 }
 
 .metric-foot {
@@ -50,6 +67,7 @@ defineProps<{
   min-width: 0;
   color: var(--text-muted);
   font: var(--text-small);
+  font-weight: 500;
 }
 
 .metric-delta {

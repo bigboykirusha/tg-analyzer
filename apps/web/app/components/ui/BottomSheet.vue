@@ -106,7 +106,7 @@ function onPointerUp() {
   width: 100%;
   max-height: 86dvh;
   overflow: hidden;
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
   transition: transform var(--transition-slow);

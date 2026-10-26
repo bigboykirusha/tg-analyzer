@@ -72,8 +72,8 @@ const items = computed(() =>
 </script>
 
 <template>
-  <section v-if="items.length" class="insights" aria-labelledby="insights-title">
-    <h2 id="insights-title" class="t-label insights__title">{{ t('insight.title') }}</h2>
+  <section v-if="items.length" class="tile insights" aria-labelledby="insights-title">
+    <h2 id="insights-title" class="tile__label insights__title">{{ t('insight.title') }}</h2>
     <ol class="insights__list">
       <li v-for="item in items" :key="item.id" class="insight">
         <span class="insight__figure t-figure" :class="`insight__figure--${item.side}`">{{ item.figure }}</span>
@@ -85,8 +85,7 @@ const items = computed(() =>
 
 <style scoped>
 .insights {
-  display: grid;
-  gap: var(--space-4);
+  gap: var(--space-2);
 }
 
 .insights__list {
@@ -96,20 +95,23 @@ const items = computed(() =>
   list-style: none;
 }
 
-/* A ledger: a hairline above each line, the figure in the left margin. */
+/* A figure over one plain sentence, rows split by hairlines. */
 .insight {
   display: grid;
-  grid-template-columns: 136px minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--space-4);
+  align-content: start;
+  gap: var(--space-1);
   padding-block: var(--space-4);
   border-top: 1px solid var(--border);
 }
 
+.insights__list > .insight:nth-child(-n + 2) {
+  border-top: 0;
+}
+
 .insight__figure {
-  font: 600 28px/32px var(--font-display);
+  font: 600 28px/32px var(--font-sans);
   font-variant-numeric: tabular-nums lining-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
   white-space: nowrap;
 }
 
@@ -122,24 +124,23 @@ const items = computed(() =>
 }
 
 .insight__text {
-  font: var(--text-body);
+  color: var(--text-muted);
+  font: var(--text-ui);
+  font-weight: 400;
   text-wrap: pretty;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 640px) {
   .insights__list {
     grid-template-columns: minmax(0, 1fr);
   }
-}
 
-@media (max-width: 480px) {
-  .insight {
-    grid-template-columns: 84px minmax(0, 1fr);
-    gap: var(--space-3);
+  .insights__list > .insight:nth-child(2) {
+    border-top: 1px solid var(--border);
   }
 
   .insight__figure {
-    font-size: 22px;
+    font-size: 24px;
     line-height: 28px;
   }
 }

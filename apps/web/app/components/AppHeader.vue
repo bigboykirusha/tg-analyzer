@@ -17,7 +17,16 @@ watch(
 )
 
 const navigation = useNavigation()
-const isReport = computed(() => route.path.startsWith('/chat/'))
+/** The bar sits flush with the page until the page scrolls under it, then shows a hairline. */
+const scrolled = ref(false)
+function onScroll() {
+  scrolled.value = window.scrollY > 4
+}
+onMounted(() => {
+  onScroll()
+  window.addEventListener('scroll', onScroll, { passive: true })
+})
+onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 const analysis = useAnalysis()
 /** The running analysis, shown in the header on every page. */
 const activity = computed(() => {
@@ -47,10 +56,10 @@ function signOut() {
 </script>
 
 <template>
-  <header class="app-navigation" :class="{ 'app-navigation--report': isReport }">
-    <div class="topbar glass-surface">
+  <header class="app-navigation" :class="{ 'is-scrolled': scrolled }">
+    <div class="topbar">
       <NuxtLink to="/dashboard" class="brand" aria-label="TG Analyzer">
-        <BrandMark :size="30" />
+        <BrandMark />
         <span class="brand-name">TG Analyzer</span>
       </NuxtLink>
       <nav v-if="navigation.items.value.length > 1" class="main-nav" :aria-label="t('nav.main')">
@@ -121,7 +130,6 @@ function signOut() {
         </UiPopoverMenu>
       </div>
     </div>
-    <div id="mobile-report-toolbar" class="mobile-report-toolbar glass-surface" />
   </header>
 </template>
 
@@ -130,6 +138,13 @@ function signOut() {
   position: sticky;
   top: 0;
   z-index: var(--z-header);
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--bg);
+  transition: box-shadow var(--duration-slow) ease;
+}
+
+.app-navigation.is-scrolled {
+  box-shadow: 0 1px 0 var(--border);
 }
 
 .topbar {
@@ -139,21 +154,24 @@ function signOut() {
   min-height: var(--topbar-height);
   /* Same column as the page below, so the logo lines up with the content. */
   padding-inline: max(var(--page-gutter), calc((100% - var(--page-max)) / 2));
-  border-width: 0 0 1px;
-  border-color: var(--border);
-  border-radius: 0;
-  box-shadow: none;
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 10px;
   border-radius: var(--radius-sm);
   color: var(--text);
-  font: 600 19px/24px var(--font-display);
-  letter-spacing: -0.015em;
+  font: 600 16px/1 var(--font-sans);
+  letter-spacing: -0.02em;
   white-space: nowrap;
+}
+
+/* With the sidebar on screen the logo lives there. */
+@media (min-width: 901px) {
+  .brand {
+    display: none;
+  }
 }
 
 .main-nav {
@@ -271,10 +289,6 @@ function signOut() {
   display: none;
 }
 
-.mobile-report-toolbar {
-  display: none;
-}
-
 @media (max-width: 640px) {
   .topbar {
     gap: var(--space-3);
@@ -292,22 +306,6 @@ function signOut() {
   .mobile-preferences {
     display: grid;
     gap: var(--space-1);
-  }
-
-  .app-navigation--report .topbar {
-    display: none;
-  }
-
-  .mobile-report-toolbar:not(:empty) {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    min-height: var(--topbar-height);
-    padding: var(--space-2) var(--space-4);
-    border-width: 0 0 1px;
-    border-color: var(--border);
-    border-radius: 0;
-    box-shadow: none;
   }
 }
 </style>

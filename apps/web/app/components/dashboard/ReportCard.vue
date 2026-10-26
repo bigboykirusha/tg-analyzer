@@ -64,19 +64,16 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-5);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface);
   transition:
-    border-color var(--transition-fast),
     box-shadow var(--transition-fast),
-    transform var(--transition-fast);
+    transform var(--duration-press) var(--ease-standard);
 }
 
 @media (hover: hover) {
   .report-card:hover {
-    border-color: var(--border-strong);
-    box-shadow: var(--shadow);
+    box-shadow: 0 0 0 1px var(--border-strong);
   }
 
   .report-card:hover .report-card__chevron {
@@ -86,7 +83,7 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
 }
 
 .report-card:active {
-  transform: scale(0.99);
+  transform: scale(var(--press-scale));
 }
 
 .report-card__head {

@@ -68,7 +68,7 @@ const classes = computed(() => [
   min-height: var(--control-md);
   padding: 0 var(--space-5);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--text);
   cursor: pointer;
@@ -91,7 +91,7 @@ const classes = computed(() => [
 .btn--sm {
   min-height: var(--control-sm);
   padding: 0 var(--space-4);
-  font-size: 13px;
+  padding: 0 14px;
 }
 
 .btn--lg {
@@ -149,10 +149,9 @@ const classes = computed(() => [
   color: var(--text);
 }
 
-/* Soft: a quiet action that repeats down a list («Анализ»). */
+/* Soft: a quiet action that repeats down a list («Анализ»): a grey chip. */
 .btn--soft {
-  border-color: var(--border);
-  background: var(--surface);
+  background: var(--surface-2);
   color: var(--text);
 }
 
@@ -192,7 +191,7 @@ const classes = computed(() => [
 }
 
 .btn:active {
-  transform: scale(0.98);
+  transform: scale(var(--press-scale));
 }
 
 .btn--ghost:active {

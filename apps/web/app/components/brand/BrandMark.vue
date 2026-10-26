@@ -1,18 +1,22 @@
 <script setup lang="ts">
 /**
- * The mark: a conversation as a seismograph. Ticks above the line are your
- * messages, ticks below are theirs. Ink follows the text colour, so the mark
- * works on paper and on night ink alike.
+ * The mark: a conversation as bars on an ink tile. Bars above the line are
+ * your messages, lime bars below are theirs, the same as in every report.
  */
-withDefaults(defineProps<{ size?: number }>(), { size: 32 })
+withDefaults(defineProps<{ size?: number }>(), { size: 28 })
 </script>
 
 <template>
-  <svg class="brand-mark" :width="size" :height="size" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-    <rect width="32" height="32" rx="7" class="brand-mark__field" />
-    <path d="M5 16h22" class="brand-mark__line" />
-    <path d="M9.5 14.5v-7M17.5 14.5v-10M25 14.5v-4" class="brand-mark__you" />
-    <path d="M13.5 17.5v6M21.5 17.5v8" class="brand-mark__them" />
+  <svg class="brand-mark" :width="size" :height="size" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+    <rect width="28" height="28" rx="8" class="brand-mark__field" />
+    <g transform="translate(3 3)">
+      <rect x="3" y="3" width="3.4" height="9" rx="1.7" class="brand-mark__you" />
+      <rect x="9.3" y="1" width="3.4" height="11" rx="1.7" class="brand-mark__you" />
+      <rect x="15.6" y="5" width="3.4" height="7" rx="1.7" class="brand-mark__you" />
+      <rect x="3" y="13" width="3.4" height="5" rx="1.7" class="brand-mark__them" />
+      <rect x="9.3" y="13" width="3.4" height="8" rx="1.7" class="brand-mark__them" />
+      <rect x="15.6" y="13" width="3.4" height="4" rx="1.7" class="brand-mark__them" />
+    </g>
   </svg>
 </template>
 
@@ -23,29 +27,14 @@ withDefaults(defineProps<{ size?: number }>(), { size: 32 })
 }
 
 .brand-mark__field {
-  fill: var(--text);
-}
-
-.brand-mark__line,
-.brand-mark__you,
-.brand-mark__them {
-  fill: none;
-  stroke-linecap: round;
-}
-
-.brand-mark__line {
-  stroke: var(--bg);
-  stroke-width: 1.2;
-  opacity: 0.45;
+  fill: var(--tile-ink);
 }
 
 .brand-mark__you {
-  stroke: var(--you);
-  stroke-width: 3;
+  fill: var(--on-tile-ink);
 }
 
 .brand-mark__them {
-  stroke: var(--bg);
-  stroke-width: 3;
+  fill: var(--lime);
 }
 </style>

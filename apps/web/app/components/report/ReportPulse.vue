@@ -5,7 +5,8 @@ import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
  * The whole chat at a glance: the signature seismograph, one tick per day
  * (per week for chats longer than a year), yours up, theirs down.
  */
-const props = defineProps<{ data: ReportDto }>()
+/** `bare`: inside a tile that already names the chart, so only the legend stays. */
+const props = defineProps<{ data: ReportDto; bare?: boolean }>()
 const { t, formatMonth } = useI18n()
 const isPhone = useMediaQuery('(max-width: 640px)')
 
@@ -45,7 +46,7 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
 <template>
   <figure v-if="ticks.length > 1" class="pulse">
     <figcaption class="pulse__caption">
-      <span class="t-label">{{ title }}</span>
+      <span v-if="!bare" class="t-label">{{ title }}</span>
       <span class="pulse__legend">
         <span class="pulse__key pulse__key--you">{{ t('report.pulse.you') }}</span>
         <span class="pulse__key pulse__key--them">{{ partner }}</span>

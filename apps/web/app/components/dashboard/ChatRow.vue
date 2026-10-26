@@ -129,13 +129,24 @@ function run(action: 'analyse' | 'delete') {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-4);
-  min-height: 72px;
-  padding: var(--space-3) var(--space-4);
+  min-height: 68px;
+  padding: var(--space-3) var(--space-5);
   transition: background-color var(--transition-fast);
 }
 
 .chat-row + .chat-row {
   box-shadow: inset 0 1px 0 var(--border);
+}
+
+/* Hairlines start under the text, not under the avatar. */
+@supports (background: linear-gradient(red, red)) {
+  .chat-row + .chat-row {
+    box-shadow: none;
+    background-image: linear-gradient(var(--border), var(--border));
+    background-repeat: no-repeat;
+    background-position: calc(var(--space-5) + 56px) 0;
+    background-size: 100% 1px;
+  }
 }
 
 @media (hover: hover) {
