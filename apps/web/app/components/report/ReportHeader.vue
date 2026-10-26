@@ -19,10 +19,9 @@ const period = computed(() => {
   return `${format(firstMessageAt)} – ${format(lastMessageAt)}`
 })
 
-function run(action: 'story' | 'reanalyse' | 'delete') {
+function run(action: 'reanalyse' | 'delete') {
   menuOpen.value = false
-  if (action === 'story') emit('story')
-  else if (action === 'reanalyse') emit('reanalyse')
+  if (action === 'reanalyse') emit('reanalyse')
   else emit('delete')
 }
 </script>
@@ -42,6 +41,7 @@ function run(action: 'story' | 'reanalyse' | 'delete') {
         {{ t('story.open') }}
       </UiButton>
       <UiIconButton
+        class="report-header__reanalyse"
         :icon="RotateCw"
         :label="t('report.reanalyse')"
         variant="secondary"
@@ -61,9 +61,6 @@ function run(action: 'story' | 'reanalyse' | 'delete') {
             @click="menuOpen = !menuOpen"
           />
         </template>
-        <UiMenuItem role="menuitem" class="report-header__story-item" :icon="Share2" @click="run('story')">
-          {{ t('story.open') }}
-        </UiMenuItem>
         <UiMenuItem role="menuitem" :icon="RotateCw" :disabled="!canReanalyse" @click="run('reanalyse')">
           {{ t('report.reanalyse') }}
         </UiMenuItem>
@@ -77,18 +74,22 @@ function run(action: 'story' | 'reanalyse' | 'delete') {
 </template>
 
 <style scoped>
-/* «Итоги» is a button on wide screens and a menu item on phones. */
-.report-header__story-item {
-  display: none;
+/* «Итоги» is the one thing people share, so it gets the lime accent. */
+.report-header__story.btn {
+  background: var(--lime);
+  color: var(--on-lime);
 }
 
-@media (max-width: 640px) {
-  .report-header__story {
-    display: none;
+@media (hover: hover) {
+  .report-header__story.btn:hover {
+    background: var(--lime-hover);
   }
+}
 
-  .report-header__story-item {
-    display: flex;
+/* Phones keep the header to one line: refreshing lives in the «…» menu. */
+@media (max-width: 640px) {
+  .report-header__reanalyse {
+    display: none;
   }
 }
 

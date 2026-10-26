@@ -11,7 +11,7 @@ const titleId = useId()
 const open = toRef(props, 'open')
 
 useBodyScrollLock(open)
-useFocusTrap(panelRef, open, { onEscape: () => emit('close') })
+useFocusTrap(panelRef, open, { onEscape: () => emit('close'), initial: () => panelRef.value })
 
 /** Each section: a title and paragraphs or a list, all from the copy files. */
 const sections = computed(() => [
@@ -44,7 +44,15 @@ const sections = computed(() => [
 <template>
   <Teleport to="body">
     <Transition name="privacy">
-      <section v-if="open" ref="panelRef" class="privacy" role="dialog" aria-modal="true" :aria-labelledby="titleId">
+      <section
+        v-if="open"
+        ref="panelRef"
+        tabindex="-1"
+        class="privacy"
+        role="dialog"
+        aria-modal="true"
+        :aria-labelledby="titleId"
+      >
         <header class="privacy__bar">
           <h1 :id="titleId" class="privacy__title">{{ t('privacy.title') }}</h1>
           <UiIconButton :icon="X" :label="t('common.close')" variant="ghost" @click="emit('close')" />
@@ -53,7 +61,7 @@ const sections = computed(() => [
         <UiPageContainer size="narrow">
           <article class="privacy__body">
             <section v-for="section in sections" :key="section.key" class="privacy__section">
-              <h2 class="t-title">{{ section.title }}</h2>
+              <h2 class="privacy__heading">{{ section.title }}</h2>
               <p v-for="paragraph in section.paragraphs ?? []" :key="paragraph" class="privacy__text">
                 {{ paragraph }}
               </p>
@@ -80,6 +88,10 @@ const sections = computed(() => [
   color: var(--text);
 }
 
+.privacy:focus {
+  outline: none;
+}
+
 /* Title and close stay in reach while the policy scrolls. */
 .privacy__bar {
   position: sticky;
@@ -102,23 +114,37 @@ const sections = computed(() => [
 
 .privacy__body {
   display: grid;
-  gap: var(--space-8);
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-card);
+  background: var(--surface);
 }
 
 .privacy__section {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  padding-block: var(--space-5);
+}
+
+.privacy__section + .privacy__section {
+  border-top: 1px solid var(--border);
+}
+
+.privacy__heading {
+  font: 600 18px/26px var(--font-sans);
+  letter-spacing: -0.01em;
 }
 
 .privacy__text {
-  font: var(--text-body);
+  color: var(--text-muted);
+  font: 400 15px/24px var(--font-sans);
 }
 
 .privacy__list {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-1);
   padding-left: var(--space-5);
-  font: var(--text-body);
+  color: var(--text-muted);
+  font: 400 15px/24px var(--font-sans);
 }
 
 .privacy__list li::marker {
@@ -140,7 +166,7 @@ const sections = computed(() => [
 
 @media (max-width: 640px) {
   .privacy__body {
-    gap: var(--space-6);
+    padding: var(--space-1) var(--space-5);
   }
 }
 </style>

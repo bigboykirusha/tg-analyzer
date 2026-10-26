@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from '../../composables/useI18n'
 import { useToast, type ToastMessage, type ToastVariant } from '../../composables/useToast'
-import { X } from '../../lib/icons'
+import { AlertTriangle, CircleCheck, CircleX, Info, X } from '../../lib/icons'
 import IconButton from './IconButton.vue'
 
 const { toasts, remove, pause, resume } = useToast()
@@ -15,6 +15,8 @@ function variantLabel(variant: ToastVariant) {
     warning: t('toast.warning'),
   }[variant]
 }
+
+const variantIcon = { success: CircleCheck, error: CircleX, info: Info, warning: AlertTriangle }
 
 function runAction(toast: ToastMessage) {
   toast.action?.onClick()
@@ -37,6 +39,7 @@ function runAction(toast: ToastMessage) {
           @focusin="pause(toast.id)"
           @focusout="resume(toast.id)"
         >
+          <component :is="variantIcon[toast.variant]" class="toast__icon" aria-hidden="true" />
           <div class="toast__copy">
             <span class="sr-only">{{ variantLabel(toast.variant) }}</span>
             <strong class="toast__title">{{ toast.title }}</strong>
@@ -60,31 +63,51 @@ function runAction(toast: ToastMessage) {
 </template>
 
 <style scoped>
-/* Bottom left: row actions live on the right edge, so toasts never cover them. */
+/* Top centre, just under the header: where the eye already is, clear of the thumb. */
 .toast-region {
   position: fixed;
-  left: var(--space-5);
-  bottom: var(--space-5);
+  top: calc(var(--topbar-height) + var(--space-2));
+  left: 50%;
   z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  width: min(380px, calc(100vw - var(--space-8)));
+  align-items: center;
+  gap: var(--space-2);
+  width: min(400px, calc(100vw - var(--space-6)));
   pointer-events: none;
+  translate: -50% 0;
 }
 
 .toast {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
   gap: var(--space-3);
+  width: 100%;
   min-width: 0;
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
+  padding: 14px var(--space-4);
+  border-radius: var(--radius-xl);
   background: var(--inverse-surface);
   box-shadow: var(--shadow-overlay);
   color: var(--on-inverse);
   pointer-events: auto;
+}
+
+.toast__icon {
+  margin-top: 2px;
+  color: var(--on-inverse);
+}
+
+.toast--success .toast__icon {
+  color: var(--lime);
+}
+
+.toast--error .toast__icon {
+  color: var(--danger);
+}
+
+.toast--warning .toast__icon {
+  color: var(--warning);
 }
 
 .toast__copy {
@@ -142,15 +165,12 @@ function runAction(toast: ToastMessage) {
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(-8px) scale(0.97);
 }
 
 @media (max-width: 640px) {
   .toast-region {
-    right: var(--space-3);
-    bottom: max(var(--space-3), env(safe-area-inset-bottom));
-    left: var(--space-3);
-    width: auto;
+    top: calc(env(safe-area-inset-top, 0px) + var(--space-2));
   }
 }
 </style>

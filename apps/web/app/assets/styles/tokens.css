@@ -403,18 +403,19 @@
   --story-track: rgba(255, 255, 255, 0.28);
   --story-chip: rgba(255, 255, 255, 0.16);
   --story-backdrop: #050507;
-  /* Poster fields: flat paper, vermilion, ink and indigo; the same in both themes. */
-  --story-gradient-1: #1c1a16;
-  --story-gradient-2: #d4442a;
-  --story-gradient-3: #2c47a8;
-  --story-gradient-4: #f2eee5;
-  --story-gradient-5: #b23a22;
-  /* Ink on the paper field. */
-  --story-paper-ink: #14130f;
-  --story-paper-ink-muted: rgba(20, 19, 15, 0.66);
-  --story-paper-track: rgba(20, 19, 15, 0.16);
-  --story-paper-chip: rgba(20, 19, 15, 0.06);
-  --story-paper-accent: #d4442a;
+  /* Poster fields from the app palette: ink, lime, lavender, paper, peach; the same in both themes. */
+  --story-gradient-1: #0e0f11;
+  --story-gradient-2: #c6f06a;
+  --story-gradient-3: #dcd6ff;
+  --story-gradient-4: #f2f3f5;
+  --story-gradient-5: #ffd9c7;
+  --story-gradient-6: #d7eefc;
+  /* Ink on the light fields; lime is the accent on the ink field. */
+  --story-paper-ink: #0e0f11;
+  --story-paper-ink-muted: rgba(14, 15, 17, 0.62);
+  --story-paper-track: rgba(14, 15, 17, 0.14);
+  --story-paper-chip: rgba(14, 15, 17, 0.07);
+  --story-accent: #c6f06a;
 }
 
 /* After the scales above, so the narrower gutters win. */

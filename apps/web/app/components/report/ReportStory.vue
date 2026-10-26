@@ -246,7 +246,7 @@ const slides = computed<StorySlideModel[]>(() => {
       tiles.push({ label: t('story.conversations'), value: formatNumber(sessions.totalSessions) })
     list.push({
       key: 'time',
-      theme: 5,
+      theme: 2,
       durationMs: 7000,
       kicker: t('story.timeKicker'),
       title: t(`story.persona.${time.persona}`),
@@ -283,7 +283,7 @@ const slides = computed<StorySlideModel[]>(() => {
     }
     list.push({
       key: 'records',
-      theme: 3,
+      theme: 5,
       durationMs: 7000,
       kicker: t('story.recordsKicker'),
       title: streak >= 3 ? tc('report.highlights.days', streak) : formatNumber(busiest!.total),
@@ -307,7 +307,7 @@ const slides = computed<StorySlideModel[]>(() => {
     if (composition.sticker) tiles.push({ label: t('story.stickers'), value: formatNumber(composition.sticker) })
     list.push({
       key: 'words',
-      theme: 2,
+      theme: 6,
       durationMs: 7500,
       kicker: t('story.wordsKicker'),
       title: `«${chatWord}»`,
@@ -517,7 +517,7 @@ watch(open, (value) => {
         <section
           ref="panelRef"
           class="stories__frame"
-          :class="{ 'is-paper': current.theme === 4 }"
+          :class="{ 'is-paper': current.theme !== 1 }"
           role="dialog"
           aria-modal="true"
           :aria-label="t('story.title')"

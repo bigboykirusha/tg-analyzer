@@ -20,8 +20,8 @@ export interface StoryTile {
 
 export interface StorySlideModel {
   key: string
-  /** 1–5: which --story-gradient-N paints the slide. */
-  theme: 1 | 2 | 3 | 4 | 5
+  /** 1–6: which --story-gradient-N paints the slide. */
+  theme: 1 | 2 | 3 | 4 | 5 | 6
   /** How long the slide stays before the next one. */
   durationMs: number
   /** The opening slide: big faces instead of the small header. */
@@ -213,24 +213,33 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   background: var(--story-gradient-3);
 }
 
-.story-slide--4 {
+.story-slide--2,
+.story-slide--3,
+.story-slide--4,
+.story-slide--5,
+.story-slide--6 {
   --story-ink: var(--story-paper-ink);
   --story-ink-muted: var(--story-paper-ink-muted);
   --story-track: var(--story-paper-track);
   --story-chip: var(--story-paper-chip);
-  --story-backdrop: var(--story-gradient-4);
-
-  background: var(--story-gradient-4);
 }
 
-/* On paper the lit bars and your share keep the vermilion of the app. */
-.story-slide--4 .story-slide__bars span.is-lit,
-.story-slide--4 .story-slide__split-bar span {
-  background: var(--story-paper-accent);
+.story-slide--4 {
+  background: var(--story-gradient-4);
 }
 
 .story-slide--5 {
   background: var(--story-gradient-5);
+}
+
+.story-slide--6 {
+  background: var(--story-gradient-6);
+}
+
+/* On the ink field the lit bars and your share are lime, as in the app. */
+.story-slide--1 .story-slide__bars span.is-lit,
+.story-slide--1 .story-slide__split-bar span {
+  background: var(--story-accent);
 }
 
 /* Top 14% and bottom stay clear: the story apps draw their own controls there. */
@@ -273,11 +282,27 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   border-radius: 50%;
   background: var(--story-chip);
   font-size: 5cqmin;
-  font-weight: 700;
+  font-weight: 600;
+}
+
+.story-slide--2 .story-slide__face {
+  border-color: var(--story-gradient-2);
+}
+
+.story-slide--3 .story-slide__face {
+  border-color: var(--story-gradient-3);
 }
 
 .story-slide--4 .story-slide__face {
   border-color: var(--story-gradient-4);
+}
+
+.story-slide--5 .story-slide__face {
+  border-color: var(--story-gradient-5);
+}
+
+.story-slide--6 .story-slide__face {
+  border-color: var(--story-gradient-6);
 }
 
 .story-slide__face + .story-slide__face {
@@ -305,7 +330,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-slide__heading strong {
   font-size: 4.6cqmin;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .story-slide__heading span {
@@ -344,9 +369,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 .story-slide__kicker {
   color: var(--story-ink-muted);
   font-size: 3.8cqmin;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-weight: 500;
 }
 
 .story-slide__title {
@@ -419,7 +442,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   justify-content: space-between;
   gap: 3cqmin;
   font-size: 3.8cqmin;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .story-slide__duel {
@@ -469,7 +492,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   align-items: baseline;
   row-gap: 1.2cqmin;
   font-size: 5cqmin;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .story-slide__rank {
@@ -547,10 +570,8 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   overflow: hidden;
   color: var(--story-ink-muted);
   font-size: 3.4cqmin;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-weight: 500;
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -560,7 +581,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   margin: 0;
   padding: 0;
   font-size: 5.4cqmin;
-  font-weight: 700;
+  font-weight: 600;
   list-style: none;
 }
 
@@ -574,7 +595,6 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   margin: 0;
   font-family: var(--font-display);
   font-size: 5.2cqmin;
-  font-style: italic;
   font-weight: 500;
   line-height: 1.3;
 }

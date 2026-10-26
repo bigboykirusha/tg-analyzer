@@ -677,7 +677,6 @@ export const en = {
   'terms.account.text':
     "You analyse only chats you have lawful access to, and you decide who sees your reports and recaps. Do not use the service to watch other people, send bulk messages or get around Telegram's limits.",
   'terms.account.title': 'Your account and responsibility',
-  'terms.back': 'Home',
   'terms.changes.text': 'If the terms change materially, we will tell you in the app before the changes take effect.',
   'terms.changes.title': 'Changes to these terms',
   'terms.contact.text':

@@ -7,7 +7,6 @@ const { t, formatNumber, formatDecimal, formatDuration, formatPercent } = useI18
 
 type Tab = 'overview' | 'rhythm' | 'words' | 'timeline'
 const tab = ref<Tab>('overview')
-const isPhone = useMediaQuery('(max-width: 640px)')
 const tabs = computed(() => [
   { value: 'overview' as const, label: t('report.tabs.overview') },
   { value: 'rhythm' as const, label: t('report.tabs.rhythm') },
@@ -111,20 +110,11 @@ const usually = computed(() => {
 
     <ReportChanges :data="data" />
 
-    <!-- Phones read the whole report as one long page; wider screens switch tabs. -->
-    <ReportNav v-model="tab" :options="tabs" :label="t('report.tabs.label')" :scroll="isPhone" />
-    <template v-if="isPhone">
-      <ReportPart id="overview" :title="tabs[0]!.label"><OverviewTab :data="data" /></ReportPart>
-      <ReportPart id="rhythm" :title="tabs[1]!.label"><RhythmTab :data="data" /></ReportPart>
-      <ReportPart id="words" :title="tabs[2]!.label"><WordsTab :data="data" /></ReportPart>
-      <ReportPart id="timeline" :title="tabs[3]!.label"><TimelineTab :data="data" /></ReportPart>
-    </template>
-    <template v-else>
-      <OverviewTab v-if="tab === 'overview'" :data="data" />
-      <RhythmTab v-else-if="tab === 'rhythm'" :data="data" />
-      <WordsTab v-else-if="tab === 'words'" :data="data" />
-      <TimelineTab v-else :data="data" />
-    </template>
+    <ReportNav v-model="tab" :options="tabs" :label="t('report.tabs.label')" />
+    <OverviewTab v-if="tab === 'overview'" :data="data" />
+    <RhythmTab v-else-if="tab === 'rhythm'" :data="data" />
+    <WordsTab v-else-if="tab === 'words'" :data="data" />
+    <TimelineTab v-else :data="data" />
   </div>
 </template>
 
