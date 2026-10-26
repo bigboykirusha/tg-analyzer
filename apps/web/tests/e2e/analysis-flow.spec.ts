@@ -80,9 +80,10 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
   await page.getByRole('button', { name: 'Итоги' }).click()
 
   const stories = page.getByRole('dialog', { name: 'Итоги переписки' })
-  // Intro first and the summary poster last; the slides between depend on the data.
-  await expect.poll(() => stories.locator('.stories__segment').count()).toBeGreaterThanOrEqual(4)
-  await expect(stories.locator('.stories__stage .story-slide__title')).toHaveText(/Demo\s*&\s*Катя/)
+  // Up to four dense slides: the overview with the total first, then what the data allows.
+  await expect.poll(() => stories.locator('.stories__segment').count()).toBeGreaterThanOrEqual(2)
+  await expect(stories.locator('.stories__stage .story-slide__heading strong')).toHaveText(/Demo\s*&\s*Катя/)
+  await expect(stories.locator('.stories__stage .story-slide__title')).toHaveText(/^\d[\d\s]*$/)
   await page.keyboard.press('ArrowRight')
   await expect(stories.locator('.stories__stage .story-slide__heading strong')).toHaveText(/Demo\s*&\s*Катя/)
 
@@ -94,5 +95,5 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
 
   const download = page.waitForEvent('download')
   await stories.getByRole('button', { name: 'Сохранить' }).click()
-  expect((await download).suggestedFilename()).toBe('tg-analyzer-volume.png')
+  expect((await download).suggestedFilename()).toMatch(/^tg-analyzer-[a-z]+\.png$/)
 })

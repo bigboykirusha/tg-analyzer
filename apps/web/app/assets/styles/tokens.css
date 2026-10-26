@@ -416,6 +416,15 @@
   --story-paper-track: rgba(14, 15, 17, 0.14);
   --story-paper-chip: rgba(14, 15, 17, 0.07);
   --story-accent: #c6f06a;
+  /* Tiles on the slides: dark on the ink field, white on the paper fields. */
+  --story-card: #1b1c1f;
+  --story-paper-card: #ffffff;
+  --story-accent-ink: #0e0f11;
+  --story-accent-ink-muted: rgba(14, 15, 17, 0.62);
+  --story-accent-track: rgba(14, 15, 17, 0.16);
+  --story-dark-ink-muted: rgba(255, 255, 255, 0.6);
+  --story-dark-track: rgba(255, 255, 255, 0.2);
+  --story-dark-ink: #ffffff;
 }
 
 /* After the scales above, so the narrower gutters win. */

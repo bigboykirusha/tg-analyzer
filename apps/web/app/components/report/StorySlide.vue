@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * One «Итоги» story slide. Purely presentational, so the same slide renders on
+ * One «Итоги» story slide: a headline over a small bento of tiles, the way the
+ * app shows a report. Purely presentational, so the same slide renders on
  * screen (any size) and off screen at 9:16 for the exported image.
  *
  * Sizes are in cqmin of the root, which is the size container. Nothing on the
@@ -18,33 +19,41 @@ export interface StoryTile {
   value: string
 }
 
+interface BlockBase {
+  /** The one tile per slide that carries the contrast colour. */
+  accent?: boolean
+  /** Spans both columns. Charts and lists always do. */
+  wide?: boolean
+}
+
+export type StoryBlock = BlockBase &
+  (
+    | { kind: 'stat'; label: string; value: string; note?: string }
+    /** The whole chat as a seismograph: yours up, theirs down. */
+    | { kind: 'pulse'; label: string; days: { sent: number; received: number }[] }
+    /** Share of the first person, 0–100, with a label for each side. */
+    | { kind: 'split'; label: string; mine: number; mineLabel: string; theirsLabel: string; note?: string }
+    /** Two sides of one measure, side by side. */
+    | { kind: 'duel'; label: string; left: StoryTile; right: StoryTile; note?: string }
+    /** 24 hourly values; hours from `from` to `to` (inclusive, may wrap past midnight) are lit. */
+    | { kind: 'bars'; label: string; values: number[]; from: number; to: number }
+    /** Top people with their share, 0–100. */
+    | { kind: 'ranking'; label: string; items: { name: string; value: string; share: number }[] }
+    | { kind: 'columns'; left: { title: string; items: string[] }; right: { title: string; items: string[] } }
+  )
+
 export interface StorySlideModel {
   key: string
   /** 1–6: which --story-gradient-N paints the slide. */
   theme: 1 | 2 | 3 | 4 | 5 | 6
   /** How long the slide stays before the next one. */
   durationMs: number
-  /** The opening slide: big faces instead of the small header. */
-  intro?: boolean
-  /** The closing summary meant for sharing: denser, larger tiles. */
-  poster?: boolean
+  /** The closing slide: carries the site address for whoever sees it shared. */
+  last?: boolean
   kicker: string
   title: string
   sub?: string
-  /** The whole chat as a seismograph: yours up, theirs down (paper slides only). */
-  pulse?: { sent: number; received: number }[]
-  /** A one-line verdict under the picture. */
-  note?: string
-  /** Share of the first person, 0–100, with a label for each side. */
-  split?: { mine: number; mineLabel: string; theirsLabel: string }
-  /** 24 hourly values; hours from `from` to `to` (inclusive, may wrap past midnight) are lit. */
-  bars?: { values: number[]; from: number; to: number }
-  /** Two sides of one measure, side by side. */
-  duel?: { left: StoryTile; right: StoryTile }
-  /** Top people with their share, 0–100. */
-  ranking?: { name: string; value: string; share: number }[]
-  columns?: { left: { title: string; items: string[] }; right: { title: string; items: string[] } }
-  tiles?: StoryTile[]
+  blocks: StoryBlock[]
 }
 
 const { t } = useI18n()
@@ -65,12 +74,11 @@ const props = withDefaults(
 )
 
 const initial = (name: string) => Array.from(name.trim())[0]?.toLocaleUpperCase() ?? '?'
-const maxBar = computed(() => Math.max(...(props.slide.bars?.values ?? [0]), 1))
+const isWide = (block: StoryBlock) => block.wide || block.kind !== 'stat'
+const maxOf = (values: number[]) => Math.max(...values, 1)
 
-function lit(hour: number) {
-  const bars = props.slide.bars
-  if (!bars) return false
-  return bars.from <= bars.to ? hour >= bars.from && hour <= bars.to : hour >= bars.from || hour <= bars.to
+function lit(block: { from: number; to: number }, hour: number) {
+  return block.from <= block.to ? hour >= block.from && hour <= block.to : hour >= block.from || hour <= block.to
 }
 
 /**
@@ -79,24 +87,20 @@ function lit(hour: number) {
  */
 const titleSize = computed(() => {
   const title = props.slide.title
-  if (props.slide.poster) return 'mid'
   const longestWord = Math.max(...title.split(/\s+/).map((word) => Array.from(word).length))
   if (/^[\d\s:.,%–-]+$/.test(title) && title.length <= 7) return 'hero'
-  if (longestWord <= 7) return 'big'
+  if (longestWord <= 8 && title.length <= 16) return 'big'
   return 'mid'
 })
 
-/** Poster tiles with long words drop a size instead of breaking the word. */
+/** Tile values with long words drop a size instead of breaking the word. */
 const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => Array.from(word).length)) > 9
 </script>
 
 <template>
-  <div
-    class="story-slide"
-    :class="[`story-slide--${slide.theme}`, { 'is-still': still, 'has-chrome': chrome, 'is-poster': slide.poster }]"
-  >
+  <div class="story-slide" :class="[`story-slide--${slide.theme}`, { 'is-still': still, 'has-chrome': chrome }]">
     <div class="story-slide__canvas">
-      <header v-if="!slide.intro" class="story-slide__people">
+      <header class="story-slide__people">
         <span class="story-slide__faces">
           <span v-for="(person, position) in people" :key="position" class="story-slide__face">
             <img v-if="person.avatar" :src="person.avatar" alt="" />
@@ -110,84 +114,96 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
       </header>
 
       <div class="story-slide__body">
-        <div v-if="slide.intro" class="story-slide__intro-faces">
-          <span v-for="(person, position) in people" :key="position" class="story-slide__face story-slide__face--xl">
-            <img v-if="person.avatar" :src="person.avatar" alt="" />
-            <span v-else>{{ initial(person.name) }}</span>
-          </span>
+        <div class="story-slide__head">
+          <span class="story-slide__kicker">{{ slide.kicker }}</span>
+          <strong class="story-slide__title" :class="`story-slide__title--${titleSize}`">{{ slide.title }}</strong>
+          <p v-if="slide.sub" class="story-slide__sub">{{ slide.sub }}</p>
         </div>
 
-        <span class="story-slide__kicker">{{ slide.kicker }}</span>
-        <strong class="story-slide__title" :class="`story-slide__title--${titleSize}`">{{ slide.title }}</strong>
-        <p v-if="slide.sub" class="story-slide__sub">{{ slide.sub }}</p>
+        <div class="story-slide__grid">
+          <section
+            v-for="(block, position) in slide.blocks"
+            :key="position"
+            class="story-tile"
+            :class="[`story-tile--${block.kind}`, { 'is-wide': isWide(block), 'is-accent': block.accent }]"
+          >
+            <template v-if="block.kind === 'stat'">
+              <span class="story-tile__label">{{ block.label }}</span>
+              <strong class="story-tile__value" :class="{ 'is-long': isLong(block.value) }">{{ block.value }}</strong>
+              <span v-if="block.note" class="story-tile__note">{{ block.note }}</span>
+            </template>
 
-        <div v-if="slide.pulse" class="story-slide__pulse" aria-hidden="true">
-          <Seismograph :days="slide.pulse" :height="1" />
-        </div>
+            <template v-else-if="block.kind === 'pulse'">
+              <span class="story-tile__label">{{ block.label }}</span>
+              <div class="story-tile__pulse" aria-hidden="true">
+                <Seismograph :days="block.days" :height="1" />
+              </div>
+            </template>
 
-        <div v-if="slide.split" class="story-slide__split">
-          <div class="story-slide__split-bar">
-            <span :style="{ width: `${slide.split.mine}%` }" />
-          </div>
-          <div class="story-slide__split-labels">
-            <span>{{ slide.split.mineLabel }}</span>
-            <span>{{ slide.split.theirsLabel }}</span>
-          </div>
-        </div>
+            <template v-else-if="block.kind === 'split'">
+              <span class="story-tile__label">{{ block.label }}</span>
+              <div class="story-tile__split-bar"><span :style="{ width: `${block.mine}%` }" /></div>
+              <div class="story-tile__split-labels">
+                <span>{{ block.mineLabel }}</span>
+                <span>{{ block.theirsLabel }}</span>
+              </div>
+              <span v-if="block.note" class="story-tile__note">{{ block.note }}</span>
+            </template>
 
-        <div v-if="slide.duel" class="story-slide__duel">
-          <div v-for="side in [slide.duel.left, slide.duel.right]" :key="side.label" class="story-slide__duel-side">
-            <span>{{ side.label }}</span>
-            <strong>{{ side.value }}</strong>
-          </div>
-        </div>
+            <template v-else-if="block.kind === 'duel'">
+              <span class="story-tile__label">{{ block.label }}</span>
+              <div class="story-tile__duel">
+                <div v-for="side in [block.left, block.right]" :key="side.label">
+                  <span>{{ side.label }}</span>
+                  <strong>{{ side.value }}</strong>
+                </div>
+              </div>
+              <span v-if="block.note" class="story-tile__note">{{ block.note }}</span>
+            </template>
 
-        <ol v-if="slide.ranking" class="story-slide__ranking">
-          <li v-for="(person, position) in slide.ranking" :key="position">
-            <span class="story-slide__rank">{{ position + 1 }}</span>
-            <span class="story-slide__rank-name">{{ person.name }}</span>
-            <span class="story-slide__rank-value">{{ person.value }}</span>
-            <span class="story-slide__rank-bar"><i :style="{ width: `${Math.max(3, person.share)}%` }" /></span>
-          </li>
-        </ol>
+            <template v-else-if="block.kind === 'bars'">
+              <span class="story-tile__label">{{ block.label }}</span>
+              <div class="story-tile__bars" aria-hidden="true">
+                <span
+                  v-for="(value, hour) in block.values"
+                  :key="hour"
+                  :class="{ 'is-lit': lit(block, hour) }"
+                  :style="{ height: `${Math.max(4, (value / maxOf(block.values)) * 100)}%`, '--bar': hour * 14 }"
+                />
+              </div>
+              <div class="story-tile__axis">
+                <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
+              </div>
+            </template>
 
-        <div v-if="slide.bars" class="story-slide__chart" aria-hidden="true">
-          <div class="story-slide__bars">
-            <span
-              v-for="(value, hour) in slide.bars.values"
-              :key="hour"
-              :class="{ 'is-lit': lit(hour) }"
-              :style="{ height: `${Math.max(4, (value / maxBar) * 100)}%`, '--bar': hour * 14 }"
-            />
-          </div>
-          <div class="story-slide__axis">
-            <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
-          </div>
-        </div>
+            <template v-else-if="block.kind === 'ranking'">
+              <span class="story-tile__label">{{ block.label }}</span>
+              <ol class="story-tile__ranking">
+                <li v-for="(person, place) in block.items" :key="place">
+                  <span class="story-tile__rank">{{ place + 1 }}</span>
+                  <span class="story-tile__rank-name">{{ person.name }}</span>
+                  <span class="story-tile__rank-value">{{ person.value }}</span>
+                  <span class="story-tile__rank-bar"><i :style="{ width: `${Math.max(3, person.share)}%` }" /></span>
+                </li>
+              </ol>
+            </template>
 
-        <div v-if="slide.columns" class="story-slide__columns">
-          <div v-for="column in [slide.columns.left, slide.columns.right]" :key="column.title">
-            <span class="story-slide__column-title">{{ column.title }}</span>
-            <ol>
-              <li v-for="item in column.items" :key="item">{{ item }}</li>
-            </ol>
-          </div>
-        </div>
-
-        <p v-if="slide.note" class="story-slide__note">{{ slide.note }}</p>
-
-        <div v-if="slide.tiles?.length" class="story-slide__tiles">
-          <div v-for="tile in slide.tiles" :key="tile.label" class="story-slide__tile">
-            <span>{{ tile.label }}</span>
-            <strong :class="{ 'is-long': isLong(tile.value) }">{{ tile.value }}</strong>
-          </div>
+            <div v-else-if="block.kind === 'columns'" class="story-tile__columns">
+              <div v-for="column in [block.left, block.right]" :key="column.title">
+                <span class="story-tile__label">{{ column.title }}</span>
+                <ol>
+                  <li v-for="item in column.items" :key="item">{{ item }}</li>
+                </ol>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 
       <footer class="story-slide__brand">
         <span class="story-slide__brand-mark" aria-hidden="true"><i /><i /><i /></span>
         TG Analyzer
-        <span v-if="slide.poster" class="story-slide__site">{{ t('story.site') }}</span>
+        <span v-if="slide.last" class="story-slide__site">{{ t('story.site') }}</span>
       </footer>
     </div>
   </div>
@@ -196,16 +212,48 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 <style scoped>
 /* The root only sizes the container; the canvas does the layout. */
 .story-slide {
+  /* Tiles: dark cards and a lime accent on the ink field. */
+  --tile-bg: var(--story-card);
+  --tile-ink: var(--story-ink);
+  --tile-muted: var(--story-dark-ink-muted);
+  --tile-track: var(--story-dark-track);
+  --tile-mark: var(--story-accent);
+  --accent-bg: var(--story-accent);
+  --accent-ink: var(--story-accent-ink);
+  --accent-muted: var(--story-accent-ink-muted);
+  --accent-track: var(--story-accent-track);
+  --accent-mark: var(--story-accent-ink);
+
   width: 100%;
   height: 100%;
   overflow: hidden;
   container-type: size;
   color: var(--story-ink);
   font-family: var(--font-sans);
+  /* html2canvas draws proportional digits; tabular layout would leave gaps in the image. */
+  font-variant-numeric: normal;
+  background: var(--story-gradient-1);
 }
 
-.story-slide--1 {
-  background: var(--story-gradient-1);
+/* Paper fields: white cards, the accent tile is ink with lime marks. */
+.story-slide--2,
+.story-slide--3,
+.story-slide--4,
+.story-slide--5,
+.story-slide--6 {
+  --story-ink: var(--story-paper-ink);
+  --story-ink-muted: var(--story-paper-ink-muted);
+  --story-chip: var(--story-paper-chip);
+  --tile-bg: var(--story-paper-card);
+  --tile-ink: var(--story-paper-ink);
+  --tile-muted: var(--story-paper-ink-muted);
+  --tile-track: var(--story-paper-track);
+  --tile-mark: var(--story-paper-ink);
+  --accent-bg: var(--story-gradient-1);
+  --accent-ink: var(--story-dark-ink);
+  --accent-muted: var(--story-dark-ink-muted);
+  --accent-track: var(--story-dark-track);
+  --accent-mark: var(--story-accent);
 }
 
 .story-slide--2 {
@@ -214,17 +262,6 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-slide--3 {
   background: var(--story-gradient-3);
-}
-
-.story-slide--2,
-.story-slide--3,
-.story-slide--4,
-.story-slide--5,
-.story-slide--6 {
-  --story-ink: var(--story-paper-ink);
-  --story-ink-muted: var(--story-paper-ink-muted);
-  --story-track: var(--story-paper-track);
-  --story-chip: var(--story-paper-chip);
 }
 
 .story-slide--4 {
@@ -239,29 +276,22 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   background: var(--story-gradient-6);
 }
 
-/* On the ink field the lit bars and your share are lime, as in the app. */
-.story-slide--1 .story-slide__bars span.is-lit,
-.story-slide--1 .story-slide__split-bar span {
-  background: var(--story-accent);
-}
-
-/* Top 14% and bottom stay clear: the story apps draw their own controls there. */
+/* Top 12% and bottom stay clear: the story apps draw their own controls there. */
 .story-slide__canvas {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 4cqmin;
   height: 100%;
-  padding: 16cqmin 7cqmin 7cqmin;
+  padding: 12cqmin 6cqmin 6cqmin;
 }
 
 .has-chrome .story-slide__canvas {
-  padding-bottom: 22cqmin;
+  padding-bottom: 19cqmin;
 }
 
 /* ─── Who: avatars and the names ─────────────────────────────────────────── */
 .story-slide__people {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 3cqmin;
@@ -275,41 +305,40 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-slide__face {
   display: inline-grid;
-  font-family: var(--font-display);
   flex: 0 0 auto;
   place-items: center;
-  width: 12cqmin;
-  height: 12cqmin;
+  width: 10cqmin;
+  height: 10cqmin;
   overflow: hidden;
-  border: 0.7cqmin solid var(--story-ink);
   border-radius: 50%;
   background: var(--story-chip);
-  font-size: 5cqmin;
+  box-shadow: 0 0 0 0.7cqmin var(--story-gradient-1);
+  font-size: 4.6cqmin;
   font-weight: 600;
 }
 
 .story-slide--2 .story-slide__face {
-  border-color: var(--story-gradient-2);
+  box-shadow: 0 0 0 0.7cqmin var(--story-gradient-2);
 }
 
 .story-slide--3 .story-slide__face {
-  border-color: var(--story-gradient-3);
+  box-shadow: 0 0 0 0.7cqmin var(--story-gradient-3);
 }
 
 .story-slide--4 .story-slide__face {
-  border-color: var(--story-gradient-4);
+  box-shadow: 0 0 0 0.7cqmin var(--story-gradient-4);
 }
 
 .story-slide--5 .story-slide__face {
-  border-color: var(--story-gradient-5);
+  box-shadow: 0 0 0 0.7cqmin var(--story-gradient-5);
 }
 
 .story-slide--6 .story-slide__face {
-  border-color: var(--story-gradient-6);
+  box-shadow: 0 0 0 0.7cqmin var(--story-gradient-6);
 }
 
 .story-slide__face + .story-slide__face {
-  margin-left: -3.5cqmin;
+  margin-left: -3cqmin;
 }
 
 .story-slide__face img {
@@ -332,41 +361,28 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 .story-slide__heading strong {
-  font-size: 4.6cqmin;
+  font-size: 4.4cqmin;
   font-weight: 600;
 }
 
 .story-slide__heading span {
   color: var(--story-ink-muted);
-  font-size: 3.4cqmin;
+  font-size: 3.3cqmin;
   font-weight: 500;
 }
 
-/* ─── Content ────────────────────────────────────────────────────────────── */
+/* ─── Headline ───────────────────────────────────────────────────────────── */
 .story-slide__body {
-  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
-  justify-content: center;
-  gap: 3.4cqmin;
+  gap: 4cqmin;
   min-height: 0;
 }
 
-.story-slide__intro-faces {
-  display: flex;
-  margin-bottom: 3cqmin;
-}
-
-.story-slide__face--xl {
-  width: 30cqmin;
-  height: 30cqmin;
-  border-width: 1.2cqmin;
-  font-size: 12cqmin;
-}
-
-.story-slide__face--xl + .story-slide__face--xl {
-  margin-left: -7cqmin;
+.story-slide__head {
+  display: grid;
+  gap: 1.6cqmin;
 }
 
 .story-slide__kicker {
@@ -376,71 +392,137 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 .story-slide__title {
-  font-family: var(--font-display);
   font-weight: 600;
-  font-variant-numeric: lining-nums;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.045em;
   overflow-wrap: break-word;
 }
 
 .story-slide__title--hero {
-  font-size: 21cqmin;
-  line-height: 0.95;
+  font-size: 17cqmin;
+  line-height: 0.92;
 }
 
 .story-slide__title--big {
-  font-size: 14cqmin;
-  line-height: 1;
+  font-size: 11.5cqmin;
+  line-height: 0.98;
 }
 
 .story-slide__title--mid {
-  font-size: 10cqmin;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  font-size: 8.4cqmin;
+  line-height: 1.02;
 }
 
 .story-slide__sub {
   margin: 0;
   color: var(--story-ink-muted);
-  font-size: 4.6cqmin;
+  font-size: 3.8cqmin;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* ─── Tiles: a two-column bento, like the report in the app ─────────────── */
+.story-slide__grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: minmax(min-content, auto);
+  align-content: end;
+  gap: 2cqmin;
+  min-height: 0;
+}
+
+.story-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2cqmin;
+  min-width: 0;
+  padding: 3.4cqmin 3.8cqmin;
+  border-radius: 4cqmin;
+  background: var(--tile-bg);
+  color: var(--tile-ink);
+  --muted: var(--tile-muted);
+  --track: var(--tile-track);
+  --mark: var(--tile-mark);
+}
+
+.story-tile.is-accent {
+  background: var(--accent-bg);
+  color: var(--accent-ink);
+  --muted: var(--accent-muted);
+  --track: var(--accent-track);
+  --mark: var(--accent-mark);
+}
+
+.story-tile.is-wide {
+  grid-column: 1 / -1;
+}
+
+.story-tile__label {
+  color: var(--muted);
+  font-size: 3.2cqmin;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.story-tile__columns .story-tile__label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.story-tile__value {
+  margin-top: auto;
+  font-size: 6.4cqmin;
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  overflow-wrap: break-word;
+}
+
+.story-tile__value.is-long {
+  font-size: 4.8cqmin;
+}
+
+.story-tile__note {
+  color: var(--muted);
+  font-size: 3.2cqmin;
   font-weight: 500;
   line-height: 1.3;
 }
 
 /* Sized in cq units by its box; the chart fills it. */
-.story-slide__pulse {
-  height: 22cqmin;
-  margin-top: 2cqmin;
+.story-tile__pulse {
+  --you: var(--tile-ink);
+  --them: var(--story-accent);
+  --border-strong: var(--tile-track);
+
+  height: 11cqmin;
 }
 
-.story-slide__pulse :deep(.seismograph) {
+.story-tile__pulse :deep(.seismograph) {
   height: 100% !important;
 }
 
-.story-slide__pulse :deep(line) {
-  stroke-width: 0.9cqmin;
+.story-tile__pulse :deep(line) {
+  stroke-width: 0.8cqmin;
 }
 
-.story-slide__split {
-  display: grid;
-  gap: 1.6cqmin;
-  margin-top: 2cqmin;
-}
-
-.story-slide__split-bar {
+.story-tile__split-bar {
   display: flex;
-  height: 4cqmin;
+  height: 3.2cqmin;
+  margin-top: 1cqmin;
   overflow: hidden;
   border-radius: var(--radius-full);
-  background: var(--story-track);
+  background: var(--track);
 }
 
-.story-slide__split-bar span {
+.story-tile__split-bar span {
   border-radius: inherit;
-  background: var(--story-ink);
+  background: var(--mark);
 }
 
-.story-slide__split-labels {
+.story-tile__split-labels {
   display: flex;
   justify-content: space-between;
   gap: 3cqmin;
@@ -448,230 +530,143 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   font-weight: 600;
 }
 
-.story-slide__duel {
+.story-tile__duel {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2.4cqmin;
-  margin-top: 2cqmin;
+  gap: 3cqmin;
 }
 
-.story-slide__duel-side {
+.story-tile__duel div {
   display: grid;
-  gap: 1cqmin;
+  gap: 0.8cqmin;
   min-width: 0;
-  padding-top: 2.6cqmin;
-  border-top: 0.4cqmin solid var(--story-track);
 }
 
-.story-slide__duel-side span {
+.story-tile__duel span {
   overflow: hidden;
-  color: var(--story-ink-muted);
-  font-size: 3.4cqmin;
-  font-weight: 600;
+  color: var(--muted);
+  font-size: 3.2cqmin;
+  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.story-slide__duel-side strong {
-  font-family: var(--font-display);
-  font-size: 9cqmin;
+.story-tile__duel strong {
+  font-size: 7cqmin;
   font-weight: 600;
   line-height: 1;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.035em;
 }
 
-.story-slide__ranking {
+.story-tile__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.7cqmin;
+  height: 10cqmin;
+  margin-top: 1cqmin;
+}
+
+.story-tile__bars span {
+  flex: 1;
+  border-radius: 0.7cqmin;
+  background: var(--track);
+}
+
+.story-tile__bars span.is-lit {
+  background: var(--mark);
+}
+
+.story-tile__axis {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 2.8cqmin;
+}
+
+.story-tile__ranking {
   display: grid;
-  gap: 2.6cqmin;
-  margin: 2cqmin 0 0;
+  gap: 2.2cqmin;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.story-slide__ranking li {
+.story-tile__ranking li {
   display: grid;
-  grid-template-columns: 6cqmin minmax(0, 1fr) auto;
+  grid-template-columns: 5cqmin minmax(0, 1fr) auto;
   align-items: baseline;
-  row-gap: 1.2cqmin;
-  font-size: 5cqmin;
+  row-gap: 1cqmin;
+  font-size: 4.4cqmin;
   font-weight: 600;
 }
 
-.story-slide__rank {
-  color: var(--story-ink-muted);
-  font-variant-numeric: tabular-nums;
+.story-tile__rank {
+  color: var(--muted);
 }
 
-.story-slide__rank-name {
+.story-tile__rank-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.story-slide__rank-value {
-  font-size: 4cqmin;
-  font-variant-numeric: tabular-nums;
+.story-tile__rank-value {
+  font-size: 3.8cqmin;
 }
 
-.story-slide__rank-bar {
+.story-tile__rank-bar {
   grid-column: 2 / -1;
-  height: 1.6cqmin;
+  height: 1.4cqmin;
   overflow: hidden;
   border-radius: var(--radius-full);
-  background: var(--story-track);
+  background: var(--track);
 }
 
-.story-slide__rank-bar i {
+.story-tile__rank-bar i {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--story-ink);
+  background: var(--mark);
 }
 
-.story-slide__chart {
-  display: grid;
-  gap: 1.2cqmin;
-  margin-top: 2cqmin;
-}
-
-.story-slide__bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.8cqmin;
-  height: 26cqmin;
-}
-
-.story-slide__bars span {
-  flex: 1;
-  border-radius: 0.8cqmin 0.8cqmin 0 0;
-  background: var(--story-track);
-}
-
-.story-slide__bars span.is-lit {
-  background: var(--story-ink);
-}
-
-.story-slide__axis {
-  display: flex;
-  justify-content: space-between;
-  color: var(--story-ink-muted);
-  font-size: 3cqmin;
-  font-variant-numeric: tabular-nums;
-}
-
-.story-slide__columns {
+.story-tile__columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4cqmin;
-  margin-top: 1cqmin;
 }
 
-.story-slide__column-title {
-  display: block;
-  margin-bottom: 1.4cqmin;
-  overflow: hidden;
-  color: var(--story-ink-muted);
-  font-size: 3.4cqmin;
-  font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.story-slide__columns ol {
+.story-tile__columns ol {
   display: grid;
-  gap: 1cqmin;
-  margin: 0;
+  gap: 0.8cqmin;
+  margin: 1cqmin 0 0;
   padding: 0;
-  font-size: 5.4cqmin;
+  font-size: 4.2cqmin;
   font-weight: 600;
+  letter-spacing: -0.02em;
   list-style: none;
 }
 
-.story-slide__columns li {
+.story-tile__columns li {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.story-slide__note {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 5.2cqmin;
-  font-weight: 500;
-  line-height: 1.3;
-}
-
-/* Facts as a two-column ledger. */
-.story-slide__tiles {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3cqmin 5cqmin;
-  margin-top: 1cqmin;
-}
-
-/* Ruled like a ledger, the way facts look in the app. */
-.story-slide__tile {
-  display: grid;
-  align-content: start;
-  gap: 1cqmin;
-  min-width: 0;
-  padding-top: 2.4cqmin;
-  border-top: 0.4cqmin solid var(--story-track);
-}
-
-.story-slide__tile span {
-  color: var(--story-ink-muted);
-  font-size: 3.2cqmin;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.story-slide__tile strong {
-  font-family: var(--font-display);
-  font-size: 5.4cqmin;
-  font-weight: 600;
-  line-height: 1.15;
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: break-word;
-}
-
-/* The summary poster: everything is a tile, numbers carry the slide. */
-.is-poster .story-slide__tiles {
-  gap: 3.4cqmin 5cqmin;
-}
-
-.is-poster .story-slide__tile {
-  min-height: 17cqmin;
-}
-
-.is-poster .story-slide__tile strong {
-  font-size: 6.4cqmin;
-  letter-spacing: -0.02em;
-}
-
-.is-poster .story-slide__tile strong.is-long {
-  font-size: 4.8cqmin;
-}
-
-.story-slide__site {
-  margin-left: 1.6cqmin;
-  font-family: var(--font-sans);
-  font-size: 3.2cqmin;
-  font-weight: 500;
-  opacity: 0.6;
-}
-
+/* ─── Brand ──────────────────────────────────────────────────────────────── */
 .story-slide__brand {
-  position: relative;
   display: flex;
   align-items: center;
   align-self: flex-start;
   gap: 1.6cqmin;
-  font-family: var(--font-display);
-  font-size: 4cqmin;
+  font-size: 3.8cqmin;
   font-weight: 600;
   letter-spacing: -0.015em;
+}
+
+.story-slide__site {
+  margin-left: 1cqmin;
+  color: var(--story-ink-muted);
+  font-weight: 500;
 }
 
 .story-slide__brand-mark {
@@ -682,14 +677,14 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   width: 6.4cqmin;
   height: 6.4cqmin;
   padding: 1.4cqmin;
-  border-radius: 1.2cqmin;
+  border-radius: 1.6cqmin;
   background: var(--story-ink);
 }
 
 .story-slide__brand-mark i {
   width: 0.8cqmin;
   border-radius: var(--radius-full);
-  background: var(--story-backdrop);
+  background: var(--story-accent);
 }
 
 .story-slide__brand-mark i:nth-child(1) {
@@ -704,28 +699,29 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   height: 2.2cqmin;
 }
 
-/* ─── Entrance: the slide builds up line by line, like Wrapped ───────────── */
-.story-slide:not(.is-still) .story-slide__body > * {
+/* ─── Entrance: headline first, then the tiles one by one ────────────────── */
+.story-slide:not(.is-still) .story-slide__head,
+.story-slide:not(.is-still) .story-tile {
   animation: story-rise 520ms var(--ease-out-expo) both;
 }
 
-.story-slide:not(.is-still) .story-slide__body > :nth-child(2) {
-  animation-delay: 80ms;
+.story-slide:not(.is-still) .story-tile:nth-child(1) {
+  animation-delay: 120ms;
 }
 
-.story-slide:not(.is-still) .story-slide__body > :nth-child(3) {
-  animation-delay: 160ms;
+.story-slide:not(.is-still) .story-tile:nth-child(2) {
+  animation-delay: 200ms;
 }
 
-.story-slide:not(.is-still) .story-slide__body > :nth-child(4) {
+.story-slide:not(.is-still) .story-tile:nth-child(3) {
   animation-delay: 280ms;
 }
 
-.story-slide:not(.is-still) .story-slide__body > :nth-child(n + 5) {
-  animation-delay: 400ms;
+.story-slide:not(.is-still) .story-tile:nth-child(n + 4) {
+  animation-delay: 360ms;
 }
 
-.story-slide:not(.is-still) .story-slide__bars span {
+.story-slide:not(.is-still) .story-tile__bars span {
   transform-origin: bottom;
   animation: story-grow 640ms var(--ease-out-expo) both;
   animation-delay: calc(360ms + var(--bar, 0) * 1ms);
