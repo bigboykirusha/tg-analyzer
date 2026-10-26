@@ -43,10 +43,42 @@ const usually = computed(() => {
     day: weekday[day]?.total ? (t('chart.weekdaysLong').split(',')[day] ?? '') : '',
   }
 })
+
+/** One plain sentence on top: who writes more, who replies faster, when you talk. */
+const lead = computed(() => {
+  const parts: string[] = []
+  const share = sentShare.value
+  const name = props.data.summary.title
+  if (share !== null)
+    parts.push(
+      share > 55
+        ? t('report.lead.balanceYou')
+        : share < 45
+          ? t('report.lead.balanceThem', { name })
+          : t('report.lead.balanceEven'),
+    )
+  const mine = responses.value.medianMineSec
+  const theirs = responses.value.medianTheirsSec
+  if (mine !== null && theirs !== null) {
+    const ratio = Math.max(mine, theirs) / Math.max(Math.min(mine, theirs), 1)
+    parts.push(
+      ratio < 1.5
+        ? t('report.lead.replyEven')
+        : mine < theirs
+          ? t('report.lead.replyYou')
+          : t('report.lead.replyThem', { name }),
+    )
+  }
+  if (usually.value) parts.push(t('report.lead.when', { window: usually.value.window }))
+  if (!parts.length) return null
+  const sentence = parts.join(', ')
+  return `${sentence.charAt(0).toLocaleUpperCase()}${sentence.slice(1)}.`
+})
 </script>
 
 <template>
   <div class="stack stack--lg">
+    <p v-if="lead" class="report-lead">{{ lead }}</p>
     <ReportHero
       :data="data"
       :label="t('report.kpi.messages')"
@@ -119,6 +151,14 @@ const usually = computed(() => {
 </template>
 
 <style scoped>
+/* The report in one sentence, before any number. */
+.report-lead {
+  max-width: 34ch;
+  font: 500 clamp(20px, 2.4vw, 26px) / 1.3 var(--font-sans);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
 .share {
   display: grid;
   gap: var(--space-3);

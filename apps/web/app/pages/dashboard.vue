@@ -1,48 +1,23 @@
 <script setup lang="ts">
-import { AlertCircle, AlertTriangle, BarChart2, Info, Lock, MessageSquare, Search, WifiOff, X } from '../lib/icons'
+import { BarChart2, ChevronRight, Lock, MessageSquare, Plus } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
-const PAGE_SIZE = 30
 /** Report cards shown before «All reports». */
-const REPORTS_PREVIEW = 6
+const REPORTS_PREVIEW = 8
 
-const { t, tc } = useI18n()
+const { t } = useI18n()
 useSeoMeta({ title: () => t('dashboard.title') })
 
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
-const { logout } = useAuth()
 const toast = useToast()
 const errorMessage = useErrorMessage()
 
-const search = ref('')
-const filter = ref<'all' | 'private' | 'groups'>('all')
 const showAllReports = ref(false)
-const visibleCount = ref(PAGE_SIZE)
-const startingChatId = ref<string | null>(null)
-const cancelling = ref(false)
-const confirmCancelOpen = ref(false)
-const deleteChatId = ref<string | null>(null)
-const deleting = ref(false)
-const sentinel = ref<HTMLElement | null>(null)
 
-const filterOptions = computed(() => [
-  { value: 'all' as const, label: t('dashboard.filter.all') },
-  { value: 'private' as const, label: t('dashboard.filter.private') },
-  { value: 'groups' as const, label: t('dashboard.filter.groups') },
-])
-
-const filteredChats = computed(() => {
-  const query = search.value.trim().toLocaleLowerCase()
-  return workspace.chats.filter((chat) => {
-    if (filter.value === 'private' && chat.type !== 'private') return false
-    if (filter.value === 'groups' && chat.type === 'private') return false
-    return !query || chat.title.toLocaleLowerCase().includes(query)
-  })
-})
-const visibleChats = computed(() => filteredChats.value.slice(0, visibleCount.value))
+const name = computed(() => auth.user?.firstName || auth.user?.username || '')
 
 /** Finished reports, newest first: what the user has already learned. */
 const reports = computed(() =>
@@ -59,86 +34,20 @@ const privateReports = computed(() =>
 )
 const avatars = computed(() => new Map(workspace.chats.map((chat) => [chat.id, chat.hasAvatar])))
 
-/** Newcomers see how it works until the first report exists. */
-const showIntro = computed(
-  () => workspace.reportsState !== 'loading' && !reports.value.length && !analysis.isActive.value,
-)
-const introSteps = computed(() => [
+/** Returning users wait for their reports instead of seeing the newcomer screen flash by. */
+const loadingReports = computed(() => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error')
+/** Newcomers pick their first chat right here; everyone else gets the summary. */
+const newcomer = computed(() => !reports.value.length && !loadingReports.value)
+
+const steps = computed(() => [
   { icon: MessageSquare, title: t('dashboard.intro.step1Title'), text: t('dashboard.intro.step1Text') },
   { icon: Lock, title: t('dashboard.intro.step2Title'), text: t('dashboard.intro.step2Text') },
   { icon: BarChart2, title: t('dashboard.intro.step3Title'), text: t('dashboard.intro.step3Text') },
 ])
+
+const queuedJobs = computed(() => new Set(analysis.queued.value.map((item) => item.chatId)))
 function isUpdating(chatId: string) {
   return (analysis.isActive.value && analysis.progress.value.chatId === chatId) || queuedJobs.value.has(chatId)
-}
-const firstLoad = computed(
-  () => !workspace.chats.length && (workspace.dialogsState === 'loading' || workspace.dialogsState === 'idle'),
-)
-const dialogsFailed = computed(() => workspace.dialogsState === 'error' && !workspace.dialogs.length)
-// Analyses queue up, so another running one does not block starting more.
-const analysisBlocked = computed(() => !auth.telegramSessionActive || startingChatId.value !== null)
-const queuedJobs = computed(() => new Map(analysis.queued.value.map((item) => [item.chatId, item.jobId])))
-
-watch([search, filter], () => {
-  visibleCount.value = PAGE_SIZE
-})
-
-useIntersection(sentinel, () => {
-  if (visibleCount.value < filteredChats.value.length) visibleCount.value += PAGE_SIZE
-})
-
-async function analyse(chatId: string, title: string) {
-  startingChatId.value = chatId
-  try {
-    await analysis.startAnalysis(chatId, title)
-  } catch (error) {
-    toast.error(t('analysis.startError'), errorMessage(error))
-  } finally {
-    startingChatId.value = null
-  }
-}
-
-/** 0–1 when Telegram reported the chat size. */
-const progressFraction = computed(() => {
-  const { scannedMessages, totalMessages, phase } = analysis.progress.value
-  if (phase === 'saving') return 1
-  if (!totalMessages || phase !== 'scanning') return null
-  return Math.min(1, scannedMessages / totalMessages)
-})
-
-// Cancelling asks for confirmation only once more than 30 s of reading would be lost.
-const CONFIRM_CANCEL_AFTER_MS = 30_000
-function requestCancel() {
-  const { startedAt } = analysis.progress.value
-  if (startedAt && Date.now() - startedAt > CONFIRM_CANCEL_AFTER_MS) confirmCancelOpen.value = true
-  else void cancel()
-}
-
-async function deleteReport() {
-  const chatId = deleteChatId.value
-  if (!chatId) return
-  deleting.value = true
-  try {
-    await workspace.deleteReport(chatId)
-    toast.success(t('report.deleted'))
-  } catch (error) {
-    toast.error(t('report.deleteError'), errorMessage(error))
-  } finally {
-    deleting.value = false
-    deleteChatId.value = null
-  }
-}
-
-async function cancel() {
-  confirmCancelOpen.value = false
-  cancelling.value = true
-  try {
-    await analysis.cancel()
-  } catch (error) {
-    toast.error(t('analysis.cancelError'), errorMessage(error))
-  } finally {
-    cancelling.value = false
-  }
 }
 
 onMounted(() => {
@@ -149,324 +58,286 @@ onMounted(() => {
 
 <template>
   <UiPageContainer>
-    <div class="dashboard">
-      <header class="dashboard-head">
-        <h1 class="t-h1">{{ t('dashboard.title') }}</h1>
-      </header>
+    <div class="home">
+      <SessionBanner />
 
-      <div v-if="!auth.telegramSessionActive" class="banner banner--warning" role="status">
-        <AlertTriangle aria-hidden="true" />
-        <div class="banner__copy">
-          <span class="banner__title">{{ t('dashboard.sessionInactive') }}</span>
-        </div>
-        <div class="banner__actions">
-          <UiButton variant="secondary" size="sm" @click="logout">{{ t('common.relogin') }}</UiButton>
-        </div>
+      <!-- Loading: the shape of the summary, so nothing jumps when it arrives. -->
+      <div v-if="loadingReports" class="bento" aria-hidden="true">
+        <div class="tile span-8 home__skeleton"><UiSkeleton width="40%" /><UiSkeleton width="60%" height="44px" /></div>
+        <div class="tile span-4 home__skeleton"><UiSkeleton width="50%" /></div>
       </div>
 
-      <section v-if="reports.length" class="dashboard-section" aria-labelledby="reports-title">
-        <div class="dashboard-section__head">
-          <h2 id="reports-title" class="dashboard-section__title">{{ t('dashboard.reportsTitle') }}</h2>
-          <UiButton
-            v-if="reports.length > REPORTS_PREVIEW"
-            variant="ghost"
-            size="sm"
-            @click="showAllReports = !showAllReports"
-          >
-            {{ showAllReports ? t('dashboard.showFewerReports') : t('dashboard.showAllReports', { count: reports.length }) }}
-          </UiButton>
-        </div>
-        <div class="report-cards">
-          <ReportCard
-            v-for="chat in shownReports"
-            :key="chat.id"
-            :report="chat.report!"
-            :has-avatar="chat.hasAvatar"
-            :updating="isUpdating(chat.id)"
-          />
-        </div>
-      </section>
-
-      <section v-if="privateReports.length >= 2" class="dashboard-section" aria-labelledby="people-title">
-        <div class="dashboard-section__head">
-          <div class="dashboard-section__copy">
-            <h2 id="people-title" class="dashboard-section__title">{{ t('people.title') }}</h2>
-            <p class="dashboard-section__hint">{{ t('people.hint') }}</p>
+      <template v-else-if="newcomer">
+        <section class="bento" aria-labelledby="onboard-title">
+          <div class="tile tile--ink span-8 onboard">
+            <p v-if="name" class="onboard__hello">{{ t('home.greeting', { name }) }}</p>
+            <h1 id="onboard-title" class="onboard__title">{{ t('home.onboardTitle') }}</h1>
+            <p class="onboard__text">{{ t('home.onboardText') }}</p>
+            <NuxtLink to="/example" class="onboard__example">
+              {{ t('home.onboardExample') }}<ChevronRight aria-hidden="true" />
+            </NuxtLink>
           </div>
-        </div>
-        <div class="tile"><PeopleTable :reports="privateReports" :avatars="avatars" /></div>
-      </section>
+          <ol class="tile tile--lime span-4 onboard__steps">
+            <li v-for="(step, index) in steps" :key="index" class="onboard__step">
+              <span class="onboard__num">{{ index + 1 }}</span>
+              <span class="onboard__copy">
+                <strong>{{ step.title }}</strong>
+                <span>{{ step.text }}</span>
+              </span>
+            </li>
+          </ol>
+        </section>
 
-      <section v-if="!reports.length && showIntro" class="intro" aria-labelledby="intro-title">
-        <h2 id="intro-title" class="dashboard-section__title">{{ t('dashboard.intro.title') }}</h2>
-        <ol class="intro__steps">
-          <li v-for="(step, index) in introSteps" :key="index" class="intro__step">
-            <span class="icon-tile icon-tile--accent" aria-hidden="true"><component :is="step.icon" /></span>
-            <span class="intro__copy">
-              <strong>{{ index + 1 }}. {{ step.title }}</strong>
-              <span>{{ step.text }}</span>
-            </span>
-          </li>
-        </ol>
-      </section>
+        <section class="home-section" aria-labelledby="chats-title">
+          <h2 id="chats-title" class="home-section__title">{{ t('dashboard.chatsTitle') }}</h2>
+          <ChatPicker />
+        </section>
+      </template>
 
-      <section class="dashboard-section" aria-labelledby="chats-title">
-        <div class="dashboard-section__head">
-          <div class="dashboard-section__copy">
-            <h2 id="chats-title" class="dashboard-section__title">{{ t('dashboard.chatsTitle') }}</h2>
-            <p class="dashboard-section__hint">{{ t('dashboard.chatsHint') }}</p>
-          </div>
-        </div>
+      <template v-else>
+        <header class="home__head">
+          <p v-if="name" class="home__hello">{{ t('home.greeting', { name }) }}</p>
+          <h1 class="home__title">{{ t('home.title') }}</h1>
+        </header>
 
-        <div class="dashboard-tools">
-          <label class="input input--raised">
-            <Search aria-hidden="true" />
-            <input
-              v-model="search"
-              type="search"
-              class="input__control"
-              :placeholder="t('dashboard.search')"
-              :aria-label="t('dashboard.search')"
-            />
-            <button
-              v-if="search"
-              type="button"
-              class="input__clear"
-              :aria-label="t('common.clear')"
-              @click="search = ''"
+        <CircleSummary :reports="workspace.reports" :avatars="avatars" />
+
+        <section class="home-section" aria-labelledby="reports-title">
+          <div class="home-section__head">
+            <h2 id="reports-title" class="home-section__title">{{ t('dashboard.reportsTitle') }}</h2>
+            <UiButton
+              v-if="reports.length > REPORTS_PREVIEW"
+              variant="ghost"
+              size="sm"
+              @click="showAllReports = !showAllReports"
             >
-              <X aria-hidden="true" />
-            </button>
-          </label>
-          <UiSegmentedControl
-            v-model="filter"
-            inline
-            class="dashboard-filter"
-            :options="filterOptions"
-            :aria-label="t('dashboard.filter.label')"
-          />
-        </div>
-
-        <div v-if="auth.telegramSessionActive && workspace.dialogsStale" class="banner banner--info" role="status">
-          <Info aria-hidden="true" />
-          <div class="banner__copy">
-            <span class="banner__text">{{ t('dashboard.staleDialogs') }}</span>
+              {{
+                showAllReports ? t('dashboard.showFewerReports') : t('dashboard.showAllReports', { count: reports.length })
+              }}
+            </UiButton>
           </div>
-        </div>
-
-        <UiListSkeleton v-if="firstLoad" :rows="6" />
-
-        <UiEmptyState
-          v-else-if="dialogsFailed"
-          class="panel"
-          tone="danger"
-          :icon="workspace.dialogsError?.code === 'TELEGRAM_BUSY' ? WifiOff : AlertCircle"
-          :title="t('dashboard.dialogsError')"
-          :description="errorMessage(workspace.dialogsError)"
-        >
-          <template #action>
-            <UiButton variant="secondary" @click="workspace.loadDialogs()">{{ t('common.retry') }}</UiButton>
-          </template>
-        </UiEmptyState>
-
-        <template v-else>
-          <div v-if="visibleChats.length" class="chat-list">
-            <ChatRow
-              v-for="chat in visibleChats"
+          <div class="report-cards">
+            <NuxtLink to="/new" class="new-card">
+              <span class="new-card__icon" aria-hidden="true"><Plus /></span>
+              <span class="new-card__title">{{ t('home.newCard') }}</span>
+              <span class="new-card__text">{{ t('home.newCardText') }}</span>
+            </NuxtLink>
+            <ReportCard
+              v-for="chat in shownReports"
               :key="chat.id"
-              :chat="chat"
-              :analysing="analysis.isActive.value && analysis.progress.value.chatId === chat.id"
-              :progress="progressFraction"
-              :paused="analysis.progress.value.phase === 'waiting'"
-              :queued="queuedJobs.has(chat.id)"
-              :starting="startingChatId === chat.id"
-              :cancelling="cancelling"
-              :disabled="analysisBlocked"
-              @analyse="analyse(chat.id, chat.title)"
-              @cancel="queuedJobs.has(chat.id) ? analysis.cancel(queuedJobs.get(chat.id)) : requestCancel()"
-              @delete="deleteChatId = chat.id"
+              :report="chat.report!"
+              :has-avatar="chat.hasAvatar"
+              :updating="isUpdating(chat.id)"
             />
           </div>
-          <UiEmptyState
-            v-else
-            class="panel"
-            :icon="MessageSquare"
-            :title="search || filter !== 'all' ? t('dashboard.noMatchesTitle') : t('dashboard.emptyTitle')"
-            :description="search || filter !== 'all' ? t('dashboard.noMatchesText') : t('dashboard.emptyText')"
-          />
+        </section>
 
-          <p
-            v-if="visibleChats.length < filteredChats.length"
-            :key="visibleCount"
-            ref="sentinel"
-            class="list-footer t-small"
-          >
-            {{ t('dashboard.shown', { shown: visibleChats.length, total: filteredChats.length }) }}
-          </p>
-          <p v-else-if="workspace.dialogsTruncated" class="list-footer t-small">{{ t('dashboard.truncated') }}</p>
-          <p v-else-if="filteredChats.length" class="list-footer t-small">
-            {{ tc('dashboard.chatCount', filteredChats.length) }}
-          </p>
-        </template>
-      </section>
+        <section v-if="privateReports.length >= 2" class="home-section" aria-labelledby="people-title">
+          <div class="home-section__copy">
+            <h2 id="people-title" class="home-section__title">{{ t('people.title') }}</h2>
+            <p class="home-section__hint">{{ t('people.hint') }}</p>
+          </div>
+          <div class="tile"><PeopleTable :reports="privateReports" :avatars="avatars" /></div>
+        </section>
+      </template>
     </div>
-
-    <UiConfirmDialog
-      :open="confirmCancelOpen"
-      :title="t('analysis.cancelTitle')"
-      :description="t('analysis.cancelText')"
-      :confirm-label="t('analysis.cancel')"
-      :cancel-label="t('analysis.keepGoing')"
-      variant="danger"
-      :loading="cancelling"
-      @close="confirmCancelOpen = false"
-      @confirm="cancel"
-    />
-    <DeleteReportDialog
-      :open="deleteChatId !== null"
-      :report="workspace.reports.find((report) => report.chatId === deleteChatId) ?? null"
-      :loading="deleting"
-      @close="deleteChatId = null"
-      @confirm="deleteReport"
-    />
   </UiPageContainer>
 </template>
 
 <style scoped>
-.dashboard {
+.home {
   display: flex;
   flex-direction: column;
   gap: var(--space-10);
 }
 
-.dashboard-head {
-  margin-bottom: calc(var(--space-4) * -1);
+.home__skeleton {
+  min-height: 220px;
 }
 
-.dashboard-section {
+.home__head {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: calc(var(--space-6) * -1);
+}
+
+.home__hello,
+.onboard__hello {
+  color: var(--text-muted);
+  font: var(--text-ui);
+}
+
+.home__title {
+  font: 600 clamp(32px, 4.4vw, 44px) / 1.05 var(--font-sans);
+  letter-spacing: -0.045em;
+}
+
+.home-section {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: var(--space-4);
 }
 
-.dashboard-section__head {
+.home-section__head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-4);
 }
 
-.dashboard-section__copy {
+.home-section__copy {
   display: grid;
   gap: var(--space-1);
 }
 
-.dashboard-section__title {
+.home-section__title {
   font: 600 20px/26px var(--font-sans);
   letter-spacing: -0.02em;
 }
 
-.dashboard-section__hint {
+.home-section__hint {
   color: var(--text-muted);
   font: var(--text-small);
 }
 
-/* As many cards per row as fit, so four reports never leave one orphan below three. */
+/* ─── Newcomer ─── */
+.onboard {
+  gap: var(--space-4);
+  min-height: 280px;
+  padding: var(--space-8);
+}
+
+.onboard__title {
+  font: 600 clamp(32px, 4.4vw, 48px) / 1.02 var(--font-sans);
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.onboard__text {
+  max-width: 46ch;
+  color: var(--text-muted);
+  font: 400 16px/1.5 var(--font-sans);
+}
+
+.onboard__example {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  margin-top: auto;
+  color: var(--them);
+  font: var(--text-ui);
+  font-weight: 600;
+}
+
+.onboard__steps {
+  justify-content: center;
+  gap: var(--space-5);
+  margin: 0;
+  list-style: none;
+}
+
+.onboard__step {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.onboard__num {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--tile-ink);
+  color: var(--on-tile-ink);
+  font: 600 13px/1 var(--font-sans);
+}
+
+.onboard__copy {
+  display: grid;
+  gap: 2px;
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.onboard__copy strong {
+  color: var(--text);
+  font: var(--text-ui);
+  font-weight: 600;
+}
+
+/* ─── Reports ─── */
+/* As many cards per row as fit, so a few reports never leave one orphan below. */
 .report-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--space-3);
 }
 
-.intro {
+/* The first card starts a new analysis: dashed, so it never reads as a report. */
+.new-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-}
-
-/* Three white step tiles; the first one is lime, like the first tile of a report. */
-.intro__steps {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
-  list-style: none;
-}
-
-.intro__step {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  justify-content: flex-end;
+  gap: var(--space-1);
+  min-height: 200px;
   padding: var(--space-5);
+  border: 1.5px dashed var(--border-strong);
   border-radius: var(--radius-card);
-  background: var(--surface);
-}
-
-.intro__step:first-child {
-  background: var(--lime);
-  --text: var(--on-lime);
-  --text-muted: var(--on-lime-muted);
-}
-
-.intro__step .icon-tile {
-  border-radius: var(--radius-full);
-  background: var(--surface-2);
   color: var(--text);
+  transition:
+    background-color var(--transition-fast),
+    transform var(--duration-press) var(--ease-standard);
 }
 
-.intro__step:first-child .icon-tile {
-  background: var(--tile-ink);
-  color: var(--on-tile-ink);
+.new-card:active {
+  transform: scale(var(--press-scale));
 }
 
-.intro__copy {
-  display: grid;
-  gap: 2px;
-  font: var(--text-small);
-  color: var(--text-muted);
-}
-
-.intro__copy strong {
-  color: var(--text);
-  font: var(--text-ui);
-  font-weight: 600;
-}
-
-.dashboard-tools {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-/* No overflow clipping: row menus float outside the list. */
-.chat-list {
-  padding: var(--space-1) 0;
-  border-radius: var(--radius-card);
-  background: var(--surface);
-}
-
-.list-footer {
-  color: var(--text-muted);
-  text-align: center;
-}
-
-@media (max-width: 900px) {
-  .intro__steps {
-    grid-template-columns: minmax(0, 1fr);
+@media (hover: hover) {
+  .new-card:hover {
+    background: var(--surface);
   }
+}
+
+.new-card__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: auto;
+  border-radius: var(--radius-full);
+  background: var(--lime);
+  color: var(--on-lime);
+}
+
+.new-card__title {
+  font: 600 18px/24px var(--font-sans);
+  letter-spacing: -0.015em;
+}
+
+.new-card__text {
+  color: var(--text-muted);
+  font: var(--text-small);
 }
 
 @media (max-width: 640px) {
-  .dashboard {
+  .home {
     gap: var(--space-8);
   }
 
-  .dashboard-tools {
-    grid-template-columns: minmax(0, 1fr);
+  .onboard {
+    min-height: 0;
+    padding: var(--space-6) var(--space-5);
   }
 
-  /* Phones: report cards scroll sideways instead of pushing the chat list down. */
+  .home__head {
+    margin-bottom: calc(var(--space-4) * -1);
+  }
+
+  /* Phones: report cards scroll sideways instead of pushing the page down. */
   .report-cards {
     display: flex;
     margin-inline: calc(var(--page-gutter) * -1);
@@ -484,6 +355,11 @@ onMounted(() => {
   .report-cards > * {
     flex: 0 0 min(260px, 75%);
     scroll-snap-align: start;
+  }
+
+  .new-card {
+    flex-basis: 150px;
+    min-height: 0;
   }
 }
 </style>

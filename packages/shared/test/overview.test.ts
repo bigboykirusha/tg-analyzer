@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { reportHeadline, weeklyPulse } from '../src/analytics/overview'
+import { reportHeadline, summarizeCircle, weeklyPulse } from '../src/analytics/overview'
 
 const day = (date: string, sent: number, received: number) => ({ date, sent, received, total: sent + received })
 
@@ -50,4 +50,69 @@ test('headline numbers come from totals and responses', () => {
     },
   })
   assert.deepEqual(headline, { sentSharePct: 33.3, iWriteFirstPct: 40, medianMineSec: 60, medianTheirsSec: 180 })
+})
+
+const summary = (
+  chatId: string,
+  type: 'private' | 'group',
+  totalMessages: number,
+  headline: Partial<{ sentSharePct: number; iWriteFirstPct: number; medianTheirsSec: number }>,
+  pulse = [{ sent: 1, received: 1 }],
+) => ({
+  chatId,
+  title: chatId,
+  type,
+  totalMessages,
+  pulse,
+  headline: {
+    sentSharePct: headline.sentSharePct ?? null,
+    iWriteFirstPct: headline.iWriteFirstPct ?? null,
+    medianMineSec: null,
+    medianTheirsSec: headline.medianTheirsSec ?? null,
+  },
+})
+
+test('the circle picks people out of private chats only', () => {
+  const circle = summarizeCircle([
+    summary('mila', 'private', 4800, { sentSharePct: 50, iWriteFirstPct: 54, medianTheirsSec: 180 }),
+    summary('artem', 'private', 820, { sentSharePct: 60, iWriteFirstPct: 63, medianTheirsSec: 90 }),
+    summary('team', 'group', 9000, { iWriteFirstPct: 99, medianTheirsSec: 5 }),
+  ])
+  assert.equal(circle.chats, 3)
+  assert.equal(circle.people, 2)
+  assert.equal(circle.groups, 1)
+  assert.equal(circle.totalMessages, 14620)
+  assert.equal(circle.sentMessages, 2400 + 492)
+  assert.deepEqual(circle.mostMessages, { chatId: 'mila', title: 'mila', value: 4800 })
+  assert.deepEqual(circle.fastestReply, { chatId: 'artem', title: 'artem', value: 90 })
+  assert.equal(circle.youStartMost?.chatId, 'artem')
+  assert.equal(circle.theyStartMost?.chatId, 'mila')
+})
+
+test('one person is not compared with anyone', () => {
+  const circle = summarizeCircle([summary('mila', 'private', 10, { iWriteFirstPct: 50, medianTheirsSec: 60 })])
+  assert.equal(circle.mostMessages, null)
+  assert.equal(circle.fastestReply, null)
+  assert.equal(circle.people, 1)
+})
+
+test('the circle pulse lines chats up on their last week', () => {
+  const circle = summarizeCircle([
+    summary('a', 'private', 3, {}, [
+      { sent: 1, received: 0 },
+      { sent: 2, received: 0 },
+    ]),
+    summary('b', 'private', 3, {}, [{ sent: 0, received: 5 }]),
+  ])
+  assert.deepEqual(circle.pulse, [
+    { sent: 1, received: 0 },
+    { sent: 2, received: 5 },
+  ])
+})
+
+test('the circle of no reports is empty', () => {
+  const circle = summarizeCircle([])
+  assert.equal(circle.chats, 0)
+  assert.deepEqual(circle.pulse, [])
+  assert.equal(circle.sentMessages, null)
 })

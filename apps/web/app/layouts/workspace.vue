@@ -46,6 +46,7 @@ watch(analysis.finished, (job) => {
         <slot />
       </main>
     </div>
+    <BottomTabs />
   </div>
 </template>
 
@@ -89,11 +90,16 @@ watch(analysis.finished, (job) => {
     display: block;
     margin-bottom: var(--space-4);
   }
+
+  /* Room for the tab bar. */
+  .workspace-main {
+    padding-bottom: calc(var(--space-16) + 64px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @media (max-width: 640px) {
   .workspace-main {
-    padding: var(--space-2) 0 max(var(--space-12), env(safe-area-inset-bottom, 0px));
+    padding-top: var(--space-2);
   }
 }
 </style>

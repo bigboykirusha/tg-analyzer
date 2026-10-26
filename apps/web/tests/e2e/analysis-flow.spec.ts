@@ -14,7 +14,10 @@ test('sign in, analyse a private chat and read the report', async ({ page }) => 
   await row.getByRole('button', { name: 'Анализ' }).click()
   await expect(page.getByText('Отчёт готов')).toBeVisible({ timeout: 30_000 })
 
-  await row.getByRole('link', { name: 'Открыть отчёт' }).click()
+  // With a first report the home page turns into the summary; the chat list lives on /new.
+  await expect(page.getByRole('heading', { name: 'Ваш круг' })).toBeVisible()
+  await page.goto('/new')
+  await page.locator('.chat-row').filter({ hasText: 'Катя' }).getByRole('link', { name: 'Открыть отчёт' }).click()
   await page.waitForURL('**/chat/1006')
   await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible()
 
@@ -24,7 +27,7 @@ test('sign in, analyse a private chat and read the report', async ({ page }) => 
   }
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
 
-  await page.goto('/dashboard')
+  await page.goto('/new')
   await expect(
     page.locator('.chat-row').filter({ hasText: 'Катя' }).getByRole('link', { name: 'Открыть отчёт' }),
   ).toBeVisible()
@@ -74,12 +77,7 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
   await page.goto('/chat/1006')
   await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible({ timeout: 15_000 })
 
-  const recap = page.getByRole('button', { name: 'Итоги' })
-  if (await recap.isVisible()) await recap.click()
-  else {
-    await page.getByRole('button', { name: 'Действия с отчётом' }).last().click()
-    await page.getByRole('menuitem', { name: 'Итоги' }).click()
-  }
+  await page.getByRole('button', { name: 'Итоги' }).click()
 
   const stories = page.getByRole('dialog', { name: 'Итоги переписки' })
   // Intro first and the summary poster last; the slides between depend on the data.
