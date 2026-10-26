@@ -9,6 +9,7 @@ export {
   AlertCircle,
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   Ban,
   BarChart2,
   Check,

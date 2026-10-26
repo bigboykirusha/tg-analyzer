@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Lock, Send, Share2, Users } from '../lib/icons'
+import { ArrowRight, Send } from '../lib/icons'
 
 definePageMeta({ middleware: ['guest'] })
 
@@ -27,12 +27,6 @@ useHead({
   ],
 })
 
-const features = computed(() => [
-  { icon: Lock, title: t('landing.feature.privacy.title'), text: t('landing.feature.privacy.text') },
-  { icon: Share2, title: t('landing.feature.story.title'), text: t('landing.feature.story.text') },
-  { icon: Users, title: t('landing.feature.groups.title'), text: t('landing.feature.groups.text') },
-])
-
 /** The header gets its hairline once the page scrolls under it. */
 const scrolled = ref(false)
 function onScroll() {
@@ -50,14 +44,9 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
     <header class="top" :class="{ 'is-scrolled': scrolled }">
       <div class="wrap top__in">
         <NuxtLink to="/" class="brand" aria-label="TG Analyzer"><BrandMark />TG Analyzer</NuxtLink>
-        <nav class="top__links" :aria-label="t('nav.main')">
-          <NuxtLink to="/example">{{ t('landing.nav.example') }}</NuxtLink>
-          <NuxtLink to="/faq">{{ t('landing.nav.faq') }}</NuxtLink>
-          <NuxtLink to="/login#privacy">{{ t('landing.nav.privacy') }}</NuxtLink>
-        </nav>
         <div class="top__actions">
-          <UiButton class="top__signin" variant="secondary" size="sm" to="/login">{{ t('landing.signIn') }}</UiButton>
-          <UiButton variant="primary" size="sm" to="/login">{{ t('landing.start') }}</UiButton>
+          <NuxtLink to="/faq" class="top__link">{{ t('landing.nav.faq') }}</NuxtLink>
+          <UiButton variant="secondary" size="sm" to="/login">{{ t('landing.signIn') }}</UiButton>
         </div>
       </div>
     </header>
@@ -65,43 +54,34 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
     <main class="wrap">
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero__copy">
-          <span class="eyebrow"><b aria-hidden="true" />{{ t('landing.eyebrow') }}</span>
           <h1 id="hero-title" class="hero__title">
             {{ t('landing.title') }} <span>{{ t('landing.titleSoft') }}</span>
           </h1>
           <p class="hero__lede">{{ t('landing.lede') }}</p>
-          <div class="hero__ctas">
-            <UiButton variant="primary" size="lg" :icon="Send" to="/login">{{ t('landing.cta') }}</UiButton>
-            <UiButton class="hero__example" variant="secondary" size="lg" to="/example">
-              {{ t('landing.example') }}
-            </UiButton>
-          </div>
-          <p class="hero__free">{{ t('landing.free') }}</p>
+          <UiButton class="hero__cta" variant="primary" size="lg" :icon="Send" to="/login">
+            {{ t('landing.cta') }}
+          </UiButton>
+          <p class="hero__trust">
+            {{ t('landing.trust') }}
+            <NuxtLink to="/example" class="hero__example">
+              {{ t('landing.nav.example') }}<ArrowRight aria-hidden="true" />
+            </NuxtLink>
+          </p>
         </div>
         <div class="hero__visual">
           <ProductWindow class="hero__window" />
           <div class="hero__phone"><PhoneMockup /></div>
         </div>
       </section>
-
-      <section class="features" :aria-label="t('landing.featuresLabel')">
-        <article v-for="feature in features" :key="feature.title" class="feature">
-          <component :is="feature.icon" class="feature__icon icon-lg" aria-hidden="true" />
-          <h2>{{ feature.title }}</h2>
-          <p>{{ feature.text }}</p>
-        </article>
-      </section>
     </main>
 
     <footer class="foot">
       <div class="wrap foot__in">
-        <NuxtLink to="/" class="brand brand--muted" aria-label="TG Analyzer"><BrandMark />TG Analyzer</NuxtLink>
+        <span>{{ t('landing.unofficial') }}</span>
         <nav :aria-label="t('landing.footerNav')">
-          <NuxtLink to="/login#privacy">{{ t('landing.dataLink') }}</NuxtLink>
-          <NuxtLink to="/faq">{{ t('landing.nav.faq') }}</NuxtLink>
+          <NuxtLink to="/login#privacy">{{ t('landing.nav.privacy') }}</NuxtLink>
           <NuxtLink to="/terms">{{ t('landing.nav.terms') }}</NuxtLink>
         </nav>
-        <span>© {{ new Date().getFullYear() }} TG Analyzer</span>
       </div>
     </footer>
   </div>
@@ -151,31 +131,32 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   white-space: nowrap;
 }
 
-.top__links {
+.top__actions {
   display: flex;
-  gap: 28px;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.top__link,
+.foot a,
+.hero__example {
+  transition: color var(--transition-fast);
+}
+
+.top__link {
   color: var(--text-muted);
   font: var(--text-ui);
 }
 
-.top__links a,
-.foot a {
-  transition: color var(--transition-fast);
-}
-
 @media (hover: hover) {
-  .top__links a:hover,
-  .foot a:hover {
+  .top__link:hover,
+  .foot a:hover,
+  .hero__example:hover {
     color: var(--text);
   }
 }
 
-.top__actions {
-  display: flex;
-  gap: var(--space-2);
-}
-
-/* ─── Hero ─── */
+/* ─── Hero: a title, one action and the product ─── */
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
@@ -188,27 +169,11 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-5);
-}
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--text-muted);
-  font: var(--text-ui);
-}
-
-.eyebrow b {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
-  background: var(--them);
 }
 
 .hero__title {
-  font: 600 clamp(40px, 5.4vw, 72px) / 1 var(--font-sans);
-  letter-spacing: -0.045em;
+  font: 600 clamp(44px, 5.8vw, 80px) / 0.98 var(--font-sans);
+  letter-spacing: -0.05em;
   text-wrap: balance;
 }
 
@@ -217,72 +182,58 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 }
 
 .hero__lede {
-  max-width: 42ch;
+  max-width: 34ch;
+  margin-top: var(--space-6);
   color: var(--text-muted);
-  font: 400 17px/1.55 var(--font-sans);
+  font: 400 18px/1.5 var(--font-sans);
 }
 
-.hero__ctas {
+.hero__cta {
+  margin-top: var(--space-8);
+}
+
+.hero__trust {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-}
-
-.hero__free {
-  margin-top: calc(var(--space-2) * -1);
+  align-items: center;
+  gap: 4px var(--space-4);
+  margin-top: var(--space-5);
   color: var(--text-muted);
   font: var(--text-small);
+}
+
+.hero__example {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.hero__example svg {
+  width: 14px;
+  height: 14px;
 }
 
 .hero__phone {
   display: none;
 }
 
-/* ─── Features ─── */
-.features {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-10);
-  margin-top: 80px;
-  padding-block: 72px 120px;
-  border-top: 1px solid var(--border);
-}
-
-.feature h2 {
-  margin: 14px 0 6px;
-  font: var(--text-title);
-  letter-spacing: -0.01em;
-}
-
-.feature p {
-  color: var(--text-muted);
-  font: 400 14px/1.55 var(--font-sans);
-}
-
-/* ─── Footer ─── */
-.foot {
-  border-top: 1px solid var(--border);
-}
-
+/* ─── Footer: one quiet line ─── */
 .foot__in {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  padding-block: 28px max(64px, env(safe-area-inset-bottom, 0px));
-  color: var(--text-muted);
+  gap: var(--space-2) var(--space-4);
+  padding-block: 20px max(20px, env(safe-area-inset-bottom, 0px));
+  color: var(--text-faint);
   font: var(--text-small);
 }
 
 .foot nav {
   display: flex;
-  flex-wrap: wrap;
   gap: 20px;
-}
-
-.brand--muted {
-  color: var(--text-muted);
 }
 
 @media (max-width: 1100px) {
@@ -291,10 +242,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   }
 }
 
-/*
- * Desktop: the whole landing fits one screen. The hero takes the free height,
- * the window scales to it, features and footer shrink to single rows.
- */
+/* Desktop: the whole landing fits one screen; the window scales to the free height. */
 @media (min-width: 901px) and (min-height: 620px) {
   .landing {
     display: flex;
@@ -316,11 +264,11 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
     flex: 1;
     grid-template-rows: minmax(0, 1fr);
     min-height: 0;
-    padding-block: clamp(16px, 4vh, 48px) var(--space-4);
+    padding-block: clamp(16px, 4vh, 48px);
   }
 
   .hero__title {
-    font-size: clamp(40px, min(5.4vw, 8.4vh), 72px);
+    font-size: clamp(44px, min(5.8vw, 9vh), 80px);
   }
 
   .hero__visual {
@@ -332,38 +280,8 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
     height: 100%;
   }
 
-  .features {
-    gap: var(--space-8);
-    margin-top: 0;
-    padding-block: 18px;
-  }
-
-  .feature {
-    display: grid;
-    grid-template-columns: 20px minmax(0, 1fr);
-    column-gap: var(--space-3);
-    row-gap: 2px;
-  }
-
-  .feature__icon {
-    grid-row: span 2;
-    width: 20px;
-    height: 20px;
-    margin-top: 1px;
-  }
-
-  .feature h2 {
-    margin: 0;
-    font: 600 15px/20px var(--font-sans);
-  }
-
-  .feature p {
-    font: 400 13px/18px var(--font-sans);
-  }
-
   .foot__in {
     flex-wrap: nowrap;
-    padding-block: 14px max(14px, env(safe-area-inset-bottom, 0px));
     white-space: nowrap;
   }
 }
@@ -376,11 +294,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
 /* Tablets and phones: no tilted window, the phone shows the product instead. */
 @media (max-width: 900px) {
-  .top__links,
-  .top__signin {
-    display: none;
-  }
-
   .hero {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-10);
@@ -398,46 +311,42 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   .hero__phone {
     display: block;
   }
-
-  .features {
-    gap: 28px;
-    margin-top: 56px;
-    padding-block: 56px 72px;
-  }
 }
 
 @media (max-width: 640px) {
-  .hero {
-    gap: 28px;
-    padding-top: var(--space-5);
+  /* The cut-off phone must not stretch the page below the footer. */
+  .landing {
+    overflow: clip;
   }
 
-  .hero__copy {
+  .top__actions {
     gap: var(--space-4);
   }
 
+  .hero {
+    gap: var(--space-8);
+    padding-top: var(--space-6);
+  }
+
   .hero__lede {
-    font-size: 16px;
+    margin-top: var(--space-4);
+    font-size: 17px;
   }
 
-  .hero__ctas {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    gap: var(--space-1);
+  .hero__cta {
+    align-self: stretch;
+    margin-top: var(--space-6);
   }
 
-  /* The second action is a quiet text button under the main one. */
-  .hero__example {
-    border-color: transparent;
-    color: var(--text-muted);
+  .hero__trust {
+    justify-content: center;
+    align-self: stretch;
   }
 
   /* The phone is cut off with a fade, so the landing stays short. */
   .hero__phone {
     position: relative;
-    height: min(400px, 104vw);
-    margin-bottom: calc(var(--space-6) * -1);
+    height: min(420px, 108vw);
     clip-path: inset(-80px -80px 2px -80px);
   }
 
@@ -463,36 +372,10 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
     width: min(290px, 76vw);
   }
 
-  /* Features scroll sideways as cards, over the bottom of the faded phone. */
-  .features {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    gap: 10px;
-    margin: 0 calc(max(20px, env(safe-area-inset-left, 0px)) * -1);
-    padding: var(--space-2) max(20px, env(safe-area-inset-left, 0px)) var(--space-10);
-    overflow-x: auto;
-    border-top: 0;
-    scroll-padding-inline: max(20px, env(safe-area-inset-left, 0px));
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-
-  .features::-webkit-scrollbar {
-    display: none;
-  }
-
-  .feature {
-    flex: 0 0 78%;
-    padding: 18px;
-    border-radius: var(--radius-card);
-    background: var(--surface);
-    scroll-snap-align: start;
-  }
-
   .foot__in {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
   }
 }
 </style>

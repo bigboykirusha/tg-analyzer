@@ -48,7 +48,7 @@ watch(analysis.finished, (job) => {
         <slot />
       </main>
     </div>
-    <BottomTabs />
+    <MobileDock />
   </div>
 </template>
 
@@ -93,9 +93,9 @@ watch(analysis.finished, (job) => {
     margin-bottom: var(--space-4);
   }
 
-  /* Room for the tab bar. */
+  /* Room for the floating dock. */
   .workspace-main {
-    padding-bottom: calc(var(--space-16) + 64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--space-16) + 56px + env(safe-area-inset-bottom, 0px));
   }
 }
 
