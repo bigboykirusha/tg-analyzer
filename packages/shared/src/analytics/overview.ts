@@ -116,9 +116,25 @@ export function summarizeCircle(reports: readonly CircleReport[], weeks = 26): C
     totalMessages: reports.reduce((sum, report) => sum + report.totalMessages, 0),
     sentMessages,
     pulse,
-    mostMessages: pick(comparable, (report) => report.totalMessages, (a, b) => a > b),
-    fastestReply: pick(comparable, (report) => report.headline.medianTheirsSec, (a, b) => a < b),
-    youStartMost: pick(comparable, (report) => report.headline.iWriteFirstPct, (a, b) => a > b),
-    theyStartMost: pick(comparable, (report) => report.headline.iWriteFirstPct, (a, b) => a < b),
+    mostMessages: pick(
+      comparable,
+      (report) => report.totalMessages,
+      (a, b) => a > b,
+    ),
+    fastestReply: pick(
+      comparable,
+      (report) => report.headline.medianTheirsSec,
+      (a, b) => a < b,
+    ),
+    youStartMost: pick(
+      comparable,
+      (report) => report.headline.iWriteFirstPct,
+      (a, b) => a > b,
+    ),
+    theyStartMost: pick(
+      comparable,
+      (report) => report.headline.iWriteFirstPct,
+      (a, b) => a < b,
+    ),
   }
 }
