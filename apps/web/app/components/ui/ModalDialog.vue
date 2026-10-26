@@ -65,10 +65,13 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
             :disabled="busy"
             @click="close"
           />
+          <div v-if="$slots.top" class="modal-top">
+            <slot name="top" />
+          </div>
           <header class="modal-header">
             <div :id="titleId">
               <slot name="header">
-                <h2 class="t-title">{{ title }}</h2>
+                <h2 class="modal-title">{{ title }}</h2>
               </slot>
             </div>
             <p v-if="description" :id="descriptionId" class="modal-description">{{ description }}</p>
@@ -104,11 +107,11 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   max-height: min(84dvh, 760px);
   overflow: hidden;
   border: 0;
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-sheet);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
 }
@@ -128,18 +131,37 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   right: var(--space-4);
 }
 
+/* Optional subject row (the chat being acted on); the close button sits at its end. */
+.modal-top {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-md);
+  padding: var(--space-5) var(--space-12) 0 var(--space-5);
+}
+
 .modal-header {
   display: grid;
   flex: 0 0 auto;
   justify-items: start;
-  gap: var(--space-1);
-  padding: var(--space-6) var(--space-16) var(--space-4) var(--space-6);
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-12) var(--space-4) var(--space-5);
+}
+
+.modal-top + .modal-header {
+  padding-top: var(--space-5);
+  padding-right: var(--space-5);
+}
+
+.modal-title {
+  font: 600 22px/1.2 var(--font-display);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 .modal-description {
   color: var(--text-muted);
-  font: var(--text-ui);
-  font-weight: 400;
+  font: 400 15px/22px var(--font-sans);
+  text-wrap: pretty;
 }
 
 .modal-body {
@@ -149,15 +171,22 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   min-width: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 var(--space-6) var(--space-2);
+  padding: 0 var(--space-5) var(--space-1);
 }
 
+/* Two equal buttons side by side: cancel on the left, the action on the right. */
 .modal-actions {
-  display: flex;
+  display: grid;
   flex: 0 0 auto;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  padding: var(--space-5) var(--space-6) var(--space-6);
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+.modal-actions :deep(.btn) {
+  width: 100%;
+  min-height: var(--control-lg);
 }
 
 .modal-enter-active,
@@ -180,7 +209,6 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   transform: translateY(8px) scale(0.98);
 }
 
-/* Phones: the dialog becomes a bottom sheet. */
 /* The dialog takes focus on open without drawing a ring around itself. */
 .modal-panel:focus {
   outline: none;
@@ -201,25 +229,6 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
     max-height: 86dvh;
     border-width: 0;
     border-radius: var(--radius-sheet);
-  }
-
-  .modal-header {
-    padding: var(--space-6) var(--space-16) var(--space-4) var(--space-5);
-  }
-
-  .modal-body {
-    padding-inline: var(--space-5);
-  }
-
-  .modal-actions {
-    flex-direction: column-reverse;
-    gap: var(--space-2);
-    padding: var(--space-3) var(--space-5) var(--space-5);
-  }
-
-  .modal-actions :deep(.btn) {
-    width: 100%;
-    min-height: var(--control-lg);
   }
 
   .modal-enter-active .modal-panel,

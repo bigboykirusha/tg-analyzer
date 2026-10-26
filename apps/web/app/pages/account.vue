@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Locale } from '../composables/useI18n'
 import type { ThemePreference } from '../composables/useTheme'
+import { Trash2 } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
@@ -185,7 +186,9 @@ onMounted(() => {
           </dl>
           <button type="button" class="text-link" @click="privacyOpen = true">{{ t('accountPage.privacy') }}</button>
           <div class="sheet__actions">
-            <UiButton variant="danger" size="sm" @click="confirmDeleteOpen = true">{{ t('account.delete') }}</UiButton>
+            <UiButton variant="danger" size="sm" :icon="Trash2" @click="confirmDeleteOpen = true">{{
+              t('account.delete')
+            }}</UiButton>
           </div>
         </div>
       </section>
@@ -224,7 +227,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: var(--space-5);
-  padding-bottom: var(--space-8);
+  padding-bottom: var(--space-5);
 }
 
 .account-head__copy {
@@ -244,13 +247,18 @@ onMounted(() => {
   font: var(--text-ui);
 }
 
-/* A printed form: a hairline above each section, title in the margin. */
+/* Each section is a tile: title and lead on the left, settings on the right. */
+.account {
+  gap: var(--space-3);
+}
+
 .sheet {
   display: grid;
   grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
   gap: var(--space-8);
-  padding-block: var(--space-8);
-  border-top: 1px solid var(--border);
+  padding: var(--space-6);
+  border-radius: var(--radius-card);
+  background: var(--surface);
 }
 
 .sheet__aside {
@@ -369,7 +377,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: var(--space-4);
   padding-block: var(--space-3);
-  border-bottom: 1px dashed var(--border);
+  border-bottom: 1px solid var(--border);
   font: var(--text-ui);
 }
 
@@ -387,13 +395,13 @@ onMounted(() => {
 
 @media (max-width: 720px) {
   .account-head {
-    padding-bottom: var(--space-6);
+    padding-bottom: var(--space-4);
   }
 
   .sheet {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-5);
-    padding-block: var(--space-6);
+    padding: var(--space-5);
   }
 }
 </style>

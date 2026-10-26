@@ -190,9 +190,9 @@ function submit() {
 .otp-input {
   width: 100%;
   height: var(--control-lg);
-  border: 1px solid var(--control-border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 20px;
@@ -200,18 +200,18 @@ function submit() {
   text-align: center;
   outline: none;
   transition:
-    border-color var(--transition-fast),
+    background-color var(--transition-fast),
     box-shadow var(--transition-fast);
 }
 
 @media (hover: hover) {
   .otp-input:hover {
-    border-color: var(--text-muted);
+    background: var(--fill-hover);
   }
 }
 
 .otp-input:focus {
-  border-color: var(--accent);
-  box-shadow: var(--focus-halo);
+  background: var(--surface);
+  box-shadow: var(--focus-ring-field);
 }
 </style>

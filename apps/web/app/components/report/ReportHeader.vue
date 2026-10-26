@@ -19,9 +19,10 @@ const period = computed(() => {
   return `${format(firstMessageAt)} – ${format(lastMessageAt)}`
 })
 
-function run(action: 'story' | 'delete') {
+function run(action: 'story' | 'reanalyse' | 'delete') {
   menuOpen.value = false
   if (action === 'story') emit('story')
+  else if (action === 'reanalyse') emit('reanalyse')
   else emit('delete')
 }
 </script>
@@ -63,7 +64,10 @@ function run(action: 'story' | 'delete') {
         <UiMenuItem role="menuitem" class="report-header__story-item" :icon="Share2" @click="run('story')">
           {{ t('story.open') }}
         </UiMenuItem>
-        <div class="menu-divider report-header__story-item" role="separator" />
+        <UiMenuItem role="menuitem" :icon="RotateCw" :disabled="!canReanalyse" @click="run('reanalyse')">
+          {{ t('report.reanalyse') }}
+        </UiMenuItem>
+        <div class="menu-divider" role="separator" />
         <UiMenuItem role="menuitem" :icon="Trash2" danger @click="run('delete')">
           {{ t('report.deleteMenu') }}
         </UiMenuItem>

@@ -30,7 +30,7 @@ withDefaults(
     :disabled="disabled"
     :aria-disabled="disabled || undefined"
   >
-    <component :is="icon" v-if="icon" class="menu-item__icon" aria-hidden="true" />
+    <component :is="icon" v-if="icon" class="menu-item__icon row-icon" aria-hidden="true" />
     <span class="menu-item__label"><slot /></span>
     <span v-if="meta" class="menu-item__meta">{{ meta }}</span>
   </button>
@@ -42,20 +42,16 @@ withDefaults(
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  min-height: 40px;
-  padding: 0 var(--space-3);
+  min-height: 44px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-option);
   background: transparent;
   color: var(--text);
   cursor: pointer;
   font: var(--text-ui);
   text-align: left;
   transition: background-color var(--transition-fast);
-}
-
-.menu-item__icon {
-  color: var(--text-muted);
 }
 
 .menu-item__label {
@@ -67,8 +63,11 @@ withDefaults(
 }
 
 .menu-item__meta {
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--fill-raised);
   color: var(--text-muted);
-  font: var(--text-small);
+  font: 500 11px/14px var(--font-mono);
 }
 
 @media (hover: hover) {
@@ -89,7 +88,11 @@ withDefaults(
 
 .menu-item--danger,
 .menu-item--danger .menu-item__icon {
-  color: var(--danger);
+  color: var(--danger-text);
+}
+
+.menu-item--danger .menu-item__icon {
+  background: var(--danger-subtle);
 }
 
 @media (hover: hover) {

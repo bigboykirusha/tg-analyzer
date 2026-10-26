@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
 import Button from './Button.vue'
 
 /**
  * Confirmation: a question as the title, consequences as the description and
- * a concrete verb on the main button. `danger` adds a filled
- * danger button and `alertdialog`; focus starts on the dialog itself.
+ * a concrete verb on the main button. `danger` makes that button soft red and
+ * the role `alertdialog`; focus starts on the dialog itself. The `subject`
+ * slot names what is acted on (a chat), the default slot lists what is lost.
  */
 const props = withDefaults(
   defineProps<{
@@ -14,11 +16,13 @@ const props = withDefaults(
     confirmLabel: string
     cancelLabel?: string
     variant?: 'default' | 'danger'
+    confirmIcon?: Component | null
     loading?: boolean
   }>(),
   {
     cancelLabel: '',
     variant: 'default',
+    confirmIcon: null,
     loading: false,
   },
 )
@@ -43,11 +47,22 @@ const isDanger = computed(() => props.variant === 'danger')
     size="sm"
     @close="emit('close')"
   >
+    <template v-if="$slots.subject" #top>
+      <slot name="subject" />
+    </template>
+    <template v-if="$slots.default" #default>
+      <slot />
+    </template>
     <template #actions>
       <Button variant="secondary" :disabled="loading" @click="emit('close')">
         {{ cancelLabel || t('common.cancel') }}
       </Button>
-      <Button :variant="isDanger ? 'danger' : 'primary'" :loading="loading" @click="emit('confirm')">
+      <Button
+        :variant="isDanger ? 'danger' : 'primary'"
+        :icon="confirmIcon"
+        :loading="loading"
+        @click="emit('confirm')"
+      >
         {{ confirmLabel }}
       </Button>
     </template>

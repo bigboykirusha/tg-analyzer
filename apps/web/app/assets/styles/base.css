@@ -346,16 +346,21 @@ svg.lucide {
   width: 100%;
   min-height: var(--control-md);
   padding: 0 var(--space-4);
-  border: 1px solid var(--control-border);
+  border: 0;
   border-radius: var(--radius-lg);
-  background: var(--surface);
+  background: var(--surface-2);
   color: var(--text);
   font-size: 16px;
   line-height: 24px;
   outline: none;
   transition:
-    border-color var(--transition-fast),
+    background-color var(--transition-fast),
     box-shadow var(--transition-fast);
+}
+
+/* A field placed straight on the page background is white instead of grey. */
+.input--raised {
+  background: var(--surface);
 }
 
 .input--lg {
@@ -394,31 +399,31 @@ svg.lucide {
 
 @media (hover: hover) {
   .input:hover {
-    border-color: var(--text-muted);
+    background: var(--fill-hover);
   }
 }
 
+/* Filled at rest; on focus the field turns white with an ink outline and a soft halo. */
 .input:focus,
 .input:focus-within {
-  border-color: var(--accent);
-  box-shadow: var(--focus-halo);
+  background: var(--surface);
+  box-shadow: var(--focus-ring-field);
 }
 
 .input--invalid,
 .input[aria-invalid='true'],
 .input--invalid:hover {
-  border-color: var(--danger);
+  background: var(--danger-subtle);
 }
 
 .input--invalid:focus-within,
 .input[aria-invalid='true']:focus {
-  border-color: var(--danger);
-  box-shadow: var(--focus-halo-danger);
+  background: var(--surface);
+  box-shadow: var(--focus-ring-field-danger);
 }
 
 .input:disabled,
 .input--disabled {
-  border-color: var(--border);
   background: var(--surface-2);
   opacity: var(--opacity-disabled);
   cursor: not-allowed;
@@ -537,7 +542,7 @@ svg.lucide {
 
 .menu-divider {
   height: 1px;
-  margin: var(--space-1) 0;
+  margin: 6px var(--space-2);
   background: var(--border);
 }
 
@@ -798,4 +803,29 @@ svg.lucide {
   .tile__figure {
     font-size: 34px;
   }
+}
+
+/* ─── Menu rows (PopoverMenu items, Select options) ─────────────────────── */
+
+/* The leading icon sits in a small grey tile; danger rows tint the tile. */
+svg.row-icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 6px;
+  border-radius: var(--radius-icon-tile);
+  background: var(--fill-raised);
+  color: var(--text);
+}
+
+/* Selected option: a lime circle with a check. */
+svg.row-check {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 3px;
+  border-radius: var(--radius-full);
+  background: var(--lime);
+  color: var(--on-lime);
+  stroke-width: 2.4;
 }

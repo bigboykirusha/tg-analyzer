@@ -156,11 +156,11 @@ function changeNumber() {
           </div>
 
           <div class="login-copy">
-            <h2>
+            <h1>
               <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
               <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
               <template v-else>{{ t('login.passwordTitle') }}</template>
-            </h2>
+            </h1>
             <p>
               <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
               <template v-else-if="step === 'code'">{{ codeDescription }}</template>
@@ -336,7 +336,7 @@ function changeNumber() {
   gap: var(--space-2);
 }
 
-.login-copy h2 {
+.login-copy h1 {
   font: 600 26px/1.1 var(--font-sans);
   letter-spacing: -0.035em;
 }

@@ -219,7 +219,7 @@ onMounted(() => {
         </div>
 
         <div class="dashboard-tools">
-          <label class="input">
+          <label class="input input--raised">
             <Search aria-hidden="true" />
             <input
               v-model="search"
@@ -322,12 +322,9 @@ onMounted(() => {
       @close="confirmCancelOpen = false"
       @confirm="cancel"
     />
-    <UiConfirmDialog
+    <DeleteReportDialog
       :open="deleteChatId !== null"
-      :title="t('report.deleteTitle')"
-      :description="t('report.deleteText')"
-      :confirm-label="t('report.delete')"
-      variant="danger"
+      :report="workspace.reports.find((report) => report.chatId === deleteChatId) ?? null"
       :loading="deleting"
       @close="deleteChatId = null"
       @confirm="deleteReport"

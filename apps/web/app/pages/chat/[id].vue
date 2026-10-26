@@ -127,12 +127,9 @@ onMounted(load)
       @close="confirm = null"
       @confirm="reanalyse"
     />
-    <UiConfirmDialog
+    <DeleteReportDialog
       :open="confirm === 'delete'"
-      :title="t('report.deleteTitle')"
-      :description="t('report.deleteText')"
-      :confirm-label="t('report.delete')"
-      variant="danger"
+      :report="data?.summary ?? null"
       :loading="deleting"
       @close="confirm = null"
       @confirm="deleteReport"

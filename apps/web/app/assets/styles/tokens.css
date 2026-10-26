@@ -12,6 +12,8 @@
   --surface-2: #f2f3f5;
   --fill-hover: #e9eaed;
   --surface-raised: #ffffff;
+  /* Grey fill for rows and icon tiles inside overlays (one step up from --surface-raised). */
+  --fill-raised: #f2f3f5;
   --sidebar: #f8f9fa;
   --thumb: #ffffff;
   --border: #e7e8eb;
@@ -59,7 +61,8 @@
   --danger: #e5484d;
   --danger-hover: #d13a3f;
   --on-danger: #ffffff;
-  --danger-subtle: #fdecec;
+  --danger-subtle: #fdeeee;
+  --danger-subtle-hover: #fbdcdc;
   --danger-text: #c4282e;
   --danger-border: rgba(229, 72, 77, 0.32);
   --inverse-surface: #0e0f11;
@@ -109,6 +112,8 @@
   --focus-ring: 0 0 0 2px #f2f3f5, 0 0 0 4px #0e0f11;
   --focus-halo: 0 0 0 4px rgba(14, 15, 17, 0.1);
   --focus-halo-danger: 0 0 0 4px rgba(229, 72, 77, 0.14);
+  --focus-ring-field: inset 0 0 0 1.5px var(--text), var(--focus-halo);
+  --focus-ring-field-danger: inset 0 0 0 1.5px var(--danger), var(--focus-halo-danger);
 }
 
 :root[data-theme='dark'] {
@@ -118,6 +123,7 @@
   --surface-2: #1c1c1f;
   --fill-hover: #26262a;
   --surface-raised: #1c1c1f;
+  --fill-raised: #26262a;
   --sidebar: #0f0f11;
   --thumb: #2a2a2e;
   --border: #232326;
@@ -162,7 +168,8 @@
   --danger: #ff6369;
   --danger-hover: #ff7c81;
   --on-danger: #ffffff;
-  --danger-subtle: #3a1517;
+  --danger-subtle: #33161a;
+  --danger-subtle-hover: #4a1a1d;
   --danger-text: #ff8a8e;
   --danger-border: rgba(255, 99, 105, 0.32);
   --inverse-surface: #f2f2f3;
@@ -215,6 +222,8 @@
     --surface-2: #1c1c1f;
     --fill-hover: #26262a;
     --surface-raised: #1c1c1f;
+    --fill-raised: #26262a;
+    --fill-raised: #26262a;
     --sidebar: #0f0f11;
     --thumb: #2a2a2e;
     --border: #232326;
@@ -259,7 +268,8 @@
     --danger: #ff6369;
     --danger-hover: #ff7c81;
     --on-danger: #ffffff;
-    --danger-subtle: #3a1517;
+    --danger-subtle: #33161a;
+    --danger-subtle-hover: #4a1a1d;
     --danger-text: #ff8a8e;
     --danger-border: rgba(255, 99, 105, 0.32);
     --inverse-surface: #f2f2f3;
@@ -322,7 +332,9 @@
   --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 12px;
-  --radius-menu: 14px;
+  --radius-icon-tile: 9px;
+  --radius-option: 14px;
+  --radius-menu: 20px;
   --radius-xl: 16px;
   --radius-card: 22px;
   --radius-modal: 24px;

@@ -64,7 +64,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
       <section class="features" :aria-label="t('landing.featuresLabel')">
         <article v-for="feature in features" :key="feature.title" class="feature">
-          <component :is="feature.icon" class="icon-lg" aria-hidden="true" />
+          <component :is="feature.icon" class="feature__icon icon-lg" aria-hidden="true" />
           <h2>{{ feature.title }}</h2>
           <p>{{ feature.text }}</p>
         </article>
@@ -263,6 +263,89 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   }
 }
 
+/*
+ * Desktop: the whole landing fits one screen. The hero takes the free height,
+ * the window scales to it, features and footer shrink to single rows.
+ */
+@media (min-width: 901px) and (min-height: 620px) {
+  .landing {
+    display: flex;
+    flex-direction: column;
+    height: 100svh;
+    min-height: 620px;
+    overflow: clip;
+  }
+
+  .landing > main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .hero {
+    flex: 1;
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+    padding-block: clamp(16px, 4vh, 48px) var(--space-4);
+  }
+
+  .hero__title {
+    font-size: clamp(40px, min(5.4vw, 8.4vh), 72px);
+  }
+
+  .hero__visual {
+    align-self: stretch;
+    min-height: 0;
+  }
+
+  .hero__window {
+    height: 100%;
+  }
+
+  .features {
+    gap: var(--space-8);
+    margin-top: 0;
+    padding-block: 18px;
+  }
+
+  .feature {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    column-gap: var(--space-3);
+    row-gap: 2px;
+  }
+
+  .feature__icon {
+    grid-row: span 2;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+  }
+
+  .feature h2 {
+    margin: 0;
+    font: 600 15px/20px var(--font-sans);
+  }
+
+  .feature p {
+    font: 400 13px/18px var(--font-sans);
+  }
+
+  .foot__in {
+    flex-wrap: nowrap;
+    padding-block: 14px max(14px, env(safe-area-inset-bottom, 0px));
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 1600px) {
+  .wrap {
+    max-width: 1400px;
+  }
+}
+
 /* Tablets and phones: no tilted window, the phone shows the product instead. */
 @media (max-width: 900px) {
   .top__links,
@@ -327,26 +410,35 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
     position: relative;
     height: min(400px, 104vw);
     margin-bottom: calc(var(--space-6) * -1);
-    clip-path: inset(-80px -80px 0 -80px);
+    clip-path: inset(-80px -80px 2px -80px);
   }
 
   .hero__phone::after {
     content: '';
     position: absolute;
-    right: -40px;
+    right: -80px;
     bottom: 0;
-    left: -40px;
-    height: 120px;
-    background: linear-gradient(transparent, var(--bg));
+    left: -80px;
+    z-index: 1;
+    height: 140px;
+    background: linear-gradient(transparent, var(--bg) 85%);
     pointer-events: none;
+  }
+
+  /* Keep everything inside the phone under the fade. */
+  .hero__phone > :deep(*) {
+    position: relative;
+    z-index: 0;
   }
 
   .hero__phone :deep(.iphone) {
     width: min(290px, 76vw);
   }
 
-  /* Features scroll sideways as cards. */
+  /* Features scroll sideways as cards, over the bottom of the faded phone. */
   .features {
+    position: relative;
+    z-index: 2;
     display: flex;
     gap: 10px;
     margin: 0 calc(max(20px, env(safe-area-inset-left, 0px)) * -1);

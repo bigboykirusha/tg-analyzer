@@ -159,14 +159,11 @@ const classes = computed(() => [
   color: var(--text-muted);
 }
 
-.btn--danger {
-  background: var(--danger);
-  color: var(--on-danger);
-}
-
+/* Destructive actions stay soft: a pink fill with red text, never a solid red slab. */
+.btn--danger,
 .btn--danger-soft {
   background: var(--danger-subtle);
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 @media (hover: hover) {
@@ -175,8 +172,7 @@ const classes = computed(() => [
   }
 
   .btn--secondary:hover,
-  .btn--soft:hover,
-  .btn--danger-soft:hover {
+  .btn--soft:hover {
     background-image: linear-gradient(var(--hover), var(--hover));
   }
 
@@ -185,8 +181,9 @@ const classes = computed(() => [
     color: var(--text);
   }
 
-  .btn--danger:hover {
-    background: var(--danger-hover);
+  .btn--danger:hover,
+  .btn--danger-soft:hover {
+    background: var(--danger-subtle-hover);
   }
 }
 
@@ -214,6 +211,13 @@ const classes = computed(() => [
   opacity: var(--opacity-disabled);
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* A primary action that is not ready yet turns into a quiet grey pill instead of faded ink. */
+.btn--primary:disabled:not([aria-busy]) {
+  background: var(--surface-2);
+  color: var(--text-faint);
+  opacity: 1;
 }
 
 .btn[aria-busy='true'] {

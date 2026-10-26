@@ -300,10 +300,15 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
               @click="choose(row.option)"
             >
               <CountryFlag v-if="row.option.flag" class="select__flag" :code="row.option.flag" />
-              <component :is="row.option.icon" v-else-if="row.option.icon" class="option__icon" aria-hidden="true" />
+              <component
+                :is="row.option.icon"
+                v-else-if="row.option.icon"
+                class="option__icon row-icon"
+                aria-hidden="true"
+              />
               <span class="option__label">{{ row.option.label }}</span>
               <span v-if="row.option.meta" class="option__meta">{{ row.option.meta }}</span>
-              <Check class="option__check" aria-hidden="true" />
+              <Check class="option__check row-check" aria-hidden="true" />
             </div>
           </template>
           <p v-if="!rows.length" class="select__empty">{{ t('common.noResults') }}</p>
@@ -348,10 +353,15 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
             @click="choose(row.option)"
           >
             <CountryFlag v-if="row.option.flag" class="select__flag" :code="row.option.flag" />
-            <component :is="row.option.icon" v-else-if="row.option.icon" class="option__icon" aria-hidden="true" />
+            <component
+              :is="row.option.icon"
+              v-else-if="row.option.icon"
+              class="option__icon row-icon"
+              aria-hidden="true"
+            />
             <span class="option__label">{{ row.option.label }}</span>
             <span v-if="row.option.meta" class="option__meta">{{ row.option.meta }}</span>
-            <Check class="option__check" aria-hidden="true" />
+            <Check class="option__check row-check" aria-hidden="true" />
           </div>
         </template>
         <p v-if="!rows.length" class="select__empty">{{ t('common.noResults') }}</p>
@@ -383,16 +393,16 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   width: 100%;
   min-height: var(--control-md);
   padding: 0 var(--space-3) 0 var(--space-4);
-  border: 1px solid var(--control-border);
+  border: 0;
   border-radius: var(--radius-lg);
-  background: var(--surface);
+  background: var(--surface-2);
   color: var(--text);
   cursor: pointer;
   font-size: 16px;
   line-height: 24px;
   text-align: left;
   transition:
-    border-color var(--transition-fast),
+    background-color var(--transition-fast),
     box-shadow var(--transition-fast);
 }
 
@@ -402,27 +412,27 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 
 @media (hover: hover) {
   .select__trigger:hover {
-    border-color: var(--text-muted);
+    background: var(--fill-hover);
   }
 }
 
 .select__trigger:focus-visible,
 .select__trigger[aria-expanded='true'] {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: var(--focus-halo);
+  background: var(--surface);
+  box-shadow: var(--focus-ring-field);
 }
 
 .select--invalid .select__trigger {
-  border-color: var(--danger);
+  background: var(--danger-subtle);
 }
 
 .select--invalid .select__trigger:focus-visible {
-  box-shadow: var(--focus-halo-danger);
+  background: var(--surface);
+  box-shadow: var(--focus-ring-field-danger);
 }
 
 .select__trigger:disabled {
-  border-color: var(--border);
   background: var(--surface-2);
   opacity: var(--opacity-disabled);
   cursor: not-allowed;
@@ -458,7 +468,6 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   gap: var(--space-2);
   padding: 0 var(--space-3) 0 var(--space-4);
   border: 0;
-  border-right: 1px solid var(--border);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   background: transparent;
   color: var(--text);
@@ -495,12 +504,12 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   left: 0;
   display: flex;
   flex-direction: column;
-  min-width: 220px;
-  max-height: 320px;
+  min-width: 232px;
+  max-height: 340px;
   overflow: hidden;
-  padding: var(--space-1);
+  padding: 6px;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-menu);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
 }
@@ -512,7 +521,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 
 .select__list {
   display: grid;
-  gap: var(--space-1);
+  gap: 2px;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -526,10 +535,10 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   align-items: center;
   gap: var(--space-2);
   min-height: var(--control-sm);
-  margin-bottom: var(--space-1);
+  margin-bottom: 6px;
   padding: 0 var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
+  border-radius: var(--radius-option);
+  background: var(--fill-raised);
   color: var(--text-muted);
 }
 
@@ -553,7 +562,8 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 }
 
 .select__search:focus-within {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--text);
 }
 
 .select__group {
@@ -574,9 +584,9 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: 40px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-option);
   color: var(--text);
   cursor: pointer;
   font: var(--text-ui);
@@ -592,7 +602,6 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   background: var(--pressed);
 }
 
-.option__icon,
 .option__meta {
   color: var(--text-muted);
 }
@@ -610,7 +619,6 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 }
 
 .option__check {
-  color: var(--accent);
   visibility: hidden;
 }
 
