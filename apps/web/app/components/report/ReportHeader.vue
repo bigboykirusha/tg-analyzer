@@ -2,11 +2,16 @@
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
 import { MoreHorizontal, RotateCw, Share2, Trash2 } from '../../lib/icons'
 
-const props = defineProps<{
-  summary: ReportSummaryDto
-  canReanalyse: boolean
-  reanalysing: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    summary: ReportSummaryDto
+    canReanalyse?: boolean
+    reanalysing?: boolean
+    /** The demo report: only «Итоги», nothing to refresh or delete. */
+    demo?: boolean
+  }>(),
+  { canReanalyse: false, reanalysing: false, demo: false },
+)
 const emit = defineEmits<{ reanalyse: []; story: []; delete: [] }>()
 const { t, formatDay } = useI18n()
 const isMobile = useMediaQuery('(max-width: 640px)')
@@ -27,50 +32,47 @@ function run(action: 'reanalyse' | 'delete') {
 </script>
 
 <template>
-  <div class="report-header">
-    <div class="report-header__identity">
+  <UiPageHeader :title="summary.title" :lede="period" truncate class="report-header">
+    <template #leading>
       <ChatAvatar :chat-id="summary.chatId" :title="summary.title" :size="isMobile ? 'md' : 'lg'" />
-      <div class="report-header__copy">
-        <h1 class="report-header__title">{{ summary.title }}</h1>
-        <p class="t-small t-muted">{{ period }}</p>
-      </div>
-    </div>
-
-    <div class="report-header__actions no-print">
+    </template>
+    <template #actions>
       <UiButton class="report-header__story" variant="soft" size="sm" :icon="Share2" @click="emit('story')">
         {{ t('story.open') }}
       </UiButton>
-      <UiIconButton
-        class="report-header__reanalyse"
-        :icon="RotateCw"
-        :label="t('report.reanalyse')"
-        variant="secondary"
-        :loading="reanalysing"
-        :disabled="!canReanalyse"
-        @click="emit('reanalyse')"
-      />
-      <UiPopoverMenu v-model:open="menuOpen" align="end" :aria-label="t('report.actions')">
-        <template #trigger>
-          <UiIconButton
-            :icon="MoreHorizontal"
-            :label="t('report.actions')"
-            variant="ghost"
-            :no-tooltip="menuOpen"
-            aria-haspopup="menu"
-            :aria-expanded="menuOpen"
-            @click="menuOpen = !menuOpen"
-          />
-        </template>
-        <UiMenuItem role="menuitem" :icon="RotateCw" :disabled="!canReanalyse" @click="run('reanalyse')">
-          {{ t('report.reanalyse') }}
-        </UiMenuItem>
-        <div class="menu-divider" role="separator" />
-        <UiMenuItem role="menuitem" :icon="Trash2" danger @click="run('delete')">
-          {{ t('report.deleteMenu') }}
-        </UiMenuItem>
-      </UiPopoverMenu>
-    </div>
-  </div>
+      <template v-if="!demo">
+        <UiIconButton
+          class="report-header__reanalyse"
+          :icon="RotateCw"
+          :label="t('report.reanalyse')"
+          variant="secondary"
+          :loading="reanalysing"
+          :disabled="!canReanalyse"
+          @click="emit('reanalyse')"
+        />
+        <UiPopoverMenu v-model:open="menuOpen" align="end" :aria-label="t('report.actions')">
+          <template #trigger>
+            <UiIconButton
+              :icon="MoreHorizontal"
+              :label="t('report.actions')"
+              variant="ghost"
+              :no-tooltip="menuOpen"
+              aria-haspopup="menu"
+              :aria-expanded="menuOpen"
+              @click="menuOpen = !menuOpen"
+            />
+          </template>
+          <UiMenuItem role="menuitem" :icon="RotateCw" :disabled="!canReanalyse" @click="run('reanalyse')">
+            {{ t('report.reanalyse') }}
+          </UiMenuItem>
+          <div class="menu-divider" role="separator" />
+          <UiMenuItem role="menuitem" :icon="Trash2" danger @click="run('delete')">
+            {{ t('report.deleteMenu') }}
+          </UiMenuItem>
+        </UiPopoverMenu>
+      </template>
+    </template>
+  </UiPageHeader>
 </template>
 
 <style scoped>
@@ -86,73 +88,20 @@ function run(action: 'reanalyse' | 'delete') {
   }
 }
 
-/* Phones keep the header to one line: refreshing lives in the «…» menu. */
+/* A report header stays on one line: avatar and name left, actions right. */
+.report-header {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.report-header :deep(.page-header__main) {
+  flex-basis: 0;
+}
+
 @media (max-width: 640px) {
+  /* Phones: refreshing lives in the «…» menu. */
   .report-header__reanalyse {
     display: none;
-  }
-}
-
-.report-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-4);
-  width: 100%;
-  min-width: 0;
-}
-
-.report-header__identity {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.report-header__copy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.report-header__title {
-  overflow: hidden;
-  font: 600 30px/1.05 var(--font-sans);
-  letter-spacing: -0.04em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.report-header__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-@media (max-width: 768px) {
-  .report-header__title {
-    font-size: 24px;
-  }
-}
-
-@media (max-width: 640px) {
-  .report-header {
-    gap: var(--space-3);
-  }
-
-  .report-header__copy {
-    gap: 0;
-  }
-
-  .report-header__title {
-    font-size: 22px;
-  }
-
-  .report-header__copy .t-small {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 }
 </style>

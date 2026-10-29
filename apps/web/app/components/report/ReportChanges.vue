@@ -56,7 +56,7 @@ const changes = computed(() => {
 </script>
 
 <template>
-  <section v-if="changes" class="panel changes" :aria-label="t('report.changes.title', { date: changes.since })">
+  <section v-if="changes" class="tile changes" :aria-label="t('report.changes.title', { date: changes.since })">
     <h2 class="changes__title">{{ t('report.changes.title', { date: changes.since }) }}</h2>
     <ul class="changes__list">
       <li v-for="line in changes.lines" :key="line">{{ line }}</li>

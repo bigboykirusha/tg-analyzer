@@ -1,7 +1,7 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    /** `narrow` for reading pages (terms); everything else shares the header's column. */
+    /** Every page shares the header's column; `narrow` caps the content width for reading and settings, still left-aligned under the logo. */
     size?: 'narrow' | 'default'
     as?: string
   }>(),
@@ -23,7 +23,7 @@ withDefaults(
   padding-inline: var(--page-gutter);
 }
 
-.page-container--narrow {
-  max-width: calc(var(--page-max-narrow) + var(--page-gutter) * 2);
+.page-container--narrow > :deep(*) {
+  max-width: var(--page-max-narrow);
 }
 </style>

@@ -2,18 +2,20 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { gotoHydrated, noHorizontalScroll, usePreferences } from './helpers'
 
-for (const theme of ['light', 'dark'] as const) {
-  test(`login renders without accessibility violations in ${theme}`, async ({ page, context }) => {
-    await usePreferences(context, theme)
-    await page.goto('/login')
-    await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
-    await expect.poll(() => noHorizontalScroll(page)).toBe(true)
+// Every public page shares one frame, so all of them get the same checks.
+for (const path of ['/', '/login', '/faq', '/terms', '/example'])
+  for (const theme of ['light', 'dark'] as const) {
+    test(`${path} renders without accessibility violations in ${theme}`, async ({ page, context }) => {
+      await usePreferences(context, theme)
+      await page.goto(path)
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+      await expect.poll(() => noHorizontalScroll(page)).toBe(true)
 
-    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
-    expect(results.violations.map((violation) => violation.id)).toEqual([])
-  })
-}
+      const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+      expect(results.violations.map((violation) => violation.id)).toEqual([])
+    })
+  }
 
 test('country picker filters and selects a country', async ({ page, context }) => {
   await usePreferences(context, 'light')

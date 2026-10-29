@@ -154,7 +154,7 @@ onMounted(() => {
 
     <UiEmptyState
       v-else-if="dialogsFailed"
-      class="panel"
+      class="tile"
       tone="danger"
       :icon="workspace.dialogsError?.code === 'TELEGRAM_BUSY' ? WifiOff : AlertCircle"
       :title="t('dashboard.dialogsError')"
@@ -185,7 +185,7 @@ onMounted(() => {
       </div>
       <UiEmptyState
         v-else
-        class="panel"
+        class="tile"
         :icon="MessageSquare"
         :title="search || filter !== 'all' ? t('dashboard.noMatchesTitle') : t('dashboard.emptyTitle')"
         :description="search || filter !== 'all' ? t('dashboard.noMatchesText') : t('dashboard.emptyText')"

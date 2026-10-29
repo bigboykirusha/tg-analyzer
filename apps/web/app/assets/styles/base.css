@@ -103,32 +103,27 @@ svg.lucide {
   --icon-size: var(--icon-lg);
 }
 
-/* ─── Typography: 11 styles, 4 weights ───────────────────────────────────── */
+/* ─── Typography: one scale, see tokens.css ──────────────────────────────── */
 
-.t-display {
-  font: var(--text-display);
-  letter-spacing: -0.045em;
-  text-wrap: balance;
-}
-
+/* The page title: one per page, always through UiPageHeader. */
 .t-h1 {
   font: var(--text-h1);
   letter-spacing: -0.04em;
   text-wrap: balance;
 }
 
+/* A focused card, dialog or status screen. */
 .t-h2 {
   font: var(--text-h2);
   letter-spacing: -0.03em;
   text-wrap: balance;
 }
 
-/* The quiet second half of a headline: «Ваши переписки. <em>В цифрах.</em>» */
-.t-display em,
-.t-h1 em,
-.t-h2 em {
-  color: var(--text-faint);
-  font-style: normal;
+/* A section on a page, through UiPageSection. */
+.t-h3 {
+  font: var(--text-h3);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 /* Big figures in reports: tight, even-width digits. */
@@ -145,7 +140,14 @@ svg.lucide {
 
 .t-title {
   font: var(--text-title);
-  letter-spacing: -0.005em;
+  letter-spacing: -0.01em;
+}
+
+.t-lede {
+  max-width: 60ch;
+  color: var(--text-muted);
+  font: var(--text-lede);
+  text-wrap: pretty;
 }
 
 .t-body {
@@ -182,10 +184,6 @@ svg.lucide {
   color: var(--them-ink);
 }
 
-.t-mono {
-  font: var(--text-mono);
-}
-
 /* Counts and percentages: the UI font with even-width digits, never the mono face. */
 .t-num {
   font-weight: 600;
@@ -198,83 +196,35 @@ svg.lucide {
 }
 
 @media (max-width: 768px) {
-  .t-h1 {
-    font-size: 30px;
-    line-height: 36px;
-  }
-
-  .t-h2 {
-    font-size: 22px;
-    line-height: 28px;
-  }
-
   .t-figure {
     font-size: 36px;
     line-height: 40px;
   }
 }
 
-@media (max-width: 640px) {
-  .t-display {
-    font-size: 38px;
-    line-height: 42px;
-  }
+/* A text link inside copy (a link or a button): ink, underlined, quiet underline colour. */
+.link {
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--transition-fast);
 }
 
-.kbd {
-  display: inline-grid;
-  place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 var(--space-1);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xs);
-  color: var(--text-muted);
-  font: var(--text-mono);
-  font-size: 12px;
-  line-height: 16px;
+@media (hover: hover) {
+  .link:hover {
+    text-decoration-color: currentColor;
+  }
 }
 
 /* ─── Surfaces ───────────────────────────────────────────────────────────── */
-
-/* A card is a white tile on the grey canvas: no edge, no shadow, soft corners. */
-.card {
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  padding: var(--space-6);
-}
-
-/* Sticky bars: the page colour, nearly opaque, with a slight blur for what scrolls under. */
-.glass-surface {
-  border: 1px solid var(--glass-border);
-  background: var(--glass);
-  backdrop-filter: blur(var(--blur-sm));
-}
-
-@media (max-width: 768px) {
-  .card {
-    padding: var(--space-4);
-  }
-}
-
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .glass-surface {
-    background: var(--bg);
-    backdrop-filter: none;
-  }
-}
-
-/* A hairline rule between rows inside a card. */
-.rule {
-  height: 1px;
-  border: 0;
-  background: var(--border);
-}
-
-.panel {
-  border-radius: var(--radius-card);
-  background: var(--surface);
-}
 
 .icon-tile {
   display: inline-grid;
@@ -292,11 +242,6 @@ svg.lucide {
   width: 48px;
   height: 48px;
   --icon-size: var(--icon-lg);
-}
-
-.icon-tile--accent {
-  background: var(--accent-subtle);
-  color: var(--accent-ink);
 }
 
 .icon-tile--warning {
@@ -589,15 +534,12 @@ svg.lucide {
   gap: var(--space-6);
 }
 
-.section-copy {
+/* Every page: header, then sections at one rhythm. */
+.page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-}
-
-.section-copy p {
-  color: var(--text-muted);
-  overflow-wrap: anywhere;
+  gap: var(--page-gap);
+  min-width: 0;
 }
 
 .sr-only {
@@ -614,32 +556,10 @@ svg.lucide {
 
 /* ─── Motion ─────────────────────────────────────────────────────────────── */
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
-}
-
-.animate-fade-in {
-  animation: fade-in var(--transition-normal) both;
-}
-
-.stagger-item {
-  animation: fade-in-up var(--duration-slow) var(--ease-standard) both;
-  animation-delay: var(--delay, 0ms);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -725,6 +645,20 @@ svg.lucide {
 
   .bento > .metric {
     grid-column: span 6;
+  }
+}
+
+/* Report tabs: sections two per row, one per row below 900px. */
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .report-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

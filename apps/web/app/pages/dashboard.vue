@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BarChart2, ChevronRight, Lock, MessageSquare, Plus } from '../lib/icons'
+import { BarChart2, Lock, MessageSquare, Plus } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
@@ -9,15 +9,12 @@ const REPORTS_PREVIEW = 8
 const { t } = useI18n()
 useSeoMeta({ title: () => t('dashboard.title') })
 
-const auth = useAuthStore()
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
 const toast = useToast()
 const errorMessage = useErrorMessage()
 
 const showAllReports = ref(false)
-
-const name = computed(() => auth.user?.firstName || auth.user?.username || '')
 
 /** Finished reports, newest first: what the user has already learned. */
 const reports = computed(() =>
@@ -58,66 +55,57 @@ onMounted(() => {
 
 <template>
   <UiPageContainer>
-    <div class="home">
+    <div class="page">
       <SessionBanner />
 
       <!-- Loading: the shape of the summary, so nothing jumps when it arrives. -->
-      <div v-if="loadingReports" class="bento" aria-hidden="true">
-        <div class="tile span-8 home__skeleton"><UiSkeleton width="40%" /><UiSkeleton width="60%" height="44px" /></div>
-        <div class="tile span-4 home__skeleton"><UiSkeleton width="50%" /></div>
-      </div>
+      <template v-if="loadingReports">
+        <UiSkeleton width="220px" height="40px" />
+        <div class="bento" aria-hidden="true">
+          <div class="tile span-8 home__skeleton">
+            <UiSkeleton width="40%" /><UiSkeleton width="60%" height="44px" />
+          </div>
+          <div class="tile span-4 home__skeleton"><UiSkeleton width="50%" /></div>
+        </div>
+      </template>
 
       <template v-else-if="newcomer">
-        <section class="bento" aria-labelledby="onboard-title">
-          <div class="tile tile--ink span-8 onboard">
-            <p v-if="name" class="onboard__hello">{{ t('home.greeting', { name }) }}</p>
-            <h1 id="onboard-title" class="onboard__title">{{ t('home.onboardTitle') }}</h1>
-            <p class="onboard__text">{{ t('home.onboardText') }}</p>
-            <NuxtLink to="/example" class="onboard__example">
-              {{ t('home.onboardExample') }}<ChevronRight aria-hidden="true" />
-            </NuxtLink>
-          </div>
-          <ol class="tile tile--lime span-4 onboard__steps">
-            <li v-for="(step, index) in steps" :key="index" class="onboard__step">
-              <span class="onboard__num">{{ index + 1 }}</span>
-              <span class="onboard__copy">
-                <strong>{{ step.title }}</strong>
-                <span>{{ step.text }}</span>
-              </span>
-            </li>
-          </ol>
-        </section>
+        <UiPageHeader :title="t('home.onboardTitle')" :lede="t('home.onboardText')">
+          <template #actions>
+            <UiButton variant="secondary" size="sm" to="/example">{{ t('home.onboardExample') }}</UiButton>
+          </template>
+        </UiPageHeader>
 
-        <section class="home-section" aria-labelledby="chats-title">
-          <h2 id="chats-title" class="home-section__title">{{ t('dashboard.chatsTitle') }}</h2>
+        <ol class="tile tile--lime onboard">
+          <li v-for="(step, index) in steps" :key="index" class="onboard__step">
+            <span class="onboard__num">{{ index + 1 }}</span>
+            <span class="onboard__copy">
+              <strong>{{ step.title }}</strong>
+              <span>{{ step.text }}</span>
+            </span>
+          </li>
+        </ol>
+
+        <UiPageSection id="chats" :title="t('dashboard.chatsTitle')">
           <ChatPicker />
-        </section>
+        </UiPageSection>
       </template>
 
       <template v-else>
-        <header class="home__head">
-          <p v-if="name" class="home__hello">{{ t('home.greeting', { name }) }}</p>
-          <h1 class="home__title">{{ t('home.title') }}</h1>
-        </header>
+        <UiPageHeader :title="t('home.title')" />
 
         <CircleSummary :reports="workspace.reports" :avatars="avatars" />
 
-        <section class="home-section" aria-labelledby="reports-title">
-          <div class="home-section__head">
-            <h2 id="reports-title" class="home-section__title">{{ t('dashboard.reportsTitle') }}</h2>
-            <UiButton
-              v-if="reports.length > REPORTS_PREVIEW"
-              variant="ghost"
-              size="sm"
-              @click="showAllReports = !showAllReports"
-            >
+        <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
+          <template v-if="reports.length > REPORTS_PREVIEW" #actions>
+            <UiButton variant="ghost" size="sm" @click="showAllReports = !showAllReports">
               {{
                 showAllReports
                   ? t('dashboard.showFewerReports')
                   : t('dashboard.showAllReports', { count: reports.length })
               }}
             </UiButton>
-          </div>
+          </template>
           <div class="report-cards">
             <NuxtLink to="/new" class="new-card">
               <span class="new-card__icon" aria-hidden="true"><Plus /></span>
@@ -132,111 +120,33 @@ onMounted(() => {
               :updating="isUpdating(chat.id)"
             />
           </div>
-        </section>
+        </UiPageSection>
 
-        <section v-if="privateReports.length >= 2" class="home-section" aria-labelledby="people-title">
-          <div class="home-section__copy">
-            <h2 id="people-title" class="home-section__title">{{ t('people.title') }}</h2>
-            <p class="home-section__hint">{{ t('people.hint') }}</p>
-          </div>
+        <UiPageSection
+          v-if="privateReports.length >= 2"
+          id="people"
+          :title="t('people.title')"
+          :hint="t('people.hint')"
+        >
           <div class="tile"><PeopleTable :reports="privateReports" :avatars="avatars" /></div>
-        </section>
+        </UiPageSection>
       </template>
     </div>
   </UiPageContainer>
 </template>
 
 <style scoped>
-.home {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-10);
-}
-
 .home__skeleton {
   min-height: 220px;
 }
 
-.home__head {
-  display: grid;
-  gap: var(--space-1);
-  margin-bottom: calc(var(--space-6) * -1);
-}
-
-.home__hello,
-.onboard__hello {
-  color: var(--text-muted);
-  font: var(--text-ui);
-}
-
-.home__title {
-  font: 600 clamp(32px, 4.4vw, 44px) / 1.05 var(--font-sans);
-  letter-spacing: -0.045em;
-}
-
-.home-section {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.home-section__head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-4);
-}
-
-.home-section__copy {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.home-section__title {
-  font: 600 20px/26px var(--font-sans);
-  letter-spacing: -0.02em;
-}
-
-.home-section__hint {
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-
-/* ─── Newcomer ─── */
+/* ─── Newcomer: three steps in one lime tile ─── */
 .onboard {
-  gap: var(--space-4);
-  min-height: 280px;
-  padding: var(--space-8);
-}
-
-.onboard__title {
-  font: 600 clamp(32px, 4.4vw, 48px) / 1.02 var(--font-sans);
-  letter-spacing: -0.045em;
-  text-wrap: balance;
-}
-
-.onboard__text {
-  max-width: 46ch;
-  color: var(--text-muted);
-  font: 400 16px/1.5 var(--font-sans);
-}
-
-.onboard__example {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  align-self: flex-start;
-  margin-top: auto;
-  color: var(--them);
-  font: var(--text-ui);
-  font-weight: 600;
-}
-
-.onboard__steps {
-  justify-content: center;
-  gap: var(--space-5);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-6);
   margin: 0;
+  padding: var(--space-6);
   list-style: none;
 }
 
@@ -268,6 +178,14 @@ onMounted(() => {
   color: var(--text);
   font: var(--text-ui);
   font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .onboard {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    padding: var(--space-5);
+  }
 }
 
 /* ─── Reports ─── */
@@ -326,19 +244,6 @@ onMounted(() => {
 }
 
 @media (max-width: 640px) {
-  .home {
-    gap: var(--space-8);
-  }
-
-  .onboard {
-    min-height: 0;
-    padding: var(--space-6) var(--space-5);
-  }
-
-  .home__head {
-    margin-bottom: calc(var(--space-4) * -1);
-  }
-
   /* Phones: report cards scroll sideways instead of pushing the page down. */
   .report-cards {
     display: flex;

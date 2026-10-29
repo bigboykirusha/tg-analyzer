@@ -71,7 +71,7 @@ watch(analysis.finished, (job) => {
 
 .workspace-main {
   min-width: 0;
-  padding: var(--space-6) 0 var(--space-16);
+  padding: var(--page-top) 0 var(--page-bottom);
 }
 
 @media (min-width: 901px) {
@@ -90,18 +90,12 @@ watch(analysis.finished, (job) => {
 @media (max-width: 900px) {
   .workspace-chips {
     display: block;
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--page-top);
   }
 
   /* Room for the floating dock. */
   .workspace-main {
-    padding-bottom: calc(var(--space-16) + 56px + env(safe-area-inset-bottom, 0px));
-  }
-}
-
-@media (max-width: 640px) {
-  .workspace-main {
-    padding-top: var(--space-2);
+    padding-bottom: calc(var(--page-bottom) + 56px + env(safe-area-inset-bottom, 0px));
   }
 }
 </style>

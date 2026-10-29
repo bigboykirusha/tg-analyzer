@@ -85,113 +85,110 @@ onMounted(() => {
 
 <template>
   <UiPageContainer size="narrow">
-    <div class="account">
-      <header class="account-head">
-        <ProfileAvatar :title="displayName" size="lg" />
-        <div class="account-head__copy">
-          <p class="t-label">{{ t('accountPage.title') }}</p>
-          <h1 class="t-h1">{{ displayName }}</h1>
-          <p v-if="handle" class="account-head__handle">{{ handle }}</p>
-        </div>
-      </header>
+    <div class="page account">
+      <UiPageHeader :title="displayName" :lede="handle || t('accountPage.title')" truncate>
+        <template #leading><ProfileAvatar :title="displayName" size="lg" /></template>
+      </UiPageHeader>
 
-      <section class="sheet" aria-labelledby="telegram-title">
-        <div class="sheet__aside">
-          <h2 id="telegram-title" class="sheet__title">{{ t('accountPage.telegramTitle') }}</h2>
-          <p class="sheet__lead">{{ t('accountPage.telegramLead') }}</p>
-        </div>
-        <div class="sheet__body">
-          <div class="status-line" role="status">
-            <span class="status-line__dot" :class="{ 'is-off': !auth.telegramSessionActive }" aria-hidden="true" />
-            <span class="status-line__text">
-              <strong>{{
-                auth.telegramSessionActive ? t('accountPage.connected') : t('accountPage.notConnected')
-              }}</strong>
-              <span>{{
-                auth.telegramSessionActive ? t('accountPage.connectedHint') : t('accountPage.notConnectedHint')
-              }}</span>
-            </span>
+      <div class="account__sheets">
+        <section class="tile sheet" aria-labelledby="telegram-title">
+          <div class="sheet__aside">
+            <h2 id="telegram-title" class="t-h3">{{ t('accountPage.telegramTitle') }}</h2>
+            <p class="sheet__lead">{{ t('accountPage.telegramLead') }}</p>
           </div>
+          <div class="sheet__body">
+            <div class="status-line" role="status">
+              <span class="status-line__dot" :class="{ 'is-off': !auth.telegramSessionActive }" aria-hidden="true" />
+              <span class="status-line__text">
+                <strong>{{
+                  auth.telegramSessionActive ? t('accountPage.connected') : t('accountPage.notConnected')
+                }}</strong>
+                <span>{{
+                  auth.telegramSessionActive ? t('accountPage.connectedHint') : t('accountPage.notConnectedHint')
+                }}</span>
+              </span>
+            </div>
 
-          <UiSwitch
-            v-model="autoDisconnect"
-            :disabled="savingAutoDisconnect"
-            :hint="t('accountPage.autoDisconnectHint')"
-          >
-            {{ t('accountPage.autoDisconnect') }}
-          </UiSwitch>
-
-          <div class="sheet__actions">
-            <UiButton
-              v-if="auth.telegramSessionActive"
-              variant="secondary"
-              size="sm"
-              @click="confirmDisconnectOpen = true"
+            <UiSwitch
+              v-model="autoDisconnect"
+              :disabled="savingAutoDisconnect"
+              :hint="t('accountPage.autoDisconnectHint')"
             >
-              {{ t('accountPage.disconnect') }}
-            </UiButton>
-            <UiButton v-else variant="primary" size="sm" @click="logout">{{ t('accountPage.reconnect') }}</UiButton>
-          </div>
-        </div>
-      </section>
+              {{ t('accountPage.autoDisconnect') }}
+            </UiSwitch>
 
-      <section class="sheet" aria-labelledby="look-title">
-        <div class="sheet__aside">
-          <h2 id="look-title" class="sheet__title">{{ t('accountPage.lookTitle') }}</h2>
-        </div>
-        <div class="sheet__body">
-          <div class="field">
-            <span class="field__label">{{ t('nav.language') }}</span>
-            <UiSegmentedControl
-              :model-value="locale"
-              :options="languageOptions"
-              :aria-label="t('nav.language')"
-              inline
-              @update:model-value="setLocale"
-            />
+            <div class="sheet__actions">
+              <UiButton
+                v-if="auth.telegramSessionActive"
+                variant="secondary"
+                size="sm"
+                @click="confirmDisconnectOpen = true"
+              >
+                {{ t('accountPage.disconnect') }}
+              </UiButton>
+              <UiButton v-else variant="primary" size="sm" @click="logout">{{ t('accountPage.reconnect') }}</UiButton>
+            </div>
           </div>
-          <div class="field">
-            <span class="field__label">{{ t('accountPage.theme') }}</span>
-            <UiSegmentedControl
-              :model-value="preference"
-              :options="themeOptions"
-              :aria-label="t('accountPage.theme')"
-              inline
-              @update:model-value="setPreference"
-            />
-          </div>
-          <div class="field">
-            <span class="field__label">{{ t('accountPage.timezone') }}</span>
-            <span class="field__value">{{ auth.user?.timezone }}</span>
-            <span class="field__hint">{{ t('accountPage.timezoneHint') }}</span>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="sheet" aria-labelledby="data-title">
-        <div class="sheet__aside">
-          <h2 id="data-title" class="sheet__title">{{ t('accountPage.dataTitle') }}</h2>
-          <p class="sheet__lead">{{ t('accountPage.dataLead') }}</p>
-        </div>
-        <div class="sheet__body">
-          <dl class="facts">
-            <div class="facts__row">
-              <dt>{{ t('accountPage.reports') }}</dt>
-              <dd class="t-num">{{ tc('accountPage.reportCount', reportCount) }}</dd>
-            </div>
-            <div class="facts__row">
-              <dt>{{ t('accountPage.messagesKept') }}</dt>
-              <dd>{{ t('accountPage.messagesKeptValue') }}</dd>
-            </div>
-          </dl>
-          <button type="button" class="text-link" @click="privacyOpen = true">{{ t('accountPage.privacy') }}</button>
-          <div class="sheet__actions">
-            <UiButton variant="danger" size="sm" :icon="Trash2" @click="confirmDeleteOpen = true">{{
-              t('account.delete')
-            }}</UiButton>
+        <section class="tile sheet" aria-labelledby="look-title">
+          <div class="sheet__aside">
+            <h2 id="look-title" class="t-h3">{{ t('accountPage.lookTitle') }}</h2>
           </div>
-        </div>
-      </section>
+          <div class="sheet__body">
+            <div class="field">
+              <span class="field__label">{{ t('nav.language') }}</span>
+              <UiSegmentedControl
+                :model-value="locale"
+                :options="languageOptions"
+                :aria-label="t('nav.language')"
+                inline
+                @update:model-value="setLocale"
+              />
+            </div>
+            <div class="field">
+              <span class="field__label">{{ t('accountPage.theme') }}</span>
+              <UiSegmentedControl
+                :model-value="preference"
+                :options="themeOptions"
+                :aria-label="t('accountPage.theme')"
+                inline
+                @update:model-value="setPreference"
+              />
+            </div>
+            <div class="field">
+              <span class="field__label">{{ t('accountPage.timezone') }}</span>
+              <span class="field__value">{{ auth.user?.timezone }}</span>
+              <span class="field__hint">{{ t('accountPage.timezoneHint') }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="tile sheet" aria-labelledby="data-title">
+          <div class="sheet__aside">
+            <h2 id="data-title" class="t-h3">{{ t('accountPage.dataTitle') }}</h2>
+            <p class="sheet__lead">{{ t('accountPage.dataLead') }}</p>
+          </div>
+          <div class="sheet__body">
+            <dl class="facts">
+              <div class="facts__row">
+                <dt>{{ t('accountPage.reports') }}</dt>
+                <dd class="t-num">{{ tc('accountPage.reportCount', reportCount) }}</dd>
+              </div>
+              <div class="facts__row">
+                <dt>{{ t('accountPage.messagesKept') }}</dt>
+                <dd>{{ t('accountPage.messagesKeptValue') }}</dd>
+              </div>
+            </dl>
+            <button type="button" class="link" @click="privacyOpen = true">{{ t('accountPage.privacy') }}</button>
+            <div class="sheet__actions">
+              <UiButton variant="danger" size="sm" :icon="Trash2" @click="confirmDeleteOpen = true">{{
+                t('account.delete')
+              }}</UiButton>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
 
     <UiConfirmDialog
@@ -218,37 +215,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.account {
+/* Each section is a tile: title and lead on the left, settings on the right. */
+.account__sheets {
   display: flex;
   flex-direction: column;
-}
-
-.account-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-5);
-  padding-bottom: var(--space-5);
-}
-
-.account-head__copy {
-  display: grid;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.account-head__copy .t-h1 {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.account-head__handle {
-  color: var(--text-muted);
-  font: var(--text-ui);
-}
-
-/* Each section is a tile: title and lead on the left, settings on the right. */
-.account {
   gap: var(--space-3);
 }
 
@@ -257,20 +227,12 @@ onMounted(() => {
   grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
   gap: var(--space-8);
   padding: var(--space-6);
-  border-radius: var(--radius-card);
-  background: var(--surface);
 }
 
 .sheet__aside {
   display: grid;
   align-content: start;
   gap: var(--space-2);
-}
-
-.sheet__title {
-  font: var(--text-h2);
-  font-size: 20px;
-  line-height: 28px;
 }
 
 .sheet__lead {
@@ -343,29 +305,9 @@ onMounted(() => {
   font: var(--text-small);
 }
 
-.text-link {
+.sheet__body .link {
   justify-self: start;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--text);
   font: var(--text-ui);
-  text-decoration: underline;
-  text-decoration-color: var(--border-strong);
-  text-underline-offset: 4px;
-  cursor: pointer;
-}
-
-@media (hover: hover) {
-  .text-link:hover {
-    text-decoration-color: currentColor;
-  }
-}
-
-.text-link:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
 }
 
 .facts {
@@ -394,10 +336,6 @@ onMounted(() => {
 }
 
 @media (max-width: 720px) {
-  .account-head {
-    padding-bottom: var(--space-4);
-  }
-
   .sheet {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-5);

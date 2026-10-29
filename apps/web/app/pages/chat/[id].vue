@@ -78,7 +78,7 @@ onMounted(load)
 
 <template>
   <UiPageContainer>
-    <div v-if="data" class="stack stack--lg report-page">
+    <div v-if="data" class="page">
       <ReportHeader
         :summary="data.summary"
         :can-reanalyse="canReanalyse"
@@ -134,18 +134,3 @@ onMounted(load)
     />
   </UiPageContainer>
 </template>
-
-<style scoped>
-.report-page :deep(.report-grid) {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-@media (max-width: 900px) {
-  .report-page :deep(.report-grid) {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-</style>

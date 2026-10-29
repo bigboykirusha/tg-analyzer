@@ -49,9 +49,6 @@
   --on-lime-muted: rgba(14, 15, 17, 0.6);
   --lavender: #dcd6ff;
   --peach: #ffd9c7;
-  --butter: #ffe3a3;
-  --sky: #d7eefc;
-  --positive: #0e0f11;
   --success: #2e9e5b;
   --success-subtle: #e6f6ec;
   --warning: #e08a00;
@@ -72,9 +69,6 @@
   --scrim: rgba(10, 10, 12, 0.36);
   --tooltip: rgba(20, 22, 28, 0.94);
   --on-tooltip: #f2f4f8;
-  --glass: rgba(242, 243, 245, 0.82);
-  --glass-border: var(--border);
-  --glow: transparent;
   --heat-1: #eef8d6;
   --heat-2: #d9f29c;
   --heat-3: #b2e34e;
@@ -108,7 +102,6 @@
   --shadow-device:
     inset 0 0 0 1px rgba(255, 255, 255, 0.6), inset 0 0 0 2.5px rgba(0, 0, 0, 0.12), 0 40px 80px rgba(10, 20, 40, 0.22),
     0 10px 24px rgba(10, 20, 40, 0.1);
-  --glass-inset: none;
   --focus-ring: 0 0 0 2px #f2f3f5, 0 0 0 4px #0e0f11;
   --focus-halo: 0 0 0 4px rgba(14, 15, 17, 0.1);
   --focus-halo-danger: 0 0 0 4px rgba(229, 72, 77, 0.14);
@@ -148,7 +141,7 @@
   --them-subtle: rgba(198, 240, 106, 0.16);
   --tile-ink: #f2f2f3;
   --on-tile-ink: #0a0a0b;
-  --on-tile-ink-muted: rgba(10, 10, 11, 0.55);
+  --on-tile-ink-muted: rgba(10, 10, 11, 0.62);
   --lime: #c6f06a;
   --them-on-ink: #4e7a0e;
   --lime-hover: #d3f585;
@@ -156,9 +149,6 @@
   --on-lime-muted: rgba(10, 10, 11, 0.6);
   --lavender: #b9aeff;
   --peach: #ffb89a;
-  --butter: #f5d27a;
-  --sky: #9fd3f5;
-  --positive: #c6f06a;
   --success: #4cc38a;
   --success-subtle: #10291b;
   --warning: #ffb224;
@@ -179,9 +169,6 @@
   --scrim: rgba(0, 0, 0, 0.6);
   --tooltip: rgba(242, 242, 243, 0.96);
   --on-tooltip: #0a0a0b;
-  --glass: rgba(10, 10, 11, 0.8);
-  --glass-border: var(--border);
-  --glow: transparent;
   --heat-1: #232a17;
   --heat-2: #4b6420;
   --heat-3: #8fb83f;
@@ -208,7 +195,6 @@
   --device-black: #000000;
   --device-status-font: 600 14px/1 -apple-system, BlinkMacSystemFont, var(--font-sans);
   --shadow-device: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 40px 100px rgba(0, 0, 0, 0.7);
-  --glass-inset: none;
   --focus-ring: 0 0 0 2px #0a0a0b, 0 0 0 4px #f2f2f3;
   --focus-halo: 0 0 0 4px rgba(255, 255, 255, 0.14);
   --focus-halo-danger: 0 0 0 4px rgba(255, 99, 105, 0.2);
@@ -222,7 +208,6 @@
     --surface-2: #1c1c1f;
     --fill-hover: #26262a;
     --surface-raised: #1c1c1f;
-    --fill-raised: #26262a;
     --fill-raised: #26262a;
     --sidebar: #0f0f11;
     --thumb: #2a2a2e;
@@ -248,7 +233,7 @@
     --them-subtle: rgba(198, 240, 106, 0.16);
     --tile-ink: #f2f2f3;
     --on-tile-ink: #0a0a0b;
-    --on-tile-ink-muted: rgba(10, 10, 11, 0.55);
+    --on-tile-ink-muted: rgba(10, 10, 11, 0.62);
     --lime: #c6f06a;
     --them-on-ink: #4e7a0e;
     --lime-hover: #d3f585;
@@ -256,9 +241,6 @@
     --on-lime-muted: rgba(10, 10, 11, 0.6);
     --lavender: #b9aeff;
     --peach: #ffb89a;
-    --butter: #f5d27a;
-    --sky: #9fd3f5;
-    --positive: #c6f06a;
     --success: #4cc38a;
     --success-subtle: #10291b;
     --warning: #ffb224;
@@ -279,9 +261,6 @@
     --scrim: rgba(0, 0, 0, 0.6);
     --tooltip: rgba(242, 242, 243, 0.96);
     --on-tooltip: #0a0a0b;
-    --glass: rgba(10, 10, 11, 0.8);
-    --glass-border: var(--border);
-    --glow: transparent;
     --heat-1: #232a17;
     --heat-2: #4b6420;
     --heat-3: #8fb83f;
@@ -308,7 +287,6 @@
     --device-black: #000000;
     --device-status-font: 600 14px/1 -apple-system, BlinkMacSystemFont, var(--font-sans);
     --shadow-device: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 40px 100px rgba(0, 0, 0, 0.7);
-    --glass-inset: none;
     --focus-ring: 0 0 0 2px #0a0a0b, 0 0 0 4px #f2f2f3;
     --focus-halo: 0 0 0 4px rgba(255, 255, 255, 0.14);
     --focus-halo-danger: 0 0 0 4px rgba(255, 99, 105, 0.2);
@@ -361,27 +339,32 @@
   --duration-normal: 200ms;
   --duration-slow: 250ms;
   --duration-view: 300ms;
-  --blur-sm: 8px;
-  --blur-glass: 24px;
-  /* Geist for everything; self-hosted, with Cyrillic. */
+  /* Geist for everything; self-hosted, with Cyrillic. One face, no mono. */
   --font-sans: 'Geist Variable', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
-  --font-display: var(--font-sans);
-  --font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --text-display: 600 72px/72px var(--font-display);
-  --text-h1: 600 40px/42px var(--font-display);
-  --text-h2: 600 28px/32px var(--font-display);
+  /*
+   * One type scale for every page:
+   * h1 — the page title (one per page), h2 — the title of a focused card, dialog or status,
+   * h3 — a section on a page, title — a tile or row. Phones shrink h1 and h2 below.
+   */
+  --text-h1: 600 40px/44px var(--font-sans);
+  --text-h2: 600 24px/30px var(--font-sans);
+  --text-h3: 600 20px/26px var(--font-sans);
   --text-title: 600 16px/22px var(--font-sans);
+  --text-lede: 400 16px/24px var(--font-sans);
   --text-body: 400 16px/25px var(--font-sans);
   --text-ui: 500 14px/20px var(--font-sans);
   --text-control: 500 14px/20px var(--font-sans);
   --text-small: 400 13px/18px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
-  /* Section labels are quiet sentence-case, not shouting caps. */
+  /* Tile labels are quiet sentence-case, not shouting caps. */
   --text-label: 500 13px/18px var(--font-sans);
   /* Big figures: tight tracking (see .t-figure). */
-  --text-figure: 600 44px/44px var(--font-display);
-  --text-figure-sm: 600 24px/28px var(--font-display);
-  --text-mono: 500 13px/20px var(--font-mono);
+  --text-figure: 600 44px/44px var(--font-sans);
+  --text-figure-sm: 600 24px/28px var(--font-sans);
+  /* The page frame: space under the header, between sections, and at the bottom. */
+  --page-top: var(--space-8);
+  --page-gap: var(--space-10);
+  --page-bottom: var(--space-16);
 
   /* Strong ease-out for everything the user triggers; nothing linear, nothing bouncy. */
   --ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
@@ -395,7 +378,6 @@
   --transition-fast: var(--duration-fast) var(--ease-standard);
   --transition-normal: var(--duration-normal) var(--ease-standard);
   --transition-slow: var(--duration-slow) var(--ease-out-expo);
-  --glass-filter: blur(var(--blur-glass)) saturate(1.4);
 
   /* «Итоги» story slides: the same in both themes, like exported images. */
   --story-ink: #ffffff;
@@ -444,5 +426,9 @@
 @media (max-width: 640px) {
   :root {
     --topbar-height: 56px;
+    --page-top: var(--space-5);
+    --page-gap: var(--space-8);
+    --text-h1: 600 30px/34px var(--font-sans);
+    --text-h2: 600 22px/28px var(--font-sans);
   }
 }

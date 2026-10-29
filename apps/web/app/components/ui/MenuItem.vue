@@ -67,7 +67,8 @@ withDefaults(
   border-radius: var(--radius-xs);
   background: var(--fill-raised);
   color: var(--text-muted);
-  font: 500 11px/14px var(--font-mono);
+  font: var(--text-caption);
+  font-variant-numeric: tabular-nums;
 }
 
 @media (hover: hover) {

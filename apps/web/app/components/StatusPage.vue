@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Full-page states (not found, error, offline): a flat seismograph — nothing is being said here. */
+/** Full-page states (not found, error, offline) inside the site frame: a flat seismograph — nothing is being said here. */
 defineProps<{ code: string; title: string; text: string; action: string }>()
 defineEmits<{ action: [] }>()
 
@@ -9,35 +9,23 @@ const silence = Array.from({ length: 64 }, (_, index) =>
 </script>
 
 <template>
-  <main class="status-page">
-    <NuxtLink to="/" class="status-brand"><BrandMark />TG Analyzer</NuxtLink>
+  <UiPageContainer class="status-page">
     <section class="status-body" aria-labelledby="status-title">
       <div class="status-tile">
         <p class="status-code">{{ code }}</p>
         <Seismograph :days="silence" :height="64" />
       </div>
-      <h1 id="status-title" class="status-title">{{ title }}</h1>
-      <p class="status-text">{{ text }}</p>
+      <h1 id="status-title" class="t-h2">{{ title }}</h1>
+      <p class="t-lede status-text">{{ text }}</p>
       <UiButton variant="primary" size="lg" @click="$emit('action')">{{ action }}</UiButton>
     </section>
-  </main>
+  </UiPageContainer>
 </template>
 
 <style scoped>
 .status-page {
   display: grid;
-  grid-template-rows: auto 1fr;
-  min-height: 100dvh;
-  padding: var(--space-4) var(--page-gutter) max(var(--space-10), env(safe-area-inset-bottom, 0px));
-}
-
-.status-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  justify-self: start;
-  font: 600 16px/1 var(--font-sans);
-  letter-spacing: -0.02em;
+  flex: 1;
 }
 
 .status-body {
@@ -72,16 +60,8 @@ const silence = Array.from({ length: 64 }, (_, index) =>
   font: var(--text-ui);
 }
 
-.status-title {
-  font: 600 clamp(28px, 7vw, 36px) / 1.1 var(--font-sans);
-  letter-spacing: -0.035em;
-  text-wrap: balance;
-}
-
 .status-text {
   max-width: 36ch;
-  color: var(--text-muted);
-  text-wrap: pretty;
 }
 
 .status-body .btn {

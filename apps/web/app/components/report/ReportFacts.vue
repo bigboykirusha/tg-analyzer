@@ -48,9 +48,8 @@ withDefaults(defineProps<{ facts: Fact[]; columns?: 1 | 2 | 3 }>(), { columns: 2
 }
 
 .fact__value {
-  font: var(--text-h2);
-  font-size: 20px;
-  line-height: 28px;
+  font: var(--text-h3);
+  letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
 

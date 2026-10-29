@@ -214,9 +214,8 @@ function submit() {
   border-radius: var(--radius-lg);
   background: var(--surface-2);
   color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 20px;
-  font-weight: 600;
+  font: 600 20px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
   text-align: center;
   outline: none;
   transition:

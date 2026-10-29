@@ -139,127 +139,80 @@ function changeNumber() {
 </script>
 
 <template>
-  <main class="login-page">
-    <header class="login-header">
-      <NuxtLink to="/" class="brand" aria-label="TG Analyzer">
-        <BrandMark />
-        <span class="brand-name">{{ t('login.title') }}</span>
-      </NuxtLink>
-      <div class="login-controls"><UiLocaleSwitch /><UiThemeToggle /></div>
-    </header>
+  <UiPageContainer class="login-shell">
+    <section class="login-panel">
+      <div class="login-card">
+        <div class="login-progress" aria-hidden="true">
+          <span v-for="index in 3" :key="index" :class="{ active: stepIndex >= index - 1 }" />
+        </div>
 
-    <div class="login-shell">
-      <section class="login-panel">
-        <div class="login-card">
-          <div class="login-progress" aria-hidden="true">
-            <span v-for="index in 3" :key="index" :class="{ active: stepIndex >= index - 1 }" />
-          </div>
-
-          <div class="login-copy">
-            <h1>
-              <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
-              <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
-              <template v-else>{{ t('login.passwordTitle') }}</template>
-            </h1>
-            <p>
-              <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
-              <template v-else-if="step === 'code'">{{ codeDescription }}</template>
-              <template v-else>{{ t('login.passwordDescription') }}</template>
-            </p>
-          </div>
-
-          <Transition name="auth-step" mode="out-in">
-            <PhoneStep
-              v-if="step === 'phone'"
-              key="phone"
-              v-model:phone="phone"
-              :loading="loading"
-              @submit="requestCode"
-            />
-            <CodeStep
-              v-else-if="step === 'code'"
-              key="code"
-              v-model:code="code"
-              :loading="loading"
-              :resend-seconds="deliveryBlocked ? 0 : resendSeconds"
-              :resend-label="resendLabel"
-              :length="delivery?.length ?? 5"
-              @submit="submitCode"
-              @resend="requestResend"
-              @change-number="changeNumber"
-            />
-            <PasswordStep
-              v-else
-              key="password"
-              v-model:password="password"
-              :hint="passwordHint"
-              :loading="loading"
-              @submit="submitPassword"
-            />
-          </Transition>
-
-          <div v-if="error" class="banner banner--danger" role="alert">
-            <AlertCircle aria-hidden="true" />
-            <p class="banner__text">{{ error }}</p>
-          </div>
-
-          <p class="trust">
-            {{ t('login.trust.short') }}
-            <button type="button" class="trust__link" @click="privacyOpen = true">{{ t('login.trust.more') }}</button>
+        <div class="login-copy">
+          <h1 class="t-h2">
+            <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
+            <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
+            <template v-else>{{ t('login.passwordTitle') }}</template>
+          </h1>
+          <p class="login-copy__text">
+            <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
+            <template v-else-if="step === 'code'">{{ codeDescription }}</template>
+            <template v-else>{{ t('login.passwordDescription') }}</template>
           </p>
         </div>
-        <NuxtLink to="/example" class="login-example">{{ t('login.exampleLink') }}</NuxtLink>
-      </section>
-    </div>
+
+        <Transition name="auth-step" mode="out-in">
+          <PhoneStep
+            v-if="step === 'phone'"
+            key="phone"
+            v-model:phone="phone"
+            :loading="loading"
+            @submit="requestCode"
+          />
+          <CodeStep
+            v-else-if="step === 'code'"
+            key="code"
+            v-model:code="code"
+            :loading="loading"
+            :resend-seconds="deliveryBlocked ? 0 : resendSeconds"
+            :resend-label="resendLabel"
+            :length="delivery?.length ?? 5"
+            @submit="submitCode"
+            @resend="requestResend"
+            @change-number="changeNumber"
+          />
+          <PasswordStep
+            v-else
+            key="password"
+            v-model:password="password"
+            :hint="passwordHint"
+            :loading="loading"
+            @submit="submitPassword"
+          />
+        </Transition>
+
+        <div v-if="error" class="banner banner--danger" role="alert">
+          <AlertCircle aria-hidden="true" />
+          <p class="banner__text">{{ error }}</p>
+        </div>
+
+        <p class="trust">
+          {{ t('login.trust.short') }}
+          <button type="button" class="link" @click="privacyOpen = true">{{ t('login.trust.more') }}</button>
+        </p>
+      </div>
+      <NuxtLink to="/example" class="login-example">{{ t('login.exampleLink') }}</NuxtLink>
+    </section>
 
     <PrivacyDialog :open="privacyOpen" @close="closePrivacy" />
-  </main>
+  </UiPageContainer>
 </template>
 
 <style scoped>
-.login-page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100dvh;
-  background: var(--bg);
-  color: var(--text);
-}
-
-.login-header {
-  position: sticky;
-  top: 0;
-  z-index: var(--z-header);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-6);
-  min-height: var(--topbar-height);
-  padding: env(safe-area-inset-top, 0px) max(20px, env(safe-area-inset-left, 0px)) 0;
-  background: var(--bg);
-}
-
-.brand,
-.login-controls {
-  display: flex;
-  align-items: center;
-}
-
-.brand {
-  gap: 10px;
-  font: 600 16px/1 var(--font-sans);
-  letter-spacing: -0.02em;
-}
-
-.login-controls {
-  gap: var(--space-1);
-}
-
-/* One card in the middle of the screen; on phones it fills the width. */
+/* A focused task: one card in the middle of the column; on phones it fills the width. */
 .login-shell {
   display: grid;
   flex: 1;
   place-items: start center;
-  padding: clamp(var(--space-8), 10vh, 120px) max(20px, env(safe-area-inset-left, 0px)) var(--space-16);
+  padding-top: clamp(0px, 6vh, 72px);
 }
 
 .login-panel {
@@ -276,7 +229,7 @@ function changeNumber() {
   gap: var(--space-6);
   width: 100%;
   padding: var(--space-8);
-  border-radius: var(--radius-modal);
+  border-radius: var(--radius-card);
   background: var(--surface);
 }
 
@@ -298,20 +251,6 @@ function changeNumber() {
   border-top: 1px solid var(--border);
   color: var(--text-muted);
   font: var(--text-small);
-}
-
-.trust__link {
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-xs);
-  background: none;
-  cursor: pointer;
-  color: var(--text);
-  font: var(--text-small);
-  font-weight: 500;
-  text-decoration: underline;
-  text-decoration-color: var(--border-strong);
-  text-underline-offset: 3px;
 }
 
 .login-progress {
@@ -336,12 +275,7 @@ function changeNumber() {
   gap: var(--space-2);
 }
 
-.login-copy h1 {
-  font: 600 26px/1.1 var(--font-sans);
-  letter-spacing: -0.035em;
-}
-
-.login-copy p {
+.login-copy__text {
   color: var(--text-muted);
   font: var(--text-ui);
   font-weight: 400;
@@ -366,7 +300,7 @@ function changeNumber() {
 
 @media (max-width: 640px) {
   .login-shell {
-    padding-top: var(--space-4);
+    padding-top: 0;
   }
 
   .login-card {

@@ -9,11 +9,13 @@ function retry() {
 </script>
 
 <template>
-  <StatusPage
-    :code="`${t('error.code')} ${error.statusCode || 500}`"
-    :title="notFound ? t('error.notFoundTitle') : t('error.title')"
-    :text="notFound ? t('error.notFoundText') : t('error.text')"
-    :action="t('error.backHome')"
-    @action="retry"
-  />
+  <NuxtLayout>
+    <StatusPage
+      :code="`${t('error.code')} ${error.statusCode || 500}`"
+      :title="notFound ? t('error.notFoundTitle') : t('error.title')"
+      :text="notFound ? t('error.notFoundText') : t('error.text')"
+      :action="t('error.backHome')"
+      @action="retry"
+    />
+  </NuxtLayout>
 </template>

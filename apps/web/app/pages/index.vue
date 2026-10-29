@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight, Send } from '../lib/icons'
 
-definePageMeta({ middleware: ['guest'] })
+definePageMeta({ middleware: ['guest'], fit: true })
 
 const { t } = useI18n()
 const runtimeConfig = useRuntimeConfig()
@@ -26,143 +26,48 @@ useHead({
     },
   ],
 })
-
-/** The header gets its hairline once the page scrolls under it. */
-const scrolled = ref(false)
-function onScroll() {
-  scrolled.value = window.scrollY > 4
-}
-onMounted(() => {
-  onScroll()
-  window.addEventListener('scroll', onScroll, { passive: true })
-})
-onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 </script>
 
 <template>
-  <div class="landing">
-    <header class="top" :class="{ 'is-scrolled': scrolled }">
-      <div class="wrap top__in">
-        <NuxtLink to="/" class="brand" aria-label="TG Analyzer"><BrandMark />TG Analyzer</NuxtLink>
-        <div class="top__actions">
-          <NuxtLink to="/faq" class="top__link">{{ t('landing.nav.faq') }}</NuxtLink>
-          <UiButton variant="secondary" size="sm" to="/login">{{ t('landing.signIn') }}</UiButton>
-        </div>
+  <UiPageContainer class="landing">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero__copy">
+        <h1 id="hero-title" class="hero__title">
+          {{ t('landing.title') }} <span>{{ t('landing.titleSoft') }}</span>
+        </h1>
+        <p class="hero__lede">{{ t('landing.lede') }}</p>
+        <UiButton class="hero__cta" variant="primary" size="lg" :icon="Send" to="/login">
+          {{ t('landing.cta') }}
+        </UiButton>
+        <p class="hero__trust">
+          {{ t('landing.trust') }}
+          <NuxtLink to="/example" class="hero__example">
+            {{ t('landing.nav.example') }}<ArrowRight aria-hidden="true" />
+          </NuxtLink>
+        </p>
       </div>
-    </header>
-
-    <main class="wrap">
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="hero__copy">
-          <h1 id="hero-title" class="hero__title">
-            {{ t('landing.title') }} <span>{{ t('landing.titleSoft') }}</span>
-          </h1>
-          <p class="hero__lede">{{ t('landing.lede') }}</p>
-          <UiButton class="hero__cta" variant="primary" size="lg" :icon="Send" to="/login">
-            {{ t('landing.cta') }}
-          </UiButton>
-          <p class="hero__trust">
-            {{ t('landing.trust') }}
-            <NuxtLink to="/example" class="hero__example">
-              {{ t('landing.nav.example') }}<ArrowRight aria-hidden="true" />
-            </NuxtLink>
-          </p>
-        </div>
-        <div class="hero__visual">
-          <ProductWindow class="hero__window" />
-          <div class="hero__phone"><PhoneMockup /></div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="foot">
-      <div class="wrap foot__in">
-        <span>{{ t('landing.unofficial') }}</span>
-        <nav :aria-label="t('landing.footerNav')">
-          <NuxtLink to="/login#privacy">{{ t('landing.nav.privacy') }}</NuxtLink>
-          <NuxtLink to="/terms">{{ t('landing.nav.terms') }}</NuxtLink>
-        </nav>
+      <div class="hero__visual">
+        <ProductWindow class="hero__window" />
+        <div class="hero__phone"><PhoneMockup /></div>
       </div>
-    </footer>
-  </div>
+    </section>
+  </UiPageContainer>
 </template>
 
 <style scoped>
-.landing {
-  min-height: 100dvh;
-  overflow-x: clip;
-  background: var(--bg);
-}
-
-.wrap {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding-inline: max(20px, env(safe-area-inset-left, 0px));
-}
-
-/* ─── Header: sticky, flush with the page until it scrolls ─── */
-.top {
-  position: sticky;
-  top: 0;
-  z-index: var(--z-header);
-  padding-top: env(safe-area-inset-top, 0px);
-  background: var(--bg);
-  transition: box-shadow var(--duration-slow) ease;
-}
-
-.top.is-scrolled {
-  box-shadow: 0 1px 0 var(--border);
-}
-
-.top__in {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  height: var(--topbar-height);
-}
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font: 600 16px/1 var(--font-sans);
-  letter-spacing: -0.02em;
-  white-space: nowrap;
-}
-
-.top__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-5);
-}
-
-.top__link,
-.foot a,
-.hero__example {
-  transition: color var(--transition-fast);
-}
-
-.top__link {
-  color: var(--text-muted);
-  font: var(--text-ui);
-}
-
-@media (hover: hover) {
-  .top__link:hover,
-  .foot a:hover,
-  .hero__example:hover {
-    color: var(--text);
-  }
-}
-
 /* ─── Hero: a title, one action and the product ─── */
+.landing {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   align-items: center;
   gap: var(--space-6);
-  padding-top: var(--space-12);
 }
 
 .hero__copy {
@@ -171,6 +76,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   align-items: flex-start;
 }
 
+/* The one display size on the site: only the landing gets it. */
 .hero__title {
   font: 600 clamp(44px, 5.8vw, 80px) / 0.98 var(--font-sans);
   letter-spacing: -0.05em;
@@ -178,7 +84,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 }
 
 .hero__title span {
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .hero__lede {
@@ -219,23 +125,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   display: none;
 }
 
-/* ─── Footer: one quiet line ─── */
-.foot__in {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
-  padding-block: 20px max(20px, env(safe-area-inset-bottom, 0px));
-  color: var(--text-faint);
-  font: var(--text-small);
-}
-
-.foot nav {
-  display: flex;
-  gap: 20px;
-}
-
 @media (max-width: 1100px) {
   .hero {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -244,22 +133,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
 /* Desktop: the whole landing fits one screen; the window scales to the free height. */
 @media (min-width: 901px) and (min-height: 620px) {
-  .landing {
-    display: flex;
-    flex-direction: column;
-    height: 100svh;
-    min-height: 620px;
-    overflow: clip;
-  }
-
-  .landing > main {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    width: 100%;
-    min-height: 0;
-  }
-
   .hero {
     flex: 1;
     grid-template-rows: minmax(0, 1fr);
@@ -279,17 +152,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   .hero__window {
     height: 100%;
   }
-
-  .foot__in {
-    flex-wrap: nowrap;
-    white-space: nowrap;
-  }
-}
-
-@media (min-width: 1600px) {
-  .wrap {
-    max-width: 1400px;
-  }
 }
 
 /* Tablets and phones: no tilted window, the phone shows the product instead. */
@@ -297,7 +159,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   .hero {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-10);
-    padding-top: var(--space-8);
   }
 
   .hero__copy {
@@ -314,18 +175,8 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 }
 
 @media (max-width: 640px) {
-  /* The cut-off phone must not stretch the page below the footer. */
-  .landing {
-    overflow: clip;
-  }
-
-  .top__actions {
-    gap: var(--space-4);
-  }
-
   .hero {
     gap: var(--space-8);
-    padding-top: var(--space-6);
   }
 
   .hero__lede {
@@ -370,12 +221,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
   .hero__phone :deep(.iphone) {
     width: min(290px, 76vw);
-  }
-
-  .foot__in {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
   }
 }
 </style>

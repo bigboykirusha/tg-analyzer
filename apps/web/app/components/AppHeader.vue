@@ -18,15 +18,7 @@ watch(
 
 const navigation = useNavigation()
 /** The bar sits flush with the page until the page scrolls under it, then shows a hairline. */
-const scrolled = ref(false)
-function onScroll() {
-  scrolled.value = window.scrollY > 4
-}
-onMounted(() => {
-  onScroll()
-  window.addEventListener('scroll', onScroll, { passive: true })
-})
-onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
+const scrolled = useScrolled()
 const analysis = useAnalysis()
 /** The running analysis, shown in the header on every page. */
 const activity = computed(() => {
@@ -57,11 +49,8 @@ function signOut() {
 
 <template>
   <header class="app-navigation" :class="{ 'is-scrolled': scrolled }">
-    <div class="topbar">
-      <NuxtLink to="/dashboard" class="brand" aria-label="TG Analyzer">
-        <BrandMark />
-        <span class="brand-name">TG Analyzer</span>
-      </NuxtLink>
+    <UiPageContainer class="topbar">
+      <BrandLink to="/dashboard" class="topbar__brand" />
       <nav v-if="navigation.items.value.length > 1" class="main-nav" :aria-label="t('nav.main')">
         <NuxtLink
           v-for="item in navigation.items.value"
@@ -129,7 +118,7 @@ function signOut() {
           <UiMenuItem role="menuitem" :icon="LogOut" @click="signOut">{{ t('account.logout') }}</UiMenuItem>
         </UiPopoverMenu>
       </div>
-    </div>
+    </UiPageContainer>
   </header>
 </template>
 
@@ -147,29 +136,17 @@ function signOut() {
   box-shadow: 0 1px 0 var(--border);
 }
 
+/* The same column as the page below, so the logo lines up with the content. */
 .topbar {
   display: flex;
   align-items: center;
   gap: var(--space-6);
-  min-height: var(--topbar-height);
-  /* Same column as the page below, so the logo lines up with the content. */
-  padding-inline: max(var(--page-gutter), calc((100% - var(--page-max)) / 2));
-}
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font: 600 16px/1 var(--font-sans);
-  letter-spacing: -0.02em;
-  white-space: nowrap;
+  height: var(--topbar-height);
 }
 
 /* With the sidebar on screen the logo lives there. */
 @media (min-width: 901px) {
-  .brand {
+  .topbar__brand {
     display: none;
   }
 }

@@ -95,7 +95,7 @@ onBeforeUnmount(() => observer?.disconnect())
 
 .window__chrome span {
   margin: 0 auto;
-  color: var(--text-faint);
+  color: var(--text-muted);
   font: var(--text-caption);
 }
 

@@ -28,10 +28,7 @@ const share = (report: ReportSummaryDto) =>
 
 <template>
   <aside class="sidebar" :aria-label="t('sidebar.label')">
-    <NuxtLink to="/dashboard" class="sidebar__brand" aria-label="TG Analyzer">
-      <BrandMark />
-      <span>TG Analyzer</span>
-    </NuxtLink>
+    <div class="sidebar__brand"><BrandLink to="/dashboard" /></div>
 
     <label v-if="workspace.reports.length > 6" class="sidebar__search">
       <Search aria-hidden="true" />
@@ -99,12 +96,8 @@ const share = (report: ReportSummaryDto) =>
   display: flex;
   flex: none;
   align-items: center;
-  gap: 10px;
   height: var(--topbar-height);
   padding: 0 var(--space-2);
-  font: 600 16px/1 var(--font-sans);
-  letter-spacing: -0.02em;
-  white-space: nowrap;
 }
 
 .sidebar__search {
