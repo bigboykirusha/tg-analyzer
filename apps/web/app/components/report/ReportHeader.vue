@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { MoreHorizontal, RotateCw, Share2, Trash2 } from '../../lib/icons'
+import { MoreHorizontal, RotateCw, Share2, Trash2, Users } from '../../lib/icons'
 
 const props = withDefaults(
   defineProps<{
@@ -12,7 +12,7 @@ const props = withDefaults(
   }>(),
   { canReanalyse: false, reanalysing: false, demo: false },
 )
-const emit = defineEmits<{ reanalyse: []; story: []; delete: [] }>()
+const emit = defineEmits<{ reanalyse: []; story: []; delete: []; team: [] }>()
 const { t, formatDay } = useI18n()
 const isMobile = useMediaQuery('(max-width: 640px)')
 const menuOpen = ref(false)
@@ -24,9 +24,10 @@ const period = computed(() => {
   return `${format(firstMessageAt)} – ${format(lastMessageAt)}`
 })
 
-function run(action: 'reanalyse' | 'delete') {
+function run(action: 'reanalyse' | 'delete' | 'team') {
   menuOpen.value = false
   if (action === 'reanalyse') emit('reanalyse')
+  else if (action === 'team') emit('team')
   else emit('delete')
 }
 </script>
@@ -65,6 +66,7 @@ function run(action: 'reanalyse' | 'delete') {
           <UiMenuItem role="menuitem" :icon="RotateCw" :disabled="!canReanalyse" @click="run('reanalyse')">
             {{ t('report.reanalyse') }}
           </UiMenuItem>
+          <UiMenuItem role="menuitem" :icon="Users" @click="run('team')">{{ t('share.menu') }}</UiMenuItem>
           <div class="menu-divider" role="separator" />
           <UiMenuItem role="menuitem" :icon="Trash2" danger @click="run('delete')">
             {{ t('report.deleteMenu') }}

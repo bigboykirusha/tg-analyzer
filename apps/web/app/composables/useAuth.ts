@@ -40,6 +40,7 @@ export function useAuth() {
   async function finishSession() {
     useAnalysis().stop()
     useWorkspaceStore().reset()
+    useTeamsStore().reset()
     auth.signOut()
     await navigateTo('/login', { replace: true })
   }

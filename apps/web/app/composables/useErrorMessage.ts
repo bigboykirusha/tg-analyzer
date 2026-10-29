@@ -20,6 +20,13 @@ const MESSAGES: Partial<Record<ApiClientError['code'], MessageKey>> = {
   PARSE_QUEUE_FULL: 'errors.parseQueueFull',
   PARSE_COOLDOWN: 'errors.parseCooldown',
   QUEUE_UNAVAILABLE: 'errors.queueUnavailable',
+  TEAM_NOT_FOUND: 'errors.teamNotFound',
+  TEAM_FORBIDDEN: 'errors.teamForbidden',
+  TEAM_OWNER_CANNOT_LEAVE: 'errors.teamOwnerCannotLeave',
+  TEAMS_LIMIT_REACHED: 'errors.teamsLimit',
+  PLAN_LIMIT_REACHED: 'errors.planLimit',
+  INVITE_INVALID: 'errors.inviteInvalid',
+  REPORT_ALREADY_SHARED: 'errors.reportAlreadyShared',
 }
 
 /** Turns any thrown value into a short, localised sentence for the user. */
