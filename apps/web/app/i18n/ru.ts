@@ -676,7 +676,7 @@ export const ru: Record<MessageKey, string> = {
   'report.talk.packs.one': 'из {count} набора',
   'report.talk.packs.other': 'из {count} наборов',
   'report.talk.questionsText':
-    'Несколько вопросов подряд считаются за один. Вопрос остался без ответа, если собеседник ничего не написал до конца разговора.',
+    'Несколько вопросов подряд считаются за один. Вопрос остался без ответа, если собеседник не написал и не поставил реакцию в течение 12 часов. Ответ утром на вечерний вопрос считается ответом.',
   'report.talk.questionsTitle': 'Вопросы',
   'report.talk.reactionCount.few': '{count} реакции',
   'report.talk.reactionCount.many': '{count} реакций',
@@ -688,7 +688,7 @@ export const ru: Record<MessageKey, string> = {
   'report.talk.reactionsTheirs': 'Реакции: {name}',
   'report.talk.reactionsTitle': 'Реакции',
   'report.talk.ritualsText':
-    'Кто открывает день (первое сообщение до полудня) и за кем последнее слово вечером (после 21:00).',
+    'Кто открывает день (первое сообщение до полудня, на которое ответили в течение нескольких часов) и за кем последнее слово вечером (после 21:00, если писали оба).',
   'report.talk.ritualsTitle': 'Утро и вечер',
   'report.talk.round': 'Кружочки',
   'report.talk.roundCount.few': '{count} кружочка',

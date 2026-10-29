@@ -277,39 +277,42 @@ export function computeHabits(
   }
 }
 
+/** A question nobody answers for this long counts as left alone; a night's sleep does not. */
+export const QUESTION_PATIENCE_MS = 12 * 60 * 60 * 1000
+
 /**
  * Questions left without an answer. A run of questions from one side counts
- * once; it is answered when the other side writes in the same conversation.
- * A question still open at the very end of the chat may yet be answered, so
- * it is not counted.
+ * once. It is answered by any message from the other side, or by their
+ * reaction under it, within {@link QUESTION_PATIENCE_MS}. A question still
+ * waiting at the very end of the chat may yet be answered, so it is not counted.
  */
 export function computeUnansweredQuestions(
-  timeline: readonly (TimelinePoint & { asks: boolean })[],
-  split: SessionSplit = bySilence,
+  timeline: readonly (TimelinePoint & { asks: boolean; reacted?: boolean })[],
 ): Pick<ConversationHabitsDto, 'unansweredQuestions' | 'questionTurns'> {
   const ordered = chronological(timeline)
   const unanswered = { mine: 0, theirs: 0 }
   const turns = { mine: 0, theirs: 0 }
-  const open = { mine: false, theirs: false }
+  /** When the latest question of each side's open run was asked. */
+  const open: { mine: number | null; theirs: number | null } = { mine: null, theirs: null }
 
-  for (let index = 0; index < ordered.length; index += 1) {
-    const current = ordered[index]!
-    const previous = ordered[index - 1]
-    if (previous && split(previous.ts, current.ts)) {
-      if (open.mine) unanswered.mine += 1
-      if (open.theirs) unanswered.theirs += 1
-      open.mine = open.theirs = false
+  for (const current of ordered) {
+    for (const key of ['mine', 'theirs'] as const) {
+      const since = open[key]
+      if (since !== null && current.ts - since > QUESTION_PATIENCE_MS) {
+        unanswered[key] += 1
+        open[key] = null
+      }
     }
     const side = current.outgoing ? 'mine' : 'theirs'
     // Any message from this side answers what the other side asked.
-    open[current.outgoing ? 'theirs' : 'mine'] = false
-    if (current.asks && !open[side]) {
-      open[side] = true
-      turns[side] += 1
+    open[current.outgoing ? 'theirs' : 'mine'] = null
+    if (current.asks) {
+      if (open[side] === null) turns[side] += 1
+      open[side] = current.reacted ? null : current.ts
     }
   }
-  if (open.mine) turns.mine -= 1
-  if (open.theirs) turns.theirs -= 1
+  if (open.mine !== null) turns.mine -= 1
+  if (open.theirs !== null) turns.theirs -= 1
 
   return { unansweredQuestions: unanswered, questionTurns: turns }
 }

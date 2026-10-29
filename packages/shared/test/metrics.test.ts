@@ -34,7 +34,8 @@ test('word forms count as one word and show the most common spelling', () => {
 test('links, mentions and stretched letters do not spoil the words', () => {
   const { keywords, wordCount } = analyzeMessageText('смотри https://youtube.com/watch?v=x1 и www.site.ru/page @mila')
   assert.deepEqual(keywords, ['смотри'])
-  assert.equal(wordCount, 1)
+  // «смотри» and «и»: the link and the mention are not words, one-letter words are.
+  assert.equal(wordCount, 2)
   assert.deepEqual(analyzeMessageText('спасибоооо, класссс').keywords, ['спасибо', 'класс'])
   // A question mark inside a link is not a question.
   assert.equal(analyzeMessageText('https://example.com/?a=1').asks, false)
@@ -91,8 +92,9 @@ test('questions typed without a question mark are noticed, statements are not', 
     assert.equal(analyzeMessageText(text).asks, false, text)
 })
 
-test('a question runs once and counts as unanswered only if the conversation ends without a reply', () => {
+test('a question runs once and counts as unanswered only if nobody answers in time', () => {
   const at = (minutes: number) => Date.parse('2026-03-01T10:00:00Z') + minutes * 60_000
+  const hours = (count: number) => count * 60
   const result = computeUnansweredQuestions([
     // Two questions in a row, then an answer: one answered question.
     { ts: at(0), outgoing: true, asks: true },
@@ -101,12 +103,29 @@ test('a question runs once and counts as unanswered only if the conversation end
     // They ask, I never answer before a long break.
     { ts: at(3), outgoing: false, asks: true },
     { ts: at(4), outgoing: false, asks: false },
-    { ts: at(60 * 10), outgoing: true, asks: false },
+    { ts: at(hours(13)), outgoing: true, asks: false },
     // My question at the very end may still be answered.
-    { ts: at(60 * 10 + 1), outgoing: true, asks: true },
+    { ts: at(hours(13) + 1), outgoing: true, asks: true },
   ])
   assert.deepEqual(result.questionTurns, { mine: 1, theirs: 1 })
   assert.deepEqual(result.unansweredQuestions, { mine: 0, theirs: 1 })
+})
+
+test('a late answer or a reaction still answers a question', () => {
+  const at = (minutes: number) => Date.parse('2026-03-01T22:00:00Z') + minutes * 60_000
+  const result = computeUnansweredQuestions([
+    // Asked in the evening, answered over breakfast.
+    { ts: at(0), outgoing: true, asks: true },
+    { ts: at(60 * 10), outgoing: false, asks: false },
+    // A thumbs-up under the question is an answer too.
+    { ts: at(60 * 11), outgoing: false, asks: true, reacted: true },
+    { ts: at(60 * 11 + 1), outgoing: true, asks: false },
+    // Left alone for a day.
+    { ts: at(60 * 12), outgoing: true, asks: true },
+    { ts: at(60 * 40), outgoing: true, asks: false },
+  ])
+  assert.deepEqual(result.questionTurns, { mine: 2, theirs: 1 })
+  assert.deepEqual(result.unansweredQuestions, { mine: 1, theirs: 0 })
 })
 
 test('voice messages and video notes are counted in minutes per side', () => {
@@ -137,7 +156,8 @@ test('reactions are split by who put them and whose message got them', () => {
   builder.add(message('2026-03-01T10:02:00Z', true, 'ок', { reactions: [{ emoji: '😂', count: 2, mine: true }] }))
   const { reactions } = builder.finish('private')
   assert.deepEqual(reactions?.given, { mine: 2, theirs: 3 })
-  assert.deepEqual(reactions?.received, { mine: 4, theirs: 1 })
+  // Your own reaction under your own message is not one you received.
+  assert.deepEqual(reactions?.received, { mine: 3, theirs: 1 })
   assert.deepEqual(reactions?.reactedMessages, { mine: 2, theirs: 1 })
   assert.deepEqual(reactions?.topBySender.mine, [
     { value: '❤️', count: 1 },
@@ -211,6 +231,7 @@ test('group members get their own voice, sticker, reaction and ritual counts', (
   builder.add(from('ann', '2026-03-01T07:00:00Z', { text: 'доброе утро всем' }))
   builder.add(from('bob', '2026-03-01T07:05:00Z', { kind: 'voice', durationSec: 61 }))
   builder.add(from('bob', '2026-03-01T07:06:00Z', { reactions: [{ emoji: '🔥', count: 3, mine: false }] }))
+  builder.add(from('bob', '2026-03-01T22:50:00Z', { text: 'ок' }))
   builder.add(from('ann', '2026-03-01T23:00:00Z', { kind: 'sticker', sticker: { id: 's', emoji: null, setId: null } }))
   const { group } = builder.finish('group')
   const ann = group?.participants.find((participant) => participant.id === 'ann')

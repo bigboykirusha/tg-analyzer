@@ -1,6 +1,9 @@
 import emojiRegex from 'emoji-regex'
 
-const WORD_PATTERN = /[\p{L}\p{N}_-]{2,}/gu
+// A word, with an apostrophe inside it («don't», «д'Артаньян») kept whole.
+const WORD_PATTERN = /[\p{L}\p{N}_-]+(?:['’][\p{L}]+)*/gu
+const HAS_LETTER_OR_DIGIT = /[\p{L}\p{N}]/u
+const APOSTROPHES = /['’]/gu
 const EMOJI_CANDIDATE = /\p{Extended_Pictographic}|\p{Regional_Indicator}|⃣/u
 // One emoji per match, as the Unicode standard defines them (ZWJ families, flags, keycaps, skin tones).
 const EMOJI_SEQUENCE = emojiRegex()
@@ -53,7 +56,8 @@ const STOP_WORDS_EN = [
   'into', 'over', 'after', 'before', 'ok', 'okay', 'yes', 'yeah', 'yep', 'nope', 'hey', 'hi', 'im',
   'dont', 'there', 'here', 'all', 'get', 'got',
   'im', 'ive', 'id', 'ill', 'youre', 'its', 'thats', 'whats', 'cant', 'wont', 'didnt', 'doesnt', 'isnt',
-  'arent', 'wasnt', 'one', 'some', 'any', 'how', 'when', 'where', 'why', 'now', 'like', 'really', 'well',
+  'arent', 'wasnt', 'werent', 'havent', 'hasnt', 'hadnt', 'wouldnt', 'couldnt', 'shouldnt', 'aint', 'lets',
+  'theyre', 'theyve', 'theyll', 'weve', 'youve', 'youll', 'hes', 'shes', 'theres', 'heres', 'whos', 'wheres', 'one', 'some', 'any', 'how', 'when', 'where', 'why', 'now', 'like', 'really', 'well',
   'know', 'think', 'going', 'gonna', 'wanna', 'lol', 'lmao', 'haha', 'hahaha', 'oh', 'ah', 'hmm', 'thanks',
   'more', 'much', 'only', 'other', 'out', 'off', 'again', 'still', 'even', 'let', 'see', 'go', 'make',
 ]
@@ -122,6 +126,8 @@ const NOT_WORDS =
 // Wishes and bare questions are matched on lower-cased text with ё folded and repeated letters squeezed to one.
 const GOOD_MORNING =
   /(?:^|[^\p{L}])(?:(?:с\s*)?добр(?:ое|ого|ым)\s*утр(?:о|ом|а|ечко|ечка|ечком)?|утр(?:о|а)\s+добр(?:ое|ого)|утречк[оа]|go{1,2}d\s*morning|g'?morning|gm)(?![\p{L}])/iu
+/** «Утро!» on its own is a greeting, while «до утра» is not. */
+const BARE_MORNING = /^(?:всем\s+)?(?:утро|утрецо|morning)[^\p{L}\p{N}]*$/iu
 const GOOD_NIGHT =
   /(?:^|[^\p{L}])(?:спокойн(?:ой|енькой)\s*ночи|споки(?:\s*ноки)?|спок\s*ночи|спокиноки|сладких\s+снов|добрых\s+снов|доброй\s+ночи|go{1,2}d\s*night|nighty?\s*night|gn|(?:иду|пошл[аи]|пошел|ушл[аи]|ушел|ложусь)\s+спать)(?![\p{L}])/iu
 
@@ -147,7 +153,7 @@ export function analyzeMessageText(
 
   const prose = NOT_WORDS.test(text) ? text.replace(NOT_WORDS, ' ') : text
   NOT_WORDS.lastIndex = 0
-  const words = prose.match(WORD_PATTERN) ?? []
+  const words = (prose.match(WORD_PATTERN) ?? []).filter((word) => HAS_LETTER_OR_DIGIT.test(word))
   const keywords: string[] = []
   let laughs = false
   for (const word of words) {
@@ -161,7 +167,11 @@ export function analyzeMessageText(
 
   const plain = prose.toLowerCase().replaceAll('ё', 'е').replace(REPEATED_LETTER, '$1').trim()
   const asks = prose.includes('?') || BARE_QUESTION.test(plain)
-  const greeting = GOOD_NIGHT.test(plain) ? 'night' : GOOD_MORNING.test(plain) ? 'morning' : null
+  const greeting = GOOD_NIGHT.test(plain)
+    ? 'night'
+    : GOOD_MORNING.test(plain) || BARE_MORNING.test(plain)
+      ? 'morning'
+      : null
 
   return { wordCount: words.length, keywords, emojis, asks, laughs, greeting }
 }
@@ -170,7 +180,7 @@ const EDGE_PUNCTUATION = /^[_-]+|[_-]+$/g
 const TWO_LETTERS = /\p{L}[^]*\p{L}/u
 
 function normalizeWord(word: string): string | null {
-  let normalized = word.toLowerCase()
+  let normalized = word.toLowerCase().replace(APOSTROPHES, '')
   if (normalized.includes('ё')) normalized = normalized.replaceAll('ё', 'е')
   if (
     normalized.startsWith('_') ||

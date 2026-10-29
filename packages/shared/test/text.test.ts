@@ -4,7 +4,7 @@ import { analyzeMessageText, createZonedClock, withoutStopWords } from '../src'
 
 test('text analysis counts raw words, filters stop words and normalises tokens', () => {
   assert.deepEqual(analyzeMessageText('HELLO hello the привет и данных Ёлка', new Set(['the', 'и'])), {
-    wordCount: 6,
+    wordCount: 7,
     keywords: ['hello', 'hello', 'привет', 'данных', 'елка'],
     emojis: [],
     asks: false,
@@ -42,8 +42,9 @@ test('filler words stay out of the vocabulary, also in reports stored earlier', 
 test('joined emoji count as one grapheme and text symbols are not emoji', () => {
   // Skin tones merge, so 👍🏽 and 👍 are one favourite.
   assert.deepEqual(analyzeMessageText('семья 👨‍👩‍👧‍👦 ❤️ 👍🏽 #️⃣', new Set()).emojis, ['👨‍👩‍👧‍👦', '❤️', '👍', '#️⃣'])
+  // Dashes and symbols are not words; «a» and «12» are.
   assert.deepEqual(analyzeMessageText('a 12 _- -- ... ♥︎ ☆', new Set()), {
-    wordCount: 3,
+    wordCount: 2,
     keywords: [],
     emojis: [],
     asks: false,
@@ -78,4 +79,21 @@ test('zoned clock resolves local parts across offsets and DST', () => {
   assert.equal(newYork(Date.parse('2026-03-08T07:00:00Z')).hour, 3)
 
   assert.equal(createZonedClock('Not/AZone')(Date.parse('2026-01-01T05:00:00Z')).hour, 5)
+})
+
+test('English contractions stay whole, and one-letter words are words', () => {
+  const { keywords, wordCount } = analyzeMessageText("I don't think it's what they're saying, I'm not sure")
+  assert.deepEqual(keywords, ['saying', 'sure'])
+  // «don», «didn», «isn» and «re» never appear as words of their own.
+  for (const junk of ['don', 'didn', 'isn', 're', 'm', 's', 't']) assert.ok(!keywords.includes(junk), junk)
+  assert.equal(wordCount, 10)
+  assert.equal(analyzeMessageText('я и ты в кино').wordCount, 5)
+})
+
+test('a bare «утро» greets, while «до утра» does not', () => {
+  assert.equal(analyzeMessageText('Утро!').greeting, 'morning')
+  assert.equal(analyzeMessageText('всем утро').greeting, 'morning')
+  assert.equal(analyzeMessageText('Morning').greeting, 'morning')
+  assert.equal(analyzeMessageText('сидели до утра').greeting, null)
+  assert.equal(analyzeMessageText('утро было тяжёлое').greeting, null)
 })

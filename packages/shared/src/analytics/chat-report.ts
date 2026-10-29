@@ -25,6 +25,7 @@ import {
   computeSessionStats,
   computeUnansweredQuestions,
   emptySessionStats,
+  OVERNIGHT_BOUNDARY_MS,
   sessionSplit,
 } from './timeline'
 import { createZonedClock, resolveTimeZone, type ZonedClock } from './zoned-clock'
@@ -69,6 +70,9 @@ const MORNING_FROM = 5
 const MORNING_UNTIL = 12
 const EVENING_FROM = 21
 const HOUR_MS = 60 * 60 * 1000
+const DAY_MS = 24 * HOUR_MS
+/** A morning counts as a talk when the other side answers within this time. */
+const MORNING_REPLY_MS = 4 * HOUR_MS
 const TOP_STICKERS = 8
 
 interface ParticipantState extends GroupParticipantInput {
@@ -87,6 +91,8 @@ interface ParticipantState extends GroupParticipantInput {
 interface TimelineEntry extends GroupTimelineEntry {
   outgoing: boolean
   asks: boolean
+  /** The other side reacted to the message. */
+  reacted: boolean
 }
 
 interface StickerState {
@@ -205,6 +211,7 @@ export class ChatReportBuilder {
       senderId: participant.id,
       replyToId: message.replyToId,
       asks: analysis.asks,
+      reacted: reactedByOtherSide(message),
     })
     this.messageSenders.set(message.id, participant.id)
     this.addExtras(message, participant, analysis.greeting)
@@ -259,7 +266,14 @@ export class ChatReportBuilder {
       recording.seconds[side] += seconds
       if (message.round) participant.roundSeconds += seconds
       else participant.voiceSeconds += seconds
-      if (seconds > 0 && (!recording.longest || seconds > recording.longest.seconds)) {
+      const longest = recording.longest
+      // Of two equally long ones the earlier counts, whatever order they arrive in.
+      if (
+        seconds > 0 &&
+        (!longest ||
+          seconds > longest.seconds ||
+          (seconds === longest.seconds && message.date.getTime() < Date.parse(longest.at)))
+      ) {
         recording.longest = {
           seconds,
           mine: message.outgoing,
@@ -274,8 +288,9 @@ export class ChatReportBuilder {
       for (const reaction of message.reactions) {
         const count = Math.max(0, Math.floor(reaction.count))
         if (!count) continue
-        total += count
         const mine = reaction.mine ? 1 : 0
+        // A reaction under your own message is not a reaction you received.
+        total += message.outgoing ? count - mine : count
         const theirs = count - mine
         this.reactions.given.mine += mine
         this.reactions.given.theirs += theirs
@@ -338,7 +353,7 @@ export class ChatReportBuilder {
     topItems(counts, limit).map((item) => ({ value: this.formOf(item.value), count: item.count }))
 
   finish(chatType: ChatType, now = new Date()): ChatReport {
-    const timeline = this.timeline.sort((left, right) => left.ts - right.ts)
+    const timeline = this.timeline.sort(byTimeThenId)
     const isPrivate = chatType === 'private'
     const daily = mapEntries(this.daily, 'date')
     const monthly = mapEntries(this.monthly, 'month')
@@ -422,7 +437,7 @@ export class ChatReportBuilder {
       habits: isPrivate
         ? {
             ...computeHabits(timeline, { questions: this.questions, laughs: this.laughs }, split),
-            ...computeUnansweredQuestions(timeline, split),
+            ...computeUnansweredQuestions(timeline),
           }
         : null,
       group:
@@ -503,37 +518,61 @@ export class ChatReportBuilder {
 
   /** Who opens the mornings and who closes the evenings; see {@link RitualsDto}. */
   private computeRituals(timeline: readonly TimelineEntry[]): RitualsDto {
-    const firstOfDay = new Map<string, TimelineEntry>()
-    const lastOfEvening = new Map<string, TimelineEntry>()
-    for (const entry of timeline) {
+    const firstOfDay = new Map<string, number>()
+    const evenings = new Map<string, { last: TimelineEntry; senders: Set<string> }>()
+    timeline.forEach((entry, index) => {
       const local = this.clock(entry.ts)
-      if (local.hour >= MORNING_FROM && !firstOfDay.has(local.day)) firstOfDay.set(local.day, entry)
+      if (local.hour >= MORNING_FROM && !firstOfDay.has(local.day)) firstOfDay.set(local.day, index)
       if (local.hour >= EVENING_FROM || local.hour < MORNING_FROM) {
-        lastOfEvening.set(this.clock(entry.ts - MORNING_FROM * HOUR_MS).day, entry)
+        // The small hours belong to the evening that began the day before.
+        const key = local.hour < MORNING_FROM ? previousDay(local.day) : local.day
+        let evening = evenings.get(key)
+        if (!evening) evenings.set(key, (evening = { last: entry, senders: new Set() }))
+        evening.last = entry
+        evening.senders.add(entry.senderId)
       }
-    }
+    })
 
     const rituals: RitualsDto = {
       mornings: 0,
       morningFirst: sideCount(),
-      evenings: lastOfEvening.size,
+      evenings: 0,
       nightLast: sideCount(),
       goodMorning: { ...this.greetings.morning },
       goodNight: { ...this.greetings.night },
     }
-    for (const entry of firstOfDay.values()) {
+    for (const [day, index] of firstOfDay) {
+      const entry = timeline[index]!
       if (this.clock(entry.ts).hour >= MORNING_UNTIL) continue
+      // Still chatting from the night: nobody opened this morning.
+      const before = timeline[index - 1]
+      if (before && entry.ts - before.ts < OVERNIGHT_BOUNDARY_MS) continue
+      if (!this.answeredSameMorning(timeline, index, day)) continue
       rituals.mornings += 1
       rituals.morningFirst[entry.outgoing ? 'mine' : 'theirs'] += 1
       const participant = this.participants.get(entry.senderId)
       if (participant) participant.morningFirst += 1
     }
-    for (const entry of lastOfEvening.values()) {
-      rituals.nightLast[entry.outgoing ? 'mine' : 'theirs'] += 1
-      const participant = this.participants.get(entry.senderId)
+    for (const { last, senders } of evenings.values()) {
+      // Someone talking alone closes nothing.
+      if (senders.size < 2) continue
+      rituals.evenings += 1
+      rituals.nightLast[last.outgoing ? 'mine' : 'theirs'] += 1
+      const participant = this.participants.get(last.senderId)
       if (participant) participant.nightLast += 1
     }
     return rituals
+  }
+
+  /** Someone else wrote the same day, soon after the opening message. */
+  private answeredSameMorning(timeline: readonly TimelineEntry[], index: number, day: string) {
+    const opener = timeline[index]!
+    for (let next = index + 1; next < timeline.length; next += 1) {
+      const entry = timeline[next]!
+      if (entry.ts - opener.ts > MORNING_REPLY_MS || this.clock(entry.ts).day !== day) return false
+      if (entry.senderId !== opener.senderId) return true
+    }
+    return false
   }
 
   private participant(message: MessageInput): ParticipantState {
@@ -578,6 +617,25 @@ export function computeMilestones(timeline: readonly (GroupTimelineEntry & { out
     const entry = timeline[index - 1]!
     return { index, at: new Date(entry.ts).toISOString(), mine: entry.outgoing, senderId: entry.senderId }
   })
+}
+
+function previousDay(day: string) {
+  return new Date(Date.parse(`${day}T00:00:00Z`) - DAY_MS).toISOString().slice(0, 10)
+}
+
+/** Telegram dates have one-second resolution, so messages sent together are ordered by id. */
+function byTimeThenId(left: { ts: number; id: string }, right: { ts: number; id: string }) {
+  if (left.ts !== right.ts) return left.ts - right.ts
+  const numeric = /^\d+$/
+  if (!numeric.test(left.id) || !numeric.test(right.id)) return 0
+  return left.id.length - right.id.length || (left.id < right.id ? -1 : left.id > right.id ? 1 : 0)
+}
+
+/** The other side put a reaction under the message: a quiet answer. */
+function reactedByOtherSide(message: MessageInput) {
+  return (message.reactions ?? []).some((reaction) =>
+    message.outgoing ? reaction.count > (reaction.mine ? 1 : 0) : reaction.mine,
+  )
 }
 
 function getOrCreate(map: Map<string, DirectionalCountDto>, key: string) {

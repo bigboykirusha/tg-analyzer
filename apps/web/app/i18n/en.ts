@@ -674,7 +674,7 @@ export const en = {
   'report.talk.packs.one': 'from {count} pack',
   'report.talk.packs.other': 'from {count} packs',
   'report.talk.questionsText':
-    'Several questions in a row count as one. A question is left unanswered when the other side wrote nothing before the conversation ended.',
+    'Several questions in a row count as one. A question is left unanswered when the other side neither wrote nor reacted within 12 hours. An answer over breakfast to an evening question still counts.',
   'report.talk.questionsTitle': 'Questions',
   'report.talk.reactionCount.few': '{count} reactions',
   'report.talk.reactionCount.many': '{count} reactions',
@@ -686,7 +686,7 @@ export const en = {
   'report.talk.reactionsTheirs': 'Reactions from {name}',
   'report.talk.reactionsTitle': 'Reactions',
   'report.talk.ritualsText':
-    'Who opens the day (the first message before noon) and who has the last word in the evening (after 9 pm).',
+    'Who opens the day (the first message before noon, answered within a few hours) and who has the last word in the evening (after 9 pm, when both wrote).',
   'report.talk.ritualsTitle': 'Mornings and evenings',
   'report.talk.round': 'Video notes',
   'report.talk.roundCount.few': '{count} video notes',
