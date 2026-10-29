@@ -60,7 +60,10 @@ test('account settings disconnect Telegram but keep the account', async ({ page 
   await page.waitForURL('**/account')
 
   const autoDisconnect = page.getByRole('switch', { name: /Отключаться после каждого анализа/ })
-  await autoDisconnect.check({ force: true })
+  // The page scrolls back to the top right after navigation, which can move the switch from under the click.
+  await expect(async () => {
+    await autoDisconnect.check({ force: true })
+  }).toPass({ timeout: 5_000 })
   await expect(autoDisconnect).toBeChecked()
 
   await page.getByRole('button', { name: 'Отключить Telegram' }).click()

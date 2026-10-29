@@ -70,11 +70,11 @@ onMounted(() => {
       </template>
 
       <template v-else-if="newcomer">
-        <UiPageHeader :title="t('home.onboardTitle')" :lede="t('home.onboardText')">
+        <UiPageBar :title="t('home.onboardTitle')" :lede="t('home.onboardText')">
           <template #actions>
             <UiButton variant="secondary" size="sm" to="/example">{{ t('home.onboardExample') }}</UiButton>
           </template>
-        </UiPageHeader>
+        </UiPageBar>
 
         <ol class="tile tile--lime onboard">
           <li v-for="(step, index) in steps" :key="index" class="onboard__step">
@@ -92,7 +92,7 @@ onMounted(() => {
       </template>
 
       <template v-else>
-        <UiPageHeader :title="t('home.title')" />
+        <UiPageBar :title="t('home.title')" />
 
         <CircleSummary :reports="workspace.reports" :avatars="avatars" />
 

@@ -6,8 +6,6 @@ const workspace = useWorkspaceStore()
 const { syncTimeZone } = useAuth()
 const { t } = useI18n()
 const toast = useToast()
-const route = useRoute()
-const isReport = computed(() => route.path.startsWith('/chat/'))
 
 onMounted(() => {
   if (!workspace.reports.length) void workspace.loadReports().catch(() => undefined)
@@ -42,9 +40,6 @@ watch(analysis.finished, (job) => {
     <div class="workspace-column">
       <AppHeader />
       <main class="workspace-main">
-        <UiPageContainer v-if="isReport" class="workspace-chips">
-          <ReportChips />
-        </UiPageContainer>
         <slot />
       </main>
     </div>
@@ -60,8 +55,7 @@ watch(analysis.finished, (job) => {
   min-height: 100dvh;
 }
 
-.workspace-sidebar,
-.workspace-chips {
+.workspace-sidebar {
   display: none;
 }
 
@@ -88,11 +82,6 @@ watch(analysis.finished, (job) => {
 }
 
 @media (max-width: 900px) {
-  .workspace-chips {
-    display: block;
-    margin-bottom: var(--page-top);
-  }
-
   /* Room for the floating dock. */
   .workspace-main {
     padding-bottom: calc(var(--page-bottom) + 56px + env(safe-area-inset-bottom, 0px));

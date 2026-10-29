@@ -6,14 +6,22 @@
 const { t } = useI18n()
 const route = useRoute()
 const scrolled = useScrolled()
+/** The example report puts its title and actions into the bar (`UiPageBar`); documents keep theirs. */
+const isReport = computed(() => route.path === '/example')
 </script>
 
 <template>
   <header class="site-header" :class="{ 'is-scrolled': scrolled }">
     <UiPageContainer class="site-header__in">
-      <BrandLink />
+      <BrandLink class="site-header__brand" :class="{ 'site-header__brand--report': isReport }" />
+      <div id="header-page" class="site-header__report" />
       <nav class="site-header__nav" :aria-label="t('nav.main')">
-        <NuxtLink to="/faq" class="site-header__link" :aria-current="route.path === '/faq' ? 'page' : undefined">
+        <NuxtLink
+          v-if="!isReport"
+          to="/faq"
+          class="site-header__link"
+          :aria-current="route.path === '/faq' ? 'page' : undefined"
+        >
           {{ t('site.faq') }}
         </NuxtLink>
         <UiButton v-if="route.path !== '/login'" variant="secondary" size="sm" to="/login">
@@ -44,6 +52,19 @@ const scrolled = useScrolled()
   justify-content: space-between;
   gap: var(--space-4);
   height: var(--topbar-height);
+}
+
+.site-header__report {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .site-header__brand--report {
+    display: none;
+  }
 }
 
 .site-header__nav {

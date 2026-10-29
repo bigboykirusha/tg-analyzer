@@ -17,6 +17,7 @@ watch(
 )
 
 const navigation = useNavigation()
+
 /** The bar sits flush with the page until the page scrolls under it, then shows a hairline. */
 const scrolled = useScrolled()
 const analysis = useAnalysis()
@@ -51,6 +52,8 @@ function signOut() {
   <header class="app-navigation" :class="{ 'is-scrolled': scrolled }">
     <UiPageContainer class="topbar">
       <BrandLink to="/dashboard" class="topbar__brand" />
+      <!-- Each screen puts its title and actions here (`UiPageBar`). -->
+      <div id="header-page" class="topbar__page" />
       <nav v-if="navigation.items.value.length > 1" class="main-nav" :aria-label="t('nav.main')">
         <NuxtLink
           v-for="item in navigation.items.value"
@@ -147,6 +150,21 @@ function signOut() {
 /* With the sidebar on screen the logo lives there. */
 @media (min-width: 901px) {
   .topbar__brand {
+    display: none;
+  }
+}
+
+/* The screen's title and actions fill the bar between the logo and the profile. */
+.topbar__page {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+}
+
+/* Phones: the screen's title takes the logo's place; «Главная» is in the dock. */
+@media (max-width: 640px) {
+  .topbar:has(.page-bar) .topbar__brand {
     display: none;
   }
 }

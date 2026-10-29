@@ -14,7 +14,6 @@ const props = withDefaults(
 )
 const emit = defineEmits<{ reanalyse: []; story: []; delete: [] }>()
 const { t, formatDay } = useI18n()
-const isMobile = useMediaQuery('(max-width: 640px)')
 const menuOpen = ref(false)
 
 const period = computed(() => {
@@ -32,9 +31,9 @@ function run(action: 'reanalyse' | 'delete') {
 </script>
 
 <template>
-  <UiPageHeader :title="summary.title" :lede="period" truncate class="report-header">
+  <UiPageBar :title="summary.title" :lede="period">
     <template #leading>
-      <ChatAvatar :chat-id="summary.chatId" :title="summary.title" :size="isMobile ? 'md' : 'lg'" />
+      <ChatAvatar :chat-id="summary.chatId" :title="summary.title" size="sm" />
     </template>
     <template #actions>
       <UiButton class="report-header__story" variant="soft" size="sm" :icon="Share2" @click="emit('story')">
@@ -45,7 +44,7 @@ function run(action: 'reanalyse' | 'delete') {
           class="report-header__reanalyse"
           :icon="RotateCw"
           :label="t('report.reanalyse')"
-          variant="secondary"
+          variant="ghost"
           :loading="reanalysing"
           :disabled="!canReanalyse"
           @click="emit('reanalyse')"
@@ -72,7 +71,7 @@ function run(action: 'reanalyse' | 'delete') {
         </UiPopoverMenu>
       </template>
     </template>
-  </UiPageHeader>
+  </UiPageBar>
 </template>
 
 <style scoped>
@@ -88,23 +87,8 @@ function run(action: 'reanalyse' | 'delete') {
   }
 }
 
-/* A report header stays on one line: avatar and name left, actions right. */
-.report-header {
-  flex-wrap: nowrap;
-  align-items: center;
-}
-
-.report-header :deep(.page-header__main) {
-  flex-basis: 0;
-}
-
-/* Narrow phones: «Итоги» keeps its lime and icon, the name gets the room and steps down to h2. */
-@media (max-width: 420px) {
-  .report-header :deep(.page-header__title) {
-    font: var(--text-h2);
-    letter-spacing: -0.03em;
-  }
-
+/* Phones: «Итоги» keeps its lime and icon, the name gets the room; refreshing lives in «…». */
+@media (max-width: 640px) {
   .report-header__story.btn {
     width: var(--control-sm);
     padding: 0;
@@ -118,10 +102,7 @@ function run(action: 'reanalyse' | 'delete') {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
   }
-}
 
-@media (max-width: 640px) {
-  /* Phones: refreshing lives in the «…» menu. */
   .report-header__reanalyse {
     display: none;
   }

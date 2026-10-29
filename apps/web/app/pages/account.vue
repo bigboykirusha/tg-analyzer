@@ -26,12 +26,15 @@ const confirmDeleteOpen = ref(false)
 const deleting = ref(false)
 const privacyOpen = ref(false)
 
+// The switch moves at once; the saved value catches up, and a failed save puts it back.
+const pendingAutoDisconnect = ref<boolean | null>(null)
 const autoDisconnect = computed({
-  get: () => auth.user?.disconnectAfterAnalysis ?? false,
+  get: () => pendingAutoDisconnect.value ?? auth.user?.disconnectAfterAnalysis ?? false,
   set: (value: boolean) => void saveAutoDisconnect(value),
 })
 
 async function saveAutoDisconnect(value: boolean) {
+  pendingAutoDisconnect.value = value
   savingAutoDisconnect.value = true
   try {
     await updateSettings({ disconnectAfterAnalysis: value })
@@ -39,6 +42,7 @@ async function saveAutoDisconnect(value: boolean) {
   } catch (error) {
     toast.error(t('accountPage.saveError'), errorMessage(error))
   } finally {
+    pendingAutoDisconnect.value = null
     savingAutoDisconnect.value = false
   }
 }
@@ -86,9 +90,9 @@ onMounted(() => {
 <template>
   <UiPageContainer size="narrow">
     <div class="page account">
-      <UiPageHeader :title="displayName" :lede="handle || t('accountPage.title')" truncate>
-        <template #leading><ProfileAvatar :title="displayName" size="lg" /></template>
-      </UiPageHeader>
+      <UiPageBar :title="displayName" :lede="handle || t('accountPage.title')">
+        <template #leading><ProfileAvatar :title="displayName" size="sm" /></template>
+      </UiPageBar>
 
       <div class="account__sheets">
         <section class="tile sheet" aria-labelledby="telegram-title">

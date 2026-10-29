@@ -4,7 +4,7 @@ import { LayoutGrid, Plus, Search, Settings } from '../lib/icons'
 
 /**
  * The app's left column on wide screens: every analysed chat, personal chats
- * first, so switching between reports is one click. Narrower screens get `ReportChips`.
+ * first, so switching between reports is one click.
  */
 const workspace = useWorkspaceStore()
 const route = useRoute()
