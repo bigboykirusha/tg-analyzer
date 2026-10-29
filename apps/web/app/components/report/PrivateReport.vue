@@ -3,11 +3,11 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { Info } from '../../lib/icons'
 
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatNumber, formatDecimal, formatDuration, formatPercent } = useI18n()
+const { t, tc, formatNumber } = useI18n()
 
-/** Three tabs: how the two of you talk, when, and with which words. */
-type Tab = 'together' | 'time' | 'words'
-const tab = useReportTab<Tab>(['together', 'time', 'words'])
+/** Three parts of one long page: how the two of you talk, when, and with which words. */
+type Part = 'together' | 'time' | 'words'
+const part = ref<Part>('together')
 const tabs = computed(() => [
   { value: 'together' as const, label: t('report.tabs.together') },
   { value: 'time' as const, label: t('report.tabs.time') },
@@ -34,14 +34,9 @@ const shareHint = computed(() => {
 const usually = computed(() => {
   const span = props.data.derived.availabilityProfile.peakWindow
   if (!span) return null
-  const weekday = props.data.report.activity.weekday
-  const day = weekday.reduce((best, value, index) => (value.total > (weekday[best]?.total ?? 0) ? index : best), 0)
   // «20–23 h»: whole hours are what people say; minutes appear only when present.
   const [from = '', to = ''] = span.split('-').map((time) => time.replace(/:00$/, ''))
-  return {
-    window: t('report.kpi.hoursRange', { from, to }),
-    day: weekday[day]?.total ? (t('chart.weekdaysLong').split(',')[day] ?? '') : '',
-  }
+  return { window: t('report.kpi.hoursRange', { from, to }) }
 })
 
 /** One plain sentence on top: who writes more, who replies faster, when you talk. */
@@ -105,41 +100,6 @@ const lead = computed(() => {
         </div>
         <div v-else class="tile__figure">{{ t('common.na') }}</div>
       </template>
-      <UiMetricCard
-        class="span-3"
-        :label="t('report.kpi.replyMedian')"
-        :value="formatDuration(responses.medianMineSec)"
-        :sub="
-          responses.medianTheirsSec === null
-            ? null
-            : t('report.kpi.replyTheirs', { name: data.summary.title, time: formatDuration(responses.medianTheirsSec) })
-        "
-      />
-      <UiMetricCard
-        class="span-3"
-        :label="t('report.kpi.starts')"
-        :value="formatPercent(responses.iWriteFirstPct)"
-        :sub="t('report.kpi.startsHint')"
-      />
-      <UiMetricCard
-        class="span-3"
-        :label="t('report.kpi.wordsPerMessage')"
-        :value="formatDecimal(data.report.vocabulary.wordsPerMessage.mine)"
-        :sub="
-          data.report.vocabulary.wordsPerMessage.theirs
-            ? t('report.kpi.wordsTheirs', {
-                name: data.summary.title,
-                value: formatDecimal(data.report.vocabulary.wordsPerMessage.theirs),
-              })
-            : null
-        "
-      />
-      <UiMetricCard
-        class="span-3"
-        :label="t('report.kpi.usually')"
-        :value="usually?.window ?? t('common.na')"
-        :sub="usually?.day ? t('report.kpi.usuallyHint', { day: usually.day }) : null"
-      />
     </ReportHero>
 
     <div v-if="totals.messages < 20" class="banner" role="status">
@@ -149,16 +109,18 @@ const lead = computed(() => {
 
     <ReportInsights :data="data" />
 
-    <ReportNav v-model="tab" :options="tabs" :label="t('report.tabs.label')" />
-    <div v-if="tab === 'together'" class="stack stack--lg">
+    <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
+    <ReportPart id="together" :title="t('report.tabs.together')">
       <OverviewTab :data="data" />
       <TalkTab :data="data" />
-    </div>
-    <div v-else-if="tab === 'time'" class="stack stack--lg">
+    </ReportPart>
+    <ReportPart id="time" :title="t('report.tabs.time')">
       <TimelineTab :data="data" />
       <RhythmTab :data="data" />
-    </div>
-    <WordsTab v-else :data="data" />
+    </ReportPart>
+    <ReportPart id="words" :title="t('report.tabs.words')">
+      <WordsTab :data="data" />
+    </ReportPart>
   </div>
 </template>
 

@@ -24,9 +24,15 @@ test('sign in, analyse a private chat and read the report', async ({ page }) => 
   await page.waitForURL('**/chat/1006')
   await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible()
 
-  for (const tab of ['Время', 'О чём', 'Вы двое']) {
+  // One long page: the nav jumps to each part and marks it.
+  for (const [tab, part] of [
+    ['Время', 'time'],
+    ['О чём', 'words'],
+    ['Вы двое', 'together'],
+  ]) {
     await page.getByRole('tab', { name: tab }).click()
-    await expect(page.locator('.report-section').first()).toBeVisible()
+    await expect(page.locator(`#part-${part}`)).toBeInViewport()
+    await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
   }
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
 
@@ -43,9 +49,13 @@ test('group chats get the group report', async ({ page }) => {
   await expect(page.getByText('Отчёт готов')).toBeVisible({ timeout: 60_000 })
 
   await page.goto('/chat/-1002004')
-  for (const tab of ['Общение', 'Время', 'Люди']) {
+  for (const [tab, part] of [
+    ['Общение', 'talk'],
+    ['Время', 'time'],
+    ['Люди', 'people'],
+  ]) {
     await page.getByRole('tab', { name: tab }).click()
-    await expect(page.locator('.report-section').first()).toBeVisible()
+    await expect(page.locator(`#part-${part}`)).toBeInViewport()
   }
 })
 

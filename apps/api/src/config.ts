@@ -33,8 +33,8 @@ const envSchema = z.object({
   AUTH_RATE_LIMIT_WINDOW: z.string().default('1 minute'),
   CHAT_REPARSE_COOLDOWN_MINUTES: z.coerce.number().int().min(0).default(60),
   DATA_RETENTION_DAYS: z.coerce.number().int().positive().default(365),
-  /** Free plan: analyses a user may start in 24 hours; unset means no limit. */
-  FREE_ANALYSES_PER_DAY: z.coerce.number().int().positive().optional(),
+  /** Free plan: analyses a user may start in 24 hours; 0 turns the limit off. */
+  FREE_ANALYSES_PER_DAY: z.coerce.number().int().min(0).default(3),
   /** Our own bot for «the report is ready» (from @BotFather); off when unset. */
   TELEGRAM_BOT_TOKEN: z
     .string()

@@ -45,11 +45,10 @@ watch(analysis.finished, (job) => {
     <div class="workspace-sidebar"><AppSidebar /></div>
     <div class="workspace-column">
       <AppHeader />
-      <main class="workspace-main" :class="{ 'has-dock': route.path === '/dashboard' }">
+      <main class="workspace-main">
         <slot />
       </main>
     </div>
-    <MobileDock />
   </div>
 </template>
 
@@ -84,13 +83,6 @@ watch(analysis.finished, (job) => {
     display: block;
     border-right: 1px solid var(--border);
     background: var(--sidebar);
-  }
-}
-
-@media (max-width: 900px) {
-  /* Room for the floating dock. */
-  .workspace-main.has-dock {
-    padding-bottom: calc(var(--page-bottom) + 56px + env(safe-area-inset-bottom, 0px));
   }
 }
 </style>

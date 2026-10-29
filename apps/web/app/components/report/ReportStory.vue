@@ -20,7 +20,8 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ close: [] }>()
 
-const { t, tc, formatNumber, formatPercent, formatDuration, formatDay, formatDecimal, formatPeriod } = useI18n()
+const { t, tc, formatNumber, formatPercent, formatDuration, formatDay, formatDecimal, formatMonth, formatPeriod } =
+  useI18n()
 const site = useSiteHost()
 const toast = useToast()
 const image = useCardImage()
@@ -311,13 +312,13 @@ const slides = computed<StorySlideModel[]>(() => {
             : undefined,
       },
     ]
-    const longest = [...sessions.highlights].sort((a, b) => b.durationSec - a.durationSec)[0]
-    if (longest)
+    // The busiest month, not the «longest conversation»: a session's length read strangely.
+    if (facts.mostActiveMonth)
       blocks.push({
         kind: 'stat',
-        label: t('story.longestTalk'),
-        value: formatDuration(longest.durationSec),
-        note: formatDay(longest.startedAt.slice(0, 10), DAY_MONTH),
+        label: t('story.busiestMonth'),
+        value: formatMonth(facts.mostActiveMonth, { month: 'long' }),
+        note: facts.mostActiveMonth.slice(0, 4),
       })
     if (busiest)
       blocks.push({

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { fillDailyGaps, type ReportDto, type SessionHighlightDto } from '@tg-analyzer/shared'
+import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 import type { Fact } from '../ReportFacts.vue'
 
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatNumber, formatDecimal, formatDuration, formatMonth, formatDate, formatPercent } = useI18n()
+const { t, tc, formatNumber, formatDecimal, formatMonth, formatPercent } = useI18n()
 
 const report = computed(() => props.data.report)
 const facts = computed(() => report.value.facts)
@@ -55,15 +55,6 @@ const milestones = computed(() => report.value.milestones ?? [])
 const milestoneAuthors = computed(() =>
   milestones.value.map((milestone) => (milestone.mine ? t('report.you') : props.data.summary.title)),
 )
-
-function highlightLabel(index: number) {
-  return t(index === 0 ? 'report.sessions.densest' : 'report.sessions.longestOne')
-}
-
-function range(session: SessionHighlightDto) {
-  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }
-  return `${formatDate(session.startedAt, options)} – ${formatDate(session.endedAt, options)}`
-}
 </script>
 
 <template>
@@ -77,24 +68,7 @@ function range(session: SessionHighlightDto) {
     </ReportSection>
 
     <ReportSection :title="t('report.sessions.title')" :text="t('report.sessions.text')" wide>
-      <!-- The longest conversation is a highlight below, with its dates. -->
       <ReportFacts :facts="sessionFacts" :columns="3" />
-      <div v-if="sessions.highlights.length" class="highlights">
-        <div v-for="(session, index) in sessions.highlights" :key="session.startedAt" class="highlight">
-          <span class="t-label">{{ highlightLabel(index) }}</span>
-          <strong>{{ tc('common.messagesCount', session.totalMessages) }}</strong>
-          <span class="t-small t-muted">{{ range(session) }}</span>
-          <span class="t-small t-muted">
-            {{ formatDuration(session.durationSec) }} ·
-            {{
-              t('report.sessions.split', {
-                mine: formatNumber(session.sentMessages),
-                theirs: formatNumber(session.receivedMessages),
-              })
-            }}
-          </span>
-        </div>
-      </div>
     </ReportSection>
 
     <ReportSection
@@ -103,34 +77,7 @@ function range(session: SessionHighlightDto) {
       :title="t('report.talk.milestonesTitle')"
       :text="t('report.talk.milestonesText')"
     >
-      <ReportMilestones :milestones="milestones" :authors="milestoneAuthors" />
+      <ReportMilestones :milestones="milestones" :authors="milestoneAuthors" :chat-id="data.summary.chatId" />
     </ReportSection>
   </div>
 </template>
-
-<style scoped>
-.highlights {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-5) var(--space-6);
-}
-
-/* Ruled like the facts above. */
-.highlight {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border);
-}
-
-.highlight strong {
-  font: var(--text-title);
-}
-
-@media (max-width: 640px) {
-  .highlights {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

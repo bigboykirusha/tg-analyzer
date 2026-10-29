@@ -5,7 +5,7 @@ import type { Comparison } from '../ReportCompare.vue'
 import type { Fact } from '../ReportFacts.vue'
 
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatDecimal, formatDuration, formatNumber, formatPercent, formatDate } = useI18n()
+const { t, tc, formatDecimal, formatDuration, formatNumber, formatPercent } = useI18n()
 
 const minutes = (seconds: number) => (seconds ? formatDuration(seconds) : formatNumber(0))
 
@@ -88,14 +88,6 @@ const voiceFacts = computed<Fact[]>(() => {
       : null,
   ].filter(notNull)
   if (counts.length) facts.push({ key: 'count', label: t('report.talk.inTotal'), value: counts.join(', ') })
-  const longest = stats.voice.longest
-  if (longest)
-    facts.push({
-      key: 'longest',
-      label: t('report.talk.longest'),
-      value: formatDuration(longest.seconds),
-      sub: `${longest.mine ? t('report.you') : name.value} · ${formatDate(longest.at, { day: 'numeric', month: 'long', year: 'numeric' })}`,
-    })
   return facts
 })
 

@@ -1,44 +1,16 @@
 <script setup lang="ts">
 import { summarizeCircle, type ReportSummaryDto } from '@tg-analyzer/shared'
-import { ChevronRight } from '../../lib/icons'
 
 /**
  * The top of the home page: everything the user's reports say together.
- * An ink tile with all messages and the shared pulse, a lime tile with the
- * person they write with most, then who replies fastest and who starts.
+ * An ink tile with all messages and the shared pulse, and a lime tile with
+ * the person they write with most.
  */
 const props = defineProps<{ reports: ReportSummaryDto[]; avatars: Map<string, boolean> }>()
-const { t, tc, formatNumber, formatDuration, formatPercent } = useI18n()
+const { t, tc, formatNumber } = useI18n()
 
 const circle = computed(() => summarizeCircle(props.reports))
 const hasPulse = computed(() => circle.value.pulse.some((week) => week.sent || week.received))
-
-const people = computed(() => {
-  const c = circle.value
-  const items = []
-  if (c.fastestReply)
-    items.push({
-      key: 'fastest',
-      label: t('circle.fastest'),
-      who: c.fastestReply,
-      note: t('circle.fastestNote', { time: formatDuration(c.fastestReply.value) }),
-    })
-  if (c.youStartMost)
-    items.push({
-      key: 'you-start',
-      label: t('circle.youStart'),
-      who: c.youStartMost,
-      note: t('circle.youStartNote', { pct: formatPercent(c.youStartMost.value) }),
-    })
-  if (c.theyStartMost && c.theyStartMost.chatId !== c.youStartMost?.chatId)
-    items.push({
-      key: 'they-start',
-      label: t('circle.theyStart'),
-      who: c.theyStartMost,
-      note: t('circle.theyStartNote', { pct: formatPercent(100 - c.theyStartMost.value) }),
-    })
-  return items
-})
 </script>
 
 <template>
@@ -78,25 +50,6 @@ const people = computed(() => {
       <div class="circle__name">{{ circle.mostMessages.title }}</div>
       <div class="tile__note">{{ tc('common.messagesCount', circle.mostMessages.value) }}</div>
     </NuxtLink>
-
-    <div v-if="people.length" class="span-12 circle__people">
-      <NuxtLink v-for="item in people" :key="item.key" :to="`/chat/${item.who.chatId}`" class="tile circle__person">
-        <div class="tile__label">{{ item.label }}</div>
-        <div class="circle__who">
-          <ChatAvatar
-            :chat-id="item.who.chatId"
-            :title="item.who.title"
-            :has-avatar="avatars.get(item.who.chatId)"
-            size="sm"
-          />
-          <span class="circle__who-name">{{ item.who.title }}</span>
-          <ChevronRight class="circle__chevron" aria-hidden="true" />
-        </div>
-        <div class="tile__note">{{ item.note }}</div>
-      </NuxtLink>
-    </div>
-
-    <p v-if="circle.people === 1" class="tile span-12 circle__hint">{{ t('circle.compareHint') }}</p>
   </div>
 </template>
 
@@ -110,24 +63,16 @@ const people = computed(() => {
   padding-top: var(--space-4);
 }
 
-.circle__most,
-.circle__person {
+.circle__most {
   transition: transform var(--duration-press) var(--ease-standard);
 }
 
-.circle__most:active,
-.circle__person:active {
+.circle__most:active {
   transform: scale(var(--press-scale));
 }
 
 .circle__avatar {
   margin-top: auto;
-}
-
-.circle__people {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
 }
 
 .circle__name {
@@ -136,33 +81,6 @@ const people = computed(() => {
   letter-spacing: -0.035em;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.circle__who {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-  margin-top: var(--space-1);
-}
-
-.circle__who-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  font: 600 20px/1.2 var(--font-sans);
-  letter-spacing: -0.02em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.circle__chevron {
-  color: var(--text-muted);
-}
-
-.circle__hint {
-  color: var(--text-muted);
-  font: var(--text-small);
 }
 
 @media (max-width: 900px) {
@@ -176,17 +94,8 @@ const people = computed(() => {
   }
 }
 
-/* Phones: the people stack as short rows; a sideways carousel cut the second card in half. */
+/* Phones: the lime tile becomes a row, avatar beside the name. */
 @media (max-width: 640px) {
-  .circle__people {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-2);
-  }
-
-  .circle__person {
-    padding-block: var(--space-4);
-  }
-
   .circle__most {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -205,12 +114,6 @@ const people = computed(() => {
 
   .circle__name {
     font-size: 24px;
-  }
-}
-
-@media (hover: hover) {
-  .circle__person:hover .circle__chevron {
-    color: var(--text);
   }
 }
 </style>

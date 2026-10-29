@@ -2,42 +2,58 @@
 import type { SegmentedOption } from '../ui/SegmentedControl.vue'
 
 /**
- * The report's section switcher, pinned under the header. Every screen size
- * swaps the content, so a phone shows one short part at a time instead of one
- * endless page. On narrow screens the bar scrolls sideways.
+ * The report is one long page; this bar, pinned under the header, jumps to its
+ * parts and follows the scroll (scroll-spy). Each part is a `ReportPart` with
+ * the id `part-<value>`. Full width on phones.
  */
-defineProps<{ options: SegmentedOption<T>[]; label: string }>()
+const props = defineProps<{ options: SegmentedOption<T>[]; label: string }>()
 const model = defineModel<T>({ required: true })
 
 const root = ref<HTMLElement | null>(null)
+/** While a jump scrolls the page, the spy keeps quiet so the thumb does not flicker. */
+let jumpingUntil = 0
 
-/** Keeps the new tab starting right under the pinned bar. */
-function selectTab(value: T) {
+function offset() {
+  const topbar = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-height')) || 64
+  return topbar + (root.value?.offsetHeight ?? 0)
+}
+
+function select(value: T) {
   model.value = value
-  const bar = root.value
-  if (!bar) return
-  const top = bar.getBoundingClientRect().top + window.scrollY - topbarHeight()
-  if (window.scrollY > top) window.scrollTo({ top })
-  nextTick(() => {
-    const active = bar.querySelector<HTMLElement>('[aria-selected="true"], [aria-checked="true"]')
-    active?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
+  const part = document.getElementById(`part-${value}`)
+  if (!part) return
+  jumpingUntil = Date.now() + 900
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({
+    top: part.getBoundingClientRect().top + window.scrollY - offset() + 1,
+    behavior: reduce ? 'auto' : 'smooth',
   })
 }
 
-function topbarHeight() {
-  return Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-height')) || 64
+function spy() {
+  if (Date.now() < jumpingUntil) return
+  const line = offset() + 8
+  let current = props.options[0]?.value
+  for (const option of props.options) {
+    const part = document.getElementById(`part-${option.value}`)
+    if (part && part.getBoundingClientRect().top <= line) current = option.value
+  }
+  // At the very bottom the last part may be too short to reach the line.
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2)
+    current = props.options.at(-1)?.value
+  if (current && current !== model.value) model.value = current
 }
+
+onMounted(() => {
+  window.addEventListener('scroll', spy, { passive: true })
+  spy()
+})
+onBeforeUnmount(() => window.removeEventListener('scroll', spy))
 </script>
 
 <template>
   <div ref="root" class="report-nav no-print">
-    <UiSegmentedControl
-      inline
-      :model-value="model"
-      :options="options"
-      :aria-label="label"
-      @update:model-value="selectTab"
-    />
+    <UiSegmentedControl :model-value="model" :options="options" :aria-label="label" @update:model-value="select" />
   </div>
 </template>
 
@@ -48,16 +64,13 @@ function topbarHeight() {
   z-index: calc(var(--z-header) - 1);
   margin-inline: calc(var(--page-gutter) * -1);
   padding: var(--space-2) var(--page-gutter);
-  overflow-x: auto;
   background: var(--bg);
-  scrollbar-width: none;
 }
 
-.report-nav::-webkit-scrollbar {
-  display: none;
-}
-
-.report-nav :deep(.segmented) {
-  width: max-content;
+/* Wide screens: a compact bar; phones: the full width, one equal slot per part. */
+@media (min-width: 641px) {
+  .report-nav :deep(.segmented) {
+    max-width: 420px;
+  }
 }
 </style>

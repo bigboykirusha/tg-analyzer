@@ -6,6 +6,7 @@ import {
   type GroupReportDto,
   type MessageCompositionDto,
   type MilestoneDto,
+  type MilestoneKind,
   type RecordingStatsDto,
   type RitualsDto,
   type SideCountDto,
@@ -96,6 +97,11 @@ interface TimelineEntry extends GroupTimelineEntry {
   asks: boolean
   /** The other side reacted to the message. */
   reacted: boolean
+  /** What the message was, for milestones; never its text. */
+  kind: MilestoneKind
+  words: number
+  emoji: string | null
+  durationSec: number | null
 }
 
 interface StickerState {
@@ -215,6 +221,10 @@ export class ChatReportBuilder {
       replyToId: message.replyToId,
       asks: analysis.asks,
       reacted: reactedByOtherSide(message),
+      kind: message.round ? 'round' : message.kind,
+      words: analysis.wordCount,
+      emoji: message.sticker?.emoji ?? null,
+      durationSec: message.durationSec ?? null,
     })
     this.messageSenders.set(message.id, participant.id)
     this.addExtras(message, participant, analysis.greeting)
@@ -619,10 +629,20 @@ export class ChatReportBuilder {
   }
 }
 
-export function computeMilestones(timeline: readonly (GroupTimelineEntry & { outgoing: boolean })[]): MilestoneDto[] {
+export function computeMilestones(timeline: readonly TimelineEntry[]): MilestoneDto[] {
   return MILESTONES.filter((index) => index <= timeline.length).map((index) => {
     const entry = timeline[index - 1]!
-    return { index, at: new Date(entry.ts).toISOString(), mine: entry.outgoing, senderId: entry.senderId }
+    return {
+      index,
+      at: new Date(entry.ts).toISOString(),
+      mine: entry.outgoing,
+      senderId: entry.senderId,
+      messageId: entry.id,
+      kind: entry.kind,
+      words: entry.words,
+      emoji: entry.emoji,
+      durationSec: entry.durationSec,
+    }
   })
 }
 

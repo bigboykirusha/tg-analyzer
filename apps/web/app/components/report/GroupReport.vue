@@ -6,9 +6,9 @@ const props = defineProps<{ data: ReportDto }>()
 const { t, formatNumber, formatPercent } = useI18n()
 const nameOf = useParticipantName()
 
-/** Three tabs: the people and who talks to whom, how the chat talks, and when. */
-type Tab = 'people' | 'talk' | 'time'
-const tab = useReportTab<Tab>(['people', 'talk', 'time'])
+/** Three parts of one long page: the people and who talks to whom, how the chat talks, and when. */
+type Part = 'people' | 'talk' | 'time'
+const part = ref<Part>('people')
 const tabs = computed(() => [
   { value: 'people' as const, label: t('group.tabs.people') },
   { value: 'talk' as const, label: t('group.tabs.talk') },
@@ -73,17 +73,19 @@ const momentum = computed(() =>
       />
     </ReportHero>
 
-    <ReportNav v-model="tab" :options="tabs" :label="t('report.tabs.label')" />
-    <div v-if="tab === 'people'" class="stack stack--lg">
+    <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
+    <ReportPart id="people" :title="t('group.tabs.people')">
       <GroupOverviewTab :data="data" :group="group" />
       <GroupMembersTab :group="group" />
       <GroupNetworkTab :group="group" />
-    </div>
-    <div v-else-if="tab === 'talk'" class="stack stack--lg">
+    </ReportPart>
+    <ReportPart id="talk" :title="t('group.tabs.talk')">
       <GroupTalkTab :data="data" :group="group" />
       <GroupContentTab :data="data" :group="group" />
-    </div>
-    <GroupDynamicsTab v-else :data="data" />
+    </ReportPart>
+    <ReportPart id="time" :title="t('report.tabs.time')">
+      <GroupDynamicsTab :data="data" />
+    </ReportPart>
   </div>
 </template>
 

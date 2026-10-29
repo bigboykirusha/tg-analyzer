@@ -412,11 +412,23 @@ export interface StickerStatsDto {
 }
 
 /** The n-th message of the chat. */
+/** What a milestone message was. Never its text: only its kind and size. */
+export type MilestoneKind = keyof MessageCompositionDto | 'round'
+
 export interface MilestoneDto {
   index: number
   at: string
   mine: boolean
   senderId: string | null
+  /** The Telegram message id, to open it in Telegram. Absent in older reports. */
+  messageId?: string
+  kind?: MilestoneKind
+  /** Words in a text message. */
+  words?: number
+  /** A sticker's emoji. */
+  emoji?: string | null
+  /** A voice message or video note, in seconds. */
+  durationSec?: number | null
 }
 
 /**

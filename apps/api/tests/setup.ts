@@ -12,5 +12,7 @@ process.env.SESSION_ENCRYPTION_KEY = 'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5
 process.env.JWT_SECRET = 'integration-access-secret-0123456789abcdef'
 process.env.JWT_REFRESH_SECRET = 'integration-refresh-secret-0123456789abcdef'
 process.env.AUTH_RATE_LIMIT_MAX = '5'
+// Tests analyse many chats per user; the limit test turns it on itself.
+process.env.FREE_ANALYSES_PER_DAY = '0'
 process.env.TELEGRAM_BOT_TOKEN = '123456:integration-only-bot-token-abcdefghijkl'
 process.env.TELEGRAM_BOT_USERNAME = 'tganalyzer_test_bot'

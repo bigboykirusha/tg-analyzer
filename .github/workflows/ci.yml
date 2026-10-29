@@ -78,6 +78,7 @@ jobs:
       CORS_ORIGIN: http://127.0.0.1:3000,http://localhost:3000
       CHAT_REPARSE_COOLDOWN_MINUTES: '0'
       AUTH_RATE_LIMIT_MAX: '100'
+      FREE_ANALYSES_PER_DAY: '0'
       NUXT_API_PROXY_TARGET: http://127.0.0.1:3001
     steps:
       - uses: actions/checkout@v4

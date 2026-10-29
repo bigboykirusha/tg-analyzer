@@ -103,7 +103,7 @@ const milestoneAuthors = computed(() =>
         :title="t('report.talk.milestonesTitle')"
         :text="t('report.talk.milestonesText')"
       >
-        <ReportMilestones :milestones="report.milestones" :authors="milestoneAuthors" />
+        <ReportMilestones :milestones="report.milestones" :authors="milestoneAuthors" :chat-id="data.summary.chatId" />
       </ReportSection>
     </template>
   </div>

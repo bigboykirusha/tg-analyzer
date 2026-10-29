@@ -90,7 +90,11 @@ onMounted(() => {
       </template>
 
       <template v-else>
-        <UiPageBar :title="t('home.title')" />
+        <UiPageBar :title="t('home.title')">
+          <template #actions>
+            <UiButton class="home__new" to="/new" size="sm" :icon="Plus">{{ t('nav.newAnalysis') }}</UiButton>
+          </template>
+        </UiPageBar>
         <AnalysisBanner />
 
         <CircleSummary :reports="workspace.reports" :avatars="avatars" />
@@ -106,11 +110,6 @@ onMounted(() => {
             </UiButton>
           </template>
           <div class="report-cards">
-            <NuxtLink to="/new" class="new-card">
-              <span class="new-card__icon" aria-hidden="true"><Plus /></span>
-              <span class="new-card__title">{{ t('home.newCard') }}</span>
-              <span class="new-card__text">{{ t('home.newCardText') }}</span>
-            </NuxtLink>
             <ReportCard
               v-for="chat in shownReports"
               :key="chat.id"
@@ -135,6 +134,13 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Wide screens start a new analysis from the sidebar. */
+@media (min-width: 901px) {
+  .home__new {
+    display: none;
+  }
+}
+
 .home__skeleton {
   min-height: 220px;
 }
@@ -195,53 +201,6 @@ onMounted(() => {
   gap: var(--space-3);
 }
 
-/* The first card starts a new analysis: dashed, so it never reads as a report. */
-.new-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: var(--space-1);
-  min-height: 200px;
-  padding: var(--space-5);
-  border: 1.5px dashed var(--border-strong);
-  border-radius: var(--radius-card);
-  color: var(--text);
-  transition:
-    background-color var(--transition-fast),
-    transform var(--duration-press) var(--ease-standard);
-}
-
-.new-card:active {
-  transform: scale(var(--press-scale));
-}
-
-@media (hover: hover) {
-  .new-card:hover {
-    background: var(--surface);
-  }
-}
-
-.new-card__icon {
-  display: inline-grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-bottom: auto;
-  border-radius: var(--radius-full);
-  background: var(--lime);
-  color: var(--on-lime);
-}
-
-.new-card__title {
-  font: 600 18px/24px var(--font-sans);
-  letter-spacing: -0.015em;
-}
-
-.new-card__text {
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-
 @media (max-width: 640px) {
   /* Phones: report cards scroll sideways instead of pushing the page down. */
   .report-cards {
@@ -261,11 +220,6 @@ onMounted(() => {
   .report-cards > * {
     flex: 0 0 min(260px, 75%);
     scroll-snap-align: start;
-  }
-
-  .new-card {
-    flex-basis: 150px;
-    min-height: 0;
   }
 }
 </style>
