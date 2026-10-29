@@ -21,7 +21,7 @@ test('sign in, analyse a private chat and read the report', async ({ page }) => 
   await page.waitForURL('**/chat/1006')
   await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible()
 
-  for (const tab of ['Активность', 'О чём', 'Динамика', 'Баланс']) {
+  for (const tab of ['Время', 'О чём', 'Вы двое']) {
     await page.getByRole('tab', { name: tab }).click()
     await expect(page.locator('.report-section').first()).toBeVisible()
   }
@@ -40,7 +40,7 @@ test('group chats get the group report', async ({ page }) => {
   await expect(page.getByText('Отчёт готов')).toBeVisible({ timeout: 60_000 })
 
   await page.goto('/chat/-1002004')
-  for (const tab of ['Участники', 'Динамика', 'Взаимодействия', 'Контент']) {
+  for (const tab of ['Общение', 'Время', 'Люди']) {
     await page.getByRole('tab', { name: tab }).click()
     await expect(page.locator('.report-section').first()).toBeVisible()
   }

@@ -5,14 +5,13 @@ import { Info } from '../../lib/icons'
 const props = defineProps<{ data: ReportDto }>()
 const { t, tc, formatNumber, formatDecimal, formatDuration, formatPercent } = useI18n()
 
-type Tab = 'overview' | 'talk' | 'rhythm' | 'words' | 'timeline'
-const tab = ref<Tab>('overview')
+/** Three tabs: how the two of you talk, when, and with which words. */
+type Tab = 'together' | 'time' | 'words'
+const tab = useReportTab<Tab>(['together', 'time', 'words'])
 const tabs = computed(() => [
-  { value: 'overview' as const, label: t('report.tabs.overview') },
-  { value: 'talk' as const, label: t('report.tabs.talk') },
-  { value: 'rhythm' as const, label: t('report.tabs.rhythm') },
+  { value: 'together' as const, label: t('report.tabs.together') },
+  { value: 'time' as const, label: t('report.tabs.time') },
   { value: 'words' as const, label: t('report.tabs.words') },
-  { value: 'timeline' as const, label: t('report.tabs.timeline') },
 ])
 
 const totals = computed(() => props.data.report.totals)
@@ -151,11 +150,15 @@ const lead = computed(() => {
     <ReportInsights :data="data" />
 
     <ReportNav v-model="tab" :options="tabs" :label="t('report.tabs.label')" />
-    <OverviewTab v-if="tab === 'overview'" :data="data" />
-    <TalkTab v-else-if="tab === 'talk'" :data="data" />
-    <RhythmTab v-else-if="tab === 'rhythm'" :data="data" />
-    <WordsTab v-else-if="tab === 'words'" :data="data" />
-    <TimelineTab v-else :data="data" />
+    <div v-if="tab === 'together'" class="stack stack--lg">
+      <OverviewTab :data="data" />
+      <TalkTab :data="data" />
+    </div>
+    <div v-else-if="tab === 'time'" class="stack stack--lg">
+      <TimelineTab :data="data" />
+      <RhythmTab :data="data" />
+    </div>
+    <WordsTab v-else :data="data" />
   </div>
 </template>
 

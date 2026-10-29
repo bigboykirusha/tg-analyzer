@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import type { ReportDto } from '@tg-analyzer/shared'
+import { compareWithPrevious, type ReportDto } from '@tg-analyzer/shared'
 
 /** «Что изменилось»: the headline numbers against the previous analysis of this chat. */
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatDay, formatDuration, formatPercent } = useI18n()
+const { t, tc, formatDay, formatDuration, formatNumber, formatPercent } = useI18n()
 
 /** Share changes below this many points are noise. */
-const MIN_SHARE_POINTS = 3
+const MIN_SHARE_POINTS = 5
+/** The pace must change at least this much to be worth a line. */
+const MIN_PACE_RATIO = 1.25
 /** Reply times must change at least this much to be worth a line. */
 const MIN_SPEED_RATIO = 1.25
 
@@ -16,13 +18,24 @@ const changes = computed(() => {
   const now = props.data.report
   const lines: string[] = []
 
-  const added = Math.max(0, now.totals.messages - before.messages)
-  lines.push(added ? tc('report.changes.newMessages', added) : t('report.changes.noNewMessages'))
+  const name = props.data.summary.title
+  // Measured on the new days alone: a week barely moves the all-time numbers.
+  const delta = compareWithPrevious(now, before)
+  lines.push(delta.added ? tc('report.changes.newMessages', delta.added) : t('report.changes.noNewMessages'))
 
-  const shareBefore = before.messages ? (before.sent / before.messages) * 100 : null
-  const shareNow = now.totals.messages ? (now.totals.sent / now.totals.messages) * 100 : null
-  if (shareBefore !== null && shareNow !== null && Math.abs(shareNow - shareBefore) >= MIN_SHARE_POINTS) {
-    lines.push(t('report.changes.share', { before: formatPercent(shareBefore), now: formatPercent(shareNow) }))
+  const pace = delta.pace
+  if (pace && Math.max(pace.since, pace.before) / Math.max(Math.min(pace.since, pace.before), 0.1) >= MIN_PACE_RATIO) {
+    lines.push(
+      t(pace.since > pace.before ? 'report.changes.paceUp' : 'report.changes.paceDown', {
+        before: formatNumber(Math.round(pace.before)),
+        now: formatNumber(Math.round(pace.since)),
+      }),
+    )
+  }
+
+  const share = delta.share
+  if (share && Math.abs(share.since - share.before) >= MIN_SHARE_POINTS) {
+    lines.push(t('report.changes.share', { before: formatPercent(share.before), now: formatPercent(share.since) }))
   }
 
   const speed = (key: 'mine' | 'theirs', previous: number | null, current: number | null) => {
@@ -34,6 +47,7 @@ const changes = computed(() => {
       t(`report.changes.${key}${faster ? 'Faster' : 'Slower'}`, {
         before: formatDuration(previous),
         now: formatDuration(current),
+        name,
       }),
     )
   }

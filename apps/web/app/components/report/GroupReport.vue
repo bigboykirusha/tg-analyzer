@@ -6,14 +6,14 @@ const props = defineProps<{ data: ReportDto }>()
 const { t, formatNumber, formatPercent } = useI18n()
 const nameOf = useParticipantName()
 
-type Tab = 'overview' | 'members' | 'talk' | 'dynamics' | 'network' | 'content'
-const tab = ref<Tab>('overview')
-const tabs = computed(() =>
-  (['overview', 'members', 'talk', 'dynamics', 'network', 'content'] as const).map((value) => ({
-    value,
-    label: t(`group.${value}`),
-  })),
-)
+/** Three tabs: the people and who talks to whom, how the chat talks, and when. */
+type Tab = 'people' | 'talk' | 'time'
+const tab = useReportTab<Tab>(['people', 'talk', 'time'])
+const tabs = computed(() => [
+  { value: 'people' as const, label: t('group.tabs.people') },
+  { value: 'talk' as const, label: t('group.tabs.talk') },
+  { value: 'time' as const, label: t('report.tabs.time') },
+])
 
 const group = computed(() => props.data.report.group)
 const health = computed(() => group.value?.health ?? null)
@@ -38,6 +38,7 @@ const momentum = computed(() =>
   />
 
   <div v-else class="stack stack--lg">
+    <ReportChanges :data="data" />
     <ReportHero
       :data="data"
       :label="t('report.kpi.messages')"
@@ -72,14 +73,17 @@ const momentum = computed(() =>
       />
     </ReportHero>
 
-    <!-- Phones read the whole report as one long page; wider screens switch tabs. -->
     <ReportNav v-model="tab" :options="tabs" :label="t('report.tabs.label')" />
-    <GroupOverviewTab v-if="tab === 'overview'" :data="data" :group="group" />
-    <GroupMembersTab v-else-if="tab === 'members'" :group="group" />
-    <GroupTalkTab v-else-if="tab === 'talk'" :data="data" :group="group" />
-    <GroupDynamicsTab v-else-if="tab === 'dynamics'" :data="data" />
-    <GroupNetworkTab v-else-if="tab === 'network'" :group="group" />
-    <GroupContentTab v-else :data="data" :group="group" />
+    <div v-if="tab === 'people'" class="stack stack--lg">
+      <GroupOverviewTab :data="data" :group="group" />
+      <GroupMembersTab :group="group" />
+      <GroupNetworkTab :group="group" />
+    </div>
+    <div v-else-if="tab === 'talk'" class="stack stack--lg">
+      <GroupTalkTab :data="data" :group="group" />
+      <GroupContentTab :data="data" :group="group" />
+    </div>
+    <GroupDynamicsTab v-else :data="data" />
   </div>
 </template>
 

@@ -184,11 +184,6 @@ const questionRows = computed(() => {
   })
   return rows
 })
-
-const milestones = computed(() => report.value.milestones ?? [])
-const milestoneAuthors = computed(() =>
-  milestones.value.map((milestone) => (milestone.mine ? t('report.you') : name.value)),
-)
 </script>
 
 <template>
@@ -239,15 +234,6 @@ const milestoneAuthors = computed(() =>
           <StickerGrid :stickers="stickers.top" />
         </template>
         <p v-else class="t-small t-muted">{{ t('report.talk.noStickers') }}</p>
-      </ReportSection>
-
-      <ReportSection
-        v-if="milestones.length"
-        wide
-        :title="t('report.talk.milestonesTitle')"
-        :text="t('report.talk.milestonesText')"
-      >
-        <ReportMilestones :milestones="milestones" :authors="milestoneAuthors" />
       </ReportSection>
     </template>
   </div>

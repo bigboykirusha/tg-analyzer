@@ -50,6 +50,12 @@ const sessionFacts = computed<Fact[]>(() => [
   },
 ])
 
+// Milestones live with the timeline: they are moments in time, not habits.
+const milestones = computed(() => report.value.milestones ?? [])
+const milestoneAuthors = computed(() =>
+  milestones.value.map((milestone) => (milestone.mine ? t('report.you') : props.data.summary.title)),
+)
+
 function highlightLabel(index: number) {
   return t(index === 0 ? 'report.sessions.densest' : 'report.sessions.longestOne')
 }
@@ -89,6 +95,15 @@ function range(session: SessionHighlightDto) {
           </span>
         </div>
       </div>
+    </ReportSection>
+
+    <ReportSection
+      v-if="milestones.length"
+      wide
+      :title="t('report.talk.milestonesTitle')"
+      :text="t('report.talk.milestonesText')"
+    >
+      <ReportMilestones :milestones="milestones" :authors="milestoneAuthors" />
     </ReportSection>
   </div>
 </template>

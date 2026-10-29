@@ -7,7 +7,7 @@ import type { InsightDto, ReportDto } from '@tg-analyzer/shared'
  * sentence is about.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatDuration, formatNumber, formatPercent } = useI18n()
+const { t, tc, formatNumber, formatPercent } = useI18n()
 
 const name = computed(() => props.data.summary.title)
 
@@ -19,6 +19,8 @@ function num(insight: InsightDto, key: string) {
 function describe(insight: InsightDto): { figure: string; text: string } | null {
   const mine = insight.side === 'mine'
   const params = { name: name.value }
+  // The reply speed is a KPI tile, the streak and the trend are in «Время»: «Главное» keeps what is said nowhere else.
+  if (insight.id === 'reply_speed' || insight.id === 'streak' || insight.id === 'trend') return null
   switch (insight.id) {
     case 'initiative':
     case 'last_word':
@@ -28,14 +30,6 @@ function describe(insight: InsightDto): { figure: string; text: string } | null 
       }
     case 'night_talks':
       return { figure: formatPercent(num(insight, 'pct')), text: t('insight.night_talks') }
-    case 'reply_speed':
-      return {
-        figure: formatDuration(num(insight, 'fastSec')),
-        text: t(`insight.reply_speed.${mine ? 'mine' : 'theirs'}`, {
-          ...params,
-          slow: formatDuration(num(insight, 'slowSec')),
-        }),
-      }
     case 'double_texts':
     case 'questions':
     case 'laughs':
@@ -50,13 +44,6 @@ function describe(insight: InsightDto): { figure: string; text: string } | null 
       return {
         figure: tc('insight.days', num(insight, 'days')),
         text: t(`insight.long_silence.${mine ? 'mine' : 'theirs'}`, params),
-      }
-    case 'streak':
-      return { figure: tc('insight.days', num(insight, 'days')), text: t('insight.streak') }
-    case 'trend':
-      return {
-        figure: insight.values.trend === 'growing' ? '↗' : '↘',
-        text: t(insight.values.trend === 'growing' ? 'insight.trend.growing' : 'insight.trend.fading'),
       }
     default:
       return null
