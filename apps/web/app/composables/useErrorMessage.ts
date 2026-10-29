@@ -19,6 +19,7 @@ const MESSAGES: Partial<Record<ApiClientError['code'], MessageKey>> = {
   PARSE_ALREADY_QUEUED: 'errors.parseQueued',
   PARSE_QUEUE_FULL: 'errors.parseQueueFull',
   PARSE_COOLDOWN: 'errors.parseCooldown',
+  PARSE_DAILY_LIMIT: 'errors.parseDailyLimit',
   QUEUE_UNAVAILABLE: 'errors.queueUnavailable',
 }
 

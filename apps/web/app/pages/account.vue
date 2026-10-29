@@ -10,7 +10,7 @@ useSeoMeta({ title: () => t('accountPage.title') })
 
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
-const { deleteAccount, disconnectTelegram, logout, updateSettings } = useAuth()
+const { deleteAccount, disconnectTelegram, logout, refreshUser, updateSettings } = useAuth()
 const { preference, setPreference } = useTheme()
 const toast = useToast()
 const errorMessage = useErrorMessage()
@@ -44,6 +44,28 @@ async function saveAutoDisconnect(value: boolean) {
   } finally {
     pendingAutoDisconnect.value = null
     savingAutoDisconnect.value = false
+  }
+}
+
+// The bot: Start in Telegram turns it on, so the page re-reads the account when the user comes back.
+const botUrl = computed(() => auth.user?.botUrl ?? null)
+const botOn = computed(() => auth.user?.botNotify ?? false)
+const turningBotOff = ref(false)
+function onReturn() {
+  if (document.visibilityState === 'visible' && botUrl.value) void refreshUser().catch(() => undefined)
+}
+onMounted(() => document.addEventListener('visibilitychange', onReturn))
+onBeforeUnmount(() => document.removeEventListener('visibilitychange', onReturn))
+
+async function turnBotOff() {
+  turningBotOff.value = true
+  try {
+    await updateSettings({ botNotify: false })
+    toast.success(t('accountPage.botOff'))
+  } catch (error) {
+    toast.error(t('accountPage.saveError'), errorMessage(error))
+  } finally {
+    turningBotOff.value = false
   }
 }
 
@@ -131,6 +153,30 @@ onMounted(() => {
                 {{ t('accountPage.disconnect') }}
               </UiButton>
               <UiButton v-else variant="primary" size="sm" @click="logout">{{ t('accountPage.reconnect') }}</UiButton>
+            </div>
+          </div>
+        </section>
+
+        <section v-if="botUrl" class="tile sheet" aria-labelledby="bot-title">
+          <div class="sheet__aside">
+            <h2 id="bot-title" class="t-h3">{{ t('accountPage.botTitle') }}</h2>
+            <p class="sheet__lead">{{ t('accountPage.botLead') }}</p>
+          </div>
+          <div class="sheet__body">
+            <div class="status-line" role="status">
+              <span class="status-line__dot" :class="{ 'is-off': !botOn }" aria-hidden="true" />
+              <span class="status-line__text">
+                <strong>{{ botOn ? t('accountPage.botOnTitle') : t('accountPage.botOffTitle') }}</strong>
+                <span>{{ botOn ? t('accountPage.botOnHint') : t('accountPage.botOffHint') }}</span>
+              </span>
+            </div>
+            <div class="sheet__actions">
+              <UiButton v-if="botOn" variant="secondary" size="sm" :loading="turningBotOff" @click="turnBotOff">
+                {{ t('accountPage.botTurnOff') }}
+              </UiButton>
+              <UiButton v-else variant="primary" size="sm" :to="botUrl" external target="_blank" rel="noopener">
+                {{ t('accountPage.botConnect') }}
+              </UiButton>
             </div>
           </div>
         </section>

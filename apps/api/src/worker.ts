@@ -8,6 +8,7 @@ import { runAnalysis } from './modules/parse/analysis'
 import { ANALYSIS_QUEUE, closeAnalysisQueue, type AnalysisJobData } from './modules/parse/queue'
 import { reconcileActiveJobs } from './modules/parse/reconcile'
 import { beatWorkerHeartbeat, clearWorkerHeartbeat } from './modules/system/heartbeat'
+import { startBotPolling } from './modules/notify/bot'
 import { startMaintenance } from './modules/system/maintenance'
 import { telegram } from './telegram'
 
@@ -28,6 +29,7 @@ async function main() {
   })
   analysisWorker.on('error', (error) => logger.error({ err: error }, 'analysis worker error'))
   const maintenanceWorker = await startMaintenance()
+  const stopBot = startBotPolling()
 
   await reconcileActiveJobs()
   await beatWorkerHeartbeat()
@@ -45,7 +47,7 @@ async function main() {
     logger.info({ signal }, 'worker shutting down')
     clearInterval(heartbeat)
     clearInterval(reconcile)
-    await Promise.allSettled([analysisWorker.close(), maintenanceWorker.close()])
+    await Promise.allSettled([analysisWorker.close(), maintenanceWorker.close(), stopBot()])
     await workerConnection.quit().catch(() => undefined)
     await clearWorkerHeartbeat().catch(() => undefined)
     await Promise.allSettled([closeAnalysisQueue(), telegram.close()])

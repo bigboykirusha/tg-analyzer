@@ -14,6 +14,9 @@ test('sign in, analyse a private chat and read the report', async ({ page }) => 
   await row.getByRole('button', { name: 'Анализ' }).click()
   await expect(page.getByText('Отчёт готов')).toBeVisible({ timeout: 30_000 })
 
+  // The very first report opens by itself.
+  await page.waitForURL('**/chat/1006')
+  await page.goto('/dashboard')
   // With a first report the home page turns into the summary; the chat list lives on /new.
   await expect(page.getByRole('heading', { name: 'Ваш круг' })).toBeVisible()
   await page.goto('/new')

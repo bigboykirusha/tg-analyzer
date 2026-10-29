@@ -26,6 +26,8 @@ export const users = pgTable('users', {
   timezone: varchar('timezone', { length: 64 }).default('UTC').notNull(),
   /** Sign out of Telegram as soon as the last queued analysis is done. */
   disconnectAfterAnalysis: boolean('disconnect_after_analysis').default(false).notNull(),
+  /** Pressed Start in our bot: say «the report is ready» there. */
+  botNotify: boolean('bot_notify').default(false).notNull(),
   createdAt: createdAt(),
   lastLogin: timestamp('last_login', { withTimezone: true }),
 })

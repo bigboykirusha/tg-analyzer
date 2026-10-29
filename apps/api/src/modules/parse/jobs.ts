@@ -19,6 +19,19 @@ function isUniqueViolation(error: unknown) {
   )
 }
 
+/**
+ * Analyses started in the last 24 hours, for the free plan's daily limit, and
+ * when the oldest of them leaves that window.
+ */
+export async function recentJobs(userId: string, since: Date) {
+  const rows = await db
+    .select({ createdAt: schema.parseJobs.createdAt })
+    .from(schema.parseJobs)
+    .where(and(eq(schema.parseJobs.userId, userId), sql`${schema.parseJobs.createdAt} > ${since}`))
+    .orderBy(asc(schema.parseJobs.createdAt))
+  return { count: rows.length, oldest: rows[0]?.createdAt ?? null }
+}
+
 /** Queues an analysis. Returns null when this chat is already queued or running. */
 export async function createJob(input: { userId: string; chatId: string; chatTitle: string | null }) {
   try {

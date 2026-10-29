@@ -36,6 +36,7 @@ export type ApiErrorCode =
   | 'PARSE_ALREADY_QUEUED'
   | 'PARSE_QUEUE_FULL'
   | 'PARSE_COOLDOWN'
+  | 'PARSE_DAILY_LIMIT'
   | 'PARSE_NOT_ACTIVE'
   | 'PARSE_JOB_ACTIVE'
   | 'QUEUE_UNAVAILABLE'
@@ -60,6 +61,10 @@ export interface UserDto {
   timezone: string
   /** Sign out of Telegram after every analysis. */
   disconnectAfterAnalysis: boolean
+  /** Pressed Start in our bot: «the report is ready» arrives there. */
+  botNotify: boolean
+  /** The bot's Start link; null when the bot is not set up. */
+  botUrl: string | null
   telegramSessionActive: boolean
 }
 
@@ -124,6 +129,7 @@ export type VerifyCodeResponse = AuthSuccessResponse | PasswordRequiredResponse
 export interface UpdateProfileBody {
   timezone?: string
   disconnectAfterAnalysis?: boolean
+  botNotify?: false
 }
 
 export interface UserResponse {

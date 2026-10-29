@@ -235,11 +235,19 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
+  // The account page re-reads this when the user comes back from the bot.
+  app.get('/me', { preHandler: requireAuth }, async (request): Promise<UserResponse> => {
+    const user = await findUser(userIdOf(request))
+    if (!user) throw notFound()
+    return { user: await toUserDto(user) }
+  })
+
   app.patch('/profile', { preHandler: requireAuth }, async (request): Promise<UserResponse> => {
-    const { timezone, disconnectAfterAnalysis } = parse(updateProfileBodySchema, request.body)
+    const { timezone, disconnectAfterAnalysis, botNotify } = parse(updateProfileBodySchema, request.body)
     const user = await updateUserSettings(userIdOf(request), {
       ...(timezone === undefined ? {} : { timezone: validTimeZone(timezone) }),
       ...(disconnectAfterAnalysis === undefined ? {} : { disconnectAfterAnalysis }),
+      ...(botNotify === undefined ? {} : { botNotify }),
     })
     if (!user) throw notFound()
     return { user: await toUserDto(user) }

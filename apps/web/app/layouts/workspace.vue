@@ -22,11 +22,16 @@ watch(analysis.finished, (job) => {
   if (!job) return
   const chat = job.chatTitle || t('analysis.untitledChat')
   const chatId = job.chatId
+  // The very first report opens by itself: that is what the newcomer was waiting for.
+  const opened = job.status === 'completed' && chatId && !workspace.reports.length && route.path === '/dashboard'
+  if (opened) void navigateTo(`/chat/${chatId}`)
   if (job.status === 'completed')
     toast.success(
       t('analysis.done.title'),
       t('analysis.done.text', { chat }),
-      chatId ? { label: t('dashboard.openReport'), onClick: () => void navigateTo(`/chat/${chatId}`) } : undefined,
+      chatId && !opened
+        ? { label: t('dashboard.openReport'), onClick: () => void navigateTo(`/chat/${chatId}`) }
+        : undefined,
     )
   else if (job.status === 'failed')
     toast.error(t('analysis.failed.title'), t(`analysis.error.${job.error ?? 'internal'}`))

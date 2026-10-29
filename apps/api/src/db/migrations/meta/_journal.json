@@ -120,6 +120,13 @@
       "when": 1792857600000,
       "tag": "0016_drop_teams",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793030400000,
+      "tag": "0017_bot_notify",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from '../../db'
 import type { UserRow } from '../../db/schema'
 import type { TelegramUser } from '../../telegram'
+import { botUrl } from '../notify/bot'
 import { hasActiveTelegramSession } from './telegram-sessions'
 
 export async function upsertTelegramUser(user: TelegramUser, phone: string): Promise<UserRow> {
@@ -28,7 +29,7 @@ export function findUser(userId: string) {
 
 export async function updateUserSettings(
   userId: string,
-  settings: { timezone?: string; disconnectAfterAnalysis?: boolean },
+  settings: { timezone?: string; disconnectAfterAnalysis?: boolean; botNotify?: boolean },
 ) {
   const [row] = await db.update(schema.users).set(settings).where(eq(schema.users.id, userId)).returning()
   return row ?? null
@@ -42,6 +43,8 @@ export async function toUserDto(user: UserRow, telegramSessionActive?: boolean):
     firstName: user.firstName,
     timezone: user.timezone,
     disconnectAfterAnalysis: user.disconnectAfterAnalysis,
+    botNotify: user.botNotify,
+    botUrl: botUrl(),
     telegramSessionActive: telegramSessionActive ?? (await hasActiveTelegramSession(user.id)),
   }
 }

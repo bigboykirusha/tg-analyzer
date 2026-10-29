@@ -232,3 +232,18 @@ test('a re-analysis keeps the previous headline numbers for «what changed»', a
   assert.equal(second.previous.sent, first.report.totals.sent)
   assert.equal(second.previous.analyzedAt, first.summary.analyzedAt)
 })
+
+test('the free plan stops new analyses after the daily limit', async () => {
+  const { config } = await import('../src/config')
+  const previous = config.FREE_ANALYSES_PER_DAY
+  ;(config as { FREE_ANALYSES_PER_DAY?: number }).FREE_ANALYSES_PER_DAY = 1
+  try {
+    const session = await login()
+    await analyse(session, PRIVATE_CHAT)
+    const second = await post(session, '/api/v1/parse/start', { chatId: GROUP_CHAT })
+    assert.equal(second.statusCode, 429)
+    assert.equal(second.json<{ code: string }>().code, 'PARSE_DAILY_LIMIT')
+  } finally {
+    ;(config as { FREE_ANALYSES_PER_DAY?: number }).FREE_ANALYSES_PER_DAY = previous
+  }
+})

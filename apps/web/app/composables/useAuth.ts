@@ -62,6 +62,12 @@ export function useAuth() {
     auth.updateUser(user)
   }
 
+  /** Re-reads the account, e.g. after the user pressed Start in the bot. */
+  async function refreshUser() {
+    const { user } = await api('GET /api/v1/auth/me')
+    auth.updateUser(user)
+  }
+
   /** Signs the app out of Telegram; the account and its reports stay. */
   async function disconnectTelegram() {
     const { user } = await api('POST /api/v1/auth/telegram/disconnect')
@@ -87,6 +93,7 @@ export function useAuth() {
     deleteAccount,
     syncTimeZone,
     updateSettings,
+    refreshUser,
     disconnectTelegram,
   }
 }

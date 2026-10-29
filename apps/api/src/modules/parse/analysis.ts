@@ -23,6 +23,7 @@ import {
   logOutTelegramSession,
 } from '../account/telegram-sessions'
 import { findUser } from '../account/users'
+import { notifyReportReady } from '../notify/bot'
 import { saveReportAndCompleteJob } from '../reports/repository'
 import { failJob, hasActiveJobs, isJobActive, markJobRunning, setJobChatTitle } from './jobs'
 import type { AnalysisJobData } from './queue'
@@ -156,6 +157,11 @@ export async function runAnalysis(job: Job<AnalysisJobData>, token?: string) {
     logger.warn({ err: error, jobId }, 'analysis completed, but announcing it failed')
   }
   logger.info({ jobId, messages: progress.scannedMessages }, 'analysis completed')
+  await notifyReportReady(userId, {
+    chatId,
+    title: progress.chatTitle ?? chatId,
+    messages: progress.scannedMessages,
+  })
 
   try {
     await disconnectIfAsked(userId)

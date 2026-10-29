@@ -15,6 +15,7 @@ import {
   type SuccessResponse,
 } from '@tg-analyzer/shared'
 import type { FastifyPluginAsync } from 'fastify'
+import { config } from '../../config'
 import { parse } from '../../http/validation'
 import { ApiError, conflict, notFound } from '../../lib/errors'
 import { telegramReauthRequired, withUserTelegram } from '../account/telegram-access'
@@ -29,6 +30,7 @@ import {
   listJobs,
   toJobDto,
   listUserActiveJobs,
+  recentJobs,
 } from './jobs'
 import { enqueueAnalysis, removeQueuedAnalysis } from './queue'
 import {
@@ -41,6 +43,8 @@ import {
   readCachedDialogs,
   readProgress,
 } from './state'
+
+const DAY_MS = 86_400_000
 
 /** A user may queue this many chats at once, the running one included. */
 const MAX_QUEUED_ANALYSES = 10
@@ -128,6 +132,15 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
 
     const cooldown = await cooldownSeconds(userId, chatId)
     if (cooldown > 0) throw new ApiError(429, 'PARSE_COOLDOWN', 'This chat was analysed recently', cooldown)
+
+    const limit = config.FREE_ANALYSES_PER_DAY
+    if (limit) {
+      const recent = await recentJobs(userId, new Date(Date.now() - DAY_MS))
+      if (recent.count >= limit) {
+        const wait = recent.oldest ? Math.ceil((recent.oldest.getTime() + DAY_MS - Date.now()) / 1000) : 3600
+        throw new ApiError(429, 'PARSE_DAILY_LIMIT', 'The free daily limit of analyses is used up', Math.max(wait, 60))
+      }
+    }
 
     const dialog = (await readCachedDialogs(userId))?.dialogs.find((item) => item.id === chatId)
     if (dialog && !(ANALYZABLE_CHAT_TYPES as readonly string[]).includes(dialog.type)) {

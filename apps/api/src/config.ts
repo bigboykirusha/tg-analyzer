@@ -33,6 +33,19 @@ const envSchema = z.object({
   AUTH_RATE_LIMIT_WINDOW: z.string().default('1 minute'),
   CHAT_REPARSE_COOLDOWN_MINUTES: z.coerce.number().int().min(0).default(60),
   DATA_RETENTION_DAYS: z.coerce.number().int().positive().default(365),
+  /** Free plan: analyses a user may start in 24 hours; unset means no limit. */
+  FREE_ANALYSES_PER_DAY: z.coerce.number().int().positive().optional(),
+  /** Our own bot for «the report is ready» (from @BotFather); off when unset. */
+  TELEGRAM_BOT_TOKEN: z
+    .string()
+    .regex(/^\d+:[\w-]{30,}$/, 'Expected a bot token from @BotFather')
+    .optional(),
+  TELEGRAM_BOT_USERNAME: z
+    .string()
+    .regex(/^\w{5,32}$/)
+    .optional(),
+  /** The web app's public address, for links in bot messages; defaults to the first CORS origin. */
+  APP_URL: z.url().optional(),
 })
 
 export type AppConfig = ReturnType<typeof parseConfig>
