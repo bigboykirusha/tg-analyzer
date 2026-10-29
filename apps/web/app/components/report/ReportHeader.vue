@@ -38,7 +38,7 @@ function run(action: 'reanalyse' | 'delete') {
     </template>
     <template #actions>
       <UiButton class="report-header__story" variant="soft" size="sm" :icon="Share2" @click="emit('story')">
-        {{ t('story.open') }}
+        <span class="report-header__story-label">{{ t('story.open') }}</span>
       </UiButton>
       <template v-if="!demo">
         <UiIconButton
@@ -96,6 +96,28 @@ function run(action: 'reanalyse' | 'delete') {
 
 .report-header :deep(.page-header__main) {
   flex-basis: 0;
+}
+
+/* Narrow phones: «Итоги» keeps its lime and icon, the name gets the room and steps down to h2. */
+@media (max-width: 420px) {
+  .report-header :deep(.page-header__title) {
+    font: var(--text-h2);
+    letter-spacing: -0.03em;
+  }
+
+  .report-header__story.btn {
+    width: var(--control-sm);
+    padding: 0;
+  }
+
+  .report-header__story-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 640px) {

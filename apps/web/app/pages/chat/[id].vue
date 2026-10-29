@@ -100,7 +100,7 @@ onMounted(load)
       :description="t('report.notFoundText')"
     >
       <template #action>
-        <UiButton variant="primary" to="/dashboard">{{ t('common.goToChats') }}</UiButton>
+        <UiButton variant="primary" to="/new">{{ t('common.goToChats') }}</UiButton>
       </template>
     </UiEmptyState>
 

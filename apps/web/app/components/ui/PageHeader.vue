@@ -63,7 +63,7 @@ withDefaults(
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* Next to an avatar the lede is a meta line (period, handle), not a paragraph. */

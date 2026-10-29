@@ -47,6 +47,19 @@ function handleDocumentPointerDown(event: PointerEvent) {
   if (menu && !event.composedPath().includes(menu)) closeMenu()
 }
 
+/** Items that are on screen: menus may hide some rows per breakpoint. */
+function visibleItems(root: HTMLElement | null | undefined) {
+  return Array.from(root?.querySelectorAll<HTMLElement>(ITEMS) ?? []).filter((item) => item.offsetParent !== null)
+}
+
+/** Escape closes the menu wherever focus is, including the trigger that opened it. */
+function handleDocumentKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+  event.preventDefault()
+  closeMenu()
+  previouslyFocused?.focus()
+}
+
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     event.preventDefault()
@@ -55,7 +68,7 @@ function handleKeydown(event: KeyboardEvent) {
   }
   const root = (event.currentTarget as HTMLElement | null) ?? panelRef.value
   if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key) || !root) return
-  const items = Array.from(root.querySelectorAll<HTMLElement>(ITEMS))
+  const items = visibleItems(root)
   if (!items.length) return
   event.preventDefault()
   const current = items.indexOf(document.activeElement as HTMLElement)
@@ -76,10 +89,13 @@ watch(
       previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
       await nextTick()
       document.addEventListener('pointerdown', handleDocumentPointerDown, true)
-      panelRef.value?.querySelector<HTMLElement>(ITEMS)?.focus()
+      document.addEventListener('keydown', handleDocumentKeydown)
+      // The panel fades in, so the first item may only be focusable on the next frame.
+      requestAnimationFrame(() => visibleItems(panelRef.value)[0]?.focus())
       return
     }
     document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
+    document.removeEventListener('keydown', handleDocumentKeydown)
     const active = document.activeElement
     if (!active || active === document.body || panelRef.value?.contains(active)) {
       previouslyFocused?.focus()
@@ -88,7 +104,9 @@ watch(
 )
 
 onBeforeUnmount(() => {
-  if (import.meta.client) document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
+  if (!import.meta.client) return
+  document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
+  document.removeEventListener('keydown', handleDocumentKeydown)
 })
 </script>
 

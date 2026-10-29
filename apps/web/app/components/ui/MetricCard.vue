@@ -23,6 +23,7 @@ defineProps<{
 <style scoped>
 /* A small number tile of the report's bento grid. */
 .metric {
+  container-type: inline-size;
   display: grid;
   align-content: start;
   gap: var(--space-3);
@@ -41,7 +42,8 @@ defineProps<{
 .metric-value {
   overflow: hidden;
   color: var(--text);
-  font: 600 36px/1 var(--font-sans);
+  /* Scales with the tile, so «17–20 ч» fits four in a row next to the sidebar. */
+  font: 600 clamp(24px, 24cqi, 36px) / 1 var(--font-sans);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
   text-overflow: ellipsis;
@@ -52,10 +54,6 @@ defineProps<{
   .metric {
     padding: var(--space-4);
     border-radius: var(--radius-xl);
-  }
-
-  .metric-value {
-    font-size: 28px;
   }
 }
 

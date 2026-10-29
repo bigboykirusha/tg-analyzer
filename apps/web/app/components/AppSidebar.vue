@@ -109,7 +109,7 @@ const share = (report: ReportSummaryDto) =>
   padding: 0 10px;
   border-radius: var(--radius-md);
   background: var(--surface-2);
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .sidebar__search input {
@@ -123,7 +123,7 @@ const share = (report: ReportSummaryDto) =>
 }
 
 .sidebar__search input::placeholder {
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .sidebar__list {
@@ -135,7 +135,7 @@ const share = (report: ReportSummaryDto) =>
 
 .sidebar__heading {
   padding: 14px var(--space-2) var(--space-1);
-  color: var(--text-faint);
+  color: var(--text-muted);
   font: var(--text-caption);
 }
 
@@ -190,14 +190,14 @@ const share = (report: ReportSummaryDto) =>
 
 .sidebar__meta {
   margin-left: auto;
-  color: var(--text-faint);
+  color: var(--text-muted);
   font: var(--text-caption);
   font-variant-numeric: tabular-nums;
 }
 
 .sidebar__empty {
   padding: var(--space-2);
-  color: var(--text-faint);
+  color: var(--text-muted);
   font: var(--text-small);
 }
 

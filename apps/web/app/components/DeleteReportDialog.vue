@@ -101,9 +101,11 @@ const losses = computed(() => {
 
 .lose__row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
+  gap: 2px var(--space-3);
   min-height: 44px;
+  padding-block: var(--space-2);
   font: var(--text-ui);
 }
 
@@ -119,11 +121,13 @@ const losses = computed(() => {
 }
 
 .lose__label {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
+/* On narrow phones the note drops under the label instead of squeezing it. */
 .lose__value {
+  margin-left: auto;
   color: var(--text-muted);
   font: var(--text-small);
   white-space: nowrap;
