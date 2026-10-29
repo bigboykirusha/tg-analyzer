@@ -6,13 +6,23 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
-import type { ChatReport, ChatType, JobStatus, ReportSnapshotDto } from '@tg-analyzer/shared'
+import type {
+  AuditAction,
+  AuditEntryDto,
+  ChatReport,
+  ChatType,
+  JobStatus,
+  PlanId,
+  ReportSnapshotDto,
+  TeamRole,
+} from '@tg-analyzer/shared'
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 
@@ -125,8 +135,98 @@ export const refreshSessions = pgTable(
   ],
 )
 
+/** A team: people who read the reports their colleagues share with it. */
+export const teams = pgTable(
+  'teams',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 80 }).notNull(),
+    /** Deleting the owner's account deletes the team. */
+    ownerId: uuid('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    plan: varchar('plan', { length: 20 }).$type<PlanId>().default('free').notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [index('teams_owner_idx').on(table.ownerId)],
+)
+
+export const teamMembers = pgTable(
+  'team_members',
+  {
+    teamId: uuid('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: varchar('role', { length: 20 }).$type<TeamRole>().notNull(),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.teamId, table.userId] }), index('team_members_user_idx').on(table.userId)],
+)
+
+/** A reusable invitation link; only the SHA-256 of its token is stored. */
+export const teamInvites = pgTable(
+  'team_invites',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    teamId: uuid('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
+    tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+    role: varchar('role', { length: 20 }).$type<TeamRole>().notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    uses: integer('uses').default(0).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (table) => [index('team_invites_team_idx').on(table.teamId)],
+)
+
+/** A personal report a member opened to a team. Re-analysis keeps the row, so the team sees fresh numbers. */
+export const teamReports = pgTable(
+  'team_reports',
+  {
+    teamId: uuid('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
+    reportId: uuid('report_id')
+      .notNull()
+      .references(() => chatReports.id, { onDelete: 'cascade' }),
+    sharedBy: uuid('shared_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    sharedAt: timestamp('shared_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.teamId, table.reportId] }),
+    index('team_reports_report_idx').on(table.reportId),
+  ],
+)
+
+/** Who did what in a team. Names are joined on read, so a deleted account leaves no name behind. */
+export const teamAuditLog = pgTable(
+  'team_audit_log',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    teamId: uuid('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
+    actorId: uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+    subjectId: uuid('subject_id').references(() => users.id, { onDelete: 'set null' }),
+    action: varchar('action', { length: 40 }).$type<AuditAction>().notNull(),
+    details: jsonb('details').$type<AuditEntryDto['details']>().default({}).notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [index('team_audit_log_team_created_idx').on(table.teamId, table.createdAt)],
+)
+
 export type UserRow = typeof users.$inferSelect
 export type TelegramSessionRow = typeof telegramSessions.$inferSelect
 export type ParseJobRow = typeof parseJobs.$inferSelect
 export type ChatReportRow = typeof chatReports.$inferSelect
 export type RefreshSessionRow = typeof refreshSessions.$inferSelect
+export type TeamRow = typeof teams.$inferSelect
+export type TeamMemberRow = typeof teamMembers.$inferSelect

@@ -3,6 +3,8 @@
  * Everything here is serialisable JSON: dates are ISO strings, ids are strings.
  */
 
+import type { AssignableTeamRole, PlanId, PlanLimits, TeamAction, TeamRole } from '../teams/plans'
+
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
@@ -39,6 +41,14 @@ export type ApiErrorCode =
   | 'PARSE_NOT_ACTIVE'
   | 'PARSE_JOB_ACTIVE'
   | 'QUEUE_UNAVAILABLE'
+  // teams
+  | 'TEAM_NOT_FOUND'
+  | 'TEAM_FORBIDDEN'
+  | 'TEAM_OWNER_CANNOT_LEAVE'
+  | 'TEAMS_LIMIT_REACHED'
+  | 'PLAN_LIMIT_REACHED'
+  | 'INVITE_INVALID'
+  | 'REPORT_ALREADY_SHARED'
 
 export interface ApiErrorResponse {
   code: ApiErrorCode
@@ -601,4 +611,140 @@ export interface ReportDto {
   derived: DerivedReportMetrics
   /** The previous analysis of this chat, for «what changed»; null for the first one. */
   previous: ReportSnapshotDto | null
+}
+
+// ---------------------------------------------------------------------------
+// Teams
+// ---------------------------------------------------------------------------
+
+export interface TeamSummaryDto {
+  id: string
+  name: string
+  role: TeamRole
+  plan: PlanId
+  memberCount: number
+  reportCount: number
+}
+
+export interface TeamsResponse {
+  teams: TeamSummaryDto[]
+}
+
+export interface TeamDto extends TeamSummaryDto {
+  createdAt: string
+  limits: PlanLimits
+  /** What the current member may do; the API enforces the same rules. */
+  permissions: Record<TeamAction, boolean>
+  /** False while payments are off: paid plans are then assigned by hand. */
+  billingEnabled: boolean
+}
+
+export interface TeamMemberDto {
+  userId: string
+  name: string | null
+  username: string | null
+  role: TeamRole
+  joinedAt: string
+  isYou: boolean
+}
+
+export interface TeamMembersResponse {
+  members: TeamMemberDto[]
+}
+
+export interface TeamInviteDto {
+  id: string
+  role: AssignableTeamRole
+  createdAt: string
+  expiresAt: string
+  uses: number
+  createdBy: string | null
+}
+
+export interface TeamInvitesResponse {
+  invites: TeamInviteDto[]
+}
+
+export interface CreateInviteResponse {
+  invite: TeamInviteDto
+  /** Shown once: only a hash is stored. */
+  token: string
+}
+
+export interface InvitePreviewDto {
+  teamId: string
+  teamName: string
+  role: AssignableTeamRole
+  invitedBy: string | null
+  memberCount: number
+  alreadyMember: boolean
+}
+
+export interface AcceptInviteResponse {
+  teamId: string
+}
+
+export interface TeamReportSummaryDto extends ReportSummaryDto {
+  reportId: string
+  sharedAt: string
+  sharedBy: { userId: string; name: string | null }
+  /** The current member shared it, so they may take it back. */
+  mine: boolean
+}
+
+export interface TeamReportsResponse {
+  reports: TeamReportSummaryDto[]
+}
+
+export interface TeamReportDto extends ReportDto {
+  shared: Omit<TeamReportSummaryDto, keyof ReportSummaryDto>
+}
+
+/** Teams the current user could share one of their reports with. */
+export interface ReportSharingDto {
+  teams: { id: string; name: string; role: TeamRole; canShare: boolean; shared: boolean }[]
+}
+
+export type AuditAction =
+  | 'team.created'
+  | 'team.renamed'
+  | 'invite.created'
+  | 'invite.revoked'
+  | 'member.joined'
+  | 'member.role_changed'
+  | 'member.removed'
+  | 'member.left'
+  | 'report.shared'
+  | 'report.unshared'
+
+export interface AuditEntryDto {
+  id: string
+  action: AuditAction
+  actor: string | null
+  /** The member an action was about, when it was about someone. */
+  subject: string | null
+  details: { role?: TeamRole; previousRole?: TeamRole; title?: string; name?: string }
+  createdAt: string
+}
+
+export interface AuditLogResponse {
+  entries: AuditEntryDto[]
+  /** Pass as `before` for the next page; null on the last one. */
+  nextBefore: string | null
+}
+
+export interface CreateTeamBody {
+  name: string
+}
+export interface RenameTeamBody {
+  name: string
+}
+export interface CreateInviteBody {
+  role: AssignableTeamRole
+}
+export interface ChangeRoleBody {
+  role: AssignableTeamRole
+}
+export interface ShareReportBody {
+  chatId: string
 }

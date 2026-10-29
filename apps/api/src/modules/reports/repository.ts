@@ -62,33 +62,49 @@ function toSummary(row: SummaryRow, parts: SummaryReportParts): ReportSummaryDto
 }
 
 export async function listReportSummaries(userId: string): Promise<ReportSummaryDto[]> {
-  const report = schema.chatReports.report
   // Only the slices a summary needs leave the database, not the whole document.
   const rows = await db
-    .select({
-      tgChatId: schema.chatReports.tgChatId,
-      title: schema.chatReports.title,
-      chatType: schema.chatReports.chatType,
-      totalMessages: schema.chatReports.totalMessages,
-      firstMessageAt: schema.chatReports.firstMessageAt,
-      lastMessageAt: schema.chatReports.lastMessageAt,
-      analyzedAt: schema.chatReports.analyzedAt,
-      daily: sql<DatedActivityDto[] | null>`${report}->'activity'->'daily'`,
-      totals: sql<Partial<ChatReport['totals']> | null>`${report}->'totals'`,
-      responses: sql<Partial<ResponseStatsDto> | null>`${report}->'responses'`,
-    })
+    .select(summaryColumns())
     .from(schema.chatReports)
     .where(eq(schema.chatReports.userId, userId))
     .orderBy(desc(schema.chatReports.analyzedAt))
   return rows.map((row) => toSummary(row, row))
 }
 
+/** The columns a summary needs, for queries that join reports with other tables. */
+export const summaryColumns = () => {
+  const report = schema.chatReports.report
+  return {
+    tgChatId: schema.chatReports.tgChatId,
+    title: schema.chatReports.title,
+    chatType: schema.chatReports.chatType,
+    totalMessages: schema.chatReports.totalMessages,
+    firstMessageAt: schema.chatReports.firstMessageAt,
+    lastMessageAt: schema.chatReports.lastMessageAt,
+    analyzedAt: schema.chatReports.analyzedAt,
+    daily: sql<DatedActivityDto[] | null>`${report}->'activity'->'daily'`,
+    totals: sql<Partial<ChatReport['totals']> | null>`${report}->'totals'`,
+    responses: sql<Partial<ResponseStatsDto> | null>`${report}->'responses'`,
+  }
+}
+
+export function summaryOf(row: SummaryRow & SummaryReportParts) {
+  return toSummary(row, row)
+}
+
 export async function getReport(userId: string, chatId: string): Promise<ReportDto | null> {
   const row = await db.query.chatReports.findFirst({
     where: and(eq(schema.chatReports.userId, userId), eq(schema.chatReports.tgChatId, Number(chatId))),
   })
-  if (!row) return null
+  return row ? toReportDto(row) : null
+}
 
+export async function getReportById(reportId: string): Promise<ReportDto | null> {
+  const row = await db.query.chatReports.findFirst({ where: eq(schema.chatReports.id, reportId) })
+  return row ? toReportDto(row) : null
+}
+
+function toReportDto(row: ChatReportRow): ReportDto {
   const report = normalizeReport(row.report, row)
   return {
     summary: toSummary(row, { daily: report.activity.daily, totals: report.totals, responses: report.responses }),

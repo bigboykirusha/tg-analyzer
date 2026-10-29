@@ -33,6 +33,8 @@ const envSchema = z.object({
   AUTH_RATE_LIMIT_WINDOW: z.string().default('1 minute'),
   CHAT_REPARSE_COOLDOWN_MINUTES: z.coerce.number().int().min(0).default(60),
   DATA_RETENTION_DAYS: z.coerce.number().int().positive().default(365),
+  /** Off until payments are connected: paid team plans are then assigned by hand. */
+  BILLING_ENABLED: booleanFlag.default(false),
 })
 
 export type AppConfig = ReturnType<typeof parseConfig>
