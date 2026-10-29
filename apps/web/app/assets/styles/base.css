@@ -14,6 +14,8 @@ html {
   -webkit-text-size-adjust: 100%;
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
+  /* Focus and anchors land clear of the sticky header and section bar. */
+  scroll-padding-top: calc(var(--topbar-height) + 64px);
   scrollbar-gutter: stable;
   touch-action: manipulation;
   background: var(--bg);

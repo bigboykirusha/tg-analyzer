@@ -39,6 +39,7 @@ export {
   Settings,
   Send,
   Share2,
+  Sparkles,
   Sun,
   Trash2,
   User,

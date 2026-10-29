@@ -128,6 +128,9 @@ test('words are grouped by dictionary lemma, function words are dropped', async 
   assert.equal(lemma('работы'), 'работа')
   assert.equal(lemma('пошла'), 'пойти')
   assert.equal(lemma('около'), null)
+  // Pronoun-like and ordinal adjectives say nothing about a topic.
+  assert.equal(lemma('такого'), null)
+  assert.equal(lemma('первый'), null)
   // Slang the dictionary does not know falls back to the stem.
   assert.equal(lemma('созвона'), lemma('созвоны'))
   assert.equal(lemma('hello'), 'hello')

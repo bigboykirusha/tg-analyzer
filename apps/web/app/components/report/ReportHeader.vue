@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { MoreHorizontal, RotateCw, Share2, Trash2 } from '../../lib/icons'
+import { MoreHorizontal, RotateCw, Sparkles, Trash2 } from '../../lib/icons'
 
 const props = withDefaults(
   defineProps<{
@@ -13,15 +13,11 @@ const props = withDefaults(
   { canReanalyse: false, reanalysing: false, demo: false },
 )
 const emit = defineEmits<{ reanalyse: []; story: []; delete: [] }>()
-const { t, formatDay } = useI18n()
+const { t, formatPeriod } = useI18n()
 const menuOpen = ref(false)
 
-const period = computed(() => {
-  const { firstMessageAt, lastMessageAt } = props.summary
-  if (!firstMessageAt || !lastMessageAt) return t('common.na')
-  const format = (value: string) => formatDay(value.slice(0, 10))
-  return `${format(firstMessageAt)} – ${format(lastMessageAt)}`
-})
+/** Months only, «окт. 2025 – окт. 2026»: it fits next to the name on a phone; days are in Dynamics. */
+const period = computed(() => formatPeriod(props.summary.firstMessageAt, props.summary.lastMessageAt, true))
 
 function run(action: 'reanalyse' | 'delete') {
   menuOpen.value = false
@@ -31,24 +27,15 @@ function run(action: 'reanalyse' | 'delete') {
 </script>
 
 <template>
-  <UiPageBar :title="summary.title" :lede="period">
+  <UiPageBar :title="summary.title" :lede="period" :back="demo ? '' : '/dashboard'">
     <template #leading>
-      <ChatAvatar :chat-id="summary.chatId" :title="summary.title" size="sm" />
+      <ChatAvatar class="report-header__avatar" :chat-id="summary.chatId" :title="summary.title" size="sm" />
     </template>
     <template #actions>
-      <UiButton class="report-header__story" variant="soft" size="sm" :icon="Share2" @click="emit('story')">
-        <span class="report-header__story-label">{{ t('story.open') }}</span>
+      <UiButton class="report-header__story" variant="soft" size="sm" :icon="Sparkles" @click="emit('story')">
+        {{ t('story.open') }}
       </UiButton>
       <template v-if="!demo">
-        <UiIconButton
-          class="report-header__reanalyse"
-          :icon="RotateCw"
-          :label="t('report.reanalyse')"
-          variant="ghost"
-          :loading="reanalysing"
-          :disabled="!canReanalyse"
-          @click="emit('reanalyse')"
-        />
         <UiPopoverMenu v-model:open="menuOpen" align="end" :aria-label="t('report.actions')">
           <template #trigger>
             <UiIconButton
@@ -61,7 +48,12 @@ function run(action: 'reanalyse' | 'delete') {
               @click="menuOpen = !menuOpen"
             />
           </template>
-          <UiMenuItem role="menuitem" :icon="RotateCw" :disabled="!canReanalyse" @click="run('reanalyse')">
+          <UiMenuItem
+            role="menuitem"
+            :icon="RotateCw"
+            :disabled="!canReanalyse || reanalysing"
+            @click="run('reanalyse')"
+          >
             {{ t('report.reanalyse') }}
           </UiMenuItem>
           <div class="menu-divider" role="separator" />
@@ -87,24 +79,14 @@ function run(action: 'reanalyse' | 'delete') {
   }
 }
 
-/* Phones: «Итоги» keeps its lime and icon, the name gets the room; refreshing lives in «…». */
+/* Phones: the word «Итоги» stays — an icon alone read as «share my chat»; the back arrow takes the avatar's place. */
 @media (max-width: 640px) {
-  .report-header__story.btn {
-    width: var(--control-sm);
-    padding: 0;
-  }
-
-  .report-header__story-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-  }
-
-  .report-header__reanalyse {
+  .report-header__avatar {
     display: none;
+  }
+
+  .report-header__story.btn {
+    padding: 0 var(--space-3);
   }
 }
 </style>

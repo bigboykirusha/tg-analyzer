@@ -17,7 +17,7 @@ import { computeGroupReport, type GroupParticipantInput, type GroupTimelineEntry
 import { addDirectional, createDirectionalCount, increment, roundTo, topItems } from './primitives'
 import { computeHealthScore, computeRelationshipScore } from './relationship'
 import { stemWord } from './stem'
-import { analyzeMessageText, normalizeEmoji } from './text'
+import { analyzeMessageText, normalizeEmoji, STOP_LEMMAS } from './text'
 import {
   computeGaps,
   computeHabits,
@@ -29,6 +29,9 @@ import {
   sessionSplit,
 } from './timeline'
 import { createZonedClock, resolveTimeZone, type ZonedClock } from './zoned-clock'
+
+/** A dictionary infinitive («говорить», «смеяться», «идти»), not a Snowball stem. */
+const INFINITIVE = /(?:ть|ться|ти|тись|чь|чься)$/u
 
 /** Metadata of one Telegram message. The text is analysed in memory and never stored. */
 export interface MessageInput {
@@ -238,7 +241,7 @@ export class ChatReportBuilder {
     participant.wordCount += analysis.wordCount
     for (const word of analysis.keywords) {
       const stem = this.wordKey(word)
-      if (stem === null) continue
+      if (stem === null || STOP_LEMMAS.has(stem)) continue
       let forms = this.wordForms.get(stem)
       if (!forms) this.wordForms.set(stem, (forms = new Map()))
       increment(forms, word)
@@ -334,10 +337,14 @@ export class ChatReportBuilder {
       .map(([id, state]) => ({ id, messageId: state.messageId }))
   }
 
-  /** Shows a word stem as its most common written form. */
+  /**
+   * Shows a word stem as its most common written form; a verb shows as its
+   * infinitive, so «говорю», «сказала» and «видел» read as one word each.
+   */
   private formOf = (stem: string) => {
     const forms = this.wordForms.get(stem)
     if (!forms) return stem
+    if (INFINITIVE.test(stem) && forms.size > 1) return stem
     let best = stem
     let bestCount = -1
     for (const [form, count] of forms) {

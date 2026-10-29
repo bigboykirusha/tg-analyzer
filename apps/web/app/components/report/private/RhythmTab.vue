@@ -43,7 +43,7 @@ const usuallyText = computed(() =>
     </ReportSection>
 
     <ReportSection :title="t('report.rhythm.hoursTitle')">
-      <HourlyChart :hourly="report.activity.hourly" />
+      <HourlyChart :hourly="report.activity.hourly" :received-label="data.summary.title" />
     </ReportSection>
   </div>
 </template>

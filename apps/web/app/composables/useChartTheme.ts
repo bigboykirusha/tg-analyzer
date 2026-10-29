@@ -18,9 +18,12 @@ const FALLBACK_FONT = 'Geist Variable, system-ui, sans-serif'
  */
 export function useChartTheme() {
   const { resolved } = useTheme()
+  const { formatNumber } = useI18n()
 
   return computed(() => {
     void resolved.value
+    // Numbers in the reader's locale: «12 000», not ECharts' default «12,000».
+    const number = (value: unknown) => (typeof value === 'number' ? formatNumber(value) : String(value ?? ''))
     const font = cssVar('--font-sans') || FALLBACK_FONT
     const colors = {
       sent: cssVar('--you'),
@@ -47,6 +50,9 @@ export function useChartTheme() {
         grid: { left: space2, right: space2, top: space3, bottom: space2, containLabel: true },
         tooltip: {
           trigger: 'axis' as const,
+          // Keep the tooltip inside the chart, away from the screen edges.
+          confine: true,
+          valueFormatter: number,
           backgroundColor: colors.raised,
           borderColor: colors.border,
           borderWidth: 1,
@@ -75,7 +81,7 @@ export function useChartTheme() {
         minInterval: 1,
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel,
+        axisLabel: { ...axisLabel, formatter: number },
         splitLine: { lineStyle: { color: colors.border } },
       },
     }

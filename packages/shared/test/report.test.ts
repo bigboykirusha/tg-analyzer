@@ -267,3 +267,21 @@ test('aggregation of a large chat stays fast', () => {
   assert.equal(report.totals.messages, 100_000)
   assert.ok(elapsed < 5_000, `aggregation took ${Math.round(elapsed)}ms`)
 })
+
+test('top words drop topic-less lemmas and show verbs in their infinitive', () => {
+  // A toy lemmatiser: every form of a verb maps to its infinitive.
+  const lemmas: Record<string, string> = {
+    говорю: 'говорить',
+    сказала: 'сказать',
+    гуляла: 'гулять',
+    гуляли: 'гулять',
+    гуляем: 'гулять',
+    такого: 'такой',
+    кофе: 'кофе',
+  }
+  const builder = new ChatReportBuilder('UTC', { wordKey: (word) => lemmas[word] ?? word })
+  builder.add(message('2026-01-01T10:00:00Z', true, 'говорю сказала гуляла кофе'))
+  builder.add(message('2026-01-01T10:01:00Z', false, 'гуляли такого гуляем кофе'))
+  const words = builder.finish('private').vocabulary.topWords.map((item) => item.value)
+  assert.deepEqual(words.sort(), ['гулять', 'кофе'])
+})

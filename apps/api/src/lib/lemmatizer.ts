@@ -12,7 +12,7 @@ import { logger } from './logger'
 interface AzParse {
   parser: string
   score: number
-  tag: { POST?: string }
+  tag: { POST?: string; Apro?: boolean; Anum?: boolean }
   normalize(): { word: string }
 }
 
@@ -66,6 +66,8 @@ export function lemmaOf(az: AzModule, word: string): string | null {
     .filter((parse) => parse.score >= best - TIE)
     .sort((left, right) => rank(left.tag.POST) - rank(right.tag.POST))[0]!
   if (chosen.tag.POST && FUNCTION_WORDS.has(chosen.tag.POST)) return null
+  // «такой», «весь», «этот» and «первый», «второй» are adjectives by form but say nothing about a topic.
+  if (chosen.tag.Apro || chosen.tag.Anum) return null
   return chosen.normalize().word.replaceAll('ё', 'е')
 }
 

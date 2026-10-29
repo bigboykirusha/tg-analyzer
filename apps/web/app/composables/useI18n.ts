@@ -79,6 +79,23 @@ export function useI18n() {
     return formatDate(`${day}T12:00:00Z`, { ...options, timeZone: 'UTC' })
   }
 
+  /**
+   * A span of calendar days (`YYYY-MM-DD`): «3 мар. – 28 сент. 2026 г.», with the
+   * year on both ends when they differ. `short` keeps months only: «окт. 2025 – окт. 2026».
+   */
+  function formatPeriod(first: string | null | undefined, last: string | null | undefined, short = false) {
+    if (!first || !last) return t('common.na')
+    const options: Intl.DateTimeFormatOptions = short
+      ? { month: 'short', year: 'numeric', timeZone: 'UTC' }
+      : { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }
+    const from = new Date(`${first.slice(0, 10)}T12:00:00Z`)
+    const to = new Date(`${last.slice(0, 10)}T12:00:00Z`)
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return t('common.na')
+    const range = new Intl.DateTimeFormat(intlLocale.value, options).formatRange(from, to)
+    // «окт. 2025 г. – окт. 2026 г.» → «окт. 2025 – окт. 2026»: the year is plain from the number.
+    return short ? range.replace(/\s?г\./gu, '') : range
+  }
+
   /** Calendar month stored as `YYYY-MM`. */
   function formatMonth(
     month: string | null | undefined,
@@ -109,7 +126,7 @@ export function useI18n() {
   /** Compact human duration: `< 1 мин`, `12 мин`, `3 ч 5 мин`, `2 д 4 ч`. */
   function formatDuration(seconds: number | null | undefined) {
     if (seconds === null || seconds === undefined || !Number.isFinite(seconds) || seconds < 0) return t('common.na')
-    if (seconds < 60) return t('duration.lessThanMinute')
+    if (seconds < 60) return t('duration.seconds', { seconds: Math.max(1, Math.round(seconds)) })
     const days = Math.floor(seconds / 86400)
     const hours = Math.floor((seconds % 86400) / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
@@ -138,6 +155,7 @@ export function useI18n() {
     formatPercent,
     formatDate,
     formatDay,
+    formatPeriod,
     formatMonth,
     formatRelative,
     formatDuration,

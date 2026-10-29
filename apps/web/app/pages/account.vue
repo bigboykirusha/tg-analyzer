@@ -90,7 +90,7 @@ onMounted(() => {
 <template>
   <UiPageContainer size="narrow">
     <div class="page account">
-      <UiPageBar :title="displayName" :lede="handle || t('accountPage.title')">
+      <UiPageBar :title="displayName" :lede="handle || t('accountPage.title')" back="/dashboard">
         <template #leading><ProfileAvatar :title="displayName" size="sm" /></template>
       </UiPageBar>
 

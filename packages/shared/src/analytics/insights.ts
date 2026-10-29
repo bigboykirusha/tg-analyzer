@@ -73,7 +73,8 @@ export function deriveInsights(report: ChatReport): InsightDto[] {
   if (habits) {
     for (const [id, counts, minTotal] of [
       ['double_texts', habits.doubleTexts, 10],
-      ['questions', habits.questions, 30],
+      // Runs of questions count once, as in the Questions card.
+      ['questions', habits.questionTurns ?? habits.questions, 30],
       ['laughs', habits.laughs, 20],
     ] as const) {
       const found = dominant(counts, minTotal)

@@ -9,7 +9,7 @@ useSeoMeta({ title: () => t('newAnalysis.seoTitle') })
 <template>
   <UiPageContainer>
     <div class="page new-analysis">
-      <UiPageBar :title="t('newAnalysis.title')" :lede="t('newAnalysis.lede')" />
+      <UiPageBar :title="t('newAnalysis.title')" :lede="t('newAnalysis.lede')" back="/dashboard" />
       <SessionBanner />
       <ChatPicker sticky />
     </div>

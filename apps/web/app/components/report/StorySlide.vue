@@ -56,7 +56,7 @@ export interface StorySlideModel {
   blocks: StoryBlock[]
 }
 
-const { t } = useI18n()
+const site = useSiteHost()
 
 const props = withDefaults(
   defineProps<{
@@ -203,7 +203,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
       <footer class="story-slide__brand">
         <span class="story-slide__brand-mark" aria-hidden="true"><i /><i /><i /></span>
         TG Analyzer
-        <span v-if="slide.last" class="story-slide__site">{{ t('story.site') }}</span>
+        <span v-if="slide.last" class="story-slide__site">{{ site }}</span>
       </footer>
     </div>
   </div>

@@ -161,6 +161,8 @@ const questionRows = computed(() => {
   const asks = row('asks', t('report.talk.asksMore'), turns)
   if (asks) rows.push(asks)
   const rate = (side: 'mine' | 'theirs') => (turns[side] ? (unanswered[side] / turns[side]) * 100 : null)
+  // 4 of 1 301 is 0.3%: «< 1%», not a «0%» that reads as broken.
+  const share = (value: number | null) => (value !== null && value > 0 && value < 1 ? '< 1%' : formatPercent(value))
   const mine = rate('mine')
   const theirs = rate('theirs')
   let verdict = t('report.talk.answeredAll')
@@ -173,11 +175,12 @@ const questionRows = computed(() => {
   rows.push({
     key: 'unanswered',
     label: t('report.talk.unanswered'),
-    mine: formatPercent(mine),
-    theirs: formatPercent(theirs),
+    mine: share(mine),
+    theirs: share(theirs),
     // Each side is a share of its own questions, so the two do not split one bar.
     minePct: null,
     verdict,
+    quiet: verdict === t('report.talk.answeredAll'),
   })
   return rows
 })
@@ -197,14 +200,14 @@ const milestoneAuthors = computed(() =>
 
     <template v-else>
       <ReportSection :title="t('report.talk.voiceTitle')" :text="t('report.talk.voiceText')">
-        <ReportCompare v-if="voiceRows.length" :rows="voiceRows" />
+        <ReportCompare v-if="voiceRows.length" :their-name="name" :rows="voiceRows" />
         <ReportFacts v-if="voiceFacts.length" :facts="voiceFacts" />
         <p v-if="!voiceRows.length" class="t-small t-muted">{{ t('report.talk.noVoice') }}</p>
       </ReportSection>
 
       <ReportSection :title="t('report.talk.reactionsTitle')" :text="t('report.talk.reactionsText')">
         <template v-if="reactions && reactionRows.length">
-          <ReportCompare :rows="reactionRows" />
+          <ReportCompare :their-name="name" :rows="reactionRows" />
           <div class="emoji-pair">
             <div>
               <span class="t-label">{{ t('report.talk.reactionsMine') }}</span>
@@ -220,19 +223,19 @@ const milestoneAuthors = computed(() =>
       </ReportSection>
 
       <ReportSection :title="t('report.talk.ritualsTitle')" :text="t('report.talk.ritualsText')">
-        <ReportCompare v-if="ritualRows.length" :rows="ritualRows" />
+        <ReportCompare v-if="ritualRows.length" :their-name="name" :rows="ritualRows" />
         <p v-else class="t-small t-muted">{{ t('report.talk.noRituals') }}</p>
         <ReportFacts v-if="greetingFacts.length" :facts="greetingFacts" />
       </ReportSection>
 
       <ReportSection :title="t('report.talk.questionsTitle')" :text="t('report.talk.questionsText')">
-        <ReportCompare v-if="questionRows.length" :rows="questionRows" />
+        <ReportCompare v-if="questionRows.length" :their-name="name" :rows="questionRows" />
         <p v-else class="t-small t-muted">{{ t('report.talk.noQuestions') }}</p>
       </ReportSection>
 
       <ReportSection wide :title="t('report.talk.stickersTitle')" :text="stickerVariety ?? undefined">
         <template v-if="stickers?.top.length">
-          <ReportCompare :rows="stickerRows" />
+          <ReportCompare :their-name="name" :rows="stickerRows" />
           <StickerGrid :stickers="stickers.top" />
         </template>
         <p v-else class="t-small t-muted">{{ t('report.talk.noStickers') }}</p>

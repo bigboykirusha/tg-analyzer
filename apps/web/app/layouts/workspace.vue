@@ -6,6 +6,7 @@ const workspace = useWorkspaceStore()
 const { syncTimeZone } = useAuth()
 const { t } = useI18n()
 const toast = useToast()
+const route = useRoute()
 
 onMounted(() => {
   if (!workspace.reports.length) void workspace.loadReports().catch(() => undefined)
@@ -39,7 +40,7 @@ watch(analysis.finished, (job) => {
     <div class="workspace-sidebar"><AppSidebar /></div>
     <div class="workspace-column">
       <AppHeader />
-      <main class="workspace-main">
+      <main class="workspace-main" :class="{ 'has-dock': route.path === '/dashboard' }">
         <slot />
       </main>
     </div>
@@ -83,7 +84,7 @@ watch(analysis.finished, (job) => {
 
 @media (max-width: 900px) {
   /* Room for the floating dock. */
-  .workspace-main {
+  .workspace-main.has-dock {
     padding-bottom: calc(var(--page-bottom) + 56px + env(safe-area-inset-bottom, 0px));
   }
 }

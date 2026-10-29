@@ -8,18 +8,13 @@ import { buildExampleReport } from '../../lib/example-report'
  * on the landing are real output of the app.
  */
 const props = defineProps<{ phone?: boolean }>()
-const { t, formatNumber, formatDuration, formatPercent, formatDay, formatDecimal } = useI18n()
+const { t, formatNumber, formatDuration, formatPercent, formatPeriod, formatDecimal } = useI18n()
 
 const data = computed(() => buildExampleReport(t('example.partner')))
 const totals = computed(() => data.value.report.totals)
 const responses = computed(() => data.value.report.responses)
 const mine = computed(() => Math.round((totals.value.sent / Math.max(1, totals.value.messages)) * 100))
-const period = computed(() => {
-  const { firstMessageAt, lastMessageAt } = data.value.summary
-  return firstMessageAt && lastMessageAt
-    ? `${formatDay(firstMessageAt.slice(0, 10))} – ${formatDay(lastMessageAt.slice(0, 10))}`
-    : ''
-})
+const period = computed(() => formatPeriod(data.value.summary.firstMessageAt, data.value.summary.lastMessageAt, true))
 /** Weekly ticks: a day per tick is too fine at this size. */
 const weeks = computed(() => {
   const out: { sent: number; received: number }[] = []
@@ -30,19 +25,10 @@ const weeks = computed(() => {
   })
   return out
 })
-const others = computed(() => t('landing.mockChats').split(','))
 </script>
 
 <template>
   <div class="mini" :class="{ 'mini--phone': props.phone }" aria-hidden="true">
-    <div v-if="props.phone" class="mini__chips">
-      <span class="mini__chip is-on"
-        ><UiAvatar :title="data.summary.title" seed="example" size="xs" />{{ data.summary.title }}</span
-      >
-      <span v-for="name in others" :key="name" class="mini__chip">
-        <UiAvatar :title="name" :seed="name" size="xs" />{{ name }}
-      </span>
-    </div>
     <div class="mini__head">
       <UiAvatar :title="data.summary.title" seed="example" :size="props.phone ? 'sm' : 'md'" />
       <div class="mini__who">
@@ -197,35 +183,5 @@ const others = computed(() => t('landing.mockChats').split(','))
 
 .mini--phone .mini__who span {
   font-size: 10px;
-}
-
-.mini__chips {
-  display: flex;
-  gap: 6px;
-  overflow: hidden;
-}
-
-.mini__chip {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px 3px 3px;
-  border-radius: var(--radius-full);
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--border);
-  font: 500 11px/1 var(--font-sans);
-}
-
-.mini__chip :deep(.avatar) {
-  width: 20px;
-  height: 20px;
-  font-size: 9px;
-}
-
-.mini__chip.is-on {
-  background: var(--text);
-  box-shadow: none;
-  color: var(--bg);
 }
 </style>

@@ -5,12 +5,26 @@
  * The bar stays on screen, so the actions are always at hand. Document pages
  * (FAQ, terms) keep `UiPageHeader` in the page.
  */
-withDefaults(defineProps<{ title: string; lede?: string }>(), { lede: '' })
+import { ChevronLeft } from '../../lib/icons'
+
+withDefaults(
+  defineProps<{
+    title: string
+    lede?: string
+    /** Phones and tablets have no sidebar: a back arrow to this page. */
+    back?: string
+  }>(),
+  { lede: '', back: '' },
+)
+const { t } = useI18n()
 </script>
 
 <template>
   <Teleport to="#header-page" defer>
-    <div class="page-bar">
+    <div class="page-bar" :data-back="back ? '' : undefined">
+      <NuxtLink v-if="back" :to="back" class="page-bar__back" :aria-label="t('nav.back')">
+        <ChevronLeft aria-hidden="true" />
+      </NuxtLink>
       <slot name="leading" />
       <div class="page-bar__copy">
         <h1 class="page-bar__title">{{ title }}</h1>
@@ -28,6 +42,28 @@ withDefaults(defineProps<{ title: string; lede?: string }>(), { lede: '' })
   flex: 1;
   align-items: center;
   gap: var(--space-3);
+}
+
+.page-bar__back {
+  display: none;
+  flex: none;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  margin-left: calc(var(--space-2) * -1);
+  place-items: center;
+  border-radius: var(--radius-full);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page-bar__back:active {
+  background: var(--hover);
+}
+
+@media (max-width: 900px) {
+  .page-bar__back {
+    display: grid;
+  }
 }
 
 .page-bar__copy {

@@ -3,7 +3,7 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { Info } from '../../lib/icons'
 
 const props = defineProps<{ data: ReportDto }>()
-const { t, formatNumber, formatDecimal, formatDuration, formatPercent } = useI18n()
+const { t, tc, formatNumber, formatDecimal, formatDuration, formatPercent } = useI18n()
 
 type Tab = 'overview' | 'talk' | 'rhythm' | 'words' | 'timeline'
 const tab = ref<Tab>('overview')
@@ -80,11 +80,13 @@ const lead = computed(() => {
 <template>
   <div class="stack stack--lg">
     <p v-if="lead" class="report-lead">{{ lead }}</p>
+    <!-- What is new since the last run comes first: it is why people come back. -->
+    <ReportChanges :data="data" />
     <ReportHero
       :data="data"
       :label="t('report.kpi.messages')"
       :value="formatNumber(totals.messages)"
-      :note="t('report.kpi.sentReceived', { sent: formatNumber(totals.sent), received: formatNumber(totals.received) })"
+      :note="tc('story.activeDaysCount', data.report.facts.activeDays)"
     >
       <template #accent>
         <div class="tile__label">{{ t('report.kpi.whoWritesMore') }}</div>
@@ -123,8 +125,15 @@ const lead = computed(() => {
       <UiMetricCard
         class="span-3"
         :label="t('report.kpi.wordsPerMessage')"
-        :value="totals.textMessages ? formatDecimal(totals.words / totals.textMessages) : t('common.na')"
-        :sub="t('report.kpi.textOnly')"
+        :value="formatDecimal(data.report.vocabulary.wordsPerMessage.mine)"
+        :sub="
+          data.report.vocabulary.wordsPerMessage.theirs
+            ? t('report.kpi.wordsTheirs', {
+                name: data.summary.title,
+                value: formatDecimal(data.report.vocabulary.wordsPerMessage.theirs),
+              })
+            : null
+        "
       />
       <UiMetricCard
         class="span-3"
@@ -140,8 +149,6 @@ const lead = computed(() => {
     </div>
 
     <ReportInsights :data="data" />
-
-    <ReportChanges :data="data" />
 
     <ReportNav v-model="tab" :options="tabs" :label="t('report.tabs.label')" />
     <OverviewTab v-if="tab === 'overview'" :data="data" />

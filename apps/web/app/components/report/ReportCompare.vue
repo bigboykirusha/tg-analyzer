@@ -10,10 +10,16 @@ export interface Comparison {
   minePct: number | null
   /** One plain sentence with the answer. */
   verdict: string
+  /** The verdict says it all («almost always answered»): no bar, no values. */
+  quiet?: boolean
 }
 
-defineProps<{ rows: Comparison[] }>()
+const props = defineProps<{
+  rows: Comparison[]
+  /** The other side by name instead of «Собеседник». */ theirName?: string
+}>()
 const { t } = useI18n()
+const them = computed(() => props.theirName || t('report.them'))
 </script>
 
 <template>
@@ -24,17 +30,17 @@ const { t } = useI18n()
         <span class="compare__verdict">{{ row.verdict }}</span>
       </div>
       <div
-        v-if="row.minePct !== null"
+        v-if="row.minePct !== null && !row.quiet"
         class="compare__bar"
         role="img"
-        :aria-label="`${t('report.you')}: ${row.mine}, ${t('report.them')}: ${row.theirs}`"
+        :aria-label="`${t('report.you')}: ${row.mine}, ${them}: ${row.theirs}`"
       >
         <span class="compare__mine" :style="{ width: `${row.minePct}%` }" />
         <span class="compare__theirs" />
       </div>
-      <div class="compare__values">
+      <div v-if="!row.quiet" class="compare__values">
         <span><i class="dot dot--mine" />{{ t('report.you') }} · {{ row.mine }}</span>
-        <span>{{ row.theirs }} · {{ t('report.them') }}<i class="dot dot--theirs" /></span>
+        <span>{{ row.theirs }} · {{ them }}<i class="dot dot--theirs" /></span>
       </div>
     </li>
   </ul>

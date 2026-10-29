@@ -162,9 +162,14 @@ function signOut() {
   align-items: center;
 }
 
-/* Phones: the screen's title takes the logo's place; «Главная» is in the dock. */
+/*
+ * Phones: the screen's title takes the logo's place. Screens with a back arrow
+ * (a report, /new, the account) drop the profile too, so the name and the
+ * period fit; the account is one tap away on the home screen.
+ */
 @media (max-width: 640px) {
-  .topbar:has(.page-bar) .topbar__brand {
+  .topbar:has(.page-bar) .topbar__brand,
+  .topbar:has(.page-bar[data-back]) .account-trigger {
     display: none;
   }
 }

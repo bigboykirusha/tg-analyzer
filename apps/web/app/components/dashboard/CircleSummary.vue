@@ -157,7 +157,7 @@ const people = computed(() => {
 }
 
 .circle__chevron {
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .circle__hint {
@@ -176,25 +176,15 @@ const people = computed(() => {
   }
 }
 
-/* Phones: the people slide sideways instead of stacking three more screens. */
+/* Phones: the people stack as short rows; a sideways carousel cut the second card in half. */
 @media (max-width: 640px) {
   .circle__people {
-    display: flex;
-    margin-inline: calc(var(--page-gutter) * -1);
-    padding: 0 var(--page-gutter);
-    overflow-x: auto;
-    scroll-padding-inline: var(--page-gutter);
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-
-  .circle__people::-webkit-scrollbar {
-    display: none;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
   }
 
   .circle__person {
-    flex: 0 0 78%;
-    scroll-snap-align: start;
+    padding-block: var(--space-4);
   }
 
   .circle__most {

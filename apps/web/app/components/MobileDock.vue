@@ -1,28 +1,32 @@
 <script setup lang="ts">
-import { LayoutGrid, Plus } from '../lib/icons'
+import { Plus } from '../lib/icons'
 
 /**
- * Phones and tablets: a small ink capsule floating above the content instead
- * of a full-width tab bar. Home on the left, the lime «new analysis» action on
- * the right; the account lives behind the avatar in the header.
+ * Phones and tablets, home only: one lime «Новый анализ» pill floating above
+ * the list. It slides away while you scroll down and comes back on the way up,
+ * so it never sits on a number. Reports, /new and the account have a back
+ * arrow in the header instead.
  */
 const { t } = useI18n()
 const route = useRoute()
-const homeActive = computed(() => route.path === '/dashboard' || route.path.startsWith('/chat/'))
-const newActive = computed(() => route.path === '/new')
+const workspace = useWorkspaceStore()
+const shown = computed(() => route.path === '/dashboard' && workspace.reports.length > 0)
+
+const hidden = ref(false)
+let lastY = 0
+function onScroll() {
+  const y = window.scrollY
+  if (Math.abs(y - lastY) < 8) return
+  hidden.value = y > lastY && y > 120
+  lastY = y
+}
+onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
+onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 </script>
 
 <template>
-  <nav class="dock no-print" :aria-label="t('nav.tabs')">
-    <NuxtLink
-      to="/dashboard"
-      class="dock__home"
-      :aria-label="t('nav.home')"
-      :aria-current="homeActive ? 'page' : undefined"
-    >
-      <LayoutGrid aria-hidden="true" />
-    </NuxtLink>
-    <NuxtLink to="/new" class="dock__new" :aria-current="newActive ? 'page' : undefined">
+  <nav v-if="shown" class="dock no-print" :class="{ 'is-hidden': hidden }" :aria-label="t('nav.tabs')">
+    <NuxtLink to="/new" class="dock__new">
       <Plus aria-hidden="true" />
       <span>{{ t('nav.newAnalysis') }}</span>
     </NuxtLink>
@@ -43,6 +47,11 @@ const newActive = computed(() => route.path === '/new')
   background: var(--tile-ink);
   box-shadow: var(--shadow-overlay);
   transform: translateX(-50%);
+  transition: transform var(--duration-slow) var(--ease-standard);
+}
+
+.dock.is-hidden {
+  transform: translate(-50%, calc(100% + var(--space-6) + env(safe-area-inset-bottom, 0px)));
 }
 
 /* Wide screens have the sidebar instead. */
@@ -52,7 +61,6 @@ const newActive = computed(() => route.path === '/new')
   }
 }
 
-.dock__home,
 .dock__new {
   display: inline-flex;
   align-items: center;
@@ -66,15 +74,6 @@ const newActive = computed(() => route.path === '/new')
   -webkit-tap-highlight-color: transparent;
 }
 
-.dock__home {
-  width: 46px;
-  color: var(--on-tile-ink-muted);
-}
-
-.dock__home[aria-current='page'] {
-  color: var(--on-tile-ink);
-}
-
 .dock__new {
   gap: var(--space-2);
   padding: 0 var(--space-5) 0 var(--space-4);
@@ -85,7 +84,6 @@ const newActive = computed(() => route.path === '/new')
   white-space: nowrap;
 }
 
-.dock__home:active,
 .dock__new:active {
   transform: scale(var(--press-scale));
 }

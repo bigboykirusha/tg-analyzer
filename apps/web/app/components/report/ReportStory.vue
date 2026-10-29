@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 import { loadChatAvatar, loadProfileAvatar } from '../../lib/avatar-loader'
+import { maskSwear } from '../../lib/profanity'
 import { ChevronLeft, ChevronRight, Download, Share2, X } from '../../lib/icons'
 import type { StoryBlock, StoryPerson, StorySlideModel } from './StorySlide.vue'
 
@@ -19,7 +20,8 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ close: [] }>()
 
-const { t, tc, formatNumber, formatPercent, formatDuration, formatDay, formatDecimal } = useI18n()
+const { t, tc, formatNumber, formatPercent, formatDuration, formatDay, formatDecimal, formatPeriod } = useI18n()
+const site = useSiteHost()
 const toast = useToast()
 const image = useCardImage()
 const auth = useAuthStore()
@@ -61,7 +63,6 @@ useFocusTrap(panelRef, open, {
 })
 
 const DAY_MONTH: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' }
-const LONG_DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
 const isGroup = computed(() => props.data.summary.type === 'group')
 const group = computed(() => props.data.report.group ?? null)
 
@@ -79,13 +80,15 @@ const heading = computed(() => (isGroup.value ? them.value.name : `${me.value.na
 const period = computed(() => {
   const { firstMessageAt, lastMessageAt } = props.data.report.period
   if (!firstMessageAt || !lastMessageAt) return null
-  return `${formatDay(firstMessageAt.slice(0, 10), DAY_MONTH)} — ${formatDay(lastMessageAt.slice(0, 10), LONG_DATE)}`
+  return formatPeriod(firstMessageAt, lastMessageAt)
 })
 const headingSub = computed(() =>
   isGroup.value && group.value ? tc('story.members', group.value.participants.length) : period.value,
 )
 
 const top = (items: { value: string }[], count = 5) => items.slice(0, count).map((item) => item.value)
+/** Words go on a picture people post, so swearing is masked: «б**». */
+const topWords = (items: { value: string }[], count: number) => top(items, count).map(maskSwear)
 const days = (seconds: number) => tc('report.highlights.days', Math.round(seconds / DAY_SECONDS))
 const hour = (value: number) => String(value).padStart(2, '0')
 
@@ -120,7 +123,7 @@ const usual = computed(() => {
  */
 const shareText = computed(() => {
   const { totals, responses } = props.data.report
-  const values = { count: formatNumber(totals.messages), site: t('story.site') }
+  const values = { count: formatNumber(totals.messages), site: site.value }
   if (isGroup.value) return tc('story.shareText.group', totals.messages, { ...values, name: them.value.name })
   const mine = responses.iWriteFirstPct
   if (mine === null || Math.abs(mine - 50) <= 5) return tc('story.shareText.even', totals.messages, values)
@@ -167,7 +170,8 @@ const slides = computed<StorySlideModel[]>(() => {
   })
 
   const mineShare = totals.messages ? (totals.sent / totals.messages) * 100 : 50
-  const perDay = formatDecimal(totals.messages / Math.max(facts.activeDays, 1))
+  // Per day with messages, rounded: «≈ 221» reads better on a poster than «220,6».
+  const perDay = formatNumber(Math.round(totals.messages / Math.max(facts.activeDays, 1)))
   const streak = facts.maxStreak.days
   const busiest = facts.mostActiveDate
   const gap = facts.longestGap
@@ -341,9 +345,9 @@ const slides = computed<StorySlideModel[]>(() => {
   if (talk) list.push(talk)
 
   // 5. Words: the word of the chat, each side's favourites, emoji and habits.
-  const myWords = top(vocabulary.topWordsBySender.mine, 3)
-  const theirWords = top(vocabulary.topWordsBySender.theirs, 3)
-  const chatWord = top(vocabulary.topWords, 1)[0] ?? myWords[0]
+  const myWords = topWords(vocabulary.topWordsBySender.mine, 3)
+  const theirWords = topWords(vocabulary.topWordsBySender.theirs, 3)
+  const chatWord = topWords(vocabulary.topWords, 1)[0] ?? myWords[0]
   if (chatWord) {
     const blocks: StoryBlock[] = []
     if (myWords.length && theirWords.length)
@@ -363,7 +367,7 @@ const slides = computed<StorySlideModel[]>(() => {
       })
     const laughs = habits ? whoMore(t('story.laughs'), habits.laughs, true) : null
     if (laughs) blocks.push(laughs)
-    const questions = habits ? whoMore(t('story.questions'), habits.questions) : null
+    const questions = habits ? whoMore(t('story.questions'), habits.questionTurns ?? habits.questions) : null
     if (questions) blocks.push(questions)
     list.push({
       key: 'words',
@@ -866,6 +870,14 @@ watch(open, (value) => {
 @keyframes story-fill {
   to {
     transform: scaleX(1);
+  }
+}
+
+/* With reduced motion the global rule would end every bar in 1 ms and race to the last slide: no auto-advance, people tap through. */
+@media (prefers-reduced-motion: reduce) {
+  .stories__fill.is-active {
+    animation: none;
+    transform: scaleX(0.5);
   }
 }
 
