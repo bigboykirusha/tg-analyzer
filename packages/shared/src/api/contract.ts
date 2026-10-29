@@ -1,22 +1,5 @@
 import { z } from 'zod'
-import { ASSIGNABLE_TEAM_ROLES } from '../teams/plans'
 import type {
-  AcceptInviteResponse,
-  AuditLogResponse,
-  ChangeRoleBody,
-  CreateInviteBody,
-  CreateInviteResponse,
-  CreateTeamBody,
-  InvitePreviewDto,
-  RenameTeamBody,
-  ReportSharingDto,
-  ShareReportBody,
-  TeamDto,
-  TeamInvitesResponse,
-  TeamMembersResponse,
-  TeamReportDto,
-  TeamReportsResponse,
-  TeamsResponse,
   AuthSuccessResponse,
   AvatarsBody,
   AvatarsResponse,
@@ -97,34 +80,6 @@ export const avatarsBodySchema = z.object({
 export const chatIdParamsSchema = z.object({ chatId: telegramIdSchema })
 export const jobIdParamsSchema = z.object({ jobId: z.uuid() })
 
-const teamNameSchema = z
-  .string()
-  .transform((value) => value.trim().replace(/\s+/g, ' '))
-  .pipe(z.string().min(1).max(80))
-
-export const createTeamBodySchema = z.object({ name: teamNameSchema }) satisfies z.ZodType<CreateTeamBody, unknown>
-export const renameTeamBodySchema = z.object({ name: teamNameSchema }) satisfies z.ZodType<RenameTeamBody, unknown>
-export const createInviteBodySchema = z.object({
-  role: z.enum(ASSIGNABLE_TEAM_ROLES),
-}) satisfies z.ZodType<CreateInviteBody, unknown>
-export const changeRoleBodySchema = z.object({
-  role: z.enum(ASSIGNABLE_TEAM_ROLES),
-}) satisfies z.ZodType<ChangeRoleBody, unknown>
-export const shareReportBodySchema = z.object({ chatId: telegramIdSchema }) satisfies z.ZodType<
-  ShareReportBody,
-  unknown
->
-
-export const teamIdParamsSchema = z.object({ teamId: z.uuid() })
-export const teamMemberParamsSchema = z.object({ teamId: z.uuid(), userId: z.uuid() })
-export const teamInviteParamsSchema = z.object({ teamId: z.uuid(), inviteId: z.uuid() })
-export const teamReportParamsSchema = z.object({ teamId: z.uuid(), reportId: z.uuid() })
-export const inviteTokenParamsSchema = z.object({ token: z.string().regex(/^[\w-]{16,128}$/) })
-export const auditQuerySchema = z.object({
-  before: z.iso.datetime({ offset: true }).optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
-})
-
 export const paginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -161,27 +116,6 @@ export interface ApiEndpointMap {
   'GET /api/v1/reports': Endpoint<undefined, ReportsResponse>
   'GET /api/v1/reports/:chatId': Endpoint<undefined, ReportDto>
   'DELETE /api/v1/reports/:chatId': Endpoint<undefined, SuccessResponse>
-  'GET /api/v1/reports/:chatId/sharing': Endpoint<undefined, ReportSharingDto>
-
-  'GET /api/v1/teams': Endpoint<undefined, TeamsResponse>
-  'POST /api/v1/teams': Endpoint<CreateTeamBody, TeamDto>
-  'GET /api/v1/teams/:teamId': Endpoint<undefined, TeamDto>
-  'PATCH /api/v1/teams/:teamId': Endpoint<RenameTeamBody, TeamDto>
-  'DELETE /api/v1/teams/:teamId': Endpoint<undefined, SuccessResponse>
-  'GET /api/v1/teams/:teamId/members': Endpoint<undefined, TeamMembersResponse>
-  'PATCH /api/v1/teams/:teamId/members/:userId': Endpoint<ChangeRoleBody, SuccessResponse>
-  'DELETE /api/v1/teams/:teamId/members/:userId': Endpoint<undefined, SuccessResponse>
-  'GET /api/v1/teams/:teamId/invites': Endpoint<undefined, TeamInvitesResponse>
-  'POST /api/v1/teams/:teamId/invites': Endpoint<CreateInviteBody, CreateInviteResponse>
-  'DELETE /api/v1/teams/:teamId/invites/:inviteId': Endpoint<undefined, SuccessResponse>
-  'GET /api/v1/teams/:teamId/reports': Endpoint<undefined, TeamReportsResponse>
-  'POST /api/v1/teams/:teamId/reports': Endpoint<ShareReportBody, SuccessResponse>
-  'GET /api/v1/teams/:teamId/reports/:reportId': Endpoint<undefined, TeamReportDto>
-  'DELETE /api/v1/teams/:teamId/reports/:reportId': Endpoint<undefined, SuccessResponse>
-  'GET /api/v1/teams/:teamId/audit': Endpoint<undefined, AuditLogResponse, z.input<typeof auditQuerySchema>>
-
-  'GET /api/v1/invites/:token': Endpoint<undefined, InvitePreviewDto>
-  'POST /api/v1/invites/:token/accept': Endpoint<undefined, AcceptInviteResponse>
 }
 
 export type ApiOperation = keyof ApiEndpointMap

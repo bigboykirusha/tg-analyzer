@@ -7,10 +7,6 @@ const props = defineProps<{
   hasAvatar?: boolean
   /** A fresh analysis of this chat is running or queued. */
   updating?: boolean
-  /** Where the card leads; a team report opens inside its team. */
-  to?: string
-  /** Replaces «analysed …» in the footer, e.g. who shared a team report. */
-  byline?: string
 }>()
 const { t, tc, formatRelative, formatDay, formatPercent } = useI18n()
 
@@ -28,7 +24,7 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
 </script>
 
 <template>
-  <NuxtLink :to="to ?? `/chat/${report.chatId}`" class="report-card">
+  <NuxtLink :to="`/chat/${report.chatId}`" class="report-card">
     <span class="report-card__head">
       <ChatAvatar :chat-id="report.chatId" :title="report.title" :has-avatar="hasAvatar" />
       <span class="report-card__type">
@@ -55,7 +51,6 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
       <span v-if="updating" class="report-card__updating">
         <span class="report-card__spinner" aria-hidden="true" />{{ t('dashboard.analysingNow') }}
       </span>
-      <span v-else-if="byline" class="report-card__byline">{{ byline }}</span>
       <span v-else>{{ t('dashboard.analysed', { time: formatRelative(report.analyzedAt) }) }}</span>
       <ChevronRight class="report-card__chevron" aria-hidden="true" />
     </span>
@@ -63,13 +58,6 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
 </template>
 
 <style scoped>
-.report-card__byline {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .report-card {
   display: flex;
   min-width: 0;

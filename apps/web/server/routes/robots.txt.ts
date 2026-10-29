@@ -12,8 +12,6 @@ export default defineEventHandler((event) => {
     'Disallow: /new',
     'Disallow: /chat/',
     'Disallow: /account',
-    'Disallow: /teams',
-    'Disallow: /invite/',
     'Disallow: /login',
     'Disallow: /api/',
     '',

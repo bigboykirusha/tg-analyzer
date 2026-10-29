@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Globe, LogOut, Moon, Settings, Sun, Users } from '../lib/icons'
+import { Globe, LogOut, Moon, Settings, Sun } from '../lib/icons'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -36,9 +36,9 @@ const displayName = computed(() => auth.user?.firstName || auth.user?.username |
 const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : ''))
 const isDark = computed(() => resolved.value === 'dark')
 
-function open(path: '/account' | '/teams') {
+function openAccount() {
   accountOpen.value = false
-  void navigateTo(path)
+  void navigateTo('/account')
 }
 
 function signOut() {
@@ -113,10 +113,7 @@ function signOut() {
               {{ isDark ? t('theme.light') : t('theme.dark') }}
             </UiMenuItem>
           </div>
-          <UiMenuItem role="menuitem" :icon="Users" @click="open('/teams')">{{ t('teams.title') }}</UiMenuItem>
-          <UiMenuItem role="menuitem" :icon="Settings" @click="open('/account')">{{
-            t('account.settings')
-          }}</UiMenuItem>
+          <UiMenuItem role="menuitem" :icon="Settings" @click="openAccount">{{ t('account.settings') }}</UiMenuItem>
           <div class="menu-divider" role="separator" />
           <UiMenuItem role="menuitem" :icon="LogOut" @click="signOut">{{ t('account.logout') }}</UiMenuItem>
         </UiPopoverMenu>

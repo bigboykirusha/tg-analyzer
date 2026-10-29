@@ -1,4 +1,4 @@
--- 0015: teams — members with roles, invitation links, shared reports and an audit log.
+-- 0015: teams (withdrawn; 0016 drops these tables). Kept so databases that ran it stay in sync.
 CREATE TABLE IF NOT EXISTS "teams" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(80) NOT NULL,

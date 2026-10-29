@@ -12,7 +12,6 @@ import { parseRoutes } from '../modules/parse/routes'
 import { progressSocketRoutes } from '../modules/parse/progress-socket'
 import { reportRoutes } from '../modules/reports/routes'
 import { systemRoutes } from '../modules/system/routes'
-import { inviteRoutes, teamRoutes } from '../modules/teams/routes'
 import { isOriginAllowed } from './origin'
 
 /** The API never serves HTML, so the strictest browser policies apply. */
@@ -75,8 +74,6 @@ export async function buildServer() {
   await app.register(authRoutes, { prefix: '/api/v1/auth' })
   await app.register(parseRoutes, { prefix: '/api/v1/parse' })
   await app.register(reportRoutes, { prefix: '/api/v1/reports' })
-  await app.register(teamRoutes, { prefix: '/api/v1/teams' })
-  await app.register(inviteRoutes, { prefix: '/api/v1/invites' })
   await app.register(progressSocketRoutes, { prefix: '/ws' })
 
   return app

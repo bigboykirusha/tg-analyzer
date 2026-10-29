@@ -23,20 +23,15 @@ export async function noHorizontalScroll(page: Page) {
 
 /** Signs in through the fake Telegram gateway (TELEGRAM_MODE=fake, code 12345). */
 export async function signIn(page: Page) {
-  await gotoHydrated(page, '/login')
-  await submitLogin(page)
-  await page.waitForURL('**/dashboard')
-}
-
-/** Fills the login form on the current page; the caller waits for wherever it leads. */
-export async function submitLogin(page: Page) {
   // A fresh number per test keeps analysis cooldowns from leaking between runs.
   const phone = `900${String(Math.floor(Math.random() * 1e7)).padStart(7, '0')}`.replace(/9$/, '1')
+  await gotoHydrated(page, '/login')
   await page.locator('.phone-input').fill(phone)
   await page.getByRole('button', { name: 'Получить код' }).click()
   await page.locator('.otp-input').first().click()
   await page.keyboard.type('12345')
   await page.getByRole('button', { name: 'Подтвердить код' }).click()
+  await page.waitForURL('**/dashboard')
 }
 
 export async function backendAvailable(baseURL: string) {

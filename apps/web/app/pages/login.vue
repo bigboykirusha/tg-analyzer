@@ -110,12 +110,6 @@ const resendLabel = computed(() => {
   return next && RESEND_LABEL[next] ? t(RESEND_LABEL[next] as 'login.resendSms') : ''
 })
 
-/** Back to where the person was headed (an invitation), never to another site. */
-function afterLogin() {
-  const next = route.query.next
-  return typeof next === 'string' && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard'
-}
-
 function submitCode() {
   return run(async () => {
     const result = await verifyCode({ phone: phone.value, code: code.value, phoneCodeHash: phoneCodeHash.value })
@@ -125,14 +119,14 @@ function submitCode() {
       step.value = 'password'
       return
     }
-    await navigateTo(afterLogin(), { replace: true })
+    await navigateTo('/dashboard', { replace: true })
   })
 }
 
 function submitPassword() {
   return run(async () => {
     await verifyPassword({ tempToken: tempToken.value, password: password.value })
-    await navigateTo(afterLogin(), { replace: true })
+    await navigateTo('/dashboard', { replace: true })
   })
 }
 

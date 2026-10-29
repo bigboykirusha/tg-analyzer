@@ -21,7 +21,6 @@ const reanalysing = ref(false)
 const confirm = ref<'reanalyse' | 'delete' | null>(null)
 const deleting = ref(false)
 const storyOpen = ref(false)
-const teamOpen = ref(false)
 
 useSeoMeta({ title: () => data.value?.summary.title ?? t('report.title') })
 
@@ -87,7 +86,6 @@ onMounted(load)
         @reanalyse="confirm = 'reanalyse'"
         @story="storyOpen = true"
         @delete="confirm = 'delete'"
-        @team="teamOpen = true"
       />
 
       <GroupReport v-if="data.summary.type === 'group'" :data="data" />
@@ -127,7 +125,6 @@ onMounted(load)
       @close="confirm = null"
       @confirm="reanalyse"
     />
-    <ShareToTeamDialog :open="teamOpen" :report="data?.summary ?? null" @close="teamOpen = false" />
     <DeleteReportDialog
       :open="confirm === 'delete'"
       :report="data?.summary ?? null"

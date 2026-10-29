@@ -74,8 +74,6 @@ export default defineNuxtConfig({
     // The job log page was removed; old links land on the chats list.
     '/history': { redirect: '/dashboard' },
     '/chat/**': { ssr: false },
-    '/teams/**': { ssr: false },
-    '/invite/**': { ssr: false },
     // The policy is a modal on the login page now.
     '/privacy': { redirect: '/login#privacy' },
   },

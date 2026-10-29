@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { LayoutGrid, Plus, Search, Settings, Users } from '../lib/icons'
+import { LayoutGrid, Plus, Search, Settings } from '../lib/icons'
 
 /**
  * The app's left column on wide screens: every analysed chat, personal chats
@@ -68,14 +68,6 @@ const share = (report: ReportSummaryDto) =>
       </p>
     </nav>
 
-    <NuxtLink
-      to="/teams"
-      class="sidebar__item sidebar__foot"
-      :aria-current="route.path.startsWith('/teams') ? 'page' : undefined"
-    >
-      <span class="sidebar__icon"><Users aria-hidden="true" /></span>
-      <span class="sidebar__name">{{ t('teams.title') }}</span>
-    </NuxtLink>
     <NuxtLink
       to="/account"
       class="sidebar__item sidebar__foot"
@@ -212,9 +204,5 @@ const share = (report: ReportSummaryDto) =>
 .sidebar__foot {
   margin-top: var(--space-2);
   color: var(--text-muted);
-}
-
-.sidebar__foot + .sidebar__foot {
-  margin-top: 0;
 }
 </style>
