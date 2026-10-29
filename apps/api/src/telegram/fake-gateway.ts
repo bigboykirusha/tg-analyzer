@@ -65,6 +65,17 @@ const PHRASES = [
   'кстати, фильм был классный', 'запиши меня', 'дедлайн в пятницу', 'отправил', 'поздравляю!! 🥳',
 ]
 
+const MORNING_PHRASES = ['доброе утро ☀️', 'с добрым утром)', 'утречко', 'доброоое утро', 'good morning!']
+const NIGHT_PHRASES = ['спокойной ночи', 'споки 💤', 'сладких снов', 'всё, я спать', 'good night']
+const REACTIONS = ['❤', '❤', '❤', '👍', '👍', '😂', '😂', '🔥', '🥰', '🤔']
+// prettier-ignore
+const STICKERS = [
+  { id: 'demo-cat-1', emoji: '😺', setId: 'cats' }, { id: 'demo-cat-2', emoji: '😹', setId: 'cats' },
+  { id: 'demo-cat-3', emoji: '😿', setId: 'cats' }, { id: 'demo-dog-1', emoji: '🐶', setId: 'dogs' },
+  { id: 'demo-dog-2', emoji: '👍', setId: 'dogs' }, { id: 'demo-duck-1', emoji: '🦆', setId: 'ducks' },
+  { id: 'demo-duck-2', emoji: '❤️', setId: 'ducks' }, { id: 'demo-duck-3', emoji: '😴', setId: 'ducks' },
+]
+
 function hashToUnit(value: string): number {
   return createHash('sha256').update(value).digest().readUInt32BE(0) / 2 ** 32
 }
@@ -112,7 +123,19 @@ function generateChat(spec: FakeChatSpec, now: number): MessageInput[] {
             : kindRoll < 0.12
               ? 'file'
               : 'text'
-    const text = kind === 'text' ? PHRASES[Math.floor(rand() * PHRASES.length)]! : ''
+    const hour = new Date(ts).getUTCHours()
+    const pick = (list: readonly string[]) => list[Math.floor(rand() * list.length)]!
+    let text = ''
+    if (kind === 'text') {
+      if (hour >= 6 && hour < 10 && rand() < 0.3) text = pick(MORNING_PHRASES)
+      else if ((hour >= 22 || hour < 2) && rand() < 0.3) text = pick(NIGHT_PHRASES)
+      else text = pick(PHRASES)
+    }
+    const round = kind === 'media' && rand() < 0.3
+    // Stickers and reactions lean towards a few favourites, as in real chats.
+    const sticker = kind === 'sticker' ? STICKERS[Math.floor(rand() * rand() * STICKERS.length)]! : null
+    const reacted = rand() < (spec.members ? 0.15 : 0.1)
+    const reactionCount = spec.members ? 1 + Math.floor(rand() * 4) : 1
 
     messages.push({
       id: String(id),
@@ -123,6 +146,20 @@ function generateChat(spec: FakeChatSpec, now: number): MessageInput[] {
       senderName: outgoing ? null : (spec.members?.[memberIndex] ?? spec.title),
       replyToId: spec.members && id > 1 && rand() < 0.15 ? String(Math.max(1, id - 1 - Math.floor(rand() * 5))) : null,
       kind,
+      durationSec:
+        kind === 'voice' ? Math.round(3 + rand() * rand() * 240) : round ? Math.round(5 + rand() * 55) : null,
+      round,
+      sticker,
+      reactions: reacted
+        ? [
+            {
+              emoji: REACTIONS[Math.floor(rand() * REACTIONS.length)]!,
+              count: reactionCount,
+              // In a private chat the other side reacts to my messages and I react to theirs.
+              mine: spec.members ? rand() < 0.1 : !outgoing,
+            },
+          ]
+        : undefined,
     })
   }
   return messages
@@ -229,6 +266,8 @@ export class FakeTelegramGateway implements TelegramGateway {
         return { messages: page, total: all.length, nextOffsetId: start > 0 ? start + 1 : null }
       },
       downloadAvatar: async () => null,
+      // The demo has no sticker files: the report shows each sticker's emoji instead.
+      stickerPreviews: async () => new Map(),
       logOut: async () => undefined,
     }
   }

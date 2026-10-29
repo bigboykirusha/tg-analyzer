@@ -5,8 +5,8 @@ import { ChevronLeft, ChevronRight, Download, Share2, X } from '../../lib/icons'
 import type { StoryBlock, StoryPerson, StorySlideModel } from './StorySlide.vue'
 
 /**
- * «Итоги» as Wrapped-style stories: four dense slides (the chat at a glance,
- * who leads, when, which words), each a headline over a small bento of tiles,
+ * «Итоги» as Wrapped-style stories: up to five dense slides (the chat at a glance,
+ * who leads, when, habits, which words), each a headline over a small bento of tiles,
  * made to be shared one by one. Full screen on phones, a 9:16 frame on wider screens; progress
  * bars on top, auto-advance, hold to pause, tap the sides or swipe to move,
  * swipe down to close. Slides save as 1080×1920 PNGs or go to the share sheet.
@@ -127,6 +127,21 @@ const shareText = computed(() => {
   return tc(mine > 50 ? 'story.shareText.me' : 'story.shareText.them', totals.messages, values)
 })
 
+/** «Who does it more» as a tile: the name, and both counts underneath. */
+function whoMore(label: string, pair: { mine: number; theirs: number }, accent = false): StoryBlock | null {
+  if (pair.mine + pair.theirs < MIN_REPLY_SAMPLES) return null
+  const myName = me.value.name
+  const otherName = theirName.value
+  const even = Math.abs(pair.mine - pair.theirs) <= Math.max(pair.mine, pair.theirs) * 0.1
+  return {
+    kind: 'stat',
+    label,
+    value: even ? t('story.even') : pair.mine > pair.theirs ? myName : otherName,
+    note: `${myName} ${formatNumber(pair.mine)} · ${otherName} ${formatNumber(pair.theirs)}`,
+    accent,
+  }
+}
+
 /** Stat tiles sit in pairs; an odd one out takes the full row. */
 function paired(blocks: StoryBlock[]) {
   const stats = blocks.filter((block) => block.kind === 'stat' && !block.wide)
@@ -156,19 +171,6 @@ const slides = computed<StorySlideModel[]>(() => {
   const streak = facts.maxStreak.days
   const busiest = facts.mostActiveDate
   const gap = facts.longestGap
-  /** «Who does it more» as a tile: the name, and both counts underneath. */
-  const whoMore = (label: string, pair: { mine: number; theirs: number }, accent = false): StoryBlock | null => {
-    if (pair.mine + pair.theirs < MIN_REPLY_SAMPLES) return null
-    const even = Math.abs(pair.mine - pair.theirs) <= Math.max(pair.mine, pair.theirs) * 0.1
-    return {
-      kind: 'stat',
-      label,
-      value: even ? t('story.even') : pair.mine > pair.theirs ? myName : otherName,
-      note: `${myName} ${formatNumber(pair.mine)} · ${otherName} ${formatNumber(pair.theirs)}`,
-      accent,
-    }
-  }
-
   // 1. The chat at a glance: how much, how evenly and for how long.
   const overview: StoryBlock[] = []
   if (pulse.length > 1) overview.push({ kind: 'pulse', label: t('story.pulseLabel'), days: pulse })
@@ -334,7 +336,11 @@ const slides = computed<StorySlideModel[]>(() => {
     })
   }
 
-  // 4. Words: the word of the chat, each side's favourites, emoji and habits.
+  // 4. Habits: voice minutes, reactions and who opens and closes the day.
+  const talk = talkSlide()
+  if (talk) list.push(talk)
+
+  // 5. Words: the word of the chat, each side's favourites, emoji and habits.
   const myWords = top(vocabulary.topWordsBySender.mine, 3)
   const theirWords = top(vocabulary.topWordsBySender.theirs, 3)
   const chatWord = top(vocabulary.topWords, 1)[0] ?? myWords[0]
@@ -373,6 +379,107 @@ const slides = computed<StorySlideModel[]>(() => {
   list[list.length - 1]!.last = true
   return list
 })
+
+/** Voice, reactions and daily rituals; null when the report has none of them. */
+function talkSlide(): StorySlideModel | null {
+  const { voice, reactions, rituals } = props.data.report
+  const myName = me.value.name
+  const otherName = theirName.value
+  const blocks: StoryBlock[] = []
+  const seconds = voice
+    ? {
+        mine: voice.voice.seconds.mine + voice.round.seconds.mine,
+        theirs: voice.voice.seconds.theirs + voice.round.seconds.theirs,
+      }
+    : { mine: 0, theirs: 0 }
+  const voiceTotal = seconds.mine + seconds.theirs
+  const plain = (items: { value: string }[]) =>
+    top(
+      items.filter((item) => item.value !== 'custom' && item.value !== 'paid'),
+      3,
+    )
+
+  const chat = group.value
+  if (isGroup.value && chat) {
+    type Count = 'morningFirst' | 'reactionsReceived' | 'nightLast'
+    const ranked = (count: Count) =>
+      [...chat.participants]
+        .filter((person) => (person[count] ?? 0) > 0)
+        .sort((a, b) => (b[count] ?? 0) - (a[count] ?? 0))
+    const wakers = ranked('morningFirst').slice(0, 4)
+    const most = Math.max(...wakers.map((person) => person.morningFirst ?? 0), 1)
+    if (wakers.length)
+      blocks.push({
+        kind: 'ranking',
+        label: t('story.wakesChat'),
+        items: wakers.map((person) => ({
+          name: nameOf(person),
+          value: tc('report.talk.mornings', person.morningFirst ?? 0),
+          share: ((person.morningFirst ?? 0) / most) * 100,
+        })),
+      })
+    const star = ranked('reactionsReceived')[0]
+    if (star)
+      blocks.push({
+        kind: 'stat',
+        label: t('story.reactionStar'),
+        value: nameOf(star),
+        note: tc('report.talk.reactionCount', star.reactionsReceived ?? 0),
+        accent: true,
+      })
+    const closer = ranked('nightLast')[0]
+    if (closer)
+      blocks.push({
+        kind: 'stat',
+        label: t('story.nightLast'),
+        value: nameOf(closer),
+        note: tc('report.talk.evenings', closer.nightLast ?? 0),
+      })
+  } else {
+    if (voiceTotal)
+      blocks.push({
+        kind: 'duel',
+        label: t('story.voice'),
+        left: { label: myName, value: formatDuration(seconds.mine) },
+        right: { label: otherName, value: formatDuration(seconds.theirs) },
+      })
+    if (rituals) {
+      const morning = whoMore(t('story.morningFirst'), rituals.morningFirst, true)
+      if (morning) blocks.push(morning)
+      const night = whoMore(t('story.nightLast'), rituals.nightLast)
+      if (night) blocks.push(night)
+    }
+    if (reactions) {
+      const mine = plain(reactions.topBySender.mine)
+      const theirs = plain(reactions.topBySender.theirs)
+      if (mine.length && theirs.length)
+        blocks.push({
+          kind: 'duel',
+          label: t('story.reactions'),
+          left: { label: myName, value: mine.join(' ') },
+          right: { label: otherName, value: theirs.join(' ') },
+        })
+    }
+  }
+  if (!blocks.length) return null
+
+  const reactionTotal = reactions ? reactions.given.mine + reactions.given.theirs : 0
+  return {
+    key: 'talk',
+    theme: 5,
+    durationMs: 9000,
+    kicker: t(isGroup.value ? 'story.talkKickerGroup' : 'story.talkKicker'),
+    title:
+      voiceTotal >= 60
+        ? formatDuration(voiceTotal)
+        : reactionTotal
+          ? formatNumber(reactionTotal)
+          : t('story.talkTitle'),
+    sub:
+      voiceTotal >= 60 ? t('story.talkSubVoice') : reactionTotal ? tc('story.reactionsWord', reactionTotal) : undefined,
+    blocks: paired(blocks.slice(0, 5)),
+  }
+}
 
 const current = computed(() => slides.value[Math.min(index.value, slides.value.length - 1)]!)
 const exportSlide = computed(() => (exportIndex.value === null ? null : slides.value[exportIndex.value]))

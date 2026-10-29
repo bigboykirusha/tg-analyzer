@@ -5,10 +5,11 @@ import { Info } from '../../lib/icons'
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatNumber, formatDecimal, formatDuration, formatPercent } = useI18n()
 
-type Tab = 'overview' | 'rhythm' | 'words' | 'timeline'
+type Tab = 'overview' | 'talk' | 'rhythm' | 'words' | 'timeline'
 const tab = ref<Tab>('overview')
 const tabs = computed(() => [
   { value: 'overview' as const, label: t('report.tabs.overview') },
+  { value: 'talk' as const, label: t('report.tabs.talk') },
   { value: 'rhythm' as const, label: t('report.tabs.rhythm') },
   { value: 'words' as const, label: t('report.tabs.words') },
   { value: 'timeline' as const, label: t('report.tabs.timeline') },
@@ -144,6 +145,7 @@ const lead = computed(() => {
 
     <ReportNav v-model="tab" :options="tabs" :label="t('report.tabs.label')" />
     <OverviewTab v-if="tab === 'overview'" :data="data" />
+    <TalkTab v-else-if="tab === 'talk'" :data="data" />
     <RhythmTab v-else-if="tab === 'rhythm'" :data="data" />
     <WordsTab v-else-if="tab === 'words'" :data="data" />
     <TimelineTab v-else :data="data" />

@@ -7,7 +7,7 @@ import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
 import type { Redis } from 'ioredis'
 import { sleep } from '../lib/time'
 import { normalizeTelegramError, TelegramLoginError } from './errors'
-import { isSystemDialog, toMessageInput, toTelegramDialog } from './mapping'
+import { imageDataUrl, isSystemDialog, toMessageInput, toTelegramDialog } from './mapping'
 import { acquireSessionLease } from './session-lease'
 import type {
   HistoryPage,
@@ -265,6 +265,32 @@ export class LiveTelegramGateway implements TelegramGateway {
         if (!target) return null
         const photo = await attempt(() => client.downloadProfilePhoto(target as never, { isBig: false }))
         return Buffer.isBuffer(photo) && photo.length > 0 ? photo : null
+      },
+
+      stickerPreviews: async (chatId, messageIds) => {
+        guard()
+        const previews = new Map<string, string>()
+        const peer = await attempt(() => findPeer(chatId))
+        const ids = messageIds.map(Number).filter((id) => Number.isInteger(id) && id > 0)
+        if (!peer || !ids.length) return previews
+        const messages = await attempt(() => client.getMessages(peer.input, { ids }))
+        for (const message of messages) {
+          const document = message?.sticker as Api.Document | undefined
+          if (!message || !document) continue
+          guard()
+          try {
+            // The thumbnail is a small WebP for every kind of sticker, animated ones included.
+            const thumbs = document.thumbs ?? []
+            const media = thumbs.length
+              ? await client.downloadMedia(message, { thumb: thumbs.length - 1 })
+              : await client.downloadMedia(message)
+            const url = Buffer.isBuffer(media) ? imageDataUrl(media) : null
+            if (url) previews.set(String(message.id), url)
+          } catch {
+            // A missing preview only means the report shows the sticker's emoji.
+          }
+        }
+        return previews
       },
 
       logOut: async () => {

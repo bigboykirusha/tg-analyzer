@@ -3,18 +3,27 @@ import {
   type ChatReport,
   type ChatType,
   type DirectionalCountDto,
+  type GroupReportDto,
   type MessageCompositionDto,
+  type MilestoneDto,
+  type RecordingStatsDto,
+  type RitualsDto,
+  type SideCountDto,
+  type StickerStatsDto,
+  type TopItemDto,
 } from '../api/types'
 import { computeMaxStreak, computeTrend, countActiveWeeks } from './activity'
 import { computeGroupReport, type GroupParticipantInput, type GroupTimelineEntry } from './group-report'
 import { addDirectional, createDirectionalCount, increment, roundTo, topItems } from './primitives'
 import { computeHealthScore, computeRelationshipScore } from './relationship'
-import { analyzeMessageText } from './text'
+import { stemWord } from './stem'
+import { analyzeMessageText, normalizeEmoji } from './text'
 import {
   computeGaps,
   computeHabits,
   computeResponseStats,
   computeSessionStats,
+  computeUnansweredQuestions,
   emptySessionStats,
   sessionSplit,
 } from './timeline'
@@ -30,17 +39,66 @@ export interface MessageInput {
   senderName: string | null
   replyToId: string | null
   kind: keyof MessageCompositionDto
+  /** Length of a voice message or video note, in seconds. */
+  durationSec?: number | null
+  /** A video note («кружочек»); its `kind` is `media`. */
+  round?: boolean
+  /** Reactions under the message, by emoji. */
+  reactions?: ReactionInput[]
+  sticker?: StickerInput | null
 }
+
+export interface ReactionInput {
+  /** The emoji, or `custom` for a custom emoji and `paid` for stars. */
+  emoji: string
+  count: number
+  /** The current user put this reaction. */
+  mine: boolean
+}
+
+export interface StickerInput {
+  id: string
+  emoji: string | null
+  setId: string | null
+}
+
+/** Message numbers worth a moment: the first one, the 1000th, the 10 000th… */
+export const MILESTONES = [1, 100, 1_000, 5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000, 1_000_000]
+/** Mornings open at 5:00 and end at noon; evenings run from 21:00 until 5:00. */
+const MORNING_FROM = 5
+const MORNING_UNTIL = 12
+const EVENING_FROM = 21
+const HOUR_MS = 60 * 60 * 1000
+const TOP_STICKERS = 8
 
 interface ParticipantState extends GroupParticipantInput {
   activeDays: Set<string>
   wordCounts: Map<string, number>
   emojiCounts: Map<string, number>
+  voiceSeconds: number
+  roundSeconds: number
+  stickerCount: number
+  reactionsReceived: number
+  greetings: number
+  morningFirst: number
+  nightLast: number
 }
 
 interface TimelineEntry extends GroupTimelineEntry {
   outgoing: boolean
+  asks: boolean
 }
+
+interface StickerState {
+  emoji: string | null
+  setId: string | null
+  mine: number
+  theirs: number
+  messageId: string
+}
+
+const sideCount = (): SideCountDto => ({ mine: 0, theirs: 0 })
+const emptyRecording = (): RecordingStatsDto => ({ count: sideCount(), seconds: sideCount(), longest: null })
 
 interface DirectionalCounts {
   all: Map<string, number>
@@ -57,6 +115,17 @@ function recordDirectional(counts: DirectionalCounts, key: string, outgoing: boo
 
 const SELF_ID = 'self'
 const UNKNOWN_ID = 'unknown'
+
+/**
+ * Groups word forms under one key, or returns null for words that carry no
+ * topic (pronouns, prepositions…). The default stems with Snowball; the
+ * worker plugs in a dictionary lemmatizer.
+ */
+export type WordKey = (word: string) => string | null
+
+export interface ChatReportOptions {
+  wordKey?: WordKey
+}
 
 /**
  * Streaming aggregator for one chat. Feed messages with {@link add} in any
@@ -81,10 +150,24 @@ export class ChatReportBuilder {
   private questions = { mine: 0, theirs: 0 }
   private laughs = { mine: 0, theirs: 0 }
   private participants = new Map<string, ParticipantState>()
+  /** Written forms of each word stem, to show the most common one. */
+  private wordForms = new Map<string, Map<string, number>>()
+  private voice = { voice: emptyRecording(), round: emptyRecording() }
+  private reactions = {
+    given: sideCount(),
+    received: sideCount(),
+    reactedMessages: sideCount(),
+    emoji: createDirectionalCounts(),
+  }
+  private stickers = new Map<string, StickerState>()
+  private greetings = { morning: sideCount(), night: sideCount() }
   private timeline: TimelineEntry[] = []
   private messageSenders = new Map<string, string>()
 
-  constructor(timeZone = 'UTC') {
+  private readonly wordKey: WordKey
+
+  constructor(timeZone = 'UTC', options: ChatReportOptions = {}) {
+    this.wordKey = options.wordKey ?? stemWord
     this.timeZone = resolveTimeZone(timeZone)
     this.clock = createZonedClock(this.timeZone)
   }
@@ -114,8 +197,17 @@ export class ChatReportBuilder {
     if (this.firstMessageAt === null || ts < this.firstMessageAt) this.firstMessageAt = ts
     if (this.lastMessageAt === null || ts > this.lastMessageAt) this.lastMessageAt = ts
 
-    this.timeline.push({ id: message.id, ts, outgoing, senderId: participant.id, replyToId: message.replyToId })
+    const analysis = analyzeMessageText(message.text)
+    this.timeline.push({
+      id: message.id,
+      ts,
+      outgoing,
+      senderId: participant.id,
+      replyToId: message.replyToId,
+      asks: analysis.asks,
+    })
     this.messageSenders.set(message.id, participant.id)
+    this.addExtras(message, participant, analysis.greeting)
 
     participant.messageCount += 1
     participant.activeDays.add(local.day)
@@ -131,7 +223,6 @@ export class ChatReportBuilder {
       this.textMessagesBySide[outgoing ? 'mine' : 'theirs'] += 1
     }
 
-    const analysis = analyzeMessageText(text)
     this.totals.words += analysis.wordCount
     const side = outgoing ? 'mine' : 'theirs'
     this.wordsBySide[side] += analysis.wordCount
@@ -139,14 +230,112 @@ export class ChatReportBuilder {
     if (analysis.laughs) this.laughs[side] += 1
     participant.wordCount += analysis.wordCount
     for (const word of analysis.keywords) {
-      recordDirectional(this.words, word, outgoing)
-      increment(participant.wordCounts, word)
+      const stem = this.wordKey(word)
+      if (stem === null) continue
+      let forms = this.wordForms.get(stem)
+      if (!forms) this.wordForms.set(stem, (forms = new Map()))
+      increment(forms, word)
+      recordDirectional(this.words, stem, outgoing)
+      increment(participant.wordCounts, stem)
     }
     for (const symbol of analysis.emojis) {
       recordDirectional(this.emoji, symbol, outgoing)
       increment(participant.emojiCounts, symbol)
     }
   }
+
+  private addExtras(message: MessageInput, participant: ParticipantState, greeting: 'morning' | 'night' | null) {
+    const side = message.outgoing ? 'mine' : 'theirs'
+
+    if (greeting) {
+      this.greetings[greeting][side] += 1
+      participant.greetings += 1
+    }
+
+    const recording = message.round ? this.voice.round : message.kind === 'voice' ? this.voice.voice : null
+    if (recording) {
+      const seconds = Math.max(0, Math.round(message.durationSec ?? 0))
+      recording.count[side] += 1
+      recording.seconds[side] += seconds
+      if (message.round) participant.roundSeconds += seconds
+      else participant.voiceSeconds += seconds
+      if (seconds > 0 && (!recording.longest || seconds > recording.longest.seconds)) {
+        recording.longest = {
+          seconds,
+          mine: message.outgoing,
+          at: message.date.toISOString(),
+          senderId: participant.id,
+        }
+      }
+    }
+
+    if (message.reactions?.length) {
+      let total = 0
+      for (const reaction of message.reactions) {
+        const count = Math.max(0, Math.floor(reaction.count))
+        if (!count) continue
+        total += count
+        const mine = reaction.mine ? 1 : 0
+        const theirs = count - mine
+        this.reactions.given.mine += mine
+        this.reactions.given.theirs += theirs
+        const emoji =
+          reaction.emoji === 'custom' || reaction.emoji === 'paid' ? reaction.emoji : normalizeEmoji(reaction.emoji)
+        if (mine) recordDirectional(this.reactions.emoji, emoji, true)
+        if (theirs) {
+          increment(this.reactions.emoji.all, emoji, theirs)
+          increment(this.reactions.emoji.theirs, emoji, theirs)
+        }
+      }
+      if (total) {
+        this.reactions.received[side] += total
+        this.reactions.reactedMessages[side] += 1
+        participant.reactionsReceived += total
+      }
+    }
+
+    if (message.kind === 'sticker') {
+      participant.stickerCount += 1
+      const sticker = message.sticker
+      if (sticker?.id) {
+        let state = this.stickers.get(sticker.id)
+        if (!state) {
+          state = { emoji: sticker.emoji, setId: sticker.setId, mine: 0, theirs: 0, messageId: message.id }
+          this.stickers.set(sticker.id, state)
+        }
+        state[side] += 1
+      }
+    }
+  }
+
+  /** The most used stickers with one message that shows each, to fetch previews. */
+  topStickers(limit = TOP_STICKERS): { id: string; messageId: string }[] {
+    return [...this.stickers.entries()]
+      .sort(
+        ([leftId, left], [rightId, right]) =>
+          right.mine + right.theirs - (left.mine + left.theirs) || leftId.localeCompare(rightId),
+      )
+      .slice(0, limit)
+      .map(([id, state]) => ({ id, messageId: state.messageId }))
+  }
+
+  /** Shows a word stem as its most common written form. */
+  private formOf = (stem: string) => {
+    const forms = this.wordForms.get(stem)
+    if (!forms) return stem
+    let best = stem
+    let bestCount = -1
+    for (const [form, count] of forms) {
+      if (count > bestCount || (count === bestCount && form < best)) {
+        best = form
+        bestCount = count
+      }
+    }
+    return best
+  }
+
+  private words20 = (counts: ReadonlyMap<string, number>, limit = 20): TopItemDto[] =>
+    topItems(counts, limit).map((item) => ({ value: this.formOf(item.value), count: item.count }))
 
   finish(chatType: ChatType, now = new Date()): ChatReport {
     const timeline = this.timeline.sort((left, right) => left.ts - right.ts)
@@ -165,6 +354,8 @@ export class ChatReportBuilder {
       split,
     )
     const responses = computeResponseStats(isPrivate ? timeline : [], split)
+    // Before the group report, which reads the per-member counts.
+    const rituals = this.computeRituals(timeline)
 
     const relationship = isPrivate
       ? computeRelationshipScore({
@@ -196,11 +387,11 @@ export class ChatReportBuilder {
       },
       activity: { hourly: this.hourly, weekday: this.weekday, daily, monthly },
       vocabulary: {
-        topWords: topItems(this.words.all),
-        topWordsBySender: { mine: topItems(this.words.mine), theirs: topItems(this.words.theirs) },
+        topWords: this.words20(this.words.all),
+        topWordsBySender: { mine: this.words20(this.words.mine), theirs: this.words20(this.words.theirs) },
         uniqueWordsBySender: {
-          mine: topItems(exclusive(this.words.mine, this.words.theirs)),
-          theirs: topItems(exclusive(this.words.theirs, this.words.mine)),
+          mine: this.words20(exclusive(this.words.mine, this.words.theirs)),
+          theirs: this.words20(exclusive(this.words.theirs, this.words.mine)),
         },
         topEmoji: topItems(this.emoji.all),
         topEmojiBySender: { mine: topItems(this.emoji.mine), theirs: topItems(this.emoji.theirs) },
@@ -228,24 +419,121 @@ export class ChatReportBuilder {
         relationship,
         trend,
       }),
-      habits: isPrivate ? computeHabits(timeline, { questions: this.questions, laughs: this.laughs }, split) : null,
+      habits: isPrivate
+        ? {
+            ...computeHabits(timeline, { questions: this.questions, laughs: this.laughs }, split),
+            ...computeUnansweredQuestions(timeline, split),
+          }
+        : null,
       group:
         chatType === 'group'
-          ? computeGroupReport({
-              totalMessages: this.totals.messages,
-              nonTextMessages: this.totals.messages - this.composition.text,
-              firstMessageAt: this.firstMessageAt,
-              lastMessageAt: this.lastMessageAt,
-              activeDays,
-              now: now.getTime(),
-              clock: this.clock,
-              wordCounts: this.words.all,
-              timeline,
-              messageSenders: this.messageSenders,
-              participants: [...this.participants.values()],
-            })
+          ? this.withWordForms(
+              computeGroupReport({
+                totalMessages: this.totals.messages,
+                nonTextMessages: this.totals.messages - this.composition.text,
+                firstMessageAt: this.firstMessageAt,
+                lastMessageAt: this.lastMessageAt,
+                activeDays,
+                now: now.getTime(),
+                clock: this.clock,
+                wordCounts: this.words.all,
+                timeline,
+                messageSenders: this.messageSenders,
+                participants: [...this.participants.values()],
+              }),
+            )
           : null,
+      voice: { voice: this.voice.voice, round: this.voice.round },
+      reactions: {
+        given: this.reactions.given,
+        received: this.reactions.received,
+        reactedMessages: this.reactions.reactedMessages,
+        topBySender: { mine: topItems(this.reactions.emoji.mine, 8), theirs: topItems(this.reactions.emoji.theirs, 8) },
+        top: topItems(this.reactions.emoji.all, 8),
+      },
+      stickers: this.stickerStats(),
+      milestones: computeMilestones(timeline),
+      rituals,
     }
+  }
+
+  private stickerStats(): StickerStatsDto {
+    const count = sideCount()
+    const packs = new Set<string>()
+    for (const state of this.stickers.values()) if (state.setId) packs.add(state.setId)
+    for (const participant of this.participants.values()) {
+      count[participant.isSelf ? 'mine' : 'theirs'] += participant.stickerCount
+    }
+    return {
+      count,
+      distinct: this.stickers.size,
+      packs: packs.size,
+      top: this.topStickers().map(({ id }) => {
+        const state = this.stickers.get(id)!
+        return { id, emoji: state.emoji, mine: state.mine, theirs: state.theirs, thumb: null }
+      }),
+    }
+  }
+
+  /** Group word lists are counted by stem; show them as written. */
+  private withWordForms(group: GroupReportDto): GroupReportDto {
+    const show = (items: TopItemDto[]) => items.map((item) => ({ ...item, value: this.formOf(item.value) }))
+    const extras = new Map([...this.participants.values()].map((participant) => [participant.id, participant]))
+    return {
+      ...group,
+      sharedVocabulary: show(group.sharedVocabulary),
+      uniqueGroupWords: show(group.uniqueGroupWords),
+      participants: group.participants.map((participant) => {
+        const state = extras.get(participant.id)
+        return {
+          ...participant,
+          topWords: show(participant.topWords),
+          topicSignature: show(participant.topicSignature),
+          voiceSeconds: state?.voiceSeconds ?? 0,
+          roundSeconds: state?.roundSeconds ?? 0,
+          stickerCount: state?.stickerCount ?? 0,
+          reactionsReceived: state?.reactionsReceived ?? 0,
+          morningFirst: state?.morningFirst ?? 0,
+          nightLast: state?.nightLast ?? 0,
+          greetings: state?.greetings ?? 0,
+        }
+      }),
+    }
+  }
+
+  /** Who opens the mornings and who closes the evenings; see {@link RitualsDto}. */
+  private computeRituals(timeline: readonly TimelineEntry[]): RitualsDto {
+    const firstOfDay = new Map<string, TimelineEntry>()
+    const lastOfEvening = new Map<string, TimelineEntry>()
+    for (const entry of timeline) {
+      const local = this.clock(entry.ts)
+      if (local.hour >= MORNING_FROM && !firstOfDay.has(local.day)) firstOfDay.set(local.day, entry)
+      if (local.hour >= EVENING_FROM || local.hour < MORNING_FROM) {
+        lastOfEvening.set(this.clock(entry.ts - MORNING_FROM * HOUR_MS).day, entry)
+      }
+    }
+
+    const rituals: RitualsDto = {
+      mornings: 0,
+      morningFirst: sideCount(),
+      evenings: lastOfEvening.size,
+      nightLast: sideCount(),
+      goodMorning: { ...this.greetings.morning },
+      goodNight: { ...this.greetings.night },
+    }
+    for (const entry of firstOfDay.values()) {
+      if (this.clock(entry.ts).hour >= MORNING_UNTIL) continue
+      rituals.mornings += 1
+      rituals.morningFirst[entry.outgoing ? 'mine' : 'theirs'] += 1
+      const participant = this.participants.get(entry.senderId)
+      if (participant) participant.morningFirst += 1
+    }
+    for (const entry of lastOfEvening.values()) {
+      rituals.nightLast[entry.outgoing ? 'mine' : 'theirs'] += 1
+      const participant = this.participants.get(entry.senderId)
+      if (participant) participant.nightLast += 1
+    }
+    return rituals
   }
 
   private participant(message: MessageInput): ParticipantState {
@@ -272,10 +560,24 @@ export class ChatReportBuilder {
       lastSeen: null,
       wordCounts: new Map(),
       emojiCounts: new Map(),
+      voiceSeconds: 0,
+      roundSeconds: 0,
+      stickerCount: 0,
+      reactionsReceived: 0,
+      greetings: 0,
+      morningFirst: 0,
+      nightLast: 0,
     }
     this.participants.set(id, created)
     return created
   }
+}
+
+export function computeMilestones(timeline: readonly (GroupTimelineEntry & { outgoing: boolean })[]): MilestoneDto[] {
+  return MILESTONES.filter((index) => index <= timeline.length).map((index) => {
+    const entry = timeline[index - 1]!
+    return { index, at: new Date(entry.ts).toISOString(), mine: entry.outgoing, senderId: entry.senderId }
+  })
 }
 
 function getOrCreate(map: Map<string, DirectionalCountDto>, key: string) {

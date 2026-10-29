@@ -6,10 +6,10 @@ const props = defineProps<{ data: ReportDto }>()
 const { t, formatNumber, formatPercent } = useI18n()
 const nameOf = useParticipantName()
 
-type Tab = 'overview' | 'members' | 'dynamics' | 'network' | 'content'
+type Tab = 'overview' | 'members' | 'talk' | 'dynamics' | 'network' | 'content'
 const tab = ref<Tab>('overview')
 const tabs = computed(() =>
-  (['overview', 'members', 'dynamics', 'network', 'content'] as const).map((value) => ({
+  (['overview', 'members', 'talk', 'dynamics', 'network', 'content'] as const).map((value) => ({
     value,
     label: t(`group.${value}`),
   })),
@@ -76,6 +76,7 @@ const momentum = computed(() =>
     <ReportNav v-model="tab" :options="tabs" :label="t('report.tabs.label')" />
     <GroupOverviewTab v-if="tab === 'overview'" :data="data" :group="group" />
     <GroupMembersTab v-else-if="tab === 'members'" :group="group" />
+    <GroupTalkTab v-else-if="tab === 'talk'" :data="data" :group="group" />
     <GroupDynamicsTab v-else-if="tab === 'dynamics'" :data="data" />
     <GroupNetworkTab v-else-if="tab === 'network'" :group="group" />
     <GroupContentTab v-else :data="data" :group="group" />

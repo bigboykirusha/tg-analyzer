@@ -75,6 +75,9 @@ importers:
       '@tg-analyzer/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      az:
+        specifier: 0.2.3
+        version: 0.2.3
       bullmq:
         specifier: ^5.56.5
         version: 5.76.6
@@ -176,6 +179,9 @@ importers:
 
   packages/shared:
     dependencies:
+      emoji-regex:
+        specifier: 10.4.0
+        version: 10.4.0
       zod:
         specifier: 4.6.7
         version: 4.6.7
@@ -2212,6 +2218,9 @@ packages:
     resolution: {integrity: sha512-UzGt8zg7Ny8djbYMhxl2zuEevVa7r2gJjYY5Lwr1xM7+XU2nd6CkIWFTVcCIbAP63vSz71NaVyyuSk9lHKcy0A==}
     engines: {node: '>=4'}
 
+  az@0.2.3:
+    resolution: {integrity: sha512-U8d6Tw8ohZ8dcEp8aKjFYo+DU3BT8JPmYqmW0A0BsWW8ocP+F6gLZvrtglHq7pYa84dCEp3NHAoZoC4W3Lth2w==}
+
   b4a@1.9.0:
     resolution: {integrity: sha512-dpfcF9fDNR6++cthXR67iyhgqWy9CBouAvIWhIntzBG6cvK/cnIPiZQjBwi/ZqjjBEDGfoNDtmB0kTjroOJ3pQ==}
     peerDependencies:
@@ -2784,6 +2793,9 @@ packages:
 
   electron-to-chromium@1.5.449:
     resolution: {integrity: sha512-dKeYk/3SFQz+nXi5whp3OuJzeWABEG4zCtkWJ9+Vby1E1iFM2y0gElRtQvNXRPJTsj8WAF4HMP7hvP790QtJ9g==}
+
+  emoji-regex@10.4.0:
+    resolution: {integrity: sha512-EC+0oUMY1Rqm4O6LLrgjtYDvcVYTy7chDnM4Q7030tP4Kwj3u/pR6gP9ygnp2CJMK5Gq+9Q2oqmrFJAz01DXjw==}
 
   emoji-regex@10.6.0:
     resolution: {integrity: sha512-toUI84YS5YmxW219erniWD0CIVOo46xGKColeNQRgOzDorgBi1v4D71/OFzgD9GO2UGKIv1C3Sp8DAn0+j5w7A==}
@@ -7318,6 +7330,8 @@ snapshots:
 
   axe-core@4.13.0: {}
 
+  az@0.2.3: {}
+
   b4a@1.9.0: {}
 
   balanced-match@1.0.2: {}
@@ -7761,6 +7775,8 @@ snapshots:
   ee-first@1.1.1: {}
 
   electron-to-chromium@1.5.449: {}
+
+  emoji-regex@10.4.0: {}
 
   emoji-regex@10.6.0: {}
 

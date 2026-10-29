@@ -9,6 +9,7 @@ test('text analysis counts raw words, filters stop words and normalises tokens',
     emojis: [],
     asks: false,
     laughs: false,
+    greeting: null,
   })
 })
 
@@ -39,15 +40,24 @@ test('filler words stay out of the vocabulary, also in reports stored earlier', 
 })
 
 test('joined emoji count as one grapheme and text symbols are not emoji', () => {
-  assert.deepEqual(analyzeMessageText('семья 👨‍👩‍👧‍👦 ❤️ 👍🏽 #️⃣', new Set()).emojis, ['👨‍👩‍👧‍👦', '❤️', '👍🏽', '#️⃣'])
+  // Skin tones merge, so 👍🏽 and 👍 are one favourite.
+  assert.deepEqual(analyzeMessageText('семья 👨‍👩‍👧‍👦 ❤️ 👍🏽 #️⃣', new Set()).emojis, ['👨‍👩‍👧‍👦', '❤️', '👍', '#️⃣'])
   assert.deepEqual(analyzeMessageText('a 12 _- -- ... ♥︎ ☆', new Set()), {
     wordCount: 3,
     keywords: [],
     emojis: [],
     asks: false,
     laughs: false,
+    greeting: null,
   })
-  assert.deepEqual(analyzeMessageText(''), { wordCount: 0, keywords: [], emojis: [], asks: false, laughs: false })
+  assert.deepEqual(analyzeMessageText(''), {
+    wordCount: 0,
+    keywords: [],
+    emojis: [],
+    asks: false,
+    laughs: false,
+    greeting: null,
+  })
 })
 
 test('zoned clock resolves local parts across offsets and DST', () => {

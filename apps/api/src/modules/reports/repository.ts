@@ -257,5 +257,11 @@ function normalizeReport(raw: ChatReport, row: ChatReportRow): ChatReport {
     health: raw.health ?? null,
     habits: raw.habits ?? null,
     group: normalizeGroup(raw.group, row.analyzedAt.getTime()),
+    // Reports made before these existed show an invitation to analyse the chat again.
+    voice: raw.voice ?? null,
+    reactions: raw.reactions ?? null,
+    stickers: raw.stickers ?? null,
+    milestones: Array.isArray(raw.milestones) ? raw.milestones : null,
+    rituals: raw.rituals ?? null,
   }
 }

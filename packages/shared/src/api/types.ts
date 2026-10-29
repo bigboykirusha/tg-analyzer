@@ -337,6 +337,11 @@ export interface SessionStatsDto {
   highlights: SessionHighlightDto[]
 }
 
+export interface SideCountDto {
+  mine: number
+  theirs: number
+}
+
 /** Habits of a one-to-one chat, counted per side. */
 export interface ConversationHabitsDto {
   /** Writing again after 30+ minutes without an answer. */
@@ -347,6 +352,80 @@ export interface ConversationHabitsDto {
   questions: { mine: number; theirs: number }
   /** Messages that laugh: «ахах», «хаха», «lol», 😂, 🤣. */
   laughs: { mine: number; theirs: number }
+  /**
+   * Questions (a run of them counts once) after which the other side did not
+   * write anything in the same conversation. Absent in older reports.
+   */
+  unansweredQuestions?: SideCountDto
+  /** Question runs, the base of {@link unansweredQuestions}. */
+  questionTurns?: SideCountDto
+}
+
+/** Voice messages or video notes («кружочки») of one chat. */
+export interface RecordingStatsDto {
+  count: SideCountDto
+  seconds: SideCountDto
+  /** The longest one; `mine` tells who recorded it. */
+  longest: { seconds: number; mine: boolean; at: string; senderId: string | null } | null
+}
+
+export interface VoiceStatsDto {
+  voice: RecordingStatsDto
+  round: RecordingStatsDto
+}
+
+export interface ReactionStatsDto {
+  /** Reactions each side put on messages of the chat. */
+  given: SideCountDto
+  /** Reactions on messages of each side. */
+  received: SideCountDto
+  /** Messages of each side with at least one reaction. */
+  reactedMessages: SideCountDto
+  /** Emoji reactions by who put them; custom emoji count under «custom». */
+  topBySender: DirectionalTopItemsDto
+  top: TopItemDto[]
+}
+
+export interface StickerDto {
+  /** Telegram document id, stable across chats. */
+  id: string
+  /** The emoji the sticker stands for. */
+  emoji: string | null
+  mine: number
+  theirs: number
+  /** A small preview as a data URL; null when Telegram did not give one. */
+  thumb: string | null
+}
+
+export interface StickerStatsDto {
+  count: SideCountDto
+  /** Different stickers and sticker packs used. */
+  distinct: number
+  packs: number
+  top: StickerDto[]
+}
+
+/** The n-th message of the chat. */
+export interface MilestoneDto {
+  index: number
+  at: string
+  mine: boolean
+  senderId: string | null
+}
+
+/**
+ * Daily rituals. A morning counts when the first message after 5:00 came
+ * before noon; an evening when messages ran past 21:00 (until 5:00).
+ */
+export interface RitualsDto {
+  mornings: number
+  morningFirst: SideCountDto
+  evenings: number
+  nightLast: SideCountDto
+  /** Messages with «доброе утро», «утречко», «good morning»… */
+  goodMorning: SideCountDto
+  /** Messages with «спокойной ночи», «споки», «сладких снов», «иду спать»… */
+  goodNight: SideCountDto
 }
 
 export type InsightId =
@@ -429,6 +508,15 @@ export interface GroupParticipantDto {
   topWords: TopItemDto[]
   topEmoji: TopItemDto[]
   topicSignature: TopItemDto[]
+  /** Absent in older reports. */
+  voiceSeconds?: number
+  roundSeconds?: number
+  stickerCount?: number
+  reactionsReceived?: number
+  /** Mornings this member opened and evenings they closed. */
+  morningFirst?: number
+  nightLast?: number
+  greetings?: number
 }
 
 export interface GroupPairDto {
@@ -546,6 +634,12 @@ export interface ChatReport {
   /** Private chats only; null for groups and for reports made before habits were counted. */
   habits: ConversationHabitsDto | null
   group: GroupReportDto | null
+  /** Null in reports made before these were counted: the chat needs a new analysis. */
+  voice: VoiceStatsDto | null
+  reactions: ReactionStatsDto | null
+  stickers: StickerStatsDto | null
+  milestones: MilestoneDto[] | null
+  rituals: RitualsDto | null
 }
 
 /** Metrics that are cheap to recompute from a report and therefore not persisted. */

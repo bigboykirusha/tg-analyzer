@@ -6,7 +6,8 @@ import type { TelegramFloodWaitError, TelegramLoginError } from '../src/telegram
 
 const errors = await import('../src/telegram/errors')
 const { normalizeTelegramError, TelegramBusyError, TelegramSessionRevokedError } = errors
-const { toMessageInput } = await import('../src/telegram/mapping')
+const { imageDataUrl, toMessageInput } = await import('../src/telegram/mapping')
+const { createLemmatizer } = await import('../src/lib/lemmatizer')
 
 test('raw Telegram errors are normalised', () => {
   const flood = normalizeTelegramError({
@@ -46,6 +47,10 @@ test('gramjs messages are projected onto analysis metadata', () => {
     senderName: 'Ann Lee',
     replyToId: '5',
     kind: 'text',
+    durationSec: null,
+    round: false,
+    reactions: undefined,
+    sticker: null,
   })
   assert.equal(
     toMessageInput({ ...base, media: { className: 'MessageMediaPhoto' }, photo: {} } as never)?.kind,
@@ -61,4 +66,69 @@ test('gramjs messages are projected onto analysis metadata', () => {
   )
   assert.equal(toMessageInput({ ...base, media: { className: 'MessageMediaWebPage' } } as never)?.kind, 'text')
   assert.equal(toMessageInput({ className: 'MessageService', id: 1 } as never), null)
+})
+
+test('voice length, video notes, reactions and stickers are read from gramjs messages', () => {
+  const base = { className: 'Message', id: 8, date: 1767225600, out: false, message: '', senderId: 5n }
+  const voice = toMessageInput({
+    ...base,
+    media: { className: 'MessageMediaDocument' },
+    voice: { attributes: [{ className: 'DocumentAttributeAudio', duration: 41.6, voice: true }] },
+    document: {},
+    reactions: {
+      results: [
+        { reaction: { className: 'ReactionEmoji', emoticon: '❤' }, count: 1, chosenOrder: 0 },
+        { reaction: { className: 'ReactionCustomEmoji', documentId: 1n }, count: 2 },
+      ],
+    },
+  } as never)
+  assert.equal(voice?.kind, 'voice')
+  assert.equal(voice?.durationSec, 42)
+  assert.deepEqual(voice?.reactions, [
+    { emoji: '❤', count: 1, mine: true },
+    { emoji: 'custom', count: 2, mine: false },
+  ])
+
+  const round = toMessageInput({
+    ...base,
+    media: { className: 'MessageMediaDocument' },
+    videoNote: { attributes: [{ className: 'DocumentAttributeVideo', duration: 12, roundMessage: true }] },
+    video: {},
+    document: {},
+  } as never)
+  assert.equal(round?.kind, 'media')
+  assert.equal(round?.round, true)
+  assert.equal(round?.durationSec, 12)
+
+  const sticker = toMessageInput({
+    ...base,
+    media: { className: 'MessageMediaDocument' },
+    sticker: {
+      id: 77n,
+      attributes: [
+        { className: 'DocumentAttributeSticker', alt: '😺', stickerset: { className: 'InputStickerSetID', id: 9n } },
+      ],
+    },
+    document: {},
+  } as never)
+  assert.deepEqual(sticker?.sticker, { id: '77', emoji: '😺', setId: '9' })
+})
+
+test('sticker previews become data URLs only for small web images', () => {
+  const webp = Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBPVP8 ')])
+  assert.match(imageDataUrl(webp) ?? '', /^data:image\/webp;base64,/)
+  assert.equal(imageDataUrl(Buffer.from('not an image')), null)
+  assert.equal(imageDataUrl(Buffer.concat([webp, Buffer.alloc(64 * 1024)])), null)
+})
+
+test('words are grouped by dictionary lemma, function words are dropped', async () => {
+  const lemma = await createLemmatizer()
+  assert.equal(lemma('люблю'), 'любить')
+  assert.equal(lemma('любит'), 'любить')
+  assert.equal(lemma('работы'), 'работа')
+  assert.equal(lemma('пошла'), 'пойти')
+  assert.equal(lemma('около'), null)
+  // Slang the dictionary does not know falls back to the stem.
+  assert.equal(lemma('созвона'), lemma('созвоны'))
+  assert.equal(lemma('hello'), 'hello')
 })

@@ -276,3 +276,40 @@ export function computeHabits(
     laughs: { ...counts.laughs },
   }
 }
+
+/**
+ * Questions left without an answer. A run of questions from one side counts
+ * once; it is answered when the other side writes in the same conversation.
+ * A question still open at the very end of the chat may yet be answered, so
+ * it is not counted.
+ */
+export function computeUnansweredQuestions(
+  timeline: readonly (TimelinePoint & { asks: boolean })[],
+  split: SessionSplit = bySilence,
+): Pick<ConversationHabitsDto, 'unansweredQuestions' | 'questionTurns'> {
+  const ordered = chronological(timeline)
+  const unanswered = { mine: 0, theirs: 0 }
+  const turns = { mine: 0, theirs: 0 }
+  const open = { mine: false, theirs: false }
+
+  for (let index = 0; index < ordered.length; index += 1) {
+    const current = ordered[index]!
+    const previous = ordered[index - 1]
+    if (previous && split(previous.ts, current.ts)) {
+      if (open.mine) unanswered.mine += 1
+      if (open.theirs) unanswered.theirs += 1
+      open.mine = open.theirs = false
+    }
+    const side = current.outgoing ? 'mine' : 'theirs'
+    // Any message from this side answers what the other side asked.
+    open[current.outgoing ? 'theirs' : 'mine'] = false
+    if (current.asks && !open[side]) {
+      open[side] = true
+      turns[side] += 1
+    }
+  }
+  if (open.mine) turns.mine -= 1
+  if (open.theirs) turns.theirs -= 1
+
+  return { unansweredQuestions: unanswered, questionTurns: turns }
+}

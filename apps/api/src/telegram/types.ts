@@ -58,6 +58,8 @@ export interface TelegramAccountApi {
   getHistory(chatId: string, offsetId: number): Promise<HistoryPage>
   /** JPEG bytes of the chat photo, or of the user's own photo when `chatId` is null. */
   downloadAvatar(chatId: string | null): Promise<Buffer | null>
+  /** Small previews of the stickers in the given messages, as data URLs keyed by message id. */
+  stickerPreviews(chatId: string, messageIds: string[]): Promise<Map<string, string>>
   logOut(): Promise<void>
 }
 

@@ -5,6 +5,7 @@ import {
   type ParseProgressDto,
 } from '@tg-analyzer/shared'
 import { DelayedError, UnrecoverableError, type Job } from 'bullmq'
+import { createLemmatizer } from '../../lib/lemmatizer'
 import { logger } from '../../lib/logger'
 import { sleep } from '../../lib/time'
 import {
@@ -104,13 +105,32 @@ export async function runAnalysis(job: Job<AnalysisJobData>, token?: string) {
     const result = await telegram.withSession(
       userId,
       session,
-      (api) => scanChat(api, chatId, user.timezone, progress, publish, ensureActive),
+      async (api) => {
+        const scanned = await scanChat(api, chatId, user.timezone, progress, publish, ensureActive)
+        const previews = await api
+          .stickerPreviews(
+            chatId,
+            scanned.builder.topStickers().map((sticker) => sticker.messageId),
+          )
+          .catch((error: unknown) => {
+            logger.warn({ err: error, jobId }, 'sticker previews failed; the report shows emoji instead')
+            return new Map<string, string>()
+          })
+        return { ...scanned, previews }
+      },
       { waitMs: 60_000 },
     )
 
     progress.phase = 'saving'
     await publish(true)
     const report = result.builder.finish(result.dialog.type)
+    if (report.stickers) {
+      const examples = new Map(result.builder.topStickers().map((sticker) => [sticker.id, sticker.messageId]))
+      for (const sticker of report.stickers.top) {
+        const messageId = examples.get(sticker.id)
+        sticker.thumb = (messageId && result.previews.get(messageId)) || null
+      }
+    }
     const saved = await withRetries(async () => {
       await setJobChatTitle(jobId, result.dialog.title)
       return saveReportAndCompleteJob({
@@ -183,7 +203,7 @@ async function scanChat(
   progress.phase = 'scanning'
   await publish(true)
 
-  const builder = new ChatReportBuilder(timeZone)
+  const builder = new ChatReportBuilder(timeZone, { wordKey: await createLemmatizer() })
   let offsetId: number | null = 0
   while (offsetId !== null) {
     await ensureActive()

@@ -1,9 +1,11 @@
+import emojiRegex from 'emoji-regex'
+
 const WORD_PATTERN = /[\p{L}\p{N}_-]{2,}/gu
 const EMOJI_CANDIDATE = /\p{Extended_Pictographic}|\p{Regional_Indicator}|⃣/u
+// One emoji per match, as the Unicode standard defines them (ZWJ families, flags, keycaps, skin tones).
+const EMOJI_SEQUENCE = emojiRegex()
 // One emoji sequence: pictograph with optional modifier / variation selector /
 // tag sequence, ZWJ-joined pictographs, a regional-indicator flag or a keycap.
-const EMOJI_SEQUENCE =
-  /\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|️⃣?|[\u{E0020}-\u{E007E}]+\u{E007F})?(?:‍\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|️)?)*|\p{Regional_Indicator}{2}|[#*0-9]️?⃣/gu
 const EMOJI_PRESENTATION = /^\p{Emoji_Presentation}/u
 const TEXT_PRESENTATION = '︎'
 
@@ -36,6 +38,8 @@ const STOP_WORDS_RU = [
   'сильно', 'совсем', 'почти', 'точно', 'правда', 'реально', 'норм', 'ок', 'окей', 'ладно', 'хорошо',
   'привет', 'пока', 'да-да', 'нет-нет', 'ну-ну', 'неа', 'ой', 'ах', 'ох', 'эх', 'хм', 'мм', 'ммм', 'ааа',
   'аа', 'ее', 'её', 'один', 'одна', 'одно', 'два', 'три', 'раз', 'день', 'сегодня', 'завтра', 'вчера',
+  // Greetings are counted as rituals, not as topics.
+  'доброе', 'доброго', 'добрым', 'доброй', 'спокойной', 'споки',
 ]
 
 // prettier-ignore
@@ -57,26 +61,50 @@ const STOP_WORDS_EN = [
 export const DEFAULT_STOP_WORDS: ReadonlySet<string> = new Set([...STOP_WORDS_RU, ...STOP_WORDS_EN])
 
 export interface MessageTextAnalysis {
-  /** Every word-like token, stop words included. */
+  /** Every word-like token, stop words included. Links and @mentions are not words. */
   wordCount: number
   /** Normalised tokens worth counting in vocabulary charts. */
   keywords: string[]
-  /** Emoji graphemes, e.g. a family emoji counts once. */
+  /** Emoji graphemes, e.g. a family emoji counts once; skin tones are merged. */
   emojis: string[]
   /** The message asks something. */
   asks: boolean
   /** The message laughs: «ахах», «хаха», «lol», 😂. */
   laughs: boolean
+  /** A good-morning or good-night wish. */
+  greeting: 'morning' | 'night' | null
 }
 
-/** «ахах», «хахаха», «хех», «lol»; typos such as «ахпхах» are left alone. */
-const LAUGH_WORD = /^(?:а?(?:х[аеы])+х?|(?:ха)+|(?:ah)?(?:ha)+h?|(?:he){2,}|lo+l|lmao|лол|ржу|ору)$/u
-const SHORT_LAUGHS = new Set(['хех', 'лол', 'lol', 'ору', 'ржу'])
+const EMPTY_ANALYSIS: MessageTextAnalysis = {
+  wordCount: 0,
+  keywords: [],
+  emojis: [],
+  asks: false,
+  laughs: false,
+  greeting: null,
+}
+
+/** «ахах», «хахаха», «хех», «lol», «азаза»; typos such as «ахпхах» count too. */
+const LAUGH_WORD = /^(?:а?(?:х[аеы])+х?|(?:ха)+|(?:ah)?(?:ha)+h?|(?:he){2,}|lo+l|lmao|lmfao|rofl|лол|ржу|ору)$/u
+/** Laughs typed in a hurry mix neighbouring keys: «ахпххаз», «хвхвх», «азазаз». */
+const SLOPPY_LAUGH = /^[ахпзвыъж]+$/u
+const SHORT_LAUGHS = new Set(['хех', 'хах', 'лол', 'lol', 'ору', 'ржу', 'кек', 'хд', 'xd', 'хдд', 'xdd'])
 const LAUGH_EMOJI = /😂|🤣|😆|😹/u
+
+function count(word: string, letter: string) {
+  let total = 0
+  for (const char of word) if (char === letter) total += 1
+  return total
+}
 
 /** Laughter tokens are counted as laughs, never as top words. */
 export function isLaughter(word: string) {
-  return (word.length >= 4 || SHORT_LAUGHS.has(word)) && LAUGH_WORD.test(word)
+  if (SHORT_LAUGHS.has(word)) return true
+  if (word.length < 4) return false
+  if (LAUGH_WORD.test(word)) return true
+  if (/^(?:аз)+а?$/u.test(word) || /^(?:пх)+п?$/u.test(word)) return true
+  // At least two «х» and a vowel, from letters next to each other on the keyboard.
+  return SLOPPY_LAUGH.test(word) && count(word, 'х') >= 2 && /[аы]/u.test(word) && !/(.)\1\1/u.test(word)
 }
 
 /** Drops stop words from stored top lists, so reports made with an older list read clean too. */
@@ -87,13 +115,39 @@ export function withoutStopWords<T extends { value: string }>(
   return items.filter((item) => !stopWords.has(item.value) && !isLaughter(item.value))
 }
 
+/** Links, e-mail addresses, @mentions and /commands carry no words of the conversation. */
+const NOT_WORDS =
+  /(?:https?:\/\/|www\.)\S+|\b[\w.+-]+@[\w-]+\.[\w.-]+|(?:^|\s)[@/][\w@]+|\b[\w-]+\.(?:com|ru|org|net|io|me|app|рф|be|ly|tv|gg)(?:\/\S*)?/giu
+
+// Wishes and bare questions are matched on lower-cased text with ё folded and repeated letters squeezed to one.
+const GOOD_MORNING =
+  /(?:^|[^\p{L}])(?:(?:с\s*)?добр(?:ое|ого|ым)\s*утр(?:о|ом|а|ечко|ечка|ечком)?|утр(?:о|а)\s+добр(?:ое|ого)|утречк[оа]|go{1,2}d\s*morning|g'?morning|gm)(?![\p{L}])/iu
+const GOOD_NIGHT =
+  /(?:^|[^\p{L}])(?:спокойн(?:ой|енькой)\s*ночи|споки(?:\s*ноки)?|спок\s*ночи|спокиноки|сладких\s+снов|добрых\s+снов|доброй\s+ночи|go{1,2}d\s*night|nighty?\s*night|gn|(?:иду|пошл[аи]|пошел|ушл[аи]|ушел|ложусь)\s+спать)(?![\p{L}])/iu
+
+/** Questions people type without a question mark. */
+const BARE_QUESTION =
+  /^(?:а\s+)?(?:(?:ты|вы)\s+(?:где|тут|здесь|дома|спишь|занят[аы]?|свободн[аы]?|можешь|придешь|будешь|едешь)|где\s+(?:ты|вы)|как\s+(?:дела|ты|вы|сам[аи]?|настроение|прошло|оно|там|себя\s+чувствуешь)|(?:что|чем|че|чо|шо)\s+(?:делаешь|делаете|занят[аы]?|нового)|(?:не\s+)?спишь|how\s+are\s+you|how\s+r\s+u|where\s+are\s+you|what'?s\s+up|wyd|you\s+there)(?![\p{L}])/iu
+
+/** «спасибоооо» → «спасибо», «класссс» → «класс», «дааа» → «да». */
+const STRETCHED_VOWEL = /([аеиоуыэюяaeiouy])\1{2,}/giu
+const STRETCHED_CONSONANT = /(\p{L})\1{2,}/gu
+
+const REPEATED_LETTER = /(\p{L})\1+/gu
+
+export function squeezeStretched(text: string) {
+  return text.replace(STRETCHED_VOWEL, '$1').replace(STRETCHED_CONSONANT, '$1$1')
+}
+
 export function analyzeMessageText(
   text: string,
   stopWords: ReadonlySet<string> = DEFAULT_STOP_WORDS,
 ): MessageTextAnalysis {
-  if (!text) return { wordCount: 0, keywords: [], emojis: [], asks: false, laughs: false }
+  if (!text) return { ...EMPTY_ANALYSIS, keywords: [], emojis: [] }
 
-  const words = text.match(WORD_PATTERN) ?? []
+  const prose = NOT_WORDS.test(text) ? text.replace(NOT_WORDS, ' ') : text
+  NOT_WORDS.lastIndex = 0
+  const words = prose.match(WORD_PATTERN) ?? []
   const keywords: string[] = []
   let laughs = false
   for (const word of words) {
@@ -105,7 +159,11 @@ export function analyzeMessageText(
   const emojis = extractEmojis(text)
   if (!laughs && emojis.length) laughs = emojis.some((symbol) => LAUGH_EMOJI.test(symbol))
 
-  return { wordCount: words.length, keywords, emojis, asks: text.includes('?'), laughs }
+  const plain = prose.toLowerCase().replaceAll('ё', 'е').replace(REPEATED_LETTER, '$1').trim()
+  const asks = prose.includes('?') || BARE_QUESTION.test(plain)
+  const greeting = GOOD_NIGHT.test(plain) ? 'night' : GOOD_MORNING.test(plain) ? 'morning' : null
+
+  return { wordCount: words.length, keywords, emojis, asks, laughs, greeting }
 }
 
 const EDGE_PUNCTUATION = /^[_-]+|[_-]+$/g
@@ -122,8 +180,22 @@ function normalizeWord(word: string): string | null {
   ) {
     normalized = normalized.replace(EDGE_PUNCTUATION, '')
   }
+  normalized = squeezeStretched(normalized)
   // Require at least two letters so that numbers and ids do not dominate.
   return normalized.length >= 2 && TWO_LETTERS.test(normalized) ? normalized : null
+}
+
+const SKIN_TONE = /[\u{1F3FB}-\u{1F3FF}]/gu
+const VARIATION_SELECTOR = '\u{FE0F}'
+
+/** One key per emoji: skin tones merge, and a symbol always carries the emoji selector. */
+export function normalizeEmoji(symbol: string) {
+  const plain = symbol.replace(SKIN_TONE, '')
+  if (!plain) return symbol
+  const bare = plain.replaceAll(VARIATION_SELECTOR, '')
+  // A lone symbol such as ❤ renders as text without the selector.
+  if ([...bare].length === 1 && !EMOJI_PRESENTATION.test(bare)) return `${bare}${VARIATION_SELECTOR}`
+  return plain.includes('\u{200D}') || plain.includes('\u{20E3}') ? plain : bare || plain
 }
 
 function extractEmojis(text: string): string[] {
@@ -137,7 +209,7 @@ function extractEmojis(text: string): string[] {
     // Pictographs such as ♥ or ☆ are plain symbols unless rendered as emoji.
     const rendersAsEmoji =
       next !== TEXT_PRESENTATION && (sequence.length > 2 || sequence.includes('️') || EMOJI_PRESENTATION.test(sequence))
-    if (rendersAsEmoji) emojis.push(sequence)
+    if (rendersAsEmoji) emojis.push(normalizeEmoji(sequence))
   }
   return emojis
 }
