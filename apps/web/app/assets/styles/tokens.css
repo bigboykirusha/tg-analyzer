@@ -10,6 +10,8 @@
   --bg: #f2f3f5;
   --surface: #ffffff;
   --surface-2: #f2f3f5;
+  /* Loading placeholders: visible both on the page and inside a white tile. */
+  --skeleton: #e6e8eb;
   --fill-hover: #e9eaed;
   --surface-raised: #ffffff;
   /* Grey fill for rows and icon tiles inside overlays (one step up from --surface-raised). */
@@ -114,6 +116,7 @@
   --bg: #0a0a0b;
   --surface: #141416;
   --surface-2: #1c1c1f;
+  --skeleton: #1f1f23;
   --fill-hover: #26262a;
   --surface-raised: #1c1c1f;
   --fill-raised: #26262a;
@@ -206,6 +209,7 @@
     --bg: #0a0a0b;
     --surface: #141416;
     --surface-2: #1c1c1f;
+    --skeleton: #1f1f23;
     --fill-hover: #26262a;
     --surface-raised: #1c1c1f;
     --fill-raised: #26262a;

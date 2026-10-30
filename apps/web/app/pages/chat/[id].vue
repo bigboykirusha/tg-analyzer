@@ -22,6 +22,13 @@ const confirm = ref<'delete' | null>(null)
 const deleting = ref(false)
 const storyOpen = ref(false)
 
+/** The chat's name from the lists already loaded, so the top bar is right before the report arrives. */
+const knownTitle = computed(
+  () =>
+    workspace.reports.find((report) => report.chatId === chatId.value)?.title ??
+    workspace.chats.find((chat) => chat.id === chatId.value)?.title ??
+    null,
+)
 useSeoMeta({ title: () => data.value?.summary.title ?? t('report.title') })
 
 const canReanalyse = computed(() => auth.telegramSessionActive && !analysis.isActive.value && !reanalysing.value)
@@ -118,7 +125,7 @@ onMounted(load)
       </template>
     </UiEmptyState>
 
-    <ReportSkeleton v-else />
+    <ReportSkeleton v-else :title="knownTitle" />
 
     <DeleteReportDialog
       :open="confirm === 'delete'"

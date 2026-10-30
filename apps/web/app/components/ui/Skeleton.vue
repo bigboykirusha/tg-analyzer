@@ -23,7 +23,7 @@ withDefaults(
   flex-shrink: 0;
   max-width: 100%;
   overflow: hidden;
-  background: var(--surface-2);
+  background: var(--skeleton);
 }
 
 .skeleton::after {

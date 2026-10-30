@@ -63,7 +63,18 @@ const share = (report: ReportSummaryDto) =>
           <small v-if="share(report)" class="sidebar__meta">{{ share(report) }}</small>
         </NuxtLink>
       </template>
-      <p v-if="!workspace.reports.length && workspace.reportsState === 'ready'" class="sidebar__empty">
+      <!-- The report list on its way: rows of the same height, so the list does not jump in. -->
+      <div
+        v-if="!workspace.reports.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error'"
+        aria-hidden="true"
+      >
+        <div class="sidebar__heading"><UiSkeleton width="64px" height="10px" /></div>
+        <div v-for="row in 4" :key="row" class="sidebar__item">
+          <UiSkeleton width="24px" height="24px" radius="50%" />
+          <UiSkeleton :width="`${80 - row * 9}%`" />
+        </div>
+      </div>
+      <p v-else-if="!workspace.reports.length && workspace.reportsState === 'ready'" class="sidebar__empty">
         {{ t('sidebar.empty') }}
       </p>
     </nav>

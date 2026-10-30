@@ -58,14 +58,29 @@ onMounted(() => {
     <div class="page">
       <SessionBanner />
 
-      <!-- Loading: the shape of the summary, so nothing jumps when it arrives. -->
+      <!-- Loading: the shape of the summary and the report cards, so nothing jumps when they arrive. -->
       <template v-if="loadingReports">
-        <UiSkeleton width="220px" height="40px" />
         <div class="bento" aria-hidden="true">
           <div class="tile span-8 home__skeleton">
-            <UiSkeleton width="40%" /><UiSkeleton width="60%" height="44px" />
+            <UiSkeleton width="40%" /><UiSkeleton width="45%" height="44px" />
+            <UiSkeleton class="home__skeleton-foot" height="72px" />
           </div>
-          <div class="tile span-4 home__skeleton"><UiSkeleton width="50%" /></div>
+          <div class="tile span-4 home__skeleton">
+            <UiSkeleton width="60%" />
+            <UiSkeleton class="home__skeleton-foot" width="64px" height="64px" radius="50%" />
+            <UiSkeleton width="50%" height="28px" />
+          </div>
+        </div>
+        <div class="stack" aria-hidden="true">
+          <UiSkeleton width="120px" height="24px" />
+          <div class="report-cards">
+            <div v-for="card in 4" :key="card" class="tile home__skeleton-card">
+              <UiSkeleton width="44px" height="44px" radius="50%" />
+              <UiSkeleton width="70%" height="20px" />
+              <UiSkeleton width="50%" />
+              <UiSkeleton class="home__skeleton-foot" height="40px" />
+            </div>
+          </div>
         </div>
       </template>
 
@@ -142,7 +157,21 @@ onMounted(() => {
 }
 
 .home__skeleton {
-  min-height: 220px;
+  min-height: 240px;
+}
+
+.home__skeleton-card {
+  min-height: 200px;
+}
+
+.home__skeleton-foot {
+  margin-top: auto;
+}
+
+@media (max-width: 900px) {
+  .home__skeleton {
+    min-height: 160px;
+  }
 }
 
 /* ─── Newcomer: three steps in one lime tile ─── */

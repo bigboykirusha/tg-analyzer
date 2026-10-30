@@ -22,7 +22,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
           <Skeleton width="65%" height="14px" />
           <Skeleton width="42%" height="12px" />
         </div>
-        <Skeleton class="loading-action" width="112px" height="var(--control-sm)" radius="var(--radius-full)" />
+        <Skeleton width="88px" height="var(--control-sm)" radius="var(--radius-full)" />
       </div>
     </template>
   </div>
@@ -31,6 +31,13 @@ onBeforeUnmount(() => window.clearTimeout(timer))
 <style scoped>
 .loading-list {
   min-width: 0;
+}
+
+/* The same white card as the chat list it stands in for. */
+.loading-list:has(.loading-row) {
+  padding: var(--space-1) 0;
+  border-radius: var(--radius-card);
+  background: var(--surface);
 }
 
 .loading-row {
@@ -51,11 +58,5 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   flex: 1;
   min-width: 0;
   gap: var(--space-2);
-}
-
-@media (max-width: 640px) {
-  .loading-action {
-    display: none;
-  }
 }
 </style>
