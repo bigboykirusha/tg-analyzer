@@ -162,6 +162,11 @@ function generateChat(spec: FakeChatSpec, now: number): MessageInput[] {
         : undefined,
     })
   }
+  // The bursty walk ends well before `now`; move the chat forward by whole days so it
+  // stays current (the last-month summary needs it) and keeps its hours of the day.
+  const lastMs = messages.at(-1)?.date.getTime() ?? now
+  const shiftMs = Math.floor((now - lastMs) / DAY_MS) * DAY_MS
+  if (shiftMs > 0) for (const message of messages) message.date = new Date(message.date.getTime() + shiftMs)
   return messages
 }
 
