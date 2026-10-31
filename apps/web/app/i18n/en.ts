@@ -889,8 +889,6 @@ export const en = {
     "We read a chat's history only while analysing it and never store message texts, only computed statistics and the most frequent words. The privacy policy explains what we keep and for how long.",
   'terms.data.title': 'Data',
   'terms.description': 'Terms of use of TG Analyzer, an unofficial app that analyses chats through the Telegram API.',
-  'terms.draft':
-    'Draft. A lawyer must review this text before the public launch: operator details, governing law and personal data processing under Russian Federal Law 152-FZ.',
   'terms.limits.text':
     'The service is provided as is. An analysis may not finish when Telegram limits requests or a chat is very large. We may suspend access to protect the service or comply with the law.',
   'terms.limits.title': 'Availability and limits',

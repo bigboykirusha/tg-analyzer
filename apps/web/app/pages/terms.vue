@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { AlertTriangle } from '../lib/icons'
-
 const { t } = useI18n()
 useSeoMeta({
   title: () => t('terms.title'),
@@ -21,11 +19,6 @@ const sections = computed(() =>
   <UiPageContainer size="narrow">
     <div class="page">
       <UiPageHeader :title="t('terms.title')" :lede="t('terms.updated')" />
-
-      <div class="banner banner--warning" role="note">
-        <AlertTriangle aria-hidden="true" />
-        <p class="banner__text">{{ t('terms.draft') }}</p>
-      </div>
 
       <div class="tile legal">
         <section v-for="(section, index) in sections" :key="section.key" class="legal__section">
