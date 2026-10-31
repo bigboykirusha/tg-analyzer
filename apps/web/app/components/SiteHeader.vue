@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The header of every public page: the logo on the left, the questions page and
- * «Sign in» on the right. Sticky, flush with the page until it scrolls.
+ * The header of every public page: the logo on the left, the privacy page and
+ * «Sign in» on the right (on the example report — «See yours»). Sticky, flush with the page until it scrolls.
  */
 const { t } = useI18n()
 const route = useRoute()
@@ -22,10 +22,10 @@ const isReport = computed(() => route.path === '/example')
           class="site-header__link"
           :aria-current="route.path === '/faq' ? 'page' : undefined"
         >
-          {{ t('site.faq') }}
+          {{ t('site.privacy') }}
         </NuxtLink>
         <UiButton v-if="route.path !== '/login'" variant="secondary" size="sm" to="/login">
-          {{ t('site.signIn') }}
+          {{ isReport ? t('example.cta') : t('site.signIn') }}
         </UiButton>
       </nav>
     </UiPageContainer>

@@ -50,6 +50,8 @@
   --lime-hover: #b8e655;
   --on-lime: #0e0f11;
   --on-lime-muted: rgba(14, 15, 17, 0.6);
+  /* Hairlines inside a lime tile. */
+  --on-lime-line: rgba(14, 15, 17, 0.14);
   --lavender: #dcd6ff;
   --peach: #ffd9c7;
   --success: #2e9e5b;
@@ -152,6 +154,7 @@
   --lime-hover: #d3f585;
   --on-lime: #0a0a0b;
   --on-lime-muted: rgba(10, 10, 11, 0.6);
+  --on-lime-line: rgba(10, 10, 11, 0.14);
   --lavender: #b9aeff;
   --peach: #ffb89a;
   --success: #4cc38a;
@@ -246,6 +249,7 @@
     --lime-hover: #d3f585;
     --on-lime: #0a0a0b;
     --on-lime-muted: rgba(10, 10, 11, 0.6);
+    --on-lime-line: rgba(10, 10, 11, 0.14);
     --lavender: #b9aeff;
     --peach: #ffb89a;
     --success: #4cc38a;

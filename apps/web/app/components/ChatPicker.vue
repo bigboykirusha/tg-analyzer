@@ -16,6 +16,7 @@ const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
 const toast = useToast()
 const errorMessage = useErrorMessage()
+const { relogin } = useAuth()
 
 const search = ref('')
 const filter = ref<'all' | 'private' | 'groups'>('all')
@@ -143,12 +144,16 @@ onMounted(() => {
       />
     </div>
 
-    <div v-if="auth.telegramSessionActive && workspace.dialogsStale" class="banner banner--info" role="status">
+    <p v-if="!auth.telegramSessionActive" class="note picker-note" role="status">
       <Info aria-hidden="true" />
-      <div class="banner__copy">
-        <span class="banner__text">{{ t('dashboard.staleDialogs') }}</span>
-      </div>
-    </div>
+      {{ t('dashboard.sessionInactive') }}
+      <button type="button" class="note__action" @click="relogin">{{ t('common.relogin') }}</button>
+    </p>
+    <p v-else-if="workspace.dialogsStale" class="note picker-note" role="status">
+      <Info aria-hidden="true" />
+      {{ t('dashboard.staleDialogs') }}
+      <button type="button" class="note__action" @click="workspace.loadDialogs()">{{ t('common.refresh') }}</button>
+    </p>
 
     <UiListSkeleton v-if="firstLoad" :rows="6" />
 

@@ -37,11 +37,11 @@ export function useAuth() {
     return result
   }
 
-  async function finishSession() {
+  async function finishSession(to = '/login') {
     useAnalysis().stop()
     useWorkspaceStore().reset()
     auth.signOut()
-    await navigateTo('/login', { replace: true })
+    await navigateTo(to, { replace: true })
   }
 
   async function logout() {
@@ -49,6 +49,15 @@ export function useAuth() {
       await api('POST /api/v1/auth/logout')
     } finally {
       await finishSession()
+    }
+  }
+
+  /** Telegram ended the session: sign out and say so on the login page. */
+  async function relogin() {
+    try {
+      await api('POST /api/v1/auth/logout')
+    } finally {
+      await finishSession('/login?session=ended')
     }
   }
 
@@ -90,6 +99,7 @@ export function useAuth() {
     verifyCode,
     verifyPassword,
     logout,
+    relogin,
     deleteAccount,
     syncTimeZone,
     updateSettings,

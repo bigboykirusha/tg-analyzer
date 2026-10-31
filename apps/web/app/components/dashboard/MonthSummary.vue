@@ -3,27 +3,64 @@ import type { RecentActivityResponse } from '@tg-analyzer/shared'
 
 /**
  * The top of the home page: private chats of the last month, counted by
- * Telegram without an analysis. An ink tile with the busiest people and who
- * writes more, and a lime tile with the person the user wrote with most.
+ * Telegram without an analysis. The ink tile lists the busiest people; the
+ * lime tile says what to do next — the busiest chat that has no report yet.
+ * When every busy chat has a report, the lime tile names the busiest person
+ * and that person leaves the ink list, so nothing is said twice.
  */
 const props = defineProps<{ recent: RecentActivityResponse; reportIds: Set<string> }>()
-const { t, tc, formatNumber, formatPercent } = useI18n()
+const { t, tc, formatNumber, formatPercent, formatRelative } = useI18n()
+const analysis = useAnalysis()
+const auth = useAuthStore()
+const toast = useToast()
+const errorMessage = useErrorMessage()
+const { relogin } = useAuth()
 
 const ROWS = 5
 
 const total = computed(() => props.recent.chats.reduce((sum, chat) => sum + chat.messages, 0))
 const mine = computed(() => props.recent.chats.reduce((sum, chat) => sum + chat.mine, 0))
+
+/** The busiest chat of the month without a report, and its place in the month. */
+const next = computed(() => {
+  const index = props.recent.chats.findIndex((chat) => !props.reportIds.has(chat.id))
+  return index === -1 ? null : { chat: props.recent.chats[index]!, rank: index + 1 }
+})
 // With one chat the lime tile would only repeat the single row.
-const top = computed(() => (props.recent.chats.length > 1 ? props.recent.chats[0]! : null))
+const top = computed(() => (!next.value && props.recent.chats.length > 1 ? props.recent.chats[0]! : null))
 const rows = computed(() =>
-  props.recent.chats.slice(0, ROWS).map((chat) => ({ ...chat, share: (chat.mine / chat.messages) * 100 })),
+  props.recent.chats
+    .filter((chat) => chat.id !== top.value?.id)
+    .slice(0, ROWS)
+    .map((chat) => ({ ...chat, share: (chat.mine / chat.messages) * 100 })),
 )
 const share = (value: number, of: number) => (of ? (value / of) * 100 : 0)
+
+const starting = ref(false)
+const nextState = computed(() => {
+  const id = next.value?.chat.id
+  if (!id) return null
+  if (analysis.isActive.value && analysis.progress.value.chatId === id) return 'running'
+  if (analysis.queued.value.some((item) => item.chatId === id)) return 'queued'
+  return null
+})
+
+async function analyseNext() {
+  if (!next.value) return
+  starting.value = true
+  try {
+    await analysis.startAnalysis(next.value.chat.id, next.value.chat.title)
+  } catch (error) {
+    toast.error(t('analysis.startError'), errorMessage(error))
+  } finally {
+    starting.value = false
+  }
+}
 </script>
 
 <template>
   <div class="bento month">
-    <section class="tile tile--ink month__main" :class="top ? 'span-8' : 'span-12'">
+    <section class="tile tile--ink month__main" :class="next || top ? 'span-8' : 'span-12'">
       <div class="tile__label">{{ t('month.label') }}</div>
       <template v-if="recent.chats.length">
         <div class="tile__figure">{{ formatNumber(total) }}</div>
@@ -50,9 +87,44 @@ const share = (value: number, of: number) => (of ? (value / of) * 100 : 0)
       <p v-else class="tile__note">{{ t('month.empty') }}</p>
     </section>
 
+    <section v-if="next" class="tile tile--lime span-4 month__top month__top--next" aria-labelledby="month-next">
+      <div class="tile__label">{{ t('month.next') }}</div>
+      <ChatAvatar
+        :chat-id="next.chat.id"
+        :title="next.chat.title"
+        :has-avatar="next.chat.hasAvatar"
+        size="lg"
+        class="month__avatar"
+      />
+      <h2 id="month-next" class="month__top-name">{{ next.chat.title }}</h2>
+      <p class="tile__note">{{ next.rank === 1 ? t('month.rankFirst') : t('month.rank', { rank: next.rank }) }}</p>
+      <dl class="month__facts">
+        <div>
+          <dt>{{ t('month.factMessages') }}</dt>
+          <dd class="t-num">{{ tc('common.messagesCount', next.chat.messages) }}</dd>
+        </div>
+        <div v-if="next.chat.lastMessageAt">
+          <dt>{{ t('month.factLast') }}</dt>
+          <dd>{{ formatRelative(next.chat.lastMessageAt) }}</dd>
+        </div>
+      </dl>
+      <UiButton v-if="!auth.telegramSessionActive" class="month__action" @click="relogin">
+        {{ t('common.relogin') }}
+      </UiButton>
+      <UiButton
+        v-else
+        class="month__action"
+        :loading="starting || nextState === 'running'"
+        :disabled="nextState !== null"
+        @click="analyseNext"
+      >
+        {{ nextState === 'queued' ? t('month.queued') : t('month.analyse') }}
+      </UiButton>
+    </section>
+
     <component
       :is="reportIds.has(top.id) ? resolveComponent('NuxtLink') : 'section'"
-      v-if="top"
+      v-else-if="top"
       :to="reportIds.has(top.id) ? `/chat/${top.id}` : undefined"
       class="tile tile--lime span-4 month__top"
     >
@@ -130,6 +202,40 @@ a.month__top:active {
   margin-top: auto;
 }
 
+/* «Not analysed yet»: the facts and the button sit at the bottom, the avatar stays near the label. */
+.month__top--next .month__avatar {
+  margin-top: var(--space-3);
+}
+
+.month__facts {
+  display: grid;
+  gap: var(--space-2);
+  margin: auto 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--on-lime-line);
+  font: var(--text-small);
+}
+
+.month__facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.month__facts dt {
+  color: var(--text-muted);
+}
+
+.month__facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.month__action {
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
 .month__top-name {
   overflow: hidden;
   font: var(--text-h2);
@@ -160,6 +266,11 @@ a.month__top:active {
   .month__top .month__avatar {
     grid-row: span 2;
     margin-top: 0;
+  }
+
+  .month__top .month__facts,
+  .month__top .month__action {
+    grid-column: 1 / -1;
   }
 
   .month__row {

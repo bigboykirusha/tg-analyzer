@@ -38,7 +38,6 @@ const momentum = computed(() =>
   />
 
   <div v-else class="stack stack--lg">
-    <ReportChanges :data="data" />
     <ReportHero
       :data="data"
       :label="t('report.kpi.messages')"

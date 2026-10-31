@@ -18,13 +18,11 @@ const storyOpen = ref(false)
 <template>
   <UiPageContainer>
     <div class="page">
-      <div class="banner banner--info" role="note">
+      <!-- A line, not a banner: the header already offers «Посмотреть свой». -->
+      <p class="note" role="note">
         <Info aria-hidden="true" />
-        <p class="banner__text">{{ t('example.note') }}</p>
-        <div class="banner__actions">
-          <UiButton variant="primary" size="sm" to="/login">{{ t('example.cta') }}</UiButton>
-        </div>
-      </div>
+        {{ t('example.note') }}
+      </p>
 
       <ReportHeader :summary="data.summary" demo @story="storyOpen = true" />
 

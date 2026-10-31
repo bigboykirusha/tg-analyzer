@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import type { Locale } from '../composables/useI18n'
 import type { ThemePreference } from '../composables/useTheme'
-import { Trash2 } from '../lib/icons'
+import { ChevronRight, LogOut } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
-const { t, tc, locale, setLocale } = useI18n()
+const { t, locale, setLocale } = useI18n()
 useSeoMeta({ title: () => t('accountPage.title') })
 
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
-const { deleteAccount, disconnectTelegram, logout, refreshUser, updateSettings } = useAuth()
+const { deleteAccount, logout } = useAuth()
 const { preference, setPreference } = useTheme()
 const toast = useToast()
 const errorMessage = useErrorMessage()
@@ -19,78 +19,18 @@ const displayName = computed(() => auth.user?.firstName || auth.user?.username |
 const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : ''))
 const reportCount = computed(() => workspace.reports.length)
 
-const savingAutoDisconnect = ref(false)
-const confirmDisconnectOpen = ref(false)
-const disconnecting = ref(false)
-const confirmDeleteOpen = ref(false)
-const deleting = ref(false)
-const privacyOpen = ref(false)
+/** «Sign out» asks first; the same dialog is where everything gets deleted, so the promise holds. */
+const signOutOpen = ref(false)
+const busy = ref<'logout' | 'delete' | null>(null)
 
-// The switch moves at once; the saved value catches up, and a failed save puts it back.
-const pendingAutoDisconnect = ref<boolean | null>(null)
-const autoDisconnect = computed({
-  get: () => pendingAutoDisconnect.value ?? auth.user?.disconnectAfterAnalysis ?? false,
-  set: (value: boolean) => void saveAutoDisconnect(value),
-})
-
-async function saveAutoDisconnect(value: boolean) {
-  pendingAutoDisconnect.value = value
-  savingAutoDisconnect.value = true
+async function signOut(alsoDelete: boolean) {
+  busy.value = alsoDelete ? 'delete' : 'logout'
   try {
-    await updateSettings({ disconnectAfterAnalysis: value })
-    toast.success(value ? t('accountPage.autoDisconnectOn') : t('accountPage.autoDisconnectOff'))
+    if (alsoDelete) await deleteAccount()
+    else await logout()
   } catch (error) {
-    toast.error(t('accountPage.saveError'), errorMessage(error))
-  } finally {
-    pendingAutoDisconnect.value = null
-    savingAutoDisconnect.value = false
-  }
-}
-
-// The bot: Start in Telegram turns it on, so the page re-reads the account when the user comes back.
-const botUrl = computed(() => auth.user?.botUrl ?? null)
-const botOn = computed(() => auth.user?.botNotify ?? false)
-const turningBotOff = ref(false)
-function onReturn() {
-  if (document.visibilityState === 'visible' && botUrl.value) void refreshUser().catch(() => undefined)
-}
-onMounted(() => document.addEventListener('visibilitychange', onReturn))
-onBeforeUnmount(() => document.removeEventListener('visibilitychange', onReturn))
-
-async function turnBotOff() {
-  turningBotOff.value = true
-  try {
-    await updateSettings({ botNotify: false })
-    toast.success(t('accountPage.botOff'))
-  } catch (error) {
-    toast.error(t('accountPage.saveError'), errorMessage(error))
-  } finally {
-    turningBotOff.value = false
-  }
-}
-
-async function confirmDisconnect() {
-  disconnecting.value = true
-  try {
-    await disconnectTelegram()
-    toast.success(t('accountPage.disconnected'))
-  } catch (error) {
-    toast.error(t('accountPage.disconnectError'), errorMessage(error))
-  } finally {
-    disconnecting.value = false
-    confirmDisconnectOpen.value = false
-  }
-}
-
-async function confirmDeleteAccount() {
-  deleting.value = true
-  try {
-    await deleteAccount()
-  } catch (error) {
-    toast.error(t('account.deleteError'), errorMessage(error))
-  } finally {
-    deleting.value = false
-    confirmDeleteOpen.value = false
+    toast.error(alsoDelete ? t('account.deleteError') : t('account.logoutError'), errorMessage(error))
+    busy.value = null
   }
 }
 
@@ -112,284 +52,198 @@ onMounted(() => {
 <template>
   <UiPageContainer size="narrow">
     <div class="page account">
-      <UiPageBar :title="displayName" :lede="handle || t('accountPage.title')" back="/dashboard">
+      <UiPageBar
+        :title="t('accountPage.title')"
+        :lede="[displayName, handle].filter(Boolean).join(' · ')"
+        back="/dashboard"
+      >
         <template #leading><ProfileAvatar :title="displayName" size="sm" /></template>
       </UiPageBar>
 
-      <div class="account__sheets">
-        <section class="tile sheet" aria-labelledby="telegram-title">
-          <div class="sheet__aside">
-            <h2 id="telegram-title" class="t-h3">{{ t('accountPage.telegramTitle') }}</h2>
-            <p class="sheet__lead">{{ t('accountPage.telegramLead') }}</p>
+      <!-- Grouped settings: a quiet caption over a card of rows, as in system settings. -->
+      <section class="group" aria-labelledby="look-title">
+        <h2 id="look-title" class="group__title">{{ t('accountPage.lookTitle') }}</h2>
+        <div class="tile group__card">
+          <div class="row">
+            <span class="row__label">{{ t('nav.language') }}</span>
+            <UiSegmentedControl
+              :model-value="locale"
+              :options="languageOptions"
+              :aria-label="t('nav.language')"
+              inline
+              @update:model-value="setLocale"
+            />
           </div>
-          <div class="sheet__body">
-            <div class="status-line" role="status">
-              <span class="status-line__dot" :class="{ 'is-off': !auth.telegramSessionActive }" aria-hidden="true" />
-              <span class="status-line__text">
-                <strong>{{
-                  auth.telegramSessionActive ? t('accountPage.connected') : t('accountPage.notConnected')
-                }}</strong>
-                <span>{{
-                  auth.telegramSessionActive ? t('accountPage.connectedHint') : t('accountPage.notConnectedHint')
-                }}</span>
-              </span>
-            </div>
+          <div class="row">
+            <span class="row__label">{{ t('accountPage.theme') }}</span>
+            <UiSegmentedControl
+              :model-value="preference"
+              :options="themeOptions"
+              :aria-label="t('accountPage.theme')"
+              inline
+              @update:model-value="setPreference"
+            />
+          </div>
+          <div class="row">
+            <span class="row__label">
+              {{ t('accountPage.timezone') }}
+              <small>{{ t('accountPage.timezoneHint') }}</small>
+            </span>
+            <span class="row__value">{{ auth.user?.timezone }}</span>
+          </div>
+        </div>
+      </section>
 
-            <UiSwitch
-              v-model="autoDisconnect"
-              :disabled="savingAutoDisconnect"
-              :hint="t('accountPage.autoDisconnectHint')"
-            >
-              {{ t('accountPage.autoDisconnect') }}
-            </UiSwitch>
+      <section class="group" aria-labelledby="data-title">
+        <h2 id="data-title" class="group__title">{{ t('accountPage.dataTitle') }}</h2>
+        <div class="tile group__card">
+          <div class="row">
+            <span class="row__label">{{ t('accountPage.reports') }}</span>
+            <span class="row__value t-num">{{ reportCount }}</span>
+          </div>
+          <div class="row">
+            <span class="row__label">{{ t('accountPage.messagesKept') }}</span>
+            <span class="row__value">{{ t('accountPage.messagesKeptValue') }}</span>
+          </div>
+          <NuxtLink to="/faq" class="row row--link">
+            <span class="row__label">{{ t('accountPage.privacy') }}</span>
+            <ChevronRight aria-hidden="true" />
+          </NuxtLink>
+        </div>
+      </section>
 
-            <div class="sheet__actions">
-              <UiButton
-                v-if="auth.telegramSessionActive"
-                variant="secondary"
-                size="sm"
-                @click="confirmDisconnectOpen = true"
-              >
-                {{ t('accountPage.disconnect') }}
-              </UiButton>
-              <UiButton v-else variant="primary" size="sm" @click="logout">{{ t('accountPage.reconnect') }}</UiButton>
-            </div>
-          </div>
-        </section>
-
-        <section v-if="botUrl" class="tile sheet" aria-labelledby="bot-title">
-          <div class="sheet__aside">
-            <h2 id="bot-title" class="t-h3">{{ t('accountPage.botTitle') }}</h2>
-            <p class="sheet__lead">{{ t('accountPage.botLead') }}</p>
-          </div>
-          <div class="sheet__body">
-            <div class="status-line" role="status">
-              <span class="status-line__dot" :class="{ 'is-off': !botOn }" aria-hidden="true" />
-              <span class="status-line__text">
-                <strong>{{ botOn ? t('accountPage.botOnTitle') : t('accountPage.botOffTitle') }}</strong>
-                <span>{{ botOn ? t('accountPage.botOnHint') : t('accountPage.botOffHint') }}</span>
-              </span>
-            </div>
-            <div class="sheet__actions">
-              <UiButton v-if="botOn" variant="secondary" size="sm" :loading="turningBotOff" @click="turnBotOff">
-                {{ t('accountPage.botTurnOff') }}
-              </UiButton>
-              <UiButton v-else variant="primary" size="sm" :to="botUrl" external target="_blank" rel="noopener">
-                {{ t('accountPage.botConnect') }}
-              </UiButton>
-            </div>
-          </div>
-        </section>
-
-        <section class="tile sheet" aria-labelledby="look-title">
-          <div class="sheet__aside">
-            <h2 id="look-title" class="t-h3">{{ t('accountPage.lookTitle') }}</h2>
-          </div>
-          <div class="sheet__body">
-            <div class="field">
-              <span class="field__label">{{ t('nav.language') }}</span>
-              <UiSegmentedControl
-                :model-value="locale"
-                :options="languageOptions"
-                :aria-label="t('nav.language')"
-                inline
-                @update:model-value="setLocale"
-              />
-            </div>
-            <div class="field">
-              <span class="field__label">{{ t('accountPage.theme') }}</span>
-              <UiSegmentedControl
-                :model-value="preference"
-                :options="themeOptions"
-                :aria-label="t('accountPage.theme')"
-                inline
-                @update:model-value="setPreference"
-              />
-            </div>
-            <div class="field">
-              <span class="field__label">{{ t('accountPage.timezone') }}</span>
-              <span class="field__value">{{ auth.user?.timezone }}</span>
-              <span class="field__hint">{{ t('accountPage.timezoneHint') }}</span>
-            </div>
-          </div>
-        </section>
-
-        <section class="tile sheet" aria-labelledby="data-title">
-          <div class="sheet__aside">
-            <h2 id="data-title" class="t-h3">{{ t('accountPage.dataTitle') }}</h2>
-            <p class="sheet__lead">{{ t('accountPage.dataLead') }}</p>
-          </div>
-          <div class="sheet__body">
-            <dl class="facts">
-              <div class="facts__row">
-                <dt>{{ t('accountPage.reports') }}</dt>
-                <dd class="t-num">{{ tc('accountPage.reportCount', reportCount) }}</dd>
-              </div>
-              <div class="facts__row">
-                <dt>{{ t('accountPage.messagesKept') }}</dt>
-                <dd>{{ t('accountPage.messagesKeptValue') }}</dd>
-              </div>
-            </dl>
-            <button type="button" class="link" @click="privacyOpen = true">{{ t('accountPage.privacy') }}</button>
-            <div class="sheet__actions">
-              <UiButton variant="danger" size="sm" :icon="Trash2" @click="confirmDeleteOpen = true">{{
-                t('account.delete')
-              }}</UiButton>
-            </div>
-          </div>
-        </section>
-      </div>
+      <section class="sign-out">
+        <UiButton variant="secondary" :icon="LogOut" @click="signOutOpen = true">{{ t('account.logout') }}</UiButton>
+        <p class="sign-out__hint">{{ t('accountPage.logoutHint') }}</p>
+      </section>
     </div>
 
-    <UiConfirmDialog
-      :open="confirmDisconnectOpen"
-      :title="t('accountPage.disconnectTitle')"
-      :description="t('accountPage.disconnectText')"
-      :confirm-label="t('accountPage.disconnect')"
-      :loading="disconnecting"
-      @close="confirmDisconnectOpen = false"
-      @confirm="confirmDisconnect"
-    />
-    <UiConfirmDialog
-      :open="confirmDeleteOpen"
-      :title="t('account.deleteTitle')"
-      :description="t('account.deleteConfirm')"
-      :confirm-label="t('account.delete')"
-      variant="danger"
-      :loading="deleting"
-      @close="confirmDeleteOpen = false"
-      @confirm="confirmDeleteAccount"
-    />
-    <PrivacyDialog :open="privacyOpen" @close="privacyOpen = false" />
+    <UiModalDialog
+      :open="signOutOpen"
+      :title="t('accountPage.logoutTitle')"
+      :description="t('accountPage.logoutText')"
+      :close-label="t('common.close')"
+      :busy="busy !== null"
+      role="alertdialog"
+      @close="signOutOpen = false"
+    >
+      <div class="sign-out__choices">
+        <UiButton block :loading="busy === 'logout'" :disabled="busy === 'delete'" @click="signOut(false)">
+          {{ t('account.logout') }}
+        </UiButton>
+        <UiButton
+          block
+          variant="danger-soft"
+          :loading="busy === 'delete'"
+          :disabled="busy === 'logout'"
+          @click="signOut(true)"
+        >
+          {{ t('accountPage.logoutAndDelete') }}
+        </UiButton>
+        <UiButton block variant="ghost" :disabled="busy !== null" @click="signOutOpen = false">
+          {{ t('common.cancel') }}
+        </UiButton>
+      </div>
+    </UiModalDialog>
   </UiPageContainer>
 </template>
 
 <style scoped>
-/* Each section is a tile: title and lead on the left, settings on the right. */
-.account__sheets {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.sheet {
+.group {
   display: grid;
-  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
-  gap: var(--space-8);
-  padding: var(--space-6);
-}
-
-.sheet__aside {
-  display: grid;
-  align-content: start;
   gap: var(--space-2);
 }
 
-.sheet__lead {
+.group__title {
+  padding-inline: var(--space-1);
   color: var(--text-muted);
   font: var(--text-small);
+  font-weight: 500;
 }
 
-.sheet__body {
+.group__card {
+  gap: 0;
+  padding-block: 0;
+}
+
+/* One setting per row: the name on the left, the control on the right, hairlines between. */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 60px;
+  padding-block: var(--space-2);
+  font: var(--text-body);
+}
+
+.row + .row {
+  border-top: 1px solid var(--border);
+}
+
+.row__label {
   display: grid;
-  align-content: start;
-  gap: var(--space-5);
+  gap: 2px;
   min-width: 0;
 }
 
-.sheet__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.status-line {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-
-.status-line__dot {
-  flex: none;
-  width: 10px;
-  height: 10px;
-  margin-top: 6px;
-  border-radius: 50%;
-  background: var(--success);
-}
-
-.status-line__dot.is-off {
-  border: 2px solid var(--text-muted);
-  background: none;
-}
-
-.status-line__text {
-  display: grid;
-  gap: 2px;
-  font: var(--text-ui);
-}
-
-.status-line__text span {
+.row__label small {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-caption);
 }
 
-.field {
+.row__value {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.row--link {
+  color: var(--text);
+}
+
+.row--link svg {
+  color: var(--text-muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .row--link:hover .row__label {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.sign-out {
   display: grid;
   justify-items: start;
   gap: var(--space-2);
 }
 
-.field__label {
-  font: var(--text-ui);
-  font-weight: 600;
-}
-
-.field__value {
-  font: var(--text-ui);
-  font-variant-numeric: tabular-nums;
-}
-
-.field__hint {
+.sign-out__hint {
+  padding-inline: var(--space-1);
   color: var(--text-muted);
   font: var(--text-small);
 }
 
-.sheet__body .link {
-  justify-self: start;
-  font: var(--text-ui);
-}
-
-.facts {
+.sign-out__choices {
   display: grid;
+  gap: var(--space-2);
 }
 
-.facts__row {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding-block: var(--space-3);
-  border-bottom: 1px solid var(--border);
-  font: var(--text-ui);
-}
+/* Phones: a control under its name, and a full-width «Sign out». */
+@media (max-width: 640px) {
+  .row:has(.segmented) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    padding-block: var(--space-3);
+  }
 
-.facts__row:first-child {
-  padding-top: 0;
-}
+  .sign-out {
+    justify-items: stretch;
+  }
 
-.facts__row dt {
-  color: var(--text-muted);
-}
-
-.facts__row dd {
-  text-align: right;
-}
-
-@media (max-width: 720px) {
-  .sheet {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-5);
-    padding: var(--space-5);
+  .sign-out__hint {
+    text-align: center;
   }
 }
 </style>

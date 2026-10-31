@@ -23,11 +23,6 @@ const reports = computed(() =>
     .sort((left, right) => Date.parse(right.report!.analyzedAt) - Date.parse(left.report!.analyzedAt)),
 )
 const shownReports = computed(() => (showAllReports.value ? reports.value : reports.value.slice(0, REPORTS_PREVIEW)))
-/** At least two private reports: compare the people side by side. */
-const privateReports = computed(() =>
-  reports.value.filter((chat) => chat.type === 'private' && chat.report?.headline).map((chat) => chat.report!),
-)
-const avatars = computed(() => new Map(workspace.chats.map((chat) => [chat.id, chat.hasAvatar])))
 const reportIds = computed(() => new Set(reports.value.map((chat) => chat.id)))
 
 /** Returning users wait for their reports instead of seeing the newcomer screen flash by. */
@@ -58,8 +53,6 @@ onMounted(() => {
 <template>
   <UiPageContainer>
     <div class="page">
-      <SessionBanner />
-
       <!-- Loading: the shape of the summary and the report cards, so nothing jumps when they arrive. -->
       <template v-if="loadingReports">
         <div class="bento" aria-hidden="true">
@@ -148,15 +141,6 @@ onMounted(() => {
               :updating="isUpdating(chat.id)"
             />
           </div>
-        </UiPageSection>
-
-        <UiPageSection
-          v-if="privateReports.length >= 2"
-          id="people"
-          :title="t('people.title')"
-          :hint="t('people.hint')"
-        >
-          <div class="tile"><PeopleTable :reports="privateReports" :avatars="avatars" /></div>
         </UiPageSection>
       </template>
     </div>

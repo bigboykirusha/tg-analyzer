@@ -54,10 +54,10 @@ const stickers = computed(() => report.value.stickers)
 
 <template>
   <div class="report-grid">
-    <div v-if="outdated" class="banner talk-banner" role="status">
+    <p v-if="outdated" class="note talk-note" role="status">
       <Info aria-hidden="true" />
-      <p class="banner__text">{{ t('report.talk.outdated') }}</p>
-    </div>
+      {{ t('report.talk.outdated') }}
+    </p>
 
     <template v-else>
       <ReportSection :title="t('group.talk.morningTitle')" :text="t('group.talk.morningText')">
@@ -93,7 +93,7 @@ const stickers = computed(() => report.value.stickers)
 </template>
 
 <style scoped>
-.talk-banner {
+.talk-note {
   grid-column: 1 / -1;
 }
 

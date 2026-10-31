@@ -85,8 +85,8 @@ export default defineNuxtConfig({
     // The job log page was removed; old links land on the chats list.
     '/history': { redirect: '/dashboard' },
     '/chat/**': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
-    // The policy is a modal on the login page now.
-    '/privacy': { redirect: '/login#privacy' },
+    // Privacy and questions share one page.
+    '/privacy': { redirect: '/faq' },
   },
   // Bundle the icons with the app: left external on the server, @lucide/vue reached a
   // second copy of Vue, lost its injection context and the first render after a cold

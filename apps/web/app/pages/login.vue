@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
 import { ApiClientError } from '../composables/useApi'
-import { AlertCircle } from '../lib/icons'
+import { AlertCircle, Info } from '../lib/icons'
 
 definePageMeta({ middleware: ['guest'] })
 
@@ -28,6 +28,8 @@ const stepIndex = computed(() => ({ phone: 0, code: 1, password: 2 })[step.value
 
 // The policy opens over the login page; old /privacy links land here with #privacy.
 const route = useRoute()
+/** Came back after Telegram ended the session: say so above the phone step, without a banner. */
+const sessionEnded = computed(() => route.query.session === 'ended')
 const privacyOpen = ref(false)
 onMounted(() => {
   if (route.hash === '#privacy') privacyOpen.value = true
@@ -147,6 +149,10 @@ function changeNumber() {
         </div>
 
         <div class="login-copy">
+          <p v-if="sessionEnded && step === 'phone'" class="note" role="status">
+            <Info aria-hidden="true" />
+            {{ t('login.sessionEnded') }}
+          </p>
           <h1 class="t-h2">
             <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
             <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
@@ -189,10 +195,10 @@ function changeNumber() {
           />
         </Transition>
 
-        <div v-if="error" class="banner banner--danger" role="alert">
+        <p v-if="error" class="note note--danger" role="alert">
           <AlertCircle aria-hidden="true" />
-          <p class="banner__text">{{ error }}</p>
-        </div>
+          {{ error }}
+        </p>
 
         <p class="trust">
           {{ t('login.trust.short') }}
@@ -267,7 +273,7 @@ function changeNumber() {
 }
 
 .login-progress span.active {
-  background: var(--lime);
+  background: var(--accent);
 }
 
 .login-copy {

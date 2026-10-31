@@ -73,9 +73,13 @@ const lead = computed(() => {
 
 <template>
   <div class="stack stack--lg">
-    <p v-if="lead" class="report-lead">{{ lead }}</p>
-    <!-- What is new since the last run comes first: it is why people come back. -->
-    <ReportChanges :data="data" />
+    <div v-if="lead || totals.messages < 20" class="report-intro">
+      <p v-if="lead" class="report-lead">{{ lead }}</p>
+      <p v-if="totals.messages < 20" class="note" role="status">
+        <Info aria-hidden="true" />
+        {{ t('report.lowData') }}
+      </p>
+    </div>
     <ReportHero
       :data="data"
       :label="t('report.kpi.messages')"
@@ -84,28 +88,25 @@ const lead = computed(() => {
     >
       <template #accent>
         <div class="tile__label">{{ t('report.kpi.whoWritesMore') }}</div>
-        <div v-if="mineShare !== null" class="share">
+        <template v-if="mineShare !== null">
+          <p v-if="shareHint" class="share__verdict">{{ shareHint }}</p>
           <div class="tile__figure share__figure">
-            {{ mineShare }}<small>/{{ 100 - mineShare }}</small>
+            {{ mineShare }}<small> / {{ 100 - mineShare }}</small>
           </div>
-          <div class="share__bar" aria-hidden="true">
-            <i :style="{ flexGrow: mineShare }" />
-            <i :style="{ flexGrow: 100 - mineShare }" />
-          </div>
-          <div class="share__names">
-            <span>{{ t('report.you') }} {{ mineShare }}% · {{ formatNumber(totals.sent) }}</span>
-            <span>{{ data.summary.title }} {{ 100 - mineShare }}% · {{ formatNumber(totals.received) }}</span>
-          </div>
-          <p v-if="shareHint" class="tile__note">{{ shareHint }}</p>
-        </div>
+          <dl class="share__sides">
+            <div>
+              <dt>{{ t('report.you') }}</dt>
+              <dd class="t-num">{{ formatNumber(totals.sent) }}</dd>
+            </div>
+            <div>
+              <dt>{{ data.summary.title }}</dt>
+              <dd class="t-num">{{ formatNumber(totals.received) }}</dd>
+            </div>
+          </dl>
+        </template>
         <div v-else class="tile__figure">{{ t('common.na') }}</div>
       </template>
     </ReportHero>
-
-    <div v-if="totals.messages < 20" class="banner" role="status">
-      <Info aria-hidden="true" />
-      <p class="banner__text">{{ t('report.lowData') }}</p>
-    </div>
 
     <ReportInsights :data="data" />
 
@@ -125,6 +126,11 @@ const lead = computed(() => {
 </template>
 
 <style scoped>
+.report-intro {
+  display: grid;
+  gap: var(--space-2);
+}
+
 /* The report in one sentence, before any number. */
 .report-lead {
   max-width: 34ch;
@@ -133,51 +139,57 @@ const lead = computed(() => {
   text-wrap: balance;
 }
 
-.share {
-  display: grid;
-  gap: var(--space-3);
+/* Who writes more: the answer in words, the split as a figure, both counts. No bar. */
+.share__verdict {
+  margin-top: calc(var(--space-1) * -1);
+  font: var(--text-h3);
+  letter-spacing: -0.02em;
 }
 
 .share__figure {
-  font-size: 60px;
+  margin-top: auto;
+  font-size: 72px;
+  line-height: 0.95;
 }
 
-.share__bar {
-  display: flex;
-  gap: 3px;
-  height: 6px;
+.share__figure small {
+  font-size: 28px;
 }
 
-.share__bar i {
-  flex-basis: 0;
-  border-radius: var(--radius-full);
-  background: var(--you);
-}
-
-.share__bar i + i {
-  background: var(--them);
-}
-
-.share__names {
-  display: flex;
-  justify-content: space-between;
+.share__sides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
-  color: var(--text-muted);
-  font: var(--text-small);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--on-lime-line);
 }
 
-.share__names span {
+.share__sides div {
+  display: grid;
   min-width: 0;
+}
+
+.share__sides dt {
   overflow: hidden;
+  color: var(--text-muted);
+  font: var(--text-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.share__sides dd {
+  margin: 0;
+  font: var(--text-title);
 }
 
 @media (max-width: 640px) {
   .share__figure {
     font-size: 48px;
+  }
+
+  .share__figure small {
+    font-size: 20px;
   }
 }
 </style>
