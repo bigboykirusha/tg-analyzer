@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { GroupParticipantDto, GroupReportDto, MilestoneDto, ReportDto } from '@tg-analyzer/shared'
+import type { GroupParticipantDto, GroupReportDto, ReportDto } from '@tg-analyzer/shared'
 import { Info } from '../../../lib/icons'
 import type { Meter } from '../ReportMeters.vue'
 
@@ -50,14 +50,6 @@ const topReactions = computed(() =>
   (report.value.reactions?.top ?? []).filter((item) => item.value !== 'custom' && item.value !== 'paid').slice(0, 8),
 )
 const stickers = computed(() => report.value.stickers)
-
-const byId = computed(() => new Map(props.group.participants.map((participant) => [participant.id, participant])))
-const milestoneAuthors = computed(() =>
-  (report.value.milestones ?? []).map((milestone: MilestoneDto) => {
-    const participant = milestone.senderId ? byId.value.get(milestone.senderId) : undefined
-    return participant ? nameOf(participant) : milestone.mine ? t('group.you') : t('group.unknownParticipant')
-  }),
-)
 </script>
 
 <template>
@@ -95,15 +87,6 @@ const milestoneAuthors = computed(() =>
       <ReportSection wide :title="t('report.talk.stickersTitle')" :text="t('report.talk.stickersText')">
         <StickerGrid v-if="stickers?.top.length" :stickers="stickers.top" />
         <p v-else class="t-small t-muted">{{ t('report.talk.noStickers') }}</p>
-      </ReportSection>
-
-      <ReportSection
-        v-if="report.milestones?.length"
-        wide
-        :title="t('report.talk.milestonesTitle')"
-        :text="t('report.talk.milestonesText')"
-      >
-        <ReportMilestones :milestones="report.milestones" :authors="milestoneAuthors" :chat-id="data.summary.chatId" />
       </ReportSection>
     </template>
   </div>

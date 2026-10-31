@@ -11,6 +11,7 @@ import {
   type Page,
   type ParseJobDto,
   type ParseProgressDto,
+  type RecentActivityResponse,
   type StartParseResponse,
   type SuccessResponse,
 } from '@tg-analyzer/shared'
@@ -36,15 +37,24 @@ import { enqueueAnalysis, removeQueuedAnalysis } from './queue'
 import {
   cacheAvatar,
   cacheDialogs,
+  cacheRecentActivity,
   cooldownSeconds,
   idleProgress,
   publishProgress,
   readCachedAvatars,
   readCachedDialogs,
+  readCachedRecentActivity,
   readProgress,
 } from './state'
 
 const DAY_MS = 86_400_000
+
+/** The home summary looks at private chats with messages in this many days. */
+const RECENT_DAYS = 30
+/** Only the most recently active chats are counted: two Telegram searches each. */
+const RECENT_CHAT_LIMIT = 10
+/** A summary younger than this is served from the cache. */
+const RECENT_FRESH_MS = 60 * 60 * 1000
 
 /** A user may queue this many chats at once, the running one included. */
 const MAX_QUEUED_ANALYSES = 10
@@ -63,6 +73,54 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
       const cached =
         error instanceof ApiError && error.code === 'TELEGRAM_BUSY' ? await readCachedDialogs(userId) : null
       if (cached) return { ...cached, stale: true }
+      throw error
+    }
+  })
+
+  app.get('/recent', async (request): Promise<RecentActivityResponse> => {
+    const userId = userIdOf(request)
+    const cached = await readCachedRecentActivity(userId)
+    if (cached && Date.now() - cached.computedAt < RECENT_FRESH_MS) return { ...cached.activity, stale: false }
+
+    const since = new Date(Date.now() - RECENT_DAYS * DAY_MS)
+    try {
+      const activity = await withUserTelegram(
+        userId,
+        async (api) => {
+          const { dialogs } = await api.listDialogs()
+          const active = dialogs
+            .filter(
+              (dialog) => dialog.type === 'private' && dialog.lastMessageAt && new Date(dialog.lastMessageAt) >= since,
+            )
+            .sort((a, b) => (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? ''))
+          const chats = []
+          for (const dialog of active.slice(0, RECENT_CHAT_LIMIT)) {
+            const counts = await api.countRecent(dialog.id, since).catch(() => null)
+            if (counts?.messages) chats.push({ ...dialog, ...counts })
+          }
+          chats.sort((a, b) => b.messages - a.messages)
+          return {
+            since: since.toISOString(),
+            days: RECENT_DAYS,
+            activeChats: active.length,
+            chats: chats.map(({ id, title, hasAvatar, lastMessageAt, messages, mine }) => ({
+              id,
+              title,
+              hasAvatar,
+              lastMessageAt,
+              messages,
+              mine,
+            })),
+          }
+        },
+        { waitMs: 3_000 },
+      )
+      await cacheRecentActivity(userId, activity)
+      return { ...activity, stale: false }
+    } catch (error) {
+      // While an analysis holds the Telegram session, serve the last known summary.
+      if (cached && error instanceof ApiError && error.code === 'TELEGRAM_BUSY')
+        return { ...cached.activity, stale: true }
       throw error
     }
   })

@@ -1,4 +1,4 @@
-import type { DialogsResponse, ParseProgressDto } from '@tg-analyzer/shared'
+import type { DialogsResponse, ParseProgressDto, RecentActivityResponse } from '@tg-analyzer/shared'
 import { config } from '../../config'
 import { redis } from '../../lib/redis'
 
@@ -103,4 +103,27 @@ export async function purgeUserState(userId: string) {
     const owned = keys.filter((key) => /^(parse|telegram):/.test(key))
     if (owned.length) await redis.del(...owned)
   } while (cursor !== '0')
+}
+
+const recentKey = (userId: string) => `telegram:recent:${userId}`
+const RECENT_CACHE_TTL_SECONDS = 6 * 60 * 60
+
+export interface CachedRecentActivity {
+  computedAt: number
+  activity: Omit<RecentActivityResponse, 'stale'>
+}
+
+export async function cacheRecentActivity(userId: string, activity: Omit<RecentActivityResponse, 'stale'>) {
+  const value: CachedRecentActivity = { computedAt: Date.now(), activity }
+  await redis.set(recentKey(userId), JSON.stringify(value), 'EX', RECENT_CACHE_TTL_SECONDS)
+}
+
+export async function readCachedRecentActivity(userId: string): Promise<CachedRecentActivity | null> {
+  const raw = await redis.get(recentKey(userId))
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as CachedRecentActivity
+  } catch {
+    return null
+  }
 }

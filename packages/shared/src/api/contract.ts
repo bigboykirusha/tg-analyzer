@@ -5,6 +5,7 @@ import type {
   AvatarsResponse,
   ClearHistoryResponse,
   DialogsResponse,
+  RecentActivityResponse,
   Page,
   ParseJobDto,
   CancelParseBody,
@@ -108,6 +109,7 @@ export interface ApiEndpointMap {
   'GET /api/v1/auth/avatar': Endpoint<undefined, Blob>
 
   'GET /api/v1/parse/dialogs': Endpoint<undefined, DialogsResponse>
+  'GET /api/v1/parse/recent': Endpoint<undefined, RecentActivityResponse>
   'POST /api/v1/parse/avatars': Endpoint<AvatarsBody, AvatarsResponse>
   'GET /api/v1/parse/status': Endpoint<undefined, ParseProgressDto>
   'POST /api/v1/parse/start': Endpoint<StartParseBody, StartParseResponse>

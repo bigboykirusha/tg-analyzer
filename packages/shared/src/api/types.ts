@@ -171,6 +171,30 @@ export interface DialogsResponse {
   stale: boolean
 }
 
+/** A private chat with messages in the recent window, counted by Telegram without reading the history. */
+export interface RecentChatDto {
+  id: string
+  title: string
+  hasAvatar: boolean
+  lastMessageAt: string | null
+  /** Messages in the window, both sides. */
+  messages: number
+  /** The user's own messages in the window. */
+  mine: number
+}
+
+export interface RecentActivityResponse {
+  /** Start of the window, ISO. */
+  since: string
+  days: number
+  /** Private chats with at least one message in the window. */
+  activeChats: number
+  /** The busiest of them, most messages first. */
+  chats: RecentChatDto[]
+  /** True when Telegram was busy and the numbers come from the cache. */
+  stale: boolean
+}
+
 export interface AvatarsBody {
   chatIds: string[]
 }

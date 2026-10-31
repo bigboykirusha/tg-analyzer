@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import { AlertCircle, Trash2 } from '../../lib/icons'
+import { AlertCircle } from '../../lib/icons'
 import { ApiClientError } from '../../composables/useApi'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
@@ -18,8 +18,6 @@ const data = ref<ReportDto | null>(workspace.openedReports[chatId.value] ?? null
 const loadError = ref<unknown>(null)
 const notFound = ref(false)
 const reanalysing = ref(false)
-const confirm = ref<'delete' | null>(null)
-const deleting = ref(false)
 const storyOpen = ref(false)
 
 /** The chat's name from the lists already loaded, so the top bar is right before the report arrives. */
@@ -55,20 +53,6 @@ async function reanalyse() {
   }
 }
 
-async function deleteReport() {
-  deleting.value = true
-  try {
-    await workspace.deleteReport(chatId.value)
-    toast.success(t('report.deleted'))
-    await navigateTo('/dashboard')
-  } catch (error) {
-    toast.error(t('report.deleteError'), errorMessage(error))
-  } finally {
-    deleting.value = false
-    confirm.value = null
-  }
-}
-
 // Reload the report as soon as a fresh analysis of this chat completes.
 watch(analysis.finished, (job) => {
   if (job?.chatId === chatId.value && job.status === 'completed') void load()
@@ -95,11 +79,6 @@ onMounted(load)
 
       <GroupReport v-if="data.summary.type === 'group'" :data="data" />
       <PrivateReport v-else :data="data" />
-      <div class="report-foot no-print">
-        <UiButton variant="danger-soft" size="sm" :icon="Trash2" @click="confirm = 'delete'">
-          {{ t('report.deleteMenu') }}
-        </UiButton>
-      </div>
       <ReportStory :open="storyOpen" :data="data" @close="storyOpen = false" />
     </div>
 
@@ -130,21 +109,9 @@ onMounted(load)
 
     <ReportSkeleton v-if="!data && !notFound && !loadError" :title="knownTitle" />
 
-    <DeleteReportDialog
-      :open="confirm === 'delete'"
-      :report="data?.summary ?? null"
-      :loading="deleting"
-      @close="confirm = null"
-      @confirm="deleteReport"
-    />
   </UiPageContainer>
 </template>
 
 <style scoped>
 /* The one destructive action, out of the way at the end of the report. */
-.report-foot {
-  display: flex;
-  justify-content: center;
-  padding-top: var(--space-4);
-}
 </style>

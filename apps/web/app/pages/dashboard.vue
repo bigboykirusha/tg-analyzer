@@ -28,6 +28,7 @@ const privateReports = computed(() =>
   reports.value.filter((chat) => chat.type === 'private' && chat.report?.headline).map((chat) => chat.report!),
 )
 const avatars = computed(() => new Map(workspace.chats.map((chat) => [chat.id, chat.hasAvatar])))
+const reportIds = computed(() => new Set(reports.value.map((chat) => chat.id)))
 
 /** Returning users wait for their reports instead of seeing the newcomer screen flash by. */
 const loadingReports = computed(
@@ -49,6 +50,7 @@ function isUpdating(chatId: string) {
 
 onMounted(() => {
   void workspace.loadDialogs()
+  void workspace.loadRecent()
   void workspace.loadReports().catch((error) => toast.error(t('dashboard.reportsError'), errorMessage(error)))
 })
 </script>
@@ -99,6 +101,8 @@ onMounted(() => {
           </li>
         </ol>
 
+        <MonthSummary v-if="workspace.recent?.chats.length" :recent="workspace.recent" :report-ids="reportIds" />
+
         <UiPageSection id="chats" :title="t('dashboard.chatsTitle')">
           <ChatPicker />
         </UiPageSection>
@@ -112,7 +116,18 @@ onMounted(() => {
         </UiPageBar>
         <AnalysisBanner />
 
-        <CircleSummary :reports="workspace.reports" :avatars="avatars" />
+        <MonthSummary v-if="workspace.recent" :recent="workspace.recent" :report-ids="reportIds" />
+        <div v-else-if="workspace.recentState !== 'error'" class="bento" aria-hidden="true">
+          <div class="tile span-8 home__skeleton">
+            <UiSkeleton width="40%" /><UiSkeleton width="45%" height="44px" />
+            <UiSkeleton class="home__skeleton-foot" height="72px" />
+          </div>
+          <div class="tile span-4 home__skeleton">
+            <UiSkeleton width="60%" />
+            <UiSkeleton class="home__skeleton-foot" width="64px" height="64px" radius="50%" />
+            <UiSkeleton width="50%" height="28px" />
+          </div>
+        </div>
 
         <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
           <template v-if="reports.length > REPORTS_PREVIEW" #actions>

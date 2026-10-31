@@ -2,6 +2,7 @@ import {
   ANALYZABLE_CHAT_TYPES,
   type ChatType,
   type DialogDto,
+  type RecentActivityResponse,
   type ReportDto,
   type ReportSummaryDto,
 } from '@tg-analyzer/shared'
@@ -45,6 +46,9 @@ export const useWorkspaceStore = defineStore('workspace', {
     reports: [] as ReportSummaryDto[],
     reportsState: 'idle' as LoadState,
     openedReports: {} as Record<string, ReportDto>,
+    /** Private chats of the last month, counted by Telegram without an analysis. */
+    recent: null as RecentActivityResponse | null,
+    recentState: 'idle' as LoadState,
   }),
   getters: {
     chats(state): WorkspaceChat[] {
@@ -79,6 +83,18 @@ export const useWorkspaceStore = defineStore('workspace', {
       } catch (error) {
         this.dialogsError = error instanceof ApiClientError ? error : null
         this.dialogsState = 'error'
+      }
+    },
+
+    async loadRecent() {
+      if (this.recentState === 'loading') return
+      this.recentState = 'loading'
+      try {
+        this.recent = await api('GET /api/v1/parse/recent')
+        this.recentState = 'ready'
+      } catch {
+        // The summary is a bonus: without it the home page simply starts with the reports.
+        this.recentState = 'error'
       }
     },
 

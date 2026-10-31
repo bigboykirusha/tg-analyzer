@@ -265,6 +265,12 @@ export class FakeTelegramGateway implements TelegramGateway {
         const page = all.slice(start, end).reverse()
         return { messages: page, total: all.length, nextOffsetId: start > 0 ? start + 1 : null }
       },
+      countRecent: async (chatId, since) => {
+        const spec = CHATS.find((chat) => chat.id === chatId)
+        if (!spec) throw new Error(`Chat ${chatId} is not available`)
+        const recent = this.messagesOf(spec).filter((message) => message.date >= since)
+        return { messages: recent.length, mine: recent.filter((message) => message.outgoing).length }
+      },
       downloadAvatar: async () => null,
       // The demo has no sticker files: the report shows each sticker's emoji instead.
       stickerPreviews: async () => new Map(),

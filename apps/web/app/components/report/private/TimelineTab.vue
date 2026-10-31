@@ -49,12 +49,6 @@ const sessionFacts = computed<Fact[]>(() => [
     sub: t('report.sessions.nightHint'),
   },
 ])
-
-// Milestones live with the timeline: they are moments in time, not habits.
-const milestones = computed(() => report.value.milestones ?? [])
-const milestoneAuthors = computed(() =>
-  milestones.value.map((milestone) => (milestone.mine ? t('report.you') : props.data.summary.title)),
-)
 </script>
 
 <template>
@@ -69,15 +63,6 @@ const milestoneAuthors = computed(() =>
 
     <ReportSection :title="t('report.sessions.title')" :text="t('report.sessions.text')" wide>
       <ReportFacts :facts="sessionFacts" :columns="3" />
-    </ReportSection>
-
-    <ReportSection
-      v-if="milestones.length"
-      wide
-      :title="t('report.talk.milestonesTitle')"
-      :text="t('report.talk.milestonesText')"
-    >
-      <ReportMilestones :milestones="milestones" :authors="milestoneAuthors" :chat-id="data.summary.chatId" />
     </ReportSection>
   </div>
 </template>

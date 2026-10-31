@@ -1,6 +1,7 @@
 import { Api, TelegramClient } from 'telegram'
 import type { Dialog } from 'telegram/tl/custom/dialog.js'
 import { Logger, LogLevel } from 'telegram/extensions/Logger.js'
+import { returnBigInt } from 'telegram/Helpers.js'
 import { computeCheck } from 'telegram/Password.js'
 import { StringSession } from 'telegram/sessions/index.js'
 import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
@@ -24,6 +25,8 @@ const DIALOG_LIMIT = 500
 const HISTORY_PAGE_SIZE = 100
 /** Telethon's default pacing for long histories; keeps accounts clear of FLOOD_WAIT. */
 const HISTORY_REQUEST_INTERVAL_MS = 1000
+/** Counting searches are light; a short gap still keeps a burst of them polite. */
+const COUNT_REQUEST_INTERVAL_MS = 350
 const PEER_CACHE_TTL_MS = 10 * 60 * 1000
 const DEFAULT_LEASE_WAIT_MS = 15_000
 
@@ -257,6 +260,41 @@ export class LiveTelegramGateway implements TelegramGateway {
           total: typeof page.total === 'number' ? page.total : null,
           nextOffsetId: page.length < HISTORY_PAGE_SIZE || !oldest ? null : oldest.id,
         }
+      },
+
+      countRecent: async (chatId, since) => {
+        guard()
+        const peer = await attempt(() => findPeer(chatId))
+        if (!peer) throw new Error(`Chat ${chatId} is not available`)
+        const count = async (mine: boolean) => {
+          const wait = lastHistoryRequestAt + COUNT_REQUEST_INTERVAL_MS - Date.now()
+          if (wait > 0) await sleep(wait, signal)
+          guard()
+          lastHistoryRequestAt = Date.now()
+          // A search with an empty query and limit 1 returns only the count of matching messages.
+          const result = await attempt(() =>
+            client.invoke(
+              new Api.messages.Search({
+                peer: peer.input,
+                q: '',
+                filter: new Api.InputMessagesFilterEmpty(),
+                minDate: Math.floor(since.getTime() / 1000),
+                maxDate: 0,
+                offsetId: 0,
+                addOffset: 0,
+                limit: 1,
+                maxId: 0,
+                minId: 0,
+                hash: returnBigInt(0),
+                ...(mine ? { fromId: new Api.InputPeerSelf() } : {}),
+              }),
+            ),
+          )
+          if (result instanceof Api.messages.MessagesNotModified) return result.count
+          return 'count' in result ? result.count : result.messages.length
+        }
+        const messages = await count(false)
+        return { messages, mine: messages ? await count(true) : 0 }
       },
 
       downloadAvatar: async (chatId) => {
