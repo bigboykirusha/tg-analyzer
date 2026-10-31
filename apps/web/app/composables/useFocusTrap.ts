@@ -28,10 +28,12 @@ export function useFocusTrap(
     const first = focusable[0]
     const last = focusable.at(-1)
     if (!first || !last) return
-    if (event.shiftKey && document.activeElement === first) {
+    // The panel (or a non-focusable child) can hold focus after opening: Shift+Tab from there wraps too.
+    const index = focusable.indexOf(document.activeElement as HTMLElement)
+    if (event.shiftKey && index <= 0) {
       event.preventDefault()
       last.focus()
-    } else if (!event.shiftKey && document.activeElement === last) {
+    } else if (!event.shiftKey && index === focusable.length - 1) {
       event.preventDefault()
       first.focus()
     }

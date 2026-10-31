@@ -64,7 +64,7 @@ const sections = computed(() =>
 
 .legal__index {
   min-width: 1.25em;
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .legal__section p {

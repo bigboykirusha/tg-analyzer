@@ -21,6 +21,7 @@
   --border: #e7e8eb;
   --border-strong: #d6d8dc;
   --control-border: #d6d8dc;
+  --control-off: #8f949b;
   --hover: rgba(14, 15, 17, 0.04);
   --pressed: rgba(14, 15, 17, 0.08);
   --text: #0e0f11;
@@ -125,6 +126,7 @@
   --border: #232326;
   --border-strong: #34343a;
   --control-border: #34343a;
+  --control-off: #6b6b72;
   --hover: rgba(242, 242, 243, 0.05);
   --pressed: rgba(242, 242, 243, 0.09);
   --text: #f2f2f3;
@@ -218,6 +220,7 @@
     --border: #232326;
     --border-strong: #34343a;
     --control-border: #34343a;
+    --control-off: #6b6b72;
     --hover: rgba(242, 242, 243, 0.05);
     --pressed: rgba(242, 242, 243, 0.09);
     --text: #f2f2f3;

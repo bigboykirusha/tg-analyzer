@@ -103,8 +103,10 @@ onMounted(load)
       <ReportStory :open="storyOpen" :data="data" @close="storyOpen = false" />
     </div>
 
+    <UiPageBar v-else-if="notFound || loadError" :title="knownTitle ?? t('nav.back')" back="/dashboard" />
+
     <UiEmptyState
-      v-else-if="notFound"
+      v-if="!data && notFound"
       :icon="AlertCircle"
       :title="t('report.notFoundTitle')"
       :description="t('report.notFoundText')"
@@ -115,7 +117,8 @@ onMounted(load)
     </UiEmptyState>
 
     <UiEmptyState
-      v-else-if="loadError"
+      v-else-if="!data && loadError"
+      tone="danger"
       :icon="AlertCircle"
       :title="t('report.loadError')"
       :description="errorMessage(loadError)"
@@ -125,7 +128,7 @@ onMounted(load)
       </template>
     </UiEmptyState>
 
-    <ReportSkeleton v-else :title="knownTitle" />
+    <ReportSkeleton v-if="!data && !notFound && !loadError" :title="knownTitle" />
 
     <DeleteReportDialog
       :open="confirm === 'delete'"

@@ -78,7 +78,13 @@ function describe(cell: Cell) {
 
 <template>
   <div v-if="weeks.length" class="heatmap" :style="{ '--cell': `${cellSize}px` }">
-    <div ref="scroller" class="heatmap__scroll">
+    <div
+      ref="scroller"
+      class="heatmap__scroll"
+      role="region"
+      tabindex="0"
+      :aria-label="t('report.rhythm.heatmapTitle')"
+    >
       <div class="heatmap__body">
         <span />
         <div class="heatmap__months">

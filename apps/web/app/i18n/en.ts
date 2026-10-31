@@ -183,7 +183,8 @@ export const en = {
   'dashboard.intro.step1Title': 'Pick a chat',
   'dashboard.intro.step1Text': 'A private chat or a group from your Telegram, listed below.',
   'dashboard.intro.step2Title': 'We count',
-  'dashboard.intro.step2Text': 'Who writes, when and how much. Message texts are never stored, only the totals.',
+  'dashboard.intro.step2Text':
+    'Who writes, when and how much. Message texts are never stored, only statistics are kept.',
   'dashboard.intro.step3Title': 'Read the report',
   'dashboard.intro.step3Text': 'Balance, rhythm, favourite words and how things changed, in plain words.',
   'dashboard.yourShare': '{share} yours',
@@ -378,8 +379,7 @@ export const en = {
   'group.wordsPerMessage': 'Words per text message',
   'group.you': 'You',
   'header.activityLabel': 'Analysing «{chat}», open the chats list',
-  'home.onboardText':
-    'The report is built from the chat history in a minute or two. We count who writes, when and how much — message texts are never stored.',
+  'home.onboardText': 'Your report is ready in about a minute. Message texts are never stored.',
   'home.onboardTitle': 'Pick your first chat',
   'home.title': 'Your circle',
   'insight.days.few': '{count} days',
@@ -418,7 +418,7 @@ export const en = {
   'login.codeLabel': 'Telegram code',
   'login.codeTitle': 'Confirm Telegram code',
   'login.codeTrust':
-    'Telegram will ask you not to share the code and show a «new login» — it always does: the code goes only to Telegram. We see your chat list, read only the chat you pick and never write on your behalf. End the session in your account here or in Telegram → Devices.',
+    'Telegram will warn about a «new login» — it always does. We read only the chat you pick and never write on your behalf. End the session in your account or in Telegram → Devices.',
   'login.confirmCode': 'Confirm code',
   'login.countryLabel': 'Country',
   'login.delivery.app':
@@ -452,7 +452,7 @@ export const en = {
   'login.phoneTitle': 'Enter your phone',
   'login.promise.delete': 'Reports and Telegram access are deleted in one click.',
   'login.promise.noAi': 'No neural networks — just counting.',
-  'login.promise.texts': 'Message texts are never stored, only the totals.',
+  'login.promise.texts': 'Message texts are never stored, only statistics are kept.',
   'login.resend': 'Send again',
   'login.resendCall': 'Call me instead',
   'login.resendIn': 'Send again in {time}',
@@ -470,7 +470,7 @@ export const en = {
   'nav.language': 'Language',
   'nav.main': 'Main navigation',
   'nav.newAnalysis': 'New analysis',
-  'newAnalysis.lede': 'Pick a chat — it takes about a minute. Start several at once.',
+  'newAnalysis.lede': 'Pick a chat, ready in about a minute',
   'newAnalysis.seoTitle': 'New analysis',
   'newAnalysis.title': 'New analysis',
   'offline.code': 'Offline',

@@ -186,7 +186,8 @@ export const ru: Record<MessageKey, string> = {
   'dashboard.intro.step1Title': 'Выберите чат',
   'dashboard.intro.step1Text': 'Личный чат или группу из вашего Telegram — список ниже.',
   'dashboard.intro.step2Title': 'Мы посчитаем',
-  'dashboard.intro.step2Text': 'Кто, когда и сколько пишет. Тексты сообщений не сохраняются — только итоговые цифры.',
+  'dashboard.intro.step2Text':
+    'Кто, когда и сколько пишет. Тексты сообщений не сохраняются, остаётся только статистика.',
   'dashboard.intro.step3Title': 'Читайте отчёт',
   'dashboard.intro.step3Text': 'Баланс, ритм, частые слова и динамика — с выводами простыми словами.',
   'dashboard.yourShare': 'ваших {share}',
@@ -382,8 +383,7 @@ export const ru: Record<MessageKey, string> = {
   'group.wordsPerMessage': 'Слов в текстовом сообщении',
   'group.you': 'Вы',
   'header.activityLabel': 'Идёт анализ «{chat}», открыть список чатов',
-  'home.onboardText':
-    'Отчёт строится по истории переписки за минуту-другую. Мы считаем, кто, когда и сколько пишет, — тексты сообщений не сохраняются.',
+  'home.onboardText': 'Отчёт готов через минуту. Тексты сообщений не сохраняются.',
   'home.onboardTitle': 'Выберите первый чат',
   'home.title': 'Ваш круг',
   'insight.days.few': '{count} дня',
@@ -423,7 +423,7 @@ export const ru: Record<MessageKey, string> = {
   'login.codeLabel': 'Код Telegram',
   'login.codeTitle': 'Подтвердите код Telegram',
   'login.codeTrust':
-    'Telegram попросит никому не сообщать код и покажет «новый вход» — так он пишет всегда: код уходит только в Telegram. Мы видим список чатов, читаем только выбранный и ничего не пишем от вашего имени. Сеанс можно завершить в аккаунте здесь или в Telegram → Устройства.',
+    'Telegram предупредит о «новом входе» — так бывает всегда. Мы читаем только выбранный чат и ничего не пишем от вашего имени. Сеанс можно завершить в аккаунте или в Telegram → Устройства.',
   'login.confirmCode': 'Подтвердить код',
   'login.countryLabel': 'Страна',
   'login.delivery.app': 'Код отправлен в Telegram: откройте чат «Telegram» в приложении, где вы уже вошли.',
@@ -474,7 +474,7 @@ export const ru: Record<MessageKey, string> = {
   'nav.language': 'Язык',
   'nav.main': 'Основная навигация',
   'nav.newAnalysis': 'Новый анализ',
-  'newAnalysis.lede': 'Выберите чат — посчитаем за минуту. Можно несколько сразу.',
+  'newAnalysis.lede': 'Выберите чат, посчитаем за минуту',
   'newAnalysis.seoTitle': 'Новый анализ',
   'newAnalysis.title': 'Новый анализ',
   'offline.code': 'Нет сети',

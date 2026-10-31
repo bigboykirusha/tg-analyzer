@@ -279,6 +279,16 @@ function signOut() {
   cursor: pointer;
 }
 
+.account-trigger {
+  position: relative;
+}
+
+.account-trigger::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+
 .account-trigger:focus-visible,
 .account-trigger[aria-expanded='true'] {
   outline: none;

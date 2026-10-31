@@ -50,12 +50,14 @@ const theirAvatar = ref<string | null>(null)
 /** Slide rendered off screen for the image; null when not exporting. */
 const exportIndex = ref<number | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
+// The arrows sit beside the frame, so the focus trap covers the whole overlay.
+const overlayRef = ref<HTMLElement | null>(null)
 const exportRef = ref<HTMLElement | null>(null)
 const open = toRef(props, 'open')
 
 useBodyScrollLock(open)
 // Focus starts on the frame itself, so no button opens with a focus ring.
-useFocusTrap(panelRef, open, {
+useFocusTrap(overlayRef, open, {
   initial: () => panelRef.value,
   onEscape: () => {
     if (shareOpen.value) shareOpen.value = false
@@ -662,7 +664,7 @@ watch(open, (value) => {
 <template>
   <Teleport to="body">
     <Transition name="stories">
-      <div v-if="open" class="stories" @click.self="emit('close')">
+      <div v-if="open" ref="overlayRef" class="stories" @click.self="emit('close')">
         <section
           ref="panelRef"
           tabindex="-1"

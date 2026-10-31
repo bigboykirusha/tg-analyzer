@@ -73,7 +73,7 @@ const hintId = useId()
   width: 44px;
   height: 26px;
   border-radius: var(--radius-full);
-  background: var(--control-border);
+  background: var(--control-off);
   transition: background-color var(--transition-normal);
 }
 

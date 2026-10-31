@@ -56,6 +56,17 @@ const { t } = useI18n()
   -webkit-tap-highlight-color: transparent;
 }
 
+/* A 44 px touch area around the 36 px circle. */
+.page-bar__back {
+  position: relative;
+}
+
+.page-bar__back::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+
 .page-bar__back:active {
   background: var(--hover);
 }
