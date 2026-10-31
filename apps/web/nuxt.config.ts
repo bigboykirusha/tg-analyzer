@@ -67,36 +67,35 @@ export default defineNuxtConfig({
       link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
     },
   },
-  // Signed-in screens restore the session in the browser (the refresh cookie is
-  // HttpOnly and only the API can read it), so they render on the client only.
+  // One list of route rules. Keeping a second list under `nitro.routeRules` made the
+  // build drop `ssr: false` for the same paths, and the signed-in pages rendered on
+  // the server and failed with a 500 on reload.
   routeRules: {
-    '/dashboard': { ssr: false },
-    '/new': { ssr: false },
-    '/account': { ssr: false },
+    '/**': { headers: securityHeaders },
+    // Signed-in screens restore the session in the browser (the refresh cookie is
+    // HttpOnly and only the API can read it), so they render on the client only.
+    // They never reach a crawler as HTML, so noindex goes in a header.
+    '/dashboard': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
+    '/new': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
+    '/account': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
     // Built in the browser from a made-up chat; nothing to render on the server.
     '/example': { ssr: false },
     // «Мои люди» was removed; old links land on the chats list.
     '/people': { redirect: '/dashboard' },
     // The job log page was removed; old links land on the chats list.
     '/history': { redirect: '/dashboard' },
-    '/chat/**': { ssr: false },
+    '/chat/**': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
     // The policy is a modal on the login page now.
     '/privacy': { redirect: '/login#privacy' },
   },
+  // Bundle the icons with the app: left external on the server, @lucide/vue reached a
+  // second copy of Vue, lost its injection context and the first render after a cold
+  // start failed with a 500 («Cannot destructure property 'size' of useLucideProps()»).
+  build: { transpile: ['@lucide/vue'] },
   runtimeConfig: {
     // Overridden at runtime by NUXT_API_PROXY_TARGET.
     apiProxyTarget,
     public: { wsUrl, siteUrl },
-  },
-  nitro: {
-    routeRules: {
-      '/**': { headers: securityHeaders },
-      // These render on the client, so the meta tag never reaches a crawler; the header does.
-      '/dashboard': { headers: { 'x-robots-tag': 'noindex, nofollow' } },
-      '/new': { headers: { 'x-robots-tag': 'noindex, nofollow' } },
-      '/account': { headers: { 'x-robots-tag': 'noindex, nofollow' } },
-      '/chat/**': { headers: { 'x-robots-tag': 'noindex, nofollow' } },
-    },
   },
   typescript: { strict: true },
 })

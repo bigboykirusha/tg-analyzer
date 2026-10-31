@@ -3,7 +3,9 @@ const props = defineProps<{ error: { statusCode?: number; statusMessage?: string
 const { t, locale } = useI18n()
 const notFound = computed(() => props.error.statusCode === 404)
 useSeoMeta({ robots: 'noindex' })
-// app.vue is not rendered on the error page, so the language and title are set here.
+// app.vue is not rendered on the error page, so the theme, language and title are set here;
+// without the theme the page followed the system setting instead of the one chosen.
+useTheme().install()
 useHead({
   htmlAttrs: { lang: () => locale.value },
   title: () => (notFound.value ? t('error.notFoundTitle') : t('error.title')),
