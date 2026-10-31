@@ -56,6 +56,15 @@ const { t } = useI18n()
   transition: color var(--transition-fast);
 }
 
+/* Text links get a full-size touch target without changing how the line looks. */
+@media (pointer: coarse) {
+  .site-footer__nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--control-md);
+  }
+}
+
 @media (hover: hover) {
   .site-footer a:hover {
     color: var(--text);

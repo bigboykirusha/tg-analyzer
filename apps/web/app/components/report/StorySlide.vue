@@ -100,7 +100,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 <template>
   <div class="story-slide" :class="[`story-slide--${slide.theme}`, { 'is-still': still, 'has-chrome': chrome }]">
     <div class="story-slide__canvas">
-      <header class="story-slide__people">
+      <div class="story-slide__people">
         <span class="story-slide__faces">
           <span v-for="(person, position) in people" :key="position" class="story-slide__face">
             <img v-if="person.avatar" :src="person.avatar" alt="" />
@@ -111,7 +111,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
           <strong>{{ heading }}</strong>
           <span v-if="headingSub">{{ headingSub }}</span>
         </span>
-      </header>
+      </div>
 
       <div class="story-slide__body">
         <div class="story-slide__head">
@@ -200,11 +200,11 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
         </div>
       </div>
 
-      <footer class="story-slide__brand">
+      <div class="story-slide__brand">
         <span class="story-slide__brand-mark" aria-hidden="true"><i /><i /><i /></span>
         TG Analyzer
         <span v-if="slide.last" class="story-slide__site">{{ site }}</span>
-      </footer>
+      </div>
     </div>
   </div>
 </template>

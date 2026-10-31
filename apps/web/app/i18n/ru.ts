@@ -150,7 +150,7 @@ export const ru: Record<MessageKey, string> = {
   'common.retry': 'Повторить',
   'common.search': 'Поиск',
   'dashboard.analyse': 'Анализ',
-  'dashboard.analysed': 'Отчёт {time}',
+  'dashboard.analysed': 'Обновлён {time}',
   'dashboard.analysingNow': 'Идёт анализ…',
   'dashboard.chatCount.few': '{count} чата',
   'dashboard.chatCount.many': '{count} чатов',

@@ -147,7 +147,7 @@ export const en = {
   'common.retry': 'Retry',
   'common.search': 'Search',
   'dashboard.analyse': 'Analyse',
-  'dashboard.analysed': 'Report {time}',
+  'dashboard.analysed': 'Updated {time}',
   'dashboard.analysingNow': 'Analysing now…',
   'dashboard.chatCount.few': '{count} chats',
   'dashboard.chatCount.many': '{count} chats',

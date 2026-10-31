@@ -79,6 +79,14 @@ const isReport = computed(() => route.path === '/example')
   transition: color var(--transition-fast);
 }
 
+@media (pointer: coarse) {
+  .site-header__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--control-md);
+  }
+}
+
 .site-header__link[aria-current='page'] {
   color: var(--text);
 }
