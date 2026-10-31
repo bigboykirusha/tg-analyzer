@@ -128,8 +128,7 @@ function handleKeydown(event: KeyboardEvent) {
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  font: var(--text-control);
-  font-size: 13px;
+  font: var(--text-label);
   white-space: nowrap;
   transition:
     color var(--transition-fast),

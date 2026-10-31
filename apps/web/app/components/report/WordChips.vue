@@ -31,14 +31,12 @@ const { formatNumber } = useI18n()
   border-radius: var(--radius-full);
   background: var(--surface-2);
   color: var(--text);
-  font-size: 14px;
-  line-height: 20px;
+  font: var(--text-ui);
 }
 
 .chip__count {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  font-weight: 500;
+  font: var(--text-caption);
 }
 </style>

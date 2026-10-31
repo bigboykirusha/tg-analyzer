@@ -168,7 +168,6 @@ function onPointerUp() {
 .sheet__body :deep(.menu-item),
 .sheet__body :deep(.option) {
   min-height: var(--control-lg);
-  font-size: 15px;
 }
 
 .sheet-enter-active,

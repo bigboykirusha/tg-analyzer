@@ -186,13 +186,20 @@ const questionRows = computed(() => {
     </div>
 
     <template v-else>
-      <ReportSection :title="t('report.talk.voiceTitle')" :text="t('report.talk.voiceText')">
+      <ReportSection
+        :title="t('report.talk.voiceTitle')"
+        :text="t('report.talk.voiceText')"
+        :empty="!voiceRows.length ? t('report.talk.noVoice') : undefined"
+      >
         <ReportCompare v-if="voiceRows.length" :their-name="name" :rows="voiceRows" />
         <ReportFacts v-if="voiceFacts.length" :facts="voiceFacts" />
-        <p v-if="!voiceRows.length" class="t-small t-muted">{{ t('report.talk.noVoice') }}</p>
       </ReportSection>
 
-      <ReportSection :title="t('report.talk.reactionsTitle')" :text="t('report.talk.reactionsText')">
+      <ReportSection
+        :title="t('report.talk.reactionsTitle')"
+        :text="t('report.talk.reactionsText')"
+        :empty="!(reactions && reactionRows.length) ? t('report.talk.noReactions') : undefined"
+      >
         <template v-if="reactions && reactionRows.length">
           <ReportCompare :their-name="name" :rows="reactionRows" />
           <div class="emoji-pair">
@@ -206,26 +213,35 @@ const questionRows = computed(() => {
             </div>
           </div>
         </template>
-        <p v-else class="t-small t-muted">{{ t('report.talk.noReactions') }}</p>
       </ReportSection>
 
-      <ReportSection :title="t('report.talk.ritualsTitle')" :text="t('report.talk.ritualsText')">
+      <ReportSection
+        :title="t('report.talk.ritualsTitle')"
+        :text="t('report.talk.ritualsText')"
+        :empty="!ritualRows.length && !greetingFacts.length ? t('report.talk.noRituals') : undefined"
+      >
         <ReportCompare v-if="ritualRows.length" :their-name="name" :rows="ritualRows" />
-        <p v-else class="t-small t-muted">{{ t('report.talk.noRituals') }}</p>
         <ReportFacts v-if="greetingFacts.length" :facts="greetingFacts" />
       </ReportSection>
 
-      <ReportSection :title="t('report.talk.questionsTitle')" :text="t('report.talk.questionsText')">
+      <ReportSection
+        :title="t('report.talk.questionsTitle')"
+        :text="t('report.talk.questionsText')"
+        :empty="!questionRows.length ? t('report.talk.noQuestions') : undefined"
+      >
         <ReportCompare v-if="questionRows.length" :their-name="name" :rows="questionRows" />
-        <p v-else class="t-small t-muted">{{ t('report.talk.noQuestions') }}</p>
       </ReportSection>
 
-      <ReportSection wide :title="t('report.talk.stickersTitle')" :text="stickerVariety ?? undefined">
+      <ReportSection
+        wide
+        :title="t('report.talk.stickersTitle')"
+        :text="stickerVariety ?? undefined"
+        :empty="!stickers?.top.length ? t('report.talk.noStickers') : undefined"
+      >
         <template v-if="stickers?.top.length">
           <ReportCompare :their-name="name" :rows="stickerRows" />
           <StickerGrid :stickers="stickers.top" />
         </template>
-        <p v-else class="t-small t-muted">{{ t('report.talk.noStickers') }}</p>
       </ReportSection>
     </template>
   </div>

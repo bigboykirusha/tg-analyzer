@@ -170,9 +170,7 @@ function run(action: 'analyse' | 'delete') {
 
 .chat-row__title {
   overflow: hidden;
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 20px;
+  font: var(--text-ui);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

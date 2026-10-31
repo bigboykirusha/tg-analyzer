@@ -67,7 +67,7 @@ const tone = computed(() => {
   width: var(--control-md);
   height: var(--control-md);
   border-radius: 50%;
-  font-size: 15px;
+  font: var(--text-ui);
   font-weight: 600;
   letter-spacing: 0.01em;
 }
@@ -81,19 +81,21 @@ const tone = computed(() => {
 .avatar--xs {
   width: 24px;
   height: 24px;
-  font-size: 10px;
+  font: var(--text-caption);
+  font-weight: 600;
 }
 
 .avatar--sm {
   width: var(--control-sm);
   height: var(--control-sm);
-  font-size: 13px;
+  font: var(--text-small);
+  font-weight: 600;
 }
 
 .avatar--lg {
   width: 64px;
   height: 64px;
-  font-size: 22px;
+  font: var(--text-h3);
 }
 
 .avatar--t1 {
