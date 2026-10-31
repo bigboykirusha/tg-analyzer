@@ -2,6 +2,7 @@
 const props = defineProps<{ error: { statusCode?: number; statusMessage?: string; message?: string } }>()
 const { t } = useI18n()
 const notFound = computed(() => props.error.statusCode === 404)
+useSeoMeta({ robots: 'noindex' })
 
 function retry() {
   clearError({ redirect: '/' })

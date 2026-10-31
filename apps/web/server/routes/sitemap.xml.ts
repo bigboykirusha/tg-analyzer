@@ -1,5 +1,5 @@
-/** Public pages only: the landing, the example report, the FAQ and the terms (the policy lives in a modal on /login). */
-const PAGES = ['/', '/example', '/faq', '/terms']
+/** Public pages that render on the server: the landing, the FAQ and the terms (the example report is client-only, the policy lives in a modal on /login). */
+const PAGES = ['/', '/faq', '/terms']
 
 export default defineEventHandler((event) => {
   const siteUrl = String(useRuntimeConfig(event).public.siteUrl ?? '').replace(/\/$/, '')

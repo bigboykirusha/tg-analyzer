@@ -93,7 +93,7 @@ const comparisons = computed(() =>
       </p>
     </ReportSection>
 
-    <ReportSection :title="t('report.composition.title')" :text="t('report.composition.text')" wide>
+    <ReportSection :title="t('report.composition.title')" :text="t('report.composition.text')">
       <CompositionChart :composition="report.composition" />
     </ReportSection>
   </div>

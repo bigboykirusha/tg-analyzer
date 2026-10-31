@@ -115,6 +115,27 @@ const habits = computed(() =>
   scrollbar-width: thin;
 }
 
+/* Phones: tighter cells so most of the matrix is visible without scrolling. */
+@media (max-width: 640px) {
+  .grid {
+    border-spacing: 2px;
+  }
+
+  .grid__corner {
+    min-width: 72px;
+  }
+
+  .grid__row {
+    max-width: 72px;
+  }
+
+  .grid__cell {
+    width: 34px;
+    min-width: 32px;
+    height: 34px;
+  }
+}
+
 .grid {
   border-collapse: separate;
   border-spacing: 3px;

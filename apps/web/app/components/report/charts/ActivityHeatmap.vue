@@ -38,11 +38,15 @@ const weeks = computed(() => {
 /** Month label above the first week that starts in a new month. */
 const monthLabels = computed(() => {
   let previous = ''
-  return weeks.value.map((week) => {
+  // Labels are about three weeks wide: a month that starts right after another would overprint it.
+  let lastLabelled = -3
+  return weeks.value.map((week, index) => {
     const first = week.find((cell) => cell !== null)
     const month = first?.date.slice(0, 7) ?? ''
     if (!month || month === previous) return ''
     previous = month
+    if (index - lastLabelled < 3) return ''
+    lastLabelled = index
     return formatDay(`${month}-01`, { month: 'short' })
   })
 })
@@ -61,6 +65,12 @@ const weekdayLabels = computed(() => {
   return [names[1], '', names[3], '', names[5], '', '']
 })
 
+// A long history scrolls sideways; open at the newest weeks, which matter most.
+const scroller = ref<HTMLElement | null>(null)
+onMounted(() => {
+  if (scroller.value) scroller.value.scrollLeft = scroller.value.scrollWidth
+})
+
 function describe(cell: Cell) {
   return `${formatDay(cell.date, { day: 'numeric', month: 'short', year: 'numeric' })}: ${tc('common.messagesCount', cell.total)}`
 }
@@ -68,7 +78,7 @@ function describe(cell: Cell) {
 
 <template>
   <div v-if="weeks.length" class="heatmap" :style="{ '--cell': `${cellSize}px` }">
-    <div class="heatmap__scroll">
+    <div ref="scroller" class="heatmap__scroll">
       <div class="heatmap__body">
         <span />
         <div class="heatmap__months">

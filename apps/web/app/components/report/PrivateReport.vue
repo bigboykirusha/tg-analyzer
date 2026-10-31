@@ -93,8 +93,8 @@ const lead = computed(() => {
             <i :style="{ flexGrow: 100 - mineShare }" />
           </div>
           <div class="share__names">
-            <span>{{ t('report.you') }} {{ formatNumber(totals.sent) }}</span>
-            <span>{{ data.summary.title }} {{ formatNumber(totals.received) }}</span>
+            <span>{{ t('report.you') }} {{ mineShare }}% · {{ formatNumber(totals.sent) }}</span>
+            <span>{{ data.summary.title }} {{ 100 - mineShare }}% · {{ formatNumber(totals.received) }}</span>
           </div>
           <p v-if="shareHint" class="tile__note">{{ shareHint }}</p>
         </div>
