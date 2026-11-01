@@ -145,7 +145,7 @@
   - Сейсмограф анимируется один раз за сессию.
   - Hover-стили — только в `@media (hover: hover) and (pointer: fine)`.
   - В «Итогах» листание стрелками — без въезда.
-- [ ] **Артефакт дизайн-системы.** «TG Analyzer» (https://claude.ai/artifact/JA2RwL5UfYbSTkHxhrYQSv) пересобрать из итогового `tokens.css`: сейчас в нём «один синий».
+- [x] **Артефакт дизайн-системы.** «TG Analyzer» (https://claude.ai/artifact/JA2RwL5UfYbSTkHxhrYQSv) пересобрать из итогового `tokens.css`: сейчас в нём «один синий».
 
 ## Что не трогаем
 
