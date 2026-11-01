@@ -173,7 +173,8 @@ function updating(report: ReportSummaryDto) {
 }
 
 .sidebar__item[aria-current='page'] {
-  background: var(--surface-2);
+  background: var(--sidebar-selected);
+  box-shadow: var(--shadow-sm);
 }
 
 @media (hover: hover) {

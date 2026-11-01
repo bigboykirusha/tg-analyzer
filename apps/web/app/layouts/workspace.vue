@@ -81,7 +81,7 @@ watch(analysis.finished, (job) => {
   /* The rail runs the full page height; the list inside stays pinned. */
   .workspace-sidebar {
     display: block;
-    border-right: 1px solid var(--border);
+    /* A heavier material than the page separates the column; no line needed. */
     background: var(--sidebar);
   }
 }

@@ -64,7 +64,18 @@ onBeforeUnmount(() => window.removeEventListener('scroll', spy))
   z-index: calc(var(--z-header) - 1);
   margin-inline: calc(var(--page-gutter) * -1);
   padding: var(--space-2) var(--page-gutter);
-  background: var(--bg);
+  /* The same material as the header above it: one floating bar, not two. */
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .report-nav {
+    background: var(--bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 /* Wide screens: a compact bar; phones: the full width, one equal slot per part. */

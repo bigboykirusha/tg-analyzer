@@ -88,7 +88,7 @@ function handleKeydown(event: KeyboardEvent) {
   padding: var(--pad);
   overflow-x: auto;
   border-radius: var(--radius-full);
-  background: var(--surface-2);
+  background: var(--segment-track);
   scrollbar-width: none;
 }
 
@@ -112,7 +112,7 @@ function handleKeydown(event: KeyboardEvent) {
   border-radius: var(--radius-full);
   background: var(--segment-thumb);
   box-shadow: var(--shadow-segment);
-  transition: left 250ms var(--ease-standard);
+  transition: left var(--duration-slow) var(--ease-standard);
   pointer-events: none;
 }
 

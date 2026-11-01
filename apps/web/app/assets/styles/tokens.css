@@ -8,6 +8,8 @@
 :root {
   color-scheme: light;
   --bg: #f2f3f5;
+  /* Floating bars: the page colour, translucent, over a blur. */
+  --glass: rgba(242, 243, 245, 0.72);
   --surface: #ffffff;
   --surface-2: #f2f3f5;
   /* Loading placeholders: visible both on the page and inside a white tile. */
@@ -16,7 +18,9 @@
   --surface-raised: #ffffff;
   /* Grey fill for rows and icon tiles inside overlays (one step up from --surface-raised). */
   --fill-raised: #f2f3f5;
-  --sidebar: #f8f9fa;
+  /* The sidebar is a heavier surface than the page; the selected row is a white plate on it. */
+  --sidebar: #e9eaed;
+  --sidebar-selected: #ffffff;
   --thumb: #ffffff;
   --border: #e7e8eb;
   --border-strong: #d6d8dc;
@@ -71,6 +75,8 @@
   --on-inverse: #ffffff;
   --switch-thumb: #ffffff;
   --segment-thumb: #ffffff;
+  /* The pill track: visible on the page and on a white card alike. */
+  --segment-track: #e9eaed;
   --scrim: rgba(10, 10, 12, 0.36);
   --tooltip: rgba(20, 22, 28, 0.94);
   --on-tooltip: #f2f4f8;
@@ -117,13 +123,15 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
   --bg: #0a0a0b;
+  --glass: rgba(10, 10, 11, 0.72);
   --surface: #141416;
   --surface-2: #1c1c1f;
   --skeleton: #1f1f23;
   --fill-hover: #26262a;
   --surface-raised: #1c1c1f;
   --fill-raised: #26262a;
-  --sidebar: #0f0f11;
+  --sidebar: #111113;
+  --sidebar-selected: #1c1c1f;
   --thumb: #2a2a2e;
   --border: #232326;
   --border-strong: #34343a;
@@ -174,6 +182,7 @@
   --on-inverse: #0a0a0b;
   --switch-thumb: #ffffff;
   --segment-thumb: #2a2a2e;
+  --segment-track: #1c1c1f;
   --scrim: rgba(0, 0, 0, 0.6);
   --tooltip: rgba(242, 242, 243, 0.96);
   --on-tooltip: #0a0a0b;
@@ -212,13 +221,15 @@
   :root:not([data-theme]) {
     color-scheme: dark;
     --bg: #0a0a0b;
+    --glass: rgba(10, 10, 11, 0.72);
     --surface: #141416;
     --surface-2: #1c1c1f;
     --skeleton: #1f1f23;
     --fill-hover: #26262a;
     --surface-raised: #1c1c1f;
     --fill-raised: #26262a;
-    --sidebar: #0f0f11;
+    --sidebar: #111113;
+    --sidebar-selected: #1c1c1f;
     --thumb: #2a2a2e;
     --border: #232326;
     --border-strong: #34343a;
@@ -269,6 +280,7 @@
     --on-inverse: #0a0a0b;
     --switch-thumb: #ffffff;
     --segment-thumb: #2a2a2e;
+    --segment-track: #1c1c1f;
     --scrim: rgba(0, 0, 0, 0.6);
     --tooltip: rgba(242, 242, 243, 0.96);
     --on-tooltip: #0a0a0b;
@@ -306,6 +318,7 @@
 
 /* Theme-independent scales. */
 :root {
+  --glass-filter: blur(20px) saturate(180%);
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;

@@ -39,11 +39,22 @@ const isReport = computed(() => route.path === '/example')
   z-index: var(--z-header);
   padding-top: env(safe-area-inset-top, 0px);
   background: var(--bg);
-  transition: box-shadow var(--duration-slow) ease;
+  transition: background-color var(--duration-slow) ease;
 }
 
+/* Scrolled: the bar turns into a translucent material and the page slides under it, no hairline. */
 .site-header.is-scrolled {
-  box-shadow: 0 1px 0 var(--border);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .site-header.is-scrolled {
+    background: var(--bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 .site-header__in {
