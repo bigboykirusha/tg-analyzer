@@ -91,7 +91,13 @@ test('the example report opens from the login page without signing in', async ({
   }
   await expect(page.getByText('Главное')).toBeVisible()
   // The example has voice messages without duration metadata. Their count
-  // must remain visible rather than being described as absent.
+  // must remain visible rather than being described as absent. On phones the
+  // voice card is one of the details behind «Ещё N карточек».
+  if (page.viewportSize()!.width <= 640)
+    await page
+      .locator('#part-together')
+      .getByRole('button', { name: /^Ещё \d+ карточ/ })
+      .click()
   await expect(page.getByRole('heading', { name: 'Голосом', exact: true })).toBeVisible()
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })

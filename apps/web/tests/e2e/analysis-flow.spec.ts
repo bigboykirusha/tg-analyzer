@@ -125,7 +125,15 @@ test('group chats get the group report', async ({ page }, testInfo) => {
     await route.fulfill({ response, json: data })
   })
   await page.reload()
-  await expect(page.getByText('Матрица ответов появится после обновления отчёта.', { exact: true })).toBeVisible()
+  // On phones the reply map is one of the cards behind «Ещё N карточек».
+  if (testInfo.project.name !== 'desktop')
+    await page
+      .locator('#part-people')
+      .getByRole('button', { name: /^Ещё \d+ карточ/ })
+      .click({ timeout: 15_000 })
+  await expect(page.getByText('Матрица ответов появится после обновления отчёта.', { exact: true })).toBeVisible({
+    timeout: 15_000,
+  })
 })
 
 test('a completed analysis is recovered when websocket progress is unavailable', async ({ page }) => {
