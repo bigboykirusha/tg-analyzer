@@ -44,10 +44,10 @@ function runAction(toast: ToastMessage) {
             <span class="sr-only">{{ variantLabel(toast.variant) }}</span>
             <strong class="toast__title">{{ toast.title }}</strong>
             <p v-if="toast.description" class="toast__text">{{ toast.description }}</p>
-            <button v-if="toast.action" type="button" class="toast__action" @click="runAction(toast)">
-              {{ toast.action.label }}
-            </button>
           </div>
+          <button v-if="toast.action" type="button" class="toast__action" @click="runAction(toast)">
+            {{ toast.action.label }}
+          </button>
           <IconButton
             class="toast__close"
             :label="t('common.close')"
@@ -80,8 +80,9 @@ function runAction(toast: ToastMessage) {
 
 .toast {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: start;
+  /* Icon, words, the action and the close button in one row: a short strip, not a card. */
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
   gap: var(--space-3);
   width: 100%;
   min-width: 0;
@@ -94,7 +95,6 @@ function runAction(toast: ToastMessage) {
 }
 
 .toast__icon {
-  margin-top: 2px;
   color: var(--on-inverse);
 }
 
@@ -130,28 +130,27 @@ function runAction(toast: ToastMessage) {
 }
 
 .toast__action {
-  justify-self: start;
-  margin-top: var(--space-2);
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-xs);
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--on-inverse-line);
+  border-radius: var(--radius-full);
   background: none;
   color: var(--on-inverse);
   cursor: pointer;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
   font: var(--text-small);
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.toast__action:hover {
-  text-decoration-thickness: 2px;
+@media (hover: hover) and (pointer: fine) {
+  .toast__action:hover {
+    border-color: var(--on-inverse);
+  }
 }
 
 /* The 32px close button sits in the corner without growing the toast. */
 .toast .toast__close {
-  margin: calc(var(--space-1) * -1.5) calc(var(--space-1) * -1.5) 0 0;
+  margin: calc(var(--space-1) * -1.5) calc(var(--space-1) * -1.5) calc(var(--space-1) * -1.5) 0;
   color: var(--on-inverse);
 }
 
@@ -171,6 +170,17 @@ function runAction(toast: ToastMessage) {
 @media (max-width: 640px) {
   .toast-region {
     top: calc(env(safe-area-inset-top, 0px) + var(--space-2));
+  }
+
+  /* On a phone the toast covers the header: keep it to two short lines. */
+  .toast {
+    padding: 10px var(--space-3);
+  }
+
+  .toast__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 </style>

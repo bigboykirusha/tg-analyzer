@@ -11,11 +11,11 @@ const props = defineProps<{
 const { t, tc, formatRelative, formatPeriod, formatNumber, formatPercent } = useI18n()
 
 const isGroup = computed(() => props.report.type === 'group')
-/** «Личный чат · март – окт. 2026»: the kind and the span in one quiet line, no chip. */
+/** «март – окт. 2026», «Группа · март – окт. 2026»: a private chat is the default and needs no label. */
 const subline = computed(() => {
   const { firstMessageAt, lastMessageAt } = props.report
   const period = firstMessageAt && lastMessageAt ? formatPeriod(firstMessageAt, lastMessageAt, true) : null
-  return [t(isGroup.value ? 'chatType.group' : 'chatType.private'), period].filter(Boolean).join(' · ')
+  return [isGroup.value ? t('chatType.group') : null, period].filter(Boolean).join(' · ')
 })
 /** Summaries cached before pulses existed have none. */
 const pulse = computed(() =>
@@ -216,6 +216,7 @@ const updated = computed(() =>
     display: none;
   }
 
+  /* Up to two lines: the time of the analysis is the part that gets cut first otherwise. */
   .report-card__line {
     display: block;
     color: var(--text-muted);

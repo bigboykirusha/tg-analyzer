@@ -29,7 +29,7 @@
   --pressed: rgba(14, 15, 17, 0.08);
   --text: #0e0f11;
   --text-muted: #63676e;
-  --text-subtle: #868a91;
+  --text-subtle: #6b6f76;
   /* Actions are ink; lime marks data, never a button. */
   --accent: #0e0f11;
   --accent-hover: #2b2d31;
@@ -63,6 +63,7 @@
   --danger-subtle-hover: #fbdcdc;
   --inverse-surface: #0e0f11;
   --on-inverse: #ffffff;
+  --on-inverse-line: rgba(255, 255, 255, 0.28);
   --switch-thumb: #ffffff;
   /* The pill track: visible on the page and on a white card alike. */
   --segment-track: #e9eaed;
@@ -121,7 +122,7 @@
   --pressed: rgba(242, 242, 243, 0.09);
   --text: #f2f2f3;
   --text-muted: #8b8b91;
-  --text-subtle: #76767c;
+  --text-subtle: #828288;
   --accent: #f2f2f3;
   --accent-hover: #ffffff;
   --accent-ink: #f2f2f3;
@@ -151,6 +152,7 @@
   --danger-subtle-hover: #4a1a1d;
   --inverse-surface: #f2f2f3;
   --on-inverse: #0a0a0b;
+  --on-inverse-line: rgba(10, 10, 11, 0.24);
   --switch-thumb: #ffffff;
   --segment-track: #1c1c1f;
   --scrim: rgba(0, 0, 0, 0.6);

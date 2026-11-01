@@ -33,6 +33,7 @@ const hasText = computed(
 
     <ReportSection
       v-if="vocabulary.uniqueWordsBySender.mine.length"
+      extra
       :title="t('report.words.distinctiveMine')"
       :text="t('report.words.distinctiveMineText')"
     >
@@ -40,6 +41,7 @@ const hasText = computed(
     </ReportSection>
     <ReportSection
       v-if="vocabulary.uniqueWordsBySender.theirs.length"
+      extra
       :title="t('report.words.distinctiveTheirs')"
       :text="t('report.words.distinctiveTheirsText')"
     >

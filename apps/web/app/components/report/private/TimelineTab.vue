@@ -60,7 +60,7 @@ const sessionFacts = computed<Fact[]>(() => [
     <ReportFacts :facts="summaryFacts" :columns="2" />
   </ReportSection>
 
-  <ReportSection :title="t('report.sessions.title')" :text="t('report.sessions.text')" wide>
+  <ReportSection :title="t('report.sessions.title')" :text="t('report.sessions.text')" wide extra>
     <ReportFacts :facts="sessionFacts" :columns="3" />
   </ReportSection>
 </template>

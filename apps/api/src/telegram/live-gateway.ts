@@ -44,6 +44,13 @@ async function attempt<T>(work: () => Promise<T>): Promise<T> {
   }
 }
 
+/** How many messages of the full result come before the first one returned; null when unknown. */
+function positionOf(result: Api.messages.TypeMessages): number | null {
+  if (result instanceof Api.messages.Messages) return 0
+  if (result instanceof Api.messages.MessagesNotModified) return null
+  return result.offsetIdOffset ?? null
+}
+
 function codeDeliveryType(
   type: Api.auth.TypeSentCodeType | Api.auth.TypeCodeType | undefined,
 ): CodeDeliveryType | null {
@@ -282,35 +289,63 @@ export class LiveTelegramGateway implements TelegramGateway {
         guard()
         const peer = await attempt(() => findPeer(chatId))
         if (!peer) throw new Error(`Chat ${chatId} is not available`)
-        const count = async (mine: boolean) => {
+        const pace = async () => {
           const wait = lastHistoryRequestAt + COUNT_REQUEST_INTERVAL_MS - Date.now()
           if (wait > 0) await sleep(wait, signal)
           guard()
           lastHistoryRequestAt = Date.now()
-          // A search with an empty query and limit 1 returns only the count of matching messages.
-          const result = await attempt(() =>
-            client.invoke(
-              new Api.messages.Search({
-                peer: peer.input,
-                q: '',
-                filter: new Api.InputMessagesFilterEmpty(),
-                minDate: Math.floor(since.getTime() / 1000),
-                maxDate: 0,
-                offsetId: 0,
-                addOffset: 0,
-                limit: 1,
-                maxId: 0,
-                minId: 0,
-                hash: returnBigInt(0),
-                ...(mine ? { fromId: new Api.InputPeerSelf() } : {}),
-              }),
-            ),
-          )
-          if (result instanceof Api.messages.MessagesNotModified) return result.count
-          return 'count' in result ? result.count : result.messages.length
         }
-        const messages = await count(false)
-        return { messages, mine: messages ? await count(true) : 0 }
+        // Telegram's message counters ignore min_date, so the period is counted by position:
+        // the newest message older than `since` sits right after all the recent ones.
+        await pace()
+        const history = await attempt(() =>
+          client.invoke(
+            new Api.messages.GetHistory({
+              peer: peer.input,
+              offsetId: 0,
+              offsetDate: Math.floor(since.getTime() / 1000),
+              addOffset: 0,
+              limit: 1,
+              maxId: 0,
+              minId: 0,
+              hash: returnBigInt(0),
+            }),
+          ),
+        )
+        if (history instanceof Api.messages.MessagesNotModified) throw new Error('Unexpected history answer')
+        const boundary = history.messages[0]
+        const total = 'count' in history ? history.count : history.messages.length
+        const messages = boundary ? positionOf(history) : total
+        if (messages === null) throw new Error('Telegram did not report the message position')
+        if (!messages) return { messages: 0, mine: 0 }
+
+        await pace()
+        const own = await attempt(() =>
+          client.invoke(
+            new Api.messages.Search({
+              peer: peer.input,
+              q: '',
+              filter: new Api.InputMessagesFilterEmpty(),
+              minDate: 0,
+              maxDate: 0,
+              offsetId: boundary?.id ?? 0,
+              addOffset: 0,
+              limit: 1,
+              maxId: 0,
+              minId: 0,
+              hash: returnBigInt(0),
+              fromId: new Api.InputPeerSelf(),
+            }),
+          ),
+        )
+        if (own instanceof Api.messages.MessagesNotModified) return { messages, mine: 0 }
+        const ownTotal = 'count' in own ? own.count : own.messages.length
+        // No own message before the boundary: every own message is a recent one.
+        if (!boundary || !own.messages.length) return { messages, mine: Math.min(ownTotal, messages) }
+        const ownRecent = positionOf(own)
+        // Without a position, assume the all-time share of own messages.
+        const mine = ownRecent ?? (total ? Math.round((messages * ownTotal) / total) : 0)
+        return { messages, mine: Math.min(mine, messages) }
       },
 
       downloadAvatar: async (chatId) => {

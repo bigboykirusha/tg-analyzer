@@ -284,9 +284,15 @@ a.month__top:active {
     grid-row: 1 / 4;
   }
 
+  /* A long name takes a second line rather than losing its end. */
   .month__top.month__top--next .month__top-name {
+    display: -webkit-box;
     grid-column: 2;
     font: var(--text-h3);
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .month__top.month__top--next .month__compact {

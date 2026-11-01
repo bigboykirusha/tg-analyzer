@@ -47,6 +47,8 @@ const option = computed(() => {
         type: 'line',
         data: points.value.map((point) => point.value),
         smooth: weekly.value ? 0.3 : false,
+        // A soft line must not invent peaks or dips between the weeks.
+        smoothMonotone: 'x',
         symbol: points.value.length <= 14 ? 'circle' : 'none',
         symbolSize: 6,
         lineStyle: { color: colors.text, width: 1.5 },

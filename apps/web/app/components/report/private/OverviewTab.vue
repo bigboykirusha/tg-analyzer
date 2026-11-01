@@ -85,7 +85,7 @@ const comparisons = computed(() =>
     <p v-else class="t-small t-muted">{{ t('report.compare.empty') }}</p>
   </ReportSection>
 
-  <ReportSection :title="t('report.composition.title')">
+  <ReportSection :title="t('report.composition.title')" extra>
     <CompositionChart :composition="report.composition" />
   </ReportSection>
 </template>

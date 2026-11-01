@@ -1,10 +1,13 @@
 <script setup lang="ts">
-/** A report card: one title, an optional plain-language explanation, then the content. */
-defineProps<{ title: string; text?: string; wide?: boolean }>()
+/**
+ * A report card: one title, an optional plain-language explanation, then the content.
+ * `extra` cards are the details: on a phone they wait behind the part's «more» button.
+ */
+defineProps<{ title: string; text?: string; wide?: boolean; extra?: boolean }>()
 </script>
 
 <template>
-  <article class="tile report-section" :class="{ 'report-section--wide': wide }">
+  <article class="tile report-section" :class="{ 'report-section--wide': wide, 'report-section--extra': extra }">
     <header class="report-section__head">
       <div class="report-section__copy">
         <h2 class="report-section__title">{{ title }}</h2>

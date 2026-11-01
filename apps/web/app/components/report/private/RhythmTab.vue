@@ -36,11 +36,12 @@ const usuallyText = computed(() =>
     <DayPartsChart :distribution="data.derived.activityDistribution" />
   </ReportSection>
 
-  <ReportSection :title="t('report.rhythm.weekdaysTitle')">
+  <ReportSection :title="t('report.rhythm.weekdaysTitle')" extra>
     <WeekdayChart :weekday="report.activity.weekday" />
   </ReportSection>
 
-  <ReportSection :title="t('report.rhythm.hoursTitle')">
+  <!-- 24 pairs of bars need the full width; the two cards above share a row without a gap. -->
+  <ReportSection :title="t('report.rhythm.hoursTitle')" wide>
     <HourlyChart :hourly="report.activity.hourly" :received-label="data.summary.title" />
   </ReportSection>
 </template>

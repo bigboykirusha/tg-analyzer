@@ -7,6 +7,11 @@ const { t, formatPercent } = useI18n()
 const nameOf = useParticipantName()
 const ranked = computed(() => [...props.group.participants].sort((a, b) => b.messageCount - a.messageCount))
 const selectedId = ref<string | null>(null)
+
+// A long list shows the most active members first; the rest open on request, without a scroll inside the page.
+const MEMBER_PREVIEW = 8
+const showAllMembers = ref(false)
+const visibleMembers = computed(() => (showAllMembers.value ? ranked.value : ranked.value.slice(0, MEMBER_PREVIEW)))
 const selected = computed(() => ranked.value.find((item) => item.id === selectedId.value) ?? ranked.value[0] ?? null)
 const isMobile = useMediaQuery('(max-width: 900px)')
 const detailsOpen = ref(false)
@@ -27,7 +32,7 @@ watch(isMobile, () => {
   <div class="members">
     <ReportSection :title="t('group.membersTitle')" :text="t('group.membersText')">
       <ul class="member-list">
-        <li v-for="participant in ranked" :key="participant.id">
+        <li v-for="participant in visibleMembers" :key="participant.id">
           <button
             type="button"
             class="member"
@@ -47,6 +52,15 @@ watch(isMobile, () => {
           </button>
         </li>
       </ul>
+      <UiButton
+        v-if="ranked.length > MEMBER_PREVIEW"
+        class="members__more"
+        variant="ghost"
+        size="sm"
+        @click="showAllMembers = !showAllMembers"
+      >
+        {{ showAllMembers ? t('group.membersCollapse') : t('group.membersShowAll', { count: ranked.length }) }}
+      </UiButton>
     </ReportSection>
 
     <ReportSection v-if="selected && !isMobile" :title="nameOf(selected)">
@@ -77,9 +91,12 @@ watch(isMobile, () => {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 640px;
-  overflow-y: auto;
   list-style: none;
+}
+
+.members__more {
+  align-self: flex-start;
+  justify-self: start;
 }
 
 .member {
@@ -134,10 +151,6 @@ watch(isMobile, () => {
 @media (max-width: 900px) {
   .members {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .member-list {
-    max-height: 360px;
   }
 
   .member__chevron {
