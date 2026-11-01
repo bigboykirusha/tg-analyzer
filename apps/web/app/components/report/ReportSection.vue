@@ -1,15 +1,11 @@
 <script setup lang="ts">
 /** A report card: one title, an optional plain-language explanation, then the content. */
-defineProps<{ title: string; text?: string; wide?: boolean; empty?: string }>()
+defineProps<{ title: string; text?: string; wide?: boolean }>()
 </script>
 
 <template>
-  <article class="tile report-section" :class="{ 'report-section--wide': wide, 'report-section--empty': empty }">
-    <template v-if="empty">
-      <h2 class="report-section__title">{{ title }}</h2>
-      <p class="report-section__text">{{ empty }}</p>
-    </template>
-    <header v-else class="report-section__head">
+  <article class="tile report-section" :class="{ 'report-section--wide': wide }">
+    <header class="report-section__head">
       <div class="report-section__copy">
         <h2 class="report-section__title">{{ title }}</h2>
         <p v-if="text" class="report-section__text">{{ text }}</p>
@@ -18,7 +14,7 @@ defineProps<{ title: string; text?: string; wide?: boolean; empty?: string }>()
         <slot name="actions" />
       </div>
     </header>
-    <slot v-if="!empty" />
+    <slot />
   </article>
 </template>
 
@@ -45,11 +41,6 @@ defineProps<{ title: string; text?: string; wide?: boolean; empty?: string }>()
   gap: var(--space-1);
   min-width: 0;
   max-width: 560px;
-}
-
-/* A section with nothing to show shrinks to a title and one quiet line. */
-.report-section--empty {
-  gap: var(--space-1);
 }
 
 /* Tiles are named quietly; the numbers inside carry the weight. */

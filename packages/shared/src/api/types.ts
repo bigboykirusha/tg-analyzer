@@ -470,17 +470,7 @@ export interface RitualsDto {
   goodNight: SideCountDto
 }
 
-export type InsightId =
-  | 'initiative'
-  | 'reply_speed'
-  | 'double_texts'
-  | 'last_word'
-  | 'questions'
-  | 'laughs'
-  | 'night_talks'
-  | 'long_silence'
-  | 'streak'
-  | 'trend'
+export type InsightId = 'double_texts' | 'laughs' | 'long_silence' | 'busiest_day' | 'reply_rate'
 
 /**
  * One notable pattern of a chat, ready to be put into words by the client.

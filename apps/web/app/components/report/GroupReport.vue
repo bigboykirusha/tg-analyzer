@@ -78,7 +78,7 @@ const momentum = computed(() =>
       <GroupMembersTab :group="group" />
       <GroupNetworkTab :group="group" />
     </ReportPart>
-    <ReportPart id="talk" :title="t('group.tabs.talk')">
+    <ReportPart id="talk" :title="t('group.tabs.talk')" columns>
       <GroupTalkTab :data="data" :group="group" />
       <GroupContentTab :data="data" :group="group" />
     </ReportPart>

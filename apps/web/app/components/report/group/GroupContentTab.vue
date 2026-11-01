@@ -14,31 +14,29 @@ const signatures = computed(() =>
 </script>
 
 <template>
-  <div class="report-grid">
-    <ReportSection :title="t('group.sharedVocabulary')" :text="t('group.sharedVocabularyHint')">
-      <WordChips :items="group.sharedVocabulary" :empty="t('group.noWords')" />
-    </ReportSection>
-    <ReportSection
-      v-if="group.uniqueGroupWords.length"
-      :title="t('group.uniqueWords')"
-      :text="t('group.uniqueWordsHint')"
-    >
-      <WordChips :items="group.uniqueGroupWords" :empty="t('group.noWords')" />
-    </ReportSection>
+  <ReportSection :title="t('group.sharedVocabulary')" :text="t('group.sharedVocabularyHint')">
+    <WordChips :items="group.sharedVocabulary" :empty="t('group.noWords')" />
+  </ReportSection>
+  <ReportSection
+    v-if="group.uniqueGroupWords.length"
+    :title="t('group.uniqueWords')"
+    :text="t('group.uniqueWordsHint')"
+  >
+    <WordChips :items="group.uniqueGroupWords" :empty="t('group.noWords')" />
+  </ReportSection>
 
-    <ReportSection v-if="signatures.length" wide :title="t('group.signatures')">
-      <div class="signatures">
-        <div v-for="p in signatures" :key="p.id" class="signature">
-          <strong>{{ nameOf(p) }}</strong>
-          <WordChips :items="p.topicSignature" :empty="t('group.noWords')" :counts="false" />
-        </div>
+  <ReportSection v-if="signatures.length" wide :title="t('group.signatures')">
+    <div class="signatures">
+      <div v-for="p in signatures" :key="p.id" class="signature">
+        <strong>{{ nameOf(p) }}</strong>
+        <WordChips :items="p.topicSignature" :empty="t('group.noWords')" :counts="false" />
       </div>
-    </ReportSection>
+    </div>
+  </ReportSection>
 
-    <ReportSection wide :title="t('group.topEmoji')">
-      <EmojiGrid :items="data.report.vocabulary.topEmoji.slice(0, 12)" />
-    </ReportSection>
-  </div>
+  <ReportSection wide :title="t('group.topEmoji')">
+    <EmojiGrid :items="data.report.vocabulary.topEmoji.slice(0, 12)" />
+  </ReportSection>
 </template>
 
 <style scoped>

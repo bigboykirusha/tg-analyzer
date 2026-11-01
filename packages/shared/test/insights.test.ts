@@ -32,19 +32,19 @@ function oneSidedChat() {
   return builder.finish('private', new Date('2026-04-15T00:00:00Z'))
 }
 
-test('a one-sided chat yields initiative, reply speed and double-text insights, strongest first', () => {
+test('a one-sided chat yields only what the report says nowhere else, strongest first', () => {
   const insights = deriveInsights(oneSidedChat())
   const ids = insights.map((insight) => insight.id)
-  assert.ok(ids.includes('initiative'))
-  assert.equal(insights.find((insight) => insight.id === 'initiative')?.side, 'mine')
-  assert.equal(insights.find((insight) => insight.id === 'initiative')?.values.pct, 100)
   assert.equal(insights.find((insight) => insight.id === 'double_texts')?.side, 'mine')
   assert.equal(insights.find((insight) => insight.id === 'laughs')?.side, 'theirs')
-  assert.equal(insights.find((insight) => insight.id === 'questions')?.side, 'mine')
+  assert.ok(ids.includes('reply_rate'))
+  // Who starts, reply speed and questions have their own cards in the report.
+  for (const id of ['initiative', 'reply_speed', 'questions', 'night_talks', 'last_word', 'streak', 'trend'])
+    assert.ok(!ids.includes(id as never), id)
   for (let index = 1; index < insights.length; index += 1) {
     assert.ok(insights[index - 1]!.strength >= insights[index]!.strength)
   }
-  assert.ok(insights.length <= 6)
+  assert.ok(insights.length <= 4)
   assert.deepEqual(deriveReportMetrics(oneSidedChat()).insights, insights)
 })
 
@@ -59,6 +59,6 @@ test('short chats and groups get no insights', () => {
 test('reports stored before habits existed still produce insights without them', () => {
   const report = { ...oneSidedChat(), habits: null }
   const ids = deriveInsights(report).map((insight) => insight.id)
-  assert.ok(ids.includes('initiative'))
+  assert.ok(ids.includes('reply_rate'))
   assert.ok(!ids.includes('double_texts'))
 })

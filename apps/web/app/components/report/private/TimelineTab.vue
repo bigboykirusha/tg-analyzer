@@ -52,17 +52,15 @@ const sessionFacts = computed<Fact[]>(() => [
 </script>
 
 <template>
-  <div class="report-grid">
-    <ReportSection :title="t('report.timeline.title')" :text="t('report.timeline.text')" wide>
-      <DailyVolumeChart :days="days" />
-    </ReportSection>
+  <ReportSection :title="t('report.timeline.title')" :text="t('report.timeline.text')" wide>
+    <DailyVolumeChart :days="days" />
+  </ReportSection>
 
-    <ReportSection :title="t('report.timeline.factsTitle')" wide>
-      <ReportFacts :facts="summaryFacts" :columns="2" />
-    </ReportSection>
+  <ReportSection :title="t('report.timeline.factsTitle')" wide>
+    <ReportFacts :facts="summaryFacts" :columns="2" />
+  </ReportSection>
 
-    <ReportSection :title="t('report.sessions.title')" :text="t('report.sessions.text')" wide>
-      <ReportFacts :facts="sessionFacts" :columns="3" />
-    </ReportSection>
-  </div>
+  <ReportSection :title="t('report.sessions.title')" :text="t('report.sessions.text')" wide>
+    <ReportFacts :facts="sessionFacts" :columns="3" />
+  </ReportSection>
 </template>

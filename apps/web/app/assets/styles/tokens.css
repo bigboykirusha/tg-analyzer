@@ -29,7 +29,7 @@
   --hover: rgba(14, 15, 17, 0.04);
   --pressed: rgba(14, 15, 17, 0.08);
   --text: #0e0f11;
-  --text-muted: #6b6f76;
+  --text-muted: #63676e;
   --text-faint: #a1a5ac;
   /* Actions are ink; lime marks data, never a button. */
   --accent: #0e0f11;

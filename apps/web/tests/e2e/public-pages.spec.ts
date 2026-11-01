@@ -45,8 +45,10 @@ test('the privacy policy opens full screen over the login page', async ({ page, 
   await policy.getByRole('button', { name: 'Закрыть' }).click()
   await expect(policy).toBeHidden()
 
+  // Old /privacy links land on «Privacy and questions».
   await page.goto('/privacy')
-  await expect(page.getByRole('dialog', { name: 'Политика конфиденциальности' })).toBeVisible()
+  await page.waitForURL('**/faq')
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 })
 
 for (const path of ['/terms']) {

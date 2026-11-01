@@ -611,9 +611,11 @@ svg.lucide {
 }
 
 /* Report tabs: sections two per row, one per row below 900px. */
+/* Two columns; a card keeps its own height instead of stretching to its neighbour. */
 .report-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: var(--space-3);
   min-width: 0;
 }
@@ -621,6 +623,32 @@ svg.lucide {
 @media (max-width: 900px) {
   .report-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Two independent columns: each card keeps its height and the next one tucks under it. */
+.report-columns {
+  columns: 2;
+  column-gap: var(--space-3);
+}
+
+.report-columns > * {
+  break-inside: avoid;
+  margin-bottom: var(--space-3);
+}
+
+.report-columns > :last-child {
+  margin-bottom: 0;
+}
+
+.report-columns > .report-section--wide,
+.report-columns > .note {
+  column-span: all;
+}
+
+@media (max-width: 900px) {
+  .report-columns {
+    columns: 1;
   }
 }
 

@@ -111,11 +111,11 @@ const lead = computed(() => {
     <ReportInsights :data="data" />
 
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
-    <ReportPart id="together" :title="t('report.tabs.together')">
+    <ReportPart id="together" :title="t('report.tabs.together')" columns>
       <OverviewTab :data="data" />
       <TalkTab :data="data" />
     </ReportPart>
-    <ReportPart id="time" :title="t('report.tabs.time')">
+    <ReportPart id="time" :title="t('report.tabs.time')" columns>
       <TimelineTab :data="data" />
       <RhythmTab :data="data" />
     </ReportPart>

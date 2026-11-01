@@ -176,82 +176,91 @@ const questionRows = computed(() => {
   })
   return rows
 })
+
+/** Sections with nothing to show collapse into one quiet line at the end of the part. */
+const absent = computed(() =>
+  [
+    !voiceRows.value.length && t('report.talk.missingVoice'),
+    !(reactions.value && reactionRows.value.length) && t('report.talk.missingReactions'),
+    !stickers.value?.top.length && t('report.talk.missingStickers'),
+  ].filter((item): item is string => Boolean(item)),
+)
+const tooFew = computed(() =>
+  [
+    !ritualRows.value.length && !greetingFacts.value.length && t('report.talk.missingRituals'),
+    !questionRows.value.length && t('report.talk.missingQuestions'),
+  ].filter((item): item is string => Boolean(item)),
+)
 </script>
 
 <template>
-  <div class="report-grid">
-    <p v-if="outdated" class="note talk-note" role="status">
+  <p v-if="outdated" class="note" role="status">
+    <Info aria-hidden="true" />
+    {{ t('report.talk.outdated') }}
+  </p>
+
+  <template v-else>
+    <ReportSection v-if="voiceRows.length" :title="t('report.talk.voiceTitle')" :text="t('report.talk.voiceText')">
+      <ReportCompare :their-name="name" :rows="voiceRows" />
+      <ReportFacts v-if="voiceFacts.length" :facts="voiceFacts" />
+    </ReportSection>
+
+    <ReportSection
+      v-if="reactions && reactionRows.length"
+      :title="t('report.talk.reactionsTitle')"
+      :text="t('report.talk.reactionsText')"
+    >
+      <ReportCompare :their-name="name" :rows="reactionRows" />
+      <div class="emoji-pair">
+        <div>
+          <span class="t-label">{{ t('report.talk.reactionsMine') }}</span>
+          <EmojiGrid :items="plainEmoji(reactions.topBySender.mine)" />
+        </div>
+        <div>
+          <span class="t-label">{{ t('report.talk.reactionsTheirs', { name }) }}</span>
+          <EmojiGrid :items="plainEmoji(reactions.topBySender.theirs)" />
+        </div>
+      </div>
+    </ReportSection>
+
+    <ReportSection
+      v-if="ritualRows.length || greetingFacts.length"
+      :title="t('report.talk.ritualsTitle')"
+      :text="t('report.talk.ritualsText')"
+    >
+      <ReportCompare v-if="ritualRows.length" :their-name="name" :rows="ritualRows" />
+      <ReportFacts v-if="greetingFacts.length" :facts="greetingFacts" />
+    </ReportSection>
+
+    <ReportSection
+      v-if="questionRows.length"
+      :title="t('report.talk.questionsTitle')"
+      :text="t('report.talk.questionsText')"
+    >
+      <ReportCompare :their-name="name" :rows="questionRows" />
+    </ReportSection>
+
+    <ReportSection
+      v-if="stickers?.top.length"
+      wide
+      :title="t('report.talk.stickersTitle')"
+      :text="stickerVariety ?? undefined"
+    >
+      <ReportCompare :their-name="name" :rows="stickerRows" />
+      <StickerGrid :stickers="stickers.top" />
+    </ReportSection>
+
+    <p v-if="absent.length || tooFew.length" class="note">
       <Info aria-hidden="true" />
-      {{ t('report.talk.outdated') }}
+      <span>
+        <template v-if="absent.length">{{ t('report.talk.missing', { items: absent.join(', ') }) }}</template>
+        <template v-if="tooFew.length"> {{ t('report.talk.tooFew', { items: tooFew.join(', ') }) }}</template>
+      </span>
     </p>
-
-    <template v-else>
-      <ReportSection
-        :title="t('report.talk.voiceTitle')"
-        :text="t('report.talk.voiceText')"
-        :empty="!voiceRows.length ? t('report.talk.noVoice') : undefined"
-      >
-        <ReportCompare v-if="voiceRows.length" :their-name="name" :rows="voiceRows" />
-        <ReportFacts v-if="voiceFacts.length" :facts="voiceFacts" />
-      </ReportSection>
-
-      <ReportSection
-        :title="t('report.talk.reactionsTitle')"
-        :text="t('report.talk.reactionsText')"
-        :empty="!(reactions && reactionRows.length) ? t('report.talk.noReactions') : undefined"
-      >
-        <template v-if="reactions && reactionRows.length">
-          <ReportCompare :their-name="name" :rows="reactionRows" />
-          <div class="emoji-pair">
-            <div>
-              <span class="t-label">{{ t('report.talk.reactionsMine') }}</span>
-              <EmojiGrid :items="plainEmoji(reactions.topBySender.mine)" />
-            </div>
-            <div>
-              <span class="t-label">{{ t('report.talk.reactionsTheirs', { name }) }}</span>
-              <EmojiGrid :items="plainEmoji(reactions.topBySender.theirs)" />
-            </div>
-          </div>
-        </template>
-      </ReportSection>
-
-      <ReportSection
-        :title="t('report.talk.ritualsTitle')"
-        :text="t('report.talk.ritualsText')"
-        :empty="!ritualRows.length && !greetingFacts.length ? t('report.talk.noRituals') : undefined"
-      >
-        <ReportCompare v-if="ritualRows.length" :their-name="name" :rows="ritualRows" />
-        <ReportFacts v-if="greetingFacts.length" :facts="greetingFacts" />
-      </ReportSection>
-
-      <ReportSection
-        :title="t('report.talk.questionsTitle')"
-        :text="t('report.talk.questionsText')"
-        :empty="!questionRows.length ? t('report.talk.noQuestions') : undefined"
-      >
-        <ReportCompare v-if="questionRows.length" :their-name="name" :rows="questionRows" />
-      </ReportSection>
-
-      <ReportSection
-        wide
-        :title="t('report.talk.stickersTitle')"
-        :text="stickerVariety ?? undefined"
-        :empty="!stickers?.top.length ? t('report.talk.noStickers') : undefined"
-      >
-        <template v-if="stickers?.top.length">
-          <ReportCompare :their-name="name" :rows="stickerRows" />
-          <StickerGrid :stickers="stickers.top" />
-        </template>
-      </ReportSection>
-    </template>
-  </div>
+  </template>
 </template>
 
 <style scoped>
-.talk-note {
-  grid-column: 1 / -1;
-}
-
 .emoji-pair {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

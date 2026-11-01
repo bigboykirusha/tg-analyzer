@@ -2,12 +2,11 @@
 import type { InsightDto, ReportDto } from '@tg-analyzer/shared'
 
 /**
- * «Главное»: the strongest patterns of a private chat, each as a figure in the
- * margin and one plain sentence. The figure takes the colour of whoever the
- * sentence is about.
+ * «Главное»: what the report says nowhere else, each as a figure over one plain
+ * sentence. The sentence names whom it is about, so the figures stay ink.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatNumber, formatPercent } = useI18n()
+const { t, tc, formatNumber, formatPercent, formatDay } = useI18n()
 
 const name = computed(() => props.data.summary.title)
 
@@ -17,34 +16,26 @@ function num(insight: InsightDto, key: string) {
 }
 
 function describe(insight: InsightDto): { figure: string; text: string } | null {
-  const mine = insight.side === 'mine'
-  const params = { name: name.value }
-  // The reply speed is a KPI tile, the streak and the trend are in «Время»: «Главное» keeps what is said nowhere else.
-  if (insight.id === 'reply_speed' || insight.id === 'streak' || insight.id === 'trend') return null
+  const side = insight.side === 'mine' ? 'mine' : 'theirs'
   switch (insight.id) {
-    case 'initiative':
-    case 'last_word':
-      return {
-        figure: formatPercent(num(insight, 'pct')),
-        text: t(`insight.${insight.id}.${mine ? 'mine' : 'theirs'}`, params),
-      }
-    case 'night_talks':
-      return { figure: formatPercent(num(insight, 'pct')), text: t('insight.night_talks') }
     case 'double_texts':
-    case 'questions':
     case 'laughs':
       return {
         figure: formatNumber(num(insight, 'count')),
-        text: t(`insight.${insight.id}.${mine ? 'mine' : 'theirs'}`, {
-          ...params,
-          other: formatNumber(num(insight, 'other')),
-        }),
+        text: t(`insight.${insight.id}.${side}`, { name: name.value, other: formatNumber(num(insight, 'other')) }),
       }
     case 'long_silence':
       return {
         figure: tc('insight.days', num(insight, 'days')),
-        text: t(`insight.long_silence.${mine ? 'mine' : 'theirs'}`, params),
+        text: t(`insight.long_silence.${side}`, { name: name.value }),
       }
+    case 'busiest_day':
+      return {
+        figure: formatDay(String(insight.values.date), { day: 'numeric', month: 'long' }),
+        text: tc('insight.busiest_day', num(insight, 'count')),
+      }
+    case 'reply_rate':
+      return { figure: formatPercent(num(insight, 'pct')), text: t('insight.reply_rate') }
     default:
       return null
   }
@@ -53,17 +44,17 @@ function describe(insight: InsightDto): { figure: string; text: string } | null 
 const items = computed(() =>
   (props.data.derived.insights ?? []).flatMap((insight) => {
     const described = describe(insight)
-    return described ? [{ ...described, id: insight.id, side: insight.side }] : []
+    return described ? [{ ...described, id: insight.id }] : []
   }),
 )
 </script>
 
 <template>
   <section v-if="items.length" class="tile insights" aria-labelledby="insights-title">
-    <h2 id="insights-title" class="tile__label insights__title">{{ t('insight.title') }}</h2>
+    <h2 id="insights-title" class="insights__title">{{ t('insight.title') }}</h2>
     <ol class="insights__list">
       <li v-for="item in items" :key="item.id" class="insight">
-        <span class="insight__figure t-figure" :class="`insight__figure--${item.side}`">{{ item.figure }}</span>
+        <span class="insight__figure">{{ item.figure }}</span>
         <p class="insight__text">{{ item.text }}</p>
       </li>
     </ol>
@@ -72,63 +63,67 @@ const items = computed(() =>
 
 <style scoped>
 .insights {
-  gap: var(--space-2);
+  gap: var(--space-4);
 }
 
+.insights__title {
+  font: var(--text-title);
+}
+
+/* One row of up to four facts; a figure over one plain sentence each. */
 .insights__list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 var(--space-8);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-6);
   list-style: none;
 }
 
-/* A figure over one plain sentence, rows split by hairlines. */
 .insight {
   display: grid;
   align-content: start;
   gap: var(--space-1);
-  padding-block: var(--space-4);
-  border-top: 1px solid var(--border);
-}
-
-.insights__list > .insight:nth-child(-n + 2) {
-  border-top: 0;
 }
 
 .insight__figure {
-  font: 600 28px/32px var(--font-sans);
-  font-variant-numeric: tabular-nums lining-nums;
-  letter-spacing: -0.04em;
+  font: var(--text-h3);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
   white-space: nowrap;
-}
-
-.insight__figure--mine {
-  color: var(--you-ink);
-}
-
-.insight__figure--theirs {
-  color: var(--them-ink);
 }
 
 .insight__text {
   color: var(--text-muted);
-  font: var(--text-ui);
-  font-weight: 400;
+  font: var(--text-small);
   text-wrap: pretty;
 }
 
+@media (max-width: 900px) {
+  .insights__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Phones: a list, figure and sentence side by side would crowd; keep them stacked with hairlines. */
 @media (max-width: 640px) {
   .insights__list {
     grid-template-columns: minmax(0, 1fr);
+    gap: 0;
   }
 
-  .insights__list > .insight:nth-child(2) {
+  .insight {
+    padding-block: var(--space-3);
+  }
+
+  .insight + .insight {
     border-top: 1px solid var(--border);
   }
 
-  .insight__figure {
-    font-size: 24px;
-    line-height: 28px;
+  .insight:first-child {
+    padding-top: 0;
+  }
+
+  .insight:last-child {
+    padding-bottom: 0;
   }
 }
 </style>

@@ -50,53 +50,66 @@ const topReactions = computed(() =>
   (report.value.reactions?.top ?? []).filter((item) => item.value !== 'custom' && item.value !== 'paid').slice(0, 8),
 )
 const stickers = computed(() => report.value.stickers)
+
+/** Sections with nothing to show collapse into one quiet line at the end. */
+const absent = computed(() =>
+  [
+    !wakers.value.length && !closers.value.length && t('report.talk.missingRituals'),
+    !reactionStars.value.length && !topReactions.value.length && t('report.talk.missingReactions'),
+    !voice.value.length && t('report.talk.missingVoice'),
+    !stickers.value?.top.length && t('report.talk.missingStickers'),
+  ].filter((item): item is string => Boolean(item)),
+)
 </script>
 
 <template>
-  <div class="report-grid">
-    <p v-if="outdated" class="note talk-note" role="status">
+  <p v-if="outdated" class="note" role="status">
+    <Info aria-hidden="true" />
+    {{ t('report.talk.outdated') }}
+  </p>
+
+  <template v-else>
+    <ReportSection v-if="wakers.length" :title="t('group.talk.morningTitle')" :text="t('group.talk.morningText')">
+      <ReportMeters :meters="wakers" />
+    </ReportSection>
+
+    <ReportSection v-if="closers.length" :title="t('group.talk.nightTitle')" :text="t('group.talk.nightText')">
+      <ReportMeters :meters="closers" />
+    </ReportSection>
+
+    <ReportSection
+      v-if="reactionStars.length || topReactions.length"
+      :title="t('group.talk.reactionsTitle')"
+      :text="t('group.talk.reactionsText')"
+    >
+      <ReportMeters v-if="reactionStars.length" :meters="reactionStars" />
+      <div v-if="topReactions.length" class="reactions">
+        <span class="t-label">{{ t('group.talk.topReactions') }}</span>
+        <EmojiGrid :items="topReactions" />
+      </div>
+    </ReportSection>
+
+    <ReportSection v-if="voice.length" :title="t('group.talk.voiceTitle')" :text="t('report.talk.voiceText')">
+      <ReportMeters :meters="voice" />
+    </ReportSection>
+
+    <ReportSection
+      v-if="stickers?.top.length"
+      wide
+      :title="t('report.talk.stickersTitle')"
+      :text="t('report.talk.stickersText')"
+    >
+      <StickerGrid :stickers="stickers.top" />
+    </ReportSection>
+
+    <p v-if="absent.length" class="note">
       <Info aria-hidden="true" />
-      {{ t('report.talk.outdated') }}
+      {{ t('report.talk.missing', { items: absent.join(', ') }) }}
     </p>
-
-    <template v-else>
-      <ReportSection :title="t('group.talk.morningTitle')" :text="t('group.talk.morningText')">
-        <ReportMeters v-if="wakers.length" :meters="wakers" />
-        <p v-else class="t-small t-muted">{{ t('report.talk.noRituals') }}</p>
-      </ReportSection>
-
-      <ReportSection :title="t('group.talk.nightTitle')" :text="t('group.talk.nightText')">
-        <ReportMeters v-if="closers.length" :meters="closers" />
-        <p v-else class="t-small t-muted">{{ t('report.talk.noRituals') }}</p>
-      </ReportSection>
-
-      <ReportSection :title="t('group.talk.reactionsTitle')" :text="t('group.talk.reactionsText')">
-        <ReportMeters v-if="reactionStars.length" :meters="reactionStars" />
-        <p v-else class="t-small t-muted">{{ t('report.talk.noReactions') }}</p>
-        <div v-if="topReactions.length" class="reactions">
-          <span class="t-label">{{ t('group.talk.topReactions') }}</span>
-          <EmojiGrid :items="topReactions" />
-        </div>
-      </ReportSection>
-
-      <ReportSection :title="t('group.talk.voiceTitle')" :text="t('report.talk.voiceText')">
-        <ReportMeters v-if="voice.length" :meters="voice" />
-        <p v-else class="t-small t-muted">{{ t('report.talk.noVoice') }}</p>
-      </ReportSection>
-
-      <ReportSection wide :title="t('report.talk.stickersTitle')" :text="t('report.talk.stickersText')">
-        <StickerGrid v-if="stickers?.top.length" :stickers="stickers.top" />
-        <p v-else class="t-small t-muted">{{ t('report.talk.noStickers') }}</p>
-      </ReportSection>
-    </template>
-  </div>
+  </template>
 </template>
 
 <style scoped>
-.talk-note {
-  grid-column: 1 / -1;
-}
-
 .reactions {
   display: grid;
   gap: var(--space-2);

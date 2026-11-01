@@ -84,17 +84,12 @@ const comparisons = computed(() =>
 </script>
 
 <template>
-  <div class="report-grid">
-    <ReportSection :title="t('report.compare.title')">
-      <ReportCompare v-if="comparisons.length" :their-name="data.summary.title" :rows="comparisons" />
-      <p v-else class="t-small t-muted">{{ t('report.compare.empty') }}</p>
-      <p v-if="responses.responseRate !== null" class="t-small t-muted">
-        {{ t('report.compare.replyRate', { rate: formatPercent(responses.responseRate) }) }}
-      </p>
-    </ReportSection>
+  <ReportSection :title="t('report.compare.title')">
+    <ReportCompare v-if="comparisons.length" :their-name="data.summary.title" :rows="comparisons" />
+    <p v-else class="t-small t-muted">{{ t('report.compare.empty') }}</p>
+  </ReportSection>
 
-    <ReportSection :title="t('report.composition.title')" :text="t('report.composition.text')">
-      <CompositionChart :composition="report.composition" />
-    </ReportSection>
-  </div>
+  <ReportSection :title="t('report.composition.title')">
+    <CompositionChart :composition="report.composition" />
+  </ReportSection>
 </template>

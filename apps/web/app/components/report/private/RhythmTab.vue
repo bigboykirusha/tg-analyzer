@@ -28,22 +28,20 @@ const usuallyText = computed(() =>
 </script>
 
 <template>
-  <div class="report-grid">
-    <ReportSection :title="t('report.rhythm.heatmapTitle')" :text="t('report.rhythm.heatmapText')" wide>
-      <ActivityHeatmap :points="days" />
-    </ReportSection>
+  <ReportSection :title="t('report.rhythm.heatmapTitle')" :text="t('report.rhythm.heatmapText')" wide>
+    <ActivityHeatmap :points="days" />
+  </ReportSection>
 
-    <!-- When you are usually around reads as the caption of the day parts, not a card of its own. -->
-    <ReportSection :title="t('report.rhythm.dayPartsTitle')" :text="usuallyText">
-      <DayPartsChart :distribution="data.derived.activityDistribution" />
-    </ReportSection>
+  <!-- When you are usually around reads as the caption of the day parts, not a card of its own. -->
+  <ReportSection :title="t('report.rhythm.dayPartsTitle')" :text="usuallyText">
+    <DayPartsChart :distribution="data.derived.activityDistribution" />
+  </ReportSection>
 
-    <ReportSection :title="t('report.rhythm.weekdaysTitle')">
-      <WeekdayChart :weekday="report.activity.weekday" />
-    </ReportSection>
+  <ReportSection :title="t('report.rhythm.weekdaysTitle')">
+    <WeekdayChart :weekday="report.activity.weekday" />
+  </ReportSection>
 
-    <ReportSection :title="t('report.rhythm.hoursTitle')">
-      <HourlyChart :hourly="report.activity.hourly" :received-label="data.summary.title" />
-    </ReportSection>
-  </div>
+  <ReportSection :title="t('report.rhythm.hoursTitle')">
+    <HourlyChart :hourly="report.activity.hourly" :received-label="data.summary.title" />
+  </ReportSection>
 </template>

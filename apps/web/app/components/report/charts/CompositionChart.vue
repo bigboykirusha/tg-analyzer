@@ -1,162 +1,82 @@
 <script setup lang="ts">
 import type { MessageCompositionDto } from '@tg-analyzer/shared'
 
+/** What the chat is made of: five numbers in a row, each with its share. No bar. */
 const props = defineProps<{
   composition: MessageCompositionDto
 }>()
 
-const { t, formatNumber } = useI18n()
+const { t, formatNumber, formatPercent } = useI18n()
 
-const segments = computed(() => {
-  const counts = {
-    text: chartCount(props.composition.text),
-    media: chartCount(props.composition.media),
-    voice: chartCount(props.composition.voice),
-    sticker: chartCount(props.composition.sticker),
-    file: chartCount(props.composition.file),
-  }
-  const total = Math.max(
-    Object.values(counts).reduce((sum, value) => sum + value, 0),
-    1,
-  )
-
-  return [
-    {
-      label: t('chart.text'),
-      value: counts.text,
-      ratio: (counts.text / total) * 100,
-      className: 'segment-text',
-    },
-    {
-      label: t('chart.media'),
-      value: counts.media,
-      ratio: (counts.media / total) * 100,
-      className: 'segment-media',
-    },
-    {
-      label: t('chart.voice'),
-      value: counts.voice,
-      ratio: (counts.voice / total) * 100,
-      className: 'segment-voice',
-    },
-    {
-      label: t('chart.sticker'),
-      value: counts.sticker,
-      ratio: (counts.sticker / total) * 100,
-      className: 'segment-sticker',
-    },
-    {
-      label: t('chart.files'),
-      value: counts.file,
-      ratio: (counts.file / total) * 100,
-      className: 'segment-files',
-    },
-  ].filter((segment) => segment.value > 0)
+const kinds = computed(() => {
+  const items = [
+    { key: 'text', label: t('chart.text'), value: chartCount(props.composition.text) },
+    { key: 'media', label: t('chart.media'), value: chartCount(props.composition.media) },
+    { key: 'voice', label: t('chart.voice'), value: chartCount(props.composition.voice) },
+    { key: 'sticker', label: t('chart.sticker'), value: chartCount(props.composition.sticker) },
+    { key: 'file', label: t('chart.files'), value: chartCount(props.composition.file) },
+  ]
+  const total = items.reduce((sum, item) => sum + item.value, 0)
+  return total ? items.map((item) => ({ ...item, share: Math.round((item.value / total) * 100) })) : []
 })
 </script>
 
 <template>
-  <div v-if="segments.length" class="composition">
-    <div class="composition-bar" aria-hidden="true">
-      <div
-        v-for="segment in segments"
-        :key="segment.label"
-        class="composition-segment"
-        :class="segment.className"
-        :style="{ width: `${segment.ratio}%` }"
-      />
+  <dl v-if="kinds.length" class="composition">
+    <div v-for="kind in kinds" :key="kind.key" class="composition__item" :class="{ 'is-zero': !kind.value }">
+      <dt>{{ kind.label }}</dt>
+      <dd class="composition__value t-num">{{ formatNumber(kind.value) }}</dd>
+      <dd class="composition__share t-num">{{ formatPercent(kind.share) }}</dd>
     </div>
-
-    <div class="composition-grid">
-      <div v-for="segment in segments" :key="segment.label" class="composition-item">
-        <div class="composition-marker" :class="segment.className" />
-        <div class="composition-copy">
-          <span class="t-small">{{ segment.label }}</span>
-          <span class="t-small t-num">{{ formatNumber(segment.value) }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div v-else class="composition-empty t-small">{{ t('chart.noComposition') }}</div>
+  </dl>
+  <p v-else class="t-small t-muted">{{ t('chart.noComposition') }}</p>
 </template>
 
 <style scoped>
 .composition {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.composition-bar {
-  display: flex;
-  height: 14px;
-  overflow: hidden;
-  border-radius: var(--radius-full);
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-
-.composition-segment {
-  height: 100%;
-}
-
-.composition-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
 }
 
-.composition-empty {
-  padding: var(--space-8);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
-  text-align: center;
-}
-
-.composition-item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
+.composition__item {
+  display: grid;
+  align-content: start;
+  gap: 2px;
   min-width: 0;
 }
 
-.composition-marker {
-  width: 10px;
-  height: 10px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
-}
-
-.composition-copy {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.composition-copy .t-small {
-  white-space: nowrap;
+.composition__item dt {
   overflow: hidden;
+  color: var(--text-muted);
+  font: var(--text-small);
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.segment-text {
-  background: var(--text);
+.composition__item dd {
+  margin: 0;
 }
 
-.segment-media {
-  background: var(--heat-3);
+.composition__value {
+  font: var(--text-title);
 }
 
-.segment-voice {
-  background: var(--heat-2);
+.composition__share {
+  color: var(--text-muted);
+  font: var(--text-caption);
 }
 
-.segment-sticker {
-  background: var(--border-strong);
+.composition__item.is-zero .composition__value {
+  color: var(--text-muted);
 }
 
-.segment-files {
-  background: var(--text-muted);
+/* Phones: three and two, read as one block. */
+@media (max-width: 640px) {
+  .composition {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: var(--space-3);
+  }
 }
 </style>
