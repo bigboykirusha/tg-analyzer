@@ -241,15 +241,11 @@ function run(action: 'analyse' | 'delete') {
   gap: var(--space-1);
 }
 
-/* Phones: tapping the row opens the report. */
+/* Phones: a tighter row; the report opens from «Открыть». */
 @media (max-width: 640px) {
   .chat-row {
     gap: var(--space-3);
     padding: var(--space-3);
-  }
-
-  .chat-row__open {
-    display: none;
   }
 }
 

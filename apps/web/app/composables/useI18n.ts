@@ -107,7 +107,8 @@ export function useI18n() {
 
   function formatRelative(value: string | null | undefined) {
     if (!value) return t('common.na')
-    const diffSeconds = (new Date(value).getTime() - Date.now()) / 1000
+    // Everything we show is in the past; a clock a little ahead must not read «in 7 hours».
+    const diffSeconds = Math.min((new Date(value).getTime() - Date.now()) / 1000, 0)
     if (!Number.isFinite(diffSeconds)) return t('common.na')
     const format = new Intl.RelativeTimeFormat(intlLocale.value, { numeric: 'auto' })
     const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [

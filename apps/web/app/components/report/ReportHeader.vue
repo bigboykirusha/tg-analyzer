@@ -25,10 +25,7 @@ const period = computed(() => formatPeriod(props.summary.firstMessageAt, props.s
       <ChatAvatar class="report-header__avatar" :chat-id="summary.chatId" :title="summary.title" size="sm" />
     </template>
     <template #actions>
-      <UiButton class="report-header__story" variant="primary" size="sm" :icon="Sparkles" @click="emit('story')">
-        {{ t('story.open') }}
-      </UiButton>
-      <!-- Refreshing is the one other action; deleting lives at the foot of the report. -->
+      <!-- Refresh, then «Итоги» last: the one primary action sits at the edge. Deleting lives in the chat menu. -->
       <UiIconButton
         v-if="!demo"
         :icon="RotateCw"
@@ -38,6 +35,9 @@ const period = computed(() => formatPeriod(props.summary.firstMessageAt, props.s
         :disabled="!canReanalyse"
         @click="emit('reanalyse')"
       />
+      <UiButton class="report-header__story" variant="primary" size="sm" :icon="Sparkles" @click="emit('story')">
+        {{ t('story.open') }}
+      </UiButton>
     </template>
   </UiPageBar>
 </template>

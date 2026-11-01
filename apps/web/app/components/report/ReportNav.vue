@@ -78,6 +78,13 @@ onBeforeUnmount(() => window.removeEventListener('scroll', spy))
   }
 }
 
+/* Phones: the parts come first, right under the header (board 09). */
+@media (max-width: 640px) {
+  .report-nav {
+    order: -1;
+  }
+}
+
 /* Wide screens: a compact bar; phones: the full width, one equal slot per part. */
 @media (min-width: 641px) {
   .report-nav :deep(.segmented) {

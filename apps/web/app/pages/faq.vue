@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Ban, ChevronDown, Database, Eye, EyeOff, Power, Send, Trash2 } from '../lib/icons'
+import { Ban, ChevronDown, Database, Eye, EyeOff, Power, Trash2 } from '../lib/icons'
 
 const { t } = useI18n()
 useSeoMeta({
@@ -67,9 +67,11 @@ useHead({
           class="tile span-4 fact"
           :class="{ 'tile--ink': fact.tone === 'ink', 'tile--lime': fact.tone === 'lime' }"
         >
-          <component :is="fact.icon" class="fact__icon icon-lg" aria-hidden="true" />
-          <h2 class="t-title">{{ fact.title }}</h2>
-          <p class="fact__text">{{ fact.text }}</p>
+          <span class="fact__icon" aria-hidden="true"><component :is="fact.icon" /></span>
+          <div class="fact__copy">
+            <h2 class="t-title">{{ fact.title }}</h2>
+            <p class="fact__text">{{ fact.text }}</p>
+          </div>
         </li>
       </ul>
 
@@ -84,11 +86,6 @@ useHead({
           </details>
         </div>
       </UiPageSection>
-
-      <div class="faq__ctas">
-        <UiButton variant="primary" size="lg" :icon="Send" to="/login">{{ t('faq.cta') }}</UiButton>
-        <UiButton variant="secondary" size="lg" to="/example">{{ t('faq.example') }}</UiButton>
-      </div>
     </div>
   </UiPageContainer>
 </template>
@@ -100,15 +97,37 @@ useHead({
   list-style: none;
 }
 
+/* Read top to bottom: an icon in a well, a title, a sentence. Rows line up at the top. */
 .fact {
-  gap: var(--space-2);
-  min-height: 180px;
+  gap: var(--space-4);
 }
 
 .fact__icon {
-  margin-bottom: auto;
-  padding-bottom: var(--space-4);
-  box-sizing: content-box;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--accent-subtle);
+}
+
+.fact__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.tile--ink .fact__icon {
+  background: var(--on-tile-ink-well);
+}
+
+.tile--lime .fact__icon {
+  background: var(--on-lime-well);
+}
+
+.fact__copy {
+  display: grid;
+  gap: var(--space-1);
 }
 
 .fact__text {
@@ -167,24 +186,13 @@ useHead({
   line-height: 24px;
 }
 
-.faq__ctas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
 @media (max-width: 640px) {
+  /* Phones: the icon beside the text, as a list. */
   .fact {
-    min-height: 0;
-  }
-
-  .fact__icon {
-    padding-bottom: var(--space-2);
-  }
-
-  .faq__ctas {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
   }
 }
 </style>

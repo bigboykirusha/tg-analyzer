@@ -32,15 +32,20 @@ useHead({
   <UiPageContainer class="landing">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero__copy">
+        <!-- «Ваши / переписки. / В цифрах.»: the soft part always takes its own line. -->
         <h1 id="hero-title" class="hero__title">
           {{ t('landing.title') }} <span>{{ t('landing.titleSoft') }}</span>
         </h1>
         <p class="hero__lede">{{ t('landing.lede') }}</p>
-        <UiButton class="hero__cta" variant="primary" size="lg" :icon="Send" to="/login">
-          {{ t('landing.cta') }}
-        </UiButton>
+        <div class="hero__actions">
+          <UiButton variant="primary" size="lg" :icon="Send" to="/login">{{ t('landing.cta') }}</UiButton>
+          <UiButton class="hero__example-button" variant="secondary" size="lg" to="/example">
+            {{ t('landing.nav.example') }}
+          </UiButton>
+        </div>
         <p class="hero__trust">
-          {{ t('landing.trust') }}
+          <span class="hero__trust-long">{{ t('landing.trust') }}</span>
+          <span class="hero__trust-short">{{ t('landing.trustShort') }}</span>
           <NuxtLink to="/example" class="hero__example">
             {{ t('landing.nav.example') }}<ArrowRight aria-hidden="true" />
           </NuxtLink>
@@ -80,10 +85,10 @@ useHead({
 .hero__title {
   font: 600 clamp(44px, 5.8vw, 80px) / 0.98 var(--font-sans);
   letter-spacing: -0.05em;
-  text-wrap: balance;
 }
 
 .hero__title span {
+  display: block;
   color: var(--text-muted);
 }
 
@@ -94,7 +99,10 @@ useHead({
   font: 400 18px/1.5 var(--font-sans);
 }
 
-.hero__cta {
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   margin-top: var(--space-8);
 }
 
@@ -108,8 +116,13 @@ useHead({
   font: var(--text-small);
 }
 
-.hero__example {
-  display: inline-flex;
+/* Desktop: the example is a button next to the action; phones keep it as a link in the trust line. */
+.hero__trust-short {
+  display: none;
+}
+
+.hero__trust .hero__example {
+  display: none;
   align-items: center;
   gap: 4px;
   color: var(--text);
@@ -184,14 +197,31 @@ useHead({
     font-size: 17px;
   }
 
-  .hero__cta {
+  .hero__actions {
     align-self: stretch;
     margin-top: var(--space-6);
   }
 
+  .hero__actions > :first-child {
+    flex: 1;
+  }
+
+  .hero__example-button,
+  .hero__trust-long {
+    display: none;
+  }
+
   .hero__trust {
-    justify-content: center;
+    justify-content: space-between;
     align-self: stretch;
+  }
+
+  .hero__trust-short {
+    display: inline;
+  }
+
+  .hero__trust .hero__example {
+    display: inline-flex;
   }
 
   /* The phone is cut off with a fade, so the landing stays short. */

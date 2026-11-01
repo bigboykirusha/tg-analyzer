@@ -22,6 +22,17 @@ const pulse = computed(() =>
   props.report.pulse?.some((week) => week.sent || week.received) ? props.report.pulse : null,
 )
 const share = computed(() => (isGroup.value ? null : (props.report.headline?.sentSharePct ?? null)))
+/** Phones list reports as rows: «4 800 сообщений · ваших 52% · вчера». */
+const line = computed(() =>
+  [
+    isGroup.value ? t('chatType.group') : null,
+    tc('common.messagesCount', props.report.totalMessages),
+    share.value === null ? null : t('dashboard.yourShare', { share: formatPercent(share.value) }),
+    props.updating ? t('dashboard.analysingNow') : formatRelative(props.report.analyzedAt),
+  ]
+    .filter(Boolean)
+    .join(' · '),
+)
 </script>
 
 <template>
@@ -31,7 +42,9 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
       <span class="report-card__who">
         <span class="report-card__title">{{ report.title }}</span>
         <span class="report-card__meta">{{ subline }}</span>
+        <span class="report-card__line">{{ line }}</span>
       </span>
+      <ChevronRight class="report-card__row-chevron" aria-hidden="true" />
     </span>
     <span class="report-card__count">
       <strong class="t-num">{{ formatNumber(report.totalMessages) }}</strong>
@@ -163,5 +176,53 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
   transition:
     color var(--transition-fast),
     transform var(--transition-fast);
+}
+
+.report-card__line,
+.report-card__row-chevron {
+  display: none;
+}
+
+/* Phones: a row in one list: avatar, name, one line of numbers, chevron. */
+@media (max-width: 640px) {
+  .report-card {
+    padding: var(--space-3) 0;
+    border-radius: 0;
+    background: none;
+  }
+
+  .report-card + .report-card {
+    border-top: 1px solid var(--border);
+  }
+
+  .report-card__head {
+    margin-bottom: 0;
+  }
+
+  .report-card__who {
+    flex: 1;
+  }
+
+  .report-card__meta,
+  .report-card__count,
+  .report-card__pulse,
+  .report-card__foot {
+    display: none;
+  }
+
+  .report-card__line {
+    display: block;
+    overflow: hidden;
+    color: var(--text-muted);
+    font: var(--text-small);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .report-card__row-chevron {
+    display: block;
+    flex: none;
+    color: var(--text-muted);
+  }
 }
 </style>

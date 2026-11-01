@@ -30,7 +30,6 @@ const nameOf = useParticipantName()
 
 /** A move longer than this is a swipe, shorter is a tap. */
 const SWIPE_PX = 40
-const DAY_SECONDS = 86_400
 /** Below this many replies on either side a speed comparison is noise. */
 const MIN_REPLY_SAMPLES = 5
 /** Differences smaller than this ratio read as «about the same». */
@@ -83,7 +82,7 @@ const heading = computed(() => (isGroup.value ? them.value.name : `${me.value.na
 const period = computed(() => {
   const { firstMessageAt, lastMessageAt } = props.data.report.period
   if (!firstMessageAt || !lastMessageAt) return null
-  return formatPeriod(firstMessageAt, lastMessageAt)
+  return formatPeriod(firstMessageAt, lastMessageAt, true)
 })
 const headingSub = computed(() =>
   isGroup.value && group.value ? tc('story.members', group.value.participants.length) : period.value,
@@ -92,7 +91,6 @@ const headingSub = computed(() =>
 const top = (items: { value: string }[], count = 5) => items.slice(0, count).map((item) => item.value)
 /** Words go on a picture people post, so swearing is masked: «б**». */
 const topWords = (items: { value: string }[], count: number) => top(items, count).map(maskSwear)
-const days = (seconds: number) => tc('report.highlights.days', Math.round(seconds / DAY_SECONDS))
 const hour = (value: number) => String(value).padStart(2, '0')
 
 /** «Вечерние собеседники» from the middle of the usual window. */
@@ -148,6 +146,17 @@ function whoMore(label: string, pair: { mine: number; theirs: number }, accent =
   }
 }
 
+/** «Почти поровну», «Вы пишете больше»: the same words as the report tile. */
+function shareVerdict(share: number) {
+  if (share >= 65) return t('report.kpi.youWriteMuchMore')
+  if (share > 55) return t('report.kpi.youWriteMore')
+  if (share <= 35) return t('report.kpi.theyWriteMuchMore')
+  if (share < 45) return t('report.kpi.theyWriteMore')
+  return t('report.kpi.even')
+}
+
+const capitalize = (text: string) => `${text.charAt(0).toLocaleUpperCase()}${text.slice(1)}`
+
 /** Stat tiles sit in pairs; an odd one out takes the full row. */
 function paired(blocks: StoryBlock[]) {
   const stats = blocks.filter((block) => block.kind === 'stat' && !block.wide)
@@ -177,25 +186,20 @@ const slides = computed<StorySlideModel[]>(() => {
   const perDay = formatNumber(Math.round(totals.messages / Math.max(facts.activeDays, 1)))
   const streak = facts.maxStreak.days
   const busiest = facts.mostActiveDate
-  const gap = facts.longestGap
   // 1. The chat at a glance: how much, how evenly and for how long.
   const overview: StoryBlock[] = []
   if (pulse.length > 1) overview.push({ kind: 'pulse', label: t('story.pulseLabel'), days: pulse })
-  if (totals.messages && !isGroup.value)
+  // Who writes more, as in the report tile: the answer in words and the split, no bar.
+  if (totals.messages && !isGroup.value) {
+    const mine = Math.round(mineShare)
     overview.push({
-      kind: 'split',
+      kind: 'stat',
       label: t('story.whoWritesMore'),
-      mine: Math.round(mineShare),
-      mineLabel: `${myName} · ${formatNumber(totals.sent)}`,
-      theirsLabel: `${formatNumber(totals.received)} · ${otherName}`,
-      note:
-        Math.abs(mineShare - 50) <= 5
-          ? t('story.balanceEven')
-          : t('story.balanceMore', {
-              name: mineShare > 50 ? myName : otherName,
-              share: formatPercent(mineShare > 50 ? mineShare : 100 - mineShare),
-            }),
+      value: `${mine} / ${100 - mine}`,
+      note: `${capitalize(shareVerdict(mineShare))}. ${myName} ${formatNumber(totals.sent)} · ${otherName} ${formatNumber(totals.received)}`,
+      wide: true,
     })
+  }
   overview.push({ kind: 'stat', label: t('story.perDay'), value: perDay, accent: true })
   overview.push(
     streak >= 3
@@ -243,7 +247,15 @@ const slides = computed<StorySlideModel[]>(() => {
     const even = Math.abs(mine - 50) <= 5
     const starter = mine >= 50 ? myName : otherName
     const { medianMineSec, medianTheirsSec, mineSamples, theirsSamples } = responses
-    const blocks: StoryBlock[] = []
+    const blocks: StoryBlock[] = [
+      {
+        kind: 'stat',
+        label: t('story.startsLabel'),
+        value: `${Math.round(mine)} / ${100 - Math.round(mine)}`,
+        note: `${myName} / ${otherName}`,
+        wide: true,
+      },
+    ]
     if (medianMineSec !== null && medianTheirsSec !== null) {
       let note: string | undefined
       if (mineSamples >= MIN_REPLY_SAMPLES && theirsSamples >= MIN_REPLY_SAMPLES) {
@@ -263,24 +275,16 @@ const slides = computed<StorySlideModel[]>(() => {
         note,
       })
     }
-    if (gap && gap.seconds >= 2 * DAY_SECONDS)
+    // The last word of the evening: the same evenings and the same share as «Утро и вечер» in the report.
+    const evenings = props.data.report.rituals?.nightLast
+    if (evenings && evenings.mine + evenings.theirs >= MIN_REPLY_SAMPLES) {
+      const lastMine = (evenings.mine / (evenings.mine + evenings.theirs)) * 100
       blocks.push({
         kind: 'stat',
-        label: t('story.longestSilence'),
-        value: days(gap.seconds),
-        note:
-          gap.brokenByMe === undefined
-            ? undefined
-            : t('story.silenceBrokenBy', { name: gap.brokenByMe ? myName : otherName }),
-        accent: true,
-      })
-    if (habits?.lastWordMinePct != null) {
-      const lastMine = habits.lastWordMinePct
-      blocks.push({
-        kind: 'stat',
-        label: t('story.lastWord'),
+        label: t('story.nightLast'),
         value: Math.abs(lastMine - 50) <= 5 ? t('story.even') : lastMine > 50 ? myName : otherName,
         note: t('story.lastWordNote', { share: formatPercent(lastMine > 50 ? lastMine : 100 - lastMine) }),
+        accent: true,
       })
     }
     list.push({
@@ -382,14 +386,12 @@ const slides = computed<StorySlideModel[]>(() => {
     })
   }
 
-  // The closing slide carries the address, so a shared picture leads back here.
-  list[list.length - 1]!.last = true
   return list
 })
 
 /** Voice, reactions and daily rituals; null when the report has none of them. */
 function talkSlide(): StorySlideModel | null {
-  const { voice, reactions, rituals } = props.data.report
+  const { voice, reactions } = props.data.report
   const myName = me.value.name
   const otherName = theirName.value
   const blocks: StoryBlock[] = []
@@ -450,13 +452,10 @@ function talkSlide(): StorySlideModel | null {
         left: { label: myName, value: formatDuration(seconds.mine) },
         right: { label: otherName, value: formatDuration(seconds.theirs) },
       })
-    if (rituals) {
-      const morning = whoMore(t('story.morningFirst'), rituals.morningFirst, true)
-      if (morning) blocks.push(morning)
-      const night = whoMore(t('story.nightLast'), rituals.nightLast)
-      if (night) blocks.push(night)
-    }
+    // Mornings and evenings live on «Кто ведёт»; this slide is voice and reactions only.
     if (reactions) {
+      const reacts = whoMore(t('story.reactsMore'), reactions.given, true)
+      if (reacts) blocks.push(reacts)
       const mine = plain(reactions.topBySender.mine)
       const theirs = plain(reactions.topBySender.theirs)
       if (mine.length && theirs.length)

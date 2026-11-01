@@ -628,6 +628,7 @@ svg.lucide {
 
 /* Two independent columns: each card keeps its height and the next one tucks under it. */
 .report-columns {
+  min-width: 0;
   columns: 2;
   column-gap: var(--space-3);
 }
@@ -646,9 +647,10 @@ svg.lucide {
   column-span: all;
 }
 
+/* One column is plain flow: a multicol box would grow to the widest chart. */
 @media (max-width: 900px) {
   .report-columns {
-    columns: 1;
+    columns: auto;
   }
 }
 

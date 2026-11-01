@@ -31,8 +31,6 @@ export type StoryBlock = BlockBase &
     | { kind: 'stat'; label: string; value: string; note?: string }
     /** The whole chat as a seismograph: yours up, theirs down. */
     | { kind: 'pulse'; label: string; days: { sent: number; received: number }[] }
-    /** Share of the first person, 0–100, with a label for each side. */
-    | { kind: 'split'; label: string; mine: number; mineLabel: string; theirsLabel: string; note?: string }
     /** Two sides of one measure, side by side. */
     | { kind: 'duel'; label: string; left: StoryTile; right: StoryTile; note?: string }
     /** 24 hourly values; hours from `from` to `to` (inclusive, may wrap past midnight) are lit. */
@@ -48,8 +46,6 @@ export interface StorySlideModel {
   theme: 1 | 2 | 3 | 4 | 5 | 6
   /** How long the slide stays before the next one. */
   durationMs: number
-  /** The closing slide: carries the site address for whoever sees it shared. */
-  last?: boolean
   kicker: string
   title: string
   sub?: string
@@ -140,16 +136,6 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
               </div>
             </template>
 
-            <template v-else-if="block.kind === 'split'">
-              <span class="story-tile__label">{{ block.label }}</span>
-              <div class="story-tile__split-bar"><span :style="{ width: `${block.mine}%` }" /></div>
-              <div class="story-tile__split-labels">
-                <span>{{ block.mineLabel }}</span>
-                <span>{{ block.theirsLabel }}</span>
-              </div>
-              <span v-if="block.note" class="story-tile__note">{{ block.note }}</span>
-            </template>
-
             <template v-else-if="block.kind === 'duel'">
               <span class="story-tile__label">{{ block.label }}</span>
               <div class="story-tile__duel">
@@ -203,7 +189,8 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
       <div class="story-slide__brand">
         <span class="story-slide__brand-mark" aria-hidden="true"><i /><i /><i /></span>
         TG Analyzer
-        <span v-if="slide.last" class="story-slide__site">{{ site }}</span>
+        <!-- The address on every slide: any one of them may be the picture that gets shared. -->
+        <span class="story-slide__site">{{ site }}</span>
       </div>
     </div>
   </div>
@@ -508,28 +495,6 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-tile__pulse :deep(line) {
   stroke-width: 0.8cqmin;
-}
-
-.story-tile__split-bar {
-  display: flex;
-  height: 3.2cqmin;
-  margin-top: 1cqmin;
-  overflow: hidden;
-  border-radius: var(--radius-full);
-  background: var(--track);
-}
-
-.story-tile__split-bar span {
-  border-radius: inherit;
-  background: var(--mark);
-}
-
-.story-tile__split-labels {
-  display: flex;
-  justify-content: space-between;
-  gap: 3cqmin;
-  font-size: 3.8cqmin;
-  font-weight: 600;
 }
 
 .story-tile__duel {

@@ -104,7 +104,7 @@ onMounted(() => {
       <template v-else>
         <UiPageBar :title="t('home.title')">
           <template #actions>
-            <UiButton class="home__new" to="/new" size="sm" :icon="Plus">{{ t('nav.newAnalysis') }}</UiButton>
+            <UiButton class="home__new" variant="primary" to="/new" size="sm" :icon="Plus">{{ t('nav.newAnalysis') }}</UiButton>
           </template>
         </UiPageBar>
         <AnalysisBanner />
@@ -230,9 +230,14 @@ onMounted(() => {
 }
 
 /* Phones: one card per row — a list you scroll down, not a carousel that hides the rest. */
+/* Phones: one white card holding the reports as rows. */
 @media (max-width: 640px) {
   .report-cards {
     grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: var(--space-1) var(--space-4);
+    border-radius: var(--radius-card);
+    background: var(--surface);
   }
 }
 </style>

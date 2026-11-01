@@ -14,6 +14,16 @@ const data = computed(() => buildExampleReport(t('example.partner')))
 const totals = computed(() => data.value.report.totals)
 const responses = computed(() => data.value.report.responses)
 const mine = computed(() => Math.round((totals.value.sent / Math.max(1, totals.value.messages)) * 100))
+/** The answer in words, as on the report tile: «Примерно поровну», «Вы пишете больше». */
+const verdict = computed(() => {
+  const text =
+    mine.value > 55
+      ? t('report.kpi.youWriteMore')
+      : mine.value < 45
+        ? t('report.kpi.theyWriteMore')
+        : t('report.kpi.even')
+  return `${text.charAt(0).toLocaleUpperCase()}${text.slice(1)}`
+})
 const period = computed(() => formatPeriod(data.value.summary.firstMessageAt, data.value.summary.lastMessageAt, true))
 /** Weekly ticks: a day per tick is too fine at this size. */
 const weeks = computed(() => {
@@ -44,10 +54,10 @@ const weeks = computed(() => {
       </div>
       <div class="tile tile--lime mini__side">
         <div class="tile__label">{{ t('report.kpi.whoWritesMore') }}</div>
-        <div class="tile__figure">
+        <strong class="mini__verdict">{{ verdict }}</strong>
+        <div class="tile__figure mini__share">
           {{ mine }}<small>/{{ 100 - mine }}</small>
         </div>
-        <div class="mini__bar"><i :style="{ flexGrow: mine }" /><i :style="{ flexGrow: 100 - mine }" /></div>
       </div>
       <div class="tile mini__small">
         <div class="tile__label">{{ t('report.kpi.replyMedian') }}</div>
@@ -129,20 +139,13 @@ const weeks = computed(() => {
   font-size: 34px;
 }
 
-.mini__bar {
-  display: flex;
-  gap: 3px;
-  height: 5px;
+/* Who writes more: the answer in words, the split at the foot. No bar. */
+.mini__verdict {
+  font: var(--text-title);
 }
 
-.mini__bar i {
-  flex-basis: 0;
-  border-radius: var(--radius-full);
-  background: var(--you);
-}
-
-.mini__bar i + i {
-  background: var(--them);
+.mini__share {
+  margin-top: auto;
 }
 
 /* Inside the phone: everything a size down, one column with a pair of small tiles. */

@@ -97,7 +97,11 @@ async function analyseNext() {
         class="month__avatar"
       />
       <h2 id="month-next" class="month__top-name">{{ next.chat.title }}</h2>
-      <p class="tile__note">{{ next.rank === 1 ? t('month.rankFirst') : t('month.rank', { rank: next.rank }) }}</p>
+      <p class="tile__note month__rank">
+        {{ next.rank === 1 ? t('month.rankFirst') : t('month.rank', { rank: next.rank }) }}
+      </p>
+      <!-- Phones: one line instead of the facts. -->
+      <p class="tile__note month__compact t-num">{{ tc('month.perMonth', next.chat.messages) }}</p>
       <dl class="month__facts">
         <div>
           <dt>{{ t('month.factMessages') }}</dt>
@@ -108,17 +112,22 @@ async function analyseNext() {
           <dd>{{ formatRelative(next.chat.lastMessageAt) }}</dd>
         </div>
       </dl>
-      <UiButton v-if="!auth.telegramSessionActive" class="month__action" @click="relogin">
+      <UiButton v-if="!auth.telegramSessionActive" variant="primary" class="month__action" @click="relogin">
         {{ t('common.relogin') }}
       </UiButton>
       <UiButton
         v-else
+        variant="primary"
         class="month__action"
         :loading="starting || nextState === 'running'"
         :disabled="nextState !== null"
         @click="analyseNext"
       >
-        {{ nextState === 'queued' ? t('month.queued') : t('month.analyse') }}
+        <template v-if="nextState === 'queued'">{{ t('month.queued') }}</template>
+        <template v-else>
+          <span class="month__action-long">{{ t('month.analyse') }}</span>
+          <span class="month__action-short">{{ t('month.analyseShort') }}</span>
+        </template>
       </UiButton>
     </section>
 
@@ -250,8 +259,61 @@ a.month__top:active {
   }
 }
 
+.month__compact,
+.month__action-short {
+  display: none;
+}
+
 /* Phones: the lime tile becomes a row, avatar beside the name; the bar gives way to the count. */
 @media (max-width: 640px) {
+  /* «Not analysed yet» as one row: avatar, label over name over the count, the button on the right. */
+  .month__top.month__top--next {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    row-gap: 2px;
+    padding: var(--space-4);
+  }
+
+  .month__top.month__top--next .tile__label {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .month__top.month__top--next .month__avatar {
+    grid-column: 1;
+    grid-row: 1 / 4;
+  }
+
+  .month__top.month__top--next .month__top-name {
+    grid-column: 2;
+    font: var(--text-h3);
+  }
+
+  .month__top.month__top--next .month__compact {
+    display: block;
+    grid-column: 2;
+  }
+
+  .month__top.month__top--next .month__rank,
+  .month__top.month__top--next .month__facts {
+    display: none;
+  }
+
+  .month__top.month__top--next .month__action {
+    grid-column: 3;
+    grid-row: 1 / 4;
+    width: auto;
+    margin-top: 0;
+  }
+
+  .month__action-long {
+    display: none;
+  }
+
+  .month__action-short {
+    display: inline;
+  }
+
   .month__top {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
