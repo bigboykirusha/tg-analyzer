@@ -17,7 +17,7 @@ const props = withDefaults(
 const emit = defineEmits<{ submit: []; resend: []; changeNumber: [] }>()
 
 const { t } = useI18n()
-const size = computed(() => Math.min(Math.max(props.length, 4), 8))
+const size = computed(() => Math.min(Math.max(props.length, 3), 10))
 const digits = ref<string[]>(Array.from({ length: props.length }, () => ''))
 const inputs = ref<HTMLInputElement[]>([])
 
@@ -26,8 +26,8 @@ function formatCountdown(seconds: number) {
 }
 
 watch(
-  code,
-  (value) => {
+  [code, size],
+  ([value]) => {
     const next = value.replace(/\D/g, '').slice(0, size.value).split('')
     digits.value = Array.from({ length: size.value }, (_, index) => next[index] ?? '')
   },
@@ -125,7 +125,7 @@ function submit() {
           autocapitalize="off"
           autocorrect="off"
           spellcheck="false"
-          maxlength="1"
+          :maxlength="size"
           :aria-label="t('login.codeLabel')"
           @input="handleInput($event, index)"
           @keydown="handleKeydown($event, index)"

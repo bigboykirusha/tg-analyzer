@@ -99,6 +99,7 @@ const habits = computed(() =>
       </li>
     </ul>
   </div>
+  <p v-else-if="!map && group.topPairs.length" class="t-small t-muted">{{ t('group.replyMapUnavailable') }}</p>
   <p v-else class="t-small t-muted">{{ t('group.topPairsEmpty') }}</p>
 </template>
 

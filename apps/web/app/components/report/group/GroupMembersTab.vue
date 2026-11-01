@@ -1,63 +1,25 @@
 <script setup lang="ts">
-import type { GroupParticipantDto, GroupReportDto } from '@tg-analyzer/shared'
-import type { Fact } from '../ReportFacts.vue'
+import type { GroupReportDto } from '@tg-analyzer/shared'
+import { ChevronRight } from '../../../lib/icons'
 
 const props = defineProps<{ group: GroupReportDto }>()
-const { t, formatNumber, formatDecimal, formatPercent, formatDate, formatRelative } = useI18n()
+const { t, formatPercent } = useI18n()
 const nameOf = useParticipantName()
-const pairName = usePairNames(() => props.group)
-
 const ranked = computed(() => [...props.group.participants].sort((a, b) => b.messageCount - a.messageCount))
 const selectedId = ref<string | null>(null)
 const selected = computed(() => ranked.value.find((item) => item.id === selectedId.value) ?? ranked.value[0] ?? null)
+const isMobile = useMediaQuery('(max-width: 900px)')
+const detailsOpen = ref(false)
 
-function window(participant: GroupParticipantDto) {
-  if (!participant.firstSeen || !participant.lastSeen) return null
-  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' }
-  return `${formatDate(participant.firstSeen, options)} – ${formatDate(participant.lastSeen, options)}`
+function selectMember(id: string, event: MouseEvent) {
+  // Safari does not focus buttons on pointer activation; remember a real return target.
+  const trigger = event.currentTarget as HTMLButtonElement
+  trigger.focus({ preventScroll: true })
+  selectedId.value = id
+  detailsOpen.value = isMobile.value
 }
-
-const facts = computed<Fact[]>(() => {
-  const p = selected.value
-  if (!p) return []
-  return [
-    {
-      key: 'messages',
-      label: t('group.messages'),
-      value: formatNumber(p.messageCount),
-      sub: t('group.shareOfMessages', { value: formatPercent(p.messageShare) }),
-    },
-    { key: 'starters', label: t('group.starters'), value: formatPercent(p.starterShare), sub: t('group.startersHint') },
-    {
-      key: 'replies',
-      label: t('group.repliesReceived'),
-      value: formatNumber(p.repliesReceived),
-      sub: t('group.repliesReceivedHint'),
-    },
-    {
-      key: 'words',
-      label: t('group.wordsPerMessage'),
-      value: p.avgWordsPerMessage === null ? t('common.na') : formatDecimal(p.avgWordsPerMessage),
-    },
-    { key: 'media', label: t('group.media'), value: formatNumber(p.mediaCount), sub: formatPercent(p.mediaShare) },
-    { key: 'last', label: t('group.lastSeen'), value: p.lastSeen ? formatRelative(p.lastSeen) : t('common.na') },
-  ]
-})
-
-const connections = computed(() => {
-  const p = selected.value
-  if (!p) return []
-  return props.group.topPairs
-    .filter((pair) => pair.leftParticipantId === p.id || pair.rightParticipantId === p.id)
-    .map((pair) => ({
-      name:
-        pair.leftParticipantId === p.id
-          ? pairName(pair.rightParticipantId, pair.rightParticipantName)
-          : pairName(pair.leftParticipantId, pair.leftParticipantName),
-      score: pair.symmetricScore,
-    }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
+watch(isMobile, () => {
+  detailsOpen.value = false
 })
 </script>
 
@@ -71,7 +33,9 @@ const connections = computed(() => {
             class="member"
             :class="{ 'member--active': participant.id === selected?.id }"
             :aria-pressed="participant.id === selected?.id"
-            @click="selectedId = participant.id"
+            :aria-haspopup="isMobile ? 'dialog' : undefined"
+            :aria-expanded="isMobile && participant.id === selected?.id ? detailsOpen : undefined"
+            @click="selectMember(participant.id, $event)"
           >
             <UiAvatar :title="nameOf(participant)" size="sm" />
             <span class="member__copy">
@@ -79,40 +43,25 @@ const connections = computed(() => {
               <span class="t-small t-muted">{{ t(`group.roles.${participant.role}`) }}</span>
             </span>
             <span class="member__share t-num">{{ formatPercent(participant.messageShare) }}</span>
+            <ChevronRight class="member__chevron" aria-hidden="true" />
           </button>
         </li>
       </ul>
     </ReportSection>
 
-    <ReportSection v-if="selected" :title="nameOf(selected)" :text="window(selected) ?? undefined">
-      <div class="role">
-        <span class="role__name">{{ t(`group.roles.${selected.role}`) }}</span>
-        <p class="t-small t-muted">
-          {{
-            t(`group.roleReasons.${selected.role}`, {
-              share: formatPercent(selected.messageShare),
-              starter: formatPercent(selected.starterShare),
-              consistency: selected.consistencyScore,
-            })
-          }}
-        </p>
-      </div>
-      <ReportFacts :facts="facts" />
-      <div class="stack">
-        <span class="t-label">{{ t('group.topWords') }}</span>
-        <WordChips :items="selected.topWords" :empty="t('report.words.none')" />
-      </div>
-      <div class="stack">
-        <span class="t-label">{{ t('group.topConnections') }}</span>
-        <ul v-if="connections.length" class="connections">
-          <li v-for="item in connections" :key="item.name">
-            <span>{{ item.name }}</span>
-            <strong class="t-num">{{ formatNumber(item.score) }}</strong>
-          </li>
-        </ul>
-        <p v-else class="t-small t-muted">{{ t('group.topPairsEmpty') }}</p>
-      </div>
+    <ReportSection v-if="selected && !isMobile" :title="nameOf(selected)">
+      <GroupMemberDetails :participant="selected" :group="group" />
     </ReportSection>
+    <UiBottomSheet
+      :open="isMobile && detailsOpen"
+      :title="selected ? nameOf(selected) : ''"
+      @close="detailsOpen = false"
+    >
+      <GroupMemberDetails v-if="selected" :participant="selected" :group="group" />
+      <template #actions>
+        <UiButton variant="secondary" @click="detailsOpen = false">{{ t('common.close') }}</UiButton>
+      </template>
+    </UiBottomSheet>
   </div>
 </template>
 
@@ -147,8 +96,10 @@ const connections = computed(() => {
   transition: background var(--transition-fast);
 }
 
-.member:hover {
-  background: var(--surface-2);
+@media (hover: hover) and (pointer: fine) {
+  .member:hover {
+    background: var(--surface-2);
+  }
 }
 
 .member--active {
@@ -174,34 +125,10 @@ const connections = computed(() => {
   color: var(--text-muted);
 }
 
-.role {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
-}
-
-.role__name {
-  color: var(--text);
-  font: var(--text-ui);
-  font-weight: 600;
-}
-
-.connections {
-  display: flex;
-  flex-direction: column;
-  list-style: none;
-}
-
-.connections li {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.connections li:last-child {
-  border-bottom: 0;
+.member__chevron {
+  display: none;
+  color: var(--text-muted);
+  flex: none;
 }
 
 @media (max-width: 900px) {
@@ -211,6 +138,10 @@ const connections = computed(() => {
 
   .member-list {
     max-height: 360px;
+  }
+
+  .member__chevron {
+    display: block;
   }
 }
 </style>

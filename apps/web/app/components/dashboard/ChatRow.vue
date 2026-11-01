@@ -26,7 +26,7 @@ const reportPath = computed(() => (props.chat.report ? `/chat/${props.chat.id}` 
 const reportMeta = computed(() => {
   const report = props.chat.report
   if (!report) return ''
-  return `${t('dashboard.analysed', { time: formatRelative(report.analyzedAt) })} · ${tc('common.messagesCount', report.totalMessages)}`
+  return t('dashboard.analysed', { time: formatRelative(report.analyzedAt) })
 })
 
 /** The type is shown by the icon; its name is only read aloud, so the time fits on a phone. */
@@ -70,8 +70,9 @@ function run(action: 'analyse' | 'delete') {
             progress == null ? t('dashboard.analysingNow') : formatPercent(progress * 100)
           }}</span>
         </span>
-        <span v-else-if="chat.report" class="chat-row__sub">
+        <span v-else-if="chat.report" class="chat-row__sub chat-row__sub--report">
           <span>{{ reportMeta }}</span>
+          <span class="chat-row__report-count">{{ tc('common.messagesCount', chat.report.totalMessages) }}</span>
         </span>
         <span v-else class="chat-row__sub">
           <component :is="chat.type === 'private' ? User : Users" class="chat-row__type-icon" aria-hidden="true" />
@@ -196,6 +197,11 @@ function run(action: 'analyse' | 'delete') {
   --icon-size: 14px;
 }
 
+.chat-row__report-count::before {
+  content: '·';
+  margin-right: var(--space-2);
+}
+
 .chat-row__track {
   position: relative;
   flex: 1 1 auto;
@@ -246,6 +252,30 @@ function run(action: 'analyse' | 'delete') {
   .chat-row {
     gap: var(--space-3);
     padding: var(--space-3);
+  }
+
+  .chat-row__sub--report {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .chat-row__sub.chat-row__sub--report > span {
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .chat-row__report-count::before {
+    content: none;
+  }
+
+  .chat-row__title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }
 

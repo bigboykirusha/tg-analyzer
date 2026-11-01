@@ -25,7 +25,7 @@ function runAction(toast: ToastMessage) {
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport to="#teleports">
     <div class="toast-region" role="region" aria-live="polite" :aria-label="t('toast.notifications')">
       <TransitionGroup name="toast">
         <article

@@ -39,6 +39,24 @@ test('filler words stay out of the vocabulary, also in reports stored earlier', 
   )
 })
 
+test('technical identifiers stay out of new and previously stored vocabularies', () => {
+  const identifiers = [
+    '7f7b6b14db6c7e7965c0ad01b88043ef',
+    '8a6b04b9-0c50-4e37-8284-780576b02bf9',
+    '0x600000224c00abcd',
+    'https',
+  ]
+  assert.deepEqual(analyzeMessageText(`${identifiers.join(' ')} typescript отпуск 1080px`).keywords, [
+    'typescript',
+    'отпуск',
+    '1080px',
+  ])
+  assert.deepEqual(withoutStopWords([...identifiers, 'typescript', 'отпуск'].map((value) => ({ value, count: 3 }))), [
+    { value: 'typescript', count: 3 },
+    { value: 'отпуск', count: 3 },
+  ])
+})
+
 test('joined emoji count as one grapheme and text symbols are not emoji', () => {
   // Skin tones merge, so 👍🏽 and 👍 are one favourite.
   assert.deepEqual(analyzeMessageText('семья 👨‍👩‍👧‍👦 ❤️ 👍🏽 #️⃣', new Set()).emojis, ['👨‍👩‍👧‍👦', '❤️', '👍', '#️⃣'])

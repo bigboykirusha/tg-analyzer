@@ -82,6 +82,11 @@ test('migration 0009 converts legacy chat statistics into report documents', asy
     const job = await pool.query(`SELECT * FROM parse_jobs`)
     assert.equal(job.rows[0].chat_id, '101')
     assert.equal('bull_job_id' in job.rows[0], false)
+    const usage = await pool.query('SELECT * FROM analysis_usage')
+    assert.equal(usage.rows.length, 1)
+    assert.equal(usage.rows[0].id, job.rows[0].id)
+    assert.equal(usage.rows[0].user_id, job.rows[0].user_id)
+    assert.equal(usage.rows[0].created_at.getTime(), job.rows[0].created_at.getTime())
   } finally {
     await pool.end()
     await admin.query(`DROP DATABASE IF EXISTS ${database}`)

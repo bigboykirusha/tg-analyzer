@@ -35,7 +35,13 @@ const period = computed(() => formatPeriod(props.summary.firstMessageAt, props.s
         :disabled="!canReanalyse"
         @click="emit('reanalyse')"
       />
-      <UiButton class="report-header__story" variant="primary" size="sm" :icon="Sparkles" @click="emit('story')">
+      <UiButton
+        class="report-header__story"
+        :variant="demo ? 'secondary' : 'primary'"
+        size="sm"
+        :icon="Sparkles"
+        @click="emit('story')"
+      >
         {{ t('story.open') }}
       </UiButton>
     </template>

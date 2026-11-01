@@ -38,8 +38,6 @@ export function useAuth() {
   }
 
   async function finishSession(to = '/login') {
-    useAnalysis().stop()
-    useWorkspaceStore().reset()
     auth.signOut()
     await navigateTo(to, { replace: true })
   }

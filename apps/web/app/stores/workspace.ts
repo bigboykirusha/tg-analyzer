@@ -69,11 +69,13 @@ export const useWorkspaceStore = defineStore('workspace', {
   actions: {
     async loadDialogs() {
       const auth = useAuthStore()
+      const version = auth.sessionVersion
       if (!this.dialogs.length && auth.user) this.dialogs = readCachedDialogs(auth.user.id)
       this.dialogsState = 'loading'
       this.dialogsError = null
       try {
         const result = await api('GET /api/v1/parse/dialogs')
+        if (auth.sessionVersion !== version) return
         this.dialogs = result.dialogs
         this.dialogsStale = result.stale
         this.dialogsTruncated = result.truncated
@@ -81,42 +83,59 @@ export const useWorkspaceStore = defineStore('workspace', {
         if (auth.user)
           localStorage.setItem(DIALOG_CACHE_KEY, JSON.stringify({ userId: auth.user.id, dialogs: result.dialogs }))
       } catch (error) {
+        if (auth.sessionVersion !== version) return
         this.dialogsError = error instanceof ApiClientError ? error : null
         this.dialogsState = 'error'
       }
     },
 
     async loadRecent() {
+      const auth = useAuthStore()
+      const version = auth.sessionVersion
       if (this.recentState === 'loading') return
       this.recentState = 'loading'
       try {
-        this.recent = await api('GET /api/v1/parse/recent')
+        const result = await api('GET /api/v1/parse/recent')
+        if (auth.sessionVersion !== version) return
+        this.recent = result
         this.recentState = 'ready'
       } catch {
+        if (auth.sessionVersion !== version) return
         // The summary is a bonus: without it the home page simply starts with the reports.
         this.recentState = 'error'
       }
     },
 
     async loadReports() {
+      const auth = useAuthStore()
+      const version = auth.sessionVersion
       this.reportsState = this.reports.length ? 'ready' : 'loading'
       try {
-        this.reports = (await api('GET /api/v1/reports')).reports
+        const result = await api('GET /api/v1/reports')
+        if (auth.sessionVersion !== version) return
+        this.reports = result.reports
         this.reportsState = 'ready'
       } catch (error) {
+        if (auth.sessionVersion !== version) return
         this.reportsState = 'error'
         throw error
       }
     },
 
     async loadReport(chatId: string) {
+      const auth = useAuthStore()
+      const version = auth.sessionVersion
       const report = await api('GET /api/v1/reports/:chatId', { params: { chatId } })
+      if (auth.sessionVersion !== version) return null
       this.openedReports[chatId] = report
       return report
     },
 
     async deleteReport(chatId: string) {
+      const auth = useAuthStore()
+      const version = auth.sessionVersion
       await api('DELETE /api/v1/reports/:chatId', { params: { chatId } })
+      if (auth.sessionVersion !== version) return
       this.reports = this.reports.filter((report) => report.chatId !== chatId)
       delete this.openedReports[chatId]
     },

@@ -5,6 +5,7 @@ import {
   type AvatarsResponse,
   jobIdParamsSchema,
   paginationQuerySchema,
+  parseStatusQuerySchema,
   startParseBodySchema,
   type ClearHistoryResponse,
   type DialogsResponse,
@@ -24,15 +25,15 @@ import { hasActiveTelegramSession } from '../account/telegram-sessions'
 import { requireAuth, userIdOf } from '../auth/guard'
 import {
   cancelActiveJob,
-  createJob,
   deleteFinishedJob,
   deleteFinishedJobs,
   failJob,
+  findJob,
   listJobs,
   toJobDto,
   listUserActiveJobs,
-  recentJobs,
 } from './jobs'
+import { admitAnalysis } from './admission'
 import { enqueueAnalysis, removeQueuedAnalysis } from './queue'
 import {
   cacheAvatar,
@@ -161,9 +162,34 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
 
   app.get('/status', async (request): Promise<ParseProgressDto> => {
     const userId = userIdOf(request)
+    const { jobId } = parse(parseStatusQuerySchema, request.query)
     const jobs = await listUserActiveJobs(userId)
+    // A suspended phone can miss the final socket frame, even as the next job starts.
+    // Let it recover the result of the job it was following from durable storage.
+    const tracked = jobId ? await findJob(jobId) : null
+    if (tracked?.userId === userId && !['pending', 'running'].includes(tracked.status)) {
+      const result = toJobDto(tracked)
+      return {
+        ...idleProgress(),
+        jobId: result.jobId,
+        status: result.status,
+        chatId: result.chatId,
+        chatTitle: result.chatTitle,
+        scannedMessages: result.totalMessages,
+        totalMessages: result.totalMessages,
+        startedAt: tracked.startedAt?.getTime() ?? null,
+        error: result.error,
+        queued: jobs
+          .filter((item) => item.chatId !== null)
+          .map((item) => ({
+            jobId: item.id,
+            chatId: String(item.chatId),
+            chatTitle: item.chatTitle,
+          })),
+      }
+    }
     const job = jobs.find((item) => item.status === 'running') ?? jobs[0]
-    if (!job) return idleProgress()
+    if (!job) return { ...idleProgress(), queued: [] }
 
     const queued = jobs
       .filter((item) => item.id !== job.id && item.chatId !== null)
@@ -191,30 +217,19 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
     const cooldown = await cooldownSeconds(userId, chatId)
     if (cooldown > 0) throw new ApiError(429, 'PARSE_COOLDOWN', 'This chat was analysed recently', cooldown)
 
-    const limit = config.FREE_ANALYSES_PER_DAY
-    if (limit) {
-      const recent = await recentJobs(userId, new Date(Date.now() - DAY_MS))
-      if (recent.count >= limit) {
-        const wait = recent.oldest ? Math.ceil((recent.oldest.getTime() + DAY_MS - Date.now()) / 1000) : 3600
-        throw new ApiError(429, 'PARSE_DAILY_LIMIT', 'The free daily limit of analyses is used up', Math.max(wait, 60))
-      }
-    }
-
     const dialog = (await readCachedDialogs(userId))?.dialogs.find((item) => item.id === chatId)
     if (dialog && !(ANALYZABLE_CHAT_TYPES as readonly string[]).includes(dialog.type)) {
       throw new ApiError(400, 'CHAT_NOT_FOUND', 'Only private chats and groups can be analysed')
     }
 
-    const waiting = await listUserActiveJobs(userId)
-    if (waiting.length >= MAX_QUEUED_ANALYSES) {
-      throw conflict('PARSE_QUEUE_FULL', 'Too many analyses are waiting; let some finish first')
-    }
-    const job = await createJob({ userId, chatId, chatTitle: dialog?.title ?? null })
-    if (!job) throw conflict('PARSE_ALREADY_QUEUED', 'This chat is already being analysed or waiting')
+    const { job, first } = await admitAnalysis(
+      { userId, chatId, chatTitle: dialog?.title ?? null },
+      { daily: config.FREE_ANALYSES_PER_DAY, queued: MAX_QUEUED_ANALYSES },
+    )
 
     try {
       // Only the first job of an empty queue changes what the progress card shows.
-      if (!waiting.length)
+      if (first)
         await publishProgress(userId, {
           ...idleProgress(),
           jobId: job.id,

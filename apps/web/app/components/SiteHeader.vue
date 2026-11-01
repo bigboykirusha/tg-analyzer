@@ -11,7 +11,7 @@ const isReport = computed(() => route.path === '/example')
 </script>
 
 <template>
-  <header class="site-header" :class="{ 'is-scrolled': scrolled }">
+  <header class="site-header" :class="{ 'is-scrolled': scrolled, 'site-header--report': isReport }">
     <UiPageContainer class="site-header__in">
       <BrandLink class="site-header__brand" :class="{ 'site-header__brand--report': isReport }" />
       <div id="header-page" class="site-header__report" />
@@ -24,7 +24,7 @@ const isReport = computed(() => route.path === '/example')
         >
           {{ t('site.privacy') }}
         </NuxtLink>
-        <UiButton v-if="route.path !== '/login'" variant="secondary" size="sm" to="/login">
+        <UiButton v-if="route.path !== '/login'" :variant="isReport ? 'primary' : 'secondary'" size="sm" to="/login">
           {{ isReport ? t('example.cta') : t('site.signIn') }}
         </UiButton>
       </nav>
@@ -72,8 +72,14 @@ const isReport = computed(() => route.path === '/example')
   align-items: center;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   .site-header__brand--report {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-header--report .site-header__nav {
     display: none;
   }
 }

@@ -82,6 +82,7 @@ export const avatarsBodySchema = z.object({
 
 export const chatIdParamsSchema = z.object({ chatId: telegramIdSchema })
 export const jobIdParamsSchema = z.object({ jobId: z.uuid() })
+export const parseStatusQuerySchema = z.object({ jobId: z.uuid().optional() })
 
 export const paginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -111,7 +112,7 @@ export interface ApiEndpointMap {
   'GET /api/v1/parse/dialogs': Endpoint<undefined, DialogsResponse>
   'GET /api/v1/parse/recent': Endpoint<undefined, RecentActivityResponse>
   'POST /api/v1/parse/avatars': Endpoint<AvatarsBody, AvatarsResponse>
-  'GET /api/v1/parse/status': Endpoint<undefined, ParseProgressDto>
+  'GET /api/v1/parse/status': Endpoint<undefined, ParseProgressDto, z.input<typeof parseStatusQuerySchema>>
   'POST /api/v1/parse/start': Endpoint<StartParseBody, StartParseResponse>
   'POST /api/v1/parse/cancel': Endpoint<CancelParseBody, SuccessResponse>
   'GET /api/v1/parse/history': Endpoint<undefined, Page<ParseJobDto>, z.input<typeof paginationQuerySchema>>

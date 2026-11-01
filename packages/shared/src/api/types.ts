@@ -341,7 +341,7 @@ export interface ResponseStatsDto {
   theirsP25Sec: number | null
   theirsP75Sec: number | null
   theirsP95Sec: number | null
-  /** Share of conversational turns that received a reply within the same session, 0–100. */
+  /** @deprecated Structural turn-continuation ratio (1 - sessions / turns), not responsiveness. Kept for stored reports. */
   responseRate: number | null
   /** Share of sessions started by the current user, 0–100. */
   iWriteFirstPct: number | null
@@ -614,6 +614,7 @@ export interface AvailabilityProfileDto {
   activeHours: number
   activeHoursPct: number
   concentrationIndex: number | null
+  /** @deprecated Legacy concentration bucket; does not predict future availability. */
   predictability: 'low' | 'medium' | 'high'
   peakWindow: string | null
   secondaryWindow: string | null

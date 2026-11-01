@@ -6,7 +6,7 @@ import type { InsightDto, ReportDto } from '@tg-analyzer/shared'
  * sentence. The sentence names whom it is about, so the figures stay ink.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatNumber, formatPercent, formatDay } = useI18n()
+const { t, tc, formatNumber, formatDay } = useI18n()
 
 const name = computed(() => props.data.summary.title)
 
@@ -34,8 +34,9 @@ function describe(insight: InsightDto): { figure: string; text: string } | null 
         figure: formatDay(String(insight.values.date), { day: 'numeric', month: 'long' }),
         text: tc('insight.busiest_day', num(insight, 'count')),
       }
+    // Legacy stored insights must not reintroduce a misleading reply-rate verdict.
     case 'reply_rate':
-      return { figure: formatPercent(num(insight, 'pct')), text: t('insight.reply_rate') }
+      return null
     default:
       return null
   }

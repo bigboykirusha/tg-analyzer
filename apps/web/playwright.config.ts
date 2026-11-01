@@ -10,20 +10,28 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
     colorScheme: 'dark',
-    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH
-      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
-      : undefined,
   },
   projects: [
     {
       name: 'mobile',
       use: {
-        ...devices['Desktop Chrome'],
-        isMobile: true,
-        hasTouch: true,
+        ...devices['Pixel 7'],
+        viewport: { width: 390, height: 844 },
+        launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH
+          ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
+          : undefined,
       },
     },
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile-webkit', use: { ...devices['iPhone 13'] } },
+    {
+      name: 'desktop',
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH
+          ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
+          : undefined,
+      },
+    },
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined

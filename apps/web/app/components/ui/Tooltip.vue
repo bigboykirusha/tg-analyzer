@@ -88,7 +88,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
     @keydown="onKeydown"
   >
     <slot :describedby="describe && open ? id : undefined" />
-    <Teleport to="body">
+    <Teleport to="#teleports">
       <span
         v-if="open"
         :id="id"

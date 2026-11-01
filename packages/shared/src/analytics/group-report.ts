@@ -329,6 +329,7 @@ function computeTopicSignature(own: ReadonlyMap<string, number>, all: ReadonlyMa
   if (!ownTotal || !allTotal) return []
 
   return Array.from(own.entries())
+    .filter(([, count]) => count >= 3)
     .map(([word, count]) => {
       const localShare = count / ownTotal
       const globalShare = (all.get(word) ?? count) / allTotal

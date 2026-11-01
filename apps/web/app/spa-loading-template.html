@@ -1,0 +1,39 @@
+<div class="startup-loading" role="progressbar" aria-label="TG Analyzer">
+  <img src="/logo.svg" alt="" width="48" height="48" />
+  <span>TG Analyzer</span>
+  <span class="startup-loading__pulse" aria-hidden="true"></span>
+</div>
+<style>
+  .startup-loading {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-toast);
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: var(--space-4);
+    background: var(--bg);
+    color: var(--text);
+    font: var(--text-title);
+  }
+  .startup-loading__pulse {
+    width: var(--control-lg);
+    height: var(--space-1);
+    border-radius: var(--radius-full);
+    background: currentColor;
+    animation: startup-pulse calc(var(--duration-slow) * 3) var(--ease-standard) infinite alternate;
+  }
+  @keyframes startup-pulse {
+    from {
+      opacity: 0.3;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .startup-loading__pulse {
+      animation: none;
+    }
+  }
+</style>

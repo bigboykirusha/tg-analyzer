@@ -81,6 +81,19 @@ export const parseJobs = pgTable(
   ],
 )
 
+/** Minimal quota ledger, independent of the deletable analysis history. */
+export const analysisUsage = pgTable(
+  'analysis_usage',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (table) => [index('analysis_usage_user_created_idx').on(table.userId, table.createdAt)],
+)
+
 export const chatReports = pgTable(
   'chat_reports',
   {

@@ -8,7 +8,7 @@
   },
   "scripts": {
     "check": "tsc --project tsconfig.json --noEmit",
-    "test": "node --import tsx --test \"test/**/*.test.ts\""
+    "test": "node --import tsx --test --test-concurrency=1 \"test/**/*.test.ts\""
   },
   "dependencies": {
     "emoji-regex": "10.4.0",

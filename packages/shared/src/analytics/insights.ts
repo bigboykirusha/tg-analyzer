@@ -5,7 +5,6 @@ const DAY_SEC = 86_400
 /** Below these sample sizes a pattern is noise, not a habit. */
 const MIN_MESSAGES = 100
 const MIN_BUSIEST_DAY = 20
-const MIN_REPLY_SAMPLES = 20
 const MAX_INSIGHTS = 4
 
 type Side = 'mine' | 'theirs'
@@ -26,15 +25,15 @@ function dominant(counts: { mine: number; theirs: number }, minTotal: number, fa
  * The few patterns of a private chat worth a sentence, strongest first. Only
  * what the report says nowhere else: who starts, reply speed, questions, night
  * talks, last words, streaks and the trend all have their own cards, and one
- * number lives in one place. The busiest day and the reply rate are calm
- * facts that fill the row when the chat has few strong habits. Each rule has a sample-size floor, so a short chat
+ * number lives in one place. The busiest day is a descriptive fallback when
+ * the chat has few strong habits. Each rule has a sample-size floor, so a short chat
  * yields fewer, not weaker, insights. Groups get none.
  */
 export function deriveInsights(report: ChatReport): InsightDto[] {
   if (report.group || report.totals.messages < MIN_MESSAGES) return []
   const insights: (InsightDto | null)[] = []
   // The share of messages is a headline number of the report itself, not an insight.
-  const { facts, habits, responses } = report
+  const { facts, habits } = report
 
   if (habits) {
     for (const [id, counts, minTotal] of [
@@ -71,10 +70,6 @@ export function deriveInsights(report: ChatReport): InsightDto[] {
       strength: 0.4,
       values: { date: busiest.date, count: busiest.total },
     })
-  }
-
-  if (responses.responseRate !== null && responses.mineSamples + responses.theirsSamples >= MIN_REPLY_SAMPLES) {
-    insights.push({ id: 'reply_rate', side: 'both', strength: 0.3, values: { pct: responses.responseRate } })
   }
 
   return insights

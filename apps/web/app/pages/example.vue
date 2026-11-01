@@ -18,11 +18,13 @@ const storyOpen = ref(false)
 <template>
   <UiPageContainer>
     <div class="page">
-      <!-- A line, not a banner: the header already offers «Посмотреть свой». -->
-      <p class="note" role="note">
-        <Info aria-hidden="true" />
-        {{ t('example.note') }}
-      </p>
+      <div class="example-intro">
+        <p class="note" role="note">
+          <Info aria-hidden="true" />
+          {{ t('example.note') }}
+        </p>
+        <UiButton class="example-start" variant="primary" to="/login">{{ t('example.cta') }}</UiButton>
+      </div>
 
       <ReportHeader :summary="data.summary" demo @story="storyOpen = true" />
 
@@ -40,6 +42,14 @@ const storyOpen = ref(false)
 </template>
 
 <style scoped>
+.example-intro {
+  display: grid;
+  gap: var(--space-3);
+}
+.example-start {
+  display: none;
+}
+
 .example-end {
   align-items: flex-start;
   gap: var(--space-3);
@@ -51,6 +61,9 @@ const storyOpen = ref(false)
 }
 
 @media (max-width: 640px) {
+  .example-start {
+    display: inline-flex;
+  }
   .example-end {
     padding: var(--space-5);
   }

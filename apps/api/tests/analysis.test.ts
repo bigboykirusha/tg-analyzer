@@ -104,6 +104,39 @@ test('a group analysis includes participants and reports are isolated per user',
   assert.equal((await app.inject({ url: '/api/v1/reports', headers: owner.headers })).json().reports.length, 0)
 })
 
+test("polling recovers a missed completion without exposing another user's job", async () => {
+  const owner = await login('+79990000021')
+  const stranger = await login('+79990000022')
+  const jobId = await analyse(owner, PRIVATE_CHAT)
+  const next = await post(owner, '/api/v1/parse/start', { chatId: GROUP_CHAT })
+  const url = `/api/v1/parse/status?jobId=${jobId}`
+  const result = (await app.inject({ url, headers: owner.headers })).json<ParseProgressDto>()
+  assert.equal(result.status, 'completed')
+  assert.equal(result.chatId, PRIVATE_CHAT)
+  assert.equal(result.scannedMessages, 130)
+  assert.equal(result.queued?.[0]?.jobId, next.json().jobId)
+
+  const foreign = (await app.inject({ url, headers: stranger.headers })).json<ParseProgressDto>()
+  assert.equal(foreign.status, 'idle')
+  assert.equal(foreign.jobId, null)
+  assert.equal(
+    (await app.inject({ url: '/api/v1/parse/status?jobId=invalid', headers: owner.headers })).statusCode,
+    400,
+  )
+})
+
+test('polling recovers cancellation and failure after socket delivery was missed', async () => {
+  const session = await login()
+  const { jobId } = (await post(session, '/api/v1/parse/start', { chatId: PRIVATE_CHAT })).json()
+  await post(session, '/api/v1/parse/cancel', { jobId })
+  const url = `/api/v1/parse/status?jobId=${jobId}`
+  assert.equal((await app.inject({ url, headers: session.headers })).json().status, 'cancelled')
+  await pool.query("UPDATE parse_jobs SET status = 'failed', error_message = 'interrupted' WHERE id = $1", [jobId])
+  const failed = (await app.inject({ url, headers: session.headers })).json<ParseProgressDto>()
+  assert.equal(failed.status, 'failed')
+  assert.equal(failed.error, 'interrupted')
+})
+
 test('analyses queue up, one chat at a time, and channels are rejected', async () => {
   const session = await login()
   await app.inject({ url: '/api/v1/parse/dialogs', headers: session.headers })
@@ -246,4 +279,61 @@ test('the free plan stops new analyses after the daily limit', async () => {
   } finally {
     ;(config as { FREE_ANALYSES_PER_DAY?: number }).FREE_ANALYSES_PER_DAY = previous
   }
+})
+
+test('clearing history does not reset the daily analysis limit', async () => {
+  const { config } = await import('../src/config')
+  const previous = config.FREE_ANALYSES_PER_DAY
+  config.FREE_ANALYSES_PER_DAY = 1
+  try {
+    const session = await login()
+    await analyse(session, PRIVATE_CHAT)
+    const cleared = await app.inject({
+      method: 'DELETE',
+      url: '/api/v1/parse/history',
+      headers: { ...session.headers, origin: ORIGIN },
+    })
+    assert.equal(cleared.statusCode, 200)
+    assert.equal(cleared.json().deleted, 1)
+    const history = await app.inject({ url: '/api/v1/parse/history', headers: session.headers })
+    assert.equal(history.json().total, 0)
+    const second = await post(session, '/api/v1/parse/start', { chatId: GROUP_CHAT })
+    assert.equal(second.statusCode, 429, second.body)
+    assert.equal(second.json().code, 'PARSE_DAILY_LIMIT')
+  } finally {
+    config.FREE_ANALYSES_PER_DAY = previous
+  }
+})
+
+test('concurrent analysis starts cannot exceed the daily limit', async () => {
+  const { config } = await import('../src/config')
+  const previous = config.FREE_ANALYSES_PER_DAY
+  config.FREE_ANALYSES_PER_DAY = 1
+  try {
+    const session = await login()
+    const responses = await Promise.all(
+      [PRIVATE_CHAT, GROUP_CHAT, '1007', '1008'].map((chatId) => post(session, '/api/v1/parse/start', { chatId })),
+    )
+    assert.equal(responses.filter((response) => response.statusCode === 200).length, 1)
+    for (const response of responses.filter((response) => response.statusCode !== 200)) {
+      assert.equal(response.statusCode, 429, response.body)
+      assert.equal(response.json().code, 'PARSE_DAILY_LIMIT')
+    }
+  } finally {
+    config.FREE_ANALYSES_PER_DAY = previous
+  }
+})
+
+test('concurrent analysis starts cannot exceed the queue capacity', async () => {
+  const session = await login()
+  const responses = await Promise.all(
+    Array.from({ length: 14 }, (_, index) => post(session, '/api/v1/parse/start', { chatId: String(8000 + index) })),
+  )
+  assert.equal(responses.filter((response) => response.statusCode === 200).length, 10)
+  for (const response of responses.filter((response) => response.statusCode !== 200)) {
+    assert.equal(response.statusCode, 409, response.body)
+    assert.equal(response.json().code, 'PARSE_QUEUE_FULL')
+  }
+  const usage = await pool.query('SELECT count(*) FROM analysis_usage WHERE user_id = $1', [session.userId])
+  assert.equal(Number(usage.rows[0].count), 10)
 })

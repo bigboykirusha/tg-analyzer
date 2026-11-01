@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ReportDto } from '@tg-analyzer/shared'
+import { replyComparisonRatio, REPLY_COMPARISON_EVEN_RATIO, type ReportDto } from '@tg-analyzer/shared'
 import { Info } from '../../lib/icons'
 
 const props = defineProps<{ data: ReportDto }>()
@@ -54,10 +54,10 @@ const lead = computed(() => {
     )
   const mine = responses.value.medianMineSec
   const theirs = responses.value.medianTheirsSec
-  if (mine !== null && theirs !== null) {
-    const ratio = Math.max(mine, theirs) / Math.max(Math.min(mine, theirs), 1)
+  const ratio = replyComparisonRatio(responses.value)
+  if (ratio !== null && mine !== null && theirs !== null) {
     parts.push(
-      ratio < 1.5
+      ratio < REPLY_COMPARISON_EVEN_RATIO
         ? t('report.lead.replyEven')
         : mine < theirs
           ? t('report.lead.replyYou')

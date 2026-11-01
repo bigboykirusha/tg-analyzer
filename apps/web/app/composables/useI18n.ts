@@ -65,9 +65,10 @@ export function useI18n() {
     if (!value) return t('common.na')
     const date = value instanceof Date ? value : new Date(value)
     if (Number.isNaN(date.getTime())) return t('common.na')
-    return new Intl.DateTimeFormat(intlLocale.value, options ?? { dateStyle: 'medium', timeStyle: 'short' }).format(
-      date,
-    )
+    // Keep the Russian year suffix with the year in narrow metric cards.
+    return new Intl.DateTimeFormat(intlLocale.value, options ?? { dateStyle: 'medium', timeStyle: 'short' })
+      .format(date)
+      .replace(/\s+г\./gu, '\u00a0г.')
   }
 
   /** Calendar day stored as `YYYY-MM-DD` (already in the report time zone). */

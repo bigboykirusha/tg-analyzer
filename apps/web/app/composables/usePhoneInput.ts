@@ -62,6 +62,8 @@ function formatGroups(digits: string, pattern: number[]) {
     groups.push(part)
     cursor += size
   }
+  // Some numbering plans allow an extra digit beyond the usual grouping.
+  if (cursor < digits.length) groups[groups.length - 1] += digits.slice(cursor)
 
   return groups.join(' ')
 }
@@ -90,10 +92,9 @@ export function usePhoneInput(initialCountry = 'RU') {
       return country.value.maxDigits
     }
 
-    const totalDigits = pattern.reduce((sum, size) => sum + size, 0)
     const spaces = Math.max(0, pattern.length - 1)
     const parentheses = pattern[0] ? 2 : 0
-    return totalDigits + spaces + parentheses
+    return country.value.maxDigits + spaces + parentheses
   })
 
   const isValid = computed(

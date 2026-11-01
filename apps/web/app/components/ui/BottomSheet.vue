@@ -69,11 +69,12 @@ function onPointerUp() {
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport to="#teleports">
     <Transition name="sheet">
       <div v-if="open" class="sheet-scrim" @click.self="close">
         <section
           ref="panelRef"
+          tabindex="-1"
           class="sheet"
           :role="role"
           aria-modal="true"
@@ -155,6 +156,7 @@ function onPointerUp() {
 
 .sheet__head {
   padding: var(--space-3) var(--space-5) var(--space-2);
+  overflow-wrap: anywhere;
 }
 
 .sheet__search {

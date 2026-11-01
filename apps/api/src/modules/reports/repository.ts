@@ -256,7 +256,7 @@ function normalizeReport(raw: ChatReport, row: ChatReportRow): ChatReport {
     relationship: raw.relationship ?? null,
     health: raw.health ?? null,
     habits: raw.habits ?? null,
-    group: normalizeGroup(raw.group, row.analyzedAt.getTime()),
+    group: normalizeGroup(raw.group, row.lastMessageAt?.getTime() ?? row.analyzedAt.getTime()),
     // Reports made before these existed show an invitation to analyse the chat again.
     voice: raw.voice ?? null,
     reactions: raw.reactions ?? null,

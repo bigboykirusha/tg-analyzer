@@ -180,7 +180,7 @@ const questionRows = computed(() => {
 /** Sections with nothing to show collapse into one quiet line at the end of the part. */
 const absent = computed(() =>
   [
-    !voiceRows.value.length && t('report.talk.missingVoice'),
+    !voiceRows.value.length && !voiceFacts.value.length && t('report.talk.missingVoice'),
     !(reactions.value && reactionRows.value.length) && t('report.talk.missingReactions'),
     !stickers.value?.top.length && t('report.talk.missingStickers'),
   ].filter((item): item is string => Boolean(item)),
@@ -200,7 +200,11 @@ const tooFew = computed(() =>
   </p>
 
   <template v-else>
-    <ReportSection v-if="voiceRows.length" :title="t('report.talk.voiceTitle')" :text="t('report.talk.voiceText')">
+    <ReportSection
+      v-if="voiceRows.length || voiceFacts.length"
+      :title="t('report.talk.voiceTitle')"
+      :text="t('report.talk.voiceText')"
+    >
       <ReportCompare :their-name="name" :rows="voiceRows" />
       <ReportFacts v-if="voiceFacts.length" :facts="voiceFacts" />
     </ReportSection>

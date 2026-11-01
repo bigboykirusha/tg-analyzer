@@ -37,7 +37,7 @@ test('a one-sided chat yields only what the report says nowhere else, strongest 
   const ids = insights.map((insight) => insight.id)
   assert.equal(insights.find((insight) => insight.id === 'double_texts')?.side, 'mine')
   assert.equal(insights.find((insight) => insight.id === 'laughs')?.side, 'theirs')
-  assert.ok(ids.includes('reply_rate'))
+  assert.ok(!ids.includes('reply_rate'))
   // Who starts, reply speed and questions have their own cards in the report.
   for (const id of ['initiative', 'reply_speed', 'questions', 'night_talks', 'last_word', 'streak', 'trend'])
     assert.ok(!ids.includes(id as never), id)
@@ -59,6 +59,6 @@ test('short chats and groups get no insights', () => {
 test('reports stored before habits existed still produce insights without them', () => {
   const report = { ...oneSidedChat(), habits: null }
   const ids = deriveInsights(report).map((insight) => insight.id)
-  assert.ok(ids.includes('reply_rate'))
-  assert.ok(!ids.includes('double_texts'))
+  assert.ok(!ids.includes('reply_rate'))
+  assert.deepEqual(ids, [])
 })

@@ -25,26 +25,50 @@ export async function acquireSessionLease(redis: Redis, userId: string, waitMs: 
   const token = randomUUID()
   const deadline = Date.now() + waitMs
 
-  while ((await redis.set(key, token, 'PX', LEASE_TTL_MS, 'NX')) !== 'OK') {
+  let leaseUntil: number
+  while (true) {
+    const requestedAt = Date.now()
+    if ((await redis.set(key, token, 'PX', LEASE_TTL_MS, 'NX')) === 'OK') {
+      leaseUntil = requestedAt + LEASE_TTL_MS
+      break
+    }
     if (Date.now() >= deadline) throw new TelegramBusyError()
     await sleep(POLL_MS)
   }
 
   const controller = new AbortController()
+  let released = false
+  const lost = () => {
+    if (!released) controller.abort(new TelegramBusyError('Telegram session lease was lost'))
+  }
+  // Redis commands can remain pending throughout an outage. Stop locally before
+  // the lease expires, even when the renewal promise never settles.
+  let expiry = setTimeout(lost, Math.max(0, leaseUntil - Date.now()))
+  expiry.unref()
+  if (Date.now() >= leaseUntil) lost()
   const renew = setInterval(() => {
+    if (controller.signal.aborted || released) return
+    const requestedAt = Date.now()
     redis
       .eval(RENEW_SCRIPT, 1, key, token, String(LEASE_TTL_MS))
       .then((renewed) => {
-        if (Number(renewed) !== 1) controller.abort(new TelegramBusyError('Telegram session lease was lost'))
+        if (released) return
+        if (Number(renewed) !== 1) return lost()
+        if (controller.signal.aborted) return
+        clearTimeout(expiry)
+        expiry = setTimeout(lost, Math.max(0, requestedAt + LEASE_TTL_MS - Date.now()))
+        expiry.unref()
       })
-      .catch(() => undefined)
+      .catch(lost)
   }, RENEW_EVERY_MS)
   renew.unref()
 
   return {
     signal: controller.signal,
     async release() {
+      released = true
       clearInterval(renew)
+      clearTimeout(expiry)
       await redis.eval(RELEASE_SCRIPT, 1, key, token).catch(() => undefined)
     },
   }

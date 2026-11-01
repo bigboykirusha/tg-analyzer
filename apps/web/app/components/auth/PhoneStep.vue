@@ -8,6 +8,7 @@ const emit = defineEmits<{ submit: [] }>()
 
 const { t, locale } = useI18n()
 const phoneInput = usePhoneInput()
+if (phone.value) phoneInput.setFromNormalized(phone.value)
 const phoneDisplay = phoneInput.displayValue
 const phoneInputId = useId()
 
@@ -28,12 +29,11 @@ const phonePlaceholder = computed(() => {
   return [prefix, suffix].filter(Boolean).join(' ')
 })
 
-const phoneMaxLength = computed(() => phoneInput.maxDisplayLength.value)
-
 function handleInput(event: Event) {
   const target = event.target as HTMLInputElement
   const value = target.value
-  phoneInput.displayValue.value = value
+  if (value.trim().startsWith('+')) phoneInput.setFromNormalized(value)
+  else phoneInput.displayValue.value = value
   // Force update the input value to the formatted one
   target.value = phoneInput.displayValue.value
 }
@@ -88,7 +88,6 @@ function submit() {
           :value="phoneDisplay"
           class="input__control phone-input"
           :placeholder="phonePlaceholder"
-          :maxlength="phoneMaxLength"
           inputmode="tel"
           autocomplete="tel"
           @input="handleInput"

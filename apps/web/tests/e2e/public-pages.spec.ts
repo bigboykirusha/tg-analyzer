@@ -6,14 +6,20 @@ import { gotoHydrated, noHorizontalScroll, usePreferences } from './helpers'
 for (const path of ['/', '/login', '/faq', '/terms', '/example'])
   for (const theme of ['light', 'dark'] as const) {
     test(`${path} renders without accessibility violations in ${theme}`, async ({ page, context }) => {
+      const renderingErrors: string[] = []
+      page.on('pageerror', (error) => renderingErrors.push(error.message))
+      page.on('console', (message) => {
+        if (/hydration.*mismatch/i.test(message.text())) renderingErrors.push(message.text())
+      })
       await usePreferences(context, theme)
-      await page.goto(path)
+      await gotoHydrated(page, path)
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
       await expect.poll(() => noHorizontalScroll(page)).toBe(true)
 
       const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
       expect(results.violations.map((violation) => violation.id)).toEqual([])
+      expect(renderingErrors).toEqual([])
     })
   }
 
@@ -33,6 +39,15 @@ test('locale switch changes the interface language', async ({ page, context }) =
   await expect(page.getByRole('button', { name: 'Получить код' })).toBeVisible()
   await page.locator('.locale-switch button').click()
   await expect(page.getByRole('button', { name: 'Get code' })).toBeVisible()
+})
+
+test('phone autofill keeps the country code and all eleven German digits', async ({ page, context }) => {
+  await usePreferences(context, 'light')
+  await gotoHydrated(page, '/login')
+  await page.locator('.phone-input').fill('+4915123456789')
+  await expect(page.locator('.dial-code')).toContainText('+49')
+  await expect(page.locator('.phone-input')).toHaveValue('(151) 234 56789')
+  await expect(page.getByRole('button', { name: 'Получить код' })).toBeEnabled()
 })
 
 test('the privacy policy opens full screen over the login page', async ({ page, context }) => {
@@ -63,14 +78,96 @@ test('protected pages redirect to login', async ({ page }) => {
   await page.waitForURL('**/login')
 })
 
-test('the example report opens from the login page without signing in', async ({ page }) => {
+test('the example report opens from the login page without signing in', async ({ page }, testInfo) => {
   await gotoHydrated(page, '/login')
   await page.getByRole('link', { name: 'Открыть пример отчёта →' }).click()
   await page.waitForURL('**/example')
   await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeVisible()
+  if (page.viewportSize()!.width <= 640) {
+    await expect(page.locator('.example-start')).toBeVisible()
+    await expect
+      .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
+      .toBe(true)
+  }
   await expect(page.getByText('Главное')).toBeVisible()
+  // The example has voice messages without duration metadata. Their count
+  // must remain visible rather than being described as absent.
+  await expect(page.getByRole('heading', { name: 'Голосом', exact: true })).toBeVisible()
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
+  await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
 
   await page.getByRole('button', { name: 'Итоги' }).click()
   await expect(page.getByRole('dialog', { name: 'Итоги переписки' })).toBeVisible()
+})
+
+test('report navigation survives resizing between phone, tablet and desktop', async ({ page, context }) => {
+  await usePreferences(context, 'dark')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await gotoHydrated(page, '/example')
+  for (const width of [320, 390, 650, 768, 1024, 1440, 430]) {
+    await page.setViewportSize({ width, height: width === 430 ? 932 : 844 })
+    await expect.poll(() => noHorizontalScroll(page)).toBe(true)
+    await expect
+      .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
+      .toBe(true)
+    await page.getByRole('tab', { name: 'Время', exact: true }).click()
+    await expect(page.locator('#part-time')).toBeInViewport()
+    await page.getByRole('tab', { name: 'Вы двое', exact: true }).click()
+    await expect(page.locator('#part-together')).toBeInViewport()
+  }
+})
+
+test('the activity calendar exposes days by touch and keyboard', async ({ page, context }, testInfo) => {
+  await usePreferences(context, 'dark')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await gotoHydrated(page, '/example')
+  const calendar = page.locator('.heatmap')
+  const cells = calendar.locator('.heatmap__grid [data-date]')
+  const count = await cells.count()
+  expect(count).toBeGreaterThan(7)
+  const target = cells.nth(count - 2)
+  const label = await target.getAttribute('title')
+  if (testInfo.project.name === 'desktop') await target.click()
+  else await target.tap()
+  await expect(calendar.getByRole('status')).toHaveText(label!)
+  await page
+    .getByRole('article')
+    .filter({ has: calendar })
+    .screenshot({
+      path: testInfo.outputPath('calendar.png'),
+      animations: 'disabled',
+    })
+
+  const scroller = calendar.getByRole('region', { name: 'Активность по дням', exact: true })
+  await scroller.focus()
+  await scroller.press('Home')
+  await expect(calendar.getByRole('status')).toHaveText((await cells.first().getAttribute('title'))!)
+  await scroller.press('ArrowRight')
+  await expect(calendar.getByRole('status')).toHaveText((await cells.nth(7).getAttribute('title'))!)
+  await scroller.press('End')
+  await expect(calendar.getByRole('status')).toHaveText((await cells.last().getAttribute('title'))!)
+  const earlier = calendar.getByRole('button', { name: 'Более ранние недели', exact: true })
+  if (await earlier.isVisible()) {
+    const before = await scroller.evaluate((element) => element.scrollLeft)
+    await earlier.click()
+    await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBeLessThan(before)
+  }
+  await expect.poll(() => noHorizontalScroll(page)).toBe(true)
+})
+
+test('client-rendered pages give feedback before the app JavaScript loads', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ viewport: { width: 360, height: 800 }, colorScheme: 'dark' })
+  try {
+    await usePreferences(context, 'light')
+    await context.route('**/_nuxt/*.js', (route) => route.abort())
+    const page = await context.newPage()
+    for (const path of ['/example', '/dashboard']) {
+      await page.goto(new URL(path, baseURL).toString())
+      await expect(page.getByRole('progressbar', { name: 'TG Analyzer', exact: true })).toBeVisible()
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+      expect(await noHorizontalScroll(page)).toBe(true)
+    }
+  } finally {
+    await context.close()
+  }
 })

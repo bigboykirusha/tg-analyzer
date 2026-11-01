@@ -78,6 +78,7 @@ const DAY_MS = 24 * HOUR_MS
 /** A morning counts as a talk when the other side answers within this time. */
 const MORNING_REPLY_MS = 4 * HOUR_MS
 const TOP_STICKERS = 8
+const MAX_WORD_KEY_CACHE = 50_000
 
 interface ParticipantState extends GroupParticipantInput {
   activeDays: Set<string>
@@ -180,6 +181,7 @@ export class ChatReportBuilder {
   private messageSenders = new Map<string, string>()
 
   private readonly wordKey: WordKey
+  private readonly wordKeys = new Map<string, string | null>()
 
   constructor(timeZone = 'UTC', options: ChatReportOptions = {}) {
     this.wordKey = options.wordKey ?? stemWord
@@ -250,7 +252,12 @@ export class ChatReportBuilder {
     if (analysis.laughs) this.laughs[side] += 1
     participant.wordCount += analysis.wordCount
     for (const word of analysis.keywords) {
-      const stem = this.wordKey(word)
+      let stem = this.wordKeys.get(word)
+      if (stem === undefined) {
+        stem = this.wordKey(word)
+        if (this.wordKeys.size >= MAX_WORD_KEY_CACHE) this.wordKeys.clear()
+        this.wordKeys.set(word, stem)
+      }
       if (stem === null || STOP_LEMMAS.has(stem)) continue
       let forms = this.wordForms.get(stem)
       if (!forms) this.wordForms.set(stem, (forms = new Map()))

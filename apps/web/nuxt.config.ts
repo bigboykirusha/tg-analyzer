@@ -48,6 +48,7 @@ const securityHeaders = {
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   srcDir: 'app',
+  spaLoadingTemplate: 'spa-loading-template.html',
   devtools: { enabled: process.env.NUXT_DEVTOOLS === 'true' },
   modules: ['@pinia/nuxt'],
   // UI kit components are prefixed (`UiButton`); feature components use their file name.
@@ -65,12 +66,12 @@ export default defineNuxtConfig({
     head: {
       meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' }],
       link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
-      // «As in the system» has no attribute from the server; this marks a dark system before the
-      // first paint, so the dark tokens live in one block (tokens.css) and nothing flashes.
+      // CSR shells have no server theme attribute: preserve the explicit cookie
+      // or use the system preference before the first paint and app hydration.
       script: [
         {
           innerHTML:
-            "(function(){var d=document.documentElement;if(!d.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches)d.dataset.theme='dark'})()",
+            "(function(){var d=document.documentElement;if(d.dataset.theme)return;var p=document.cookie.match(/(?:^|; *)tg-analyzer-theme=(light|dark)(?:;|$)/);d.dataset.theme=p?p[1]:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'})()",
           tagPosition: 'head',
           tagPriority: 'critical',
         },

@@ -42,7 +42,7 @@ const sections = computed(() => [
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport to="#teleports">
     <Transition name="privacy">
       <section
         v-if="open"

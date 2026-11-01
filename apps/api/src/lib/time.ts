@@ -9,10 +9,13 @@ export function addMs(date: Date, ms: number) {
 
 export function sleep(ms: number, signal?: AbortSignal) {
   return new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, ms)
-    signal?.addEventListener('abort', () => {
+    if (signal?.aborted) return resolve()
+    const finish = () => {
       clearTimeout(timer)
+      signal?.removeEventListener('abort', finish)
       resolve()
-    })
+    }
+    const timer = setTimeout(finish, ms)
+    signal?.addEventListener('abort', finish, { once: true })
   })
 }

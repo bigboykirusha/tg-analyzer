@@ -19,11 +19,10 @@ const usually = computed(() => {
   return {
     main: day ? t('report.rhythm.usuallyWithDay', { from, to, day }) : t('report.rhythm.usually', { from, to }),
     second: profile.secondaryWindow ? t('report.rhythm.alsoActive', { from: secondFrom, to: secondTo }) : null,
-    scattered: profile.predictability === 'low' ? t('report.rhythm.scattered') : null,
   }
 })
 const usuallyText = computed(() =>
-  usually.value ? [usually.value.main, usually.value.second, usually.value.scattered].filter(Boolean).join(' ') : '',
+  usually.value ? [usually.value.main, usually.value.second].filter(Boolean).join(' ') : '',
 )
 </script>
 

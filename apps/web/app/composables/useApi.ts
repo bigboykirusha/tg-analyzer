@@ -49,6 +49,14 @@ const SESSION_ENDED: ReadonlySet<string> = new Set(['AUTH_REFRESH_INVALID', 'AUT
 
 let refreshInFlight: Promise<AuthSuccessResponse | null> | null = null
 
+/** Pending work belongs to the session that started it, even after signing back into the same account. */
+function guardSession(auth: ReturnType<typeof useAuthStore>) {
+  const version = auth.sessionVersion
+  return () => {
+    if (auth.sessionVersion !== version) throw new DOMException('Session changed', 'AbortError')
+  }
+}
+
 async function requestRefresh(): Promise<AuthSuccessResponse | null> {
   try {
     return await ofetch<AuthSuccessResponse>('/api/v1/auth/refresh', {
@@ -74,13 +82,16 @@ export function refreshSession(): Promise<AuthSuccessResponse | null> {
   if (refreshInFlight) return refreshInFlight
 
   const auth = useAuthStore()
+  const assertSession = guardSession(auth)
   const tokenBefore = auth.accessToken
   const run = async () => {
+    assertSession()
     // Another tab may have refreshed while this one waited for the lock.
     if (auth.accessToken && auth.accessToken !== tokenBefore) {
       return { accessToken: auth.accessToken, user: auth.user! }
     }
     const result = await requestRefresh()
+    assertSession()
     if (result) auth.signIn(result)
     else auth.signOut()
     return result
@@ -126,10 +137,12 @@ export async function api<K extends ApiOperation>(operation: K, ...args: Optiona
   const method = operation.slice(0, separator) as 'GET' | 'POST' | 'PATCH' | 'DELETE'
   const path = buildApiPath(operation.slice(separator + 1), options.params)
   const auth = useAuthStore()
+  const assertSession = guardSession(auth)
   const isBinaryBody = options.body instanceof Blob
 
-  const send = () =>
-    ofetch<ApiResponse<K>>(path, {
+  const send = async () => {
+    assertSession()
+    const result = await ofetch<ApiResponse<K>>(path, {
       method,
       body: options.body as BodyInit | Record<string, unknown> | undefined,
       query: options.query,
@@ -140,10 +153,14 @@ export async function api<K extends ApiOperation>(operation: K, ...args: Optiona
         ...(isBinaryBody ? { 'Content-Type': (options.body as Blob).type || 'application/octet-stream' } : {}),
       },
     })
+    assertSession()
+    return result
+  }
 
   try {
     return await send()
   } catch (rawError) {
+    assertSession()
     const error = toClientError(rawError)
     if (error.code === 'TELEGRAM_REAUTH_REQUIRED') auth.markTelegramSessionInactive()
     if (error.status !== 401 || error.code !== 'AUTH_UNAUTHORIZED' || !auth.accessToken) throw error
@@ -155,6 +172,7 @@ export async function api<K extends ApiOperation>(operation: K, ...args: Optiona
     await redirectToLogin()
     throw new ApiClientError('Session expired', 401, 'AUTH_REFRESH_INVALID')
   }
+  assertSession()
   try {
     return await send()
   } catch (rawError) {

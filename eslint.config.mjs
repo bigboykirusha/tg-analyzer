@@ -10,6 +10,8 @@ export default tseslint.config(
       '**/.nuxt/**',
       '**/.output/**',
       '**/coverage/**',
+      '**/test-results/**',
+      '**/playwright-report/**',
       '**/node_modules/**',
       '.data/**',
       'apps/api/src/db/migrations/meta/**',

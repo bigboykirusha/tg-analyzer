@@ -221,8 +221,8 @@ export function computeSessionStats(
     totalSessions: sessions.length,
     averageSessionMessages: Math.round(calculateAverage(sizes)),
     averageSessionDurationSec: Math.round(calculateAverage(durations)),
-    longestSessionMessages: Math.max(...sizes),
-    longestSessionDurationSec: Math.max(...durations),
+    longestSessionMessages: densest.totalMessages,
+    longestSessionDurationSec: Math.round((longest.endedAt - longest.startedAt) / 1000),
     sessionsPerActiveWeek: roundTo(sessions.length / Math.max(activeWeeks, 1), 1),
     nightSessionsPct: Math.round((nightSessions / sessions.length) * 100),
     highlights,
@@ -315,4 +315,25 @@ export function computeUnansweredQuestions(
   if (open.theirs !== null) turns.theirs -= 1
 
   return { unansweredQuestions: unanswered, questionTurns: turns }
+}
+
+/** Shared display rules for reply-time comparisons; these are heuristics, not significance tests. */
+export const MIN_REPLY_COMPARISON_SAMPLES = 5
+export const REPLY_COMPARISON_EVEN_RATIO = 1.25
+
+/** Null means that the sample or timestamp precision cannot support a comparison. */
+export function replyComparisonRatio(responses: ResponseStatsDto): number | null {
+  const { medianMineSec: mine, medianTheirsSec: theirs, mineSamples, theirsSamples } = responses
+  if (
+    mine === null ||
+    theirs === null ||
+    mineSamples < MIN_REPLY_COMPARISON_SAMPLES ||
+    theirsSamples < MIN_REPLY_COMPARISON_SAMPLES
+  )
+    return null
+  if (!Number.isFinite(mine) || !Number.isFinite(theirs) || mine < 0 || theirs < 0) return null
+  if (mine === theirs) return 1
+  // Telegram timestamps have second precision. Zero cannot be used as a ratio denominator.
+  if (mine === 0 || theirs === 0) return null
+  return Math.max(mine, theirs) / Math.min(mine, theirs)
 }

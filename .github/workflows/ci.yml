@@ -90,7 +90,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @tg-analyzer/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @tg-analyzer/web exec playwright install --with-deps chromium webkit
       - run: pnpm --filter @tg-analyzer/api build
       - run: pnpm --filter @tg-analyzer/api migrate
       - name: Start API and worker

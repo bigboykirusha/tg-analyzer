@@ -113,12 +113,23 @@ export class LiveTelegramGateway implements TelegramGateway {
     })
   }
 
-  private async withClient<T>(session: string, work: (client: TelegramClient) => Promise<T>): Promise<T> {
+  private async withClient<T>(
+    session: string,
+    work: (client: TelegramClient) => Promise<T>,
+    signal?: AbortSignal,
+  ): Promise<T> {
     const client = this.createClient(session)
+    const disconnect = () => {
+      void client.destroy().catch(() => undefined)
+    }
+    signal?.addEventListener('abort', disconnect, { once: true })
     try {
+      signal?.throwIfAborted()
       await attempt(() => client.connect())
+      signal?.throwIfAborted()
       return await attempt(() => work(client))
     } finally {
+      signal?.removeEventListener('abort', disconnect)
       await client.destroy().catch(() => undefined)
     }
   }
@@ -194,7 +205,12 @@ export class LiveTelegramGateway implements TelegramGateway {
   ): Promise<T> {
     const lease = await acquireSessionLease(this.redis, userId, options.waitMs ?? DEFAULT_LEASE_WAIT_MS)
     try {
-      return await this.withClient(session, (client) => work(this.accountApi(userId, client, lease.signal)))
+      lease.signal.throwIfAborted()
+      return await this.withClient(
+        session,
+        (client) => work(this.accountApi(userId, client, lease.signal)),
+        lease.signal,
+      )
     } finally {
       await lease.release()
     }

@@ -268,6 +268,24 @@ test('aggregation of a large chat stays fast', () => {
   assert.ok(elapsed < 5_000, `aggregation took ${Math.round(elapsed)}ms`)
 })
 
+test('word normalisation is cached per report, including excluded words', () => {
+  let calls = 0
+  const wordKey = (word: string) => {
+    calls += 1
+    return word === 'работа' ? 'работать' : null
+  }
+  const builder = new ChatReportBuilder('UTC', { wordKey })
+  for (let index = 0; index < 20; index += 1)
+    builder.add(message('2026-01-01T10:00:00Z', index % 2 === 0, 'работа планы'))
+  const report = builder.finish('private')
+  assert.equal(calls, 2)
+  assert.equal(report.vocabulary.topWords[0]?.count, 20)
+  assert.equal(report.vocabulary.topWords.length, 1)
+  const other = new ChatReportBuilder('UTC', { wordKey: () => null })
+  for (let index = 0; index < 3; index += 1) other.add(message('2026-01-01T10:00:00Z', true, 'работа'))
+  assert.deepEqual(other.finish('private').vocabulary.topWords, [])
+})
+
 test('top words drop topic-less lemmas and show verbs in their infinitive', () => {
   // A toy lemmatiser: every form of a verb maps to its infinitive.
   const lemmas: Record<string, string> = {

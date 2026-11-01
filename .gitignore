@@ -12,3 +12,7 @@ playwright-report
 *.log
 docker-data
 dump.rdb
+
+# local tooling and archives
+.claude/
+*.bundle

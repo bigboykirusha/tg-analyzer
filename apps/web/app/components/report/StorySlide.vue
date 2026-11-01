@@ -94,7 +94,13 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 </script>
 
 <template>
-  <div class="story-slide" :class="[`story-slide--${slide.theme}`, { 'is-still': still, 'has-chrome': chrome }]">
+  <div
+    class="story-slide"
+    :class="[
+      `story-slide--${slide.theme}`,
+      { 'is-still': still, 'has-chrome': chrome, 'is-dense': slide.blocks.length >= 3 },
+    ]"
+  >
     <div class="story-slide__canvas">
       <div class="story-slide__people">
         <span class="story-slide__faces">
@@ -432,6 +438,15 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   --muted: var(--tile-muted);
   --track: var(--tile-track);
   --mark: var(--tile-mark);
+}
+
+/* Three full-width tiles must still leave space for the brand in a 9:16 export. */
+.story-slide.is-dense .story-slide__body {
+  gap: 2.4cqmin;
+}
+
+.story-slide.is-dense .story-tile {
+  padding-block: 2.4cqmin;
 }
 
 .story-tile.is-accent {

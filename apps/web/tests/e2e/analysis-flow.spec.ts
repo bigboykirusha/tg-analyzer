@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { backendAvailable, noHorizontalScroll, signIn, usePreferences } from './helpers'
+import { readFile } from 'node:fs/promises'
+import { backendAvailable, gotoHydrated, noHorizontalScroll, signIn, usePreferences } from './helpers'
+
+// A full flow includes login, background processing and image export.
+test.describe.configure({ timeout: 60_000 })
 
 // Needs the API and worker running with TELEGRAM_MODE=fake. All sign-ins come
 // from one IP, so run the API with a higher AUTH_RATE_LIMIT_MAX (CI uses 100).
@@ -8,17 +12,42 @@ test.beforeEach(async ({ baseURL, context }) => {
   await usePreferences(context, 'light')
 })
 
-test('sign in, analyse a private chat and read the report', async ({ page }) => {
+test('sign in, analyse a private chat and read the report', async ({ page }, testInfo) => {
   await signIn(page)
   const row = page.locator('.chat-row').filter({ hasText: 'Катя' })
   await row.getByRole('button', { name: 'Анализ' }).click()
-  await expect(page.getByText('Отчёт готов')).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 30_000 })
 
   // The very first report opens by itself.
   await page.waitForURL('**/chat/1006')
   await page.goto('/dashboard')
   // With a first report the home page turns into the summary; the chat list lives on /new.
   await expect(page.getByRole('heading', { name: 'Ваш круг' })).toBeVisible()
+  if (page.viewportSize()!.width <= 640) {
+    await expect(page.locator('.report-card__updated').first()).toHaveText(/^Обновлён/)
+    await expect
+      .poll(() =>
+        page
+          .locator('.report-card__line')
+          .first()
+          .evaluate((element) => element.scrollWidth <= element.clientWidth),
+      )
+      .toBe(true)
+    const recommendation = page.locator('.month__top--next')
+    await expect
+      .poll(() =>
+        recommendation.locator('.month__compact').evaluate((element) => element.scrollWidth <= element.clientWidth),
+      )
+      .toBe(true)
+    expect(
+      await recommendation.evaluate((element) => {
+        const count = element.querySelector('.month__compact')!.getBoundingClientRect()
+        const action = element.querySelector('.month__action')!.getBoundingClientRect()
+        return count.bottom <= action.top || count.right <= action.left || count.left >= action.right
+      }),
+    ).toBe(true)
+  }
+  await page.screenshot({ path: testInfo.outputPath('dashboard.png'), fullPage: true, animations: 'disabled' })
   await page.goto('/new')
   await page.locator('.chat-row').filter({ hasText: 'Катя' }).getByRole('link', { name: 'Открыть отчёт' }).click()
   await page.waitForURL('**/chat/1006')
@@ -35,6 +64,21 @@ test('sign in, analyse a private chat and read the report', async ({ page }) => 
     await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
   }
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
+  const month = page.locator('.fact').filter({ hasText: 'Самый активный месяц' }).locator('.fact__value')
+  expect(
+    await month.evaluate((element) => {
+      const text = element.textContent!
+      const match = /\d{4}\s+г\./u.exec(text)!
+      const range = document.createRange()
+      range.setStart(element.firstChild!, match.index + 3)
+      range.setEnd(element.firstChild!, match.index + 4)
+      const yearTop = range.getBoundingClientRect().top
+      const suffix = text.indexOf('г.', match.index)
+      range.setStart(element.firstChild!, suffix)
+      range.setEnd(element.firstChild!, suffix + 2)
+      return Math.abs(yearTop - range.getBoundingClientRect().top)
+    }),
+  ).toBeLessThan(1)
 
   await page.goto('/new')
   await expect(
@@ -42,11 +86,11 @@ test('sign in, analyse a private chat and read the report', async ({ page }) => 
   ).toBeVisible()
 })
 
-test('group chats get the group report', async ({ page }) => {
+test('group chats get the group report', async ({ page }, testInfo) => {
   await signIn(page)
   const row = page.locator('.chat-row').filter({ hasText: 'Weekend plans' })
   await row.getByRole('button', { name: 'Анализ' }).click()
-  await expect(page.getByText('Отчёт готов')).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 60_000 })
 
   await page.goto('/chat/-1002004')
   for (const [tab, part] of [
@@ -57,7 +101,74 @@ test('group chats get the group report', async ({ page }) => {
     await page.getByRole('tab', { name: tab }).click()
     await expect(page.locator(`#part-${part}`)).toBeInViewport()
   }
+  const member = page.locator('.member').first()
+  const memberName = await member.locator('.member__name').innerText()
+  await member.click()
+  if (testInfo.project.name !== 'desktop') {
+    const details = page.getByRole('dialog', { name: memberName, exact: true })
+    await expect(details).toBeVisible()
+    await expect(details.getByText('С кем общается чаще всего', { exact: true })).toBeVisible()
+    await page.screenshot({ path: testInfo.outputPath('member-details.png'), animations: 'disabled' })
+    await details.getByRole('button', { name: 'Закрыть', exact: true }).click()
+    await expect(details).toBeHidden()
+    await expect(member).toBeFocused()
+  } else {
+    await expect(page.getByRole('heading', { name: memberName, exact: true })).toBeVisible()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+  }
+  // Older reports have pair statistics but no reply matrix. They must not
+  // claim there are no pairs simply because that newer field is missing.
+  await page.route('**/api/v1/reports/-1002004', async (route) => {
+    const response = await route.fetch()
+    const data = await response.json()
+    data.report.group.replyMap = null
+    await route.fulfill({ response, json: data })
+  })
+  await page.reload()
+  await expect(page.getByText('Матрица ответов появится после обновления отчёта.', { exact: true })).toBeVisible()
 })
+
+test('a completed analysis is recovered when websocket progress is unavailable', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.routeWebSocket('**/ws/parse-progress**', (socket) => socket.close())
+  await signIn(page)
+  await page.locator('.chat-row').filter({ hasText: 'Катя' }).getByRole('button', { name: 'Анализ' }).click()
+  await page.waitForURL('**/chat/1006', { timeout: 30_000 })
+  await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible()
+})
+
+test('code autofill and two-step verification complete sign-in', async ({ page }) => {
+  await gotoHydrated(page, '/login')
+  const phone = `900${String(Math.floor(Math.random() * 1e6)).padStart(6, '0')}9`
+  await page.locator('.phone-input').fill(phone)
+  await page.getByRole('button', { name: 'Получить код' }).click()
+  await page.locator('.otp-input').first().fill('12345')
+  await page.getByRole('button', { name: 'Подтвердить код' }).click()
+  await page.locator('input[type="password"]').fill('secret')
+  await page.getByRole('button', { name: 'Войти', exact: true }).click()
+  await page.waitForURL('**/dashboard')
+})
+
+for (const delayMs of [0, 250]) {
+  test(`retry after a network failure (${delayMs}ms) returns to the requested workspace page`, async ({ page }) => {
+    await signIn(page)
+    let offline = true
+    await page.route('**/api/v1/auth/refresh', async (route) => {
+      if (!offline) return route.continue()
+      if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs))
+      await route.abort()
+    })
+    await page.goto('/new')
+    await page.waitForURL('**/offline?**')
+    await expect(page.getByRole('button', { name: 'Попробовать снова' })).toBeVisible()
+    // Keep interception installed while lazy page assets are loading. Changing
+    // Chromium's interception mode mid-navigation can strand unrelated requests.
+    offline = false
+    await page.getByRole('button', { name: 'Попробовать снова' }).click()
+    await page.waitForURL('**/new')
+    await expect(page.getByRole('heading', { name: 'Новый анализ' })).toBeVisible()
+  })
+}
 
 test('signing out from the account page returns to the login page', async ({ page }) => {
   await signIn(page)
@@ -74,14 +185,84 @@ test('signing out from the account page returns to the login page', async ({ pag
   await page.waitForURL('**/login')
 })
 
-test('the recap opens as stories with both names and saves a slide', async ({ page }) => {
+test('signing in as another user reloads the profile photo', async ({ page }) => {
+  let requests = 0
+  await page.route('**/api/v1/auth/avatar', (route) => {
+    requests += 1
+    return route.fulfill({
+      contentType: 'image/png',
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ1kAAAAASUVORK5CYII=',
+        'base64',
+      ),
+    })
+  })
+  await signIn(page)
+  await expect.poll(() => requests).toBe(1)
+  await page.goto('/account')
+  await page.getByRole('button', { name: 'Выйти', exact: true }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Выйти', exact: true }).click()
+  await page.waitForURL('**/login')
+  await signIn(page)
+  await expect.poll(() => requests).toBe(2)
+})
+
+test('a late dialog response cannot populate the next account', async ({ page }) => {
+  const marker = 'Previous account private chat'
+  let previousAccount = true
+  let held = 0
+  let release: () => void = () => undefined
+  const released = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  await page.route('**/api/v1/parse/dialogs', async (route) => {
+    if (!previousAccount) return route.continue()
+    const response = await route.fetch()
+    const data = await response.json()
+    data.dialogs[0].title = marker
+    held += 1
+    await released
+    await route.fulfill({ response, json: data })
+  })
+  try {
+    await signIn(page)
+    await expect.poll(() => held).toBeGreaterThan(0)
+    if (await page.locator('.sidebar__foot').isVisible()) {
+      await page.locator('.sidebar__foot').click()
+      await page.getByRole('button', { name: 'Выйти', exact: true }).click()
+      await page.getByRole('alertdialog').getByRole('button', { name: 'Выйти', exact: true }).click()
+    } else {
+      await page.locator('.account-trigger').click()
+      await page.getByRole('menuitem', { name: 'Выйти', exact: true }).click()
+    }
+    await page.waitForURL('**/login')
+    previousAccount = false
+    await signIn(page, { navigate: false })
+    await expect(page.locator('.chat-row').filter({ hasText: 'Катя' })).toBeVisible()
+    const lateResponse = page.waitForResponse('**/api/v1/parse/dialogs')
+    release()
+    await (await lateResponse).finished()
+    await page.evaluate(
+      () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+    )
+    await expect(page.getByText(marker, { exact: true })).toHaveCount(0)
+    expect(await page.evaluate(() => localStorage.getItem('tg-analyzer:dialogs'))).not.toContain(marker)
+  } finally {
+    release()
+  }
+})
+
+test('the recap opens as stories with both names and saves a slide', async ({ page }, testInfo) => {
   await signIn(page)
   const row = page.locator('.chat-row').filter({ hasText: 'Катя' })
   await row.getByRole('button', { name: 'Анализ' }).click()
-  await expect(page.getByText('Отчёт готов')).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 30_000 })
   await page.goto('/chat/1006')
   await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible({ timeout: 15_000 })
 
+  // Match the fixed 9:16 export, which has less vertical room than a tall phone.
+  await page.setViewportSize({ width: 360, height: 640 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.getByRole('button', { name: 'Итоги' }).click()
 
   const stories = page.getByRole('dialog', { name: 'Итоги переписки' })
@@ -90,6 +271,15 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
   await expect(stories.locator('.stories__stage .story-slide__heading strong')).toHaveText(/Demo\s*&\s*Катя/)
   await expect(stories.locator('.stories__stage .story-slide__title')).toHaveText(/^\d[\d\s]*$/)
   await page.keyboard.press('ArrowRight')
+  await expect
+    .poll(() =>
+      stories.locator('.stories__stage .story-slide').evaluate((slide) => {
+        const grid = slide.querySelector('.story-slide__grid')!
+        const brand = slide.querySelector('.story-slide__brand')!
+        return brand.getBoundingClientRect().top - grid.getBoundingClientRect().bottom
+      }),
+    )
+    .toBeGreaterThanOrEqual(8)
   await expect(stories.locator('.stories__stage .story-slide__heading strong')).toHaveText(/Demo\s*&\s*Катя/)
 
   await stories.getByRole('button', { name: 'Поделиться' }).click()
@@ -100,5 +290,11 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
 
   const download = page.waitForEvent('download')
   await stories.getByRole('button', { name: 'Сохранить' }).click()
-  expect((await download).suggestedFilename()).toMatch(/^tg-analyzer-[a-z]+\.png$/)
+  const saved = await download
+  expect(saved.suggestedFilename()).toMatch(/^tg-analyzer-[a-z]+\.png$/)
+  const path = testInfo.outputPath('recap.png')
+  await saved.saveAs(path)
+  const png = await readFile(path)
+  expect(png.subarray(1, 4).toString()).toBe('PNG')
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1920])
 })

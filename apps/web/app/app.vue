@@ -3,6 +3,19 @@ const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
 const { locale, t } = useI18n()
 useTheme().install()
+const auth = useAuthStore()
+const workspace = useWorkspaceStore()
+const analysis = useAnalysis()
+watch(
+  () => auth.user?.id,
+  (userId, previousId) => {
+    if (previousId && userId !== previousId) {
+      analysis.stop()
+      workspace.reset()
+    }
+  },
+  { flush: 'sync' },
+)
 // Visit analytics: add a self-hosted Plausible or Umami script here (see docs/ROADMAP.md); no Yandex Metrica.
 
 const siteUrl = computed(() => String(runtimeConfig.public.siteUrl ?? '').replace(/\/$/, ''))
@@ -41,5 +54,7 @@ useSeoMeta({
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
-  <UiToastProvider />
+  <ClientOnly>
+    <UiToastProvider />
+  </ClientOnly>
 </template>

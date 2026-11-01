@@ -5,11 +5,13 @@ import { createRedisConnection } from '../../lib/redis'
 import { addMs, DAY_MS } from '../../lib/time'
 import { deleteExpiredRefreshSessions } from '../auth/refresh-sessions'
 import { deleteJobsOlderThan } from '../parse/jobs'
+import { deleteExpiredAnalysisUsage } from '../parse/admission'
 
 const MAINTENANCE_QUEUE = 'maintenance'
 
 async function runMaintenance() {
   await deleteExpiredRefreshSessions()
+  await deleteExpiredAnalysisUsage()
   await deleteJobsOlderThan(addMs(new Date(), -config.DATA_RETENTION_DAYS * DAY_MS))
 }
 

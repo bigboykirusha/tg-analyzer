@@ -43,7 +43,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport to="#teleports">
     <Transition name="modal">
       <div v-if="open" class="modal-backdrop" @click.self="close">
         <section

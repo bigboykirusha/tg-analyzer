@@ -132,7 +132,12 @@ export function withoutStopWords<T extends { value: string }>(
   items: readonly T[],
   stopWords: ReadonlySet<string> = DEFAULT_STOP_WORDS,
 ): T[] {
-  return items.filter((item) => !stopWords.has(item.value) && !isLaughter(item.value))
+  return items.filter((item) => !stopWords.has(item.value) && !isLaughter(item.value) && !isTechnicalToken(item.value))
+}
+
+/** Hashes and UUIDs are identifiers, never a person's vocabulary. */
+function isTechnicalToken(value: string) {
+  return /^(?:0x)?[\da-f][\da-f-]{15,}$/i.test(value) || /^https?$/i.test(value)
 }
 
 /** Links, e-mail addresses, @mentions and /commands carry no words of the conversation. */
@@ -196,6 +201,7 @@ const EDGE_PUNCTUATION = /^[_-]+|[_-]+$/g
 const TWO_LETTERS = /\p{L}[^]*\p{L}/u
 
 function normalizeWord(word: string): string | null {
+  if (isTechnicalToken(word)) return null
   let normalized = word.toLowerCase().replace(APOSTROPHES, '')
   if (normalized.includes('ё')) normalized = normalized.replaceAll('ё', 'е')
   if (

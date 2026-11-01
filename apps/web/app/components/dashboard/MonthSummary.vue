@@ -100,7 +100,7 @@ async function analyseNext() {
       <p class="tile__note month__rank">
         {{ next.rank === 1 ? t('month.rankFirst') : t('month.rank', { rank: next.rank }) }}
       </p>
-      <!-- Phones: one line instead of the facts. -->
+      <!-- Phones: a compact summary instead of the full facts. -->
       <p class="tile__note month__compact t-num">{{ tc('month.perMonth', next.chat.messages) }}</p>
       <dl class="month__facts">
         <div>
@@ -266,10 +266,10 @@ a.month__top:active {
 
 /* Phones: the lime tile becomes a row, avatar beside the name; the bar gives way to the count. */
 @media (max-width: 640px) {
-  /* «Not analysed yet» as one row: avatar, label over name over the count, the button on the right. */
+  /* Give the recommendation copy its own width; a trailing button obscures long counts. */
   .month__top.month__top--next {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-rows: auto auto auto;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
     row-gap: 2px;
     padding: var(--space-4);
   }
@@ -292,6 +292,8 @@ a.month__top:active {
   .month__top.month__top--next .month__compact {
     display: block;
     grid-column: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .month__top.month__top--next .month__rank,
@@ -300,10 +302,10 @@ a.month__top:active {
   }
 
   .month__top.month__top--next .month__action {
-    grid-column: 3;
-    grid-row: 1 / 4;
-    width: auto;
-    margin-top: 0;
+    grid-column: 1 / -1;
+    grid-row: 4;
+    width: 100%;
+    margin-top: var(--space-3);
   }
 
   .month__action-long {

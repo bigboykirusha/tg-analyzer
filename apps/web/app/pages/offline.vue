@@ -1,10 +1,11 @@
 <script setup lang="ts">
 const { t } = useI18n()
+const route = useRoute()
 
 function retry() {
-  if (import.meta.client) {
-    window.location.reload()
-  }
+  const target = route.query.redirect
+  const path = typeof target === 'string' && target.startsWith('/') && !target.startsWith('//') ? target : '/dashboard'
+  return navigateTo(path, { replace: true })
 }
 </script>
 

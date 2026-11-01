@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
+import {
+  fillDailyGaps,
+  replyComparisonRatio,
+  REPLY_COMPARISON_EVEN_RATIO,
+  MIN_REPLY_COMPARISON_SAMPLES as MIN_REPLY_SAMPLES,
+  type ReportDto,
+} from '@tg-analyzer/shared'
 import { loadChatAvatar, loadProfileAvatar } from '../../lib/avatar-loader'
 import { maskSwear } from '../../lib/profanity'
 import { ChevronLeft, ChevronRight, Download, Share2, X } from '../../lib/icons'
@@ -30,10 +36,6 @@ const nameOf = useParticipantName()
 
 /** A move longer than this is a swipe, shorter is a tap. */
 const SWIPE_PX = 40
-/** Below this many replies on either side a speed comparison is noise. */
-const MIN_REPLY_SAMPLES = 5
-/** Differences smaller than this ratio read as «about the same». */
-const EVEN_RATIO = 1.25
 /** The intro seismograph stays legible at story size with this many ticks at most. */
 const PULSE_TICKS = 90
 
@@ -127,7 +129,7 @@ const shareText = computed(() => {
   const values = { count: formatNumber(totals.messages), site: site.value }
   if (isGroup.value) return tc('story.shareText.group', totals.messages, { ...values, name: them.value.name })
   const mine = responses.iWriteFirstPct
-  if (mine === null || Math.abs(mine - 50) <= 5) return tc('story.shareText.even', totals.messages, values)
+  if (mine === null || Math.abs(mine - 50) <= 10) return tc('story.shareText.even', totals.messages, values)
   return tc(mine > 50 ? 'story.shareText.me' : 'story.shareText.them', totals.messages, values)
 })
 
@@ -244,9 +246,9 @@ const slides = computed<StorySlideModel[]>(() => {
     })
   } else if (!isGroup.value && responses.iWriteFirstPct !== null) {
     const mine = responses.iWriteFirstPct
-    const even = Math.abs(mine - 50) <= 5
+    const even = Math.abs(mine - 50) <= 10
     const starter = mine >= 50 ? myName : otherName
-    const { medianMineSec, medianTheirsSec, mineSamples, theirsSamples } = responses
+    const { medianMineSec, medianTheirsSec } = responses
     const blocks: StoryBlock[] = [
       {
         kind: 'stat',
@@ -258,10 +260,10 @@ const slides = computed<StorySlideModel[]>(() => {
     ]
     if (medianMineSec !== null && medianTheirsSec !== null) {
       let note: string | undefined
-      if (mineSamples >= MIN_REPLY_SAMPLES && theirsSamples >= MIN_REPLY_SAMPLES) {
-        const ratio = Math.max(medianMineSec, medianTheirsSec) / Math.max(Math.min(medianMineSec, medianTheirsSec), 1)
+      const ratio = replyComparisonRatio(responses)
+      if (ratio !== null) {
         note =
-          ratio < EVEN_RATIO
+          ratio < REPLY_COMPARISON_EVEN_RATIO
             ? t('story.speedEven')
             : medianMineSec < medianTheirsSec
               ? t('story.speedFasterYou', { ratio: formatDecimal(ratio) })
@@ -667,7 +669,7 @@ watch(open, (value) => {
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport to="#teleports">
     <Transition name="stories">
       <div v-if="open" ref="overlayRef" class="stories" @click.self="emit('close')">
         <section

@@ -22,16 +22,20 @@ const pulse = computed(() =>
   props.report.pulse?.some((week) => week.sent || week.received) ? props.report.pulse : null,
 )
 const share = computed(() => (isGroup.value ? null : (props.report.headline?.sentSharePct ?? null)))
-/** Phones list reports as rows: «4 800 сообщений · ваших 52% · вчера». */
+/** Keep report size and freshness on separate lines on a phone. */
 const line = computed(() =>
   [
     isGroup.value ? t('chatType.group') : null,
     tc('common.messagesCount', props.report.totalMessages),
     share.value === null ? null : t('dashboard.yourShare', { share: formatPercent(share.value) }),
-    props.updating ? t('dashboard.analysingNow') : formatRelative(props.report.analyzedAt),
   ]
     .filter(Boolean)
     .join(' · '),
+)
+const updated = computed(() =>
+  props.updating
+    ? t('dashboard.analysingNow')
+    : t('dashboard.analysed', { time: formatRelative(props.report.analyzedAt) }),
 )
 </script>
 
@@ -43,6 +47,7 @@ const line = computed(() =>
         <span class="report-card__title">{{ report.title }}</span>
         <span class="report-card__meta">{{ subline }}</span>
         <span class="report-card__line">{{ line }}</span>
+        <span class="report-card__updated">{{ updated }}</span>
       </span>
       <ChevronRight class="report-card__row-chevron" aria-hidden="true" />
     </span>
@@ -62,7 +67,7 @@ const line = computed(() =>
       <span v-if="updating" class="report-card__updating">
         <span class="report-card__spinner" aria-hidden="true" />{{ t('dashboard.analysingNow') }}
       </span>
-      <span v-else>{{ t('dashboard.analysed', { time: formatRelative(report.analyzedAt) }) }}</span>
+      <span v-else>{{ updated }}</span>
       <ChevronRight class="report-card__chevron" aria-hidden="true" />
     </span>
   </NuxtLink>
@@ -179,11 +184,12 @@ const line = computed(() =>
 }
 
 .report-card__line,
+.report-card__updated,
 .report-card__row-chevron {
   display: none;
 }
 
-/* Phones: a row in one list: avatar, name, one line of numbers, chevron. */
+/* Phones: a row with readable size and freshness instead of a clipped sentence. */
 @media (max-width: 640px) {
   .report-card {
     padding: var(--space-3) 0;
@@ -212,11 +218,23 @@ const line = computed(() =>
 
   .report-card__line {
     display: block;
-    overflow: hidden;
     color: var(--text-muted);
     font: var(--text-small);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+  }
+
+  .report-card__updated {
+    display: block;
+    color: var(--text-muted);
+    font: var(--text-caption);
+  }
+
+  .report-card__title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .report-card__row-chevron {

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { DatedActivityDto } from '@tg-analyzer/shared'
+import { ChevronLeft, ChevronRight } from '../../../lib/icons'
 
 /** Calendar of daily activity, Monday-first, for the last year at most. */
 const props = defineProps<{ points: DatedActivityDto[] }>()
-const { t, tc, formatDay } = useI18n()
+const { t, tc, formatDay, formatPeriod } = useI18n()
 
 const MAX_WEEKS = 53
 const LEVELS = [0, 1, 2, 3, 4] as const
@@ -67,8 +68,77 @@ const weekdayLabels = computed(() => {
 
 // A long history scrolls sideways; open at the newest weeks, which matter most.
 const scroller = ref<HTMLElement | null>(null)
-onMounted(() => {
+const cells = computed(() => weeks.value.flat().filter((cell) => cell !== null))
+const selectedDate = ref<string | null>(null)
+const selected = computed(() => cells.value.find((cell) => cell.date === selectedDate.value) ?? cells.value.at(-1))
+const period = computed(() => formatPeriod(cells.value[0]?.date, cells.value.at(-1)?.date, true))
+const earlier = ref(false)
+const later = ref(false)
+const selectionId = useId()
+const keyboardId = useId()
+let resizeObserver: ResizeObserver | undefined
+
+function updateScroll() {
+  const element = scroller.value
+  if (!element) return
+  earlier.value = element.scrollLeft > 1
+  later.value = element.scrollLeft + element.clientWidth < element.scrollWidth - 1
+}
+
+function newest() {
   if (scroller.value) scroller.value.scrollLeft = scroller.value.scrollWidth
+  updateScroll()
+}
+
+function moveWeeks(direction: -1 | 1) {
+  const element = scroller.value
+  if (!element) return
+  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+  element.scrollBy({ left: direction * element.clientWidth * 0.8, behavior })
+}
+
+function selectAtPoint(event: MouseEvent) {
+  const grid = event.currentTarget as HTMLElement
+  const rect = grid.getBoundingClientRect()
+  const gap = Number.parseFloat(getComputedStyle(grid).gap) || 0
+  const step = cellSize.value + gap
+  const column = Math.max(
+    0,
+    Math.min(weeks.value.length - 1, Math.round((event.clientX - rect.left - cellSize.value / 2) / step)),
+  )
+  const row = Math.max(0, Math.min(6, Math.round((event.clientY - rect.top - cellSize.value / 2) / step)))
+  const cell = weeks.value[column]?.[row]
+  if (cell) selectedDate.value = cell.date
+}
+
+function onKeydown(event: KeyboardEvent) {
+  const steps: Record<string, number> = { ArrowLeft: -7, ArrowRight: 7, ArrowUp: -1, ArrowDown: 1 }
+  const index = cells.value.findIndex((cell) => cell.date === selected.value?.date)
+  let next: number
+  if (event.key === 'Home') next = 0
+  else if (event.key === 'End') next = cells.value.length - 1
+  else if (event.key in steps) next = index + steps[event.key]!
+  else return
+  event.preventDefault()
+  const cell = cells.value[Math.max(0, Math.min(cells.value.length - 1, next))]
+  if (!cell) return
+  selectedDate.value = cell.date
+  scroller.value
+    ?.querySelector<HTMLElement>(`[data-date="${CSS.escape(cell.date)}"]`)
+    ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+}
+
+onMounted(() => {
+  newest()
+  resizeObserver = new ResizeObserver(updateScroll)
+  if (scroller.value) resizeObserver.observe(scroller.value)
+})
+onBeforeUnmount(() => resizeObserver?.disconnect())
+watch(weeks, async () => {
+  await nextTick()
+  newest()
+  resizeObserver?.disconnect()
+  if (scroller.value) resizeObserver?.observe(scroller.value)
 })
 
 function describe(cell: Cell) {
@@ -78,12 +148,34 @@ function describe(cell: Cell) {
 
 <template>
   <div v-if="weeks.length" class="heatmap" :style="{ '--cell': `${cellSize}px` }">
+    <div class="heatmap__toolbar">
+      <span class="t-small t-muted">{{ period }}</span>
+      <div v-if="earlier || later" class="heatmap__controls">
+        <UiIconButton
+          :icon="ChevronLeft"
+          :label="t('chart.earlierWeeks')"
+          size="sm"
+          :disabled="!earlier"
+          @click="moveWeeks(-1)"
+        />
+        <UiIconButton
+          :icon="ChevronRight"
+          :label="t('chart.laterWeeks')"
+          size="sm"
+          :disabled="!later"
+          @click="moveWeeks(1)"
+        />
+      </div>
+    </div>
     <div
       ref="scroller"
       class="heatmap__scroll"
       role="region"
       tabindex="0"
       :aria-label="t('report.rhythm.heatmapTitle')"
+      :aria-describedby="`${selectionId} ${keyboardId}`"
+      @scroll="updateScroll"
+      @keydown="onKeydown"
     >
       <div class="heatmap__body">
         <span />
@@ -93,13 +185,17 @@ function describe(cell: Cell) {
         <div class="heatmap__weekdays" aria-hidden="true">
           <span v-for="(label, index) in weekdayLabels" :key="index">{{ label }}</span>
         </div>
-        <div class="heatmap__grid" role="img" :aria-label="t('report.rhythm.heatmapTitle')">
+        <div class="heatmap__grid" role="img" :aria-label="t('report.rhythm.heatmapTitle')" @click="selectAtPoint">
           <template v-for="(week, weekIndex) in weeks" :key="weekIndex">
             <span
               v-for="(cell, dayIndex) in week"
               :key="cell?.date ?? `pad-${weekIndex}-${dayIndex}`"
               class="heatmap__cell"
-              :class="cell ? `heatmap__cell--${cell.level}` : 'heatmap__cell--pad'"
+              :class="[
+                cell ? `heatmap__cell--${cell.level}` : 'heatmap__cell--pad',
+                { 'is-selected': cell && cell.date === selected?.date },
+              ]"
+              :data-date="cell?.date"
               :style="{ gridColumn: weekIndex + 1, gridRow: dayIndex + 1 }"
               :title="cell ? describe(cell) : undefined"
             />
@@ -107,6 +203,8 @@ function describe(cell: Cell) {
         </div>
       </div>
     </div>
+    <p v-if="selected" :id="selectionId" class="heatmap__selection t-small" role="status">{{ describe(selected) }}</p>
+    <span :id="keyboardId" class="sr-only">{{ t('chart.calendarKeyboard') }}</span>
     <div class="heatmap__legend t-small" aria-hidden="true">
       <span>{{ t('chart.less') }}</span>
       <span v-for="level in LEVELS" :key="level" class="heatmap__cell" :class="`heatmap__cell--${level}`" />
@@ -127,6 +225,36 @@ function describe(cell: Cell) {
 .heatmap__scroll {
   overflow-x: auto;
   scrollbar-width: none;
+}
+
+.heatmap__toolbar,
+.heatmap__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.heatmap__toolbar {
+  justify-content: space-between;
+}
+
+.heatmap__toolbar > span {
+  min-width: 0;
+}
+
+.heatmap__controls {
+  flex: none;
+}
+
+.heatmap__scroll:focus-visible {
+  border-radius: var(--radius-xs);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.heatmap__selection {
+  color: var(--text-muted);
+  min-height: 2lh;
 }
 
 .heatmap__scroll::-webkit-scrollbar {
@@ -156,6 +284,11 @@ function describe(cell: Cell) {
 }
 
 .heatmap__weekdays {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+  box-shadow: var(--space-2) 0 0 var(--surface);
   display: grid;
   grid-template-rows: repeat(7, var(--cell));
   gap: var(--gap);
@@ -184,6 +317,16 @@ function describe(cell: Cell) {
 
 .heatmap__cell--pad {
   visibility: hidden;
+}
+
+.heatmap__grid .heatmap__cell {
+  cursor: pointer;
+  scroll-margin-inline: calc(2ch + var(--space-2)) var(--space-1);
+}
+
+.heatmap__grid .heatmap__cell.is-selected {
+  outline: 1px solid var(--text);
+  outline-offset: 1px;
 }
 
 .heatmap__cell--0 {

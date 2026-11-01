@@ -22,10 +22,10 @@ export async function noHorizontalScroll(page: Page) {
 }
 
 /** Signs in through the fake Telegram gateway (TELEGRAM_MODE=fake, code 12345). */
-export async function signIn(page: Page) {
+export async function signIn(page: Page, options: { navigate?: boolean } = {}) {
   // A fresh number per test keeps analysis cooldowns from leaking between runs.
   const phone = `900${String(Math.floor(Math.random() * 1e7)).padStart(7, '0')}`.replace(/9$/, '1')
-  await gotoHydrated(page, '/login')
+  if (options.navigate !== false) await gotoHydrated(page, '/login')
   await page.locator('.phone-input').fill(phone)
   await page.getByRole('button', { name: 'Получить код' }).click()
   await page.locator('.otp-input').first().click()

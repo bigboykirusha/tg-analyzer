@@ -24,16 +24,22 @@ export function useFocusTrap(
       return
     }
     if (event.key !== 'Tab' || !panel.value) return
-    const focusable = Array.from(panel.value.querySelectorAll<HTMLElement>(FOCUSABLE))
+    const focusable = Array.from(panel.value.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+      (element) => element.getClientRects().length > 0 && !element.closest('[inert]'),
+    )
     const first = focusable[0]
     const last = focusable.at(-1)
-    if (!first || !last) return
+    if (!first || !last) {
+      event.preventDefault()
+      panel.value.focus()
+      return
+    }
     // The panel (or a non-focusable child) can hold focus after opening: Shift+Tab from there wraps too.
     const index = focusable.indexOf(document.activeElement as HTMLElement)
     if (event.shiftKey && index <= 0) {
       event.preventDefault()
       last.focus()
-    } else if (!event.shiftKey && index === focusable.length - 1) {
+    } else if (!event.shiftKey && (index === -1 || index === focusable.length - 1)) {
       event.preventDefault()
       first.focus()
     }
@@ -47,7 +53,12 @@ export function useFocusTrap(
         previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
         document.addEventListener('keydown', handleKeydown)
         await nextTick()
-        const target = options.initial?.() ?? panel.value?.querySelector<HTMLElement>(FOCUSABLE)
+        const target =
+          options.initial?.() ??
+          Array.from(panel.value?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []).find(
+            (element) => element.getClientRects().length > 0 && !element.closest('[inert]'),
+          ) ??
+          panel.value
         target?.focus()
       } else {
         document.removeEventListener('keydown', handleKeydown)

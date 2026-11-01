@@ -23,30 +23,56 @@ const previous: ReportSnapshotDto = {
   iWriteFirstPct: null,
 }
 
-test('changes are measured on the days after the previous analysis', () => {
-  const changes = compareWithPrevious(
-    report([
-      { date: '2026-01-01', sent: 50, received: 50 },
-      { date: '2026-01-12', sent: 45, received: 15 },
-    ]),
-    previous,
-  )
-  assert.equal(changes.added, 60)
-  assert.equal(changes.days, 2)
-  // 100 messages over 10 days before, 60 over 2 days since.
-  assert.deepEqual(changes.pace, { before: 10, since: 30 })
+const current = () =>
+  report([
+    { date: '2026-01-01', sent: 50, received: 50 },
+    { date: '2026-01-09', sent: 20, received: 20 },
+    { date: '2026-01-10', sent: 900, received: 0 },
+    { date: '2026-01-11', sent: 30, received: 10 },
+    { date: '2026-01-12', sent: 0, received: 900 },
+  ])
+
+test('equal full-day windows exclude both analysis days and the lifetime baseline', () => {
+  const changes = compareWithPrevious(current(), previous, '2026-01-12T12:00:00Z')
+  assert.equal(changes.days, 1)
+  assert.deepEqual(changes.pace, { before: 40, since: 40 })
   assert.deepEqual(changes.share, { before: 50, since: 75 })
 })
 
-test('a handful of new messages gives no pace or share', () => {
-  const changes = compareWithPrevious(
-    report([
-      { date: '2026-01-01', sent: 50, received: 50 },
-      { date: '2026-01-12', sent: 3, received: 2 },
-    ]),
-    previous,
-  )
-  assert.equal(changes.added, 5)
-  assert.equal(changes.pace, null)
-  assert.equal(changes.share, null)
+test('trailing silence up to the analysis date stays in the denominator', () => {
+  const data = report([
+    { date: '2025-10-01', sent: 1, received: 0 },
+    { date: '2026-01-09', sent: 30, received: 0 },
+    { date: '2026-01-11', sent: 30, received: 0 },
+  ])
+  const changes = compareWithPrevious(data, previous, '2026-03-12T12:00:00Z')
+  assert.equal(changes.days, 60)
+  assert.equal(changes.pace?.since, 0.5)
+})
+
+test('missing observation date, same-day updates and short baselines do not invent comparisons', () => {
+  assert.equal(compareWithPrevious(current(), previous).pace, null)
+  assert.equal(compareWithPrevious(current(), previous, 'invalid').pace, null)
+  assert.equal(compareWithPrevious(current(), previous, previous.analyzedAt).pace, null)
+  const data = current()
+  data.period.firstMessageAt = '2026-01-10T00:00:00Z'
+  assert.equal(compareWithPrevious(data, previous, '2026-01-12T12:00:00Z').pace, null)
+})
+
+test('comparison uses local dates and calendar days across DST', () => {
+  const data = report([
+    { date: '2026-03-01', sent: 1, received: 0 },
+    { date: '2026-03-27', sent: 20, received: 20 },
+    { date: '2026-03-29', sent: 30, received: 10 },
+  ])
+  data.timeZone = 'Europe/Berlin'
+  const changes = compareWithPrevious(data, { ...previous, analyzedAt: '2026-03-27T23:30:00Z' }, '2026-03-29T22:30:00Z')
+  assert.equal(changes.days, 1)
+  assert.deepEqual(changes.pace, { before: 40, since: 40 })
+})
+
+test('a small sample on either side suppresses comparisons', () => {
+  const data = current()
+  data.activity.daily[1]!.total = 29
+  assert.equal(compareWithPrevious(data, previous, '2026-01-12T12:00:00Z').share, null)
 })

@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import type { ReportDto } from '@tg-analyzer/shared'
+import { replyComparisonRatio, REPLY_COMPARISON_EVEN_RATIO, type ReportDto } from '@tg-analyzer/shared'
 import type { Comparison } from '../ReportCompare.vue'
 
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatDecimal, formatDuration, formatPercent } = useI18n()
 
-/** Below this many replies on either side a speed comparison is noise. */
-const MIN_REPLY_SAMPLES = 5
 /** Differences smaller than this ratio read as «about the same». */
 const EVEN_RATIO = 1.25
 
@@ -32,14 +30,12 @@ function startsRow(): Comparison | null {
 }
 
 function speedRow(): Comparison | null {
-  const { medianMineSec: mine, medianTheirsSec: theirs, mineSamples, theirsSamples } = responses.value
+  const { medianMineSec: mine, medianTheirsSec: theirs } = responses.value
   if (mine === null && theirs === null) return null
-  const enough =
-    mine !== null && theirs !== null && mineSamples >= MIN_REPLY_SAMPLES && theirsSamples >= MIN_REPLY_SAMPLES
+  const ratio = replyComparisonRatio(responses.value)
   let verdict = t('report.compare.speedFew')
-  if (enough) {
-    const ratio = Math.max(mine, theirs) / Math.max(Math.min(mine, theirs), 1)
-    if (ratio < EVEN_RATIO) verdict = t('report.compare.speedEven')
+  if (ratio !== null && mine !== null && theirs !== null) {
+    if (ratio < REPLY_COMPARISON_EVEN_RATIO) verdict = t('report.compare.speedEven')
     else
       verdict = t(mine < theirs ? 'report.compare.speedMine' : 'report.compare.speedTheirs', {
         ratio: formatDecimal(ratio),
