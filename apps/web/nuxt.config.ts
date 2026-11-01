@@ -65,6 +65,16 @@ export default defineNuxtConfig({
     head: {
       meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' }],
       link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
+      // «As in the system» has no attribute from the server; this marks a dark system before the
+      // first paint, so the dark tokens live in one block (tokens.css) and nothing flashes.
+      script: [
+        {
+          innerHTML:
+            "(function(){var d=document.documentElement;if(!d.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches)d.dataset.theme='dark'})()",
+          tagPosition: 'head',
+          tagPriority: 'critical',
+        },
+      ],
     },
   },
   // One list of route rules. Keeping a second list under `nitro.routeRules` made the

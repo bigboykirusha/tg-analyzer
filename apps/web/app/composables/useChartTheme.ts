@@ -46,6 +46,9 @@ export function useChartTheme() {
       barRadius: [3, 3, 0, 0] as [number, number, number, number],
       base: {
         backgroundColor: 'transparent',
+        // Charts draw in on the one long duration of the system, on its ease-out.
+        animationDuration: px('--duration-chart', 800),
+        animationEasing: 'cubicOut' as const,
         textStyle: { fontFamily: font, color: colors.muted },
         grid: { left: space2, right: space2, top: space3, bottom: space2, containLabel: true },
         tooltip: {

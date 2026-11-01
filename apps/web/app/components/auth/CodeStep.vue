@@ -211,10 +211,10 @@ function submit() {
   width: 100%;
   height: var(--control-lg);
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--surface-2);
   color: var(--text);
-  font: 600 20px/1 var(--font-sans);
+  font: var(--text-h3);
   font-variant-numeric: tabular-nums;
   text-align: center;
   outline: none;
@@ -223,7 +223,7 @@ function submit() {
     box-shadow var(--transition-fast);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .otp-input:hover {
     background: var(--fill-hover);
   }

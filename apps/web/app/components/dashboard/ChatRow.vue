@@ -150,7 +150,7 @@ function run(action: 'analyse' | 'delete') {
   }
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .chat-row:hover {
     background: var(--hover);
   }

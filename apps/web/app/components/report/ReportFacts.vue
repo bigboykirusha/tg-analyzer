@@ -70,8 +70,7 @@ const cols = computed(() => Math.max(1, Math.min(props.columns, props.facts.leng
   }
 
   .fact__value {
-    font-size: 18px;
-    line-height: 24px;
+    font: var(--text-h3);
   }
 }
 </style>

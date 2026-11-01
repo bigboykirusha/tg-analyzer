@@ -229,7 +229,7 @@ function describe(cell: Cell) {
 .heatmap-empty {
   padding: var(--space-8);
   border: 1px dashed var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
   text-align: center;
 }

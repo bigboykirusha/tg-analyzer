@@ -45,7 +45,7 @@ withDefaults(
   min-height: 44px;
   padding: 0 var(--space-2);
   border: 0;
-  border-radius: var(--radius-option);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text);
   cursor: pointer;
@@ -71,7 +71,7 @@ withDefaults(
   font-variant-numeric: tabular-nums;
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .menu-item:hover {
     background: var(--hover);
   }
@@ -89,14 +89,14 @@ withDefaults(
 
 .menu-item--danger,
 .menu-item--danger .menu-item__icon {
-  color: var(--danger-text);
+  color: var(--danger);
 }
 
 .menu-item--danger .menu-item__icon {
   background: var(--danger-subtle);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .menu-item--danger:hover {
     background: var(--danger-subtle);
   }

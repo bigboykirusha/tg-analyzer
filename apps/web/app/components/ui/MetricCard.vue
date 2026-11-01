@@ -29,7 +29,7 @@ defineProps<{
   gap: var(--space-3);
   min-width: 0;
   padding: var(--space-5);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -53,7 +53,7 @@ defineProps<{
 @media (max-width: 640px) {
   .metric {
     padding: var(--space-4);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-md);
   }
 }
 

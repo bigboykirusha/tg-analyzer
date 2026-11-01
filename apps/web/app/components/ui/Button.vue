@@ -162,10 +162,10 @@ const classes = computed(() => [
 .btn--danger,
 .btn--danger-soft {
   background: var(--danger-subtle);
-  color: var(--danger-text);
+  color: var(--danger);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .btn--primary:hover {
     background: var(--accent-hover);
   }
@@ -215,7 +215,7 @@ const classes = computed(() => [
 /* A primary action that is not ready yet turns into a quiet grey pill instead of faded ink. */
 .btn--primary:disabled:not([aria-busy]) {
   background: var(--surface-2);
-  color: var(--text-faint);
+  color: var(--text-subtle);
   opacity: 1;
 }
 

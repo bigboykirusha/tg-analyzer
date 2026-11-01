@@ -82,7 +82,7 @@ function onChange(event: Event) {
   place-items: center;
   width: 20px;
   height: 20px;
-  border: 1.5px solid var(--control-border);
+  border: 1.5px solid var(--border-strong);
   border-radius: var(--radius-xs);
   background: var(--surface);
   color: var(--on-accent);
@@ -130,7 +130,7 @@ function onChange(event: Event) {
   box-shadow: var(--focus-ring);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .check:hover .check__input:not(:checked):not(:disabled) + .check__box {
     border-color: var(--text);
   }

@@ -63,6 +63,6 @@ const sections = computed(() =>
 .legal__section p {
   max-width: 68ch;
   color: var(--text-muted);
-  font: 400 15px/24px var(--font-sans);
+  font: var(--text-body);
 }
 </style>

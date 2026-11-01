@@ -9,7 +9,7 @@ const props = withDefaults(
     days: readonly { sent: number; received: number }[]
     /** Pixel height of the whole strip. */
     height?: number
-    /** Draw ticks one after another on mount. */
+    /** Draw ticks one after another on mount: once per session, then it simply appears. */
     animate?: boolean
     label?: string
   }>(),
@@ -25,12 +25,31 @@ const ticks = computed(() =>
   })),
 )
 const width = computed(() => Math.max(1, props.days.length))
+
+// The drawing is a welcome, not a loading state: the second report of a visit shows at once.
+const SESSION_KEY = 'tg-analyzer-seismograph-played'
+function playedThisSession() {
+  try {
+    return sessionStorage.getItem(SESSION_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+const play = ref(props.animate && import.meta.client && !playedThisSession())
+onMounted(() => {
+  if (!play.value) return
+  try {
+    sessionStorage.setItem(SESSION_KEY, '1')
+  } catch {
+    // Private mode: it plays again next time, which is harmless.
+  }
+})
 </script>
 
 <template>
   <svg
     class="seismograph"
-    :class="{ 'seismograph--animate': animate }"
+    :class="{ 'seismograph--animate': play }"
     :viewBox="`0 0 ${width} 100`"
     preserveAspectRatio="none"
     :style="{ height: `${height}px` }"
@@ -49,7 +68,7 @@ const width = computed(() => Math.max(1, props.days.length))
         :x2="tick.x"
         y1="49"
         :y2="49 - tick.up"
-        :style="animate ? { '--i': index, '--n': ticks.length } : undefined"
+        :style="play ? { '--i': index, '--n': ticks.length } : undefined"
       />
     </g>
     <g class="seismograph__them">
@@ -61,7 +80,7 @@ const width = computed(() => Math.max(1, props.days.length))
         :x2="tick.x"
         y1="51"
         :y2="51 + tick.down"
-        :style="animate ? { '--i': index, '--n': ticks.length } : undefined"
+        :style="play ? { '--i': index, '--n': ticks.length } : undefined"
       />
     </g>
   </svg>
@@ -95,7 +114,7 @@ const width = computed(() => Math.max(1, props.days.length))
 
 .seismograph--animate .seismograph__you line,
 .seismograph--animate .seismograph__them line {
-  animation: seismograph-in var(--duration-slow) var(--ease-out-expo) both;
+  animation: seismograph-in var(--duration-slow) var(--ease-standard) both;
   /* The sweep takes the same 0.7 s however many ticks there are. */
   animation-delay: calc(var(--i, 0) * 700ms / var(--n, 100));
   transform-box: fill-box;

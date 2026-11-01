@@ -18,7 +18,7 @@ withDefaults(defineProps<{ to?: string }>(), { to: '/' })
   gap: 10px;
   border-radius: var(--radius-sm);
   color: var(--text);
-  font: 600 16px/1 var(--font-sans);
+  font: var(--text-title);
   letter-spacing: -0.02em;
   white-space: nowrap;
 }

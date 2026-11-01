@@ -81,7 +81,7 @@ const losses = computed(() => {
 
 .subject__name {
   overflow: hidden;
-  font: 600 15px/20px var(--font-sans);
+  font: var(--text-title);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -94,7 +94,7 @@ const losses = computed(() => {
 .lose {
   margin: 0;
   padding: var(--space-1) var(--space-4);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   background: var(--fill-raised);
   list-style: none;
 }

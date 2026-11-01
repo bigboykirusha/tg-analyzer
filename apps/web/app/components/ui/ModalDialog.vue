@@ -99,7 +99,6 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   place-items: center;
   padding: var(--space-4);
   background: var(--scrim);
-  backdrop-filter: blur(var(--blur-sm));
 }
 
 .modal-panel {
@@ -111,7 +110,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   max-height: min(84dvh, 760px);
   overflow: hidden;
   border: 0;
-  border-radius: var(--radius-sheet);
+  border-radius: var(--radius-xl);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
 }
@@ -160,7 +159,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
 
 .modal-description {
   color: var(--text-muted);
-  font: 400 15px/22px var(--font-sans);
+  font: var(--text-body);
   text-wrap: pretty;
 }
 
@@ -228,7 +227,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
     max-width: none;
     max-height: 86dvh;
     border-width: 0;
-    border-radius: var(--radius-sheet);
+    border-radius: var(--radius-xl);
   }
 
   .modal-enter-active .modal-panel,

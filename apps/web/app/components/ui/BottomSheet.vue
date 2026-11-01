@@ -20,7 +20,15 @@ const panelRef = ref<HTMLElement | null>(null)
 const titleId = useId()
 const open = toRef(props, 'open')
 const dragOffset = ref(0)
+const dragging = ref(false)
 let dragStart: number | null = null
+/** The last few pointer positions, to tell a flick from a slow drag. */
+let trail: { y: number; t: number }[] = []
+
+/** A flick faster than this closes the sheet however short it was (px per ms). */
+const FLICK_VELOCITY = 0.5
+/** Dragged further than this share of its height, the sheet closes on release. */
+const CLOSE_SHARE = 0.3
 
 function close() {
   if (!props.busy) emit('close')
@@ -31,20 +39,32 @@ useFocusTrap(panelRef, open, { onEscape: close })
 
 function onPointerDown(event: PointerEvent) {
   dragStart = event.clientY
+  trail = [{ y: event.clientY, t: event.timeStamp }]
+  dragging.value = true
   ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
 }
 
 function onPointerMove(event: PointerEvent) {
   if (dragStart === null) return
-  dragOffset.value = Math.max(0, event.clientY - dragStart)
+  const delta = event.clientY - dragStart
+  // Down follows the finger; up resists like rubber, since the sheet has nowhere to go.
+  dragOffset.value = delta >= 0 ? delta : -Math.sqrt(-delta) * 2
+  trail = [...trail.filter((point) => event.timeStamp - point.t < 100), { y: event.clientY, t: event.timeStamp }]
 }
 
 function onPointerUp() {
   if (dragStart === null) return
   const height = panelRef.value?.offsetHeight ?? 0
-  if (height && dragOffset.value > height * 0.3) close()
+  const first = trail[0]
+  const last = trail.at(-1)
+  const velocity = first && last && last.t > first.t ? (last.y - first.y) / (last.t - first.t) : 0
+  const closing =
+    dragOffset.value > 0 && (velocity > FLICK_VELOCITY || (height && dragOffset.value > height * CLOSE_SHARE))
   dragStart = null
+  dragging.value = false
+  // Either way the inline offset goes: closing slides on from here, staying springs back.
   dragOffset.value = 0
+  if (closing) close()
 }
 </script>
 
@@ -58,7 +78,8 @@ function onPointerUp() {
           :role="role"
           aria-modal="true"
           :aria-labelledby="title ? titleId : undefined"
-          :style="dragOffset ? { transform: `translateY(${dragOffset}px)`, transition: 'none' } : undefined"
+          :class="{ 'is-dragging': dragging }"
+          :style="dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined"
         >
           <div
             class="sheet__drag"
@@ -97,7 +118,6 @@ function onPointerUp() {
   display: flex;
   align-items: flex-end;
   background: var(--scrim);
-  backdrop-filter: blur(var(--blur-sm));
 }
 
 .sheet {
@@ -106,10 +126,15 @@ function onPointerUp() {
   width: 100%;
   max-height: 86dvh;
   overflow: hidden;
-  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
-  transition: transform var(--transition-slow);
+  /* Let go, it settles back on the drawer curve. */
+  transition: transform var(--duration-sheet) var(--ease-drawer);
+}
+
+.sheet.is-dragging {
+  transition: none;
 }
 
 .sheet__drag {

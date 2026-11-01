@@ -206,7 +206,7 @@ function signOut() {
     color var(--transition-fast);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .nav-link:hover {
     background: var(--hover);
     color: var(--text);
@@ -242,7 +242,7 @@ function signOut() {
   transition: background-color var(--transition-fast);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .activity:hover {
     background-image: linear-gradient(var(--hover), var(--hover));
   }

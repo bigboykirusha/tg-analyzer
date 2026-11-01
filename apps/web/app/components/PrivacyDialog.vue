@@ -115,7 +115,7 @@ const sections = computed(() => [
 .privacy__body {
   display: grid;
   padding: var(--space-2) var(--space-6);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -130,13 +130,13 @@ const sections = computed(() => [
 }
 
 .privacy__heading {
-  font: 600 18px/26px var(--font-sans);
+  font: var(--text-h3);
   letter-spacing: -0.01em;
 }
 
 .privacy__text {
   color: var(--text-muted);
-  font: 400 15px/24px var(--font-sans);
+  font: var(--text-body);
 }
 
 .privacy__list {
@@ -144,7 +144,7 @@ const sections = computed(() => [
   gap: var(--space-1);
   padding-left: var(--space-5);
   color: var(--text-muted);
-  font: 400 15px/24px var(--font-sans);
+  font: var(--text-body);
 }
 
 .privacy__list li::marker {

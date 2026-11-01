@@ -197,7 +197,8 @@ onMounted(() => {
   border-radius: var(--radius-full);
   background: var(--tile-ink);
   color: var(--on-tile-ink);
-  font: 600 13px/1 var(--font-sans);
+  font: var(--text-label);
+  font-weight: 600;
 }
 
 .onboard__copy {
@@ -236,7 +237,7 @@ onMounted(() => {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
     padding: var(--space-1) var(--space-4);
-    border-radius: var(--radius-card);
+    border-radius: var(--radius-lg);
     background: var(--surface);
   }
 }

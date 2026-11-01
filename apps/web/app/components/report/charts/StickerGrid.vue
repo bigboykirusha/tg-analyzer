@@ -37,7 +37,7 @@ const { t, formatNumber } = useI18n()
   width: 64px;
   height: 64px;
   place-items: center;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
 }
 

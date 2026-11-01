@@ -200,7 +200,7 @@ async function analyseNext() {
 }
 
 .month__top {
-  transition: transform var(--duration-press) var(--ease-standard);
+  transition: transform var(--duration-fast) var(--ease-standard);
 }
 
 a.month__top:active {

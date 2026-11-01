@@ -36,7 +36,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
 /* The same white card as the chat list it stands in for. */
 .loading-list:has(.loading-row) {
   padding: var(--space-1) 0;
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 

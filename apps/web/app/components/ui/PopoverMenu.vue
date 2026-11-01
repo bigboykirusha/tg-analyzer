@@ -178,7 +178,7 @@ onBeforeUnmount(() => {
   overscroll-behavior: contain;
   padding: 6px;
   border: 0;
-  border-radius: var(--radius-menu);
+  border-radius: var(--radius-lg);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
   scrollbar-width: thin;

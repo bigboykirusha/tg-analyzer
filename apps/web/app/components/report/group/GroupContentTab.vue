@@ -52,6 +52,6 @@ const signatures = computed(() =>
   gap: var(--space-3);
   padding: var(--space-4);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 </style>

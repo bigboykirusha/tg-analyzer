@@ -49,7 +49,7 @@ const silence = Array.from({ length: 64 }, (_, index) =>
   width: 100%;
   margin-bottom: var(--space-4);
   padding: var(--space-5);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-lg);
   background: var(--tile-ink);
   color: var(--on-tile-ink);
   text-align: left;

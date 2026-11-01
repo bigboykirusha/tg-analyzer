@@ -669,7 +669,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 /* ─── Entrance: headline first, then the tiles one by one ────────────────── */
 .story-slide:not(.is-still) .story-slide__head,
 .story-slide:not(.is-still) .story-tile {
-  animation: story-rise 520ms var(--ease-out-expo) both;
+  animation: story-rise 520ms var(--ease-standard) both;
 }
 
 .story-slide:not(.is-still) .story-tile:nth-child(1) {
@@ -690,7 +690,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-slide:not(.is-still) .story-tile__bars span {
   transform-origin: bottom;
-  animation: story-grow 640ms var(--ease-out-expo) both;
+  animation: story-grow 640ms var(--ease-standard) both;
   animation-delay: calc(360ms + var(--bar, 0) * 1ms);
 }
 

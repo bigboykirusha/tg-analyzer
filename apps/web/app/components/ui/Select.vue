@@ -394,7 +394,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   min-height: var(--control-md);
   padding: 0 var(--space-3) 0 var(--space-4);
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--surface-2);
   color: var(--text);
   cursor: pointer;
@@ -410,7 +410,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   min-height: var(--control-lg);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .select__trigger:hover {
     background: var(--fill-hover);
   }
@@ -468,7 +468,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   gap: var(--space-2);
   padding: 0 var(--space-3) 0 var(--space-4);
   border: 0;
-  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
   background: transparent;
   color: var(--text);
   cursor: pointer;
@@ -480,7 +480,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   flex: 0 0 auto;
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .select__addon:hover {
     background: var(--hover);
   }
@@ -509,7 +509,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   overflow: hidden;
   padding: 6px;
   border: 0;
-  border-radius: var(--radius-menu);
+  border-radius: var(--radius-lg);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
 }
@@ -537,7 +537,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   min-height: var(--control-sm);
   margin-bottom: 6px;
   padding: 0 var(--space-3);
-  border-radius: var(--radius-option);
+  border-radius: var(--radius-md);
   background: var(--fill-raised);
   color: var(--text-muted);
 }
@@ -586,7 +586,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   gap: var(--space-3);
   min-height: 44px;
   padding: 0 var(--space-2);
-  border-radius: var(--radius-option);
+  border-radius: var(--radius-md);
   color: var(--text);
   cursor: pointer;
   font: var(--text-ui);

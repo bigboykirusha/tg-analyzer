@@ -65,7 +65,7 @@ const { t } = useI18n()
   }
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .site-footer a:hover {
     color: var(--text);
   }

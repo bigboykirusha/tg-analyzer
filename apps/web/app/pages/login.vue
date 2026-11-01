@@ -235,7 +235,7 @@ function changeNumber() {
   gap: var(--space-6);
   width: 100%;
   padding: var(--space-8);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -245,7 +245,7 @@ function changeNumber() {
   transition: color var(--transition-fast);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .login-example:hover {
     color: var(--text);
   }
@@ -311,7 +311,7 @@ function changeNumber() {
 
   .login-card {
     padding: var(--space-5);
-    border-radius: var(--radius-card);
+    border-radius: var(--radius-lg);
   }
 }
 </style>

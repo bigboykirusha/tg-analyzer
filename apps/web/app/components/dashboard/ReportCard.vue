@@ -75,11 +75,11 @@ const line = computed(() =>
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-5);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-lg);
   background: var(--surface);
   transition:
     box-shadow var(--transition-fast),
-    transform var(--duration-press) var(--ease-standard);
+    transform var(--duration-fast) var(--ease-standard);
 }
 
 @media (hover: hover) and (pointer: fine) {

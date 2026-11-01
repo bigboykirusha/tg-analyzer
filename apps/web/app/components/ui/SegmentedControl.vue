@@ -110,7 +110,7 @@ function handleKeydown(event: KeyboardEvent) {
   left: calc(var(--pad) + var(--index) * var(--slot));
   width: var(--slot);
   border-radius: var(--radius-full);
-  background: var(--segment-thumb);
+  background: var(--thumb);
   box-shadow: var(--shadow-segment);
   transition: left var(--duration-slow) var(--ease-standard);
   pointer-events: none;
@@ -140,7 +140,7 @@ function handleKeydown(event: KeyboardEvent) {
   flex: 0 0 auto;
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .segment:hover {
     color: var(--text);
   }
@@ -152,7 +152,7 @@ function handleKeydown(event: KeyboardEvent) {
 
 /* Inline variant sizes to content, so the selected segment carries its own thumb. */
 .segmented--inline .segment-active {
-  background: var(--segment-thumb);
+  background: var(--thumb);
   box-shadow: var(--shadow-segment);
 }
 

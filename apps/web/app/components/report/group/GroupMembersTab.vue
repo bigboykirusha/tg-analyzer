@@ -140,7 +140,7 @@ const connections = computed(() => {
   width: 100%;
   padding: var(--space-2) var(--space-3);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: transparent;
   cursor: pointer;
   text-align: left;

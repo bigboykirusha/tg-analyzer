@@ -108,7 +108,7 @@ useHead({
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--accent-subtle);
 }
 
@@ -162,7 +162,7 @@ useHead({
 }
 
 .qa__q:focus-visible {
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   outline: none;
   box-shadow: var(--focus-ring);
 }
@@ -182,8 +182,6 @@ useHead({
   padding-bottom: var(--space-5);
   color: var(--text-muted);
   font: var(--text-body);
-  font-size: 15px;
-  line-height: 24px;
 }
 
 @media (max-width: 640px) {

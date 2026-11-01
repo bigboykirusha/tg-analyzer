@@ -96,17 +96,11 @@ const momentum = computed(() =>
 
 .leader__name {
   overflow: hidden;
-  font: 600 40px/1.05 var(--font-sans);
+  font: var(--text-h1);
   letter-spacing: -0.04em;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-}
-
-@media (max-width: 640px) {
-  .leader__name {
-    font-size: 32px;
-  }
 }
 </style>

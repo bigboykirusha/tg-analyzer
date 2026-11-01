@@ -129,7 +129,7 @@ function updating(report: ReportSummaryDto) {
   height: 34px;
   margin-bottom: var(--space-2);
   padding: 0 10px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
   color: var(--text-muted);
 }
@@ -167,7 +167,7 @@ function updating(report: ReportSummaryDto) {
   gap: 10px;
   min-height: 42px;
   padding: 7px var(--space-2);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   font: var(--text-ui);
   transition: background-color var(--transition-fast);
 }
@@ -177,7 +177,7 @@ function updating(report: ReportSummaryDto) {
   box-shadow: var(--shadow-sm);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .sidebar__item:not([aria-current='page']):hover {
     background: var(--hover);
   }

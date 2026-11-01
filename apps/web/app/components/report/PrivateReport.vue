@@ -152,12 +152,11 @@ const lead = computed(() => {
 
 .share__figure {
   margin-top: auto;
-  font-size: 72px;
-  line-height: 0.95;
+  font: var(--text-figure-lg);
 }
 
 .share__figure small {
-  font-size: 28px;
+  font-size: 0.4em;
 }
 
 .share__sides {
@@ -185,15 +184,5 @@ const lead = computed(() => {
 .share__sides dd {
   margin: 0;
   font: var(--text-title);
-}
-
-@media (max-width: 640px) {
-  .share__figure {
-    font-size: 48px;
-  }
-
-  .share__figure small {
-    font-size: 20px;
-  }
 }
 </style>

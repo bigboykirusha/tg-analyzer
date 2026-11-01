@@ -259,7 +259,7 @@ onMounted(() => {
 /* No overflow clipping: row menus float outside the list. */
 .chat-list {
   padding: var(--space-1) 0;
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 

@@ -102,7 +102,7 @@ const isReport = computed(() => route.path === '/example')
   color: var(--text);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .site-header__link:hover {
     color: var(--text);
   }

@@ -502,6 +502,7 @@ function go(step: 1 | -1) {
 
 /** The active progress bar finished filling: move on, like stories. */
 function onSegmentDone() {
+  byKeys.value = false
   if (index.value < slides.value.length - 1) index.value += 1
   else paused.value = true
 }
@@ -510,6 +511,7 @@ function onSegmentDone() {
 let start: { x: number; y: number } | null = null
 
 function begin(x: number, y: number) {
+  byKeys.value = false
   start = { x, y }
   paused.value = true
 }
@@ -562,10 +564,14 @@ function onCancel() {
   paused.value = false
 }
 
+/** Paging with the arrow keys is reading, not watching: the next slide is just there. */
+const byKeys = ref(false)
+
 function onKeydown(event: KeyboardEvent) {
   if (shareOpen.value) return
-  if (event.key === 'ArrowRight') go(1)
-  else if (event.key === 'ArrowLeft') go(-1)
+  if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
+  byKeys.value = true
+  go(event.key === 'ArrowRight' ? 1 : -1)
 }
 
 // ─── Images: rendered from an exact 9:16 copy off screen ─────────────────────
@@ -691,6 +697,7 @@ watch(open, (value) => {
               :people="people"
               :heading="heading"
               :heading-sub="headingSub"
+              :still="byKeys"
               chrome
             />
           </div>
@@ -816,7 +823,7 @@ watch(open, (value) => {
   height: var(--frame-height);
   aspect-ratio: 9 / 16;
   overflow: hidden;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-overlay);
 }
 
@@ -915,7 +922,7 @@ watch(open, (value) => {
   box-shadow: 0 0 0 2px var(--story-ink);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .stories__icon:hover {
     background: var(--story-chip);
   }
@@ -940,7 +947,6 @@ watch(open, (value) => {
   border: 0;
   border-radius: var(--radius-full);
   background: var(--story-chip);
-  backdrop-filter: blur(var(--blur-sm));
   color: var(--story-ink);
   cursor: pointer;
   font: var(--text-control);
@@ -971,7 +977,7 @@ watch(open, (value) => {
   gap: var(--space-2);
   width: 100%;
   padding: var(--space-4);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   background: var(--surface-raised);
   color: var(--text);
   box-shadow: var(--shadow-overlay);
@@ -988,7 +994,7 @@ watch(open, (value) => {
   min-height: var(--control-lg);
   padding: var(--space-2) var(--space-4);
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--surface-2);
   color: var(--text);
   cursor: pointer;
@@ -1007,7 +1013,7 @@ watch(open, (value) => {
   color: var(--text-muted);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .stories__option:hover {
     background: var(--surface);
   }

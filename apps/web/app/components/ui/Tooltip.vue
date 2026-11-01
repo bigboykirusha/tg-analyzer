@@ -1,3 +1,8 @@
+<script lang="ts">
+/** Shared by every tooltip on the page. */
+let lastClosedAt = 0
+</script>
+
 <script setup lang="ts">
 /**
  * Inverse-theme label over its trigger: after 300 ms of hover, at once on
@@ -15,6 +20,8 @@ const props = withDefaults(
 )
 
 const SHOW_DELAY_MS = 300
+/** Once one tooltip has been seen, its neighbours open at once and without a fade while the pointer moves on. */
+const SKIP_DELAY_MS = 400
 const EDGE = 8
 
 const id = useId()
@@ -23,6 +30,7 @@ const tipRef = ref<HTMLElement | null>(null)
 const open = ref(false)
 const position = ref({ top: 0, left: 0, below: false })
 let timer: number | undefined
+const instant = ref(false)
 
 async function show() {
   if (props.disabled || !props.text || !anchorRef.value) return
@@ -44,13 +52,16 @@ async function show() {
 
 function hide() {
   window.clearTimeout(timer)
+  if (open.value) lastClosedAt = Date.now()
   open.value = false
 }
 
 function onPointerEnter(event: PointerEvent) {
   if (event.pointerType === 'touch' || !window.matchMedia('(hover: hover)').matches) return
   window.clearTimeout(timer)
-  timer = window.setTimeout(show, SHOW_DELAY_MS)
+  instant.value = Date.now() - lastClosedAt < SKIP_DELAY_MS
+  if (instant.value) void show()
+  else timer = window.setTimeout(show, SHOW_DELAY_MS)
 }
 
 function onFocusIn(event: FocusEvent) {
@@ -83,7 +94,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
         :id="id"
         ref="tipRef"
         class="tooltip"
-        :class="{ 'tooltip--below': position.below }"
+        :class="{ 'tooltip--below': position.below, 'tooltip--instant': instant }"
         role="tooltip"
         :aria-hidden="describe ? undefined : 'true'"
         :style="{ top: `${position.top}px`, left: `${position.left}px` }"
@@ -115,6 +126,10 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   pointer-events: none;
   transform: translate(-50%, -100%);
   animation: tooltip-in var(--duration-fast) var(--ease-standard) both;
+}
+
+.tooltip--instant {
+  animation: none;
 }
 
 .tooltip--below {
