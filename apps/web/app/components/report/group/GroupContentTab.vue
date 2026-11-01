@@ -19,13 +19,14 @@ const signatures = computed(() =>
   </ReportSection>
   <ReportSection
     v-if="group.uniqueGroupWords.length"
+    extra
     :title="t('group.uniqueWords')"
     :text="t('group.uniqueWordsHint')"
   >
     <WordChips :items="group.uniqueGroupWords" :empty="t('group.noWords')" />
   </ReportSection>
 
-  <ReportSection v-if="signatures.length" wide :title="t('group.signatures')">
+  <ReportSection v-if="signatures.length" wide extra :title="t('group.signatures')">
     <div class="signatures">
       <div v-for="p in signatures" :key="p.id" class="signature">
         <strong>{{ nameOf(p) }}</strong>
