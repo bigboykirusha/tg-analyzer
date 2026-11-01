@@ -229,25 +229,10 @@ onMounted(() => {
   gap: var(--space-3);
 }
 
+/* Phones: one card per row — a list you scroll down, not a carousel that hides the rest. */
 @media (max-width: 640px) {
-  /* Phones: report cards scroll sideways instead of pushing the page down. */
   .report-cards {
-    display: flex;
-    margin-inline: calc(var(--page-gutter) * -1);
-    padding: 2px var(--page-gutter) var(--space-2);
-    overflow-x: auto;
-    scroll-padding-inline: var(--page-gutter);
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-
-  .report-cards::-webkit-scrollbar {
-    display: none;
-  }
-
-  .report-cards > * {
-    flex: 0 0 min(260px, 75%);
-    scroll-snap-align: start;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

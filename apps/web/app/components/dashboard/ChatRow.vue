@@ -90,7 +90,9 @@ function run(action: 'analyse' | 'delete') {
       </UiButton>
       <template v-else-if="chat.report">
         <UiButton :to="reportPath!" variant="secondary" size="sm" class="chat-row__open">
-          {{ t('dashboard.openReport') }}
+          <!-- Phones show «Открыть»; the full name stays for screen readers and tests. -->
+          <span class="chat-row__open-long">{{ t('dashboard.openReport') }}</span>
+          <span class="chat-row__open-short" aria-hidden="true">{{ t('dashboard.openShort') }}</span>
         </UiButton>
         <UiPopoverMenu v-model:open="menuOpen" align="end" :aria-label="chat.title">
           <template #trigger>
@@ -115,7 +117,7 @@ function run(action: 'analyse' | 'delete') {
           </UiMenuItem>
         </UiPopoverMenu>
       </template>
-      <UiButton v-else variant="soft" size="sm" :loading="starting" :disabled="disabled" @click="emit('analyse')">
+      <UiButton v-else variant="secondary" size="sm" :loading="starting" :disabled="disabled" @click="emit('analyse')">
         {{ t('dashboard.analyse') }}
       </UiButton>
     </div>
@@ -248,6 +250,25 @@ function run(action: 'analyse' | 'delete') {
 
   .chat-row__open {
     display: none;
+  }
+}
+
+.chat-row__open-short {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .chat-row__open-long {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .chat-row__open-short {
+    display: inline;
   }
 }
 </style>

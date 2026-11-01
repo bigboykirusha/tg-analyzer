@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { ChevronRight, User, Users } from '../../lib/icons'
+import { ChevronRight } from '../../lib/icons'
 
 const props = defineProps<{
   report: ReportSummaryDto
@@ -8,14 +8,15 @@ const props = defineProps<{
   /** A fresh analysis of this chat is running or queued. */
   updating?: boolean
 }>()
-const { t, tc, formatRelative, formatDay, formatPercent } = useI18n()
+const { t, tc, formatRelative, formatPeriod, formatNumber, formatPercent } = useI18n()
 
-const period = computed(() => {
-  const { firstMessageAt, lastMessageAt } = props.report
-  if (!firstMessageAt || !lastMessageAt) return null
-  return `${formatDay(firstMessageAt.slice(0, 10))} – ${formatDay(lastMessageAt.slice(0, 10))}`
-})
 const isGroup = computed(() => props.report.type === 'group')
+/** «Личный чат · март – окт. 2026»: the kind and the span in one quiet line, no chip. */
+const subline = computed(() => {
+  const { firstMessageAt, lastMessageAt } = props.report
+  const period = firstMessageAt && lastMessageAt ? formatPeriod(firstMessageAt, lastMessageAt, true) : null
+  return [t(isGroup.value ? 'chatType.group' : 'chatType.private'), period].filter(Boolean).join(' · ')
+})
 /** Summaries cached before pulses existed have none. */
 const pulse = computed(() =>
   props.report.pulse?.some((week) => week.sent || week.received) ? props.report.pulse : null,
@@ -27,24 +28,21 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
   <NuxtLink :to="`/chat/${report.chatId}`" class="report-card">
     <span class="report-card__head">
       <ChatAvatar :chat-id="report.chatId" :title="report.title" :has-avatar="hasAvatar" />
-      <span class="report-card__type">
-        <component :is="isGroup ? Users : User" aria-hidden="true" />
-        {{ t(isGroup ? 'chatType.group' : 'chatType.private') }}
+      <span class="report-card__who">
+        <span class="report-card__title">{{ report.title }}</span>
+        <span class="report-card__meta">{{ subline }}</span>
       </span>
     </span>
-    <span class="report-card__title">{{ report.title }}</span>
     <span class="report-card__count">
-      {{ tc('common.messagesCount', report.totalMessages) }}
-      <template v-if="share !== null">
-        · <span class="t-you">{{ t('dashboard.yourShare', { share: formatPercent(share) }) }}</span>
-      </template>
+      <strong class="t-num">{{ formatNumber(report.totalMessages) }}</strong>
+      {{ tc('dashboard.messagesWord', report.totalMessages)
+      }}<template v-if="share !== null"> · {{ t('dashboard.yourShare', { share: formatPercent(share) }) }}</template>
     </span>
-    <span v-if="period" class="report-card__meta">{{ period }}</span>
     <Seismograph
       v-if="pulse"
       class="report-card__pulse"
       :days="pulse"
-      :height="40"
+      :height="36"
       :label="t('dashboard.pulseLabel')"
     />
     <span class="report-card__foot">
@@ -71,7 +69,7 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
     transform var(--duration-press) var(--ease-standard);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .report-card:hover {
     box-shadow: 0 0 0 1px var(--border-strong);
   }
@@ -88,22 +86,14 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
 
 .report-card__head {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
-.report-card__type {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--surface-2);
-  color: var(--text-muted);
-  font: var(--text-caption);
-  --icon-size: 12px;
+.report-card__who {
+  display: grid;
+  min-width: 0;
 }
 
 .report-card__title {
@@ -113,9 +103,18 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
   white-space: nowrap;
 }
 
+/* The size of the chat as a figure, the share beside it in the quiet voice. */
 .report-card__count {
-  font: var(--text-ui);
+  color: var(--text-muted);
+  font: var(--text-small);
   font-variant-numeric: tabular-nums;
+}
+
+.report-card__count strong {
+  margin-right: var(--space-1);
+  color: var(--text);
+  font: var(--text-figure-sm);
+  letter-spacing: -0.03em;
 }
 
 .report-card__meta {
@@ -146,7 +145,7 @@ const share = computed(() => (isGroup.value ? null : (props.report.headline?.sen
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  color: var(--accent-ink);
+  color: var(--text);
   font-weight: 600;
 }
 
