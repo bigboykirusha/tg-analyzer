@@ -59,30 +59,19 @@ test('group chats get the group report', async ({ page }) => {
   }
 })
 
-test('logging out returns to the login page', async ({ page }) => {
+test('signing out from the account page returns to the login page', async ({ page }) => {
   await signIn(page)
-  await page.locator('.account-trigger').click()
-  await page.getByRole('menuitem', { name: 'Выйти' }).click()
-  await page.waitForURL('**/login')
-})
-
-test('account settings disconnect Telegram but keep the account', async ({ page }) => {
-  await signIn(page)
-  await page.locator('.account-trigger').click()
-  await page.getByRole('menuitem', { name: 'Аккаунт и приватность' }).click()
-  await page.waitForURL('**/account')
-
-  const autoDisconnect = page.getByRole('switch', { name: /Отключаться после каждого анализа/ })
-  // The page scrolls back to the top right after navigation, which can move the switch from under the click.
-  await expect(async () => {
-    await autoDisconnect.check({ force: true })
-  }).toPass({ timeout: 5_000 })
-  await expect(autoDisconnect).toBeChecked()
-
-  await page.getByRole('button', { name: 'Отключить Telegram' }).click()
-  await page.getByRole('dialog').getByRole('button', { name: 'Отключить Telegram' }).click()
-  await expect(page.getByText('Не подключён')).toBeVisible()
+  await page.goto('/account')
+  await expect(page.getByRole('heading', { name: 'Аккаунт' })).toBeVisible()
+  // Telegram settings are gone: the page keeps appearance, data and «Выйти».
+  await expect(page.getByText('Отключаться после каждого анализа')).toHaveCount(0)
   expect(await noHorizontalScroll(page)).toBe(true)
+
+  await page.getByRole('button', { name: 'Выйти', exact: true }).click()
+  const dialog = page.getByRole('alertdialog')
+  await expect(dialog.getByRole('button', { name: 'Выйти и удалить отчёты' })).toBeVisible()
+  await dialog.getByRole('button', { name: 'Выйти', exact: true }).click()
+  await page.waitForURL('**/login')
 })
 
 test('the recap opens as stories with both names and saves a slide', async ({ page }) => {

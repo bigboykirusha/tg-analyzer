@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { LayoutGrid, Plus, Search, Settings } from '../lib/icons'
+import { LayoutGrid, Plus, Search } from '../lib/icons'
 
 /**
  * The app's left column on wide screens: every analysed chat, personal chats
@@ -8,7 +8,10 @@ import { LayoutGrid, Plus, Search, Settings } from '../lib/icons'
  */
 const workspace = useWorkspaceStore()
 const route = useRoute()
-const { t, formatPercent } = useI18n()
+const { t } = useI18n()
+const auth = useAuthStore()
+const analysis = useAnalysis()
+const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
 
 const query = ref('')
 const matches = (report: ReportSummaryDto) =>
@@ -22,8 +25,13 @@ const sections = computed(() =>
   ].filter((section) => section.items.length),
 )
 const activeId = computed(() => (route.path.startsWith('/chat/') ? String(route.params.id) : null))
-const share = (report: ReportSummaryDto) =>
-  report.type === 'group' || report.headline?.sentSharePct == null ? null : formatPercent(report.headline.sentSharePct)
+/** Names only: shares beside a name read like unread counters. A report being refreshed shows a spinner. */
+function updating(report: ReportSummaryDto) {
+  return (
+    (analysis.isActive.value && analysis.progress.value.chatId === report.chatId) ||
+    analysis.queued.value.some((item) => item.chatId === report.chatId)
+  )
+}
 </script>
 
 <template>
@@ -60,7 +68,7 @@ const share = (report: ReportSummaryDto) =>
         >
           <ChatAvatar :chat-id="report.chatId" :title="report.title" size="xs" />
           <span class="sidebar__name">{{ report.title }}</span>
-          <small v-if="share(report)" class="sidebar__meta">{{ share(report) }}</small>
+          <span v-if="updating(report)" class="sidebar__spinner" :aria-label="t('sidebar.updating')" role="img" />
         </NuxtLink>
       </template>
       <!-- The report list on its way: rows of the same height, so the list does not jump in. -->
@@ -84,8 +92,11 @@ const share = (report: ReportSummaryDto) =>
       class="sidebar__item sidebar__foot"
       :aria-current="route.path === '/account' ? 'page' : undefined"
     >
-      <span class="sidebar__icon"><Settings aria-hidden="true" /></span>
-      <span class="sidebar__name">{{ t('account.settings') }}</span>
+      <ProfileAvatar :title="displayName" size="sm" />
+      <span class="sidebar__who">
+        <span class="sidebar__name">{{ displayName }}</span>
+        <small>{{ t('accountPage.title') }}</small>
+      </span>
     </NuxtLink>
   </aside>
 </template>
@@ -199,11 +210,30 @@ const share = (report: ReportSummaryDto) =>
   white-space: nowrap;
 }
 
-.sidebar__meta {
+.sidebar__spinner {
+  flex: none;
+  width: 12px;
+  height: 12px;
   margin-left: auto;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--text);
+  border-radius: var(--radius-full);
+  animation: spin 0.8s linear infinite;
+}
+
+.sidebar__who {
+  display: grid;
+  min-width: 0;
+}
+
+.sidebar__who .sidebar__name {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.sidebar__who small {
   color: var(--text-muted);
   font: var(--text-caption);
-  font-variant-numeric: tabular-nums;
 }
 
 .sidebar__empty {

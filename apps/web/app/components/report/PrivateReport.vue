@@ -140,6 +140,10 @@ const lead = computed(() => {
 }
 
 /* Who writes more: the answer in words, the split as a figure, both counts. No bar. */
+.share__verdict::first-letter {
+  text-transform: uppercase;
+}
+
 .share__verdict {
   margin-top: calc(var(--space-1) * -1);
   font: var(--text-h3);

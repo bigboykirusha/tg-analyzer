@@ -78,11 +78,13 @@ function signOut() {
           <span v-if="activity.percent !== null" class="activity__percent">{{ activity.percent }}%</span>
           <span v-if="activity.queued" class="activity__queued">+{{ activity.queued }}</span>
         </NuxtLink>
-        <div class="desktop-only">
-          <UiLocaleSwitch />
-          <UiThemeToggle />
-        </div>
-        <UiPopoverMenu v-model:open="accountOpen" align="end" :aria-label="displayName" title="">
+        <UiPopoverMenu
+          v-model:open="accountOpen"
+          class="topbar__account"
+          align="end"
+          :aria-label="displayName"
+          title=""
+        >
           <template #trigger>
             <button
               type="button"
@@ -147,9 +149,10 @@ function signOut() {
   height: var(--topbar-height);
 }
 
-/* With the sidebar on screen the logo lives there. */
+/* With the sidebar on screen the logo and the account live there. */
 @media (min-width: 901px) {
-  .topbar__brand {
+  .topbar__brand,
+  .topbar__account {
     display: none;
   }
 }
@@ -209,12 +212,6 @@ function signOut() {
   align-items: center;
   gap: var(--space-1);
   margin-left: auto;
-}
-
-.desktop-only {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
 }
 
 /* Background work: a quiet pill while an analysis runs. */
@@ -304,7 +301,6 @@ function signOut() {
     gap: var(--space-3);
   }
 
-  .desktop-only,
   .activity__chat {
     display: none;
   }
