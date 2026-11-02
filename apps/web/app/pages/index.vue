@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Send } from '../lib/icons'
+import { ArrowRight, Send } from '../lib/icons'
 
 definePageMeta({ middleware: ['guest'], fit: true })
 
@@ -39,10 +39,11 @@ useHead({
         <p class="hero__lede">{{ t('landing.lede') }}</p>
         <div class="hero__actions">
           <UiButton variant="primary" size="lg" :icon="Send" to="/login">{{ t('landing.cta') }}</UiButton>
-          <UiButton variant="secondary" size="lg" to="/example">
-            {{ t('landing.nav.example') }}
-          </UiButton>
         </div>
+        <!-- The example is a quiet link under the one action, not a second button. -->
+        <NuxtLink to="/example" class="hero__example">
+          {{ t('landing.nav.example') }}<ArrowRight aria-hidden="true" />
+        </NuxtLink>
       </div>
       <div class="hero__visual">
         <ProductWindow class="hero__window" />
@@ -97,6 +98,35 @@ useHead({
   flex-wrap: wrap;
   gap: var(--space-3);
   margin-top: var(--space-8);
+}
+
+.hero__example {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--space-4);
+  color: var(--text);
+  font: var(--text-ui);
+  font-weight: 600;
+}
+
+.hero__example svg {
+  width: 14px;
+  height: 14px;
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hero__example:hover svg {
+    transform: translateX(2px);
+  }
+}
+
+@media (pointer: coarse) {
+  .hero__example {
+    min-height: var(--control-md);
+    margin-top: var(--space-1);
+  }
 }
 
 .hero__phone {
@@ -154,7 +184,7 @@ useHead({
 
 @media (max-width: 640px) {
   .hero {
-    gap: var(--space-8);
+    gap: var(--space-6);
   }
 
   .hero__lede {
@@ -167,16 +197,35 @@ useHead({
     margin-top: var(--space-6);
   }
 
-  /* The two buttons share the row's width, or stack when the screen is narrow. */
   .hero__actions > * {
-    flex: 1 1 auto;
+    flex: 1;
+  }
+}
+
+/* One screen, no scroll: the phone takes what the text leaves, and fades out at the bottom. */
+@media (max-width: 900px) and (min-height: 560px) {
+  .hero {
+    flex: 1;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-4);
+    min-height: 0;
   }
 
-  /* The phone is cut off with a fade, so the landing stays short. */
-  .hero__phone {
+  .hero__visual {
     position: relative;
-    height: min(420px, 108vw);
-    clip-path: inset(-80px -80px 2px -80px);
+    align-self: stretch;
+    min-height: 0;
+  }
+
+  /* The phone fills whatever height the text leaves. */
+  .hero__phone {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+    /* Cut at the bottom only, so the phone's shadow is not boxed in on the sides. */
+    overflow-x: visible;
+    overflow-y: clip;
   }
 
   .hero__phone::after {
@@ -186,7 +235,7 @@ useHead({
     bottom: 0;
     left: -80px;
     z-index: 1;
-    height: 140px;
+    height: 96px;
     background: linear-gradient(transparent, var(--bg) 85%);
     pointer-events: none;
   }

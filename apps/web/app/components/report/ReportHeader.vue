@@ -29,12 +29,12 @@ function pick(action: 'story' | 'share') {
 </script>
 
 <template>
-  <UiPageBar :title="summary.title" :lede="period" :back="demo ? '/' : '/dashboard'">
-    <template #leading>
+  <UiPageBar :title="summary.title" :lede="period" :back="demo ? '/' : '/dashboard'" :quiet-on-wide="demo">
+    <template v-if="!demo" #leading>
       <ChatAvatar class="report-header__avatar" :chat-id="summary.chatId" :title="summary.title" size="sm" />
     </template>
     <template #actions>
-      <UiButton v-if="demo" variant="primary" size="xs" to="/login">{{ t('example.cta') }}</UiButton>
+      <UiButton v-if="demo" variant="primary" size="sm" to="/login">{{ t('site.signIn') }}</UiButton>
       <template v-else>
         <!-- Phones refresh from the foot of the report; the bar keeps the title, «Share» and the profile. -->
         <UiIconButton
@@ -42,7 +42,7 @@ function pick(action: 'story' | 'share') {
           :icon="RotateCw"
           :label="t('report.reanalyse')"
           variant="ghost"
-          size="xs"
+          size="sm"
           :loading="reanalysing"
           :disabled="!canReanalyse"
           @click="emit('reanalyse')"
@@ -53,7 +53,7 @@ function pick(action: 'story' | 'share') {
             <UiButton
               class="report-header__share"
               variant="primary"
-              size="xs"
+              size="sm"
               :icon="Share2"
               aria-haspopup="menu"
               :aria-expanded="shareOpen"
@@ -71,16 +71,15 @@ function pick(action: 'story' | 'share') {
 </template>
 
 <style scoped>
-/* Phones: the back arrow takes the chat avatar's place, the refresh moves to the foot of the page. */
+/* Phones: the chat's avatar stays beside the name, the refresh moves to the foot of the page. */
 @media (max-width: 640px) {
-  .report-header__avatar,
   .report-header__refresh {
     display: none;
   }
 
   /* The title needs the room: the button is the share icon alone, named for screen readers. */
   .report-header__share.btn {
-    width: var(--control-xs);
+    width: var(--control-sm);
     padding: 0;
   }
 

@@ -402,8 +402,6 @@ export const ru: Record<MessageKey, string> = {
   'login.seoTitle': 'Вход',
   'login.signIn': 'Войти',
   'login.signingIn': 'Входим…',
-  'login.trust.more': 'Как это устроено',
-  'login.trust.short': 'Тексты сообщений не сохраняются, а удалить все данные можно в любой момент.',
   'month.empty': 'За последний месяц в личных чатах тихо.',
   'month.leaders': 'Больше всего переписок',
   'month.mine': 'ваших {share}',

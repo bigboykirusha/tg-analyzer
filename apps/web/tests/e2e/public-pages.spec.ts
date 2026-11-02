@@ -52,8 +52,8 @@ test('phone autofill keeps the country code and all eleven German digits', async
 
 test('the privacy policy opens full screen over the login page', async ({ page, context }) => {
   await usePreferences(context, 'light')
-  await gotoHydrated(page, '/login')
-  await page.getByRole('button', { name: 'Как это устроено' }).click()
+  // The login card has no privacy line any more: the policy opens from the #privacy link.
+  await gotoHydrated(page, '/login#privacy')
   const policy = page.getByRole('dialog', { name: 'Политика конфиденциальности' })
   await expect(policy).toBeVisible()
   await expect(policy.getByText('Коротко')).toHaveCount(0)
@@ -83,7 +83,7 @@ test('the example report opens from the login page without signing in', async ({
   await page.getByRole('link', { name: 'Открыть пример отчёта →' }).click()
   await page.waitForURL('**/example')
   await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeVisible()
-  await expect(page.locator('#header-page').getByRole('link', { name: 'Разобрать чат' })).toBeVisible()
+  await expect(page.locator('#header-page').getByRole('link', { name: 'Войти' })).toBeVisible()
   if (page.viewportSize()!.width <= 640) {
     await expect
       .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
@@ -104,9 +104,11 @@ test('report navigation survives resizing between phone, tablet and desktop', as
   for (const width of [320, 390, 650, 768, 1024, 1440, 430]) {
     await page.setViewportSize({ width, height: width === 430 ? 932 : 844 })
     await expect.poll(() => noHorizontalScroll(page)).toBe(true)
-    await expect
-      .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
-      .toBe(true)
+    // Wide screens keep the name quiet, so there is no line to fit.
+    if (width < 901)
+      await expect
+        .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
+        .toBe(true)
     await page.getByRole('tab', { name: 'Время', exact: true }).click()
     await expect(page.locator('#part-time')).toBeInViewport()
     await page.getByRole('tab', { name: 'Вы двое', exact: true }).click()

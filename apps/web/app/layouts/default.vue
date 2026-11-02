@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Public pages: the site header, the page in the shared column and the footer line.
- * Pages with `fit: true` (the landing) fill exactly one desktop screen.
+ * Pages with `fit: true` (the landing) fill exactly one screen, phone or desktop.
  */
 const route = useRoute()
 const fit = computed(() => route.meta.fit === true)
@@ -35,6 +35,26 @@ const fit = computed(() => route.meta.fit === true)
 
 .site--fit .site-main {
   padding-bottom: var(--space-4);
+}
+
+/* Phones and tablets: the same, with the footer inside the screen; short screens just scroll. */
+@media (max-width: 900px) and (min-height: 560px) {
+  .site--fit {
+    height: 100svh;
+    overflow: clip;
+  }
+
+  /* The footer is its own opaque strip, whatever the landing's phone does above it. */
+  .site--fit :deep(.site-footer) {
+    position: relative;
+    z-index: 1;
+    background: var(--bg);
+  }
+
+  .site--fit .site-main {
+    min-height: 0;
+    padding-top: var(--space-2);
+  }
 }
 
 @media (min-width: 901px) and (min-height: 620px) {

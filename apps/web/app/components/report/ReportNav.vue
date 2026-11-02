@@ -2,20 +2,20 @@
 import type { SegmentedOption } from '../ui/SegmentedControl.vue'
 
 /**
- * The report is one long page; this bar, pinned under the header, jumps to its
- * parts and follows the scroll (scroll-spy). Each part is a `ReportPart` with
- * the id `part-<value>`. Full width on phones.
+ * The report is one long page; this control, which lives in the header (it is
+ * teleported there, so the header is one bar with one blur), jumps to its parts
+ * and follows the scroll (scroll-spy). Each part is a `ReportPart` with the id
+ * `part-<value>`. Full width on phones.
  */
 const props = defineProps<{ options: SegmentedOption<T>[]; label: string }>()
 const model = defineModel<T>({ required: true })
 
-const root = ref<HTMLElement | null>(null)
 /** While a jump scrolls the page, the spy keeps quiet so the thumb does not flicker. */
 let jumpingUntil = 0
 
+/** The pinned header, navigation included, is what the page scrolls under. */
 function offset() {
-  const topbar = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-height')) || 64
-  return topbar + (root.value?.offsetHeight ?? 0)
+  return document.querySelector<HTMLElement>('.app-navigation, .site-header')?.offsetHeight ?? 64
 }
 
 function select(value: T) {
@@ -52,43 +52,26 @@ onBeforeUnmount(() => window.removeEventListener('scroll', spy))
 </script>
 
 <template>
-  <div ref="root" class="report-nav no-print">
-    <UiSegmentedControl :model-value="model" :options="options" :aria-label="label" @update:model-value="select" />
-  </div>
+  <Teleport to="#header-sub" defer>
+    <div class="report-nav no-print">
+      <UiSegmentedControl :model-value="model" :options="options" :aria-label="label" @update:model-value="select" />
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
 .report-nav {
-  position: sticky;
-  top: var(--topbar-height);
-  z-index: calc(var(--z-header) - 1);
-  margin-inline: calc(var(--page-gutter) * -1);
-  padding: var(--space-2) var(--page-gutter);
-  /* The same material as the header above it: one floating bar, not two. */
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
+  width: 100%;
 }
 
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .report-nav {
-    background: var(--bg);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-
-/* Phones: the parts come first, right under the header (board 09). */
-@media (max-width: 640px) {
-  .report-nav {
-    order: -1;
-  }
-}
-
-/* Wide screens: a compact bar; phones: the full width, one equal slot per part. */
+/* Wide screens: a compact control; phones: the full width, one equal slot per part. */
 @media (min-width: 641px) {
+  .report-nav {
+    width: auto;
+  }
+
   .report-nav :deep(.segmented) {
-    max-width: 420px;
+    width: 420px;
   }
 }
 </style>

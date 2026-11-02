@@ -5,7 +5,7 @@ withDefaults(defineProps<{ to?: string }>(), { to: '/' })
 
 <template>
   <NuxtLink :to="to" class="brand-link" aria-label="TG Analyzer">
-    <BrandMark :size="32" />
+    <BrandMark :size="36" />
     <span class="brand-link__name">TG Analyzer</span>
   </NuxtLink>
 </template>

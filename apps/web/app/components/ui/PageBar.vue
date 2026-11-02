@@ -15,20 +15,27 @@ withDefaults(
     back?: string
     /** The screen has a name for screen readers but none on screen (the home page): the logo stands in. */
     untitled?: boolean
+    /** Wide screens only: the name goes quiet (the example report), phones keep it next to the back arrow. */
+    quietOnWide?: boolean
   }>(),
-  { lede: '', back: '', untitled: false },
+  { lede: '', back: '', untitled: false, quietOnWide: false },
 )
 const { t } = useI18n()
 </script>
 
 <template>
   <Teleport to="#header-page" defer>
-    <div class="page-bar" :data-back="back ? '' : undefined" :data-untitled="untitled ? '' : undefined">
+    <div
+      class="page-bar"
+      :data-back="back ? '' : undefined"
+      :data-untitled="untitled ? '' : undefined"
+      :data-leading="$slots.leading ? '' : undefined"
+    >
       <NuxtLink v-if="back" :to="back" class="page-bar__back" :aria-label="t('nav.back')">
         <ChevronLeft aria-hidden="true" />
       </NuxtLink>
       <slot name="leading" />
-      <div class="page-bar__copy" :class="{ 'sr-only': untitled }">
+      <div class="page-bar__copy" :class="{ 'sr-only': untitled, 'page-bar__copy--quiet': quietOnWide }">
         <h1 class="page-bar__title">{{ title }}</h1>
         <p v-if="lede" class="page-bar__lede t-num" :title="lede">{{ lede }}</p>
       </div>
@@ -49,8 +56,8 @@ const { t } = useI18n()
 .page-bar__back {
   display: none;
   flex: none;
-  width: var(--control-xs);
-  height: var(--control-xs);
+  width: var(--control-sm);
+  height: var(--control-sm);
   margin-left: calc(var(--space-2) * -1);
   place-items: center;
   border-radius: var(--radius-full);
@@ -58,7 +65,7 @@ const { t } = useI18n()
   -webkit-tap-highlight-color: transparent;
 }
 
-/* A 44 px touch area around the 32 px circle. */
+/* A 44 px touch area around the 36 px circle. */
 .page-bar__back {
   position: relative;
 }
@@ -66,7 +73,7 @@ const { t } = useI18n()
 .page-bar__back::after {
   content: '';
   position: absolute;
-  inset: -6px;
+  inset: -4px;
 }
 
 .page-bar__back:active {
@@ -83,6 +90,16 @@ const { t } = useI18n()
   display: grid;
   min-width: 0;
   flex: 1;
+}
+
+@media (min-width: 901px) {
+  .page-bar__copy--quiet {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
 }
 
 .page-bar__title {

@@ -199,11 +199,6 @@ function changeNumber() {
           <AlertCircle aria-hidden="true" />
           {{ error }}
         </p>
-
-        <p class="trust">
-          {{ t('login.trust.short') }}
-          <button type="button" class="link" @click="privacyOpen = true">{{ t('login.trust.more') }}</button>
-        </p>
       </div>
       <NuxtLink to="/example" class="login-example">{{ t('login.exampleLink') }}</NuxtLink>
     </section>
@@ -240,23 +235,16 @@ function changeNumber() {
 }
 
 .login-example {
-  color: var(--text-muted);
+  color: var(--text);
   font: var(--text-ui);
+  font-weight: 600;
   transition: color var(--transition-fast);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .login-example:hover {
-    color: var(--text);
+    color: var(--text-muted);
   }
-}
-
-/* One quiet line about privacy, with the policy one tap away. */
-.trust {
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--border);
-  color: var(--text-muted);
-  font: var(--text-small);
 }
 
 .login-progress {

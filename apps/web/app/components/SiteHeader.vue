@@ -30,13 +30,15 @@ const isReport = computed(() => route.path === '/example')
           v-if="!isReport && route.path !== '/login'"
           :class="{ 'site-header__signin--landing': route.path === '/' }"
           variant="secondary"
-          size="xs"
+          size="sm"
           to="/login"
         >
           {{ t('site.signIn') }}
         </UiButton>
       </nav>
     </UiPageContainer>
+    <!-- A screen with parts (the report) puts its navigation here: one bar, one material, one blur. -->
+    <UiPageContainer id="header-sub" class="header-sub" />
   </header>
 </template>
 
@@ -126,6 +128,35 @@ const isReport = computed(() => route.path === '/example')
   .site-header__link,
   .site-header__nav .site-header__signin--landing {
     display: none;
+  }
+}
+
+/*
+ * The screen's navigation (`ReportNav`) sits in the header itself. Phones and
+ * tablets give it a second row; wide screens centre it in the first.
+ */
+.header-sub:empty {
+  display: none;
+}
+
+.header-sub {
+  padding-bottom: var(--space-2);
+}
+
+@media (min-width: 1200px) {
+  .header-sub {
+    position: absolute;
+    inset: env(safe-area-inset-top, 0px) 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--topbar-height);
+    padding-bottom: 0;
+    pointer-events: none;
+  }
+
+  .header-sub > :deep(*) {
+    pointer-events: auto;
   }
 }
 </style>

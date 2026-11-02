@@ -94,7 +94,7 @@ onMounted(() => {
       <template v-else>
         <UiPageBar :title="t('home.title')" untitled>
           <template #actions>
-            <UiButton class="home__new" variant="primary" to="/new" size="xs" :icon="Plus">{{
+            <UiButton class="home__new" variant="primary" to="/new" size="sm" :icon="Plus">{{
               t('nav.newAnalysis')
             }}</UiButton>
           </template>

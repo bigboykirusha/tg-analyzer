@@ -124,6 +124,8 @@ function signOut() {
         </UiPopoverMenu>
       </div>
     </UiPageContainer>
+    <!-- A screen with parts (the report) puts its navigation here: one bar, one material, one blur. -->
+    <UiPageContainer id="header-sub" class="header-sub" />
   </header>
 </template>
 
@@ -178,10 +180,12 @@ function signOut() {
 
 /*
  * Phones: the screen's title takes the logo's place. The home screen has no
- * title on screen, so the logo stays; the profile is always there.
+ * title on screen, so the logo stays. A report shows the chat's own avatar,
+ * so the profile steps aside there.
  */
 @media (max-width: 640px) {
-  .topbar:has(.page-bar:not([data-untitled])) .topbar__brand {
+  .topbar:has(.page-bar:not([data-untitled])) .topbar__brand,
+  .topbar:has(.page-bar[data-leading]) .account-trigger {
     display: none;
   }
 }
@@ -194,7 +198,7 @@ function signOut() {
 .nav-link {
   display: inline-flex;
   align-items: center;
-  min-height: var(--control-xs);
+  min-height: var(--control-sm);
   padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   color: var(--text-muted);
@@ -230,7 +234,7 @@ function signOut() {
   gap: var(--space-2);
   min-width: 0;
   max-width: 240px;
-  min-height: var(--control-xs);
+  min-height: var(--control-sm);
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   background: var(--accent-subtle);
@@ -275,8 +279,8 @@ function signOut() {
 
 .account-trigger {
   display: grid;
-  width: var(--control-xs);
-  height: var(--control-xs);
+  width: var(--control-sm);
+  height: var(--control-sm);
   place-items: center;
   padding: 0;
   border: 0;
@@ -292,13 +296,7 @@ function signOut() {
 .account-trigger::after {
   content: '';
   position: absolute;
-  inset: -6px;
-}
-
-/* The avatar follows the bar's 32 px scale: logo, back arrow, buttons and profile are one size. */
-.account-trigger :deep(.avatar) {
-  width: var(--control-xs);
-  height: var(--control-xs);
+  inset: -4px;
 }
 
 .account-trigger:focus-visible,
@@ -327,6 +325,35 @@ function signOut() {
   .mobile-preferences {
     display: grid;
     gap: var(--space-1);
+  }
+}
+
+/*
+ * The screen's navigation (`ReportNav`) sits in the header itself. Phones and
+ * tablets give it a second row; wide screens centre it in the first.
+ */
+.header-sub:empty {
+  display: none;
+}
+
+.header-sub {
+  padding-bottom: var(--space-2);
+}
+
+@media (min-width: 1200px) {
+  .header-sub {
+    position: absolute;
+    inset: env(safe-area-inset-top, 0px) 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--topbar-height);
+    padding-bottom: 0;
+    pointer-events: none;
+  }
+
+  .header-sub > :deep(*) {
+    pointer-events: auto;
   }
 }
 </style>

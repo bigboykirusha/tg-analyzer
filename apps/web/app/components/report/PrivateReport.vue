@@ -98,6 +98,13 @@ const shareHint = computed(() => {
   font: var(--text-figure-lg);
 }
 
+/* Wide screens: the figure is as big as the other tiles', so the pair stays low. */
+@media (min-width: 901px) {
+  .share__figure {
+    font: var(--text-figure);
+  }
+}
+
 .share__figure small {
   font-size: 0.4em;
 }

@@ -402,8 +402,6 @@ export const en = {
   'login.seoTitle': 'Sign in',
   'login.signIn': 'Sign in',
   'login.signingIn': 'Signing in…',
-  'login.trust.more': 'How it works',
-  'login.trust.short': 'Message texts are never stored, and you can delete everything at any time.',
   'month.empty': 'No private messages in the last month.',
   'month.leaders': 'Busiest chats',
   'month.mine': '{share} yours',
