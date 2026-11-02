@@ -27,6 +27,7 @@ const usuallyText = computed(() =>
 </script>
 
 <template>
+  <ReportRole :data="data" />
   <ReportSection :title="t('report.rhythm.heatmapTitle')" :text="t('report.rhythm.heatmapText')" wide>
     <ActivityHeatmap :points="days" />
   </ReportSection>

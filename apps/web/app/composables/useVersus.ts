@@ -22,6 +22,10 @@ export interface Versus {
   figure: string
   /** «в 9,9 раза больше»; empty when even, since the figure already says so. */
   note: string
+  /** Who leads; null when even. */
+  lead: 'mine' | 'theirs' | null
+  /** How many times the leader does more; 1 when even, Infinity when only one side does it. */
+  ratio: number
   pairs: VersusPair[]
 }
 
@@ -48,11 +52,22 @@ export function useVersus(data: () => ReportDto) {
     const high = Math.max(mine, theirs)
     const low = Math.min(mine, theirs)
     const ratio = low > 0 ? high / low : Infinity
-    if (ratio < LEAD_RATIO) return { key, title, figure: t('report.duel.evenFigure'), note: '', pairs }
+    if (ratio < LEAD_RATIO)
+      return {
+        key,
+        title,
+        figure: t('report.duel.evenFigure'),
+        note: '',
+        lead: null,
+        ratio: low > 0 ? ratio : 1,
+        pairs,
+      }
     const name = data().summary.title
     return {
       key,
       title,
+      lead: mine > theirs ? 'mine' : 'theirs',
+      ratio,
       figure: mine > theirs ? t('report.you') : name,
       note: Number.isFinite(ratio)
         ? t(`report.duel.${kind}`, { ratio: formatDecimal(ratio) })
@@ -134,6 +149,11 @@ export function useVersus(data: () => ReportDto) {
     const questions = report.habits?.questionTurns
     result.questions = enough(questions, MIN_SAMPLES)
       ? card('questions', t('report.duel.questions'), 'often', [questions.mine, questions.theirs], [counted(questions)])
+      : null
+
+    const laughs = report.habits?.laughs
+    result.laughs = enough(laughs, MIN_SAMPLES)
+      ? card('laughs', t('report.fmt.laughsTitle'), 'often', [laughs.mine, laughs.theirs], [counted(laughs)])
       : null
 
     const reactions = report.reactions?.given

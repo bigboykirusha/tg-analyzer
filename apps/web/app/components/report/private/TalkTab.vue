@@ -51,61 +51,65 @@ const absent = computed(() =>
     {{ t('report.talk.outdated') }}
   </p>
 
-  <template v-else>
-    <ReportSection
-      v-if="reactionPairs"
-      tone="lime"
-      :title="t('report.talk.reactionsTitle')"
-      :text="t('report.talk.reactionsText')"
-    >
-      <div class="emoji-pair">
-        <div v-if="reactionPairs.mine.length">
-          <span class="t-label">{{ t('report.talk.reactionsMine') }}</span>
-          <EmojiGrid :items="reactionPairs.mine" />
-        </div>
-        <div v-if="reactionPairs.theirs.length">
-          <span class="t-label">{{ t('report.talk.reactionsTheirs', { name }) }}</span>
-          <EmojiGrid :items="reactionPairs.theirs" />
-        </div>
-      </div>
-    </ReportSection>
-
+  <div v-else class="report-grid report-grid--even">
     <ReportShared :data="data" />
-
-    <ReportEquivalents :data="data" />
 
     <ReportSection
       v-if="stickers?.top.length"
-      wide
       :title="t('report.talk.stickersTitle')"
       :text="stickerVariety ?? undefined"
     >
-      <ReportVersus v-if="versus.stickers" :item="versus.stickers" :their-name="name" />
       <StickerGrid :stickers="stickers.top" />
+      <div v-if="versus.stickers" class="split">
+        <i class="split__bar" aria-hidden="true">
+          <b :style="{ flexGrow: versus.stickers.pairs[0]!.mine.value }" />
+          <b :style="{ flexGrow: versus.stickers.pairs[0]!.theirs.value }" />
+        </i>
+        <p class="split__legend t-num">
+          <span>{{ t('report.you') }} · {{ versus.stickers.pairs[0]!.mine.text }}</span>
+          <span>{{ name }} · {{ versus.stickers.pairs[0]!.theirs.text }}</span>
+        </p>
+      </div>
     </ReportSection>
 
-    <p v-if="absent.length" class="note">
+    <p v-if="absent.length" class="note talk__absent">
       <Info aria-hidden="true" />
       <span>{{ t('report.talk.missing', { items: absent.join(', ') }) }}</span>
     </p>
-  </template>
+  </div>
 </template>
 
 <style scoped>
-.emoji-pair {
-  display: grid;
-  gap: var(--space-4);
+.talk__absent {
+  grid-column: 1 / -1;
 }
 
-@media (min-width: 641px) {
-  .emoji-pair {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.emoji-pair > div {
+.split {
   display: grid;
-  align-content: start;
   gap: var(--space-2);
+  margin-top: auto;
+}
+
+.split__bar {
+  display: flex;
+  gap: 3px;
+  height: var(--bar-height);
+}
+
+.split__bar b {
+  border-radius: var(--radius-full);
+  background: var(--you);
+}
+
+.split__bar b + b {
+  background: var(--them);
+}
+
+.split__legend {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--text-muted);
+  font: var(--text-small);
 }
 </style>

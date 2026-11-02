@@ -19,6 +19,16 @@ const sentShare = computed(() => (totals.value.messages ? (totals.value.sent / t
 
 const mineShare = computed(() => (sentShare.value === null ? null : Math.round(sentShare.value)))
 
+/** «Это 158 сообщений в день»: the total said as a daily habit over the whole period. */
+const perDay = computed(() => {
+  const { firstMessageAt, lastMessageAt } = props.data.report.period
+  if (!firstMessageAt || !lastMessageAt) return null
+  const days = Math.max(1, Math.round((Date.parse(lastMessageAt) - Date.parse(firstMessageAt)) / 86_400_000) + 1)
+  const value = totals.value.messages / days
+  if (value >= 1) return tc('report.fmt.perDay', Math.round(value))
+  return tc('report.fmt.everyDays', Math.max(2, Math.round(1 / value)))
+})
+
 const shareHint = computed(() => {
   const share = sentShare.value
   if (share === null) return null
@@ -36,34 +46,27 @@ const shareHint = computed(() => {
       <Info aria-hidden="true" />
       {{ t('report.lowData') }}
     </p>
-    <ReportHero
-      :data="data"
-      :label="t('report.kpi.messages')"
-      :value="formatNumber(totals.messages)"
-      :note="tc('story.activeDaysCount', data.report.facts.activeDays)"
-    >
-      <template #accent>
-        <div class="tile__label">{{ t('report.kpi.whoWritesMore') }}</div>
-        <template v-if="mineShare !== null">
-          <p v-if="shareHint" class="share__verdict">{{ shareHint }}</p>
-          <div class="tile__figure share__figure">
-            <span>{{ mineShare }}</span
-            ><small>/</small><span>{{ 100 - mineShare }}</span>
-          </div>
-          <dl class="share__sides">
-            <div>
-              <dt>{{ t('report.you') }}</dt>
-              <dd class="t-num">{{ formatNumber(totals.sent) }}</dd>
-            </div>
-            <div>
-              <dt>{{ data.summary.title }}</dt>
-              <dd class="t-num">{{ formatNumber(totals.received) }}</dd>
-            </div>
-          </dl>
-        </template>
-        <div v-else class="tile__figure">{{ t('common.na') }}</div>
-      </template>
-    </ReportHero>
+    <!-- One big number with a plain sentence under it, then the split between the two of you. -->
+    <section class="tile tile--ink hero">
+      <div class="tile__label">
+        <span>{{ t('report.kpi.messages') }}</span>
+        <span class="t-num">{{ tc('story.activeDaysCount', data.report.facts.activeDays) }}</span>
+      </div>
+      <p class="hero__figure t-num">{{ formatNumber(totals.messages) }}</p>
+      <p v-if="perDay" class="hero__sentence">{{ perDay }}</p>
+      <div v-if="mineShare !== null" class="hero__split">
+        <i class="hero__bar" aria-hidden="true">
+          <b :style="{ flexGrow: totals.sent }" />
+          <b :style="{ flexGrow: totals.received }" />
+        </i>
+        <p class="hero__sides t-num">
+          <span>{{ t('report.you') }} · {{ formatNumber(totals.sent) }} · {{ mineShare }}%</span>
+          <span>{{ 100 - mineShare }}% · {{ formatNumber(totals.received) }} · {{ data.summary.title }}</span>
+        </p>
+        <p v-if="shareHint" class="hero__hint">{{ shareHint }}</p>
+      </div>
+      <ReportPulse :data="data" bare class="hero__pulse" />
+    </section>
 
     <ReportInsights :data="data" />
 
@@ -86,60 +89,59 @@ const shareHint = computed(() => {
 </template>
 
 <style scoped>
-/* Who writes more: the answer in words, the split as a figure, both counts. No bar. */
-.share__verdict::first-letter {
+.hero {
+  gap: var(--space-3);
+}
+
+.hero__figure {
+  font: var(--text-figure-lg);
+  letter-spacing: -0.04em;
+}
+
+.hero__sentence {
+  max-width: 32rem;
+  font: var(--text-h3);
+}
+
+.hero__split {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.hero__bar {
+  display: flex;
+  gap: 3px;
+  height: var(--bar-height);
+}
+
+.hero__bar b {
+  border-radius: var(--radius-full);
+  background: var(--you);
+}
+
+.hero__bar b + b {
+  background: var(--them);
+}
+
+.hero__sides {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  font: var(--text-small);
+}
+
+.hero__hint {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.hero__hint::first-letter {
   text-transform: uppercase;
 }
 
-.share__verdict {
-  margin-top: calc(var(--space-1) * -1);
-  font: var(--text-h3);
-  letter-spacing: -0.02em;
-}
-
-.share__figure {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  margin-top: auto;
-  font: var(--text-figure-lg);
-}
-
-/* Wide screens: the figure is as big as the other tiles', so the pair stays low. */
-@media (min-width: 901px) {
-  .share__figure {
-    font: var(--text-figure);
-  }
-}
-
-.share__figure small {
-  font-size: 0.6em;
-}
-
-.share__sides {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-  margin: 0;
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--on-lime-line);
-}
-
-.share__sides div {
-  display: grid;
-  min-width: 0;
-}
-
-.share__sides dt {
-  overflow: hidden;
-  color: var(--text-muted);
-  font: var(--text-caption);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.share__sides dd {
-  margin: 0;
-  font: var(--text-title);
+.hero__pulse {
+  margin-top: var(--space-2);
 }
 </style>

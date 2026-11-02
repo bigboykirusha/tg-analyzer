@@ -3,32 +3,11 @@ import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 import type { Fact } from '../ReportFacts.vue'
 
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatNumber, formatDecimal, formatMonth, formatPercent } = useI18n()
+const { t, formatNumber, formatDecimal, formatPercent } = useI18n()
 
 const report = computed(() => props.data.report)
-const facts = computed(() => report.value.facts)
 const sessions = computed(() => report.value.sessions)
 const days = computed(() => fillDailyGaps(report.value.activity.daily))
-const silenceDays = computed(() =>
-  Math.round(facts.value.silencesOver30Days.reduce((sum, gap) => sum + gap.seconds, 0) / 86400),
-)
-
-const summaryFacts = computed<Fact[]>(() => [
-  { key: 'month', label: t('report.timeline.mostActiveMonth'), value: formatMonth(facts.value.mostActiveMonth) },
-  { key: 'trend', label: t('report.timeline.trend'), value: t(`report.trend.${facts.value.trend}`) },
-  {
-    key: 'streak',
-    label: t('report.timeline.streak'),
-    value: tc('report.timeline.days', facts.value.maxStreak.days),
-  },
-  {
-    key: 'silences',
-    label: t('report.timeline.silences'),
-    value: formatNumber(facts.value.silencesOver30Days.length),
-    sub: silenceDays.value ? tc('report.timeline.silenceDays', silenceDays.value) : null,
-  },
-])
-
 const sessionFacts = computed<Fact[]>(() => [
   {
     key: 'perWeek',
@@ -58,9 +37,7 @@ const sessionFacts = computed<Fact[]>(() => [
 
   <ReportChronicle :data="data" />
 
-  <ReportSection :title="t('report.timeline.factsTitle')" tone="lime" wide>
-    <ReportFacts :facts="summaryFacts" :columns="2" />
-  </ReportSection>
+  <ReportRecords :data="data" />
 
   <ReportSection :title="t('report.sessions.title')" :text="t('report.sessions.text')" wide>
     <ReportFacts :facts="sessionFacts" :columns="3" />
