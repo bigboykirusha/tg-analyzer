@@ -2,7 +2,6 @@
 import type { ReportDto, SideCountDto } from '@tg-analyzer/shared'
 import { Info } from '../../../lib/icons'
 import type { Comparison } from '../ReportCompare.vue'
-import type { Fact } from '../ReportFacts.vue'
 
 const props = defineProps<{ data: ReportDto }>()
 const { t, tc, formatDecimal, formatDuration, formatNumber, formatPercent } = useI18n()
@@ -75,22 +74,6 @@ const voiceRows = computed(() => {
     row('round', t('report.talk.round'), stats.round.seconds, 'minutes'),
   ].filter(notNull)
 })
-const voiceFacts = computed<Fact[]>(() => {
-  const stats = voice.value
-  if (!stats) return []
-  const facts: Fact[] = []
-  const counts = [
-    stats.voice.count.mine + stats.voice.count.theirs
-      ? tc('report.talk.voiceCount', stats.voice.count.mine + stats.voice.count.theirs)
-      : null,
-    stats.round.count.mine + stats.round.count.theirs
-      ? tc('report.talk.roundCount', stats.round.count.mine + stats.round.count.theirs)
-      : null,
-  ].filter(notNull)
-  if (counts.length) facts.push({ key: 'count', label: t('report.talk.inTotal'), value: counts.join(', ') })
-  return facts
-})
-
 // Reactions: custom emoji have no picture here, so only regular ones are shown.
 const reactions = computed(() => report.value.reactions)
 const plainEmoji = (items: { value: string; count: number }[]) =>
@@ -138,7 +121,7 @@ const questionRows = computed(() => {
 /** Sections with nothing to show collapse into one quiet line at the end of the part. */
 const absent = computed(() =>
   [
-    !voiceRows.value.length && !voiceFacts.value.length && t('report.talk.missingVoice'),
+    !voiceRows.value.length && t('report.talk.missingVoice'),
     !(reactions.value && reactionRows.value.length) && t('report.talk.missingReactions'),
     !stickers.value?.top.length && t('report.talk.missingStickers'),
   ].filter((item): item is string => Boolean(item)),
@@ -158,14 +141,11 @@ const tooFew = computed(() =>
   </p>
 
   <template v-else>
-    <ReportSection
-      v-if="voiceRows.length || voiceFacts.length"
-      :title="t('report.talk.voiceTitle')"
-      :text="t('report.talk.voiceText')"
-    >
+    <ReportSection v-if="voiceRows.length" :title="t('report.talk.voiceTitle')" :text="t('report.talk.voiceText')">
       <ReportCompare :their-name="name" :rows="voiceRows" />
-      <ReportFacts v-if="voiceFacts.length" :facts="voiceFacts" />
     </ReportSection>
+
+    <ReportEquivalents :data="data" />
 
     <ReportSection
       v-if="reactions && reactionRows.length"
@@ -206,6 +186,8 @@ const tooFew = computed(() =>
       <ReportCompare :their-name="name" :rows="stickerRows" />
       <StickerGrid :stickers="stickers.top" />
     </ReportSection>
+
+    <ReportShared :data="data" />
 
     <p v-if="absent.length || tooFew.length" class="note">
       <Info aria-hidden="true" />

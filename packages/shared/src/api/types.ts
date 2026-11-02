@@ -695,6 +695,33 @@ export interface DerivedReportMetrics {
   availabilityProfile: AvailabilityProfileDto
   /** Strongest patterns first; empty for groups. */
   insights: InsightDto[]
+  /** Questions for the guessing game; empty for groups and for chats with too little to ask about. */
+  quiz: QuizQuestionDto[]
+}
+
+export type QuizQuestionId =
+  | 'starts'
+  | 'fastest'
+  | 'talker'
+  | 'laughs'
+  | 'questions'
+  | 'voice'
+  | 'stickers'
+  | 'essays'
+  | 'lastWord'
+  | 'doubleTexts'
+
+/** How the two numbers of a question are written out. */
+export type QuizUnit = 'count' | 'percent' | 'seconds' | 'words'
+
+/** One «who more?» question of a private chat. The values are the answer shown afterwards. */
+export interface QuizQuestionDto {
+  id: QuizQuestionId
+  unit: QuizUnit
+  mine: number
+  theirs: number
+  /** Who the answer is. */
+  answer: 'mine' | 'theirs'
 }
 
 /** Headline numbers of one chat, for overviews that compare chats. */

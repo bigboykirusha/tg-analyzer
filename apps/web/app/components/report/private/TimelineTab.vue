@@ -56,6 +56,8 @@ const sessionFacts = computed<Fact[]>(() => [
     <DailyVolumeChart :days="days" />
   </ReportSection>
 
+  <ReportChronicle :data="data" />
+
   <ReportSection :title="t('report.timeline.factsTitle')" wide>
     <ReportFacts :facts="summaryFacts" :columns="2" />
   </ReportSection>
