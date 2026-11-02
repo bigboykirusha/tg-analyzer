@@ -57,7 +57,7 @@ export interface TelegramAccountApi {
   getDialog(chatId: string): Promise<TelegramDialog | null>
   getHistory(chatId: string, offsetId: number): Promise<HistoryPage>
   /** Messages since `since`, all and the user's own, counted by Telegram search without downloading them. */
-  countRecent(chatId: string, since: Date): Promise<{ messages: number; mine: number }>
+  countRecent(chatId: string, since: Date): Promise<{ messages: number; mine: number; total: number }>
   /** JPEG bytes of the chat photo, or of the user's own photo when `chatId` is null. */
   downloadAvatar(chatId: string | null): Promise<Buffer | null>
   /** Small previews of the stickers in the given messages, as data URLs keyed by message id. */

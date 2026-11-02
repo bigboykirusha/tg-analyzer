@@ -159,4 +159,21 @@ const isReport = computed(() => route.path === '/example')
     pointer-events: auto;
   }
 }
+
+/* Header buttons are 36 px on phones too; the touch area still reaches 44 px. */
+@media (max-width: 640px) and (pointer: coarse) {
+  .site-header__nav :deep(.btn--sm) {
+    min-height: var(--control-sm);
+  }
+
+  .site-header__nav :deep(.btn--icon-only.btn--sm) {
+    width: var(--control-sm);
+  }
+
+  .site-header__nav :deep(.btn--sm)::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+}
 </style>

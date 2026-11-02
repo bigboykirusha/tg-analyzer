@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, Send } from '../lib/icons'
+import { Send } from '../lib/icons'
 
 definePageMeta({ middleware: ['guest'], fit: true })
 
@@ -39,11 +39,9 @@ useHead({
         <p class="hero__lede">{{ t('landing.lede') }}</p>
         <div class="hero__actions">
           <UiButton variant="primary" size="lg" :icon="Send" to="/login">{{ t('landing.cta') }}</UiButton>
+          <!-- The example is a quiet link beside the one action (under it on phones), not a second button. -->
+          <NuxtLink to="/example" class="hero__example">{{ t('landing.nav.example') }}</NuxtLink>
         </div>
-        <!-- The example is a quiet link under the one action, not a second button. -->
-        <NuxtLink to="/example" class="hero__example">
-          {{ t('landing.nav.example') }}<ArrowRight aria-hidden="true" />
-        </NuxtLink>
       </div>
       <div class="hero__visual">
         <ProductWindow class="hero__window" />
@@ -96,36 +94,29 @@ useHead({
 .hero__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
   margin-top: var(--space-8);
 }
 
 .hero__example {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  margin-top: var(--space-4);
   color: var(--text);
   font: var(--text-ui);
   font-weight: 600;
-}
-
-.hero__example svg {
-  width: 14px;
-  height: 14px;
-  transition: transform var(--duration-fast) var(--ease-standard);
+  transition: color var(--transition-fast);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .hero__example:hover svg {
-    transform: translateX(2px);
+  .hero__example:hover {
+    color: var(--text-muted);
   }
 }
 
 @media (pointer: coarse) {
   .hero__example {
     min-height: var(--control-md);
-    margin-top: var(--space-1);
   }
 }
 
@@ -197,8 +188,15 @@ useHead({
     margin-top: var(--space-6);
   }
 
-  .hero__actions > * {
-    flex: 1;
+  /* The button takes the width, the example link sits centred under it. */
+  .hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+  }
+
+  .hero__example {
+    justify-content: center;
   }
 }
 

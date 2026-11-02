@@ -317,7 +317,7 @@ export class LiveTelegramGateway implements TelegramGateway {
         const total = 'count' in history ? history.count : history.messages.length
         const messages = boundary ? positionOf(history) : total
         if (messages === null) throw new Error('Telegram did not report the message position')
-        if (!messages) return { messages: 0, mine: 0 }
+        if (!messages) return { messages: 0, mine: 0, total }
 
         await pace()
         const own = await attempt(() =>
@@ -338,14 +338,14 @@ export class LiveTelegramGateway implements TelegramGateway {
             }),
           ),
         )
-        if (own instanceof Api.messages.MessagesNotModified) return { messages, mine: 0 }
+        if (own instanceof Api.messages.MessagesNotModified) return { messages, mine: 0, total }
         const ownTotal = 'count' in own ? own.count : own.messages.length
         // No own message before the boundary: every own message is a recent one.
-        if (!boundary || !own.messages.length) return { messages, mine: Math.min(ownTotal, messages) }
+        if (!boundary || !own.messages.length) return { messages, mine: Math.min(ownTotal, messages), total }
         const ownRecent = positionOf(own)
         // Without a position, assume the all-time share of own messages.
         const mine = ownRecent ?? (total ? Math.round((messages * ownTotal) / total) : 0)
-        return { messages, mine: Math.min(mine, messages) }
+        return { messages, mine: Math.min(mine, messages), total }
       },
 
       downloadAvatar: async (chatId) => {

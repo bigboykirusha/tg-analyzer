@@ -3,13 +3,13 @@ import type { RecentActivityResponse } from '@tg-analyzer/shared'
 
 /**
  * The top of the home page: private chats of the last month, counted by
- * Telegram without an analysis. The ink tile is a podium of the three busiest
- * people; the lime tile says what to do next — the busiest chat that has no
+ * Telegram without an analysis. The ink tile is a podium of the three biggest
+ * conversations of all time; the lime tile says what to do next — the busiest chat that has no
  * report yet. When every busy chat has a report, the lime tile names the
- * busiest person and that person leaves the podium, so nothing is said twice.
+ * busiest person of the month.
  */
 const props = defineProps<{ recent: RecentActivityResponse; reportIds: Set<string> }>()
-const { t, tc, formatNumber, formatPercent } = useI18n()
+const { t, tc, formatPercent } = useI18n()
 const analysis = useAnalysis()
 const auth = useAuthStore()
 const toast = useToast()
@@ -26,13 +26,14 @@ const next = computed(() => {
 })
 // With one chat the lime tile would only repeat the single row.
 const top = computed(() => (!next.value && props.recent.chats.length > 1 ? props.recent.chats[0]! : null))
-// The places keep their numbers when the busiest person moves to the lime tile.
+// The podium counts the whole history: Telegram reports the chat's size with the monthly count, so it costs
+// nothing extra (a weekly count would be a request per chat). Older cached answers fall back to the month.
 const rows = computed(() => {
-  const leader = props.recent.chats[0]?.messages || 1
-  return props.recent.chats
-    .map((chat, index) => ({ ...chat, place: index + 1, level: (chat.messages / leader) * 100 }))
-    .filter((chat) => chat.id !== top.value?.id)
-    .slice(0, PLACES)
+  const sized = props.recent.chats
+    .map((chat) => ({ ...chat, size: chat.total ?? chat.messages }))
+    .sort((a, b) => b.size - a.size)
+  const leader = sized[0]?.size || 1
+  return sized.slice(0, PLACES).map((chat, index) => ({ ...chat, place: index + 1, level: (chat.size / leader) * 100 }))
 })
 const share = (value: number, of: number) => (of ? (value / of) * 100 : 0)
 
@@ -61,13 +62,19 @@ async function analyseNext() {
 <template>
   <div class="bento month">
     <section class="tile tile--ink month__main" :class="next || top ? 'span-8' : 'span-12'">
-      <div class="tile__label">{{ t('month.leaders') }}</div>
+      <div class="tile__label">
+        <span>{{ t('month.leaders') }}</span>
+        <span class="month__period">{{ t('month.allTime') }}</span>
+      </div>
       <ol v-if="rows.length" class="month__rows">
         <li v-for="row in rows" :key="row.id" class="month__row">
           <span class="month__place t-num" :class="{ 'month__place--first': row.place === 1 }">{{ row.place }}</span>
           <ChatAvatar :chat-id="row.id" :title="row.title" :has-avatar="row.hasAvatar" size="sm" />
           <span class="month__who">
-            <span class="month__name">{{ row.title }}</span>
+            <span class="month__line">
+              <span class="month__name">{{ row.title }}</span>
+              <span class="month__count t-num">{{ tc('common.messagesCount', row.size) }}</span>
+            </span>
             <span
               class="month__bar"
               role="img"
@@ -76,7 +83,6 @@ async function analyseNext() {
               <span :style="{ width: `${row.level}%` }" />
             </span>
           </span>
-          <span class="month__count t-num">{{ formatNumber(row.messages) }}</span>
         </li>
       </ol>
       <p v-else class="tile__note">{{ t('month.empty') }}</p>
@@ -143,7 +149,7 @@ async function analyseNext() {
 
 .month__row {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
   gap: var(--space-3);
   font: var(--text-ui);
@@ -166,9 +172,21 @@ async function analyseNext() {
   color: var(--on-lime);
 }
 
+.month__period {
+  font-weight: 500;
+}
+
 .month__who {
   display: grid;
   gap: 6px;
+  min-width: 0;
+}
+
+.month__line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
   min-width: 0;
 }
 
@@ -181,7 +199,7 @@ async function analyseNext() {
 /* The rating bar: each person against the busiest one. */
 .month__bar {
   display: block;
-  height: 4px;
+  height: 6px;
   border-radius: var(--radius-full);
   background: var(--on-tile-ink-well);
 }
@@ -194,9 +212,10 @@ async function analyseNext() {
 }
 
 .month__count {
-  min-width: 40px;
+  flex: none;
   color: var(--text-muted);
-  text-align: right;
+  font: var(--text-small);
+  font-variant-numeric: tabular-nums;
 }
 
 .month__top {

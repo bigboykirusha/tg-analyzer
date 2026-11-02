@@ -104,13 +104,14 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
             since: since.toISOString(),
             days: RECENT_DAYS,
             activeChats: active.length,
-            chats: chats.map(({ id, title, hasAvatar, lastMessageAt, messages, mine }) => ({
+            chats: chats.map(({ id, title, hasAvatar, lastMessageAt, messages, mine, total }) => ({
               id,
               title,
               hasAvatar,
               lastMessageAt,
               messages,
               mine,
+              total,
             })),
           }
         },

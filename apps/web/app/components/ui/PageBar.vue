@@ -124,4 +124,21 @@ const { t } = useI18n()
   align-items: center;
   gap: var(--space-1);
 }
+
+/* Header buttons are 36 px on phones too; the touch area still reaches 44 px. */
+@media (max-width: 640px) and (pointer: coarse) {
+  .page-bar__actions :deep(.btn--sm) {
+    min-height: var(--control-sm);
+  }
+
+  .page-bar__actions :deep(.btn--icon-only.btn--sm) {
+    width: var(--control-sm);
+  }
+
+  .page-bar__actions :deep(.btn--sm)::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+}
 </style>

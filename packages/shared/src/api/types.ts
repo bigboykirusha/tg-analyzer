@@ -181,6 +181,8 @@ export interface RecentChatDto {
   messages: number
   /** The user's own messages in the window. */
   mine: number
+  /** All messages in the chat, ever: Telegram reports it with the same answer, no extra request. */
+  total?: number
 }
 
 export interface RecentActivityResponse {

@@ -382,7 +382,7 @@ export const en = {
   'login.delivery.sms': 'We sent the code by SMS to {phone}.',
   'login.delivery.unsupported':
     'Telegram chose a way to send the code that only official apps support. Request the code again to get it another way.',
-  'login.exampleLink': 'See an example report →',
+  'login.exampleLink': 'See an example report',
   'login.getCode': 'Get code',
   'login.passwordDescription': 'Use your Telegram password only if two-factor authentication is enabled.',
   'login.passwordHelp': 'This password is checked by Telegram. TG Analyzer does not store it.',
@@ -403,6 +403,7 @@ export const en = {
   'login.signIn': 'Sign in',
   'login.signingIn': 'Signing in…',
   'month.empty': 'No private messages in the last month.',
+  'month.allTime': 'all time',
   'month.leaders': 'Busiest chats',
   'month.mine': '{share} yours',
   'month.next': 'Not analysed yet',

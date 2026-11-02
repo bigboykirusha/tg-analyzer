@@ -382,7 +382,7 @@ export const ru: Record<MessageKey, string> = {
   'login.delivery.sms': 'Код отправлен по SMS на номер {phone}.',
   'login.delivery.unsupported':
     'Telegram выбрал способ отправки, который поддерживают только официальные приложения. Запросите код ещё раз, чтобы получить его другим способом.',
-  'login.exampleLink': 'Открыть пример отчёта →',
+  'login.exampleLink': 'Открыть пример отчёта',
   'login.getCode': 'Получить код',
   'login.passwordDescription': 'Пароль нужен только если в Telegram включена двухфакторная защита.',
   'login.passwordHelp': 'Пароль проверяется Telegram. TG Analyzer его не хранит.',
@@ -403,6 +403,7 @@ export const ru: Record<MessageKey, string> = {
   'login.signIn': 'Войти',
   'login.signingIn': 'Входим…',
   'month.empty': 'За последний месяц в личных чатах тихо.',
+  'month.allTime': 'за всё время',
   'month.leaders': 'Больше всего переписок',
   'month.mine': 'ваших {share}',
   'month.next': 'Ещё не разобран',
