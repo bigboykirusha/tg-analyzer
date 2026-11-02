@@ -51,7 +51,7 @@ const items = computed(() =>
 </script>
 
 <template>
-  <section v-if="items.length" class="tile insights" aria-labelledby="insights-title">
+  <section v-if="items.length > 1" class="tile insights" aria-labelledby="insights-title">
     <h2 id="insights-title" class="insights__title">{{ t('insight.title') }}</h2>
     <ol class="insights__list">
       <li v-for="item in items" :key="item.id" class="insight">
@@ -74,7 +74,7 @@ const items = computed(() =>
 /* One row of up to four facts; a figure over one plain sentence each. */
 .insights__list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--space-4) var(--space-6);
   list-style: none;
 }
@@ -96,12 +96,6 @@ const items = computed(() =>
   color: var(--text-muted);
   font: var(--text-small);
   text-wrap: pretty;
-}
-
-@media (max-width: 900px) {
-  .insights__list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 /* Phones: a list, figure and sentence side by side would crowd; keep them stacked with hairlines. */

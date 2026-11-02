@@ -202,7 +202,7 @@ function signOut() {
   padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   color: var(--text-muted);
-  font: var(--text-control);
+  font: var(--text-ui);
   transition:
     background-color var(--transition-fast),
     color var(--transition-fast);

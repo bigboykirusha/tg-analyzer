@@ -7,13 +7,6 @@ const { t, tc, formatNumber, formatDecimal } = useI18n()
 const nameOf = useParticipantName()
 const pairName = usePairNames(() => props.group)
 
-// Leave the card out only when it has nothing to say: no replies in the map and no pairs to explain.
-const hasReplyMap = computed(() => {
-  const map = props.group.replyMap
-  if (!map) return props.group.topPairs.length > 0
-  return map.participantIds.length >= 3 && map.cells.some((row) => row.some((count) => count > 0))
-})
-
 const maxPair = computed(() => Math.max(1, ...props.group.topPairs.map((pair) => pair.symmetricScore)))
 const pairs = computed(() =>
   props.group.topPairs.map((pair) => ({
@@ -45,10 +38,6 @@ const magnets = computed(() =>
 
 <template>
   <div class="report-grid">
-    <ReportSection v-if="hasReplyMap" wide :title="t('group.replyMapTitle')" :text="t('group.replyMapText')">
-      <ReplyMap :group="group" />
-    </ReportSection>
-
     <ReportSection wide :title="t('group.networkTitle')" :text="t('group.networkText')">
       <ul v-if="pairs.length" class="pairs">
         <li v-for="pair in pairs" :key="pair.key" class="pair">

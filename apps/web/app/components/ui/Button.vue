@@ -72,7 +72,7 @@ const classes = computed(() => [
   background: transparent;
   color: var(--text);
   cursor: pointer;
-  font: var(--text-control);
+  font: var(--text-ui);
   text-align: center;
   text-decoration: none;
   white-space: nowrap;

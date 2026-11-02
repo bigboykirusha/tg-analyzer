@@ -161,7 +161,7 @@ svg.lucide {
 }
 
 .t-control {
-  font: var(--text-control);
+  font: var(--text-ui);
 }
 
 .t-small {
@@ -685,6 +685,7 @@ svg.lucide {
 }
 
 .tile--grey {
+  --border: var(--border-strong);
   background: var(--tile-grey);
 }
 

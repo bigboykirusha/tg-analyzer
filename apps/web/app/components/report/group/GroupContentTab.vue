@@ -14,7 +14,11 @@ const signatures = computed(() =>
 </script>
 
 <template>
-  <ReportSection :title="t('group.sharedVocabulary')" :text="t('group.sharedVocabularyHint')">
+  <ReportSection
+    :wide="!group.uniqueGroupWords.length"
+    :title="t('group.sharedVocabulary')"
+    :text="t('group.sharedVocabularyHint')"
+  >
     <WordChips :items="group.sharedVocabulary" :empty="t('group.noWords')" />
   </ReportSection>
   <ReportSection

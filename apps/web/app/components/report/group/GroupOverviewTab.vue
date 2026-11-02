@@ -115,7 +115,7 @@ const insights = computed(() => {
       <p v-else class="t-small t-muted">{{ t('group.noParticipants') }}</p>
     </ReportSection>
 
-    <ReportSection :title="t('group.healthTitle')">
+    <ReportSection tone="grey" :title="t('group.healthTitle')">
       <template v-if="health">
         <ReportMeters :meters="healthMeters" />
       </template>
@@ -126,7 +126,7 @@ const insights = computed(() => {
       <ReportFacts :facts="healthFacts" :columns="3" />
     </ReportSection>
 
-    <ReportSection wide :title="t('group.insightsTitle')">
+    <ReportSection wide tone="ink" :title="t('group.insightsTitle')">
       <ul v-if="insights.length" class="insights">
         <li v-for="item in insights" :key="item">{{ item }}</li>
       </ul>

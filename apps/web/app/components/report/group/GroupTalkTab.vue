@@ -73,12 +73,18 @@ const absent = computed(() =>
       <ReportMeters :meters="wakers" />
     </ReportSection>
 
-    <ReportSection v-if="closers.length" :title="t('group.talk.nightTitle')" :text="t('group.talk.nightText')">
+    <ReportSection
+      v-if="closers.length"
+      tone="grey"
+      :title="t('group.talk.nightTitle')"
+      :text="t('group.talk.nightText')"
+    >
       <ReportMeters :meters="closers" />
     </ReportSection>
 
     <ReportSection
       v-if="reactionStars.length || topReactions.length"
+      tone="lime"
       :title="t('group.talk.reactionsTitle')"
       :text="t('group.talk.reactionsText')"
     >

@@ -80,8 +80,6 @@ const comparisons = computed(() =>
 </script>
 
 <template>
-  <ReportQuiz :data="data" />
-
   <ReportSection :title="t('report.compare.title')">
     <ReportCompare v-if="comparisons.length" :their-name="data.summary.title" :rows="comparisons" />
     <p v-else class="t-small t-muted">{{ t('report.compare.empty') }}</p>

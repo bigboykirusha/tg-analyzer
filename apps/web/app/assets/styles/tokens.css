@@ -1,7 +1,7 @@
 /*
  * Design tokens — «Чистый»: cool grey canvas, white cards, ink and lime.
- * You are ink, they are lime; actions are ink. One ink tile and one lime tile
- * per screen carry the emphasis, everything else is a white card.
+ * You are ink, they are lime; actions are ink. White cards are the default; ink,
+ * lime and grey tiles break up a page of them (see «Плитки» in CLAUDE.md).
  * Components use these names only: a new shade is a new token with a value
  * per theme, never color-mix() in a component.
  */
@@ -14,15 +14,15 @@
   --surface-2: #f2f3f5;
   /* Loading placeholders: visible both on the page and inside a white tile. */
   --skeleton: #e6e8eb;
-  --fill-hover: #e9eaed;
+  --fill-hover: #e6e8eb;
   --surface-raised: #ffffff;
   /* Grey fill for rows and icon tiles inside overlays (one step up from --surface-raised). */
   --fill-raised: #f2f3f5;
   /* The sidebar is a heavier surface than the page; the selected row is a white plate on it. */
-  --sidebar: #e9eaed;
+  --sidebar: #e6e8eb;
   --sidebar-selected: #ffffff;
   --thumb: #ffffff;
-  --border: #e7e8eb;
+  --border: #e6e8eb;
   --border-strong: #d6d8dc;
   --control-off: #8f949b;
   --hover: rgba(14, 15, 17, 0.04);
@@ -68,7 +68,7 @@
   --on-inverse-line: rgba(255, 255, 255, 0.28);
   --switch-thumb: #ffffff;
   /* The pill track: visible on the page and on a white card alike. */
-  --segment-track: #e9eaed;
+  --segment-track: #e6e8eb;
   --scrim: rgba(10, 10, 12, 0.36);
   --heat-1: #eef8d6;
   --heat-2: #d9f29c;
@@ -89,7 +89,7 @@
   --shadow-segment: 0 1px 3px rgba(10, 20, 40, 0.1);
   --shadow-overlay:
     0 12px 32px rgba(14, 15, 17, 0.12), 0 2px 6px rgba(14, 15, 17, 0.06), 0 0 0 1px rgba(14, 15, 17, 0.05);
-  --shadow-window: 0 0 0 1px #e7e8eb, 0 30px 80px rgba(10, 20, 40, 0.14), 0 8px 24px rgba(10, 20, 40, 0.06);
+  --shadow-window: 0 0 0 1px #e6e8eb, 0 30px 80px rgba(10, 20, 40, 0.14), 0 8px 24px rgba(10, 20, 40, 0.06);
   --device-frame: linear-gradient(140deg, #e4e2de 0%, #b9b6b0 22%, #f1efeb 48%, #a9a6a0 76%, #d9d6d1 100%);
   --device-button: #a9a6a0;
   --device-black: #000000;
@@ -110,7 +110,7 @@
   --glass: rgba(10, 10, 11, 0.72);
   --surface: #141416;
   --surface-2: #1c1c1f;
-  --skeleton: #1f1f23;
+  --skeleton: #26262a;
   --fill-hover: #26262a;
   --surface-raised: #1c1c1f;
   --fill-raised: #26262a;
@@ -137,7 +137,7 @@
   --them: #c6f06a;
   --them-ink: #c6f06a;
   --tile-ink: #f2f2f3;
-  --tile-grey: #26262a;
+  --tile-grey: #222226;
   --on-tile-ink: #0a0a0b;
   --on-tile-ink-muted: rgba(10, 10, 11, 0.62);
   --lime: #c6f06a;
@@ -245,7 +245,6 @@
   --text-lede: 400 16px/24px var(--font-sans);
   --text-body: 400 16px/25px var(--font-sans);
   --text-ui: 500 14px/20px var(--font-sans);
-  --text-control: 500 14px/20px var(--font-sans);
   --text-small: 400 13px/18px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
   /* Tile labels are quiet sentence-case, not shouting caps. */

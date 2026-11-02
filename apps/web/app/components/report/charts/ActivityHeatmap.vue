@@ -52,12 +52,18 @@ const monthLabels = computed(() => {
   })
 })
 
+/** Width of the scroll area, so a short history fills the card instead of leaving it half empty. */
+const room = ref(0)
+/** The grid gap in px: the same `--space-1` the cells are laid out with. */
+const GAP_PX = 4
+const MAX_CELL = 22
+
 const cellSize = computed(() => {
   const count = weeks.value.length
-  if (count <= 8) return 26
-  if (count <= 20) return 18
-  if (count <= 36) return 14
-  return 12
+  const base = count <= 8 ? 26 : count <= 20 ? 18 : count <= 36 ? 14 : 12
+  if (!room.value) return base
+  const fit = Math.floor((room.value - GAP_PX * (count - 1)) / count)
+  return Math.min(Math.max(base, fit), Math.max(base, MAX_CELL))
 })
 
 const weekdayLabels = computed(() => {
@@ -81,6 +87,7 @@ let resizeObserver: ResizeObserver | undefined
 function updateScroll() {
   const element = scroller.value
   if (!element) return
+  room.value = element.clientWidth
   earlier.value = element.scrollLeft > 1
   later.value = element.scrollLeft + element.clientWidth < element.scrollWidth - 1
 }

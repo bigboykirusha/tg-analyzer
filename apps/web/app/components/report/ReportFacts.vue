@@ -54,7 +54,9 @@ const cols = computed(() => Math.max(1, Math.min(props.columns, props.facts.leng
   border-top: 1px solid var(--border);
 }
 
+/* A label may take two lines; the values of one row still sit on one baseline. */
 .fact__value {
+  margin-top: auto;
   font: var(--text-h3);
   letter-spacing: -0.02em;
   overflow-wrap: anywhere;

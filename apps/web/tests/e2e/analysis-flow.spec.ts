@@ -116,18 +116,8 @@ test('group chats get the group report', async ({ page }, testInfo) => {
     await expect(page.getByRole('heading', { name: memberName, exact: true })).toBeVisible()
     await expect(page.getByRole('dialog')).toHaveCount(0)
   }
-  // Older reports have pair statistics but no reply matrix. They must not
-  // claim there are no pairs simply because that newer field is missing.
-  await page.route('**/api/v1/reports/-1002004', async (route) => {
-    const response = await route.fetch()
-    const data = await response.json()
-    data.report.group.replyMap = null
-    await route.fulfill({ response, json: data })
-  })
-  await page.reload()
-  await expect(page.getByText('Матрица ответов появится после обновления отчёта.', { exact: true })).toBeVisible({
-    timeout: 15_000,
-  })
+  // The pair statistics stay in the report.
+  await expect(page.getByRole('heading', { name: 'Структура взаимодействий' })).toBeVisible()
 })
 
 test('a completed analysis is recovered when websocket progress is unavailable', async ({ page }) => {

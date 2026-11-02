@@ -954,7 +954,7 @@ watch(open, (value) => {
   background: var(--story-chip);
   color: var(--story-ink);
   cursor: pointer;
-  font: var(--text-control);
+  font: var(--text-ui);
 }
 
 .stories__action--primary {
@@ -1003,7 +1003,7 @@ watch(open, (value) => {
   background: var(--surface-2);
   color: var(--text);
   cursor: pointer;
-  font: var(--text-control);
+  font: var(--text-ui);
   text-align: left;
 }
 
