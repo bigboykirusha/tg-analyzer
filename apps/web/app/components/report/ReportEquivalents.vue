@@ -26,7 +26,7 @@ const width = (value: number) =>
 </script>
 
 <template>
-  <ReportSection v-if="flights >= MIN_FLIGHTS" :title="t('report.mix.voiceTitle')" :text="caption">
+  <ReportSection v-if="flights >= MIN_FLIGHTS" tone="lime" :title="t('report.mix.voiceTitle')" :text="caption">
     <p class="scale__figure t-num">{{ formatDuration(seconds) }}</p>
     <div class="scale__rows">
       <div class="scale__row">
@@ -65,7 +65,7 @@ const width = (value: number) =>
   display: block;
   height: var(--space-2);
   border-radius: var(--radius-full);
-  background: var(--fill-raised);
+  background: var(--on-lime-well);
   overflow: hidden;
 }
 

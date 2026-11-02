@@ -63,8 +63,8 @@ function again() {
 </script>
 
 <template>
-  <ReportSection v-if="questions.length" :title="t('report.mix.quizTitle')" :text="t('report.mix.quizText')">
-    <template v-if="current">
+  <ReportSection v-if="questions.length" tone="ink" :title="t('report.mix.quizTitle')" :text="t('report.mix.quizText')">
+    <div v-if="current" class="quiz">
       <p class="quiz__ask">
         <span class="t-title">{{ t(`report.mix.quiz.${current.id}`) }}</span>
         <span class="quiz__step t-num">{{ step + 1 }} / {{ questions.length }}</span>
@@ -85,23 +85,33 @@ function again() {
       <template v-if="picked">
         <ReportCompare :their-name="name" :rows="reveal" />
         <div>
-          <UiButton variant="soft" size="sm" @click="next">
+          <UiButton variant="secondary" size="sm" @click="next">
             {{ last ? t('report.mix.quizResult') : t('report.mix.quizNext') }}
           </UiButton>
         </div>
       </template>
-    </template>
-    <template v-else>
+    </div>
+    <div v-else class="quiz">
       <p class="quiz__score t-num">{{ score }} / {{ questions.length }}</p>
       <p class="t-lede">{{ tc('report.mix.quizScore', score) }}</p>
       <div>
-        <UiButton variant="soft" size="sm" @click="again">{{ t('report.mix.quizAgain') }}</UiButton>
+        <UiButton variant="secondary" size="sm" @click="again">{{ t('report.mix.quizAgain') }}</UiButton>
       </div>
-    </template>
+    </div>
   </ReportSection>
 </template>
 
 <style scoped>
+.quiz {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* The ink tile has its own line colour; the default border would vanish on it. */
+.quiz :deep(.btn--secondary) {
+  border-color: var(--text-muted);
+}
+
 .quiz__ask {
   display: flex;
   align-items: baseline;
@@ -120,9 +130,9 @@ function again() {
   gap: var(--space-2);
 }
 
-/* The right side lights up in lime, the only accent a white card may carry. */
-.quiz__option--right,
-.quiz__option--right:disabled {
+/* The right side lights up in lime. */
+.quiz .quiz__option--right,
+.quiz .quiz__option--right:disabled {
   border-color: var(--lime);
   background: var(--lime);
   color: var(--on-lime);
