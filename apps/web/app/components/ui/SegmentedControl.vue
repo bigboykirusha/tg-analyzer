@@ -98,7 +98,7 @@ function handleKeydown(event: KeyboardEvent) {
 
 .segmented--inline {
   display: inline-flex;
-  width: auto;
+  width: max-content;
 }
 
 .segment-indicator {

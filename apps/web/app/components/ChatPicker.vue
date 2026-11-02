@@ -273,5 +273,13 @@ onMounted(() => {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-2);
   }
+
+  .picker-tools .picker-filter {
+    width: 100%;
+  }
+
+  .picker-tools .picker-filter :deep(.segment) {
+    flex: 1 1 0;
+  }
 }
 </style>

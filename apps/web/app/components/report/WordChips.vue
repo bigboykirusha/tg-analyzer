@@ -26,15 +26,18 @@ const { formatNumber } = useI18n()
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  height: 32px;
-  padding: 0 var(--space-3);
+  max-width: 100%;
+  min-height: var(--control-xs);
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
   background: var(--surface-2);
   color: var(--text);
   font: var(--text-ui);
+  overflow-wrap: anywhere;
 }
 
 .chip__count {
+  flex: none;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   font: var(--text-caption);

@@ -9,7 +9,7 @@ defineProps<{ data: ReportDto; label: string; value: string; note?: string | nul
 </script>
 
 <template>
-  <div class="bento hero">
+  <div class="bento bento--split hero">
     <section class="tile tile--ink span-8 hero__main">
       <div class="tile__label">{{ label }}</div>
       <div class="tile__figure">{{ value }}</div>
@@ -31,5 +31,17 @@ defineProps<{ data: ReportDto; label: string; value: string; note?: string | nul
 
 .hero__accent {
   justify-content: space-between;
+}
+
+/* The overview should leave room for the first facts on a phone. */
+@media (max-width: 640px) {
+  .hero__main,
+  .hero__accent {
+    gap: var(--space-2);
+  }
+
+  .hero__pulse {
+    padding-top: var(--space-2);
+  }
 }
 </style>

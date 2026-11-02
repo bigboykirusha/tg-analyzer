@@ -10,7 +10,7 @@ defineProps<{ title: string; text?: string; wide?: boolean; tone?: 'ink' | 'lime
   <article class="tile report-section" :class="[{ 'report-section--wide': wide }, tone && `tile--${tone}`]">
     <header class="report-section__head">
       <div class="report-section__copy">
-        <h2 class="report-section__title">{{ title }}</h2>
+        <h3 class="report-section__title">{{ title }}</h3>
         <p v-if="text" class="report-section__text">{{ text }}</p>
       </div>
       <div v-if="$slots.actions" class="report-section__actions no-print">
@@ -23,7 +23,7 @@ defineProps<{ title: string; text?: string; wide?: boolean; tone?: 'ink' | 'lime
 
 <style scoped>
 .report-section {
-  gap: var(--space-4);
+  gap: var(--space-5);
   overflow: hidden;
 }
 

@@ -254,6 +254,14 @@ onMounted(() => {
     padding-block: var(--space-3);
   }
 
+  .row :deep(.segmented) {
+    width: 100%;
+  }
+
+  .row :deep(.segment) {
+    flex: 1 1 0;
+  }
+
   .sign-out {
     justify-items: stretch;
   }

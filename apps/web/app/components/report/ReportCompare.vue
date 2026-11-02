@@ -104,10 +104,13 @@ const them = computed(() => props.theirName || t('report.them'))
 .compare__values span {
   display: inline-flex;
   align-items: center;
+  min-width: 0;
+  overflow-wrap: anywhere;
   gap: var(--space-2);
 }
 
 .dot {
+  flex: none;
   width: 8px;
   height: 8px;
   border-radius: 50%;

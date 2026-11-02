@@ -298,8 +298,9 @@ function changeNumber() {
   }
 
   .login-card {
-    padding: var(--space-5);
-    border-radius: var(--radius-lg);
+    padding: var(--space-4) 0;
+    border-radius: 0;
+    background: transparent;
   }
 }
 </style>

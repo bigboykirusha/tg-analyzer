@@ -328,6 +328,13 @@ function signOut() {
   }
 }
 
+/* The home action and profile need their full touch targets on narrow phones. */
+@media (max-width: 430px) {
+  .topbar:has(.page-bar[data-untitled]) .topbar__brand :deep(.brand-link__name) {
+    display: none;
+  }
+}
+
 /*
  * The screen's navigation (`ReportNav`) sits in the header itself. Phones and
  * tablets give it a second row; wide screens centre it in the first.
@@ -341,6 +348,11 @@ function signOut() {
 }
 
 @media (min-width: 1200px) {
+  /* The centred section control reserves its own space, even for long chat names. */
+  .app-navigation:has(.report-nav) .topbar__page :deep(.page-bar__copy) {
+    max-width: max(0px, calc((100% - var(--report-nav-width)) / 2 - var(--space-10)));
+  }
+
   .header-sub {
     position: absolute;
     inset: env(safe-area-inset-top, 0px) 0 auto;

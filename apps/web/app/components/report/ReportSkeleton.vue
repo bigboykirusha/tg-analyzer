@@ -11,7 +11,7 @@ defineProps<{ title?: string | null }>()
   <div class="stack stack--lg" aria-busy="true">
     <UiPageBar v-if="title" :title="title" back="/dashboard" />
 
-    <div class="bento" aria-hidden="true">
+    <div class="bento bento--split" aria-hidden="true">
       <div class="tile span-8 skeleton-tile">
         <UiSkeleton width="30%" />
         <UiSkeleton width="45%" height="48px" />
@@ -53,7 +53,7 @@ defineProps<{ title?: string | null }>()
 
 @media (min-width: 641px) {
   .skeleton-nav {
-    max-width: 420px;
+    max-width: var(--report-nav-width);
   }
 }
 

@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="bento" aria-hidden="true">
+  <div class="bento bento--split" aria-hidden="true">
     <div class="tile tile--ink span-8 month-skeleton month-skeleton--ink">
       <UiSkeleton width="38%" />
       <div v-for="row in 3" :key="row" class="month-skeleton__row">

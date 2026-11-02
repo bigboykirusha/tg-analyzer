@@ -60,7 +60,7 @@ async function analyseNext() {
 </script>
 
 <template>
-  <div class="bento month">
+  <div class="bento bento--split month">
     <section class="tile tile--ink month__main" :class="next || top ? 'span-8' : 'span-12'">
       <div class="tile__label">
         <span>{{ t('month.leaders') }}</span>

@@ -70,7 +70,7 @@ onMounted(() => {
       </template>
 
       <template v-else-if="newcomer">
-        <UiPageBar :title="t('home.onboardTitle')" :lede="t('home.onboardText')" />
+        <UiPageBar :title="t('home.onboardTitle')" />
 
         <AnalysisBanner />
 
@@ -83,8 +83,6 @@ onMounted(() => {
             </span>
           </li>
         </ol>
-
-        <MonthSummary v-if="workspace.recent?.chats.length" :recent="workspace.recent" :report-ids="reportIds" />
 
         <UiPageSection id="chats" :title="t('dashboard.chatsTitle')">
           <ChatPicker />

@@ -57,6 +57,7 @@
   --on-lime-line: rgba(14, 15, 17, 0.14);
   --on-lime-well: rgba(14, 15, 17, 0.08);
   --on-tile-ink-well: rgba(255, 255, 255, 0.12);
+  --on-tile-ink-line: rgba(255, 255, 255, 0.18);
   --warning: #e08a00;
   --warning-ink: #9a5c00;
   --warning-subtle: #fff3dc;
@@ -147,6 +148,7 @@
   --on-lime-line: rgba(10, 10, 11, 0.14);
   --on-lime-well: rgba(10, 10, 11, 0.08);
   --on-tile-ink-well: rgba(10, 10, 11, 0.1);
+  --on-tile-ink-line: rgba(10, 10, 11, 0.18);
   --warning: #ffb224;
   --warning-ink: #ffb224;
   --warning-subtle: #33240a;
@@ -219,10 +221,14 @@
   --icon-md: 20px;
   --icon-lg: 24px;
   --topbar-height: 64px;
+  --report-nav-width: 420px;
   /* One content column for the header and every page; the gutter follows the screen. */
   --page-max: 1200px;
   --page-max-narrow: 720px;
   --page-gutter: var(--space-8);
+  /* Shared geometry for cards, including the measured report columns. */
+  --card-padding: var(--space-6);
+  --card-gap: var(--space-4);
   --opacity-disabled: 0.4;
   --z-header: 20;
   --z-popover: 30;
@@ -318,6 +324,8 @@
     --topbar-height: 56px;
     --page-top: var(--space-5);
     --page-gap: var(--space-8);
+    --card-padding: var(--space-5);
+    --card-gap: var(--space-3);
     --text-h1: 600 30px/34px var(--font-sans);
     --text-h2: 600 22px/28px var(--font-sans);
     --text-figure: 600 34px/36px var(--font-sans);

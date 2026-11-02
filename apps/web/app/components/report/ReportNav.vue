@@ -71,7 +71,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', spy))
   }
 
   .report-nav :deep(.segmented) {
-    width: 420px;
+    width: var(--report-nav-width);
   }
 }
 </style>

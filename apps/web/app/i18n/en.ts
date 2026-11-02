@@ -327,7 +327,6 @@ export const en = {
   'group.wordsPerMessage': 'Words per text message',
   'group.you': 'You',
   'header.activityLabel': 'Analysing «{chat}», open the chats list',
-  'home.onboardText': 'Your report is ready in about a minute. Message texts are never stored.',
   'home.onboardTitle': 'Pick your first chat',
   'home.title': 'Home',
   'insight.busiest_day.few': 'the busiest day — {count} messages',

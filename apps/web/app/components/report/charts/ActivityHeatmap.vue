@@ -83,6 +83,7 @@ const later = ref(false)
 const selectionId = useId()
 const keyboardId = useId()
 let resizeObserver: ResizeObserver | undefined
+let resizeFrame = 0
 
 function updateScroll() {
   const element = scroller.value
@@ -90,6 +91,13 @@ function updateScroll() {
   room.value = element.clientWidth
   earlier.value = element.scrollLeft > 1
   later.value = element.scrollLeft + element.clientWidth < element.scrollWidth - 1
+}
+
+// Cell size depends on the measured width. Apply it in the next frame so
+// changing the grid height cannot re-enter Safari's resize notification cycle.
+function scheduleResize() {
+  cancelAnimationFrame(resizeFrame)
+  resizeFrame = requestAnimationFrame(updateScroll)
 }
 
 function newest() {
@@ -137,10 +145,13 @@ function onKeydown(event: KeyboardEvent) {
 
 onMounted(() => {
   newest()
-  resizeObserver = new ResizeObserver(updateScroll)
+  resizeObserver = new ResizeObserver(scheduleResize)
   if (scroller.value) resizeObserver.observe(scroller.value)
 })
-onBeforeUnmount(() => resizeObserver?.disconnect())
+onBeforeUnmount(() => {
+  cancelAnimationFrame(resizeFrame)
+  resizeObserver?.disconnect()
+})
 watch(weeks, async () => {
   await nextTick()
   newest()

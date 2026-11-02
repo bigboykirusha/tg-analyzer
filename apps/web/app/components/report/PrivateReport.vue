@@ -47,7 +47,8 @@ const shareHint = computed(() => {
         <template v-if="mineShare !== null">
           <p v-if="shareHint" class="share__verdict">{{ shareHint }}</p>
           <div class="tile__figure share__figure">
-            {{ mineShare }}<small> / {{ 100 - mineShare }}</small>
+            <span>{{ mineShare }}</span
+            ><small>/</small><span>{{ 100 - mineShare }}</span>
           </div>
           <dl class="share__sides">
             <div>
@@ -94,6 +95,9 @@ const shareHint = computed(() => {
 }
 
 .share__figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
   margin-top: auto;
   font: var(--text-figure-lg);
 }
@@ -106,7 +110,7 @@ const shareHint = computed(() => {
 }
 
 .share__figure small {
-  font-size: 0.4em;
+  font-size: 0.6em;
 }
 
 .share__sides {

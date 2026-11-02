@@ -36,7 +36,7 @@ const { t } = useI18n()
       </NuxtLink>
       <slot name="leading" />
       <div class="page-bar__copy" :class="{ 'sr-only': untitled, 'page-bar__copy--quiet': quietOnWide }">
-        <h1 class="page-bar__title">{{ title }}</h1>
+        <h1 class="page-bar__title" :title="title">{{ title }}</h1>
         <p v-if="lede" class="page-bar__lede t-num" :title="lede">{{ lede }}</p>
       </div>
       <div v-if="$slots.actions" class="page-bar__actions no-print"><slot name="actions" /></div>

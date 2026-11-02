@@ -91,7 +91,6 @@ const classes = computed(() => [
 .btn--sm {
   min-height: var(--control-sm);
   padding: 0 var(--space-4);
-  padding: 0 14px;
 }
 
 .btn--lg {

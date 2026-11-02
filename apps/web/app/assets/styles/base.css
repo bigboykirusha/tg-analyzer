@@ -541,7 +541,7 @@ svg.lucide {
 .bento {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: var(--space-3);
+  gap: var(--card-gap);
   min-width: 0;
 }
 
@@ -589,6 +589,17 @@ svg.lucide {
   }
 }
 
+/* Paired summary tiles keep a complete row on tablets. */
+@media (min-width: 641px) and (max-width: 900px) {
+  .bento--split > .span-8 {
+    grid-column: span 7;
+  }
+
+  .bento--split > .span-4 {
+    grid-column: span 5;
+  }
+}
+
 @media (max-width: 640px) {
   .bento > *,
   .bento > .span-3,
@@ -609,7 +620,7 @@ svg.lucide {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
-  gap: var(--space-3);
+  gap: var(--card-gap);
   min-width: 0;
 }
 
@@ -624,7 +635,7 @@ svg.lucide {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: 1px;
-  column-gap: var(--space-3);
+  column-gap: var(--card-gap);
   min-width: 0;
   /* Hidden for the one frame before the cards are measured, so they never overlap. */
   visibility: hidden;
@@ -649,8 +660,12 @@ svg.lucide {
   .report-columns {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--card-gap);
     visibility: visible;
+  }
+
+  .report-columns > * {
+    align-self: stretch;
   }
 }
 
@@ -660,7 +675,7 @@ svg.lucide {
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
-  padding: var(--space-5);
+  padding: var(--card-padding);
   border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--text);
@@ -674,12 +689,17 @@ svg.lucide {
   --text: var(--on-tile-ink);
   --text-muted: var(--on-tile-ink-muted);
   --text-subtle: var(--on-tile-ink-muted);
-  --border: var(--on-tile-ink-muted);
+  --border: var(--on-tile-ink-line);
+  --border-strong: var(--on-tile-ink-line);
+  --surface-2: var(--on-tile-ink-well);
   background: var(--tile-ink);
   color: var(--on-tile-ink);
 }
 
 .tile--lime {
+  --border: var(--on-lime-line);
+  --border-strong: var(--on-lime-line);
+  --surface-2: var(--on-lime-well);
   --text: var(--on-lime);
   --text-muted: var(--on-lime-muted);
   --text-subtle: var(--on-lime-muted);
@@ -723,13 +743,6 @@ svg.lucide {
   color: var(--text-muted);
   font: var(--text-small);
   font-weight: 500;
-}
-
-@media (max-width: 640px) {
-  .tile {
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
-  }
 }
 
 /* ─── Menu rows (PopoverMenu items, Select options) ─────────────────────── */

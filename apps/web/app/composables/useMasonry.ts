@@ -4,7 +4,7 @@
  * column frees up first. The cards stay in the DOM in reading order and keep their own
  * height; on phones the container is a plain column and nothing is measured.
  */
-export function useMasonry(container: Ref<HTMLElement | null>, gap = 12) {
+export function useMasonry(container: Ref<HTMLElement | null>) {
   const ready = ref(false)
   let resize: ResizeObserver | undefined
   let mutation: MutationObserver | undefined
@@ -14,6 +14,7 @@ export function useMasonry(container: Ref<HTMLElement | null>, gap = 12) {
   function layout() {
     const element = container.value
     if (!element) return
+    const gap = Number.parseFloat(getComputedStyle(element).columnGap) || 0
     for (const child of Array.from(element.children) as HTMLElement[]) {
       if (wide?.matches) child.style.gridRowEnd = `span ${Math.ceil(child.getBoundingClientRect().height) + gap}`
       else child.style.removeProperty('grid-row-end')

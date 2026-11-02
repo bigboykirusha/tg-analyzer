@@ -327,7 +327,6 @@ export const ru: Record<MessageKey, string> = {
   'group.wordsPerMessage': 'Слов в текстовом сообщении',
   'group.you': 'Вы',
   'header.activityLabel': 'Идёт анализ «{chat}», открыть список чатов',
-  'home.onboardText': 'Отчёт готов через минуту. Тексты сообщений не сохраняются.',
   'home.onboardTitle': 'Выберите первый чат',
   'home.title': 'Главная',
   'insight.busiest_day.few': 'самый разговорчивый день — {count} сообщения',
