@@ -18,6 +18,8 @@ const points = computed(() => {
     if (index % 7 === 0) buckets.push({ date: day.date, value: 0 })
     buckets[buckets.length - 1]!.value += chartCount(day.total)
   })
+  // A last week that is not over yet would plunge to near zero and read as «the chat died».
+  if (props.days.length % 7 !== 0 && buckets.length > 1) buckets.pop()
   return buckets
 })
 const total = computed(() => points.value.reduce((sum, point) => sum + point.value, 0))

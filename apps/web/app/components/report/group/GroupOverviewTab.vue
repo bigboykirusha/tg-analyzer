@@ -150,9 +150,18 @@ const insights = computed(() => {
   font: var(--text-body);
 }
 
+/* Rules sit between rows, never above the first one, so a lone sentence is not underlined by its own title. */
+.insights li:nth-child(-n + 2) {
+  border-top: 0;
+}
+
 @media (max-width: 640px) {
   .insights {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .insights li:nth-child(2) {
+    border-top: 1px solid var(--border);
   }
 }
 </style>

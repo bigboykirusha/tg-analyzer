@@ -136,7 +136,7 @@ export const ru: Record<MessageKey, string> = {
   'dashboard.sessionInactive': 'Сеанс Telegram завершился. Чтобы разобрать новый чат, войдите снова.',
   'dashboard.shown': 'Показано {shown} из {total}',
   'dashboard.staleDialogs': 'Telegram занят анализом — показан последний загруженный список.',
-  'dashboard.title': 'Ваши переписки',
+  'dashboard.title': 'Главная',
   'dashboard.truncated': 'Показаны 500 последних чатов.',
   'dashboard.reportsTitle': 'Отчёты',
   'dashboard.chatsTitle': 'Чаты Telegram',

@@ -136,7 +136,7 @@ export const en = {
   'dashboard.sessionInactive': 'Your Telegram session ended. Sign in again to analyse new chats.',
   'dashboard.shown': 'Shown {shown} of {total}',
   'dashboard.staleDialogs': 'Telegram is busy with an analysis, showing the last loaded list.',
-  'dashboard.title': 'Your conversations',
+  'dashboard.title': 'Home',
   'dashboard.truncated': 'Only your 500 most recent chats are listed.',
   'dashboard.reportsTitle': 'Reports',
   'dashboard.chatsTitle': 'Telegram chats',
