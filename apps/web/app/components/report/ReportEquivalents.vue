@@ -63,7 +63,7 @@ const width = (value: number) =>
 
 .scale__bar {
   display: block;
-  height: var(--space-2);
+  height: var(--bar-height);
   border-radius: var(--radius-full);
   background: var(--on-lime-well);
   overflow: hidden;

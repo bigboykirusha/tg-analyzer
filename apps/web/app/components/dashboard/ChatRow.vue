@@ -207,7 +207,7 @@ function run(action: 'analyse' | 'delete') {
   flex: 1 1 auto;
   min-width: 48px;
   max-width: 160px;
-  height: 4px;
+  height: var(--bar-height);
   overflow: hidden;
   border-radius: var(--radius-full);
   background: var(--surface-2);

@@ -2,7 +2,6 @@ import type {
   GroupHealthDto,
   GroupMemberRole,
   GroupPairDto,
-  GroupReplyMapDto,
   GroupParticipantDto,
   GroupReportDto,
   TopItemDto,
@@ -299,7 +298,6 @@ export function computeGroupReport(input: GroupReportInput): GroupReportDto {
   return {
     participants,
     topPairs: buildTopPairs(participants, directPairs, impliedPairs),
-    replyMap: buildReplyMap(participants, directPairs, impliedPairs),
     health:
       input.totalMessages > 0 && memberCount > 0
         ? {
@@ -337,28 +335,6 @@ function computeTopicSignature(own: ReadonlyMap<string, number>, all: ReadonlyMa
     })
     .sort((left, right) => right.count - left.count || left.value.localeCompare(right.value))
     .slice(0, 5)
-}
-
-/** Members in the reply map: more makes the grid unreadable on a phone. */
-export const REPLY_MAP_SIZE = 8
-
-function buildReplyMap(
-  participants: readonly GroupParticipantDto[],
-  directPairs: ReadonlyMap<string, number>,
-  impliedPairs: ReadonlyMap<string, number>,
-): GroupReplyMapDto {
-  const ids = [...participants]
-    .filter((participant) => participant.messageCount > 0)
-    .sort((left, right) => right.messageCount - left.messageCount)
-    .slice(0, REPLY_MAP_SIZE)
-    .map((participant) => participant.id)
-  // Pair keys are `recipient|sender`.
-  const cells = ids.map((from) =>
-    ids.map((to) =>
-      from === to ? 0 : (directPairs.get(`${to}|${from}`) ?? 0) + (impliedPairs.get(`${to}|${from}`) ?? 0),
-    ),
-  )
-  return { participantIds: ids, cells }
 }
 
 function buildTopPairs(

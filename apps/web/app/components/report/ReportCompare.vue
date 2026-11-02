@@ -77,7 +77,7 @@ const them = computed(() => props.theirName || t('report.them'))
 .compare__bar {
   display: flex;
   gap: 2px;
-  height: 8px;
+  height: var(--bar-height);
   overflow: hidden;
   border-radius: var(--radius-full);
 }

@@ -99,7 +99,7 @@ const botUrl = computed(() => (auth.user?.botUrl && !auth.user.botNotify ? auth.
 
 .analysis-banner__bar {
   width: 100%;
-  height: 6px;
+  height: var(--bar-height);
   overflow: hidden;
   border-radius: var(--radius-full);
   background: var(--surface-2);

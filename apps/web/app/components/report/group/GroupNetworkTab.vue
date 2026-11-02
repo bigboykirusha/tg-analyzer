@@ -101,7 +101,7 @@ const magnets = computed(() =>
 }
 
 .pair__track {
-  height: 6px;
+  height: var(--bar-height);
   overflow: hidden;
   border-radius: var(--radius-full);
   background: var(--surface-2);

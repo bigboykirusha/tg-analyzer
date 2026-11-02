@@ -75,7 +75,7 @@ const { formatPercent } = useI18n()
 }
 
 .meter__track {
-  height: 8px;
+  height: var(--bar-height);
   overflow: hidden;
   border-radius: var(--radius-full);
   background: var(--surface-2);

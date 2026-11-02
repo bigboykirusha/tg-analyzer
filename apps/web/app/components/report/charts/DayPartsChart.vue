@@ -90,7 +90,7 @@ const hasActivity = computed(() => items.value.some((item) => item.value > 0))
 }
 
 .distribution-track {
-  height: 8px;
+  height: var(--bar-height);
   border-radius: var(--radius-full);
   background: var(--surface-2);
   overflow: hidden;

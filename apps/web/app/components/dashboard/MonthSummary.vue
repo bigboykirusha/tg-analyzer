@@ -199,7 +199,7 @@ async function analyseNext() {
 /* The rating bar: each person against the busiest one. */
 .month__bar {
   display: block;
-  height: 6px;
+  height: var(--bar-height);
   border-radius: var(--radius-full);
   background: var(--on-tile-ink-well);
 }

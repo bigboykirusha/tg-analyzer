@@ -126,7 +126,7 @@ function updating(report: ReportSummaryDto) {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  height: 34px;
+  height: var(--control-sm);
   margin-bottom: var(--space-2);
   padding: 0 10px;
   border-radius: var(--radius-sm);
