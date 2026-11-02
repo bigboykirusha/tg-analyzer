@@ -684,6 +684,10 @@ svg.lucide {
   color: var(--on-lime);
 }
 
+.tile--grey {
+  background: var(--tile-grey);
+}
+
 .tile__label {
   display: flex;
   align-items: center;
