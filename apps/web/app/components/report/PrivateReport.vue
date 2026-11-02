@@ -68,13 +68,16 @@ const shareHint = computed(() => {
     <ReportInsights :data="data" />
 
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
-    <ReportPart id="together" :title="t('report.tabs.together')" columns>
+    <!-- «Вы двое» reads top to bottom: one full-width card per row. -->
+    <ReportPart id="together" :title="t('report.tabs.together')">
       <OverviewTab :data="data" />
       <TalkTab :data="data" />
     </ReportPart>
-    <ReportPart id="time" :title="t('report.tabs.time')" columns>
-      <TimelineTab :data="data" />
-      <RhythmTab :data="data" />
+    <ReportPart id="time" :title="t('report.tabs.time')">
+      <div class="report-grid report-grid--even">
+        <TimelineTab :data="data" />
+        <RhythmTab :data="data" />
+      </div>
     </ReportPart>
     <ReportPart id="words" :title="t('report.tabs.words')">
       <WordsTab :data="data" />

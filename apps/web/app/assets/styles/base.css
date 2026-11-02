@@ -577,6 +577,15 @@ svg.lucide {
   min-width: 0;
 }
 
+/* Pairs of cards side by side end on one line. */
+.report-grid--even {
+  align-items: stretch;
+}
+
+.report-grid > .report-section--wide {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 900px) {
   .report-grid {
     grid-template-columns: minmax(0, 1fr);

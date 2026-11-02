@@ -52,6 +52,18 @@ const rows = computed(() => {
   border-top: 0;
 }
 
+/* Full-width card: two columns of rows, so a line never stretches across the screen. */
+@media (min-width: 641px) {
+  .shared {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-8);
+  }
+
+  .shared__row:nth-child(2) {
+    border-top: 0;
+  }
+}
+
 .shared__label {
   font: var(--text-ui);
 }

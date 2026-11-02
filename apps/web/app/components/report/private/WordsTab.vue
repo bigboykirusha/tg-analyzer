@@ -17,7 +17,7 @@ const hasText = computed(
 
 <template>
   <UiEmptyState v-if="!hasText" :title="t('report.words.emptyTitle')" :description="t('report.words.emptyText')" />
-  <div v-else class="report-grid">
+  <div v-else class="report-grid report-grid--even">
     <ReportSection
       :title="t('report.words.topMine')"
       :text="t('report.words.perMessage', { value: formatDecimal(vocabulary.wordsPerMessage.mine) })"

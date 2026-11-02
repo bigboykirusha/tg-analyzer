@@ -95,6 +95,12 @@ const absent = computed(() =>
   gap: var(--space-4);
 }
 
+@media (min-width: 641px) {
+  .emoji-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .emoji-pair > div {
   display: grid;
   align-content: start;

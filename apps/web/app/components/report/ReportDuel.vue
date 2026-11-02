@@ -3,7 +3,7 @@ import type { ReportDto, SideCountDto } from '@tg-analyzer/shared'
 
 /**
  * «Кто есть кто»: every two-sided habit of the chat in one card, like match stats.
- * Each row gives a point to the side that does noticeably more; the score sits on top.
+ * You on the left, the other side on the right; the side that does noticeably more is in bold.
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatDecimal, formatDuration, formatNumber, formatPercent } = useI18n()
@@ -27,8 +27,6 @@ interface DuelRow {
   lead: Lead
   ratio: string | null
 }
-
-const name = computed(() => props.data.summary.title)
 
 /** `mine` and `theirs` are «more is the lead» amounts; `format` prints the raw values. */
 function makeRow(
@@ -95,34 +93,15 @@ const rows = computed(() => {
 
   return items.filter((row): row is DuelRow => row !== null)
 })
-
-const score = computed(() => ({
-  mine: rows.value.filter((row) => row.lead === 'mine').length,
-  theirs: rows.value.filter((row) => row.lead === 'theirs').length,
-}))
-
-const verdict = computed(() => {
-  const { mine, theirs } = score.value
-  if (mine > theirs) return t('report.duel.leadMine')
-  if (theirs > mine) return t('report.duel.leadTheirs', { name: name.value })
-  return t('report.duel.draw')
-})
 </script>
 
 <template>
-  <ReportSection v-if="rows.length" wide :title="t('report.duel.title')" :text="t('report.duel.text')">
-    <div
-      class="duel__score"
-      role="img"
-      :aria-label="t('report.duel.scoreLabel', { mine: score.mine, theirs: score.theirs, name })"
-    >
-      <span class="duel__side"><i class="dot dot--mine" />{{ t('report.you') }}</span>
-      <span class="duel__center">
-        <strong class="duel__figure t-num">{{ score.mine }}<small>:</small>{{ score.theirs }}</strong>
-        <span class="duel__verdict">{{ verdict }}</span>
-      </span>
-      <span class="duel__side duel__side--theirs">{{ name }}<i class="dot dot--theirs" /></span>
-    </div>
+  <ReportSection
+    v-if="rows.length"
+    wide
+    :title="t('report.duel.title')"
+    :text="t('report.duel.text', { name: data.summary.title })"
+  >
     <ul class="duel">
       <li v-for="row in rows" :key="row.key" class="duel__row" :class="row.lead && `is-${row.lead}`">
         <span class="duel__value duel__value--mine t-num">{{ row.mine }}</span>
@@ -141,55 +120,6 @@ const verdict = computed(() => {
 </template>
 
 <style scoped>
-.duel__score {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-4);
-  padding-bottom: var(--space-5);
-  border-bottom: 1px solid var(--border);
-}
-
-.duel__side {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  overflow: hidden;
-  font: var(--text-title);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.duel__side--theirs {
-  justify-content: flex-end;
-}
-
-.duel__center {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-1);
-}
-
-.duel__verdict {
-  color: var(--text-muted);
-  font: var(--text-small);
-  text-align: center;
-}
-
-.duel__figure {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  font: var(--text-figure);
-  letter-spacing: -0.04em;
-}
-
-.duel__figure small {
-  color: var(--text-muted);
-  font-size: 0.6em;
-}
-
 .duel {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -261,28 +191,9 @@ const verdict = computed(() => {
   opacity: 0.35;
 }
 
-.dot {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.dot--mine {
-  background: var(--you);
-}
-
-.dot--theirs {
-  background: var(--them);
-}
-
 @media (max-width: 640px) {
   .duel {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .duel__figure {
-    font: var(--text-figure-sm);
   }
 }
 </style>
