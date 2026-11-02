@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, Send } from '../lib/icons'
+import { Send } from '../lib/icons'
 
 definePageMeta({ middleware: ['guest'], fit: true })
 
@@ -39,17 +39,10 @@ useHead({
         <p class="hero__lede">{{ t('landing.lede') }}</p>
         <div class="hero__actions">
           <UiButton variant="primary" size="lg" :icon="Send" to="/login">{{ t('landing.cta') }}</UiButton>
-          <UiButton class="hero__example-button" variant="secondary" size="lg" to="/example">
+          <UiButton variant="secondary" size="lg" to="/example">
             {{ t('landing.nav.example') }}
           </UiButton>
         </div>
-        <p class="hero__trust">
-          <span class="hero__trust-long">{{ t('landing.trust') }}</span>
-          <span class="hero__trust-short">{{ t('landing.trustShort') }}</span>
-          <NuxtLink to="/example" class="hero__example">
-            {{ t('landing.nav.example') }}<ArrowRight aria-hidden="true" />
-          </NuxtLink>
-        </p>
       </div>
       <div class="hero__visual">
         <ProductWindow class="hero__window" />
@@ -104,34 +97,6 @@ useHead({
   flex-wrap: wrap;
   gap: var(--space-3);
   margin-top: var(--space-8);
-}
-
-.hero__trust {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px var(--space-4);
-  margin-top: var(--space-5);
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-
-/* Desktop: the example is a button next to the action; phones keep it as a link in the trust line. */
-.hero__trust-short {
-  display: none;
-}
-
-.hero__trust .hero__example {
-  display: none;
-  align-items: center;
-  gap: 4px;
-  color: var(--text);
-  font-weight: 600;
-}
-
-.hero__example svg {
-  width: 14px;
-  height: 14px;
 }
 
 .hero__phone {
@@ -202,26 +167,9 @@ useHead({
     margin-top: var(--space-6);
   }
 
-  .hero__actions > :first-child {
-    flex: 1;
-  }
-
-  .hero__example-button,
-  .hero__trust-long {
-    display: none;
-  }
-
-  .hero__trust {
-    justify-content: space-between;
-    align-self: stretch;
-  }
-
-  .hero__trust-short {
-    display: inline;
-  }
-
-  .hero__trust .hero__example {
-    display: inline-flex;
+  /* The two buttons share the row's width, or stack when the screen is narrow. */
+  .hero__actions > * {
+    flex: 1 1 auto;
   }
 
   /* The phone is cut off with a fade, so the landing stays short. */

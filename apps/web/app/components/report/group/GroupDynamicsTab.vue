@@ -15,10 +15,10 @@ const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
       <ActivityHeatmap :points="days" />
     </ReportSection>
     <!-- Two or three bars say nothing that the daily chart does not. -->
-    <ReportSection v-if="data.report.activity.monthly.length > 3" extra :title="t('group.monthlyTitle')">
+    <ReportSection v-if="data.report.activity.monthly.length > 3" :title="t('group.monthlyTitle')">
       <MonthlyChart :months="data.report.activity.monthly" />
     </ReportSection>
-    <ReportSection extra :title="t('report.rhythm.weekdaysTitle')">
+    <ReportSection :title="t('report.rhythm.weekdaysTitle')">
       <WeekdayChart :weekday="data.report.activity.weekday" />
     </ReportSection>
     <ReportSection wide :title="t('group.hoursTitle')">

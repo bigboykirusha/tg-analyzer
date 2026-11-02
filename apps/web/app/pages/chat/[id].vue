@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import { AlertCircle } from '../../lib/icons'
+import { AlertCircle, RotateCw } from '../../lib/icons'
 import { ApiClientError } from '../../composables/useApi'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 const route = useRoute()
-const { t } = useI18n()
+const { t, formatRelative } = useI18n()
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
@@ -19,6 +19,13 @@ const loadError = ref<unknown>(null)
 const notFound = ref(false)
 const reanalysing = ref(false)
 const storyOpen = ref(false)
+/** Opened from «Share»: the sheet with the ways to send the pictures is already up. */
+const storyShare = ref(false)
+
+function openStory(share: boolean) {
+  storyShare.value = share
+  storyOpen.value = true
+}
 
 /** The chat's name from the lists already loaded, so the top bar is right before the report arrives. */
 const knownTitle = computed(
@@ -74,12 +81,30 @@ onMounted(load)
         :can-reanalyse="canReanalyse"
         :reanalysing="reanalysing"
         @reanalyse="reanalyse"
-        @story="storyOpen = true"
+        @story="openStory(false)"
+        @share="openStory(true)"
       />
 
       <GroupReport v-if="data.summary.type === 'group'" :data="data" />
       <PrivateReport v-else :data="data" />
-      <ReportStory :open="storyOpen" :data="data" @close="storyOpen = false" />
+
+      <!-- Phones: the bar has no refresh button, it sits under the report with the date of the data. -->
+      <div class="report-foot no-print">
+        <span class="report-foot__date">{{
+          t('report.updatedAt', { when: formatRelative(data.summary.analyzedAt) })
+        }}</span>
+        <UiButton
+          variant="ghost"
+          size="sm"
+          :icon="RotateCw"
+          :loading="reanalysing"
+          :disabled="!canReanalyse"
+          @click="reanalyse"
+        >
+          {{ t('report.reanalyse') }}
+        </UiButton>
+      </div>
+      <ReportStory :open="storyOpen" :share-first="storyShare" :data="data" @close="storyOpen = false" />
     </div>
 
     <UiPageBar v-else-if="notFound || loadError" :title="knownTitle ?? t('nav.back')" back="/dashboard" />
@@ -108,10 +133,23 @@ onMounted(load)
     </UiEmptyState>
 
     <ReportSkeleton v-if="!data && !notFound && !loadError" :title="knownTitle" />
-
   </UiPageContainer>
 </template>
 
 <style scoped>
-/* The one destructive action, out of the way at the end of the report. */
+.report-foot {
+  display: none;
+}
+
+/* Phones: the date of the data and the refresh, quietly under the report. */
+@media (max-width: 640px) {
+  .report-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    color: var(--text-muted);
+    font: var(--text-small);
+  }
+}
 </style>

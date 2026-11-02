@@ -83,27 +83,18 @@ test('the example report opens from the login page without signing in', async ({
   await page.getByRole('link', { name: 'Открыть пример отчёта →' }).click()
   await page.waitForURL('**/example')
   await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeVisible()
+  await expect(page.locator('#header-page').getByRole('link', { name: 'Разобрать чат' })).toBeVisible()
   if (page.viewportSize()!.width <= 640) {
-    await expect(page.locator('.example-start')).toBeVisible()
     await expect
       .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
       .toBe(true)
   }
   await expect(page.getByText('Главное')).toBeVisible()
   // The example has voice messages without duration metadata. Their count
-  // must remain visible rather than being described as absent. On phones the
-  // voice card is one of the details behind «Ещё N карточек».
-  if (page.viewportSize()!.width <= 640)
-    await page
-      .locator('#part-together')
-      .getByRole('button', { name: /^Ещё \d+ карточ/ })
-      .click()
+  // must remain visible rather than being described as absent.
   await expect(page.getByRole('heading', { name: 'Голосом', exact: true })).toBeVisible()
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
-
-  await page.getByRole('button', { name: 'Итоги' }).click()
-  await expect(page.getByRole('dialog', { name: 'Итоги переписки' })).toBeVisible()
 })
 
 test('report navigation survives resizing between phone, tablet and desktop', async ({ page, context }) => {

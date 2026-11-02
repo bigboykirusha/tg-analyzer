@@ -121,12 +121,15 @@ const classes = computed(() => [
   width: var(--control-lg);
 }
 
-.btn--xs,
+.btn--xs {
+  min-height: var(--control-xs);
+  padding: 0 var(--space-3);
+  --icon-size: var(--icon-sm);
+}
+
 .btn--icon-only.btn--xs {
   width: var(--control-xs);
-  min-height: var(--control-xs);
   padding: 0;
-  --icon-size: var(--icon-sm);
 }
 
 /* The close button stays 32px but its hit area is 44px. */

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The shape of a report while it loads: the lead sentence, the ink and lime
+ * The shape of a report while it loads: the ink and lime
  * tiles, the part navigation and the first sections. The title sits in the
  * top bar like on the real report, when the chat is already known.
  */
@@ -10,12 +10,6 @@ defineProps<{ title?: string | null }>()
 <template>
   <div class="stack stack--lg" aria-busy="true">
     <UiPageBar v-if="title" :title="title" back="/dashboard" />
-
-    <div class="skeleton-lead">
-      <UiSkeleton width="100%" height="24px" />
-      <UiSkeleton width="82%" height="24px" />
-      <UiSkeleton width="48%" height="24px" />
-    </div>
 
     <div class="bento" aria-hidden="true">
       <div class="tile span-8 skeleton-tile">
@@ -43,12 +37,6 @@ defineProps<{ title?: string | null }>()
 </template>
 
 <style scoped>
-.skeleton-lead {
-  display: grid;
-  gap: var(--space-2);
-  max-width: 34ch;
-}
-
 .skeleton-tile {
   gap: var(--space-3);
   min-height: 240px;

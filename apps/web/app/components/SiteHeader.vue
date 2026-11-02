@@ -1,7 +1,9 @@
 <script setup lang="ts">
 /**
  * The header of every public page: the logo on the left, the privacy page and
- * «Sign in» on the right (on the example report — «See yours»). Sticky, flush with the page until it scrolls.
+ * «Sign in» on the right. The example report puts its own title and the one
+ * action («Analyse a chat») into the bar. On the landing a phone has the big
+ * button right under the title, so the bar keeps the logo only.
  */
 const { t } = useI18n()
 const route = useRoute()
@@ -24,8 +26,14 @@ const isReport = computed(() => route.path === '/example')
         >
           {{ t('site.privacy') }}
         </NuxtLink>
-        <UiButton v-if="route.path !== '/login'" :variant="isReport ? 'primary' : 'secondary'" size="sm" to="/login">
-          {{ isReport ? t('example.cta') : t('site.signIn') }}
+        <UiButton
+          v-if="!isReport && route.path !== '/login'"
+          :class="{ 'site-header__signin--landing': route.path === '/' }"
+          variant="secondary"
+          size="xs"
+          to="/login"
+        >
+          {{ t('site.signIn') }}
         </UiButton>
       </nav>
     </UiPageContainer>
@@ -78,12 +86,6 @@ const isReport = computed(() => route.path === '/example')
   }
 }
 
-@media (max-width: 640px) {
-  .site-header--report .site-header__nav {
-    display: none;
-  }
-}
-
 .site-header__nav {
   display: flex;
   align-items: center;
@@ -117,6 +119,13 @@ const isReport = computed(() => route.path === '/example')
 @media (max-width: 640px) {
   .site-header__nav {
     gap: var(--space-4);
+  }
+}
+/* Phones: «Privacy» lives in the footer, and the landing's own button is under the title. */
+@media (max-width: 640px) {
+  .site-header__link,
+  .site-header__nav .site-header__signin--landing {
+    display: none;
   }
 }
 </style>

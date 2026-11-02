@@ -45,7 +45,7 @@ const magnets = computed(() =>
 
 <template>
   <div class="report-grid">
-    <ReportSection v-if="hasReplyMap" wide extra :title="t('group.replyMapTitle')" :text="t('group.replyMapText')">
+    <ReportSection v-if="hasReplyMap" wide :title="t('group.replyMapTitle')" :text="t('group.replyMapText')">
       <ReplyMap :group="group" />
     </ReportSection>
 
@@ -66,11 +66,11 @@ const magnets = computed(() =>
       <p v-else class="t-small t-muted">{{ t('group.topPairsEmpty') }}</p>
     </ReportSection>
 
-    <ReportSection extra :title="t('group.starterLeaders')" :text="t('group.startersHint')">
+    <ReportSection :title="t('group.starterLeaders')" :text="t('group.startersHint')">
       <ReportMeters :meters="starters" />
     </ReportSection>
 
-    <ReportSection extra :title="t('group.replyMagnets')" :text="t('group.magnetHint')">
+    <ReportSection :title="t('group.replyMagnets')" :text="t('group.magnetHint')">
       <ul v-if="magnets.length" class="ranking">
         <li v-for="p in magnets" :key="p.id">
           <span>{{ nameOf(p) }}</span>

@@ -202,7 +202,6 @@ const tooFew = computed(() =>
   <template v-else>
     <ReportSection
       v-if="voiceRows.length || voiceFacts.length"
-      extra
       :title="t('report.talk.voiceTitle')"
       :text="t('report.talk.voiceText')"
     >
@@ -239,7 +238,6 @@ const tooFew = computed(() =>
 
     <ReportSection
       v-if="questionRows.length"
-      extra
       :title="t('report.talk.questionsTitle')"
       :text="t('report.talk.questionsText')"
     >
@@ -249,7 +247,6 @@ const tooFew = computed(() =>
     <ReportSection
       v-if="stickers?.top.length"
       wide
-      extra
       :title="t('report.talk.stickersTitle')"
       :text="stickerVariety ?? undefined"
     >

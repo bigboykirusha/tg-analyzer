@@ -177,13 +177,11 @@ function signOut() {
 }
 
 /*
- * Phones: the screen's title takes the logo's place. Screens with a back arrow
- * (a report, /new, the account) drop the profile too, so the name and the
- * period fit; the account is one tap away on the home screen.
+ * Phones: the screen's title takes the logo's place. The home screen has no
+ * title on screen, so the logo stays; the profile is always there.
  */
 @media (max-width: 640px) {
-  .topbar:has(.page-bar) .topbar__brand,
-  .topbar:has(.page-bar[data-back]) .account-trigger {
+  .topbar:has(.page-bar:not([data-untitled])) .topbar__brand {
     display: none;
   }
 }
@@ -196,7 +194,7 @@ function signOut() {
 .nav-link {
   display: inline-flex;
   align-items: center;
-  min-height: var(--control-sm);
+  min-height: var(--control-xs);
   padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   color: var(--text-muted);
@@ -232,7 +230,7 @@ function signOut() {
   gap: var(--space-2);
   min-width: 0;
   max-width: 240px;
-  min-height: var(--control-sm);
+  min-height: var(--control-xs);
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   background: var(--accent-subtle);
@@ -277,8 +275,8 @@ function signOut() {
 
 .account-trigger {
   display: grid;
-  width: var(--control-sm);
-  height: var(--control-sm);
+  width: var(--control-xs);
+  height: var(--control-xs);
   place-items: center;
   padding: 0;
   border: 0;
@@ -294,7 +292,13 @@ function signOut() {
 .account-trigger::after {
   content: '';
   position: absolute;
-  inset: -4px;
+  inset: -6px;
+}
+
+/* The avatar follows the bar's 32 px scale: logo, back arrow, buttons and profile are one size. */
+.account-trigger :deep(.avatar) {
+  width: var(--control-xs);
+  height: var(--control-xs);
 }
 
 .account-trigger:focus-visible,

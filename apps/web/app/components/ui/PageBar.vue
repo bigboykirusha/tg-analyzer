@@ -13,20 +13,22 @@ withDefaults(
     lede?: string
     /** Phones and tablets have no sidebar: a back arrow to this page. */
     back?: string
+    /** The screen has a name for screen readers but none on screen (the home page): the logo stands in. */
+    untitled?: boolean
   }>(),
-  { lede: '', back: '' },
+  { lede: '', back: '', untitled: false },
 )
 const { t } = useI18n()
 </script>
 
 <template>
   <Teleport to="#header-page" defer>
-    <div class="page-bar" :data-back="back ? '' : undefined">
+    <div class="page-bar" :data-back="back ? '' : undefined" :data-untitled="untitled ? '' : undefined">
       <NuxtLink v-if="back" :to="back" class="page-bar__back" :aria-label="t('nav.back')">
         <ChevronLeft aria-hidden="true" />
       </NuxtLink>
       <slot name="leading" />
-      <div class="page-bar__copy">
+      <div class="page-bar__copy" :class="{ 'sr-only': untitled }">
         <h1 class="page-bar__title">{{ title }}</h1>
         <p v-if="lede" class="page-bar__lede t-num" :title="lede">{{ lede }}</p>
       </div>
@@ -47,8 +49,8 @@ const { t } = useI18n()
 .page-bar__back {
   display: none;
   flex: none;
-  width: var(--control-sm);
-  height: var(--control-sm);
+  width: var(--control-xs);
+  height: var(--control-xs);
   margin-left: calc(var(--space-2) * -1);
   place-items: center;
   border-radius: var(--radius-full);
@@ -56,7 +58,7 @@ const { t } = useI18n()
   -webkit-tap-highlight-color: transparent;
 }
 
-/* A 44 px touch area around the 36 px circle. */
+/* A 44 px touch area around the 32 px circle. */
 .page-bar__back {
   position: relative;
 }
@@ -64,7 +66,7 @@ const { t } = useI18n()
 .page-bar__back::after {
   content: '';
   position: absolute;
-  inset: -4px;
+  inset: -6px;
 }
 
 .page-bar__back:active {
@@ -100,6 +102,7 @@ const { t } = useI18n()
 
 .page-bar__actions {
   display: flex;
+  margin-left: auto;
   flex: none;
   align-items: center;
   gap: var(--space-1);

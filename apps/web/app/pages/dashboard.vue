@@ -55,17 +55,7 @@ onMounted(() => {
     <div class="page">
       <!-- Loading: the shape of the summary and the report cards, so nothing jumps when they arrive. -->
       <template v-if="loadingReports">
-        <div class="bento" aria-hidden="true">
-          <div class="tile span-8 home__skeleton">
-            <UiSkeleton width="40%" /><UiSkeleton width="45%" height="44px" />
-            <UiSkeleton class="home__skeleton-foot" height="72px" />
-          </div>
-          <div class="tile span-4 home__skeleton">
-            <UiSkeleton width="60%" />
-            <UiSkeleton class="home__skeleton-foot" width="64px" height="64px" radius="50%" />
-            <UiSkeleton width="50%" height="28px" />
-          </div>
-        </div>
+        <MonthSkeleton />
         <div class="stack" aria-hidden="true">
           <UiSkeleton width="120px" height="24px" />
           <div class="report-cards">
@@ -102,25 +92,17 @@ onMounted(() => {
       </template>
 
       <template v-else>
-        <UiPageBar :title="t('home.title')">
+        <UiPageBar :title="t('home.title')" untitled>
           <template #actions>
-            <UiButton class="home__new" variant="primary" to="/new" size="sm" :icon="Plus">{{ t('nav.newAnalysis') }}</UiButton>
+            <UiButton class="home__new" variant="primary" to="/new" size="xs" :icon="Plus">{{
+              t('nav.newAnalysis')
+            }}</UiButton>
           </template>
         </UiPageBar>
         <AnalysisBanner />
 
         <MonthSummary v-if="workspace.recent" :recent="workspace.recent" :report-ids="reportIds" />
-        <div v-else-if="workspace.recentState !== 'error'" class="bento" aria-hidden="true">
-          <div class="tile span-8 home__skeleton">
-            <UiSkeleton width="40%" /><UiSkeleton width="45%" height="44px" />
-            <UiSkeleton class="home__skeleton-foot" height="72px" />
-          </div>
-          <div class="tile span-4 home__skeleton">
-            <UiSkeleton width="60%" />
-            <UiSkeleton class="home__skeleton-foot" width="64px" height="64px" radius="50%" />
-            <UiSkeleton width="50%" height="28px" />
-          </div>
-        </div>
+        <MonthSkeleton v-else-if="workspace.recentState !== 'error'" />
 
         <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
           <template v-if="reports.length > REPORTS_PREVIEW" #actions>
@@ -155,22 +137,12 @@ onMounted(() => {
   }
 }
 
-.home__skeleton {
-  min-height: 240px;
-}
-
 .home__skeleton-card {
   min-height: 200px;
 }
 
 .home__skeleton-foot {
   margin-top: auto;
-}
-
-@media (max-width: 900px) {
-  .home__skeleton {
-    min-height: 160px;
-  }
 }
 
 /* ─── Newcomer: three steps in one lime tile ─── */

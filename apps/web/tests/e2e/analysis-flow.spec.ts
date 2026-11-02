@@ -22,7 +22,7 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   await page.waitForURL('**/chat/1006')
   await page.goto('/dashboard')
   // With a first report the home page turns into the summary; the chat list lives on /new.
-  await expect(page.getByRole('heading', { name: 'Ваш круг' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Главная' })).toBeVisible()
   if (page.viewportSize()!.width <= 640) {
     await expect(page.locator('.report-card__updated').first()).toHaveText(/^Обновлён/)
     await expect
@@ -33,15 +33,15 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
           .evaluate((element) => element.scrollWidth <= element.clientWidth),
       )
       .toBe(true)
-    const recommendation = page.locator('.month__top--next')
+    const recommendation = page.locator('.month__top')
     await expect
       .poll(() =>
-        recommendation.locator('.month__compact').evaluate((element) => element.scrollWidth <= element.clientWidth),
+        recommendation.locator('.month__copy').evaluate((element) => element.scrollWidth <= element.clientWidth),
       )
       .toBe(true)
     expect(
       await recommendation.evaluate((element) => {
-        const count = element.querySelector('.month__compact')!.getBoundingClientRect()
+        const count = element.querySelector('.month__copy')!.getBoundingClientRect()
         const action = element.querySelector('.month__action')!.getBoundingClientRect()
         return count.bottom <= action.top || count.right <= action.left || count.left >= action.right
       }),
@@ -125,12 +125,6 @@ test('group chats get the group report', async ({ page }, testInfo) => {
     await route.fulfill({ response, json: data })
   })
   await page.reload()
-  // On phones the reply map is one of the cards behind «Ещё N карточек».
-  if (testInfo.project.name !== 'desktop')
-    await page
-      .locator('#part-people')
-      .getByRole('button', { name: /^Ещё \d+ карточ/ })
-      .click({ timeout: 15_000 })
   await expect(page.getByText('Матрица ответов появится после обновления отчёта.', { exact: true })).toBeVisible({
     timeout: 15_000,
   })
@@ -271,7 +265,8 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
   // Match the fixed 9:16 export, which has less vertical room than a tall phone.
   await page.setViewportSize({ width: 360, height: 640 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.getByRole('button', { name: 'Итоги' }).click()
+  await page.locator('#header-page').getByRole('button', { name: 'Поделиться' }).click()
+  await page.getByRole('menuitem', { name: 'Смотреть итоги' }).click()
 
   const stories = page.getByRole('dialog', { name: 'Итоги переписки' })
   // Up to four dense slides: the overview with the total first, then what the data allows.

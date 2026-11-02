@@ -89,13 +89,12 @@ const absent = computed(() =>
       </div>
     </ReportSection>
 
-    <ReportSection v-if="voice.length" extra :title="t('group.talk.voiceTitle')" :text="t('report.talk.voiceText')">
+    <ReportSection v-if="voice.length" :title="t('group.talk.voiceTitle')" :text="t('report.talk.voiceText')">
       <ReportMeters :meters="voice" />
     </ReportSection>
 
     <ReportSection
       v-if="stickers?.top.length"
-      extra
       wide
       :title="t('report.talk.stickersTitle')"
       :text="t('report.talk.stickersText')"

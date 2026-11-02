@@ -36,7 +36,7 @@ const usuallyText = computed(() =>
     <DayPartsChart :distribution="data.derived.activityDistribution" />
   </ReportSection>
 
-  <ReportSection :title="t('report.rhythm.weekdaysTitle')" extra>
+  <ReportSection :title="t('report.rhythm.weekdaysTitle')">
     <WeekdayChart :weekday="report.activity.weekday" />
   </ReportSection>
 
