@@ -92,7 +92,7 @@ test('the example report opens from the login page without signing in', async ({
   await expect(page.getByRole('heading', { name: 'Вы двое', exact: true })).toBeVisible()
   // The example has voice messages without duration metadata. Their count
   // must remain visible rather than being described as absent.
-  await expect(page.getByRole('heading', { name: 'Голосом', exact: true })).toBeVisible()
+  await expect(page.locator('.shared__row').filter({ hasText: 'Голосовые' })).toBeVisible()
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
 })

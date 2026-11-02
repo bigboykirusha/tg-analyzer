@@ -1,126 +1,133 @@
 <script setup lang="ts">
 import type { GroupReportDto } from '@tg-analyzer/shared'
+import type { Fact } from '../ReportFacts.vue'
 import type { Meter } from '../ReportMeters.vue'
 
+/** How the group holds together: the closest pairs and the group's health. */
 const props = defineProps<{ group: GroupReportDto }>()
-const { t, tc, formatNumber, formatDecimal } = useI18n()
-const nameOf = useParticipantName()
+const { t, tc, formatNumber, formatPercent } = useI18n()
 const pairName = usePairNames(() => props.group)
 
-const maxPair = computed(() => Math.max(1, ...props.group.topPairs.map((pair) => pair.symmetricScore)))
 const pairs = computed(() =>
   props.group.topPairs.map((pair) => ({
     key: `${pair.leftParticipantId}-${pair.rightParticipantId}`,
-    title: `${pairName(pair.leftParticipantId, pair.leftParticipantName)} × ${pairName(pair.rightParticipantId, pair.rightParticipantName)}`,
-    width: (pair.symmetricScore / maxPair.value) * 100,
+    left: pairName(pair.leftParticipantId, pair.leftParticipantName),
+    right: pairName(pair.rightParticipantId, pair.rightParticipantName),
     direct: pair.directReplies,
     implied: pair.impliedReplies,
   })),
 )
 
-const starters = computed<Meter[]>(() =>
-  [...props.group.participants]
-    .sort((a, b) => b.starterShare - a.starterShare)
-    .slice(0, 6)
-    .map((p) => ({ key: p.id, label: nameOf(p), value: p.starterShare })),
-)
+const health = computed(() => props.group.health)
+const healthMeters = computed<Meter[]>(() => {
+  const value = health.value
+  if (!value) return []
+  return [
+    // Shown as evenness so every bar reads "higher is better".
+    {
+      key: 'evenness',
+      label: t('group.evenness'),
+      value: Math.round((1 - value.giniCoefficient) * 100),
+      detail: t('group.evennessHint'),
+    },
+    {
+      key: 'coverage',
+      label: t('group.responseCoverage'),
+      value: value.responseCoverage,
+      detail: t('group.responseCoverageHint'),
+    },
+    {
+      key: 'consistency',
+      label: t('group.consistency'),
+      value: value.consistency,
+      detail: t('group.consistencyHint'),
+    },
+    ...(value.retentionRate === null
+      ? []
+      : [
+          {
+            key: 'retention',
+            label: t('group.retention'),
+            value: value.retentionRate,
+            detail: t('group.retentionHint'),
+          },
+        ]),
+  ]
+})
 
-const MIN_MAGNET_MESSAGES = 10
-
-const magnets = computed(() =>
-  [...props.group.participants]
-    // A member with one message and two replies would top the list; require a real sample.
-    .filter((p) => p.magnetScore !== null && p.messageCount >= MIN_MAGNET_MESSAGES)
-    .sort((a, b) => (b.magnetScore ?? 0) - (a.magnetScore ?? 0))
-    .slice(0, 6),
-)
+const healthFacts = computed<Fact[]>(() => {
+  const value = health.value
+  if (!value) return []
+  return [
+    { key: 'lurkers', label: t('group.lurkers'), value: formatPercent(value.lurkerRatio), sub: t('group.lurkersHint') },
+    {
+      key: 'churned',
+      label: t('group.churned'),
+      value: formatNumber(value.churnedMembers),
+      sub: t('group.churnedHint'),
+    },
+    {
+      key: 'peak',
+      label: t('group.peakSimultaneity'),
+      value: formatNumber(value.peakSimultaneity),
+      sub: t('group.peakSimultaneityHint'),
+    },
+  ]
+})
 </script>
 
 <template>
   <div class="report-grid">
-    <ReportSection wide :title="t('group.networkTitle')" :text="t('group.networkText')">
-      <ul v-if="pairs.length" class="pairs">
-        <li v-for="pair in pairs" :key="pair.key" class="pair">
-          <div class="pair__head">
-            <strong>{{ pair.title }}</strong>
+    <ReportSection v-if="pairs.length" :title="t('group.networkTitle')" :text="t('group.networkText')">
+      <ol class="pairs">
+        <li v-for="(pair, index) in pairs" :key="pair.key" class="pair">
+          <span class="pair__rank t-num">{{ index + 1 }}</span>
+          <span class="pair__names">
+            <strong>{{ pair.left }} × {{ pair.right }}</strong>
             <span class="t-small t-muted">
               {{ tc('group.pairDirectCount', pair.direct) }} · {{ tc('group.pairImpliedCount', pair.implied) }}
             </span>
-          </div>
-          <div class="pair__track" aria-hidden="true">
-            <div class="pair__fill" :style="{ width: `${pair.width}%` }" />
-          </div>
+          </span>
         </li>
-      </ul>
-      <p v-else class="t-small t-muted">{{ t('group.topPairsEmpty') }}</p>
+      </ol>
     </ReportSection>
 
-    <ReportSection :title="t('group.starterLeaders')" :text="t('group.startersHint')">
-      <ReportMeters :meters="starters" />
-    </ReportSection>
-
-    <ReportSection :title="t('group.replyMagnets')" :text="t('group.magnetHint')">
-      <ul v-if="magnets.length" class="ranking">
-        <li v-for="p in magnets" :key="p.id">
-          <span>{{ nameOf(p) }}</span>
-          <strong class="t-num">{{ formatDecimal(p.magnetScore ?? 0) }}</strong>
-        </li>
-      </ul>
-      <p v-else class="t-small t-muted">{{ t('report.relationship.empty') }}</p>
-      <p class="t-small t-muted">
-        {{ t('group.repliesTotal', { count: formatNumber(group.participants.reduce((s, p) => s + p.replyCount, 0)) }) }}
-      </p>
+    <ReportSection v-if="health" tone="grey" :title="t('group.healthTitle')">
+      <ReportMeters :meters="healthMeters" />
+      <ReportFacts :facts="healthFacts" />
     </ReportSection>
   </div>
 </template>
 
 <style scoped>
-.pairs,
-.ranking {
-  display: flex;
-  flex-direction: column;
-  list-style: none;
-}
-
 .pairs {
-  gap: var(--space-4);
+  display: grid;
+  list-style: none;
 }
 
 .pair {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.pair__head {
-  display: flex;
-  flex-wrap: wrap;
   align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-1) var(--space-3);
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--border);
 }
 
-.pair__track {
-  height: var(--bar-height);
-  overflow: hidden;
-  border-radius: var(--radius-full);
-  background: var(--surface-2);
+.pair:first-child {
+  padding-top: 0;
+  border-top: 0;
 }
 
-.pair__fill {
-  height: 100%;
-  border-radius: inherit;
-  background: var(--text);
+.pair__rank {
+  flex: none;
+  width: 1.5em;
+  color: var(--text-muted);
+  font: var(--text-ui);
 }
 
-.ranking li {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.ranking li:last-child {
-  border-bottom: 0;
+.pair__names {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 </style>

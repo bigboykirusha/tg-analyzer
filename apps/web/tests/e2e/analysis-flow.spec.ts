@@ -117,7 +117,7 @@ test('group chats get the group report', async ({ page }, testInfo) => {
     await expect(page.getByRole('dialog')).toHaveCount(0)
   }
   // The pair statistics stay in the report.
-  await expect(page.getByRole('heading', { name: 'Структура взаимодействий' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Самые плотные пары' })).toBeVisible()
 })
 
 test('a completed analysis is recovered when websocket progress is unavailable', async ({ page }) => {

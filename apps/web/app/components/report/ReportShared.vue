@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
 
-/** What the two of you sent, as a quiet list: a name, a dotted leader, a number. */
+/** Everything the two of you sent, as a quiet list: a name, a dotted leader, a number. */
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatNumber } = useI18n()
 
@@ -9,6 +9,9 @@ const rows = computed(() => {
   const { report } = props.data
   const sum = (side: { mine: number; theirs: number } | undefined) => (side ? side.mine + side.theirs : 0)
   return [
+    { key: 'text', label: t('report.mix.sharedText'), count: chartCount(report.composition.text) },
+    { key: 'media', label: t('report.mix.sharedMedia'), count: chartCount(report.composition.media) },
+    { key: 'files', label: t('report.mix.sharedFiles'), count: chartCount(report.composition.file) },
     { key: 'voice', label: t('report.mix.sharedVoice'), count: sum(report.voice?.voice.count) },
     { key: 'stickers', label: t('report.mix.sharedStickers'), count: sum(report.stickers?.count) },
     { key: 'reactions', label: t('report.mix.sharedReactions'), count: sum(report.reactions?.given) },
@@ -20,7 +23,7 @@ const rows = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="rows.length > 1" tone="ink" :title="t('report.mix.sharedTitle')">
+  <ReportSection v-if="rows.length > 1" tone="grey" :title="t('report.mix.sharedTitle')">
     <ol class="shared">
       <li v-for="row in rows" :key="row.key" class="shared__row">
         <span class="shared__label">{{ row.label }}</span>

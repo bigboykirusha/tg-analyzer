@@ -187,7 +187,8 @@ function run(action: 'analyse' | 'delete') {
   font: var(--text-small);
 }
 
-.chat-row__sub > span:last-child {
+.chat-row__sub > span:last-child,
+.chat-row__sub--report > span:first-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -254,22 +255,6 @@ function run(action: 'analyse' | 'delete') {
     padding: var(--space-3);
   }
 
-  .chat-row__sub--report {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .chat-row__sub.chat-row__sub--report > span {
-    overflow: visible;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .chat-row__report-count::before {
-    content: none;
-  }
-
   .chat-row__title {
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -295,6 +280,11 @@ function run(action: 'analyse' | 'delete') {
 
   .chat-row__open-short {
     display: inline;
+  }
+
+  /* One line under the name on phones: when it was updated; the count lives in the report. */
+  .chat-row__report-count {
+    display: none;
   }
 }
 </style>

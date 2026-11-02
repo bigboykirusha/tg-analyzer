@@ -136,10 +136,6 @@ svg.lucide {
   white-space: nowrap;
 }
 
-.t-figure--sm {
-  font: var(--text-figure-sm);
-}
-
 .t-title {
   font: var(--text-title);
   letter-spacing: -0.01em;
@@ -160,10 +156,6 @@ svg.lucide {
   font: var(--text-ui);
 }
 
-.t-control {
-  font: var(--text-ui);
-}
-
 .t-small {
   font: var(--text-small);
 }
@@ -175,15 +167,6 @@ svg.lucide {
 .t-label {
   color: var(--text-muted);
   font: var(--text-label);
-}
-
-/* The two voices: text that names «you» or «them» carries their colour. */
-.t-you {
-  color: var(--you-ink);
-}
-
-.t-them {
-  color: var(--them-ink);
 }
 
 /* Counts and percentages: the UI font with even-width digits, never the mono face. */
@@ -239,11 +222,6 @@ svg.lucide {
   --icon-size: var(--icon-lg);
 }
 
-.icon-tile--warning {
-  background: var(--warning-subtle);
-  color: var(--warning-ink);
-}
-
 .icon-tile--danger {
   background: var(--danger-subtle);
   color: var(--danger);
@@ -269,10 +247,6 @@ svg.lucide {
   gap: var(--space-1);
   color: var(--text-muted);
   font: var(--text-small);
-}
-
-.field__hint--error {
-  color: var(--danger);
 }
 
 /*
@@ -350,20 +324,16 @@ svg.lucide {
   box-shadow: var(--focus-ring-field);
 }
 
-.input--invalid,
-.input[aria-invalid='true'],
-.input--invalid:hover {
+.input[aria-invalid='true'] {
   background: var(--danger-subtle);
 }
 
-.input--invalid:focus-within,
 .input[aria-invalid='true']:focus {
   background: var(--surface);
   box-shadow: var(--focus-ring-field-danger);
 }
 
-.input:disabled,
-.input--disabled {
+.input:disabled {
   background: var(--surface-2);
   opacity: var(--opacity-disabled);
   cursor: not-allowed;
@@ -550,24 +520,12 @@ svg.lucide {
   min-width: 0;
 }
 
-.span-3 {
-  grid-column: span 3;
-}
-
 .span-4 {
   grid-column: span 4;
 }
 
-.span-5 {
-  grid-column: span 5;
-}
-
 .span-6 {
   grid-column: span 6;
-}
-
-.span-7 {
-  grid-column: span 7;
 }
 
 .span-8 {
@@ -576,14 +534,11 @@ svg.lucide {
 
 /* Under 900: two per row, wide tiles take the row. At 640: one per row, but small stat tiles still pair up. */
 @media (max-width: 900px) {
-  .bento > .span-3,
   .bento > .span-4,
-  .bento > .span-5,
   .bento > .span-6 {
     grid-column: span 6;
   }
 
-  .bento > .span-7,
   .bento > .span-8 {
     grid-column: span 12;
   }
@@ -602,9 +557,7 @@ svg.lucide {
 
 @media (max-width: 640px) {
   .bento > *,
-  .bento > .span-3,
   .bento > .span-4,
-  .bento > .span-5,
   .bento > .span-6 {
     grid-column: span 12;
   }

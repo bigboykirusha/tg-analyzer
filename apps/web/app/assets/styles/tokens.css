@@ -24,7 +24,6 @@
   --thumb: #ffffff;
   --border: #e6e8eb;
   --border-strong: #d6d8dc;
-  --control-off: #8f949b;
   --hover: rgba(14, 15, 17, 0.04);
   --pressed: rgba(14, 15, 17, 0.08);
   --text: #0e0f11;
@@ -59,15 +58,12 @@
   --on-tile-ink-well: rgba(255, 255, 255, 0.12);
   --on-tile-ink-line: rgba(255, 255, 255, 0.18);
   --warning: #e08a00;
-  --warning-ink: #9a5c00;
-  --warning-subtle: #fff3dc;
   --danger: #d23b40;
   --danger-subtle: #fdeeee;
   --danger-subtle-hover: #fbdcdc;
   --inverse-surface: #0e0f11;
   --on-inverse: #ffffff;
   --on-inverse-line: rgba(255, 255, 255, 0.28);
-  --switch-thumb: #ffffff;
   /* The pill track: visible on the page and on a white card alike. */
   --segment-track: #e6e8eb;
   --scrim: rgba(10, 10, 12, 0.36);
@@ -120,7 +116,6 @@
   --thumb: #2a2a2e;
   --border: #232326;
   --border-strong: #34343a;
-  --control-off: #6b6b72;
   --hover: rgba(242, 242, 243, 0.05);
   --pressed: rgba(242, 242, 243, 0.09);
   --text: #f2f2f3;
@@ -150,15 +145,12 @@
   --on-tile-ink-well: rgba(10, 10, 11, 0.1);
   --on-tile-ink-line: rgba(10, 10, 11, 0.18);
   --warning: #ffb224;
-  --warning-ink: #ffb224;
-  --warning-subtle: #33240a;
   --danger: #ff6369;
   --danger-subtle: #33161a;
   --danger-subtle-hover: #4a1a1d;
   --inverse-surface: #f2f2f3;
   --on-inverse: #0a0a0b;
   --on-inverse-line: rgba(10, 10, 11, 0.24);
-  --switch-thumb: #ffffff;
   --segment-track: #1c1c1f;
   --scrim: rgba(0, 0, 0, 0.6);
   --heat-1: #232a17;

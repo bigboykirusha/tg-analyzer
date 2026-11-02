@@ -74,7 +74,7 @@ const momentum = computed(() =>
 
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
     <ReportPart id="people" :title="t('group.tabs.people')">
-      <GroupOverviewTab :data="data" :group="group" />
+      <GroupOverviewTab :group="group" />
       <GroupMembersTab :group="group" />
       <GroupNetworkTab :group="group" />
     </ReportPart>
