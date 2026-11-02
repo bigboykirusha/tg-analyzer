@@ -31,6 +31,16 @@ const usuallyText = computed(() =>
     <ActivityHeatmap :points="days" />
   </ReportSection>
 
+  <!-- Reports made before the weekday × hour grid existed simply do not show it. -->
+  <ReportSection
+    v-if="report.activity.heatmap"
+    :title="t('report.rhythm.weekHourTitle')"
+    :text="t('report.rhythm.weekHourText')"
+    wide
+  >
+    <WeekHourHeatmap :cells="report.activity.heatmap" />
+  </ReportSection>
+
   <!-- When you are usually around reads as the caption of the day parts, not a card of its own. -->
   <ReportSection :title="t('report.rhythm.dayPartsTitle')" :text="usuallyText">
     <DayPartsChart :distribution="data.derived.activityDistribution" />

@@ -1,4 +1,10 @@
-import type { ConversationHabitsDto, GapDto, ResponseStatsDto, SessionStatsDto } from '../api/types'
+import {
+  REPLY_BUCKETS_SEC,
+  type ConversationHabitsDto,
+  type GapDto,
+  type ResponseStatsDto,
+  type SessionStatsDto,
+} from '../api/types'
 import { calculateAverage, calculateMedian, calculatePercentile, roundTo } from './primitives'
 
 export interface TimelinePoint {
@@ -113,6 +119,7 @@ export function computeResponseStats(
   }
 
   return {
+    histogram: { mine: replyHistogram(mine), theirs: replyHistogram(theirs) },
     medianMineSec: calculateMedian(mine),
     medianTheirsSec: calculateMedian(theirs),
     mineSamples: mine.length,
@@ -126,6 +133,16 @@ export function computeResponseStats(
     responseRate: computeResponseRate(ordered, split),
     iWriteFirstPct: sessions ? Math.round((sessionsStartedByMe / sessions) * 100) : null,
   }
+}
+
+/** Counts of answers per {@link REPLY_BUCKETS_SEC} bucket; the last one takes the slower ones. */
+export function replyHistogram(seconds: readonly number[]): number[] {
+  const buckets = new Array<number>(REPLY_BUCKETS_SEC.length + 1).fill(0)
+  for (const value of seconds) {
+    const index = REPLY_BUCKETS_SEC.findIndex((limit) => value < limit)
+    buckets[index === -1 ? REPLY_BUCKETS_SEC.length : index]! += 1
+  }
+  return buckets
 }
 
 /** Share (0–100) of conversational turns that got an answer within the same session. */

@@ -347,7 +347,16 @@ export interface ResponseStatsDto {
   responseRate: number | null
   /** Share of sessions started by the current user, 0–100. */
   iWriteFirstPct: number | null
+  /** How fast each side answers, in {@link REPLY_BUCKETS_SEC} steps; absent in older reports. */
+  histogram?: { mine: number[]; theirs: number[] }
 }
+
+/**
+ * Upper bounds, in seconds, of the first buckets of the reply-time histogram:
+ * under a minute, under five, under half an hour, under two hours. The last
+ * bucket takes everything slower.
+ */
+export const REPLY_BUCKETS_SEC = [60, 300, 1800, 7200] as const
 
 export interface SessionHighlightDto {
   startedAt: string
@@ -652,6 +661,8 @@ export interface ChatReport {
     weekday: DirectionalCountDto[]
     daily: DatedActivityDto[]
     monthly: MonthlyActivityDto[]
+    /** 168 buckets, index = weekday * 24 + local hour (weekday 0 = Sunday); absent in older reports. */
+    heatmap?: number[]
   }
   vocabulary: {
     topWords: TopItemDto[]
