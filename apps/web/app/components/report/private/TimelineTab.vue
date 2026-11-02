@@ -58,7 +58,7 @@ const sessionFacts = computed<Fact[]>(() => [
 
   <ReportChronicle :data="data" />
 
-  <ReportSection :title="t('report.timeline.factsTitle')" wide>
+  <ReportSection :title="t('report.timeline.factsTitle')" tone="lime" wide>
     <ReportFacts :facts="summaryFacts" :columns="2" />
   </ReportSection>
 

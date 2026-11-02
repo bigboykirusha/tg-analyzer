@@ -45,6 +45,8 @@
   --them-ink: #4e7a0e;
   /* Tile fills: one ink tile and one lime tile per screen, pastels for avatars. */
   --tile-ink: #0e0f11;
+  /* A quiet grey tile: one step darker than the page, for cards that should not shout. */
+  --tile-grey: #e6e8eb;
   --on-tile-ink: #ffffff;
   --on-tile-ink-muted: rgba(255, 255, 255, 0.55);
   --lime: #c6f06a;
@@ -135,6 +137,7 @@
   --them: #c6f06a;
   --them-ink: #c6f06a;
   --tile-ink: #f2f2f3;
+  --tile-grey: #26262a;
   --on-tile-ink: #0a0a0b;
   --on-tile-ink-muted: rgba(10, 10, 11, 0.62);
   --lime: #c6f06a;

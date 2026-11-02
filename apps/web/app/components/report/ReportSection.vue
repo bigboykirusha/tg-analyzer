@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
  * A report card: one title, an optional plain-language explanation, then the content.
- * `tone` turns it into an ink or lime tile, the accents that break up a page of white cards.
+ * `tone` turns it into an ink, lime or grey tile: the accents that break up a page of white cards.
  */
-defineProps<{ title: string; text?: string; wide?: boolean; tone?: 'ink' | 'lime' }>()
+defineProps<{ title: string; text?: string; wide?: boolean; tone?: 'ink' | 'lime' | 'grey' }>()
 </script>
 
 <template>

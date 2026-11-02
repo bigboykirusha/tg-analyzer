@@ -95,7 +95,7 @@ const comparisons = computed(() =>
     <ReplySpeedChart :histogram="report.responses.histogram" :received-label="data.summary.title" />
   </ReportSection>
 
-  <ReportSection :title="t('report.composition.title')">
+  <ReportSection :title="t('report.composition.title')" tone="grey">
     <CompositionChart :composition="report.composition" />
   </ReportSection>
 </template>

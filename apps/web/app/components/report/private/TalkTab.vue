@@ -145,10 +145,9 @@ const tooFew = computed(() =>
       <ReportCompare :their-name="name" :rows="voiceRows" />
     </ReportSection>
 
-    <ReportEquivalents :data="data" />
-
     <ReportSection
       v-if="reactions && reactionRows.length"
+      tone="lime"
       :title="t('report.talk.reactionsTitle')"
       :text="t('report.talk.reactionsText')"
     >
@@ -165,7 +164,12 @@ const tooFew = computed(() =>
       </div>
     </ReportSection>
 
-    <ReportSection v-if="ritualRows.length" :title="t('report.talk.ritualsTitle')" :text="t('report.talk.ritualsText')">
+    <ReportSection
+      v-if="ritualRows.length"
+      tone="grey"
+      :title="t('report.talk.ritualsTitle')"
+      :text="t('report.talk.ritualsText')"
+    >
       <ReportCompare :their-name="name" :rows="ritualRows" />
     </ReportSection>
 
@@ -186,6 +190,8 @@ const tooFew = computed(() =>
       <ReportCompare :their-name="name" :rows="stickerRows" />
       <StickerGrid :stickers="stickers.top" />
     </ReportSection>
+
+    <ReportEquivalents :data="data" />
 
     <ReportShared :data="data" />
 

@@ -20,7 +20,7 @@ const rows = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="rows.length > 1" :title="t('report.mix.sharedTitle')">
+  <ReportSection v-if="rows.length > 1" tone="ink" :title="t('report.mix.sharedTitle')">
     <ol class="shared">
       <li v-for="row in rows" :key="row.key" class="shared__row">
         <span class="shared__label">{{ row.label }}</span>
@@ -55,7 +55,7 @@ const rows = computed(() => {
 
 .shared__leader {
   flex: 1;
-  border-bottom: 1px dotted var(--border-strong);
+  border-bottom: 1px dotted var(--border);
   transform: translateY(-0.25rem);
 }
 
