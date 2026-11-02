@@ -50,7 +50,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiPageContainer size="narrow">
+  <UiPageContainer>
     <div class="page account">
       <UiPageBar
         :title="t('accountPage.title')"
@@ -61,56 +61,58 @@ onMounted(() => {
       </UiPageBar>
 
       <!-- Grouped settings: a quiet caption over a card of rows, as in system settings. -->
-      <section class="group" aria-labelledby="look-title">
-        <h2 id="look-title" class="group__title">{{ t('accountPage.lookTitle') }}</h2>
-        <div class="tile group__card">
-          <div class="row">
-            <span class="row__label">{{ t('nav.language') }}</span>
-            <UiSegmentedControl
-              :model-value="locale"
-              :options="languageOptions"
-              :aria-label="t('nav.language')"
-              inline
-              @update:model-value="setLocale"
-            />
+      <div class="account__groups">
+        <section class="group" aria-labelledby="look-title">
+          <h2 id="look-title" class="group__title">{{ t('accountPage.lookTitle') }}</h2>
+          <div class="tile group__card">
+            <div class="row">
+              <span class="row__label">{{ t('nav.language') }}</span>
+              <UiSegmentedControl
+                :model-value="locale"
+                :options="languageOptions"
+                :aria-label="t('nav.language')"
+                inline
+                @update:model-value="setLocale"
+              />
+            </div>
+            <div class="row">
+              <span class="row__label">{{ t('accountPage.theme') }}</span>
+              <UiSegmentedControl
+                :model-value="preference"
+                :options="themeOptions"
+                :aria-label="t('accountPage.theme')"
+                inline
+                @update:model-value="setPreference"
+              />
+            </div>
+            <div class="row">
+              <span class="row__label">
+                {{ t('accountPage.timezone') }}
+                <small>{{ t('accountPage.timezoneHint') }}</small>
+              </span>
+              <span class="row__value">{{ auth.user?.timezone }}</span>
+            </div>
           </div>
-          <div class="row">
-            <span class="row__label">{{ t('accountPage.theme') }}</span>
-            <UiSegmentedControl
-              :model-value="preference"
-              :options="themeOptions"
-              :aria-label="t('accountPage.theme')"
-              inline
-              @update:model-value="setPreference"
-            />
-          </div>
-          <div class="row">
-            <span class="row__label">
-              {{ t('accountPage.timezone') }}
-              <small>{{ t('accountPage.timezoneHint') }}</small>
-            </span>
-            <span class="row__value">{{ auth.user?.timezone }}</span>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="group" aria-labelledby="data-title">
-        <h2 id="data-title" class="group__title">{{ t('accountPage.dataTitle') }}</h2>
-        <div class="tile group__card">
-          <div class="row">
-            <span class="row__label">{{ t('accountPage.reports') }}</span>
-            <span class="row__value t-num">{{ reportCount }}</span>
+        <section class="group" aria-labelledby="data-title">
+          <h2 id="data-title" class="group__title">{{ t('accountPage.dataTitle') }}</h2>
+          <div class="tile group__card">
+            <div class="row">
+              <span class="row__label">{{ t('accountPage.reports') }}</span>
+              <span class="row__value t-num">{{ reportCount }}</span>
+            </div>
+            <div class="row">
+              <span class="row__label">{{ t('accountPage.messagesKept') }}</span>
+              <span class="row__value">{{ t('accountPage.messagesKeptValue') }}</span>
+            </div>
+            <NuxtLink to="/faq" class="row row--link">
+              <span class="row__label">{{ t('accountPage.privacy') }}</span>
+              <ChevronRight aria-hidden="true" />
+            </NuxtLink>
           </div>
-          <div class="row">
-            <span class="row__label">{{ t('accountPage.messagesKept') }}</span>
-            <span class="row__value">{{ t('accountPage.messagesKeptValue') }}</span>
-          </div>
-          <NuxtLink to="/faq" class="row row--link">
-            <span class="row__label">{{ t('accountPage.privacy') }}</span>
-            <ChevronRight aria-hidden="true" />
-          </NuxtLink>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <section class="sign-out">
         <UiButton variant="secondary" :icon="LogOut" @click="signOutOpen = true">{{ t('account.logout') }}</UiButton>
@@ -149,6 +151,14 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* The same column as every other page: the two groups of settings sit side by side. */
+.account__groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+  align-items: start;
+}
+
 .group {
   display: grid;
   gap: var(--space-2);
@@ -227,6 +237,12 @@ onMounted(() => {
 .sign-out__choices {
   display: grid;
   gap: var(--space-2);
+}
+
+@media (max-width: 900px) {
+  .account__groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Phones: a control under its name, and a full-width «Sign out». */

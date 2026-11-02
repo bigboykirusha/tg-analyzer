@@ -619,31 +619,38 @@ svg.lucide {
   }
 }
 
-/* Two independent columns: each card keeps its height and the next one tucks under it. */
+/* Masonry: two columns, rows of 1px, each card spans its own height (see useMasonry). */
 .report-columns {
-  min-width: 0;
-  columns: 2;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1px;
   column-gap: var(--space-3);
+  min-width: 0;
+  /* Hidden for the one frame before the cards are measured, so they never overlap. */
+  visibility: hidden;
+}
+
+.report-columns.is-ready {
+  visibility: visible;
 }
 
 .report-columns > * {
-  break-inside: avoid;
-  margin-bottom: var(--space-3);
-}
-
-.report-columns > :last-child {
-  margin-bottom: 0;
+  align-self: start;
+  min-width: 0;
 }
 
 .report-columns > .report-section--wide,
 .report-columns > .note {
-  column-span: all;
+  grid-column: 1 / -1;
 }
 
-/* One column is plain flow: a multicol box would grow to the widest chart. */
+/* One column is plain flow, no measuring. */
 @media (max-width: 900px) {
   .report-columns {
-    columns: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    visibility: visible;
   }
 }
 
