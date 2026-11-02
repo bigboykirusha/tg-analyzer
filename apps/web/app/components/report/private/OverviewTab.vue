@@ -85,6 +85,14 @@ const comparisons = computed(() =>
     <p v-else class="t-small t-muted">{{ t('report.compare.empty') }}</p>
   </ReportSection>
 
+  <ReportSection
+    v-if="report.responses.histogram && report.responses.mineSamples + report.responses.theirsSamples > 0"
+    :title="t('report.speed.title')"
+    :text="t('report.speed.text')"
+  >
+    <ReplySpeedChart :histogram="report.responses.histogram" :received-label="data.summary.title" />
+  </ReportSection>
+
   <ReportSection :title="t('report.composition.title')">
     <CompositionChart :composition="report.composition" />
   </ReportSection>

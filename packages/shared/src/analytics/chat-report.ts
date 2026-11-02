@@ -157,6 +157,7 @@ export class ChatReportBuilder {
   private lastMessageAt: number | null = null
   private hourly = Array.from({ length: 24 }, createDirectionalCount)
   private weekday = Array.from({ length: 7 }, createDirectionalCount)
+  private heatmap = new Array<number>(7 * 24).fill(0)
   private daily = new Map<string, DirectionalCountDto>()
   private monthly = new Map<string, DirectionalCountDto>()
   private words = createDirectionalCounts()
@@ -208,6 +209,7 @@ export class ChatReportBuilder {
 
     addDirectional(this.hourly[local.hour]!, outgoing)
     addDirectional(this.weekday[local.weekday]!, outgoing)
+    this.heatmap[local.weekday * 24 + local.hour]! += 1
     addDirectional(getOrCreate(this.daily, local.day), outgoing)
     addDirectional(getOrCreate(this.monthly, local.month), outgoing)
 
@@ -424,7 +426,7 @@ export class ChatReportBuilder {
         firstMessageAt: this.firstMessageAt === null ? null : new Date(this.firstMessageAt).toISOString(),
         lastMessageAt: this.lastMessageAt === null ? null : new Date(this.lastMessageAt).toISOString(),
       },
-      activity: { hourly: this.hourly, weekday: this.weekday, daily, monthly },
+      activity: { hourly: this.hourly, weekday: this.weekday, daily, monthly, heatmap: this.heatmap },
       vocabulary: {
         topWords: this.words20(this.words.all),
         topWordsBySender: { mine: this.words20(this.words.mine), theirs: this.words20(this.words.theirs) },

@@ -232,6 +232,9 @@ function normalizeReport(raw: ChatReport, row: ChatReportRow): ChatReport {
       weekday: normalizeBuckets(raw.activity?.weekday, 7),
       daily: Array.isArray(raw.activity?.daily) ? raw.activity.daily : [],
       monthly: Array.isArray(raw.activity?.monthly) ? raw.activity.monthly : [],
+      ...(Array.isArray(raw.activity?.heatmap) && raw.activity.heatmap.length === 7 * 24
+        ? { heatmap: raw.activity.heatmap }
+        : {}),
     },
     // Stop words are filtered again on read, so older reports benefit from a longer list.
     vocabulary: {
