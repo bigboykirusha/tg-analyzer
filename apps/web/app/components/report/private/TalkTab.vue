@@ -125,56 +125,14 @@ const ritualRows = computed(() => {
     shareRow('night', t('report.talk.nightLast'), stats.nightLast, 'report.talk.evenings'),
   ].filter(notNull)
 })
-const greetingFacts = computed<Fact[]>(() => {
-  const stats = rituals.value
-  if (!stats) return []
-  const fact = (key: string, label: string, side: SideCountDto): Fact | null =>
-    side.mine + side.theirs
-      ? {
-          key,
-          label,
-          value: `${formatNumber(side.mine)} / ${formatNumber(side.theirs)}`,
-          sub: t('report.talk.youThem', { name: name.value }),
-        }
-      : null
-  return [
-    fact('goodMorning', t('report.talk.goodMorning'), stats.goodMorning),
-    fact('goodNight', t('report.talk.goodNight'), stats.goodNight),
-  ].filter(notNull)
-})
 
 // Questions.
 const habits = computed(() => report.value.habits)
 const questionRows = computed(() => {
   const turns = habits.value?.questionTurns
-  const unanswered = habits.value?.unansweredQuestions
-  if (!turns || !unanswered || turns.mine + turns.theirs < MIN_SAMPLES) return []
-  const rows: Comparison[] = []
+  if (!turns || turns.mine + turns.theirs < MIN_SAMPLES) return []
   const asks = row('asks', t('report.talk.asksMore'), turns)
-  if (asks) rows.push(asks)
-  const rate = (side: 'mine' | 'theirs') => (turns[side] ? (unanswered[side] / turns[side]) * 100 : null)
-  // 4 of 1 301 is 0.3%: «< 1%», not a «0%» that reads as broken.
-  const share = (value: number | null) => (value !== null && value > 0 && value < 1 ? '< 1%' : formatPercent(value))
-  const mine = rate('mine')
-  const theirs = rate('theirs')
-  let verdict = t('report.talk.answeredAll')
-  if ((mine ?? 0) >= 10 || (theirs ?? 0) >= 10) {
-    verdict =
-      (mine ?? 0) >= (theirs ?? 0)
-        ? t('report.talk.unansweredMine', { share: formatPercent(mine) })
-        : t('report.talk.unansweredTheirs', { share: formatPercent(theirs), name: name.value })
-  }
-  rows.push({
-    key: 'unanswered',
-    label: t('report.talk.unanswered'),
-    mine: share(mine),
-    theirs: share(theirs),
-    // Each side is a share of its own questions, so the two do not split one bar.
-    minePct: null,
-    verdict,
-    quiet: verdict === t('report.talk.answeredAll'),
-  })
-  return rows
+  return asks ? [asks] : []
 })
 
 /** Sections with nothing to show collapse into one quiet line at the end of the part. */
@@ -187,7 +145,7 @@ const absent = computed(() =>
 )
 const tooFew = computed(() =>
   [
-    !ritualRows.value.length && !greetingFacts.value.length && t('report.talk.missingRituals'),
+    !ritualRows.value.length && t('report.talk.missingRituals'),
     !questionRows.value.length && t('report.talk.missingQuestions'),
   ].filter((item): item is string => Boolean(item)),
 )
@@ -227,13 +185,8 @@ const tooFew = computed(() =>
       </div>
     </ReportSection>
 
-    <ReportSection
-      v-if="ritualRows.length || greetingFacts.length"
-      :title="t('report.talk.ritualsTitle')"
-      :text="t('report.talk.ritualsText')"
-    >
-      <ReportCompare v-if="ritualRows.length" :their-name="name" :rows="ritualRows" />
-      <ReportFacts v-if="greetingFacts.length" :facts="greetingFacts" />
+    <ReportSection v-if="ritualRows.length" :title="t('report.talk.ritualsTitle')" :text="t('report.talk.ritualsText')">
+      <ReportCompare :their-name="name" :rows="ritualRows" />
     </ReportSection>
 
     <ReportSection
