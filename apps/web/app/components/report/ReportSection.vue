@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
  * A report card: one title, an optional plain-language explanation, then the content.
+ * `tone` turns it into an ink or lime tile, the accents that break up a page of white cards.
  */
-defineProps<{ title: string; text?: string; wide?: boolean }>()
+defineProps<{ title: string; text?: string; wide?: boolean; tone?: 'ink' | 'lime' }>()
 </script>
 
 <template>
-  <article class="tile report-section" :class="{ 'report-section--wide': wide }">
+  <article class="tile report-section" :class="[{ 'report-section--wide': wide }, tone && `tile--${tone}`]">
     <header class="report-section__head">
       <div class="report-section__copy">
         <h2 class="report-section__title">{{ title }}</h2>

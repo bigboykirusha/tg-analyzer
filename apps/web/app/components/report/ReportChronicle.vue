@@ -52,7 +52,7 @@ const when = (day: string) => formatDay(day, { day: 'numeric', month: 'short', y
 </script>
 
 <template>
-  <ReportSection v-if="events.length > 2" wide :title="t('report.mix.chronTitle')">
+  <ReportSection v-if="events.length > 2" wide tone="ink" :title="t('report.mix.chronTitle')">
     <ol class="chron" :style="{ '--steps': events.length }">
       <li v-for="event in events" :key="event.key" class="chron__item">
         <i class="chron__dot" aria-hidden="true" />
