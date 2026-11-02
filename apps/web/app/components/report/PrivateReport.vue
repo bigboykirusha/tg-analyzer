@@ -70,7 +70,7 @@ const shareHint = computed(() => {
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
     <!-- «Вы двое» reads top to bottom: one full-width card per row. -->
     <ReportPart id="together" :title="t('report.tabs.together')">
-      <OverviewTab :data="data" />
+      <ReportDuel :data="data" />
       <TalkTab :data="data" />
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">

@@ -22,13 +22,18 @@ const hasText = computed(
       :title="t('report.words.topMine')"
       :text="t('report.words.perMessage', { value: formatDecimal(vocabulary.wordsPerMessage.mine) })"
     >
-      <WordChips :items="vocabulary.topWordsBySender.mine.slice(0, 15)" :empty="t('report.words.none')" />
+      <ReportTopList :items="vocabulary.topWordsBySender.mine" :limit="10" :empty="t('report.words.none')" />
     </ReportSection>
     <ReportSection
       :title="t('report.words.topTheirs')"
       :text="t('report.words.perMessage', { value: formatDecimal(vocabulary.wordsPerMessage.theirs) })"
     >
-      <WordChips :items="vocabulary.topWordsBySender.theirs.slice(0, 15)" :empty="t('report.words.none')" />
+      <ReportTopList
+        :items="vocabulary.topWordsBySender.theirs"
+        :limit="10"
+        side="theirs"
+        :empty="t('report.words.none')"
+      />
     </ReportSection>
 
     <ReportSection
@@ -47,10 +52,15 @@ const hasText = computed(
     </ReportSection>
 
     <ReportSection :title="t('report.words.emojiMine')">
-      <EmojiGrid :items="vocabulary.topEmojiBySender.mine.slice(0, 8)" />
+      <ReportTopList :items="vocabulary.topEmojiBySender.mine" :limit="6" :empty="t('report.words.none')" />
     </ReportSection>
     <ReportSection :title="t('report.words.emojiTheirs')">
-      <EmojiGrid :items="vocabulary.topEmojiBySender.theirs.slice(0, 8)" />
+      <ReportTopList
+        :items="vocabulary.topEmojiBySender.theirs"
+        :limit="6"
+        side="theirs"
+        :empty="t('report.words.none')"
+      />
     </ReportSection>
   </div>
 </template>

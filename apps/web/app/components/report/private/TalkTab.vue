@@ -23,6 +23,7 @@ const reactionPairs = computed(() => {
 })
 
 const stickers = computed(() => report.value.stickers)
+const versus = useVersus(() => props.data)
 const stickerVariety = computed(() => {
   const stats = stickers.value
   if (!stats?.distinct) return null
@@ -79,6 +80,7 @@ const absent = computed(() =>
       :title="t('report.talk.stickersTitle')"
       :text="stickerVariety ?? undefined"
     >
+      <ReportVersus v-if="versus.stickers" :item="versus.stickers" :their-name="name" />
       <StickerGrid :stickers="stickers.top" />
     </ReportSection>
 
