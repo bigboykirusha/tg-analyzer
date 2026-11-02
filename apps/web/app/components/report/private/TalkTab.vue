@@ -7,20 +7,7 @@ const props = defineProps<{ data: ReportDto }>()
 const { t, tc } = useI18n()
 
 const report = computed(() => props.data.report)
-const name = computed(() => props.data.summary.title)
 const outdated = computed(() => !report.value.voice || !report.value.rituals)
-
-// Reactions: custom emoji have no picture here, so only regular ones are shown.
-const reactions = computed(() => report.value.reactions)
-const plainEmoji = (items: { value: string; count: number }[]) =>
-  items.filter((item) => item.value !== 'custom' && item.value !== 'paid').slice(0, 6)
-const reactionPairs = computed(() => {
-  const stats = reactions.value
-  if (!stats) return null
-  const mine = plainEmoji(stats.topBySender.mine)
-  const theirs = plainEmoji(stats.topBySender.theirs)
-  return mine.length || theirs.length ? { mine, theirs } : null
-})
 
 const stickers = computed(() => report.value.stickers)
 const versus = useVersus(() => props.data)
@@ -39,7 +26,7 @@ const absent = computed(() =>
       !report.value.voice?.round.count.mine &&
       !report.value.voice?.round.count.theirs &&
       t('report.talk.missingVoice'),
-    !reactionPairs.value && t('report.talk.missingReactions'),
+    !report.value.reactions && t('report.talk.missingReactions'),
     !stickers.value?.top.length && t('report.talk.missingStickers'),
   ].filter((item): item is string => Boolean(item)),
 )
@@ -52,24 +39,6 @@ const absent = computed(() =>
   </p>
 
   <template v-else>
-    <ReportSection
-      v-if="reactionPairs"
-      tone="lime"
-      :title="t('report.talk.reactionsTitle')"
-      :text="t('report.talk.reactionsText')"
-    >
-      <div class="emoji-pair">
-        <div v-if="reactionPairs.mine.length">
-          <span class="t-label">{{ t('report.talk.reactionsMine') }}</span>
-          <EmojiGrid :items="reactionPairs.mine" />
-        </div>
-        <div v-if="reactionPairs.theirs.length">
-          <span class="t-label">{{ t('report.talk.reactionsTheirs', { name }) }}</span>
-          <EmojiGrid :items="reactionPairs.theirs" />
-        </div>
-      </div>
-    </ReportSection>
-
     <ReportShared :data="data" />
 
     <ReportEquivalents :data="data" />
@@ -80,7 +49,9 @@ const absent = computed(() =>
       :title="t('report.talk.stickersTitle')"
       :text="stickerVariety ?? undefined"
     >
-      <ReportVersus v-if="versus.stickers" :item="versus.stickers" :their-name="name" />
+      <p v-if="versus.stickers?.note" class="sticker-lead">
+        <b>{{ versus.stickers.figure }}</b> {{ versus.stickers.note }}
+      </p>
       <StickerGrid :stickers="stickers.top" />
     </ReportSection>
 
@@ -92,20 +63,12 @@ const absent = computed(() =>
 </template>
 
 <style scoped>
-.emoji-pair {
-  display: grid;
-  gap: var(--space-4);
+.sticker-lead {
+  color: var(--text-muted);
+  font: var(--text-ui);
 }
 
-@media (min-width: 641px) {
-  .emoji-pair {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.emoji-pair > div {
-  display: grid;
-  align-content: start;
-  gap: var(--space-2);
+.sticker-lead b {
+  color: var(--text);
 }
 </style>
