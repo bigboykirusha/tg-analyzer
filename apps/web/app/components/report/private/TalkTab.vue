@@ -4,10 +4,18 @@ import { Info } from '../../../lib/icons'
 
 /** What the two of you send besides words. Who does more lives in «Кто есть кто». */
 const props = defineProps<{ data: ReportDto }>()
-const { t } = useI18n()
+const { t, formatNumber } = useI18n()
 
 const report = computed(() => props.data.report)
 const outdated = computed(() => !report.value.voice || !report.value.rituals)
+const voiceWithoutDuration = computed(() => {
+  const voice = report.value.voice
+  if (!voice) return []
+  return [
+    { label: t('report.duel.voiceLabel'), stats: voice.voice },
+    { label: t('report.duel.roundLabel'), stats: voice.round },
+  ].filter(({ stats }) => stats.count.mine + stats.count.theirs > 0 && stats.seconds.mine + stats.seconds.theirs === 0)
+})
 
 // Reactions: custom emoji have no picture here, so only regular ones are shown.
 const reactions = computed(() => report.value.reactions)
@@ -44,6 +52,18 @@ const absent = computed(() =>
   </p>
 
   <div v-else class="report-grid report-grid--even">
+    <ReportSection v-for="item in voiceWithoutDuration" :key="item.label" :title="item.label">
+      <dl class="voice-count">
+        <div>
+          <dt>{{ t('report.you') }}</dt>
+          <dd class="t-num t-h2">{{ formatNumber(item.stats.count.mine) }}</dd>
+        </div>
+        <div>
+          <dt>{{ data.summary.title }}</dt>
+          <dd class="t-num t-h2">{{ formatNumber(item.stats.count.theirs) }}</dd>
+        </div>
+      </dl>
+    </ReportSection>
     <p v-if="absent.length" class="note talk__absent">
       <Info aria-hidden="true" />
       <span>{{ t('report.talk.missing', { items: absent.join(', ') }) }}</span>
@@ -52,6 +72,19 @@ const absent = computed(() =>
 </template>
 
 <style scoped>
+.voice-count {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.voice-count dt {
+  color: var(--text-muted);
+  font: var(--text-small);
+  margin-bottom: var(--space-2);
+  overflow-wrap: anywhere;
+}
+
 .talk__absent {
   grid-column: 1 / -1;
 }

@@ -15,8 +15,12 @@ const FIT = 0.94
 function fit() {
   const stage = stageRef.value
   const win = windowRef.value
-  if (!stage || !win || !win.offsetHeight) return
-  scale.value = Math.min(0.9, (stage.clientHeight * FIT) / win.offsetHeight)
+  if (!stage || !win || !win.offsetHeight || !win.offsetWidth) return
+  scale.value = Math.min(
+    0.9,
+    (stage.clientWidth * FIT) / win.offsetWidth,
+    (stage.clientHeight * FIT) / win.offsetHeight,
+  )
 }
 
 let observer: ResizeObserver | null = null
@@ -47,6 +51,7 @@ onBeforeUnmount(() => observer?.disconnect())
 .stage {
   display: flex;
   align-items: center;
+  min-width: 0;
   perspective: 1800px;
 }
 

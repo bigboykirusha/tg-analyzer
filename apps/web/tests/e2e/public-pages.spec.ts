@@ -2,6 +2,18 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { gotoHydrated, noHorizontalScroll, usePreferences } from './helpers'
 
+test('system dark theme hydrates without replacing the theme icon', async ({ page }) => {
+  const errors: string[] = []
+  page.on('console', (message) => {
+    if (/hydration.*mismatch/i.test(message.text())) errors.push(message.text())
+  })
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await gotoHydrated(page, '/login')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await expect(page.getByRole('button', { name: 'Светлая тема', exact: true })).toBeVisible()
+  expect(errors).toEqual([])
+})
+
 // Every public page shares one frame, so all of them get the same checks.
 for (const path of ['/', '/login', '/faq', '/terms', '/example'])
   for (const theme of ['light', 'dark'] as const) {
@@ -92,7 +104,9 @@ test('the example report opens from the login page without signing in', async ({
   await expect(page.getByRole('heading', { name: 'Вы двое', exact: true })).toBeVisible()
   // The example has voice messages without duration metadata. Their count
   // must remain visible rather than being described as absent.
-  await expect(page.locator('.shared__row').filter({ hasText: 'Голосовые' })).toBeVisible()
+  const voice = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Голосовые', exact: true }) })
+  await expect(voice).toBeVisible()
+  await expect(voice.locator('dd')).toHaveCount(2)
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
 })

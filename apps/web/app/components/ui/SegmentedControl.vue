@@ -157,8 +157,10 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 .segment:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
+  /* Keep the focus indicator inside the scrollable pill track. */
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+  box-shadow: none;
 }
 
 .segment:disabled {
