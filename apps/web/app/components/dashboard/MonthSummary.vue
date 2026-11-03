@@ -5,8 +5,8 @@ import { ArrowDown, ArrowUp } from '../../lib/icons'
 /**
  * The top of the home page: a chart of the month, like a music chart. Private chats of the last
  * month, counted by Telegram without an analysis, ranked by messages in the month; the arrow says
- * how a chat moved against its place by size over all time (among the same chats). The leader is
- * large; a slim lime strip under the chart offers the busiest chat that has no report yet.
+ * how a chat moved against its place by size over all time (among the same chats). One column, the
+ * same row for every place; a slim lime strip under the chart offers the busiest chat that has no report yet.
  */
 const props = defineProps<{ recent: RecentActivityResponse; reportIds: Set<string> }>()
 const { t, tc, formatNumber } = useI18n()
@@ -31,8 +31,6 @@ const rows = computed(() => {
     reported: props.reportIds.has(chat.id),
   }))
 })
-const leader = computed(() => rows.value[0] ?? null)
-const others = computed(() => rows.value.slice(1))
 
 /** The busiest chat of the month without a report, and its place in the month. */
 const next = computed(() => {
@@ -73,57 +71,39 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
         <span class="t-num">{{ tc('month.window', recent.days) }}</span>
       </div>
 
-      <div v-if="leader" class="month__body">
-        <component :is="tag(leader)" :to="link(leader)" class="month__leader">
-          <span class="month__place month__place--lead t-num">1</span>
-          <ChatAvatar :chat-id="leader.id" :title="leader.title" :has-avatar="leader.hasAvatar" size="lg" />
-          <span class="month__leader-copy">
-            <span class="month__leader-name">{{ leader.title }}</span>
-            <span class="month__figure t-num">{{ formatNumber(leader.messages) }}</span>
-            <span class="month__sub">
-              {{ tc('month.perMonthShort', leader.messages) }}
-              <template v-if="leader.total">
-                · {{ t('month.allTimeTotal', { count: formatNumber(leader.total) }) }}</template
-              >
+      <ol v-if="rows.length" class="month__rows">
+        <li v-for="row in rows" :key="row.id">
+          <component :is="tag(row)" :to="link(row)" class="month__row">
+            <span class="month__place t-num">{{ row.place }}</span>
+            <span
+              class="month__move t-num"
+              :class="{ 'month__move--up': row.move > 0 }"
+              :aria-label="
+                row.move > 0
+                  ? t('month.moveUp', { count: row.move })
+                  : row.move < 0
+                    ? t('month.moveDown', { count: -row.move })
+                    : undefined
+              "
+            >
+              <template v-if="row.move > 0"><ArrowUp aria-hidden="true" />{{ row.move }}</template>
+              <template v-else-if="row.move < 0"><ArrowDown aria-hidden="true" />{{ -row.move }}</template>
+              <template v-else>–</template>
             </span>
-            <span v-if="!leader.reported" class="month__fresh">{{ t('month.notReported') }}</span>
-          </span>
-        </component>
-
-        <ol v-if="others.length" class="month__rows">
-          <li v-for="row in others" :key="row.id">
-            <component :is="tag(row)" :to="link(row)" class="month__row">
-              <span class="month__place t-num">{{ row.place }}</span>
-              <span
-                class="month__move t-num"
-                :class="{ 'month__move--up': row.move > 0 }"
-                :aria-label="
-                  row.move > 0
-                    ? t('month.moveUp', { count: row.move })
-                    : row.move < 0
-                      ? t('month.moveDown', { count: -row.move })
-                      : undefined
-                "
-              >
-                <template v-if="row.move > 0"><ArrowUp aria-hidden="true" />{{ row.move }}</template>
-                <template v-else-if="row.move < 0"><ArrowDown aria-hidden="true" />{{ -row.move }}</template>
-                <template v-else>–</template>
+            <ChatAvatar :chat-id="row.id" :title="row.title" :has-avatar="row.hasAvatar" size="sm" />
+            <span class="month__who">
+              <span class="month__name">{{ row.title }}</span>
+              <span class="month__sub">
+                <span v-if="!row.reported" class="month__fresh">{{ t('month.notReported') }}</span>
+                <template v-else-if="row.total">{{
+                  t('month.allTimeTotal', { count: formatNumber(row.total) })
+                }}</template>
               </span>
-              <ChatAvatar :chat-id="row.id" :title="row.title" :has-avatar="row.hasAvatar" size="sm" />
-              <span class="month__who">
-                <span class="month__name">{{ row.title }}</span>
-                <span class="month__sub">
-                  <span v-if="!row.reported" class="month__fresh">{{ t('month.notReported') }}</span>
-                  <template v-else-if="row.total">{{
-                    t('month.allTimeTotal', { count: formatNumber(row.total) })
-                  }}</template>
-                </span>
-              </span>
-              <span class="month__count t-num">{{ formatNumber(row.messages) }}</span>
-            </component>
-          </li>
-        </ol>
-      </div>
+            </span>
+            <span class="month__count t-num">{{ formatNumber(row.messages) }}</span>
+          </component>
+        </li>
+      </ol>
       <p v-else class="tile__note">{{ t('month.empty') }}</p>
     </section>
 
@@ -169,66 +149,9 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
   font: inherit;
 }
 
-/* The leader on the left, the rest of the chart on the right; one column on a phone. */
-.month__body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}
-
-@media (min-width: 901px) {
-  .month__body {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    gap: var(--space-8);
-  }
-}
-
-.month__leader {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-3);
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (min-width: 901px) {
-  .month__leader {
-    align-content: center;
-    padding-right: var(--space-8);
-    border-right: 1px solid var(--border);
-  }
-}
-
-.month__leader-copy {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.month__leader-name {
-  overflow: hidden;
-  font: var(--text-h3);
-  letter-spacing: -0.02em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.month__figure {
-  font: var(--text-figure);
-  letter-spacing: -0.03em;
-}
-
 .month__place {
-  min-width: 1.4em;
   font: var(--text-h3);
   letter-spacing: -0.02em;
-}
-
-.month__place--lead {
-  min-width: 0;
-  font: var(--text-figure);
-  letter-spacing: -0.03em;
 }
 
 .month__rows {
@@ -244,7 +167,7 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
 
 .month__row {
   display: grid;
-  grid-template-columns: auto 2.6em auto minmax(0, 1fr) auto;
+  grid-template-columns: 1em 2.4em auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
   padding-block: var(--space-2);
@@ -320,8 +243,7 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
 }
 
 @media (hover: hover) and (pointer: fine) {
-  a.month__row:hover .month__name,
-  a.month__leader:hover .month__leader-name {
+  a.month__row:hover .month__name {
     text-decoration: underline;
     text-underline-offset: 3px;
   }

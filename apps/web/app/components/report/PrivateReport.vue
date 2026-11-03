@@ -58,9 +58,6 @@ const shareHint = computed(() => {
       <template #label>
         <span class="t-num">{{ tc('story.activeDaysCount', data.report.facts.activeDays) }}</span>
       </template>
-      <template #main>
-        <ReportInsights :data="data" bare />
-      </template>
       <template #accent>
         <div class="tile__label">{{ t('report.kpi.whoWritesMore') }}</div>
         <template v-if="mineShare !== null">

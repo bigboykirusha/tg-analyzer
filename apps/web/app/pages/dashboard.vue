@@ -3,8 +3,6 @@ import { BarChart2, Lock, MessageSquare, Plus } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
-/** Report cards shown before «All reports». */
-const REPORTS_PREVIEW = 8
 
 const { t } = useI18n()
 useSeoMeta({ title: () => t('dashboard.title') })
@@ -14,7 +12,6 @@ const analysis = useAnalysis()
 const toast = useToast()
 const errorMessage = useErrorMessage()
 
-const showAllReports = ref(false)
 
 /** Finished reports, newest first: what the user has already learned. */
 const reports = computed(() =>
@@ -22,7 +19,6 @@ const reports = computed(() =>
     .filter((chat) => chat.report)
     .sort((left, right) => Date.parse(right.report!.analyzedAt) - Date.parse(left.report!.analyzedAt)),
 )
-const shownReports = computed(() => (showAllReports.value ? reports.value : reports.value.slice(0, REPORTS_PREVIEW)))
 const reportIds = computed(() => new Set(reports.value.map((chat) => chat.id)))
 
 /** Returning users wait for their reports instead of seeing the newcomer screen flash by. */
@@ -103,18 +99,9 @@ onMounted(() => {
         <MonthSkeleton v-else-if="workspace.recentState !== 'error'" />
 
         <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
-          <template v-if="reports.length > REPORTS_PREVIEW" #actions>
-            <UiButton variant="ghost" size="sm" @click="showAllReports = !showAllReports">
-              {{
-                showAllReports
-                  ? t('dashboard.showFewerReports')
-                  : t('dashboard.showAllReports', { count: reports.length })
-              }}
-            </UiButton>
-          </template>
           <div class="report-cards">
             <ReportCard
-              v-for="chat in shownReports"
+              v-for="chat in reports"
               :key="chat.id"
               :report="chat.report!"
               :has-avatar="chat.hasAvatar"

@@ -12,13 +12,13 @@ const name = computed(() => props.data.summary.title)
 </script>
 
 <template>
-  <div class="report-grid report-grid--even duel">
+  <div class="report-grid duel">
     <DuelSpeed v-if="cards.speed" :data="data" :item="cards.speed" />
-    <div v-if="cards.starts || cards.questions" class="duel__stack">
+    <div v-if="cards.starts || cards.length" class="duel__stack">
       <DuelStarts v-if="cards.starts" :item="cards.starts" :their-name="name" />
-      <DuelQuestions v-if="cards.questions" :item="cards.questions" :their-name="name" />
+      <DuelLength v-if="cards.length" :item="cards.length" :their-name="name" />
     </div>
-    <DuelLength v-if="cards.length" :item="cards.length" :their-name="name" />
+    <DuelQuestions v-if="cards.questions" :item="cards.questions" :their-name="name" />
     <DuelReactions :data="data" :item="cards.reactions ?? null" />
     <DuelVoice v-if="cards.voice" :item="cards.voice" :their-name="name" />
     <ReportEquivalents :data="data" />
@@ -28,11 +28,11 @@ const name = computed(() => props.data.summary.title)
 </template>
 
 <style scoped>
-/* Cards go in pairs; who starts and questions share one cell beside reply time. A card left
+/* Cards go in pairs; who starts and message length share one cell beside reply time. A card left
    alone at the end takes the row. */
 .duel__stack {
   display: grid;
-  grid-template-rows: auto 1fr;
+  align-content: start;
   gap: var(--card-gap);
   min-width: 0;
 }

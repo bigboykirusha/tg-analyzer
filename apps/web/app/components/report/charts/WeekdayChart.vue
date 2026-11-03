@@ -39,5 +39,6 @@ const option = computed(() => {
     :option="option"
     :label="t('chart.weekdaySummary', { messages: formatNumber(total) })"
     :empty="total === 0"
+    compact
   />
 </template>

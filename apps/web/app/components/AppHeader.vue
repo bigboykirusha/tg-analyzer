@@ -19,7 +19,6 @@ watch(
 const navigation = useNavigation()
 
 /** The bar sits flush with the page until the page scrolls under it, then shows a hairline. */
-const scrolled = useScrolled()
 const analysis = useAnalysis()
 /** The running analysis, shown in the header on every page. */
 const activity = computed(() => {
@@ -49,7 +48,7 @@ function signOut() {
 </script>
 
 <template>
-  <header class="app-navigation" :class="{ 'is-scrolled': scrolled }">
+  <header class="app-navigation">
     <UiPageContainer class="topbar">
       <BrandLink to="/dashboard" class="topbar__brand" />
       <!-- Each screen puts its title and actions here (`UiPageBar`). -->
@@ -137,21 +136,6 @@ function signOut() {
   padding-top: env(safe-area-inset-top, 0px);
   background: var(--bg);
   transition: background-color var(--duration-slow) ease;
-}
-
-/* Scrolled: the bar turns into a translucent material and the page slides under it, no hairline. */
-.app-navigation.is-scrolled {
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-}
-
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .app-navigation.is-scrolled {
-    background: var(--bg);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
 }
 
 /* The same column as the page below, so the logo lines up with the content. */

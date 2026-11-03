@@ -18,7 +18,6 @@ defineProps<{ data: ReportDto; label: string; value: string; note?: string | nul
       <div class="tile__figure">{{ value }}</div>
       <div v-if="note" class="tile__note">{{ note }}</div>
       <ReportPulse :data="data" bare class="hero__pulse" />
-      <slot name="main" />
     </section>
     <section class="tile tile--lime span-4 hero__accent">
       <slot name="accent" />

@@ -9,7 +9,6 @@
   color-scheme: light;
   --bg: #f2f3f5;
   /* Floating bars: the page colour, translucent, over a blur. */
-  --glass: rgba(242, 243, 245, 0.72);
   --surface: #ffffff;
   --surface-2: #f2f3f5;
   /* Loading placeholders: visible both on the page and inside a white tile. */
@@ -104,7 +103,6 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
   --bg: #0a0a0b;
-  --glass: rgba(10, 10, 11, 0.72);
   --surface: #141416;
   --surface-2: #1c1c1f;
   --skeleton: #26262a;
@@ -184,7 +182,6 @@
 
 /* Theme-independent scales. */
 :root {
-  --glass-filter: blur(20px) saturate(180%);
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;

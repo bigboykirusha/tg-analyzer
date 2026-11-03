@@ -8,13 +8,22 @@ import { buildExampleReport } from '../../lib/example-report'
  * on the landing are real output of the app.
  */
 const props = defineProps<{ phone?: boolean }>()
-const { t, formatNumber, formatDuration, formatPercent, formatPeriod, formatDecimal } = useI18n()
+const { t, tc, formatNumber, formatDuration, formatPercent, formatPeriod, formatDecimal } = useI18n()
 
 const data = computed(() => buildExampleReport(t('example.partner')))
 const totals = computed(() => data.value.report.totals)
 const responses = computed(() => data.value.report.responses)
 const mine = computed(() => Math.round((totals.value.sent / Math.max(1, totals.value.messages)) * 100))
-/** The answer in words, as on the report tile: «Примерно поровну», «Вы пишете больше». */
+const firstPct = computed(() => responses.value.iWriteFirstPct ?? 50)
+const sent = computed(() => totals.value.sent)
+const received = computed(() => totals.value.received)
+const days = computed(() => {
+  const { firstMessageAt, lastMessageAt } = data.value.summary
+  if (!firstMessageAt || !lastMessageAt) return 1
+  return Math.max(1, Math.round((Date.parse(lastMessageAt) - Date.parse(firstMessageAt)) / 86_400_000) + 1)
+})
+const perDay = computed(() => tc('report.fmt.perDay', Math.max(1, Math.round(totals.value.messages / days.value))))
+/** The same one-line answer the real report gives under «Кто пишет больше». */
 const verdict = computed(() => {
   const text =
     mine.value > 55
@@ -24,6 +33,7 @@ const verdict = computed(() => {
         : t('report.kpi.even')
   return `${text.charAt(0).toLocaleUpperCase()}${text.slice(1)}`
 })
+const tabs = computed(() => [t('report.tabs.together'), t('report.tabs.time'), t('report.tabs.words')])
 const period = computed(() => formatPeriod(data.value.summary.firstMessageAt, data.value.summary.lastMessageAt, true))
 /** Weekly ticks: a day per tick is too fine at this size. */
 const weeks = computed(() => {
@@ -45,12 +55,16 @@ const weeks = computed(() => {
         <strong>{{ data.summary.title }}</strong>
         <span>{{ period }}</span>
       </div>
+      <span v-if="!props.phone" class="mini__tabs">
+        <i v-for="(tab, index) in tabs" :key="tab" :class="{ 'is-on': index === 0 }">{{ tab }}</i>
+      </span>
     </div>
     <div class="mini__grid">
       <div class="tile tile--ink mini__wide">
         <div class="tile__label">{{ t('report.kpi.messages') }}</div>
         <div class="tile__figure">{{ formatNumber(totals.messages) }}</div>
-        <Seismograph :days="weeks" :height="props.phone ? 64 : 96" />
+        <div class="mini__sentence">{{ perDay }}</div>
+        <Seismograph :days="weeks" :height="props.phone ? 40 : 96" />
       </div>
       <div class="tile tile--lime mini__side">
         <div class="tile__label">{{ t('report.kpi.whoWritesMore') }}</div>
@@ -58,6 +72,7 @@ const weeks = computed(() => {
         <div class="tile__figure mini__share">
           {{ mine }}<small>/{{ 100 - mine }}</small>
         </div>
+        <i class="mini__bar"><b :style="{ flexGrow: sent }" /><b :style="{ flexGrow: received }" /></i>
       </div>
       <div class="tile mini__small">
         <div class="tile__label">{{ t('report.kpi.replyMedian') }}</div>
@@ -66,6 +81,7 @@ const weeks = computed(() => {
       <div class="tile mini__small">
         <div class="tile__label">{{ t('report.kpi.starts') }}</div>
         <div class="tile__figure">{{ formatPercent(responses.iWriteFirstPct) }}</div>
+        <i class="mini__bar"><b :style="{ flexGrow: firstPct }" /><b :style="{ flexGrow: 100 - firstPct }" /></i>
       </div>
       <div v-if="!props.phone" class="tile mini__small">
         <div class="tile__label">{{ t('report.kpi.wordsPerMessage') }}</div>
@@ -139,7 +155,49 @@ const weeks = computed(() => {
   font-size: 34px;
 }
 
-/* Who writes more: the answer in words, the split at the foot. No bar. */
+.mini__sentence {
+  font: var(--text-small);
+  opacity: 0.85;
+}
+
+.mini__tabs {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  padding: 3px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  font: var(--text-caption);
+}
+
+.mini__tabs i {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  font-style: normal;
+}
+
+.mini__tabs i.is-on {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.mini__bar {
+  display: flex;
+  gap: 3px;
+  height: var(--bar-height);
+}
+
+.mini__bar b {
+  border-radius: var(--radius-full);
+  background: var(--you);
+}
+
+.mini__bar b + b {
+  background: var(--them);
+}
+
+/* Who writes more: the answer in words, the split as a figure and a bar. */
 .mini__verdict {
   font: var(--text-title);
 }

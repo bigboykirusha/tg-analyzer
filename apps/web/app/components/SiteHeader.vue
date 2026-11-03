@@ -7,13 +7,12 @@
  */
 const { t } = useI18n()
 const route = useRoute()
-const scrolled = useScrolled()
 /** The example report puts its title and actions into the bar (`UiPageBar`); documents keep theirs. */
 const isReport = computed(() => route.path === '/example')
 </script>
 
 <template>
-  <header class="site-header" :class="{ 'is-scrolled': scrolled, 'site-header--report': isReport }">
+  <header class="site-header" :class="{ 'site-header--report': isReport }">
     <UiPageContainer class="site-header__in">
       <BrandLink class="site-header__brand" :class="{ 'site-header__brand--report': isReport }" />
       <div id="header-page" class="site-header__report" />
@@ -50,21 +49,6 @@ const isReport = computed(() => route.path === '/example')
   padding-top: env(safe-area-inset-top, 0px);
   background: var(--bg);
   transition: background-color var(--duration-slow) ease;
-}
-
-/* Scrolled: the bar turns into a translucent material and the page slides under it, no hairline. */
-.site-header.is-scrolled {
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-}
-
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .site-header.is-scrolled {
-    background: var(--bg);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
 }
 
 .site-header__in {

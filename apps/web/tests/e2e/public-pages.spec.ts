@@ -116,7 +116,10 @@ test('report navigation survives resizing between phone, tablet and desktop', as
   }
 })
 
-test('the activity calendar exposes days by touch and keyboard', async ({ page, context }, testInfo) => {
+test('the activity calendar names each day in its tooltip and scrolls without a page overflow', async ({
+  page,
+  context,
+}, testInfo) => {
   await usePreferences(context, 'dark')
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await gotoHydrated(page, '/example')
@@ -124,11 +127,8 @@ test('the activity calendar exposes days by touch and keyboard', async ({ page, 
   const cells = calendar.locator('.heatmap__grid [data-date]')
   const count = await cells.count()
   expect(count).toBeGreaterThan(7)
-  const target = cells.nth(count - 2)
-  const label = await target.getAttribute('title')
-  if (testInfo.project.name === 'desktop') await target.click()
-  else await target.tap()
-  await expect(calendar.getByRole('status')).toHaveText(label!)
+  expect(await cells.nth(count - 2).getAttribute('title')).toBeTruthy()
+  await expect(calendar.locator('.heatmap__selection')).toHaveCount(0)
   await page
     .getByRole('article')
     .filter({ has: calendar })
@@ -138,13 +138,6 @@ test('the activity calendar exposes days by touch and keyboard', async ({ page, 
     })
 
   const scroller = calendar.getByRole('region', { name: 'Активность по дням', exact: true })
-  await scroller.focus()
-  await scroller.press('Home')
-  await expect(calendar.getByRole('status')).toHaveText((await cells.first().getAttribute('title'))!)
-  await scroller.press('ArrowRight')
-  await expect(calendar.getByRole('status')).toHaveText((await cells.nth(7).getAttribute('title'))!)
-  await scroller.press('End')
-  await expect(calendar.getByRole('status')).toHaveText((await cells.last().getAttribute('title'))!)
   const earlier = calendar.getByRole('button', { name: 'Более ранние недели', exact: true })
   if (await earlier.isVisible()) {
     const before = await scroller.evaluate((element) => element.scrollLeft)
