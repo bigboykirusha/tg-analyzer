@@ -43,6 +43,23 @@ const usually = computed(() => {
     ? t('report.rhythm.usuallyWithDay', { from, to, day: busiestDay.value })
     : t('report.rhythm.usually', { from, to })
 })
+/** The seven days from Monday, the busiest one marked. */
+const week = computed(() => {
+  const weekday = props.data.report.activity.weekday
+  const names = t('chart.weekdaysShort').split(',')
+  const max = Math.max(1, ...weekday.map((day) => day.total))
+  return [1, 2, 3, 4, 5, 6, 0].map((index) => ({
+    index,
+    name: names[index] ?? '',
+    level: (weekday[index]?.total ?? 0) / max,
+  }))
+})
+const second = computed(() => {
+  const window = props.data.derived.availabilityProfile.secondaryWindow
+  if (!window) return null
+  const [from = '', to = ''] = window.split('-')
+  return t('report.fmt.clockSecond', { from, to })
+})
 const night = computed(() => props.data.report.sessions.nightSessionsPct)
 
 /** Stars of the night sky: fixed spots, so the picture is the same on every visit. */
@@ -89,24 +106,39 @@ const hand = computed(() => (window.value ? at(window.value.start, R - 30) : at(
     </ReportSection>
 
     <ReportSection :title="t('report.fmt.clockTitle')">
-      <svg viewBox="0 0 200 200" class="clock" role="img" :aria-label="`${window.from}–${window.to}`">
-        <circle :cx="CX" :cy="CX" :r="R" class="clock__face" />
-        <path v-if="sector" :d="sector" class="clock__window" />
-        <line
-          v-for="tick in ticks"
-          :key="tick.hour"
-          :x1="tick.outer.x"
-          :y1="tick.outer.y"
-          :x2="tick.inner.x"
-          :y2="tick.inner.y"
-          class="clock__tick"
-          :class="{ 'clock__tick--main': tick.hour % 3 === 0 }"
-        />
-        <line :x1="CX" :y1="CX" :x2="hand.x" :y2="hand.y" class="clock__hand" />
-        <circle :cx="CX" :cy="CX" r="6" class="clock__hub" />
-      </svg>
-      <p class="clock__time t-num">{{ window.from }} — {{ window.to }}</p>
-      <p v-if="busiestDay" class="clock__day">{{ t('report.fmt.clockDay', { day: busiestDay }) }}</p>
+      <div class="clock__row">
+        <svg viewBox="0 0 200 200" class="clock" role="img" :aria-label="`${window.from}–${window.to}`">
+          <circle :cx="CX" :cy="CX" :r="R" class="clock__face" />
+          <path v-if="sector" :d="sector" class="clock__window" />
+          <line
+            v-for="tick in ticks"
+            :key="tick.hour"
+            :x1="tick.outer.x"
+            :y1="tick.outer.y"
+            :x2="tick.inner.x"
+            :y2="tick.inner.y"
+            class="clock__tick"
+            :class="{ 'clock__tick--main': tick.hour % 3 === 0 }"
+          />
+          <line :x1="CX" :y1="CX" :x2="hand.x" :y2="hand.y" class="clock__hand" />
+          <circle :cx="CX" :cy="CX" r="6" class="clock__hub" />
+        </svg>
+        <div class="clock__copy">
+          <p class="clock__time t-num">{{ window.from }} — {{ window.to }}</p>
+          <p v-if="busiestDay" class="clock__day">{{ t('report.fmt.clockDay', { day: busiestDay }) }}</p>
+          <p v-if="second" class="clock__day">{{ second }}</p>
+        </div>
+      </div>
+      <ol class="week" :aria-label="t('report.rhythm.weekdaysTitle')">
+        <li v-for="day in week" :key="day.index" class="week__day">
+          <i
+            class="week__bar"
+            :class="{ 'week__bar--top': day.level === 1 }"
+            :style="{ height: `${Math.round(6 + day.level * 46)}px` }"
+          />
+          <span>{{ day.name }}</span>
+        </li>
+      </ol>
     </ReportSection>
   </template>
 </template>
@@ -153,10 +185,51 @@ const hand = computed(() => (window.value ? at(window.value.start, R - 30) : at(
   font: var(--text-small);
 }
 
+.clock__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+
 .clock {
+  flex: none;
+  width: 132px;
+}
+
+.clock__copy {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+  height: 72px;
+  margin-top: auto;
+  list-style: none;
+}
+
+.week__day {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  justify-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+  font: var(--text-caption);
+}
+
+.week__bar {
+  align-self: end;
   width: 100%;
-  max-width: 200px;
-  margin-inline: auto;
+  border-radius: var(--radius-xs);
+  background: var(--surface-2);
+}
+
+.week__bar--top {
+  background: var(--them);
 }
 
 .clock__face {
@@ -188,12 +261,10 @@ const hand = computed(() => (window.value ? at(window.value.start, R - 30) : at(
 
 .clock__time {
   font: var(--text-figure-sm);
-  text-align: center;
 }
 
 .clock__day {
   color: var(--text-muted);
   font: var(--text-small);
-  text-align: center;
 }
 </style>

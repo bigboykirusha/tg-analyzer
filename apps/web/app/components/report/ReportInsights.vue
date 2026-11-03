@@ -5,7 +5,7 @@ import type { InsightDto, ReportDto } from '@tg-analyzer/shared'
  * «Главное»: what the report says nowhere else, each as a figure over one plain
  * sentence. The sentence names whom it is about, so the figures stay ink.
  */
-const props = defineProps<{ data: ReportDto }>()
+const props = defineProps<{ data: ReportDto; bare?: boolean }>()
 const { t, tc, formatNumber, formatDay } = useI18n()
 
 const name = computed(() => props.data.summary.title)
@@ -51,8 +51,13 @@ const items = computed(() =>
 </script>
 
 <template>
-  <section v-if="items.length > 1" class="tile insights" aria-labelledby="insights-title">
-    <h2 id="insights-title" class="insights__title">{{ t('insight.title') }}</h2>
+  <section
+    v-if="items.length > 1"
+    class="insights"
+    :class="{ tile: !bare, 'insights--bare': bare }"
+    aria-labelledby="insights-title"
+  >
+    <h2 id="insights-title" :class="bare ? 'sr-only' : 'insights__title'">{{ t('insight.title') }}</h2>
     <ol class="insights__list">
       <li v-for="item in items" :key="item.id" class="insight">
         <span class="insight__figure">{{ item.figure }}</span>
@@ -65,6 +70,12 @@ const items = computed(() =>
 <style scoped>
 .insights {
   gap: var(--space-4);
+}
+
+.insights--bare {
+  display: grid;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
 }
 
 .insights__title {

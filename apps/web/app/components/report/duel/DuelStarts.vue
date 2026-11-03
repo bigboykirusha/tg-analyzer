@@ -6,7 +6,7 @@ import type { Versus } from '../../../composables/useVersus'
  * starts more often, on a scale of ticks every five percent, so a small lead still shows.
  */
 const props = defineProps<{ item: Versus; theirName: string }>()
-const { t, formatDecimal } = useI18n()
+const { t } = useI18n()
 
 const pair = computed(() => props.item.pairs[0]!)
 /** Your share, 0–100. */
@@ -18,18 +18,6 @@ const RIGHT = W - 36
 /** The knot: 0 % of yours puts it at the right end (the other side pulled it all). */
 const knot = computed(() => LEFT + ((100 - mine.value) / 100) * (RIGHT - LEFT))
 const ticks = Array.from({ length: 21 }, (_, index) => LEFT + (index / 20) * (RIGHT - LEFT))
-
-const verdict = computed(() => {
-  const { lead, ratio } = props.item
-  if (!lead) {
-    if (Math.abs(mine.value - 50) < 1) return t('report.fmt.startsTie')
-    return t(mine.value > 50 ? 'report.fmt.startsEvenMine' : 'report.fmt.startsEvenTheirs', { name: props.theirName })
-  }
-  return t(lead === 'mine' ? 'report.fmt.startsMine' : 'report.fmt.startsTheirs', {
-    name: props.theirName,
-    ratio: formatDecimal(ratio),
-  })
-})
 </script>
 
 <template>
@@ -66,7 +54,6 @@ const verdict = computed(() => {
           <span class="rope__who">{{ theirName }}</span>
         </div>
       </div>
-      <p class="rope__verdict">{{ verdict }}</p>
     </div>
   </ReportSection>
 </template>
@@ -137,9 +124,5 @@ const verdict = computed(() => {
   font: var(--text-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.rope__verdict {
-  font: var(--text-title);
 }
 </style>

@@ -7,7 +7,7 @@ import type { Versus } from '../../../composables/useVersus'
  * who is faster, and the spread of replies next to it.
  */
 const props = defineProps<{ data: ReportDto; item: Versus }>()
-const { t, formatDecimal } = useI18n()
+const { t } = useI18n()
 const name = computed(() => props.data.summary.title)
 const responses = computed(() => props.data.report.responses)
 const pair = computed(() => props.item.pairs[0]!)
@@ -18,19 +18,6 @@ const hasHistogram = computed(
 
 /** The figure is the leader's usual answer; when even, yours (they are about the same). */
 const figure = computed(() => (props.item.lead === 'theirs' ? pair.value.theirs.text : pair.value.mine.text))
-const sentence = computed(() => {
-  const { lead, ratio } = props.item
-  if (!lead) {
-    const fast = Math.max(pair.value.mine.value, pair.value.theirs.value) < 60
-    return fast ? t('report.fmt.speedEvenFast') : t('report.fmt.speedEven')
-  }
-  return t(lead === 'mine' ? 'report.fmt.speedMine' : 'report.fmt.speedTheirs', {
-    name: name.value,
-    ratio: formatDecimal(ratio),
-    mine: pair.value.mine.text,
-    theirs: pair.value.theirs.text,
-  })
-})
 </script>
 
 <template>
@@ -39,7 +26,9 @@ const sentence = computed(() => {
       <div class="speed__fact">
         <span class="speed__label">{{ t('report.fmt.speedLabel') }}</span>
         <p class="speed__figure t-num">{{ figure }}</p>
-        <p class="speed__sentence">{{ sentence }}</p>
+        <p class="speed__sides t-num">
+          {{ t('report.you') }} · {{ pair.mine.text }} &nbsp; {{ name }} · {{ pair.theirs.text }}
+        </p>
       </div>
       <ReplySpeedChart v-if="hasHistogram" :histogram="responses.histogram!" :received-label="name" />
     </div>
@@ -69,10 +58,9 @@ const sentence = computed(() => {
   white-space: nowrap;
 }
 
-.speed__sentence {
-  max-width: 28rem;
-  font: var(--text-lede);
-  font-weight: 500;
+.speed__sides {
+  color: var(--text-muted);
+  font: var(--text-small);
 }
 
 @media (min-width: 901px) {

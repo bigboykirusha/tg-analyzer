@@ -13,9 +13,6 @@ const pair = computed(() => props.item.pairs[0]!)
 const WIDTHS = [34, 52, 28, 20, 44, 30, 38, 26, 48, 22, 36, 30]
 const MAX_WORDS = 12
 const strokes = (words: number) => WIDTHS.slice(0, Math.min(MAX_WORDS, Math.max(1, Math.round(words))))
-const verdict = computed(() =>
-  props.item.lead ? `${props.item.figure} — ${props.item.note}` : t('report.fmt.lengthEven'),
-)
 </script>
 
 <template>
@@ -42,7 +39,6 @@ const verdict = computed(() =>
         <span class="sides__who">{{ t('report.you') }}</span>
       </div>
     </div>
-    <p class="verdict">{{ verdict }}</p>
   </ReportSection>
 </template>
 
@@ -109,9 +105,5 @@ const verdict = computed(() =>
   font: var(--text-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.verdict {
-  font: var(--text-title);
 }
 </style>

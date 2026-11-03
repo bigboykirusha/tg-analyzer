@@ -52,10 +52,9 @@ const absent = computed(() =>
   </p>
 
   <div v-else class="report-grid report-grid--even">
-    <ReportShared :data="data" />
-
     <ReportSection
       v-if="stickers?.top.length"
+      wide
       :title="t('report.talk.stickersTitle')"
       :text="stickerVariety ?? undefined"
     >

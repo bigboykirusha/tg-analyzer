@@ -3,7 +3,7 @@ import type { Versus } from '../../../composables/useVersus'
 
 /** Questions as a unit chart: one square is a fixed number of questions, so the gap is counted by eye. */
 const props = defineProps<{ item: Versus; theirName: string }>()
-const { t, tc } = useI18n()
+const { t } = useI18n()
 
 const pair = computed(() => props.item.pairs[0]!)
 /** At most about 180 squares on both sides together; the step is a round number. */
@@ -31,7 +31,6 @@ const rows = computed(() => [
         <i v-for="index in row.cells" :key="index" :class="`units__cell--${row.key}`" />
       </div>
     </div>
-    <p class="units__scale">{{ tc('report.fmt.questionsStep', step) }}</p>
   </ReportSection>
 </template>
 
@@ -80,11 +79,5 @@ const rows = computed(() => [
 
 .units__cell--theirs {
   background: var(--them);
-}
-
-.units__scale {
-  margin-top: auto;
-  color: var(--text-muted);
-  font: var(--text-small);
 }
 </style>

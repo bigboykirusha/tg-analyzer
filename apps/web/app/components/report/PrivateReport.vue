@@ -28,16 +28,6 @@ const perDay = computed(() => {
   if (value >= 1) return tc('report.fmt.perDay', Math.round(value))
   return tc('report.fmt.everyDays', Math.max(2, Math.round(1 / value)))
 })
-
-const shareHint = computed(() => {
-  const share = sentShare.value
-  if (share === null) return null
-  if (share >= 65) return t('report.kpi.youWriteMuchMore')
-  if (share > 55) return t('report.kpi.youWriteMore')
-  if (share <= 35) return t('report.kpi.theyWriteMuchMore')
-  if (share < 45) return t('report.kpi.theyWriteMore')
-  return t('report.kpi.even')
-})
 </script>
 
 <template>
@@ -52,23 +42,25 @@ const shareHint = computed(() => {
         <span>{{ t('report.kpi.messages') }}</span>
         <span class="t-num">{{ tc('story.activeDaysCount', data.report.facts.activeDays) }}</span>
       </div>
-      <p class="hero__figure t-num">{{ formatNumber(totals.messages) }}</p>
-      <p v-if="perDay" class="hero__sentence">{{ perDay }}</p>
-      <div v-if="mineShare !== null" class="hero__split">
-        <i class="hero__bar" aria-hidden="true">
-          <b :style="{ flexGrow: totals.sent }" />
-          <b :style="{ flexGrow: totals.received }" />
-        </i>
-        <p class="hero__sides t-num">
-          <span>{{ t('report.you') }} · {{ formatNumber(totals.sent) }} · {{ mineShare }}%</span>
-          <span>{{ 100 - mineShare }}% · {{ formatNumber(totals.received) }} · {{ data.summary.title }}</span>
-        </p>
-        <p v-if="shareHint" class="hero__hint">{{ shareHint }}</p>
+      <div class="hero__top">
+        <div class="hero__count">
+          <p class="hero__figure t-num">{{ formatNumber(totals.messages) }}</p>
+          <p v-if="perDay" class="hero__sentence">{{ perDay }}</p>
+        </div>
+        <div v-if="mineShare !== null" class="hero__split">
+          <i class="hero__bar" aria-hidden="true">
+            <b :style="{ flexGrow: totals.sent }" />
+            <b :style="{ flexGrow: totals.received }" />
+          </i>
+          <p class="hero__sides t-num">
+            <span>{{ t('report.you') }} · {{ formatNumber(totals.sent) }} · {{ mineShare }}%</span>
+            <span>{{ 100 - mineShare }}% · {{ formatNumber(totals.received) }} · {{ data.summary.title }}</span>
+          </p>
+        </div>
       </div>
       <ReportPulse :data="data" bare class="hero__pulse" />
+      <ReportInsights :data="data" bare />
     </section>
-
-    <ReportInsights :data="data" />
 
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
     <!-- «Вы двое» reads top to bottom: one full-width card per row. -->
@@ -98,15 +90,32 @@ const shareHint = computed(() => {
   letter-spacing: -0.04em;
 }
 
+.hero__top {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 901px) {
+  .hero__top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+    gap: var(--space-8);
+  }
+}
+
+.hero__count {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .hero__sentence {
-  max-width: 32rem;
-  font: var(--text-h3);
+  font: var(--text-lede);
+  font-weight: 500;
 }
 
 .hero__split {
   display: grid;
   gap: var(--space-2);
-  padding-top: var(--space-2);
 }
 
 .hero__bar {
@@ -130,15 +139,6 @@ const shareHint = computed(() => {
   justify-content: space-between;
   gap: var(--space-1) var(--space-3);
   font: var(--text-small);
-}
-
-.hero__hint {
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-
-.hero__hint::first-letter {
-  text-transform: uppercase;
 }
 
 .hero__pulse {

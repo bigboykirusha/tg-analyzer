@@ -38,9 +38,9 @@ const longest = computed(() => {
 <template>
   <ReportSection v-if="flights >= MIN_FLIGHTS" tone="ink" :title="t('report.mix.voiceTitle')">
     <p class="scale__figure t-num">{{ formatDuration(seconds) }}</p>
-    <p class="scale__caption">{{ t('report.fmt.flightsSentence', { flights: caption }) }}</p>
-    <p class="scale__planes" aria-hidden="true">
-      <Plane v-for="index in planes" :key="index" />
+    <p class="scale__caption">
+      {{ t('report.fmt.flightsSentence', { flights: caption }) }}
+      <span class="scale__planes" aria-hidden="true"><Plane v-for="index in planes" :key="index" /></span>
     </p>
     <p v-if="longest" class="scale__note">{{ longest }}</p>
   </ReportSection>
@@ -58,19 +58,19 @@ const longest = computed(() => {
 }
 
 .scale__planes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  display: inline-flex;
+  gap: var(--space-1);
+  margin-left: var(--space-1);
   color: var(--them);
+  vertical-align: -0.2em;
 }
 
 .scale__planes svg {
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
 }
 
 .scale__note {
-  margin-top: auto;
   color: var(--text-muted);
   font: var(--text-small);
 }
