@@ -22,8 +22,8 @@ const rows = computed(() => [
 <template>
   <ReportSection :title="item.title">
     <p class="lead">
-      <b>{{ item.lead ? item.note : item.figure }}</b>
       <span v-if="item.lead">{{ item.figure }}</span>
+      <b>{{ item.lead ? item.note : item.figure }}</b>
     </p>
     <div v-for="row in rows" :key="row.key" class="units">
       <span class="units__who t-num">{{ row.who }} · {{ row.side.text }}</span>

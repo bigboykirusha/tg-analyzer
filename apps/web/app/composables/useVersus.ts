@@ -34,7 +34,7 @@ const LEAD_RATIO = 1.25
 /** Fewer events than this on both sides together is noise. */
 const MIN_SAMPLES = 5
 
-type Kind = 'more' | 'often' | 'faster' | 'longer'
+type Kind = 'more' | 'often' | 'faster'
 
 /**
  * Every two-sided habit of a private chat as a card of its own. The same numbers feed
@@ -123,24 +123,6 @@ export function useVersus(data: () => ReportDto) {
                 key: 'median',
                 mine: side(mineSec, formatDuration(mineSec)),
                 theirs: side(theirsSec, formatDuration(theirsSec)),
-              },
-            ],
-          )
-        : null
-
-    const words = report.vocabulary.wordsPerMessage
-    result.length =
-      words.mine && words.theirs
-        ? card(
-            'length',
-            t('report.duel.length'),
-            'longer',
-            [words.mine, words.theirs],
-            [
-              {
-                key: 'words',
-                mine: side(words.mine, t('report.duel.words', { value: formatDecimal(words.mine) })),
-                theirs: side(words.theirs, t('report.duel.words', { value: formatDecimal(words.theirs) })),
               },
             ],
           )

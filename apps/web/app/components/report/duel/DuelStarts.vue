@@ -10,18 +10,18 @@ const { t } = useI18n()
 
 const pair = computed(() => props.item.pairs[0]!)
 const mine = computed(() => pair.value.mine.value)
-/** About even: one word instead of a share that would read as someone's lead. */
+const lead = computed(() => (mine.value > 50 ? 'mine' : mine.value < 50 ? 'theirs' : null))
 const figure = computed(() =>
-  props.item.lead === 'theirs'
+  lead.value === 'theirs'
     ? pair.value.theirs.text
-    : props.item.lead === 'mine'
+    : lead.value === 'mine'
       ? pair.value.mine.text
       : t('report.fmt.startsEven'),
 )
 const sentence = computed(() =>
-  props.item.lead === 'mine'
+  lead.value === 'mine'
     ? t('report.fmt.startsMine')
-    : props.item.lead === 'theirs'
+    : lead.value === 'theirs'
       ? t('report.fmt.startsTheirs', { name: props.theirName })
       : null,
 )

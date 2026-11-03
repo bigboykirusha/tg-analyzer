@@ -200,7 +200,6 @@ function changeNumber() {
           {{ error }}
         </p>
       </div>
-      <NuxtLink to="/example" class="login-example">{{ t('login.exampleLink') }}</NuxtLink>
     </section>
 
     <PrivacyDialog :open="privacyOpen" @close="closePrivacy" />
@@ -232,19 +231,6 @@ function changeNumber() {
   padding: var(--space-8);
   border-radius: var(--radius-lg);
   background: var(--surface);
-}
-
-.login-example {
-  color: var(--text);
-  font: var(--text-ui);
-  font-weight: 600;
-  transition: color var(--transition-fast);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .login-example:hover {
-    color: var(--text-muted);
-  }
 }
 
 .login-progress {

@@ -53,7 +53,6 @@ const verdict = computed(() => {
         <path v-if="fill" :d="fill" class="meter__fill" :class="`meter__fill--${item.lead ?? 'mine'}`" />
         <line :x1="CX" :y1="CY" :x2="needle.x" :y2="needle.y" class="meter__needle" />
         <circle :cx="CX" :cy="CY" r="7" class="meter__hub" />
-        <text :x="CX" y="12" text-anchor="middle" class="meter__tick">{{ t('report.duel.evenFigure') }}</text>
         <text x="4" y="148" class="meter__tick">{{ theirName }}</text>
         <text x="236" y="148" text-anchor="end" class="meter__tick">{{ t('report.you') }}</text>
       </svg>

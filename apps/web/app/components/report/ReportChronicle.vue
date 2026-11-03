@@ -83,7 +83,7 @@ const when = (day: string) => formatDay(day, { day: 'numeric', month: 'short', y
 
 .chron__dot {
   position: absolute;
-  top: calc(var(--space-2) * -1 - 1px);
+  top: calc(var(--space-3) / -2 - 1px);
   left: 0;
   width: var(--space-3);
   height: var(--space-3);
@@ -120,7 +120,7 @@ const when = (day: string) => formatDay(day, { day: 'numeric', month: 'short', y
 
   .chron__dot {
     top: var(--space-1);
-    left: calc(var(--space-3) / -2 + 1px);
+    left: calc(var(--space-3) / -2 - 1px);
   }
 }
 </style>

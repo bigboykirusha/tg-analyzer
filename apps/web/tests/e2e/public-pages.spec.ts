@@ -90,10 +90,8 @@ test('protected pages redirect to login', async ({ page }) => {
   await page.waitForURL('**/login')
 })
 
-test('the example report opens from the login page without signing in', async ({ page }, testInfo) => {
-  await gotoHydrated(page, '/login')
-  await page.getByRole('link', { name: 'Открыть пример отчёта' }).click()
-  await page.waitForURL('**/example')
+test('the example report opens without signing in', async ({ page }, testInfo) => {
+  await gotoHydrated(page, '/example')
   await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeVisible()
   await expect(page.locator('#header-page').getByRole('link', { name: 'Войти' })).toBeVisible()
   if (page.viewportSize()!.width <= 640) {

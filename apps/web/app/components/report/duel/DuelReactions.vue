@@ -37,7 +37,7 @@ const sides = computed(() => {
           place: entry === first ? 1 : entry === second ? 2 : 3,
           height: 28 + (entry.count / top) * 52,
         }))
-      return { ...side, steps, rest: side.items.slice(3) }
+      return { ...side, steps }
     })
 })
 const pair = computed(() => props.item?.pairs[0] ?? null)
@@ -62,9 +62,6 @@ const pair = computed(() => props.item?.pairs[0] ?? null)
             <b class="podium__step t-num" :style="{ height: `${step.height}px` }">{{ formatNumber(step.count) }}</b>
           </div>
         </div>
-        <p v-if="side.rest.length" class="podium-side__rest t-num">
-          <span v-for="entry in side.rest" :key="entry.value">{{ entry.value }} {{ formatNumber(entry.count) }}</span>
-        </p>
       </div>
     </div>
   </ReportSection>
@@ -150,13 +147,5 @@ const pair = computed(() => props.item?.pairs[0] ?? null)
 .podium--theirs .podium__step {
   background: var(--on-lime-well);
   color: var(--on-lime);
-}
-
-.podium-side__rest {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3);
-  color: var(--text-muted);
-  font: var(--text-small);
 }
 </style>

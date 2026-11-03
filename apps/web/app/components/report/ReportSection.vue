@@ -3,14 +3,14 @@
  * A report card: one title, an optional plain-language explanation, then the content.
  * `tone` turns it into an ink, lime or grey tile: the accents that break up a page of white cards.
  */
-defineProps<{ title: string; text?: string; wide?: boolean; tone?: 'ink' | 'lime' | 'grey' }>()
+defineProps<{ title?: string; text?: string; wide?: boolean; tone?: 'ink' | 'lime' | 'grey' }>()
 </script>
 
 <template>
   <article class="tile report-section" :class="[{ 'report-section--wide': wide }, tone && `tile--${tone}`]">
-    <header class="report-section__head">
+    <header v-if="title || text || $slots.actions" class="report-section__head">
       <div class="report-section__copy">
-        <h3 class="report-section__title">{{ title }}</h3>
+        <h3 v-if="title" class="report-section__title">{{ title }}</h3>
         <p v-if="text" class="report-section__text">{{ text }}</p>
       </div>
       <div v-if="$slots.actions" class="report-section__actions no-print">

@@ -38,7 +38,6 @@ function pick(action: 'story' | 'share') {
       <template v-else>
         <!-- Phones refresh from the foot of the report; the bar keeps the title, «Share» and the profile. -->
         <UiIconButton
-          class="report-header__refresh"
           :icon="RotateCw"
           :label="t('report.reanalyse')"
           variant="ghost"
@@ -71,12 +70,7 @@ function pick(action: 'story' | 'share') {
 </template>
 
 <style scoped>
-/* Phones: the chat's avatar stays beside the name, the refresh moves to the foot of the page. */
 @media (max-width: 640px) {
-  .report-header__refresh {
-    display: none;
-  }
-
   /* The title needs the room: the button is the share icon alone, named for screen readers. */
   .report-header__share.btn {
     width: var(--control-sm);

@@ -39,7 +39,6 @@ const rows = computed(() => {
         </span>
       </div>
     </div>
-    <p class="note">{{ t('report.fmt.voiceTogether') }}</p>
   </ReportSection>
 </template>
 
@@ -52,12 +51,6 @@ const rows = computed(() => {
 .track {
   display: grid;
   gap: var(--space-3);
-}
-
-.note {
-  margin-top: auto;
-  color: var(--text-muted);
-  font: var(--text-small);
 }
 
 .wave {

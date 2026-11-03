@@ -50,7 +50,7 @@ const view = computed(() => {
     if (evening) lines.push(evening)
     if (morning) lines.push(morning)
     return {
-      label: t('report.fmt.goodNightLabel'),
+      label: null,
       figure: formatNumber(Math.max(goodNight.mine, goodNight.theirs)),
       sentence: theirsLead
         ? t('report.fmt.goodNightTheirs', { ...vars, other: formatNumber(goodNight.mine) })
@@ -73,7 +73,7 @@ const view = computed(() => {
 <template>
   <ReportSection v-if="view" :title="t('report.fmt.ritualsTitle')">
     <div class="fact">
-      <span class="fact__label">{{ view.label }}</span>
+      <span v-if="view.label" class="fact__label">{{ view.label }}</span>
       <p class="fact__figure t-num">{{ view.figure }}</p>
       <p class="fact__sentence">{{ view.sentence }}</p>
     </div>

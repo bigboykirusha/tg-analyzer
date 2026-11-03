@@ -21,7 +21,6 @@ const name = computed(() => props.data.summary.title)
       </div>
       <div class="duel__stack">
         <DuelStarts v-if="cards.starts" :item="cards.starts" :their-name="name" />
-        <DuelLength v-if="cards.length" :item="cards.length" :their-name="name" />
         <DuelQuestions v-if="cards.questions" :item="cards.questions" :their-name="name" />
       </div>
     </div>

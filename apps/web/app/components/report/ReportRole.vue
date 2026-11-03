@@ -93,7 +93,7 @@ const hand = computed(() => (window.value ? at(window.value.start, R - 30) : at(
 
 <template>
   <template v-if="window && role">
-    <ReportSection tone="ink" class="role" :title="t('report.fmt.roleTitle')">
+    <ReportSection tone="ink" class="role">
       <div v-if="role === 'night'" class="sky" aria-hidden="true">
         <i v-for="(star, index) in STARS" :key="index" :style="star" />
       </div>

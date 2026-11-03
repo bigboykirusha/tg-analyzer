@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import { AlertCircle, RotateCw } from '../../lib/icons'
+import { AlertCircle } from '../../lib/icons'
 import { ApiClientError } from '../../composables/useApi'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 const route = useRoute()
-const { t, formatRelative } = useI18n()
+const { t } = useI18n()
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
@@ -88,22 +88,6 @@ onMounted(load)
       <GroupReport v-if="data.summary.type === 'group'" :data="data" />
       <PrivateReport v-else :data="data" />
 
-      <!-- Phones: the bar has no refresh button, it sits under the report with the date of the data. -->
-      <div class="report-foot no-print">
-        <span class="report-foot__date">{{
-          t('report.updatedAt', { when: formatRelative(data.summary.analyzedAt) })
-        }}</span>
-        <UiButton
-          variant="ghost"
-          size="sm"
-          :icon="RotateCw"
-          :loading="reanalysing"
-          :disabled="!canReanalyse"
-          @click="reanalyse"
-        >
-          {{ t('report.reanalyse') }}
-        </UiButton>
-      </div>
       <ReportStory :open="storyOpen" :share-first="storyShare" :data="data" @close="storyOpen = false" />
     </div>
 
@@ -135,21 +119,3 @@ onMounted(load)
     <ReportSkeleton v-if="!data && !notFound && !loadError" :title="knownTitle" />
   </UiPageContainer>
 </template>
-
-<style scoped>
-.report-foot {
-  display: none;
-}
-
-/* Phones: the date of the data and the refresh, quietly under the report. */
-@media (max-width: 640px) {
-  .report-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    color: var(--text-muted);
-    font: var(--text-small);
-  }
-}
-</style>
