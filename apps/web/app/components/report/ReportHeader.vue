@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { RotateCw, Share2, Sparkles } from '../../lib/icons'
+import { RotateCw, Share2 } from '../../lib/icons'
 
 const props = withDefaults(
   defineProps<{
@@ -12,20 +12,13 @@ const props = withDefaults(
   }>(),
   { canReanalyse: false, reanalysing: false, demo: false },
 )
-const emit = defineEmits<{ reanalyse: []; story: []; share: [] }>()
+const emit = defineEmits<{ reanalyse: []; story: [] }>()
 const { t, formatPeriod } = useI18n()
 
 /** Months only, «окт. 2025 – окт. 2026»: it fits next to the name on a phone; days are in Dynamics. */
 const period = computed(() =>
   props.demo ? t('example.title') : formatPeriod(props.summary.firstMessageAt, props.summary.lastMessageAt, true),
 )
-
-const shareOpen = ref(false)
-function pick(action: 'story' | 'share') {
-  shareOpen.value = false
-  if (action === 'story') emit('story')
-  else emit('share')
-}
 </script>
 
 <template>
@@ -45,24 +38,16 @@ function pick(action: 'story' | 'share') {
           :disabled="!canReanalyse"
           @click="emit('reanalyse')"
         />
-        <!-- «Share» holds the recap too: the slides are what gets shared, so one button, two ways in. -->
-        <UiPopoverMenu v-model:open="shareOpen" align="end" :aria-label="t('story.share')" :title="t('story.share')">
-          <template #trigger>
-            <UiButton
-              class="report-header__share"
-              variant="secondary"
-              size="sm"
-              :icon="Share2"
-              aria-haspopup="menu"
-              :aria-expanded="shareOpen"
-              @click="shareOpen = !shareOpen"
-            >
-              <span class="report-header__share-label">{{ t('story.share') }}</span>
-            </UiButton>
-          </template>
-          <UiMenuItem role="menuitem" :icon="Sparkles" @click="pick('story')">{{ t('story.watch') }}</UiMenuItem>
-          <UiMenuItem role="menuitem" :icon="Share2" @click="pick('share')">{{ t('story.sendPictures') }}</UiMenuItem>
-        </UiPopoverMenu>
+        <UiButton
+          class="report-header__share"
+          variant="secondary"
+          size="sm"
+          :icon="Share2"
+          aria-haspopup="dialog"
+          @click="emit('story')"
+        >
+          <span class="report-header__share-label">{{ t('story.share') }}</span>
+        </UiButton>
       </template>
     </template>
   </UiPageBar>

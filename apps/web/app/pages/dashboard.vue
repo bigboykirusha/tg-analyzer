@@ -56,9 +56,13 @@ onMounted(() => {
           <UiSkeleton width="120px" height="24px" />
           <div class="report-cards">
             <div v-for="card in 4" :key="card" class="tile home__skeleton-card">
+              <div class="home__skeleton-head">
               <UiSkeleton width="44px" height="44px" radius="50%" />
-              <UiSkeleton width="70%" height="20px" />
-              <UiSkeleton width="50%" />
+                <div class="home__skeleton-copy">
+                  <UiSkeleton width="70%" height="20px" />
+                  <UiSkeleton width="50%" />
+                </div>
+              </div>
               <UiSkeleton class="home__skeleton-foot" height="40px" />
             </div>
           </div>
@@ -126,8 +130,39 @@ onMounted(() => {
   min-height: 200px;
 }
 
+.home__skeleton-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.home__skeleton-copy {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: var(--space-2);
+}
+
 .home__skeleton-foot {
   margin-top: auto;
+}
+
+@media (max-width: 640px) {
+  .home__skeleton-card {
+    min-height: 72px;
+    justify-content: center;
+    padding: var(--space-3) 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .home__skeleton-card + .home__skeleton-card {
+    border-top: 1px solid var(--border);
+  }
+
+  .home__skeleton-foot {
+    display: none;
+  }
 }
 
 /* ─── Newcomer: three steps in one lime tile ─── */

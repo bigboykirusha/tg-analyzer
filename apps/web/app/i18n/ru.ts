@@ -544,7 +544,6 @@ export const ru: Record<MessageKey, string> = {
   'sidebar.newAnalysis': 'Новый анализ',
   'sidebar.personal': 'Личные',
   'sidebar.reports': 'Отчёты',
-  'sidebar.search': 'Поиск',
   'sidebar.updating': 'Обновляется',
   'site.footerNav': 'Документы',
   'site.privacy': 'Приватность',

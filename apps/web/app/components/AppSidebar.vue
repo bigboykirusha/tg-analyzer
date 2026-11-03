@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { LayoutGrid, Plus, Search } from '../lib/icons'
+import { LayoutGrid, Plus } from '../lib/icons'
 
 /**
  * The app's left column on wide screens: every analysed chat, personal chats
@@ -13,11 +13,8 @@ const auth = useAuthStore()
 const analysis = useAnalysis()
 const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
 
-const query = ref('')
-const matches = (report: ReportSummaryDto) =>
-  !query.value.trim() || report.title.toLocaleLowerCase().includes(query.value.trim().toLocaleLowerCase())
-const personal = computed(() => workspace.reports.filter((report) => report.type !== 'group' && matches(report)))
-const groups = computed(() => workspace.reports.filter((report) => report.type === 'group' && matches(report)))
+const personal = computed(() => workspace.reports.filter((report) => report.type !== 'group'))
+const groups = computed(() => workspace.reports.filter((report) => report.type === 'group'))
 const sections = computed(() =>
   [
     { key: 'personal', title: t('sidebar.personal'), items: personal.value },
@@ -37,11 +34,6 @@ function updating(report: ReportSummaryDto) {
 <template>
   <aside class="sidebar" :aria-label="t('sidebar.label')">
     <div class="sidebar__brand"><BrandLink to="/dashboard" /></div>
-
-    <label v-if="workspace.reports.length > 6" class="sidebar__search">
-      <Search aria-hidden="true" />
-      <input v-model="query" type="search" :placeholder="t('sidebar.search')" :aria-label="t('sidebar.search')" />
-    </label>
 
     <nav class="sidebar__list" :aria-label="t('sidebar.reports')">
       <NuxtLink to="/dashboard" class="sidebar__item" :aria-current="route.path === '/dashboard' ? 'page' : undefined">
@@ -103,6 +95,7 @@ function updating(report: ReportSummaryDto) {
 
 <style scoped>
 .sidebar {
+  --skeleton: var(--border-strong);
   position: sticky;
   top: 0;
   display: flex;
@@ -120,32 +113,6 @@ function updating(report: ReportSummaryDto) {
   align-items: center;
   height: var(--topbar-height);
   padding: 0 var(--space-2);
-}
-
-.sidebar__search {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: var(--control-sm);
-  margin-bottom: var(--space-2);
-  padding: 0 10px;
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  color: var(--text-muted);
-}
-
-.sidebar__search input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  background: none;
-  color: var(--text);
-  font: var(--text-small);
-  outline: none;
-}
-
-.sidebar__search input::placeholder {
-  color: var(--text-muted);
 }
 
 .sidebar__list {

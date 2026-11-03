@@ -149,7 +149,8 @@ function signOut() {
 /* With the sidebar on screen the logo and the account live there. */
 @media (min-width: 901px) {
   .topbar__brand,
-  .topbar__account {
+  .topbar__account,
+  .topbar-actions:not(:has(.activity)) {
     display: none;
   }
 }
@@ -169,7 +170,8 @@ function signOut() {
  */
 @media (max-width: 640px) {
   .topbar:has(.page-bar:not([data-untitled])) .topbar__brand,
-  .topbar:has(.page-bar[data-leading]) .account-trigger {
+  .topbar:has(.page-bar[data-leading]) .topbar__account,
+  .topbar:has(.page-bar[data-leading]) .topbar-actions:not(:has(.activity)) {
     display: none;
   }
 }

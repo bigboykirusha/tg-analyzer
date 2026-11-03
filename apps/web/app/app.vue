@@ -2,7 +2,8 @@
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
 const { locale, t } = useI18n()
-useTheme().install()
+const theme = useTheme()
+theme.install()
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
@@ -31,8 +32,11 @@ useHead({
   ],
   meta: [
     { charset: 'utf-8' },
-    { name: 'theme-color', content: '#0A0A0B', media: '(prefers-color-scheme: dark)' },
-    { name: 'theme-color', content: '#F2F3F5', media: '(prefers-color-scheme: light)' },
+    {
+      name: 'theme-color',
+      tagPriority: -9,
+      content: () => (theme.resolved.value === 'dark' ? '#0a0a0b' : '#f2f3f5'),
+    },
     { name: 'format-detection', content: 'telephone=no' },
   ],
 })
@@ -51,6 +55,7 @@ useSeoMeta({
 </script>
 
 <template>
+  <NuxtLoadingIndicator color="var(--them)" :height="2" :throttle="200" />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>

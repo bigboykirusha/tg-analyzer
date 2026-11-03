@@ -7,21 +7,26 @@
   .startup-loading {
     position: fixed;
     inset: 0;
-    z-index: var(--z-toast);
+    z-index: var(--z-toast, 100);
     display: grid;
     place-content: center;
     justify-items: center;
-    gap: var(--space-4);
-    background: var(--bg);
-    color: var(--text);
-    font: var(--text-title);
+    gap: var(--space-4, 16px);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: var(--bg, #f2f3f5);
+    color: var(--text, #0e0f11);
+    font: var(--text-title, 600 16px/22px system-ui);
+  }
+  :root[data-theme='dark'] .startup-loading {
+    background: var(--bg, #0a0a0b);
+    color: var(--text, #f2f2f3);
   }
   .startup-loading__pulse {
-    width: var(--control-lg);
-    height: var(--space-1);
-    border-radius: var(--radius-full);
+    width: var(--control-lg, 48px);
+    height: var(--space-1, 4px);
+    border-radius: var(--radius-full, 999px);
     background: currentColor;
-    animation: startup-pulse calc(var(--duration-slow) * 3) var(--ease-standard) infinite alternate;
+    animation: startup-pulse calc(var(--duration-slow, 300ms) * 3) var(--ease-standard, ease-in-out) infinite alternate;
   }
   @keyframes startup-pulse {
     from {

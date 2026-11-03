@@ -64,14 +64,17 @@ export default defineNuxtConfig({
   ],
   app: {
     head: {
-      meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' }],
+      meta: [
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+        { name: 'theme-color', content: '#f2f3f5', tagPriority: -9 },
+      ],
       link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
       // CSR shells have no server theme attribute: preserve the explicit cookie
       // or use the system preference before the first paint and app hydration.
       script: [
         {
           innerHTML:
-            "(function(){var d=document.documentElement;if(d.dataset.theme)return;var p=document.cookie.match(/(?:^|; *)tg-analyzer-theme=(light|dark)(?:;|$)/);d.dataset.theme=p?p[1]:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'})()",
+            "(function(){var d=document.documentElement;var p=document.cookie.match(/(?:^|; *)tg-analyzer-theme=(light|dark)(?:;|$)/);d.dataset.theme=d.dataset.theme||(p?p[1]:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var m=document.querySelector('meta[name=theme-color]');if(m)m.content=d.dataset.theme==='dark'?'#0a0a0b':'#f2f3f5'})()",
           tagPosition: 'head',
           tagPriority: 'critical',
         },

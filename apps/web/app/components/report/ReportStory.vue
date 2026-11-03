@@ -24,7 +24,6 @@ const props = defineProps<{
   /** The public example: no account, so no photos to fetch. */
   offline?: boolean
   /** Opened from «Share»: the share sheet is already up. */
-  shareFirst?: boolean
 }>()
 const emit = defineEmits<{ close: [] }>()
 
@@ -667,7 +666,6 @@ watch(open, (value) => {
   shareOpen.value = false
   canShare.value = image.canShareFiles()
   void loadAvatars()
-  if (props.shareFirst) openShare()
 })
 </script>
 

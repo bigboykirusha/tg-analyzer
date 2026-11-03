@@ -544,7 +544,6 @@ export const en = {
   'sidebar.newAnalysis': 'New analysis',
   'sidebar.personal': 'Private',
   'sidebar.reports': 'Reports',
-  'sidebar.search': 'Search',
   'sidebar.updating': 'Updating',
   'site.footerNav': 'Documents',
   'site.privacy': 'Privacy',

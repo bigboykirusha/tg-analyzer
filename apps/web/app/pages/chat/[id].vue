@@ -19,14 +19,6 @@ const loadError = ref<unknown>(null)
 const notFound = ref(false)
 const reanalysing = ref(false)
 const storyOpen = ref(false)
-/** Opened from «Share»: the sheet with the ways to send the pictures is already up. */
-const storyShare = ref(false)
-
-function openStory(share: boolean) {
-  storyShare.value = share
-  storyOpen.value = true
-}
-
 /** The chat's name from the lists already loaded, so the top bar is right before the report arrives. */
 const knownTitle = computed(
   () =>
@@ -81,14 +73,13 @@ onMounted(load)
         :can-reanalyse="canReanalyse"
         :reanalysing="reanalysing"
         @reanalyse="reanalyse"
-        @story="openStory(false)"
-        @share="openStory(true)"
+        @story="storyOpen = true"
       />
 
       <GroupReport v-if="data.summary.type === 'group'" :data="data" />
       <PrivateReport v-else :data="data" />
 
-      <ReportStory :open="storyOpen" :share-first="storyShare" :data="data" @close="storyOpen = false" />
+      <ReportStory :open="storyOpen" :data="data" @close="storyOpen = false" />
     </div>
 
     <UiPageBar v-else-if="notFound || loadError" :title="knownTitle ?? t('nav.back')" back="/dashboard" />
