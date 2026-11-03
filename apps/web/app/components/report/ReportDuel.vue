@@ -12,32 +12,53 @@ const name = computed(() => props.data.summary.title)
 </script>
 
 <template>
-  <div class="report-grid report-grid--even duel">
-    <DuelSpeed v-if="cards.speed" :data="data" :item="cards.speed" />
-    <div v-if="cards.starts || cards.length" class="duel__stack">
-      <DuelStarts v-if="cards.starts" :item="cards.starts" :their-name="name" />
-      <DuelLength v-if="cards.length" :item="cards.length" :their-name="name" />
+  <div class="duel">
+    <!-- Two columns of different cards side by side: reply time and stickers, who starts, length and questions. -->
+    <div class="report-grid duel__top">
+      <div class="duel__stack">
+        <DuelSpeed v-if="cards.speed" :data="data" :item="cards.speed" />
+        <DuelStickers :data="data" />
+      </div>
+      <div class="duel__stack">
+        <DuelStarts v-if="cards.starts" :item="cards.starts" :their-name="name" />
+        <DuelLength v-if="cards.length" :item="cards.length" :their-name="name" />
+        <DuelQuestions v-if="cards.questions" :item="cards.questions" :their-name="name" />
+      </div>
     </div>
-    <DuelQuestions v-if="cards.questions" :item="cards.questions" :their-name="name" />
-    <DuelReactions :data="data" :item="cards.reactions ?? null" />
-    <DuelVoice v-if="cards.voice" :item="cards.voice" :their-name="name" />
-    <ReportEquivalents :data="data" />
-    <DuelRituals :data="data" />
-    <DuelLaughs v-if="cards.laughs" :item="cards.laughs" :their-name="name" />
+    <div class="report-grid report-grid--even duel__rest">
+      <DuelReactions :data="data" :item="cards.reactions ?? null" />
+      <DuelVoice v-if="cards.voice" :item="cards.voice" :their-name="name" />
+      <ReportEquivalents :data="data" />
+      <DuelRituals :data="data" />
+      <DuelLaughs v-if="cards.laughs" :item="cards.laughs" :their-name="name" />
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Cards go in pairs; who starts and message length share one cell beside reply time. A card left
-   alone at the end takes the row. */
-.duel__stack {
+.duel {
   display: grid;
-  grid-template-rows: auto 1fr;
+  gap: var(--card-gap);
+}
+
+/* Each column is a stack whose last card takes what is left, so both columns end on one line. */
+.duel__top {
+  align-items: stretch;
+}
+
+.duel__stack {
+  display: flex;
+  flex-direction: column;
   gap: var(--card-gap);
   min-width: 0;
 }
 
-.duel > :last-child:nth-child(odd) {
+.duel__stack > :last-child {
+  flex: 1;
+}
+
+/* A card left alone at the end takes the row. */
+.duel__rest > :last-child:nth-child(odd) {
   grid-column: 1 / -1;
 }
 </style>
