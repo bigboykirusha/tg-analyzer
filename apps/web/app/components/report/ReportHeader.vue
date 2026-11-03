@@ -36,7 +36,6 @@ function pick(action: 'story' | 'share') {
     <template #actions>
       <UiButton v-if="demo" variant="primary" size="sm" to="/login">{{ t('site.signIn') }}</UiButton>
       <template v-else>
-        <!-- Phones refresh from the foot of the report; the bar keeps the title, «Share» and the profile. -->
         <UiIconButton
           :icon="RotateCw"
           :label="t('report.reanalyse')"
@@ -51,7 +50,7 @@ function pick(action: 'story' | 'share') {
           <template #trigger>
             <UiButton
               class="report-header__share"
-              variant="primary"
+              variant="secondary"
               size="sm"
               :icon="Share2"
               aria-haspopup="menu"

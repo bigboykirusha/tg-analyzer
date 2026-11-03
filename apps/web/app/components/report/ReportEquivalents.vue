@@ -27,6 +27,8 @@ const comparisons = computed(() =>
   t('report.fmt.voiceComparisons', {
     films: formatNumber(Math.round(seconds.value / (90 * 60))),
     episodes: formatNumber(Math.round(seconds.value / (25 * 60))),
+    songs: formatNumber(Math.round(seconds.value / (3 * 60))),
+    matches: formatNumber(Math.round(seconds.value / (45 * 60))),
   }),
 )
 const planes = computed(() => Math.min(MAX_PLANES, Math.max(1, Math.round(flights.value))))
@@ -48,7 +50,7 @@ const longest = computed(() => {
       {{ t('report.fmt.flightsSentence', { flights: caption }) }}
       <span class="scale__planes" aria-hidden="true"><Plane v-for="index in planes" :key="index" /></span>
     </p>
-    <p class="scale__note">{{ comparisons }}</p>
+    <p class="scale__caption">{{ comparisons }}</p>
     <p v-if="longest" class="scale__note">{{ longest }}</p>
   </ReportSection>
 </template>

@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import type { RecentActivityResponse } from '@tg-analyzer/shared'
-import { ArrowDown, ArrowUp } from '../../lib/icons'
 
-/**
- * The top of the home page: a chart of the month, like a music chart. Private chats of the last
- * month, counted by Telegram without an analysis, ranked by messages in the month; the arrow says
- * how a chat moved against its place by size over all time (among the same chats). One column, the
- * same row for every place; a slim lime strip under the chart offers the busiest chat that has no report yet.
- */
+/** Monthly chat list and the busiest chat still waiting for analysis. */
 const props = defineProps<{ recent: RecentActivityResponse; reportIds: Set<string> }>()
 const { t, tc, formatNumber } = useI18n()
 const analysis = useAnalysis()
@@ -21,26 +15,18 @@ const PLACES = 5
 
 const rows = computed(() => {
   const chats = props.recent.chats
-  // Older cached answers have no all-time size: then there is nothing to move against.
-  const sized = chats.every((chat) => chat.total !== undefined)
-  const byTotal = sized ? [...chats].sort((a, b) => (b.total ?? 0) - (a.total ?? 0)).map((chat) => chat.id) : []
   return chats.slice(0, PLACES).map((chat, index) => ({
     ...chat,
     place: index + 1,
-    move: sized ? byTotal.indexOf(chat.id) - index : 0,
     reported: props.reportIds.has(chat.id),
   }))
 })
 
-/** The busiest chat of the month without a report, and its place in the month. */
-const next = computed(() => {
-  const index = props.recent.chats.findIndex((chat) => !props.reportIds.has(chat.id))
-  return index === -1 ? null : { chat: props.recent.chats[index]!, rank: index + 1 }
-})
+const next = computed(() => props.recent.chats.find((chat) => !props.reportIds.has(chat.id)))
 
 const starting = ref(false)
 const nextState = computed(() => {
-  const id = next.value?.chat.id
+  const id = next.value?.id
   if (!id) return null
   if (analysis.isActive.value && analysis.progress.value.chatId === id) return 'running'
   if (analysis.queued.value.some((item) => item.chatId === id)) return 'queued'
@@ -51,7 +37,7 @@ async function analyseNext() {
   if (!next.value) return
   starting.value = true
   try {
-    await analysis.startAnalysis(next.value.chat.id, next.value.chat.title)
+    await analysis.startAnalysis(next.value.id, next.value.title)
   } catch (error) {
     toast.error(t('analysis.startError'), errorMessage(error))
   } finally {
@@ -68,7 +54,6 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
     <section class="tile tile--ink month__chart" aria-labelledby="month-title">
       <div class="tile__label">
         <h2 id="month-title" class="month__label">{{ t('month.chart') }}</h2>
-        <span class="t-num">{{ tc('month.window', recent.days) }}</span>
       </div>
 
       <ol v-if="rows.length" class="month__rows">
@@ -80,21 +65,6 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
             :class="{ 'month__row--first': row.place === 1 }"
           >
             <span class="month__place t-num">{{ row.place }}</span>
-            <span
-              class="month__move t-num"
-              :class="{ 'month__move--up': row.move > 0 }"
-              :aria-label="
-                row.move > 0
-                  ? t('month.moveUp', { count: row.move })
-                  : row.move < 0
-                    ? t('month.moveDown', { count: -row.move })
-                    : undefined
-              "
-            >
-              <template v-if="row.move > 0"><ArrowUp aria-hidden="true" />{{ row.move }}</template>
-              <template v-else-if="row.move < 0"><ArrowDown aria-hidden="true" />{{ -row.move }}</template>
-              <template v-else>–</template>
-            </span>
             <ChatAvatar
               :chat-id="row.id"
               :title="row.title"
@@ -118,13 +88,12 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
     </section>
 
     <section v-if="next" class="tile tile--lime month__next" aria-labelledby="month-next">
-      <ChatAvatar :chat-id="next.chat.id" :title="next.chat.title" :has-avatar="next.chat.hasAvatar" size="md" />
+      <ChatAvatar :chat-id="next.id" :title="next.title" :has-avatar="next.hasAvatar" size="md" />
       <div class="month__next-copy">
         <span class="month__next-label">{{ t('month.next') }}</span>
-        <h2 id="month-next" class="month__next-name">{{ next.chat.title }}</h2>
+        <h2 id="month-next" class="month__next-name">{{ next.title }}</h2>
         <p class="month__next-note">
-          {{ next.rank === 1 ? t('month.rankFirst') : t('month.rank', { rank: next.rank }) }} ·
-          {{ tc('month.perMonth', next.chat.messages) }}
+          {{ tc('month.perMonth', next.messages) }}
         </p>
       </div>
       <UiButton v-if="!auth.telegramSessionActive" class="month__action" @click="relogin">
@@ -177,7 +146,7 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
 
 .month__row {
   display: grid;
-  grid-template-columns: 1.1em 2.4em 44px minmax(0, 1fr) auto;
+  grid-template-columns: 1.1em 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
   padding-block: var(--space-2);
@@ -216,27 +185,8 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
   padding-bottom: 0;
 }
 
-.month__move {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  color: var(--text-muted);
-  font: var(--text-caption);
-  font-weight: 600;
-}
-
-.month__move svg {
-  width: 12px;
-  height: 12px;
-  stroke-width: 2.4;
-}
-
-.month__move--up {
-  color: var(--them);
-}
-
 .month__row :deep(.avatar),
-.month__row > :nth-child(3) {
+.month__row > :nth-child(2) {
   justify-self: center;
 }
 

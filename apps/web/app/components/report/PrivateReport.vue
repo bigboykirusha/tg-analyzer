@@ -55,9 +55,6 @@ const shareHint = computed(() => {
     </p>
     <!-- Ink: the count, its pulse and the key facts. Lime: who writes more. -->
     <ReportHero :data="data" :label="t('report.kpi.messages')" :value="formatNumber(totals.messages)" :note="perDay">
-      <template #label>
-        <span class="t-num">{{ tc('story.activeDaysCount', data.report.facts.activeDays) }}</span>
-      </template>
       <template #accent>
         <div class="tile__label">{{ t('report.kpi.whoWritesMore') }}</div>
         <template v-if="mineShare !== null">

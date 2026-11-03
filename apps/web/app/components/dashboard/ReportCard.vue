@@ -8,7 +8,7 @@ const props = defineProps<{
   /** A fresh analysis of this chat is running or queued. */
   updating?: boolean
 }>()
-const { t, tc, formatRelative, formatPeriod, formatNumber, formatPercent } = useI18n()
+const { t, tc, formatRelative, formatPeriod, formatNumber } = useI18n()
 
 const isGroup = computed(() => props.report.type === 'group')
 /** «март – окт. 2026», «Группа · март – окт. 2026»: a private chat is the default and needs no label. */
@@ -21,14 +21,9 @@ const subline = computed(() => {
 const pulse = computed(() =>
   props.report.pulse?.some((week) => week.sent || week.received) ? props.report.pulse : null,
 )
-const share = computed(() => (isGroup.value ? null : (props.report.headline?.sentSharePct ?? null)))
 /** Keep report size and freshness on separate lines on a phone. */
 const line = computed(() =>
-  [
-    isGroup.value ? t('chatType.group') : null,
-    tc('common.messagesCount', props.report.totalMessages),
-    share.value === null ? null : t('dashboard.yourShare', { share: formatPercent(share.value) }),
-  ]
+  [isGroup.value ? t('chatType.group') : null, tc('common.messagesCount', props.report.totalMessages)]
     .filter(Boolean)
     .join(' · '),
 )
@@ -53,8 +48,7 @@ const updated = computed(() =>
     </span>
     <span class="report-card__count">
       <strong class="t-num">{{ formatNumber(report.totalMessages) }}</strong>
-      {{ tc('dashboard.messagesWord', report.totalMessages)
-      }}<template v-if="share !== null"> · {{ t('dashboard.yourShare', { share: formatPercent(share) }) }}</template>
+      {{ tc('dashboard.messagesWord', report.totalMessages) }}
     </span>
     <Seismograph
       v-if="pulse"
