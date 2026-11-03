@@ -2,127 +2,89 @@
 import type { Versus } from '../../../composables/useVersus'
 
 /**
- * Who starts a conversation as a tug of war: the knot moves from the middle towards whoever
- * starts more often, on a scale of ticks every five percent, so a small lead still shows.
+ * Who starts a conversation, kept small: the leader's share as a figure, who it is, and the
+ * split as one bar. It sits under the reply-time card's neighbour, so it stays short.
  */
 const props = defineProps<{ item: Versus; theirName: string }>()
 const { t } = useI18n()
 
 const pair = computed(() => props.item.pairs[0]!)
-/** Your share, 0–100. */
 const mine = computed(() => pair.value.mine.value)
-
-const W = 320
-const LEFT = 36
-const RIGHT = W - 36
-/** The knot: 0 % of yours puts it at the right end (the other side pulled it all). */
-const knot = computed(() => LEFT + ((100 - mine.value) / 100) * (RIGHT - LEFT))
-const ticks = Array.from({ length: 21 }, (_, index) => LEFT + (index / 20) * (RIGHT - LEFT))
+/** About even: one word instead of a share that would read as someone's lead. */
+const figure = computed(() =>
+  props.item.lead === 'theirs'
+    ? pair.value.theirs.text
+    : props.item.lead === 'mine'
+      ? pair.value.mine.text
+      : t('report.fmt.startsEven'),
+)
+const sentence = computed(() =>
+  props.item.lead === 'mine'
+    ? t('report.fmt.startsMine')
+    : props.item.lead === 'theirs'
+      ? t('report.fmt.startsTheirs', { name: props.theirName })
+      : null,
+)
 </script>
 
 <template>
   <ReportSection :title="item.title">
-    <div class="rope">
-      <svg
-        :viewBox="`0 0 ${W} 96`"
-        class="rope__svg"
-        role="img"
-        :aria-label="`${pair.mine.text} / ${pair.theirs.text}`"
-      >
-        <line
-          v-for="(x, index) in ticks"
-          :key="index"
-          :x1="x"
-          :x2="x"
-          :y1="index === 10 ? 14 : 34"
-          :y2="index === 10 ? 82 : 40"
-          class="rope__tick"
-          :class="{ 'rope__tick--mid': index === 10 }"
-        />
-        <path :d="`M${LEFT} 52 Q ${W / 4} 46 ${W / 2} 52 T ${RIGHT} 52`" class="rope__line" />
-        <rect :x="knot - 6" y="40" width="12" height="24" rx="4" class="rope__knot" />
-        <circle :cx="LEFT - 14" cy="52" r="14" class="rope__end rope__end--mine" />
-        <circle :cx="RIGHT + 14" cy="52" r="14" class="rope__end rope__end--theirs" />
-      </svg>
-      <div class="rope__sides">
-        <div>
-          <span class="rope__value t-num">{{ pair.mine.text }}</span>
-          <span class="rope__who">{{ t('report.you') }}</span>
-        </div>
-        <div class="rope__right">
-          <span class="rope__value t-num">{{ pair.theirs.text }}</span>
-          <span class="rope__who">{{ theirName }}</span>
-        </div>
-      </div>
+    <div class="starts">
+      <p class="starts__fact">
+        <span class="starts__figure t-num">{{ figure }}</span>
+        <span v-if="sentence">{{ sentence }}</span>
+      </p>
+      <i class="starts__bar" role="img" :aria-label="`${pair.mine.text} / ${pair.theirs.text}`">
+        <b :style="{ flexGrow: mine }" />
+        <b :style="{ flexGrow: 100 - mine }" />
+      </i>
+      <p class="starts__sides t-num">
+        <span>{{ t('report.you') }} · {{ pair.mine.text }}</span>
+        <span>{{ theirName }} · {{ pair.theirs.text }}</span>
+      </p>
     </div>
   </ReportSection>
 </template>
 
 <style scoped>
-.rope {
+.starts {
   display: grid;
-  gap: var(--space-3);
-  margin-top: auto;
+  gap: var(--space-2);
 }
 
-.rope__svg {
-  width: 100%;
-  overflow: visible;
+.starts__fact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  font: var(--text-body);
 }
 
-.rope__tick {
-  stroke: var(--border-strong);
-  stroke-width: 1.5;
+.starts__figure {
+  font: var(--text-figure);
+  letter-spacing: -0.03em;
 }
 
-.rope__tick--mid {
-  stroke: var(--text-muted);
-  stroke-dasharray: 3 4;
+.starts__bar {
+  display: flex;
+  gap: 3px;
+  height: var(--bar-height);
 }
 
-.rope__line {
-  fill: none;
-  stroke: var(--text-muted);
-  stroke-width: 5;
-  stroke-linecap: round;
+.starts__bar b {
+  border-radius: var(--radius-full);
+  background: var(--you);
 }
 
-.rope__knot {
-  fill: var(--text);
+.starts__bar b + b {
+  background: var(--them);
 }
 
-.rope__end--mine {
-  fill: var(--you);
-}
-
-.rope__end--theirs {
-  fill: var(--them);
-}
-
-.rope__sides {
+.starts__sides {
   display: flex;
   justify-content: space-between;
   gap: var(--space-3);
-}
-
-.rope__sides div {
-  display: grid;
-  min-width: 0;
-}
-
-.rope__right {
-  text-align: right;
-}
-
-.rope__value {
-  font: var(--text-figure-sm);
-}
-
-.rope__who {
-  overflow: hidden;
   color: var(--text-muted);
-  font: var(--text-caption);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font: var(--text-small);
 }
 </style>

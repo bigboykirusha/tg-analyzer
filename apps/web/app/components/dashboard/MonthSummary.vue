@@ -1,41 +1,44 @@
 <script setup lang="ts">
 import type { RecentActivityResponse } from '@tg-analyzer/shared'
+import { ArrowDown, ArrowUp } from '../../lib/icons'
 
 /**
- * The top of the home page: private chats of the last month, counted by
- * Telegram without an analysis. The ink tile is a podium of the three biggest
- * conversations of all time; the lime tile says what to do next — the busiest chat that has no
- * report yet. When every busy chat has a report, the lime tile names the
- * busiest person of the month.
+ * The top of the home page: a chart of the month, like a music chart. Private chats of the last
+ * month, counted by Telegram without an analysis, ranked by messages in the month; the arrow says
+ * how a chat moved against its place by size over all time (among the same chats). The leader is
+ * large; a slim lime strip under the chart offers the busiest chat that has no report yet.
  */
 const props = defineProps<{ recent: RecentActivityResponse; reportIds: Set<string> }>()
-const { t, tc, formatPercent } = useI18n()
+const { t, tc, formatNumber } = useI18n()
 const analysis = useAnalysis()
 const auth = useAuthStore()
 const toast = useToast()
 const errorMessage = useErrorMessage()
 const { relogin } = useAuth()
 
-/** The podium: three places, no more. */
-const PLACES = 3
+/** Places in the chart: the leader and four more. */
+const PLACES = 5
+
+const rows = computed(() => {
+  const chats = props.recent.chats
+  // Older cached answers have no all-time size: then there is nothing to move against.
+  const sized = chats.every((chat) => chat.total !== undefined)
+  const byTotal = sized ? [...chats].sort((a, b) => (b.total ?? 0) - (a.total ?? 0)).map((chat) => chat.id) : []
+  return chats.slice(0, PLACES).map((chat, index) => ({
+    ...chat,
+    place: index + 1,
+    move: sized ? byTotal.indexOf(chat.id) - index : 0,
+    reported: props.reportIds.has(chat.id),
+  }))
+})
+const leader = computed(() => rows.value[0] ?? null)
+const others = computed(() => rows.value.slice(1))
 
 /** The busiest chat of the month without a report, and its place in the month. */
 const next = computed(() => {
   const index = props.recent.chats.findIndex((chat) => !props.reportIds.has(chat.id))
   return index === -1 ? null : { chat: props.recent.chats[index]!, rank: index + 1 }
 })
-// With one chat the lime tile would only repeat the single row.
-const top = computed(() => (!next.value && props.recent.chats.length > 1 ? props.recent.chats[0]! : null))
-// The podium counts the whole history: Telegram reports the chat's size with the monthly count, so it costs
-// nothing extra (a weekly count would be a request per chat). Older cached answers fall back to the month.
-const rows = computed(() => {
-  const sized = props.recent.chats
-    .map((chat) => ({ ...chat, size: chat.total ?? chat.messages }))
-    .sort((a, b) => b.size - a.size)
-  const leader = sized[0]?.size || 1
-  return sized.slice(0, PLACES).map((chat, index) => ({ ...chat, place: index + 1, level: (chat.size / leader) * 100 }))
-})
-const share = (value: number, of: number) => (of ? (value / of) * 100 : 0)
 
 const starting = ref(false)
 const nextState = computed(() => {
@@ -57,55 +60,88 @@ async function analyseNext() {
     starting.value = false
   }
 }
+
+const link = (row: { id: string; reported: boolean }) => (row.reported ? `/chat/${row.id}` : undefined)
+const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('NuxtLink') : 'div')
 </script>
 
 <template>
-  <div class="bento bento--split month">
-    <section class="tile tile--ink month__main" :class="next || top ? 'span-8' : 'span-12'">
+  <div class="month">
+    <section class="tile tile--ink month__chart" aria-labelledby="month-title">
       <div class="tile__label">
-        <span>{{ t('month.leaders') }}</span>
-        <span class="month__period">{{ t('month.allTime') }}</span>
+        <h2 id="month-title" class="month__label">{{ t('month.chart') }}</h2>
+        <span class="t-num">{{ tc('month.window', recent.days) }}</span>
       </div>
-      <ol v-if="rows.length" class="month__rows">
-        <li v-for="row in rows" :key="row.id" class="month__row">
-          <span class="month__place t-num" :class="{ 'month__place--first': row.place === 1 }">{{ row.place }}</span>
-          <ChatAvatar :chat-id="row.id" :title="row.title" :has-avatar="row.hasAvatar" size="sm" />
-          <span class="month__who">
-            <span class="month__line">
-              <span class="month__name">{{ row.title }}</span>
-              <span class="month__count t-num">{{ tc('common.messagesCount', row.size) }}</span>
+
+      <div v-if="leader" class="month__body">
+        <component :is="tag(leader)" :to="link(leader)" class="month__leader">
+          <span class="month__place month__place--lead t-num">1</span>
+          <ChatAvatar :chat-id="leader.id" :title="leader.title" :has-avatar="leader.hasAvatar" size="lg" />
+          <span class="month__leader-copy">
+            <span class="month__leader-name">{{ leader.title }}</span>
+            <span class="month__figure t-num">{{ formatNumber(leader.messages) }}</span>
+            <span class="month__sub">
+              {{ tc('month.perMonthShort', leader.messages) }}
+              <template v-if="leader.total">
+                · {{ t('month.allTimeTotal', { count: formatNumber(leader.total) }) }}</template
+              >
             </span>
-            <span
-              class="month__bar"
-              role="img"
-              :aria-label="t('month.rowShare', { name: row.title, share: formatPercent(row.level) })"
-            >
-              <span :style="{ width: `${row.level}%` }" />
-            </span>
+            <span v-if="!leader.reported" class="month__fresh">{{ t('month.notReported') }}</span>
           </span>
-        </li>
-      </ol>
+        </component>
+
+        <ol v-if="others.length" class="month__rows">
+          <li v-for="row in others" :key="row.id">
+            <component :is="tag(row)" :to="link(row)" class="month__row">
+              <span class="month__place t-num">{{ row.place }}</span>
+              <span
+                class="month__move t-num"
+                :class="{ 'month__move--up': row.move > 0 }"
+                :aria-label="
+                  row.move > 0
+                    ? t('month.moveUp', { count: row.move })
+                    : row.move < 0
+                      ? t('month.moveDown', { count: -row.move })
+                      : undefined
+                "
+              >
+                <template v-if="row.move > 0"><ArrowUp aria-hidden="true" />{{ row.move }}</template>
+                <template v-else-if="row.move < 0"><ArrowDown aria-hidden="true" />{{ -row.move }}</template>
+                <template v-else>–</template>
+              </span>
+              <ChatAvatar :chat-id="row.id" :title="row.title" :has-avatar="row.hasAvatar" size="sm" />
+              <span class="month__who">
+                <span class="month__name">{{ row.title }}</span>
+                <span class="month__sub">
+                  <span v-if="!row.reported" class="month__fresh">{{ t('month.notReported') }}</span>
+                  <template v-else-if="row.total">{{
+                    t('month.allTimeTotal', { count: formatNumber(row.total) })
+                  }}</template>
+                </span>
+              </span>
+              <span class="month__count t-num">{{ formatNumber(row.messages) }}</span>
+            </component>
+          </li>
+        </ol>
+      </div>
       <p v-else class="tile__note">{{ t('month.empty') }}</p>
     </section>
 
-    <section v-if="next" class="tile tile--lime span-4 month__top" aria-labelledby="month-next">
-      <div class="tile__label">{{ t('month.next') }}</div>
-      <div class="month__head">
-        <ChatAvatar :chat-id="next.chat.id" :title="next.chat.title" :has-avatar="next.chat.hasAvatar" size="md" />
-        <div class="month__copy">
-          <h2 id="month-next" class="month__top-name">{{ next.chat.title }}</h2>
-          <p class="tile__note t-num">
-            {{ tc('month.perMonth', next.chat.messages) }}<br />
-            {{ next.rank === 1 ? t('month.rankFirst') : t('month.rank', { rank: next.rank }) }}
-          </p>
-        </div>
+    <section v-if="next" class="tile tile--lime month__next" aria-labelledby="month-next">
+      <ChatAvatar :chat-id="next.chat.id" :title="next.chat.title" :has-avatar="next.chat.hasAvatar" size="md" />
+      <div class="month__next-copy">
+        <span class="month__next-label">{{ t('month.next') }}</span>
+        <h2 id="month-next" class="month__next-name">{{ next.chat.title }}</h2>
+        <p class="month__next-note">
+          {{ next.rank === 1 ? t('month.rankFirst') : t('month.rank', { rank: next.rank }) }} ·
+          {{ tc('month.perMonth', next.chat.messages) }}
+        </p>
       </div>
-      <UiButton v-if="!auth.telegramSessionActive" variant="primary" class="month__action" @click="relogin">
+      <UiButton v-if="!auth.telegramSessionActive" class="month__action" @click="relogin">
         {{ t('common.relogin') }}
       </UiButton>
       <UiButton
         v-else
-        variant="primary"
         class="month__action"
         :loading="starting || nextState === 'running'"
         :disabled="nextState !== null"
@@ -115,139 +151,217 @@ async function analyseNext() {
         <template v-else>{{ t('month.analyse') }}</template>
       </UiButton>
     </section>
-
-    <component
-      :is="reportIds.has(top.id) ? resolveComponent('NuxtLink') : 'section'"
-      v-else-if="top"
-      :to="reportIds.has(top.id) ? `/chat/${top.id}` : undefined"
-      class="tile tile--lime span-4 month__top"
-    >
-      <div class="tile__label">{{ t('month.top') }}</div>
-      <div class="month__head">
-        <ChatAvatar :chat-id="top.id" :title="top.title" :has-avatar="top.hasAvatar" size="md" />
-        <div class="month__copy">
-          <div class="month__top-name">{{ top.title }}</div>
-          <div class="tile__note t-num">
-            {{ tc('common.messagesCount', top.messages) }} ·
-            {{ t('month.mine', { share: formatPercent(share(top.mine, top.messages)) }) }}
-          </div>
-        </div>
-      </div>
-    </component>
   </div>
 </template>
 
 <style scoped>
-/* A podium of three rows: as tall as its rows, no filler. */
+.month {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--card-gap);
+}
+
+.month__chart {
+  gap: var(--space-4);
+}
+
+.month__label {
+  font: inherit;
+}
+
+/* The leader on the left, the rest of the chart on the right; one column on a phone. */
+.month__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 901px) {
+  .month__body {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: var(--space-8);
+  }
+}
+
+.month__leader {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (min-width: 901px) {
+  .month__leader {
+    align-content: center;
+    padding-right: var(--space-8);
+    border-right: 1px solid var(--border);
+  }
+}
+
+.month__leader-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.month__leader-name {
+  overflow: hidden;
+  font: var(--text-h3);
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.month__figure {
+  font: var(--text-figure);
+  letter-spacing: -0.03em;
+}
+
+.month__place {
+  min-width: 1.4em;
+  font: var(--text-h3);
+  letter-spacing: -0.02em;
+}
+
+.month__place--lead {
+  min-width: 0;
+  font: var(--text-figure);
+  letter-spacing: -0.03em;
+}
+
 .month__rows {
   display: grid;
-  gap: var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.month__row {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-3);
-  font: var(--text-ui);
+.month__rows li + li {
+  border-top: 1px solid var(--border);
 }
 
-/* The place: a small disc, the first one filled. */
-.month__place {
-  display: inline-grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-full);
-  background: var(--on-tile-ink-well);
-  font: var(--text-label);
+.month__row {
+  display: grid;
+  grid-template-columns: auto 2.6em auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  color: inherit;
+  text-decoration: none;
+}
+
+.month__rows li:first-child .month__row {
+  padding-top: 0;
+}
+
+.month__rows li:last-child .month__row {
+  padding-bottom: 0;
+}
+
+.month__move {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-muted);
+  font: var(--text-caption);
   font-weight: 600;
 }
 
-.month__place--first {
-  background: var(--lime);
-  color: var(--on-lime);
+.month__move svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.4;
 }
 
-.month__period {
-  font-weight: 500;
+.month__move--up {
+  color: var(--them);
 }
 
 .month__who {
   display: grid;
-  gap: 6px;
-  min-width: 0;
-}
-
-.month__line {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
   min-width: 0;
 }
 
 .month__name {
   overflow: hidden;
+  font: var(--text-title);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* The rating bar: each person against the busiest one. */
-.month__bar {
-  display: block;
-  height: var(--bar-height);
-  border-radius: var(--radius-full);
-  background: var(--on-tile-ink-well);
-}
-
-.month__bar span {
-  display: block;
-  height: 100%;
-  border-radius: var(--radius-full);
-  background: var(--them);
-}
-
-.month__count {
-  flex: none;
+.month__sub {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-caption);
   font-variant-numeric: tabular-nums;
 }
 
-.month__top {
-  justify-content: space-between;
-  transition: transform var(--duration-fast) var(--ease-standard);
-}
-
-a.month__top:active {
-  transform: scale(var(--press-scale));
-}
-
-.month__head {
-  display: flex;
+/* «Не разобран» inside the ink tile: the lime of the ink tile, as a dot and a word. */
+.month__fresh {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
+  gap: 6px;
+  color: var(--them);
+  font: var(--text-caption);
+  font-weight: 500;
 }
 
-.month__copy {
+.month__fresh::before {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  content: '';
+}
+
+.month__count {
+  font: var(--text-title);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.month__row:hover .month__name,
+  a.month__leader:hover .month__leader-name {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+/* The next chat: one slim strip, not a tall tile. */
+.month__next {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  padding-block: var(--space-4);
+}
+
+.month__next-copy {
   display: grid;
   min-width: 0;
 }
 
-.month__top-name {
+.month__next-label,
+.month__next-note {
+  color: var(--text-muted);
+  font: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.month__next-name {
   overflow: hidden;
-  font: var(--text-h3);
-  letter-spacing: -0.03em;
+  font: var(--text-title);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.month__action {
-  width: 100%;
+@media (max-width: 520px) {
+  .month__next {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .month__action {
+    grid-column: 1 / -1;
+  }
 }
 </style>

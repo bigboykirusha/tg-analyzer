@@ -46,7 +46,7 @@ const strokes = (words: number) => WIDTHS.slice(0, Math.min(MAX_WORDS, Math.max(
 .chat {
   display: grid;
   gap: var(--space-2);
-  margin-top: auto;
+  margin-block: auto;
 }
 
 .bubble {

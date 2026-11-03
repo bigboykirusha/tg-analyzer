@@ -33,15 +33,15 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
           .evaluate((element) => element.scrollWidth <= element.clientWidth),
       )
       .toBe(true)
-    const recommendation = page.locator('.month__top')
+    const recommendation = page.locator('.month__next')
     await expect
       .poll(() =>
-        recommendation.locator('.month__copy').evaluate((element) => element.scrollWidth <= element.clientWidth),
+        recommendation.locator('.month__next-copy').evaluate((element) => element.scrollWidth <= element.clientWidth),
       )
       .toBe(true)
     expect(
       await recommendation.evaluate((element) => {
-        const count = element.querySelector('.month__copy')!.getBoundingClientRect()
+        const count = element.querySelector('.month__next-copy')!.getBoundingClientRect()
         const action = element.querySelector('.month__action')!.getBoundingClientRect()
         return count.bottom <= action.top || count.right <= action.left || count.left >= action.right
       }),

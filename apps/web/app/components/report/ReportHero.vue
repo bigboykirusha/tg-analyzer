@@ -11,10 +11,14 @@ defineProps<{ data: ReportDto; label: string; value: string; note?: string | nul
 <template>
   <div class="bento bento--split hero">
     <section class="tile tile--ink span-8 hero__main">
-      <div class="tile__label">{{ label }}</div>
+      <div class="tile__label">
+        <span>{{ label }}</span>
+        <slot name="label" />
+      </div>
       <div class="tile__figure">{{ value }}</div>
       <div v-if="note" class="tile__note">{{ note }}</div>
       <ReportPulse :data="data" bare class="hero__pulse" />
+      <slot name="main" />
     </section>
     <section class="tile tile--lime span-4 hero__accent">
       <slot name="accent" />

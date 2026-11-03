@@ -19,23 +19,17 @@ const hasText = computed(
   <UiEmptyState v-if="!hasText" :title="t('report.words.emptyTitle')" :description="t('report.words.emptyText')" />
   <div v-else class="report-grid report-grid--even">
     <ReportWordOfChat :data="data" />
-    <ReportSection wide :title="t('report.fmt.wordsTitle')">
-      <div class="sides">
-        <div class="side">
-          <span class="side__who"
-            >{{ t('report.you') }} ·
-            {{ t('report.words.perMessage', { value: formatDecimal(vocabulary.wordsPerMessage.mine) }) }}</span
-          >
-          <WordChips :items="vocabulary.topWordsBySender.mine.slice(0, 10)" :empty="t('report.words.none')" />
-        </div>
-        <div class="side">
-          <span class="side__who"
-            >{{ data.summary.title }} ·
-            {{ t('report.words.perMessage', { value: formatDecimal(vocabulary.wordsPerMessage.theirs) }) }}</span
-          >
-          <WordChips :items="vocabulary.topWordsBySender.theirs.slice(0, 10)" :empty="t('report.words.none')" />
-        </div>
-      </div>
+    <ReportSection
+      :title="t('report.fmt.wordsMine')"
+      :text="t('report.words.perMessage', { value: formatDecimal(vocabulary.wordsPerMessage.mine) })"
+    >
+      <WordChips :items="vocabulary.topWordsBySender.mine.slice(0, 10)" :empty="t('report.words.none')" />
+    </ReportSection>
+    <ReportSection
+      :title="t('report.fmt.wordsTheirs')"
+      :text="t('report.words.perMessage', { value: formatDecimal(vocabulary.wordsPerMessage.theirs) })"
+    >
+      <WordChips :items="vocabulary.topWordsBySender.theirs.slice(0, 10)" :empty="t('report.words.none')" />
     </ReportSection>
 
     <ReportSection
@@ -53,43 +47,11 @@ const hasText = computed(
       <WordChips :items="vocabulary.uniqueWordsBySender.theirs.slice(0, 12)" :empty="t('report.words.none')" />
     </ReportSection>
 
-    <ReportSection wide :title="t('report.fmt.emojiTitle')">
-      <div class="sides">
-        <div class="side">
-          <span class="side__who">{{ t('report.you') }}</span>
-          <WordChips :items="vocabulary.topEmojiBySender.mine.slice(0, 6)" :empty="t('report.words.none')" />
-        </div>
-        <div class="side">
-          <span class="side__who">{{ data.summary.title }}</span>
-          <WordChips :items="vocabulary.topEmojiBySender.theirs.slice(0, 6)" :empty="t('report.words.none')" />
-        </div>
-      </div>
+    <ReportSection :title="t('report.fmt.emojiMine')">
+      <WordChips :items="vocabulary.topEmojiBySender.mine.slice(0, 8)" :empty="t('report.words.none')" />
+    </ReportSection>
+    <ReportSection :title="t('report.fmt.emojiTheirs')">
+      <WordChips :items="vocabulary.topEmojiBySender.theirs.slice(0, 8)" :empty="t('report.words.none')" />
     </ReportSection>
   </div>
 </template>
-
-<style scoped>
-/* Both of you in one card: side by side on a wide screen, one under the other on a phone. */
-.sides {
-  display: grid;
-  gap: var(--space-5);
-}
-
-@media (min-width: 641px) {
-  .sides {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-8);
-  }
-}
-
-.side {
-  display: grid;
-  align-content: start;
-  gap: var(--space-2);
-}
-
-.side__who {
-  color: var(--text-muted);
-  font: var(--text-caption);
-}
-</style>

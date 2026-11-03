@@ -16,7 +16,7 @@ const MIN_DAYS = 5
 const view = computed(() => {
   const rituals = props.data.report.rituals
   if (!rituals) return null
-  const { goodNight, goodMorning, nightLast, morningFirst } = rituals
+  const { goodNight, nightLast, morningFirst } = rituals
   const vars = { name: name.value }
   const lines: string[] = []
 
@@ -56,7 +56,6 @@ const view = computed(() => {
         ? t('report.fmt.goodNightTheirs', { ...vars, other: formatNumber(goodNight.mine) })
         : t('report.fmt.goodNightMine', { ...vars, other: formatNumber(goodNight.theirs) }),
       lines,
-      morningPhrase: goodMorning.mine + goodMorning.theirs ? goodMorning : null,
     }
   }
   if (lastShare === null || evenings < MIN_DAYS) return null
@@ -67,7 +66,6 @@ const view = computed(() => {
     figure: formatPercent(mineLead ? lastShare : 100 - lastShare),
     sentence: mineLead ? t('report.fmt.lastWordMine') : t('report.fmt.lastWordTheirs', vars),
     lines,
-    morningPhrase: goodMorning.mine + goodMorning.theirs ? goodMorning : null,
   }
 })
 </script>
@@ -81,15 +79,6 @@ const view = computed(() => {
     </div>
     <ul class="lines">
       <li v-for="line in view.lines" :key="line">{{ line }}</li>
-      <li v-if="view.morningPhrase" class="t-num">
-        {{
-          t('report.fmt.goodMorning', {
-            name: data.summary.title,
-            mine: formatNumber(view.morningPhrase.mine),
-            theirs: formatNumber(view.morningPhrase.theirs),
-          })
-        }}
-      </li>
     </ul>
   </ReportSection>
 </template>

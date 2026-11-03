@@ -3,8 +3,8 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import type { Versus } from '../../../composables/useVersus'
 
 /**
- * Reply time as one fact, Wrapped-style: the usual answer large, a plain sentence that says
- * who is faster, and the spread of replies next to it.
+ * Reply time as one fact, Wrapped-style: the usual answer large, both sides under it, and the
+ * spread of replies below. A half-width card, paired with who starts.
  */
 const props = defineProps<{ data: ReportDto; item: Versus }>()
 const { t } = useI18n()
@@ -21,7 +21,7 @@ const figure = computed(() => (props.item.lead === 'theirs' ? pair.value.theirs.
 </script>
 
 <template>
-  <ReportSection wide :title="item.title" :text="t('report.speed.text')">
+  <ReportSection :title="item.title" :text="t('report.speed.text')">
     <div class="speed">
       <div class="speed__fact">
         <span class="speed__label">{{ t('report.fmt.speedLabel') }}</span>
@@ -38,7 +38,7 @@ const figure = computed(() => (props.item.lead === 'theirs' ? pair.value.theirs.
 <style scoped>
 .speed {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-4);
 }
 
 .speed__fact {
@@ -61,12 +61,5 @@ const figure = computed(() => (props.item.lead === 'theirs' ? pair.value.theirs.
 .speed__sides {
   color: var(--text-muted);
   font: var(--text-small);
-}
-
-@media (min-width: 901px) {
-  .speed {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-    align-items: center;
-  }
 }
 </style>
