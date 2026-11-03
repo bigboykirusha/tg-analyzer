@@ -12,7 +12,7 @@ const name = computed(() => props.data.summary.title)
 </script>
 
 <template>
-  <div class="report-grid duel">
+  <div class="report-grid report-grid--even duel">
     <DuelSpeed v-if="cards.speed" :data="data" :item="cards.speed" />
     <div v-if="cards.starts || cards.length" class="duel__stack">
       <DuelStarts v-if="cards.starts" :item="cards.starts" :their-name="name" />
@@ -32,7 +32,7 @@ const name = computed(() => props.data.summary.title)
    alone at the end takes the row. */
 .duel__stack {
   display: grid;
-  align-content: start;
+  grid-template-rows: auto 1fr;
   gap: var(--card-gap);
   min-width: 0;
 }

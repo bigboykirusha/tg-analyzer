@@ -73,7 +73,12 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
 
       <ol v-if="rows.length" class="month__rows">
         <li v-for="row in rows" :key="row.id">
-          <component :is="tag(row)" :to="link(row)" class="month__row">
+          <component
+            :is="tag(row)"
+            :to="link(row)"
+            class="month__row"
+            :class="{ 'month__row--first': row.place === 1 }"
+          >
             <span class="month__place t-num">{{ row.place }}</span>
             <span
               class="month__move t-num"
@@ -90,7 +95,12 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
               <template v-else-if="row.move < 0"><ArrowDown aria-hidden="true" />{{ -row.move }}</template>
               <template v-else>–</template>
             </span>
-            <ChatAvatar :chat-id="row.id" :title="row.title" :has-avatar="row.hasAvatar" size="sm" />
+            <ChatAvatar
+              :chat-id="row.id"
+              :title="row.title"
+              :has-avatar="row.hasAvatar"
+              :size="row.place === 1 ? 'md' : 'sm'"
+            />
             <span class="month__who">
               <span class="month__name">{{ row.title }}</span>
               <span class="month__sub">
@@ -167,7 +177,7 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
 
 .month__row {
   display: grid;
-  grid-template-columns: 1em 2.4em auto minmax(0, 1fr) auto;
+  grid-template-columns: 1.1em 2.4em 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
   padding-block: var(--space-2);
@@ -175,8 +185,31 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
   text-decoration: none;
 }
 
-.month__rows li:first-child .month__row {
-  padding-top: 0;
+/* The leader: a lime-lined well, a bigger avatar and count, its place in lime. */
+.month__rows li:first-child {
+  margin: 0 calc(var(--space-3) * -1) var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--on-tile-ink-well);
+}
+
+.month__rows li:first-child + li {
+  border-top: 0;
+}
+
+.month__row--first {
+  padding: var(--space-3);
+}
+
+.month__row--first .month__place,
+.month__row--first .month__count {
+  color: var(--them);
+  font: var(--text-h2);
+  letter-spacing: -0.03em;
+}
+
+.month__row--first .month__name {
+  font: var(--text-h3);
+  letter-spacing: -0.02em;
 }
 
 .month__rows li:last-child .month__row {
@@ -200,6 +233,11 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
 
 .month__move--up {
   color: var(--them);
+}
+
+.month__row :deep(.avatar),
+.month__row > :nth-child(3) {
+  justify-self: center;
 }
 
 .month__who {
