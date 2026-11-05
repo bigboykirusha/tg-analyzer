@@ -70,7 +70,7 @@ defineProps<{
 
 .metric-delta {
   color: var(--text);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .metric-sub {

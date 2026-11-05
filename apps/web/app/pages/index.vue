@@ -104,7 +104,7 @@ useHead({
   align-items: center;
   color: var(--text);
   font: var(--text-ui);
-  font-weight: 600;
+  font-weight: 500;
   transition: color var(--transition-fast);
 }
 

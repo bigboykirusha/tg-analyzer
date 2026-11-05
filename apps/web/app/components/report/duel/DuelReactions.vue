@@ -136,7 +136,7 @@ const pair = computed(() => props.item?.pairs[0] ?? null)
   padding-top: var(--space-2);
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   font: var(--text-ui);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .podium--mine .podium__step {

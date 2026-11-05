@@ -94,7 +94,7 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
   max-width: 100%;
   overflow: hidden;
   font: var(--text-small);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .pulse__key {

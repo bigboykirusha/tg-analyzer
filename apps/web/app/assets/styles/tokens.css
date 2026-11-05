@@ -135,18 +135,19 @@
   --you-subtle: rgba(242, 242, 243, 0.1);
   --them: #c6f06a;
   --them-ink: #c6f06a;
-  --tile-ink: #f2f2f3;
-  --tile-grey: #222226;
-  --on-tile-ink: #0a0a0b;
-  --on-tile-ink-muted: rgba(10, 10, 11, 0.62);
+  /* Dark: ink is a raised surface, not a white slab; lime stays the one bright tile. */
+  --tile-ink: #2a2a2f;
+  --tile-grey: #1a1a1d;
+  --on-tile-ink: #f2f2f3;
+  --on-tile-ink-muted: rgba(242, 242, 243, 0.6);
   --lime: #c6f06a;
-  --them-on-ink: #4e7a0e;
+  --them-on-ink: #c6f06a;
   --on-lime: #0a0a0b;
   --on-lime-muted: rgba(10, 10, 11, 0.6);
   --on-lime-line: rgba(10, 10, 11, 0.14);
   --on-lime-well: rgba(10, 10, 11, 0.08);
-  --on-tile-ink-well: rgba(10, 10, 11, 0.1);
-  --on-tile-ink-line: rgba(10, 10, 11, 0.18);
+  --on-tile-ink-well: rgba(255, 255, 255, 0.08);
+  --on-tile-ink-line: rgba(255, 255, 255, 0.12);
   --warning: #ffb224;
   --danger: #ff6369;
   --danger-subtle: #33161a;
@@ -247,10 +248,10 @@
    * h1 — the page title (one per page), h2 — the title of a focused card, dialog or status,
    * h3 — a section on a page, title — a tile or row. Phones shrink h1 and h2 below.
    */
-  --text-h1: 600 40px/44px var(--font-sans);
-  --text-h2: 600 24px/30px var(--font-sans);
-  --text-h3: 600 20px/26px var(--font-sans);
-  --text-title: 600 16px/22px var(--font-sans);
+  --text-h1: 500 40px/44px var(--font-sans);
+  --text-h2: 500 24px/30px var(--font-sans);
+  --text-h3: 500 20px/26px var(--font-sans);
+  --text-title: 500 16px/22px var(--font-sans);
   --text-lede: 400 16px/24px var(--font-sans);
   --text-body: 400 16px/25px var(--font-sans);
   --text-ui: 500 14px/20px var(--font-sans);
@@ -259,17 +260,18 @@
   /* Tile labels are quiet sentence-case, not shouting caps. */
   --text-label: 500 13px/18px var(--font-sans);
   /* Big figures: tight tracking (see .t-figure). */
-  --text-figure: 600 44px/44px var(--font-sans);
-  --text-figure-sm: 600 24px/28px var(--font-sans);
+  --text-figure: 500 44px/44px var(--font-sans);
+  --text-figure-sm: 500 24px/28px var(--font-sans);
   /* Oversized, for the top of a report only: «52 / 48» in the hero and «Слово вашей переписки».
    * Cards answer with --text-figure (a number or a short word) or --text-h2 (a phrase). */
-  --text-figure-lg: 600 72px/68px var(--font-sans);
+  --text-figure-lg: 500 72px/68px var(--font-sans);
   /* Tracking follows the size: the bigger the type, the tighter. Components use these, not raw em. */
   --tracking-display: -0.05em;
   --tracking-figure: -0.04em;
   --tracking-h2: -0.03em;
   --tracking-h3: -0.02em;
-  --tracking-title: -0.01em;
+  /* Small text keeps its natural spacing; only large type is tightened. */
+  --tracking-title: 0;
   /* Initials in an avatar breathe a little. */
   --tracking-initials: 0.01em;
   /* The page frame: space under the header, between sections, and at the bottom. */
@@ -336,9 +338,9 @@
     --page-gap: var(--space-8);
     --card-padding: var(--space-5);
     --card-gap: var(--space-3);
-    --text-h1: 600 30px/34px var(--font-sans);
-    --text-h2: 600 22px/28px var(--font-sans);
-    --text-figure: 600 34px/36px var(--font-sans);
-    --text-figure-lg: 600 48px/48px var(--font-sans);
+    --text-h1: 500 30px/34px var(--font-sans);
+    --text-h2: 500 22px/28px var(--font-sans);
+    --text-figure: 500 34px/36px var(--font-sans);
+    --text-figure-lg: 500 48px/48px var(--font-sans);
   }
 }

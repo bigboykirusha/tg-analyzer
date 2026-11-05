@@ -68,7 +68,7 @@ const tone = computed(() => {
   height: var(--control-md);
   border-radius: 50%;
   font: var(--text-ui);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: var(--tracking-initials);
 }
 
@@ -82,14 +82,14 @@ const tone = computed(() => {
   width: 24px;
   height: 24px;
   font: var(--text-caption);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .avatar--sm {
   width: var(--control-sm);
   height: var(--control-sm);
   font: var(--text-small);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .avatar--lg {

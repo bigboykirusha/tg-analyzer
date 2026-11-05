@@ -119,7 +119,7 @@ function runAction(toast: ToastMessage) {
 .toast__title {
   color: var(--on-inverse);
   font: var(--text-ui);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .toast__text {
@@ -138,7 +138,7 @@ function runAction(toast: ToastMessage) {
   color: var(--on-inverse);
   cursor: pointer;
   font: var(--text-small);
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
 }
 

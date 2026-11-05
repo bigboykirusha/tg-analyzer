@@ -128,7 +128,7 @@ function updating(report: ReportSummaryDto) {
 }
 
 .sidebar__heading {
-  padding: 14px var(--space-2) var(--space-1);
+  padding: var(--space-4) var(--space-2) var(--space-1);
   color: var(--text-muted);
   font: var(--text-caption);
 }
@@ -136,9 +136,9 @@ function updating(report: ReportSummaryDto) {
 .sidebar__item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 42px;
-  padding: 7px var(--space-2);
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: var(--space-2);
   border-radius: var(--radius-sm);
   font: var(--text-ui);
   transition: background-color var(--transition-fast);
@@ -194,7 +194,7 @@ function updating(report: ReportSummaryDto) {
 
 .sidebar__who .sidebar__name {
   color: var(--text);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sidebar__who small {

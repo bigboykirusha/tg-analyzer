@@ -56,7 +56,7 @@ const { formatPercent } = useI18n()
 }
 
 .meter__value {
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -66,7 +66,7 @@ const { formatPercent } = useI18n()
 
 .meter--self .meter__heading span {
   color: var(--you-ink);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .meter__detail {

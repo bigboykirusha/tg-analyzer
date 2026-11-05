@@ -212,7 +212,7 @@ onMounted(() => {
   background: var(--tile-ink);
   color: var(--on-tile-ink);
   font: var(--text-label);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .onboard__copy {
@@ -225,7 +225,7 @@ onMounted(() => {
 .onboard__copy strong {
   color: var(--text);
   font: var(--text-ui);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 @media (max-width: 900px) {

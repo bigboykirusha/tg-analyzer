@@ -171,7 +171,7 @@ svg.lucide {
 
 /* Counts and percentages: the UI font with even-width digits, never the mono face. */
 .t-num {
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -402,7 +402,7 @@ svg.lucide {
   background: none;
   color: var(--text);
   font: inherit;
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
@@ -438,7 +438,7 @@ svg.lucide {
 
 .menu-identity__name {
   font: var(--text-ui);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .menu-identity__sub {
@@ -512,7 +512,7 @@ main:focus {
 
 .fact-line dd {
   margin: 0;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sr-only {

@@ -226,7 +226,7 @@ function signOut() {
   background: var(--accent-subtle);
   color: var(--accent-ink);
   font: var(--text-small);
-  font-weight: 600;
+  font-weight: 500;
   transition: background-color var(--transition-fast);
 }
 

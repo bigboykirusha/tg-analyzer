@@ -158,7 +158,7 @@ const updated = computed(() =>
   align-items: center;
   gap: var(--space-2);
   color: var(--text);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .report-card__chevron {

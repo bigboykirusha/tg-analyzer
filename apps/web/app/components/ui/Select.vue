@@ -570,7 +570,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   padding: var(--space-2) var(--space-3) var(--space-1);
   color: var(--text-muted);
   font: var(--text-caption);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .select__empty {
@@ -628,7 +628,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 }
 
 .option[aria-selected='true'] {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .option[aria-selected='true'] .option__check {

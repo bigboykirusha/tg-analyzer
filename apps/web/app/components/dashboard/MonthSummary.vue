@@ -219,7 +219,7 @@ button.month__row:disabled {
 .month__fresh {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
   color: var(--them);
   font: var(--text-caption);
   font-weight: 500;
