@@ -11,14 +11,42 @@ export function useMasonry(container: Ref<HTMLElement | null>) {
   let frame = 0
   let wide: MediaQueryList | undefined
 
+  function span(child: HTMLElement, gap: number) {
+    child.style.gridRowEnd = `span ${Math.ceil(child.getBoundingClientRect().height) + gap}`
+  }
+
+  /**
+   * The last card can land alone under one column and leave a hole beside it. When it hangs
+   * below the other column by more than half its height, it takes the full width instead.
+   */
+  function widenLast(element: HTMLElement, gap: number) {
+    const cards = (Array.from(element.children) as HTMLElement[]).filter((child) => child.offsetParent !== null)
+    const last = cards.at(-1)
+    if (!last || cards.length < 3 || getComputedStyle(last).gridColumnEnd === '-1') return
+    const box = element.getBoundingClientRect()
+    const middle = box.left + box.width / 2
+    const own = last.getBoundingClientRect()
+    const leftSide = own.left < middle
+    const other = cards
+      .slice(0, -1)
+      .filter((child) => child.getBoundingClientRect().left < middle !== leftSide)
+      .reduce((bottom, child) => Math.max(bottom, child.getBoundingClientRect().bottom), box.top)
+    if (own.bottom - other > own.height / 2) {
+      last.dataset.masonryWide = ''
+      span(last, gap)
+    }
+  }
+
   function layout() {
     const element = container.value
     if (!element) return
     const gap = Number.parseFloat(getComputedStyle(element).columnGap) || 0
     for (const child of Array.from(element.children) as HTMLElement[]) {
-      if (wide?.matches) child.style.gridRowEnd = `span ${Math.ceil(child.getBoundingClientRect().height) + gap}`
+      delete child.dataset.masonryWide
+      if (wide?.matches) span(child, gap)
       else child.style.removeProperty('grid-row-end')
     }
+    if (wide?.matches) widenLast(element, gap)
     ready.value = true
   }
 

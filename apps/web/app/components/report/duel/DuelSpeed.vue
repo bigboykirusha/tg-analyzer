@@ -3,8 +3,8 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import type { Versus } from '../../../composables/useVersus'
 
 /**
- * Reply time as one fact, Wrapped-style: the usual answer large, both sides under it, and the
- * spread of replies below. A half-width card, paired with who starts.
+ * Reply time answers its own question: who is faster (or «почти одинаково»), both usual
+ * answers under it, and the spread of replies below.
  */
 const props = defineProps<{ data: ReportDto; item: Versus }>()
 const { t } = useI18n()
@@ -16,16 +16,17 @@ const hasHistogram = computed(
   () => Boolean(responses.value.histogram) && responses.value.mineSamples + responses.value.theirsSamples > 0,
 )
 
-/** The figure is the leader's usual answer; when even, yours (they are about the same). */
-const figure = computed(() => (props.item.lead === 'theirs' ? pair.value.theirs.text : pair.value.mine.text))
+/** «Машка — в 2 раза быстрее», or «Почти одинаково» when neither leads. */
+const answer = computed(() =>
+  props.item.lead ? `${props.item.figure} — ${props.item.note}` : t('report.fmt.speedEven'),
+)
 </script>
 
 <template>
   <ReportSection :title="item.title" :text="t('report.speed.text')">
     <div class="speed">
       <div class="speed__fact">
-        <span class="speed__label">{{ t('report.fmt.speedLabel') }}</span>
-        <p class="speed__figure t-num">{{ figure }}</p>
+        <p class="speed__answer">{{ answer }}</p>
         <p class="speed__sides t-num">
           {{ t('report.you') }} · {{ pair.mine.text }} &nbsp; {{ name }} · {{ pair.theirs.text }}
         </p>
@@ -47,15 +48,10 @@ const figure = computed(() => (props.item.lead === 'theirs' ? pair.value.theirs.
   gap: var(--space-3);
 }
 
-.speed__label {
-  color: var(--text-muted);
-  font: var(--text-label);
-}
-
-.speed__figure {
-  font: var(--text-figure);
-  letter-spacing: var(--tracking-figure);
-  white-space: nowrap;
+.speed__answer {
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+  text-wrap: balance;
 }
 
 .speed__sides {

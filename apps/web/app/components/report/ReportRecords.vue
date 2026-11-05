@@ -4,10 +4,10 @@ import { Flame } from '../../lib/icons'
 
 /**
  * Personal records, Strava-style: the longest streak with a strip of its days, then the other
- * bests in a grid, and the slow facts of the chat in a quiet row at the end.
+ * bests in a grid, and how long and how often you talk in a quiet row at the end.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatNumber, formatDuration, formatDay, formatMonth } = useI18n()
+const { t, tc, formatNumber, formatDecimal, formatDuration, formatDay } = useI18n()
 
 /** More days than this are drawn as the first ones and a count. */
 const MAX_STRIP = 60
@@ -56,21 +56,18 @@ const records = computed(() => {
   return out
 })
 
-const silenceDays = computed(() =>
-  Math.round(report.value.facts.silencesOver30Days.reduce((sum, gap) => sum + gap.seconds, 0) / 86400),
-)
+/** How you talk in conversations, in the quiet row under the bests (it was a card of its own). */
+const sessions = computed(() => report.value.sessions)
 const quiet = computed(() => [
-  ...(report.value.period.firstMessageAt
-    ? [{ key: 'first', label: t('report.timeline.firstMessage'), value: day(report.value.period.firstMessageAt) }]
-    : []),
-  { key: 'month', label: t('report.timeline.mostActiveMonth'), value: formatMonth(report.value.facts.mostActiveMonth) },
-  { key: 'trend', label: t('report.timeline.trend'), value: t(`report.trend.${report.value.facts.trend}`) },
   {
-    key: 'silences',
-    label: t('report.timeline.silences'),
-    value: silenceDays.value
-      ? `${formatNumber(report.value.facts.silencesOver30Days.length)} · ${tc('report.timeline.silenceDays', silenceDays.value)}`
-      : formatNumber(report.value.facts.silencesOver30Days.length),
+    key: 'perWeek',
+    label: t('report.sessions.perWeek'),
+    value: formatDecimal(sessions.value.sessionsPerActiveWeek),
+  },
+  {
+    key: 'size',
+    label: t('report.sessions.averageSize'),
+    value: tc('common.messagesCount', sessions.value.averageSessionMessages),
   },
 ])
 </script>
@@ -95,7 +92,7 @@ const quiet = computed(() => [
         </div>
       </dl>
     </div>
-    <dl class="quiet">
+    <dl class="fact-line">
       <div v-for="item in quiet" :key="item.key">
         <dt>{{ item.label }}</dt>
         <dd class="t-num">{{ item.value }}</dd>
@@ -183,29 +180,5 @@ const quiet = computed(() => [
 .board__label {
   color: var(--text-muted);
   font: var(--text-small);
-}
-
-.quiet {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-6);
-  margin: 0;
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border);
-}
-
-.quiet div {
-  display: flex;
-  gap: var(--space-2);
-  font: var(--text-small);
-}
-
-.quiet dt {
-  color: var(--text-muted);
-}
-
-.quiet dd {
-  margin: 0;
-  font-weight: 600;
 }
 </style>

@@ -71,16 +71,16 @@ const verdict = computed(() => {
 /* The dial and the answer stack in a half-width card and stand side by side in a full-width one. */
 .laughs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 320px));
+  justify-content: start;
   align-items: end;
-  gap: var(--space-5);
+  gap: var(--space-5) var(--space-8);
   margin-top: auto;
 }
 
 .meter {
   width: 100%;
   max-width: 320px;
-  margin-inline: auto;
   overflow: visible;
 }
 

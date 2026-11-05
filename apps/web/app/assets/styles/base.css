@@ -490,6 +490,31 @@ main:focus {
   outline: none;
 }
 
+/* A quiet row of label–value facts at the foot of a card, after a hairline. */
+.fact-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.fact-line > div {
+  display: flex;
+  gap: var(--space-2);
+  font: var(--text-small);
+}
+
+.fact-line dt {
+  color: var(--text-muted);
+}
+
+.fact-line dd {
+  margin: 0;
+  font-weight: 600;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -650,7 +675,8 @@ main:focus {
 }
 
 .report-columns > .report-section--wide,
-.report-columns > .note {
+.report-columns > .note,
+.report-columns > [data-masonry-wide] {
   grid-column: 1 / -1;
 }
 

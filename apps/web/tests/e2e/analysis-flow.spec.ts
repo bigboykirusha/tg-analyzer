@@ -55,8 +55,8 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
     await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
   }
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
-  // «май 2026 г.» in the quiet row of «Рекорды» never breaks between the year and «г.».
-  const month = page.locator('.quiet > div').filter({ hasText: 'Самый активный месяц' }).locator('dd')
+  // «май 2026 г.» under the volume chart never breaks between the year and «г.».
+  const month = page.locator('.fact-line > div').filter({ hasText: 'Самый активный месяц' }).locator('dd')
   expect(
     await month.evaluate((element) => {
       const text = element.textContent!
