@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { RotateCw, Share2 } from '../../lib/icons'
+import { RotateCw, Sparkles } from '../../lib/icons'
 
 const props = withDefaults(
   defineProps<{
@@ -38,15 +38,16 @@ const period = computed(() =>
           :disabled="!canReanalyse"
           @click="emit('reanalyse')"
         />
+        <!-- «Итоги» is what the button opens; saving and sharing live on the slides. -->
         <UiButton
           class="report-header__share"
-          variant="secondary"
+          variant="primary"
           size="sm"
-          :icon="Share2"
+          :icon="Sparkles"
           aria-haspopup="dialog"
           @click="emit('story')"
         >
-          <span class="report-header__share-label">{{ t('story.share') }}</span>
+          <span class="report-header__share-label">{{ t('story.open') }}</span>
         </UiButton>
       </template>
     </template>
@@ -55,7 +56,7 @@ const period = computed(() =>
 
 <style scoped>
 @media (max-width: 640px) {
-  /* The title needs the room: the button is the share icon alone, named for screen readers. */
+  /* The title needs the room: the button is the recap icon alone, named for screen readers. */
   .report-header__share.btn {
     width: var(--control-sm);
     padding: 0;

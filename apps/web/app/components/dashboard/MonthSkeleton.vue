@@ -23,14 +23,6 @@
         </div>
       </div>
     </div>
-    <div class="tile tile--lime month-skeleton month-skeleton--lime">
-      <UiSkeleton width="40px" height="40px" radius="50%" />
-      <div class="month-skeleton__who">
-        <UiSkeleton width="30%" />
-        <UiSkeleton width="50%" />
-      </div>
-      <UiSkeleton class="month-skeleton__action" height="var(--control-md)" />
-    </div>
   </div>
 </template>
 
@@ -46,14 +38,6 @@
 
 .month-skeleton--ink {
   --skeleton: var(--on-tile-ink-well);
-}
-
-.month-skeleton--lime {
-  --skeleton: var(--on-lime-well);
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 104px;
-  align-items: center;
-  padding-block: var(--space-4);
 }
 
 .month-skeleton__rows {
@@ -76,16 +60,5 @@
   display: grid;
   min-width: 0;
   gap: var(--space-2);
-}
-
-@media (max-width: 520px) {
-  .month-skeleton--lime {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .month-skeleton__action {
-    grid-column: 1 / -1;
-    width: 100%;
-  }
 }
 </style>

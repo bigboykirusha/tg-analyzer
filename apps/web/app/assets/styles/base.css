@@ -110,21 +110,21 @@ svg.lucide {
 /* The page title: one per page, always through UiPageHeader. */
 .t-h1 {
   font: var(--text-h1);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
   text-wrap: balance;
 }
 
 /* A focused card, dialog or status screen. */
 .t-h2 {
   font: var(--text-h2);
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-h2);
   text-wrap: balance;
 }
 
 /* A section on a page, through UiPageSection. */
 .t-h3 {
   font: var(--text-h3);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-h3);
   text-wrap: balance;
 }
 
@@ -132,13 +132,13 @@ svg.lucide {
 .t-figure {
   font: var(--text-figure);
   font-variant-numeric: lining-nums tabular-nums;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
   white-space: nowrap;
 }
 
 .t-title {
   font: var(--text-title);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-title);
 }
 
 .t-lede {
@@ -467,6 +467,29 @@ svg.lucide {
   min-width: 0;
 }
 
+/* «К содержимому»: off screen until it takes focus, then a pill over the top left corner. */
+.skip-link {
+  position: fixed;
+  z-index: var(--z-toast);
+  top: var(--space-2);
+  left: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: var(--text-ui);
+  text-decoration: none;
+  transform: translateY(calc(-100% - var(--space-4)));
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
+main:focus {
+  outline: none;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -487,12 +510,26 @@ svg.lucide {
   }
 }
 
+/* One spinner for buttons, rows, the sidebar and the recap: a ring in the current colour. */
+.spinner {
+  --spinner-size: 12px;
+  display: inline-block;
+  flex: none;
+  width: var(--spinner-size);
+  height: var(--spinner-size);
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--radius-full);
+  animation: spin var(--duration-spin) linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     scroll-behavior: auto !important;
     animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
     transition-delay: 0ms !important;
@@ -690,7 +727,7 @@ svg.lucide {
 .tile__figure {
   font: var(--text-figure);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
   white-space: nowrap;
 }
 
@@ -698,7 +735,7 @@ svg.lucide {
   color: var(--text-muted);
   font-size: 0.42em;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-title);
 }
 
 .tile__note {

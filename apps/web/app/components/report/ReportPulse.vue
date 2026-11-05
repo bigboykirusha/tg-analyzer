@@ -48,8 +48,12 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
     <figcaption class="pulse__caption">
       <span v-if="!bare" class="t-label">{{ title }}</span>
       <span class="pulse__legend">
-        <span class="pulse__key pulse__key--you">{{ t('report.pulse.you') }}</span>
-        <span class="pulse__key pulse__key--them">{{ partner }}</span>
+        <span class="pulse__key pulse__key--you"
+          ><span class="pulse__name">{{ t('report.pulse.you') }}</span></span
+        >
+        <span class="pulse__key pulse__key--them"
+          ><span class="pulse__name">{{ partner }}</span></span
+        >
       </span>
     </figcaption>
     <Seismograph
@@ -68,10 +72,13 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
 <style scoped>
 .pulse {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .pulse__caption {
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -81,8 +88,11 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
 
 .pulse__legend {
   display: flex;
+  flex: 0 1 auto;
   gap: var(--space-4);
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   font: var(--text-small);
   font-weight: 600;
 }
@@ -91,6 +101,11 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
+}
+
+/* A long name ends in an ellipsis inside the tile instead of running past its edge. */
+.pulse__name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

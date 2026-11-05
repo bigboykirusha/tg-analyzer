@@ -21,13 +21,13 @@ const option = computed(() => {
     series: [
       {
         type: 'bar',
-        // The busiest day reads at a glance: it stays solid, the other days step back.
+        // The whole chat in grey; the busiest day takes the strong step, so it reads at a glance.
         data: values.value.map((value) => ({
           value,
-          itemStyle: { opacity: value === peak.value && value > 0 ? 1 : 0.35 },
+          itemStyle: { color: value === peak.value && value > 0 ? colors.neutralStrong : colors.neutral },
         })),
         barMaxWidth: 28,
-        itemStyle: { color: colors.text, borderRadius: barRadius },
+        itemStyle: { borderRadius: barRadius },
       },
     ],
   }

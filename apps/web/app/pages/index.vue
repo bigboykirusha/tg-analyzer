@@ -76,7 +76,7 @@ useHead({
 /* The one display size on the site: only the landing gets it. */
 .hero__title {
   font: 600 clamp(44px, 5.8vw, 80px) / 0.98 var(--font-sans);
-  letter-spacing: -0.05em;
+  letter-spacing: var(--tracking-display);
 }
 
 .hero__title span {

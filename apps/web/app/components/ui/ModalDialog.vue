@@ -153,7 +153,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
 
 .modal-title {
   font: var(--text-h2);
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-h2);
   text-wrap: balance;
 }
 

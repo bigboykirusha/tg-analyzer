@@ -106,12 +106,13 @@ export function useI18n() {
     return formatDate(`${month}-15T12:00:00Z`, { ...options, timeZone: 'UTC' })
   }
 
-  function formatRelative(value: string | null | undefined) {
+  /** «39 минут назад»; `short` gives «39 мин. назад» for tight rows on phones. */
+  function formatRelative(value: string | null | undefined, style: 'long' | 'short' = 'long') {
     if (!value) return t('common.na')
     // Everything we show is in the past; a clock a little ahead must not read «in 7 hours».
     const diffSeconds = Math.min((new Date(value).getTime() - Date.now()) / 1000, 0)
     if (!Number.isFinite(diffSeconds)) return t('common.na')
-    const format = new Intl.RelativeTimeFormat(intlLocale.value, { numeric: 'auto' })
+    const format = new Intl.RelativeTimeFormat(intlLocale.value, { numeric: 'auto', style })
     const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [
       ['year', 365 * 86400],
       ['month', 30 * 86400],

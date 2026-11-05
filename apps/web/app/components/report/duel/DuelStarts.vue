@@ -62,7 +62,7 @@ const sentence = computed(() =>
 
 .starts__figure {
   font: var(--text-figure);
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-h2);
 }
 
 .starts__bar {

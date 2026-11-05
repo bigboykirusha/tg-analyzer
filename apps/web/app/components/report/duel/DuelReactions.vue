@@ -75,7 +75,7 @@ const pair = computed(() => props.item?.pairs[0] ?? null)
 
 .lead__figure {
   font: var(--text-figure);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
 }
 
 .lead__figure small {

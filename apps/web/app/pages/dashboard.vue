@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BarChart2, Lock, MessageSquare, Plus } from '../lib/icons'
+import { AlertCircle, BarChart2, Lock, MessageSquare, Plus } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
@@ -9,7 +9,6 @@ useSeoMeta({ title: () => t('dashboard.title') })
 
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
-const toast = useToast()
 const errorMessage = useErrorMessage()
 
 
@@ -25,8 +24,16 @@ const reportIds = computed(() => new Set(reports.value.map((chat) => chat.id)))
 const loadingReports = computed(
   () => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
 )
+/** A failed load is not an empty account: say so and offer a retry instead of the newcomer screen. */
+const reportsFailed = computed(() => !reports.value.length && workspace.reportsState === 'error')
 /** Newcomers pick their first chat right here; everyone else gets the summary. */
-const newcomer = computed(() => !reports.value.length && !loadingReports.value)
+const newcomer = computed(() => !reports.value.length && !loadingReports.value && !reportsFailed.value)
+
+const reportsError = ref<unknown>(null)
+function loadReports() {
+  reportsError.value = null
+  void workspace.loadReports().catch((error) => (reportsError.value = error))
+}
 
 const steps = computed(() => [
   { icon: MessageSquare, title: t('dashboard.intro.step1Title'), text: t('dashboard.intro.step1Text') },
@@ -42,7 +49,8 @@ function isUpdating(chatId: string) {
 onMounted(() => {
   void workspace.loadDialogs()
   void workspace.loadRecent()
-  void workspace.loadReports().catch((error) => toast.error(t('dashboard.reportsError'), errorMessage(error)))
+  // The failure is shown in place (see `reportsFailed`); a toast would say it twice.
+  loadReports()
 })
 </script>
 
@@ -67,6 +75,20 @@ onMounted(() => {
             </div>
           </div>
         </div>
+      </template>
+
+      <template v-else-if="reportsFailed">
+        <UiPageBar :title="t('home.title')" />
+        <UiEmptyState
+          tone="danger"
+          :icon="AlertCircle"
+          :title="t('dashboard.reportsError')"
+          :description="errorMessage(reportsError)"
+        >
+          <template #action>
+            <UiButton variant="secondary" @click="loadReports">{{ t('common.retry') }}</UiButton>
+          </template>
+        </UiEmptyState>
       </template>
 
       <template v-else-if="newcomer">
@@ -103,7 +125,7 @@ onMounted(() => {
         <MonthSkeleton v-else-if="workspace.recentState !== 'error'" />
 
         <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
-          <div class="report-cards">
+          <div class="report-cards" :style="{ '--report-cols': Math.min(4, Math.max(3, reports.length)) }">
             <ReportCard
               v-for="chat in reports"
               :key="chat.id"
@@ -220,6 +242,13 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--space-3);
+}
+
+/* Wide screens: three reports fill the row instead of leaving a fourth of it empty; four and more in fours. */
+@media (min-width: 1200px) {
+  .report-cards {
+    grid-template-columns: repeat(var(--report-cols, 4), minmax(0, 1fr));
+  }
 }
 
 /* Phones: one card per row — a list you scroll down, not a carousel that hides the rest. */

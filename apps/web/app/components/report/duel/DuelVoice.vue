@@ -24,7 +24,8 @@ const rows = computed(() => {
     text: formatDuration(value),
     bars: HEIGHTS.slice(0, value ? Math.max(2, Math.round((value / max) * BARS)) : 0),
   })
-  return [row('theirs', props.theirName, theirs), row('mine', t('report.you'), mine)]
+  // You first, as in every comparison of the report.
+  return [row('mine', t('report.you'), mine), row('theirs', props.theirName, theirs)]
 })
 </script>
 
@@ -45,7 +46,7 @@ const rows = computed(() => {
 <style scoped>
 .verdict {
   font: var(--text-figure-sm);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-h3);
 }
 
 .track {

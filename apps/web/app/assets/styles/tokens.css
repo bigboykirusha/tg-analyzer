@@ -69,6 +69,11 @@
   --heat-1: #eef8d6;
   --heat-2: #d9f29c;
   --heat-3: #b2e34e;
+  /* The busiest cells: a deeper lime, not ink — ink means «you» in every chart. */
+  --heat-4: #6f9e1f;
+  /* Charts of the whole chat (both sides together): grey, with the strong step for the peak. */
+  --chart-neutral: #c9ccd1;
+  --chart-neutral-strong: #63676e;
   --avatar-1-bg: #c6f06a;
   --avatar-1-ink: #0e0f11;
   --avatar-2-bg: #dcd6ff;
@@ -154,6 +159,9 @@
   --heat-1: #232a17;
   --heat-2: #4b6420;
   --heat-3: #8fb83f;
+  --heat-4: #c6f06a;
+  --chart-neutral: #3a3a40;
+  --chart-neutral-strong: #a1a1a8;
   --avatar-1-bg: #c6f06a;
   --avatar-1-ink: #0a0a0b;
   --avatar-2-bg: #b9aeff;
@@ -206,6 +214,8 @@
   --control-sm: 36px;
   --control-md: 44px;
   --control-lg: 48px;
+  /* The smallest touch target: a 36px control on a phone still answers a 44px tap (see .btn::after). */
+  --hit-min: 44px;
   --icon-sm: 16px;
   --icon-md: 20px;
   --icon-lg: 24px;
@@ -228,6 +238,8 @@
   --duration-slow: 300ms;
   --duration-sheet: 400ms;
   --duration-chart: 800ms;
+  /* One turn of a spinner. */
+  --duration-spin: 800ms;
   /* Geist for everything; self-hosted, with Cyrillic. One face, no mono. */
   --font-sans: 'Geist Variable', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
   /*
@@ -249,8 +261,17 @@
   /* Big figures: tight tracking (see .t-figure). */
   --text-figure: 600 44px/44px var(--font-sans);
   --text-figure-sm: 600 24px/28px var(--font-sans);
-  /* The one oversized figure of a screen: «52 / 48» in the lime tile. */
+  /* Oversized, for the top of a report only: «52 / 48» in the hero and «Слово вашей переписки».
+   * Cards answer with --text-figure (a number or a short word) or --text-h2 (a phrase). */
   --text-figure-lg: 600 72px/68px var(--font-sans);
+  /* Tracking follows the size: the bigger the type, the tighter. Components use these, not raw em. */
+  --tracking-display: -0.05em;
+  --tracking-figure: -0.04em;
+  --tracking-h2: -0.03em;
+  --tracking-h3: -0.02em;
+  --tracking-title: -0.01em;
+  /* Initials in an avatar breathe a little. */
+  --tracking-initials: 0.01em;
   /* The page frame: space under the header, between sections, and at the bottom. */
   --page-top: var(--space-8);
   --page-gap: var(--space-10);
@@ -301,7 +322,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   :root {
     --page-gutter: var(--space-4);
   }

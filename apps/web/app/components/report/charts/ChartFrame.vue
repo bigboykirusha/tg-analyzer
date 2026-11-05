@@ -53,7 +53,7 @@ const { t } = useI18n()
   text-align: center;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .chart,
   .chart--tall,
   .chart--compact {

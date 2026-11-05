@@ -5,10 +5,30 @@ import { ChevronRight, LogOut } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
-const { t, locale, setLocale } = useI18n()
+const { t, locale, intlLocale, setLocale } = useI18n()
 useSeoMeta({ title: () => t('accountPage.title') })
 
 const auth = useAuthStore()
+
+/** «Москва, UTC+3» from the browser zone; the raw IANA name if Intl cannot name it. */
+const timezoneLabel = computed(() => {
+  const zone = auth.user?.timezone
+  if (!zone) return ''
+  const part = (style: 'longGeneric' | 'shortOffset') => {
+    try {
+      return new Intl.DateTimeFormat(intlLocale.value, { timeZone: zone, timeZoneName: style })
+        .formatToParts(new Date())
+        .find((item) => item.type === 'timeZoneName')?.value
+    } catch {
+      return undefined
+    }
+  }
+  // «Москва, стандартное время» → «Москва»; Chromium has no short Russian names.
+  const name = part('longGeneric')?.split(',')[0]?.trim()
+  const offset = part('shortOffset')?.replace(/^GMT/, 'UTC')
+  return name && offset ? `${name}, ${offset === 'UTC' ? 'UTC+0' : offset}` : zone
+})
+
 const workspace = useWorkspaceStore()
 const { deleteAccount, logout } = useAuth()
 const { preference, setPreference } = useTheme()
@@ -90,7 +110,7 @@ onMounted(() => {
                 {{ t('accountPage.timezone') }}
                 <small>{{ t('accountPage.timezoneHint') }}</small>
               </span>
-              <span class="row__value">{{ auth.user?.timezone }}</span>
+              <span class="row__value">{{ timezoneLabel }}</span>
             </div>
           </div>
         </section>

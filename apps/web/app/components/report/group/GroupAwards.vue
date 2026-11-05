@@ -139,7 +139,7 @@ const awards = computed(() =>
 .award__winner {
   overflow: hidden;
   font: var(--text-h3);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-h3);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

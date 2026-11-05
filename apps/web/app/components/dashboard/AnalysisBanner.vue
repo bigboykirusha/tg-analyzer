@@ -42,7 +42,7 @@ const botUrl = computed(() => (auth.user?.botUrl && !auth.user.botNotify ? auth.
 <template>
   <section v-if="view" class="tile analysis-banner" aria-live="polite">
     <div class="analysis-banner__head">
-      <span class="analysis-banner__spinner" aria-hidden="true" />
+      <span class="spinner analysis-banner__spinner" aria-hidden="true" />
       <strong class="t-title">{{ t('analysis.banner.title', { chat: view.chat }) }}</strong>
     </div>
     <p class="t-small t-muted t-num">{{ view.line }}</p>
@@ -88,13 +88,7 @@ const botUrl = computed(() => (auth.user?.botUrl && !auth.user.botNotify ? auth.
 }
 
 .analysis-banner__spinner {
-  flex: none;
-  width: 14px;
-  height: 14px;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  --spinner-size: 14px;
 }
 
 .analysis-banner__bar {

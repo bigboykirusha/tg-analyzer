@@ -95,8 +95,8 @@ const view = computed(() => {
 }
 
 .fact__figure {
-  font: var(--text-figure-lg);
-  letter-spacing: -0.04em;
+  font: var(--text-figure);
+  letter-spacing: var(--tracking-figure);
 }
 
 .fact__sentence {

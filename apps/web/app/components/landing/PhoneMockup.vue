@@ -130,7 +130,7 @@ const { t } = useI18n()
   align-items: center;
   gap: 8px;
   font: 600 13px/1 var(--font-sans);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-h3);
 }
 
 .iphone__share {

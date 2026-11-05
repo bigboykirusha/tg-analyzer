@@ -58,7 +58,7 @@ const cols = computed(() => Math.max(1, Math.min(props.columns, props.facts.leng
 .fact__value {
   margin-top: auto;
   font: var(--text-h3);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-h3);
   overflow-wrap: anywhere;
 }
 

@@ -14,11 +14,8 @@ const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
     <ReportSection wide :title="t('report.rhythm.heatmapTitle')" :text="t('report.rhythm.heatmapText')">
       <ActivityHeatmap :points="days" />
     </ReportSection>
-    <!-- Two or three bars say nothing that the daily chart does not. -->
-    <ReportSection v-if="data.report.activity.monthly.length > 3" :title="t('group.monthlyTitle')">
-      <MonthlyChart :months="data.report.activity.monthly" />
-    </ReportSection>
-    <ReportSection :title="t('report.rhythm.weekdaysTitle')">
+    <!-- Months are not charted apart: the weekly line above already shows them. -->
+    <ReportSection wide :title="t('report.rhythm.weekdaysTitle')">
       <WeekdayChart :weekday="data.report.activity.weekday" />
     </ReportSection>
     <ReportSection wide :title="t('group.hoursTitle')">

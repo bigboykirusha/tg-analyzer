@@ -45,7 +45,7 @@ defineProps<{
   /* Scales with the tile, so «17–20 ч» fits four in a row next to the sidebar. */
   font: 600 clamp(24px, 24cqi, 36px) / 1 var(--font-sans);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

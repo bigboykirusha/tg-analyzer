@@ -28,6 +28,12 @@ const reportMeta = computed(() => {
   if (!report) return ''
   return t('dashboard.analysed', { time: formatRelative(report.analyzedAt) })
 })
+/** Phones keep the line under the name whole: «Обновлён 39 мин. назад». */
+const reportMetaShort = computed(() => {
+  const report = props.chat.report
+  if (!report) return ''
+  return t('dashboard.analysed', { time: formatRelative(report.analyzedAt, 'short') })
+})
 
 /** The type is shown by the icon; its name is only read aloud, so the time fits on a phone. */
 const typeLabel = computed(() => t(props.chat.type === 'private' ? 'chatType.private' : 'chatType.group'))
@@ -41,7 +47,7 @@ function run(action: 'analyse' | 'delete') {
 </script>
 
 <template>
-  <div class="chat-row" :class="{ 'chat-row--active': analysing }">
+  <div class="chat-row" :class="{ 'chat-row--active': analysing, 'chat-row--link': reportPath }">
     <component :is="reportPath ? NuxtLink : 'div'" :to="reportPath ?? undefined" class="chat-row__main">
       <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" />
       <span class="chat-row__copy">
@@ -71,7 +77,8 @@ function run(action: 'analyse' | 'delete') {
           }}</span>
         </span>
         <span v-else-if="chat.report" class="chat-row__sub chat-row__sub--report">
-          <span>{{ reportMeta }}</span>
+          <span class="chat-row__meta-long">{{ reportMeta }}</span>
+          <span class="chat-row__meta-short" aria-hidden="true">{{ reportMetaShort }}</span>
           <span class="chat-row__report-count">{{ tc('common.messagesCount', chat.report.totalMessages) }}</span>
         </span>
         <span v-else class="chat-row__sub">
@@ -151,8 +158,9 @@ function run(action: 'analyse' | 'delete') {
   }
 }
 
+/* Only a row that opens something lights up; a row with just a button stays still. */
 @media (hover: hover) and (pointer: fine) {
-  .chat-row:hover {
+  .chat-row--link:hover {
     background: var(--hover);
   }
 }
@@ -188,7 +196,8 @@ function run(action: 'analyse' | 'delete') {
 }
 
 .chat-row__sub > span:last-child,
-.chat-row__sub--report > span:first-child {
+.chat-row__sub--report > span:first-child,
+.chat-row__sub--report > .chat-row__meta-short {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -260,11 +269,14 @@ function run(action: 'analyse' | 'delete') {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     white-space: normal;
-    overflow-wrap: anywhere;
+    /* Break between words; a single word longer than the line is hyphenated, not cut anywhere. */
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
 }
 
-.chat-row__open-short {
+.chat-row__open-short,
+.chat-row__meta-short {
   display: none;
 }
 
@@ -278,8 +290,19 @@ function run(action: 'analyse' | 'delete') {
     white-space: nowrap;
   }
 
-  .chat-row__open-short {
+  .chat-row__open-short,
+  .chat-row__meta-short {
     display: inline;
+  }
+
+  /* Still read aloud in full; only the short line is drawn. */
+  .chat-row__meta-long {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 
   /* One line under the name on phones: when it was updated; the count lives in the report. */

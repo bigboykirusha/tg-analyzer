@@ -85,8 +85,8 @@ const shareHint = computed(() => {
     </ReportHero>
 
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
-    <!-- «Вы двое» reads top to bottom: one full-width card per row. -->
-    <ReportPart id="together" :title="t('report.tabs.together')">
+    <!-- «Вы двое» is masonry: every card at its own height, no stretched blanks (see useMasonry). -->
+    <ReportPart id="together" :title="t('report.tabs.together')" columns>
       <ReportDuel :data="data" />
       <TalkTab :data="data" />
     </ReportPart>
@@ -110,7 +110,7 @@ const shareHint = computed(() => {
 
 .share__verdict {
   font: var(--text-h3);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-h3);
 }
 
 .share__figure {
@@ -119,7 +119,7 @@ const shareHint = computed(() => {
   gap: var(--space-2);
   margin-top: auto;
   font: var(--text-figure-lg);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
 }
 
 .share__figure small {

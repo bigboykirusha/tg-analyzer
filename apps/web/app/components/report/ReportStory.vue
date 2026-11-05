@@ -137,7 +137,8 @@ const shareText = computed(() => {
 /** «Who does it more» as a tile: the name, and both counts underneath. */
 function whoMore(label: string, pair: { mine: number; theirs: number }, accent = false): StoryBlock | null {
   if (pair.mine + pair.theirs < MIN_REPLY_SAMPLES) return null
-  const myName = me.value.name
+  // Inside the slides you are «Вы», as in the report; your name only heads the cover.
+  const myName = t('story.you')
   const otherName = theirName.value
   const even = Math.abs(pair.mine - pair.theirs) <= Math.max(pair.mine, pair.theirs) * 0.1
   return {
@@ -171,7 +172,8 @@ const slides = computed<StorySlideModel[]>(() => {
   const { report } = props.data
   const { totals, facts, responses, vocabulary, activity, sessions, habits } = report
   const list: StorySlideModel[] = []
-  const myName = me.value.name
+  // Inside the slides you are «Вы», as in the report; your name only heads the cover.
+  const myName = t('story.you')
   const otherName = theirName.value
 
   // The whole chat as the signature seismograph, bucketed to stay legible.
@@ -395,7 +397,8 @@ const slides = computed<StorySlideModel[]>(() => {
 /** Voice, reactions and daily rituals; null when the report has none of them. */
 function talkSlide(): StorySlideModel | null {
   const { voice, reactions } = props.data.report
-  const myName = me.value.name
+  // Inside the slides you are «Вы», as in the report; your name only heads the cover.
+  const myName = t('story.you')
   const otherName = theirName.value
   const blocks: StoryBlock[] = []
   const seconds = voice
@@ -741,7 +744,7 @@ watch(open, (value) => {
               :aria-expanded="shareOpen"
               @click="openShare"
             >
-              <span v-if="image.busy.value" class="stories__spinner" aria-hidden="true" />
+              <span v-if="image.busy.value" class="spinner stories__spinner" aria-hidden="true" />
               <Share2 v-else aria-hidden="true" />
               {{ t('story.share') }}
             </button>
@@ -1043,12 +1046,7 @@ watch(open, (value) => {
 }
 
 .stories__spinner {
-  width: var(--icon-sm);
-  height: var(--icon-sm);
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  --spinner-size: var(--icon-sm);
 }
 
 /* ─── Arrows beside the frame on wide screens ────────────────────────────── */

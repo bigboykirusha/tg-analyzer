@@ -59,7 +59,7 @@ const updated = computed(() =>
     />
     <span class="report-card__foot">
       <span v-if="updating" class="report-card__updating">
-        <span class="report-card__spinner" aria-hidden="true" />{{ t('dashboard.analysingNow') }}
+        <span class="spinner" aria-hidden="true" />{{ t('dashboard.analysingNow') }}
       </span>
       <span v-else>{{ updated }}</span>
       <ChevronRight class="report-card__chevron" aria-hidden="true" />
@@ -126,7 +126,7 @@ const updated = computed(() =>
   margin-right: var(--space-1);
   color: var(--text);
   font: var(--text-figure-sm);
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-h2);
 }
 
 .report-card__meta {
@@ -159,15 +159,6 @@ const updated = computed(() =>
   gap: var(--space-2);
   color: var(--text);
   font-weight: 600;
-}
-
-.report-card__spinner {
-  width: 12px;
-  height: 12px;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
 }
 
 .report-card__chevron {

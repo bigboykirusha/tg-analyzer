@@ -72,7 +72,7 @@ function signOut() {
           :aria-label="t('header.activityLabel', { chat: activity.chat })"
           aria-live="polite"
         >
-          <span class="activity__spinner" aria-hidden="true" />
+          <span class="spinner" aria-hidden="true" />
           <span class="activity__chat">{{ activity.chat }}</span>
           <span v-if="activity.percent !== null" class="activity__percent">{{ activity.percent }}%</span>
           <span v-if="activity.queued" class="activity__queued">+{{ activity.queued }}</span>
@@ -236,16 +236,6 @@ function signOut() {
   }
 }
 
-.activity__spinner {
-  flex: 0 0 auto;
-  width: 12px;
-  height: 12px;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
 .activity__chat {
   min-width: 0;
   overflow: hidden;
@@ -315,7 +305,7 @@ function signOut() {
 }
 
 /* The home action and profile need their full touch targets on narrow phones. */
-@media (max-width: 430px) {
+@media (max-width: 640px) {
   .topbar:has(.page-bar[data-untitled]) .topbar__brand :deep(.brand-link__name) {
     display: none;
   }

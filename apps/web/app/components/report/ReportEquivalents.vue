@@ -58,7 +58,7 @@ const longest = computed(() => {
 <style scoped>
 .scale__figure {
   font: var(--text-figure);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
 }
 
 .scale__caption {

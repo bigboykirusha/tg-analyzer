@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { BarChart2, Clock, Share2, Trash2 } from '../lib/icons'
+import { BarChart2, Sparkles, Trash2 } from '../lib/icons'
 
 /** Deleting a report: names the chat and lists exactly what goes away. */
 const props = defineProps<{
@@ -27,8 +27,7 @@ const losses = computed(() => {
       label: t('report.lose.stats'),
       value: days ? tc('report.lose.days', days) : tc('common.messagesCount', report.totalMessages),
     },
-    { icon: Share2, label: t('report.lose.story'), value: t('report.lose.storyValue') },
-    { icon: Clock, label: t('report.lose.history'), value: t('report.lose.historyValue') },
+    { icon: Sparkles, label: t('report.lose.story'), value: t('report.lose.storyValue') },
   ]
 })
 </script>

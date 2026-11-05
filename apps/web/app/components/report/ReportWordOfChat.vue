@@ -48,7 +48,7 @@ const sides = computed(() => {
 .word {
   overflow-wrap: anywhere;
   font: var(--text-figure-lg);
-  letter-spacing: -0.05em;
+  letter-spacing: var(--tracking-display);
 }
 
 .word__sentence {

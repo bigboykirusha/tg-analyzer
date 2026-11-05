@@ -60,7 +60,12 @@ function updating(report: ReportSummaryDto) {
         >
           <ChatAvatar :chat-id="report.chatId" :title="report.title" size="xs" />
           <span class="sidebar__name">{{ report.title }}</span>
-          <span v-if="updating(report)" class="sidebar__spinner" :aria-label="t('sidebar.updating')" role="img" />
+          <span
+            v-if="updating(report)"
+            class="spinner sidebar__spinner"
+            :aria-label="t('sidebar.updating')"
+            role="img"
+          />
         </NuxtLink>
       </template>
       <!-- The report list on its way: rows of the same height, so the list does not jump in. -->
@@ -179,14 +184,7 @@ function updating(report: ReportSummaryDto) {
 }
 
 .sidebar__spinner {
-  flex: none;
-  width: 12px;
-  height: 12px;
   margin-left: auto;
-  border: 2px solid var(--border-strong);
-  border-top-color: var(--text);
-  border-radius: var(--radius-full);
-  animation: spin 0.8s linear infinite;
 }
 
 .sidebar__who {

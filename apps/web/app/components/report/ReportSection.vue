@@ -49,7 +49,7 @@ defineProps<{ title?: string; text?: string; wide?: boolean; tone?: 'ink' | 'lim
 /* Tiles are named quietly; the numbers inside carry the weight. */
 .report-section__title {
   font: var(--text-title);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-title);
 }
 
 .report-section__text {

@@ -53,8 +53,8 @@ const figure = computed(() => (props.item.lead === 'theirs' ? pair.value.theirs.
 }
 
 .speed__figure {
-  font: var(--text-figure-lg);
-  letter-spacing: -0.04em;
+  font: var(--text-figure);
+  letter-spacing: var(--tracking-figure);
   white-space: nowrap;
 }
 

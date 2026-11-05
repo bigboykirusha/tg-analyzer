@@ -4,13 +4,15 @@
  * Pages with `fit: true` (the landing) fill exactly one screen, phone or desktop.
  */
 const route = useRoute()
+const { t } = useI18n()
 const fit = computed(() => route.meta.fit === true)
 </script>
 
 <template>
   <div class="site" :class="{ 'site--fit': fit }">
+    <a class="skip-link" href="#main">{{ t('common.skipToContent') }}</a>
     <SiteHeader />
-    <main class="site-main">
+    <main id="main" class="site-main" tabindex="-1">
       <slot />
     </main>
     <SiteFooter />

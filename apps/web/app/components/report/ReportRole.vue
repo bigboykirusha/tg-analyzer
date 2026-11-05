@@ -3,9 +3,10 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { Moon, Sun, Sunrise } from '../../lib/icons'
 
 /**
- * When you are usually around, twice: a role badge on its own sky (Reddit Recap) and a wall
- * clock with the window painted on the dial. The window is `availabilityProfile.peakWindow`,
- * the same one as in the KPI and «Итоги».
+ * When you are around, each fact once. The role badge (Reddit Recap) names the part of the day
+ * with the most messages and says its share. «Ваше время» holds the rest: the busiest window
+ * on a wall clock (`availabilityProfile.peakWindow`, as in the KPI and «Итоги»), the weekdays and
+ * the four parts of the day.
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatPercent } = useI18n()
@@ -21,14 +22,39 @@ const window = computed(() => {
 })
 
 type Role = 'night' | 'morning' | 'day' | 'evening'
-const role = computed<Role | null>(() => {
+const PARTS = [
+  ['night', 'night'],
+  ['morning', 'morning'],
+  ['afternoon', 'day'],
+  ['evening', 'evening'],
+] as const
+/** The part of the day the peak window starts in, used only to break a tie. */
+const windowRole = computed<Role | null>(() => {
   const value = window.value?.start
   if (value === undefined) return null
-  if (value < 5) return 'night'
-  if (value < 11) return 'morning'
-  if (value < 17) return 'day'
+  if (value < 6) return 'night'
+  if (value < 12) return 'morning'
+  if (value < 18) return 'day'
   return 'evening'
 })
+/**
+ * The role is the part of the day with the most messages, so «Ночные совы» never stands over a
+ * chat that is mostly written by day. Parts within one point of the top are a tie; the peak
+ * window decides it.
+ */
+const shares = computed(() => {
+  const distribution = props.data.derived.activityDistribution
+  const counts = PARTS.map(([key, name]) => ({ role: name as Role, count: distribution[key].total }))
+  const total = counts.reduce((sum, item) => sum + item.count, 0)
+  return total ? counts.map((item) => ({ ...item, share: (item.count / total) * 100 })) : []
+})
+const top = computed(() => {
+  if (!shares.value.length) return null
+  const best = Math.max(...shares.value.map((item) => item.share))
+  const leaders = shares.value.filter((item) => best - item.share < 1)
+  return leaders.find((item) => item.role === windowRole.value) ?? leaders[0] ?? null
+})
+const role = computed<Role | null>(() => top.value?.role ?? null)
 const icon = computed(() => (role.value === 'night' ? Moon : role.value === 'morning' ? Sunrise : Sun))
 
 const busiestDay = computed(() => {
@@ -36,13 +62,11 @@ const busiestDay = computed(() => {
   const best = weekday.reduce((top, value, index) => (value.total > (weekday[top]?.total ?? 0) ? index : top), 0)
   return weekday[best]?.total ? (t('chart.weekdaysLong').split(',')[best] ?? '') : ''
 })
-const usually = computed(() => {
-  if (!window.value) return ''
-  const { from, to } = window.value
-  return busiestDay.value
-    ? t('report.rhythm.usuallyWithDay', { from, to, day: busiestDay.value })
-    : t('report.rhythm.usually', { from, to })
-})
+const roleText = computed(() =>
+  top.value && role.value
+    ? t('report.fmt.roleShare', { pct: formatPercent(top.value.share), part: t(`report.fmt.rolePart.${role.value}`) })
+    : '',
+)
 /** The seven days from Monday, the busiest one marked. */
 const week = computed(() => {
   const weekday = props.data.report.activity.weekday
@@ -60,7 +84,6 @@ const second = computed(() => {
   const [from = '', to = ''] = window.split('-')
   return t('report.fmt.clockSecond', { from, to })
 })
-const night = computed(() => props.data.report.sessions.nightSessionsPct)
 
 /** Stars of the night sky: fixed spots, so the picture is the same on every visit. */
 const STARS = Array.from({ length: 28 }, (_, index) => ({
@@ -99,10 +122,7 @@ const hand = computed(() => (window.value ? at(window.value.start, R - 30) : at(
       </div>
       <component :is="icon" class="role__icon" aria-hidden="true" />
       <p class="role__name">{{ t(`report.fmt.role.${role}`) }}</p>
-      <p class="role__text">{{ usually }}</p>
-      <p v-if="night !== null && night > 0" class="role__note">
-        {{ t('report.fmt.roleNight', { pct: formatPercent(night) }) }}
-      </p>
+      <p class="role__text">{{ roleText }}</p>
     </ReportSection>
 
     <ReportSection :title="t('report.fmt.clockTitle')">
@@ -139,6 +159,7 @@ const hand = computed(() => (window.value ? at(window.value.start, R - 30) : at(
           <span>{{ day.name }}</span>
         </li>
       </ol>
+      <DayPartsChart class="clock__parts" :distribution="data.derived.activityDistribution" />
     </ReportSection>
   </template>
 </template>
@@ -172,17 +193,12 @@ const hand = computed(() => (window.value ? at(window.value.start, R - 30) : at(
 .role__name {
   margin-top: auto;
   font: var(--text-figure);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
 }
 
 .role__text {
   font: var(--text-lede);
   font-weight: 500;
-}
-
-.role__note {
-  color: var(--text-muted);
-  font: var(--text-small);
 }
 
 .clock__row {
@@ -228,8 +244,9 @@ const hand = computed(() => (window.value ? at(window.value.start, R - 30) : at(
   background: var(--surface-2);
 }
 
+/* Whole-chat highlights use the heat scale (intensity), not --them (the other side). */
 .week__bar--top {
-  background: var(--them);
+  background: var(--heat-3);
 }
 
 .clock__face {
@@ -237,7 +254,7 @@ const hand = computed(() => (window.value ? at(window.value.start, R - 30) : at(
 }
 
 .clock__window {
-  fill: var(--them);
+  fill: var(--heat-3);
 }
 
 .clock__tick {
@@ -266,5 +283,9 @@ const hand = computed(() => (window.value ? at(window.value.start, R - 30) : at(
 .clock__day {
   color: var(--text-muted);
   font: var(--text-small);
+}
+.clock__parts {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
 }
 </style>

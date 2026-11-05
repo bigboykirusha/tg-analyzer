@@ -13,7 +13,10 @@ withDefaults(
     lede?: string
     /** Phones and tablets have no sidebar: a back arrow to this page. */
     back?: string
-    /** The screen has a name for screen readers but none on screen (the home page): the logo stands in. */
+    /**
+     * The home page: up to 900px the logo in the bar stands in for the name, which stays for
+     * screen readers; wide screens, where the logo lives in the sidebar, show the name.
+     */
     untitled?: boolean
     /** Wide screens only: the name goes quiet (the example report), phones keep it next to the back arrow. */
     quietOnWide?: boolean
@@ -35,7 +38,10 @@ const { t } = useI18n()
         <ChevronLeft aria-hidden="true" />
       </NuxtLink>
       <slot name="leading" />
-      <div class="page-bar__copy" :class="{ 'sr-only': untitled, 'page-bar__copy--quiet': quietOnWide }">
+      <div
+        class="page-bar__copy"
+        :class="{ 'page-bar__copy--untitled': untitled, 'page-bar__copy--quiet': quietOnWide }"
+      >
         <h1 class="page-bar__title" :title="title">{{ title }}</h1>
         <p v-if="lede" class="page-bar__lede t-num" :title="lede">{{ lede }}</p>
       </div>
@@ -90,6 +96,17 @@ const { t } = useI18n()
   display: grid;
   min-width: 0;
   flex: 1;
+}
+
+@media (max-width: 900px) {
+  .page-bar__copy--untitled {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
 }
 
 @media (min-width: 901px) {

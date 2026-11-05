@@ -593,9 +593,14 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   transition: background-color var(--transition-fast);
 }
 
-.option.is-active,
-.option:hover {
+.option.is-active {
   background: var(--hover);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .option:hover {
+    background: var(--hover);
+  }
 }
 
 .option:active {

@@ -33,19 +33,10 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
           .evaluate((element) => element.scrollWidth <= element.clientWidth),
       )
       .toBe(true)
-    const recommendation = page.locator('.month__next')
-    await expect
-      .poll(() =>
-        recommendation.locator('.month__next-copy').evaluate((element) => element.scrollWidth <= element.clientWidth),
-      )
-      .toBe(true)
-    expect(
-      await recommendation.evaluate((element) => {
-        const count = element.querySelector('.month__next-copy')!.getBoundingClientRect()
-        const action = element.querySelector('.month__action')!.getBoundingClientRect()
-        return count.bottom <= action.top || count.right <= action.left || count.left >= action.right
-      }),
-    ).toBe(true)
+    // A chat of the month without a report starts its analysis from its own row, and the row fits.
+    const waiting = page.locator('button.month__row').first()
+    await expect(waiting).toContainText('Разобрать чат')
+    expect(await waiting.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
   }
   await page.screenshot({ path: testInfo.outputPath('dashboard.png'), fullPage: true, animations: 'disabled' })
   await page.goto('/new')
@@ -64,7 +55,8 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
     await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
   }
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
-  const month = page.locator('.fact').filter({ hasText: 'Самый активный месяц' }).locator('.fact__value')
+  // «май 2026 г.» in the quiet row of «Рекорды» never breaks between the year and «г.».
+  const month = page.locator('.quiet > div').filter({ hasText: 'Самый активный месяц' }).locator('dd')
   expect(
     await month.evaluate((element) => {
       const text = element.textContent!
@@ -255,7 +247,7 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
   // Match the fixed 9:16 export, which has less vertical room than a tall phone.
   await page.setViewportSize({ width: 360, height: 640 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.locator('#header-page').getByRole('button', { name: 'Поделиться' }).click()
+  await page.locator('#header-page').getByRole('button', { name: 'Итоги' }).click()
 
   const stories = page.getByRole('dialog', { name: 'Итоги переписки' })
   // Up to four dense slides: the overview with the total first, then what the data allows.

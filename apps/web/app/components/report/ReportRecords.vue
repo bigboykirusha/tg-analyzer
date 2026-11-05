@@ -60,6 +60,9 @@ const silenceDays = computed(() =>
   Math.round(report.value.facts.silencesOver30Days.reduce((sum, gap) => sum + gap.seconds, 0) / 86400),
 )
 const quiet = computed(() => [
+  ...(report.value.period.firstMessageAt
+    ? [{ key: 'first', label: t('report.timeline.firstMessage'), value: day(report.value.period.firstMessageAt) }]
+    : []),
   { key: 'month', label: t('report.timeline.mostActiveMonth'), value: formatMonth(report.value.facts.mostActiveMonth) },
   { key: 'trend', label: t('report.timeline.trend'), value: t(`report.trend.${report.value.facts.trend}`) },
   {
@@ -133,7 +136,7 @@ const quiet = computed(() => [
 
 .streak__figure {
   font: var(--text-figure);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
 }
 
 .streak__note {

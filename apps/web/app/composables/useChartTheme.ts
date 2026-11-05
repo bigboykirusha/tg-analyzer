@@ -34,7 +34,10 @@ export function useChartTheme() {
       surface: cssVar('--surface'),
       raised: cssVar('--surface-raised'),
       warning: cssVar('--warning'),
-      heat: [cssVar('--surface-2'), cssVar('--heat-1'), cssVar('--heat-2'), cssVar('--heat-3'), cssVar('--text')],
+      // The whole chat, both sides together: never ink, which is «you».
+      neutral: cssVar('--chart-neutral'),
+      neutralStrong: cssVar('--chart-neutral-strong'),
+      heat: [cssVar('--surface-2'), cssVar('--heat-1'), cssVar('--heat-2'), cssVar('--heat-3'), cssVar('--heat-4')],
     }
     const space2 = px('--space-2', 8)
     const space3 = px('--space-3', 12)

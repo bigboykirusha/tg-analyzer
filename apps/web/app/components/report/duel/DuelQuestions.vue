@@ -44,7 +44,7 @@ const rows = computed(() => [
 
 .lead b {
   font: var(--text-figure);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
 }
 
 .lead span {

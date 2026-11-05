@@ -21,6 +21,7 @@ const sessionFacts = computed<Fact[]>(() => [
     value: formatNumber(sessions.value.averageSessionMessages),
     sub: t('report.sessions.averageSizeHint'),
   },
+  // Conversations that start at night live here, with the other facts about conversations.
   {
     key: 'night',
     label: t('report.sessions.night'),
@@ -34,8 +35,6 @@ const sessionFacts = computed<Fact[]>(() => [
   <ReportSection :title="t('report.timeline.title')" :text="t('report.timeline.text')" wide>
     <DailyVolumeChart :days="days" />
   </ReportSection>
-
-  <ReportChronicle :data="data" />
 
   <ReportRecords :data="data" />
 

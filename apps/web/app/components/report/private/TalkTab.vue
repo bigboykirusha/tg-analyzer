@@ -51,7 +51,7 @@ const absent = computed(() =>
     {{ t('report.talk.outdated') }}
   </p>
 
-  <div v-else class="report-grid report-grid--even">
+  <template v-else>
     <ReportSection v-for="item in voiceWithoutDuration" :key="item.label" :title="item.label">
       <dl class="voice-count">
         <div>
@@ -68,7 +68,7 @@ const absent = computed(() =>
       <Info aria-hidden="true" />
       <span>{{ t('report.talk.missing', { items: absent.join(', ') }) }}</span>
     </p>
-  </div>
+  </template>
 </template>
 
 <style scoped>
@@ -83,9 +83,5 @@ const absent = computed(() =>
   font: var(--text-small);
   margin-bottom: var(--space-2);
   overflow-wrap: anywhere;
-}
-
-.talk__absent {
-  grid-column: 1 / -1;
 }
 </style>

@@ -240,7 +240,7 @@ function changeNumber() {
 }
 
 .login-progress span {
-  height: 4px;
+  height: var(--bar-height);
   border-radius: var(--radius-full);
   background: var(--surface-2);
   transition: background-color var(--transition-normal);
@@ -283,7 +283,10 @@ function changeNumber() {
     padding-top: 0;
   }
 
+  /* Without the card the fields stand on the page itself: they take the card colour, like the
+   * search on «Новый анализ», so the phone field, code cells and steps stay visible. */
   .login-card {
+    --surface-2: var(--surface);
     padding: var(--space-4) 0;
     border-radius: 0;
     background: transparent;

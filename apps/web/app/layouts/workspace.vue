@@ -42,10 +42,12 @@ watch(analysis.finished, (job) => {
 
 <template>
   <div class="workspace">
+    <!-- Keyboard users skip the sidebar's links straight to the screen. -->
+    <a class="skip-link" href="#main">{{ t('common.skipToContent') }}</a>
     <div class="workspace-sidebar"><AppSidebar /></div>
     <div class="workspace-column">
       <AppHeader />
-      <main class="workspace-main">
+      <main id="main" class="workspace-main" tabindex="-1">
         <slot />
       </main>
     </div>

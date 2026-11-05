@@ -69,7 +69,7 @@ const tone = computed(() => {
   border-radius: 50%;
   font: var(--text-ui);
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--tracking-initials);
 }
 
 .avatar img {

@@ -2,8 +2,8 @@
 import type { Versus } from '../../../composables/useVersus'
 
 /**
- * A laugh meter: a dial with «поровну» at the top, the other side on the left and you on the
- * right. The needle leans by how many times one of you laughs more, up to five times.
+ * A laugh meter: a dial with «поровну» at the top, you on the left and the other side on the
+ * right, the order of every comparison in the report. The needle leans by how many times one of you laughs more, up to five times.
  */
 const props = defineProps<{ item: Versus; theirName: string }>()
 const { t, formatDecimal } = useI18n()
@@ -14,12 +14,12 @@ const CX = 120
 const CY = 124
 const R = 92
 
-/** -1 (all the other side) … 0 (even) … 1 (all you), on a log scale of the ratio. */
+/** -1 (all you) … 0 (even) … 1 (all the other side), on a log scale of the ratio. */
 const lean = computed(() => {
   const { mine, theirs } = pair.value
-  if (!mine.value) return -1
-  if (!theirs.value) return 1
-  const value = Math.log(mine.value / theirs.value) / Math.log(MAX_RATIO)
+  if (!theirs.value) return -1
+  if (!mine.value) return 1
+  const value = Math.log(theirs.value / mine.value) / Math.log(MAX_RATIO)
   return Math.max(-1, Math.min(1, value))
 })
 const point = (value: number, radius: number) => {
@@ -53,8 +53,8 @@ const verdict = computed(() => {
         <path v-if="fill" :d="fill" class="meter__fill" :class="`meter__fill--${item.lead ?? 'mine'}`" />
         <line :x1="CX" :y1="CY" :x2="needle.x" :y2="needle.y" class="meter__needle" />
         <circle :cx="CX" :cy="CY" r="7" class="meter__hub" />
-        <text x="4" y="148" class="meter__tick">{{ theirName }}</text>
-        <text x="236" y="148" text-anchor="end" class="meter__tick">{{ t('report.you') }}</text>
+        <text x="4" y="148" class="meter__tick">{{ t('report.you') }}</text>
+        <text x="236" y="148" text-anchor="end" class="meter__tick">{{ theirName }}</text>
       </svg>
       <div class="result">
         <p class="result__figure t-num">{{ figure }}</p>
@@ -125,7 +125,7 @@ const verdict = computed(() => {
 
 .result__figure {
   font: var(--text-figure);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
 }
 
 .result__verdict {

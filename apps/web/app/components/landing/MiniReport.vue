@@ -114,7 +114,7 @@ const weeks = computed(() => {
 
 .mini__who strong {
   font: 600 24px/1 var(--font-sans);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-figure);
 }
 
 .mini__who span {

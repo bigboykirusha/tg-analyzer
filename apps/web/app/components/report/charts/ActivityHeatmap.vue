@@ -311,7 +311,7 @@ function describe(cell: Cell) {
 }
 
 .heatmap__cell--4 {
-  background: var(--text);
+  background: var(--heat-4);
 }
 
 .heatmap__legend {

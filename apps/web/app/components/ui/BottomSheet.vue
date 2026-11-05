@@ -112,12 +112,14 @@ function onPointerUp() {
 </template>
 
 <style scoped>
+/* The same floating sheet as a dialog on a phone (ModalDialog): inset from the edges, all corners round. */
 .sheet-scrim {
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
   display: flex;
   align-items: flex-end;
+  padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
   background: var(--scrim);
 }
 
@@ -127,7 +129,7 @@ function onPointerUp() {
   width: 100%;
   max-height: 86dvh;
   overflow: hidden;
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-radius: var(--radius-xl);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
   /* Let go, it settles back on the drawer curve. */
@@ -178,7 +180,7 @@ function onPointerUp() {
   flex: 0 0 auto;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-5) max(var(--space-5), env(safe-area-inset-bottom));
+  padding: var(--space-3) var(--space-5) var(--space-5);
 }
 
 .sheet__foot :deep(.btn) {
@@ -186,9 +188,9 @@ function onPointerUp() {
   min-height: var(--control-lg);
 }
 
-/* Without actions the list itself reaches the safe area. */
+/* The scrim keeps the sheet above the safe area, so the last block needs only its own padding. */
 .sheet__body:last-child {
-  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  padding-bottom: var(--space-3);
 }
 
 /* Options and menu items are 48px / 15px inside a sheet. */
@@ -204,7 +206,7 @@ function onPointerUp() {
 
 .sheet-enter-active .sheet,
 .sheet-leave-active .sheet {
-  transition: transform var(--transition-slow);
+  transition: transform var(--duration-sheet) var(--ease-drawer);
 }
 
 .sheet-enter-from,
@@ -214,6 +216,6 @@ function onPointerUp() {
 
 .sheet-enter-from .sheet,
 .sheet-leave-to .sheet {
-  transform: translateY(100%);
+  transform: translateY(calc(100% + var(--space-4)));
 }
 </style>

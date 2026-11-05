@@ -42,13 +42,13 @@ const classes = computed(() => [
 
 <template>
   <NuxtLink v-if="to" v-bind="attrs" :to="to" :class="classes" :aria-busy="loading || undefined">
-    <span v-if="loading" class="btn__spinner" aria-hidden="true" />
+    <span v-if="loading" class="spinner btn__spinner" aria-hidden="true" />
     <component :is="icon" v-else-if="icon" aria-hidden="true" />
     <slot v-else name="icon" />
     <slot />
   </NuxtLink>
   <button v-else v-bind="attrs" :class="classes" :disabled="disabled || loading" :aria-busy="loading || undefined">
-    <span v-if="loading" class="btn__spinner" aria-hidden="true" />
+    <span v-if="loading" class="spinner btn__spinner" aria-hidden="true" />
     <component :is="icon" v-else-if="icon" aria-hidden="true" />
     <slot v-else name="icon" />
     <slot />
@@ -228,16 +228,19 @@ const classes = computed(() => [
 
 /* ─── Spinner ──────────────────────────────────────────────────────────────── */
 .btn__spinner {
-  flex: 0 0 auto;
-  width: var(--icon-size);
-  height: var(--icon-size);
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  --spinner-size: var(--icon-size);
 }
 
 /* Touch targets stay ≥ 44px on phones. */
+/* Touch: a compact button keeps its size but catches a tap of at least --hit-min around it. */
+@media (pointer: coarse) {
+  .btn::after {
+    content: '';
+    position: absolute;
+    inset: min(0px, calc((100% - var(--hit-min)) / 2));
+  }
+}
+
 @media (max-width: 640px) and (pointer: coarse) {
   .btn--sm {
     min-height: var(--control-md);

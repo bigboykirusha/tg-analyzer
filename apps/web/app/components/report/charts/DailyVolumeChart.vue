@@ -52,9 +52,9 @@ const option = computed(() => {
         smooth: false,
         symbol: points.value.length <= 14 ? 'circle' : 'none',
         symbolSize: 6,
-        lineStyle: { color: colors.text, width: 1.5 },
-        itemStyle: { color: colors.text },
-        areaStyle: { color: colors.text, opacity: 0.08 },
+        lineStyle: { color: colors.neutralStrong, width: 1.5 },
+        itemStyle: { color: colors.neutralStrong },
+        areaStyle: { color: colors.neutralStrong, opacity: 0.1 },
       },
     ],
   }

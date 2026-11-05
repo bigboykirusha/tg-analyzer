@@ -98,6 +98,7 @@ const hasActivity = computed(() => items.value.some((item) => item.value > 0))
 
 .distribution-fill {
   height: 100%;
-  background: var(--text);
+  border-radius: inherit;
+  background: var(--chart-neutral-strong);
 }
 </style>

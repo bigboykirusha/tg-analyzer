@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import type { RecentActivityResponse } from '@tg-analyzer/shared'
+import { Plus } from '../../lib/icons'
 
-/** Monthly chat list and the busiest chat still waiting for analysis. */
+/**
+ * The month chart: the five busiest private chats. A row with a report opens it; a row without
+ * one starts its analysis right here, so every chat has one entry on the home page.
+ */
 const props = defineProps<{ recent: RecentActivityResponse; reportIds: Set<string> }>()
-const { t, tc, formatNumber } = useI18n()
+const { t, formatNumber } = useI18n()
 const analysis = useAnalysis()
 const auth = useAuthStore()
 const toast = useToast()
@@ -21,106 +25,95 @@ const rows = computed(() => {
     reported: props.reportIds.has(chat.id),
   }))
 })
+type Row = (typeof rows.value)[number]
 
-const next = computed(() => props.recent.chats.find((chat) => !props.reportIds.has(chat.id)))
+/** Without a Telegram session nothing can be analysed: the rows stay quiet and one line says why. */
+const canAnalyse = computed(() => auth.telegramSessionActive)
+const waiting = computed(() => rows.value.some((row) => !row.reported))
 
-const starting = ref(false)
-const nextState = computed(() => {
-  const id = next.value?.id
-  if (!id) return null
-  if (analysis.isActive.value && analysis.progress.value.chatId === id) return 'running'
-  if (analysis.queued.value.some((item) => item.chatId === id)) return 'queued'
+const starting = ref<string | null>(null)
+function state(row: Row) {
+  if (analysis.isActive.value && analysis.progress.value.chatId === row.id) return 'running'
+  if (analysis.queued.value.some((item) => item.chatId === row.id)) return 'queued'
+  if (starting.value === row.id) return 'starting'
   return null
-})
+}
 
-async function analyseNext() {
-  if (!next.value) return
-  starting.value = true
+async function analyse(row: Row) {
+  if (state(row)) return
+  starting.value = row.id
   try {
-    await analysis.startAnalysis(next.value.id, next.value.title)
+    await analysis.startAnalysis(row.id, row.title)
   } catch (error) {
     toast.error(t('analysis.startError'), errorMessage(error))
   } finally {
-    starting.value = false
+    starting.value = null
   }
 }
 
-const link = (row: { id: string; reported: boolean }) => (row.reported ? `/chat/${row.id}` : undefined)
-const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('NuxtLink') : 'div')
+function tag(row: Row) {
+  if (row.reported) return resolveComponent('NuxtLink')
+  return canAnalyse.value ? 'button' : 'div'
+}
+function attrs(row: Row) {
+  if (row.reported) return { to: `/chat/${row.id}` }
+  if (!canAnalyse.value) return {}
+  return { type: 'button', disabled: state(row) !== null, onClick: () => analyse(row) }
+}
 </script>
 
 <template>
-  <div class="month">
-    <section class="tile tile--ink month__chart" aria-labelledby="month-title">
-      <div class="tile__label">
-        <h2 id="month-title" class="month__label">{{ t('month.chart') }}</h2>
-      </div>
+  <section class="tile tile--ink month" aria-labelledby="month-title">
+    <div class="tile__label">
+      <h2 id="month-title" class="month__label">{{ t('month.chart') }}</h2>
+    </div>
 
-      <ol v-if="rows.length" class="month__rows">
-        <li v-for="row in rows" :key="row.id">
-          <component
-            :is="tag(row)"
-            :to="link(row)"
-            class="month__row"
-            :class="{ 'month__row--first': row.place === 1 }"
-          >
-            <span class="month__place t-num">{{ row.place }}</span>
-            <ChatAvatar
-              :chat-id="row.id"
-              :title="row.title"
-              :has-avatar="row.hasAvatar"
-              :size="row.place === 1 ? 'md' : 'sm'"
-            />
-            <span class="month__who">
-              <span class="month__name">{{ row.title }}</span>
-              <span class="month__sub">
-                <span v-if="!row.reported" class="month__fresh">{{ t('month.notReported') }}</span>
-                <template v-else-if="row.total">{{
-                  t('month.allTimeTotal', { count: formatNumber(row.total) })
-                }}</template>
+    <ol v-if="rows.length" class="month__rows">
+      <li v-for="row in rows" :key="row.id">
+        <component
+          :is="tag(row)"
+          v-bind="attrs(row)"
+          class="month__row"
+          :class="{ 'month__row--first': row.place === 1, 'month__row--action': !row.reported && canAnalyse }"
+        >
+          <span class="month__place t-num">{{ row.place }}</span>
+          <ChatAvatar
+            :chat-id="row.id"
+            :title="row.title"
+            :has-avatar="row.hasAvatar"
+            :size="row.place === 1 ? 'md' : 'sm'"
+          />
+          <span class="month__who">
+            <span class="month__name">{{ row.title }}</span>
+            <span class="month__sub">
+              <template v-if="row.reported">{{
+                row.total ? t('month.allTimeTotal', { count: formatNumber(row.total) }) : ''
+              }}</template>
+              <span v-else-if="state(row) === 'running' || state(row) === 'starting'" class="month__fresh">
+                <span class="spinner" aria-hidden="true" />{{ t('dashboard.analysingNow') }}
               </span>
+              <span v-else-if="state(row) === 'queued'" class="month__fresh">{{ t('month.queued') }}</span>
+              <span v-else-if="canAnalyse" class="month__fresh month__fresh--action">
+                <Plus aria-hidden="true" />{{ t('month.analyse') }}
+              </span>
+              <span v-else class="month__fresh month__fresh--dot">{{ t('month.notReported') }}</span>
             </span>
-            <span class="month__count t-num">{{ formatNumber(row.messages) }}</span>
-          </component>
-        </li>
-      </ol>
-      <p v-else class="tile__note">{{ t('month.empty') }}</p>
-    </section>
+          </span>
+          <span class="month__count t-num">{{ formatNumber(row.messages) }}</span>
+        </component>
+      </li>
+    </ol>
+    <p v-else class="tile__note">{{ t('month.empty') }}</p>
 
-    <section v-if="next" class="tile tile--lime month__next" aria-labelledby="month-next">
-      <ChatAvatar :chat-id="next.id" :title="next.title" :has-avatar="next.hasAvatar" size="md" />
-      <div class="month__next-copy">
-        <span class="month__next-label">{{ t('month.next') }}</span>
-        <h2 id="month-next" class="month__next-name">{{ next.title }}</h2>
-        <p class="month__next-note">
-          {{ tc('month.perMonth', next.messages) }}
-        </p>
-      </div>
-      <UiButton v-if="!auth.telegramSessionActive" class="month__action" @click="relogin">
-        {{ t('common.relogin') }}
-      </UiButton>
-      <UiButton
-        v-else
-        class="month__action"
-        :loading="starting || nextState === 'running'"
-        :disabled="nextState !== null"
-        @click="analyseNext"
-      >
-        <template v-if="nextState === 'queued'">{{ t('month.queued') }}</template>
-        <template v-else>{{ t('month.analyse') }}</template>
-      </UiButton>
-    </section>
-  </div>
+    <div v-if="!canAnalyse && waiting" class="month__session">
+      <p>{{ t('login.sessionEnded') }}</p>
+      <UiButton size="sm" @click="relogin">{{ t('common.relogin') }}</UiButton>
+    </div>
+  </section>
 </template>
 
 <style scoped>
 .month {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--card-gap);
-}
-
-.month__chart {
   gap: var(--space-4);
 }
 
@@ -130,7 +123,7 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
 
 .month__place {
   font: var(--text-h3);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-h3);
 }
 
 .month__rows {
@@ -149,9 +142,23 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
   grid-template-columns: 1.1em 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
+  width: 100%;
   padding-block: var(--space-2);
+  border: 0;
+  background: none;
   color: inherit;
+  font: inherit;
+  text-align: left;
   text-decoration: none;
+}
+
+button.month__row {
+  cursor: pointer;
+}
+
+button.month__row:disabled {
+  cursor: default;
+  opacity: 1;
 }
 
 /* The leader: a lime-lined well, a bigger avatar and count, its place in lime. */
@@ -173,12 +180,12 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
 .month__row--first .month__count {
   color: var(--them);
   font: var(--text-h2);
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-h2);
 }
 
 .month__row--first .month__name {
   font: var(--text-h3);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-h3);
 }
 
 .month__rows li:last-child .month__row {
@@ -208,7 +215,7 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
   font-variant-numeric: tabular-nums;
 }
 
-/* «Не разобран» inside the ink tile: the lime of the ink tile, as a dot and a word. */
+/* A chat without a report, in the lime of the ink tile: «+ Разобрать чат», its progress, or a dot and a word. */
 .month__fresh {
   display: inline-flex;
   align-items: center;
@@ -218,7 +225,11 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
   font-weight: 500;
 }
 
-.month__fresh::before {
+.month__fresh :deep(svg.lucide) {
+  --icon-size: 12px;
+}
+
+.month__fresh--dot::before {
   width: 6px;
   height: 6px;
   border-radius: var(--radius-full);
@@ -231,47 +242,23 @@ const tag = (row: { reported: boolean }) => (row.reported ? resolveComponent('Nu
 }
 
 @media (hover: hover) and (pointer: fine) {
-  a.month__row:hover .month__name {
+  a.month__row:hover .month__name,
+  button.month__row:enabled:hover .month__name {
     text-decoration: underline;
     text-underline-offset: 3px;
   }
 }
 
-/* The next chat: one slim strip, not a tall tile. */
-.month__next {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+/* Without a Telegram session: one line and the way back in, at the foot of the chart. */
+.month__session {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3) var(--space-4);
-  padding-block: var(--space-4);
-}
-
-.month__next-copy {
-  display: grid;
-  min-width: 0;
-}
-
-.month__next-label,
-.month__next-note {
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
   color: var(--text-muted);
-  font: var(--text-caption);
-  font-variant-numeric: tabular-nums;
-}
-
-.month__next-name {
-  overflow: hidden;
-  font: var(--text-title);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (max-width: 520px) {
-  .month__next {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .month__action {
-    grid-column: 1 / -1;
-  }
+  font: var(--text-small);
 }
 </style>
