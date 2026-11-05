@@ -84,6 +84,9 @@ const shareHint = computed(() => {
       </template>
     </ReportHero>
 
+    <!-- The three most unusual facts of this chat, each opening the part where it lives. -->
+    <ReportHighlights :data="data" />
+
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
     <!-- «Вы двое» is masonry: every card at its own height, no stretched blanks (see useMasonry). -->
     <ReportPart id="together" :title="t('report.tabs.together')" columns>
