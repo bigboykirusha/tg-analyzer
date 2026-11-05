@@ -41,7 +41,7 @@ type Kind = 'more' | 'often' | 'faster'
  * the sticker card, so one value never gets two answers on the page.
  */
 export function useVersus(data: () => ReportDto) {
-  const { t, tc, formatDecimal, formatDuration, formatNumber, formatPercent } = useI18n()
+  const { t, tc, formatDuration, formatNumber, formatPercent } = useI18n()
 
   const side = (value: number, text: string): VersusSide => ({ value, text })
 
@@ -70,7 +70,7 @@ export function useVersus(data: () => ReportDto) {
       ratio,
       figure: mine > theirs ? t('report.you') : name,
       note: Number.isFinite(ratio)
-        ? t(`report.duel.${kind}`, { ratio: formatDecimal(ratio) })
+        ? t(`report.duel.${kind}`, { ratio: formatNumber(Math.round(ratio * 10) / 10) })
         : t(mine > theirs ? 'report.duel.onlyMine' : 'report.duel.onlyTheirs'),
       pairs,
     }

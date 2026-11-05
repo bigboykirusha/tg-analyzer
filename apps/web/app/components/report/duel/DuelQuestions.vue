@@ -3,7 +3,9 @@ import type { Versus } from '../../../composables/useVersus'
 
 /** Questions as a unit chart: one square is a fixed number of questions, so the gap is counted by eye. */
 const props = defineProps<{ item: Versus; theirName: string }>()
-const { t } = useI18n()
+const { t, formatNumber } = useI18n()
+/** «2», «3,2»: one decimal, no trailing «,0». */
+const times = (value: number) => formatNumber(Math.round(value * 10) / 10)
 
 const pair = computed(() => props.item.pairs[0]!)
 /** At most about 180 squares on both sides together; the step is a round number. */
@@ -13,6 +15,18 @@ const step = computed(() => {
   return STEPS.find((value) => total / value <= 180) ?? 1000
 })
 const squares = (value: number) => (value > 0 ? Math.max(1, Math.round(value / step.value)) : 0)
+/** The answer as one sentence, like «Кто отвечает быстрее»: «Вы спрашиваете в 3,2 раза чаще». */
+const answer = computed(() => {
+  const { lead, ratio } = props.item
+  if (!lead) return t('report.fmt.questionsEven')
+  if (!Number.isFinite(ratio))
+    return lead === 'mine'
+      ? t('report.fmt.questionsOnlyMine')
+      : t('report.fmt.questionsOnlyTheirs', { name: props.theirName })
+  return lead === 'mine'
+    ? t('report.fmt.questionsMine', { ratio: times(ratio) })
+    : t('report.fmt.questionsTheirs', { name: props.theirName, ratio: times(ratio) })
+})
 const rows = computed(() => [
   { key: 'mine', who: t('report.you'), side: pair.value.mine, cells: squares(pair.value.mine.value) },
   { key: 'theirs', who: props.theirName, side: pair.value.theirs, cells: squares(pair.value.theirs.value) },
@@ -21,10 +35,7 @@ const rows = computed(() => [
 
 <template>
   <ReportSection :title="item.title">
-    <p class="lead">
-      <span v-if="item.lead">{{ item.figure }}</span>
-      <b>{{ item.lead ? item.note : item.figure }}</b>
-    </p>
+    <p class="lead">{{ answer }}</p>
     <div v-for="row in rows" :key="row.key" class="units">
       <span class="units__who t-num">{{ row.who }} · {{ row.side.text }}</span>
       <div class="units__grid" aria-hidden="true">
@@ -36,20 +47,9 @@ const rows = computed(() => [
 
 <style scoped>
 .lead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2);
-}
-
-.lead b {
-  font: var(--text-figure);
-  letter-spacing: var(--tracking-figure);
-}
-
-.lead span {
-  color: var(--text-muted);
-  font: var(--text-h3);
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+  text-wrap: balance;
 }
 
 .units {
