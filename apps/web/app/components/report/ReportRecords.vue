@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import { Flame } from '../../lib/icons'
 
 /**
  * Personal records, Strava-style: the longest streak with a strip of its days, then the other
@@ -73,14 +72,13 @@ const quiet = computed(() => [
 </script>
 
 <template>
-  <ReportSection wide :title="t('report.fmt.recordsTitle')">
+  <ReportSection
+    wide
+    :title="t('report.fmt.recordsTitle')"
+    :answer="streak.days > 1 ? `${tc('report.fmt.streakDays', streak.days)} ${t('report.fmt.streakNote')}` : null"
+  >
     <div class="records">
       <div v-if="streak.days > 1" class="streak">
-        <p class="streak__head">
-          <Flame class="streak__icon" aria-hidden="true" />
-          <span class="streak__figure t-num">{{ tc('report.fmt.streakDays', streak.days) }}</span>
-        </p>
-        <p class="streak__note">{{ t('report.fmt.streakNote') }}</p>
         <div class="streak__strip" aria-hidden="true">
           <i v-for="index in strip" :key="index" />
         </div>
@@ -119,27 +117,6 @@ const quiet = computed(() => [
   gap: var(--space-2);
 }
 
-.streak__head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.streak__icon {
-  width: var(--icon-lg);
-  height: var(--icon-lg);
-  color: var(--them-ink);
-}
-
-.streak__figure {
-  font: var(--text-figure);
-  letter-spacing: var(--tracking-figure);
-}
-
-.streak__note {
-  color: var(--text-muted);
-  font: var(--text-small);
-}
 
 .streak__strip {
   display: grid;
@@ -174,7 +151,8 @@ const quiet = computed(() => [
 .board__value {
   order: -1;
   margin: 0;
-  font: var(--text-figure-sm);
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
 }
 
 .board__label {

@@ -32,14 +32,18 @@ const sides = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="word" wide tone="ink" :title="t('report.fmt.wordTitle')">
+  <ReportSection
+    v-if="word"
+    wide
+    tone="ink"
+    :title="t('report.fmt.wordTitle')"
+    :sides="
+      sides ? { mine: formatNumber(sides.mine), theirs: formatNumber(sides.theirs), name: data.summary.title } : null
+    "
+  >
     <p class="word">«{{ word.value }}»</p>
     <p class="word__sentence">
       {{ tc('report.fmt.wordCount', word.count) }}<template v-if="often">. {{ often }}</template>
-    </p>
-    <p v-if="sides" class="word__sides t-num">
-      <span>{{ t('report.you') }} · {{ formatNumber(sides.mine) }}</span>
-      <span>{{ data.summary.title }} · {{ formatNumber(sides.theirs) }}</span>
     </p>
   </ReportSection>
 </template>
@@ -54,12 +58,5 @@ const sides = computed(() => {
 .word__sentence {
   font: var(--text-lede);
   font-weight: 500;
-}
-
-.word__sides {
-  display: flex;
-  gap: var(--space-6);
-  color: var(--text-muted);
-  font: var(--text-small);
 }
 </style>

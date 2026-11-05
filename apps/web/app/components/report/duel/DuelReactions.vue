@@ -44,15 +44,13 @@ const pair = computed(() => props.item?.pairs[0] ?? null)
 </script>
 
 <template>
-  <ReportSection v-if="sides.length" tone="lime" :title="item?.title ?? t('report.talk.reactionsTitle')">
-    <div v-if="item && pair" class="lead">
-      <p class="lead__figure t-num">
-        {{ pair.mine.text }} <small>{{ t('report.fmt.against', { value: pair.theirs.text }) }}</small>
-      </p>
-      <p class="lead__note">
-        {{ item.lead ? `${item.figure} — ${item.note}` : t('report.fmt.reactionsEven') }}
-      </p>
-    </div>
+  <ReportSection
+    v-if="sides.length"
+    tone="lime"
+    :title="item?.title ?? t('report.talk.reactionsTitle')"
+    :answer="item ? (item.lead ? `${item.figure} — ${item.note}` : t('report.fmt.reactionsEven')) : null"
+    :sides="pair ? { mine: pair.mine.text, theirs: pair.theirs.text, name } : null"
+  >
     <div class="podiums">
       <div v-for="side in sides" :key="side.key" class="podium-side">
         <span class="podium-side__label">{{ side.label }}</span>
@@ -68,26 +66,6 @@ const pair = computed(() => props.item?.pairs[0] ?? null)
 </template>
 
 <style scoped>
-.lead {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.lead__figure {
-  font: var(--text-figure);
-  letter-spacing: var(--tracking-figure);
-}
-
-.lead__figure small {
-  color: var(--text-muted);
-  font: var(--text-h3);
-  letter-spacing: 0;
-}
-
-.lead__note {
-  font: var(--text-ui);
-}
-
 .podiums {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

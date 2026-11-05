@@ -2,8 +2,8 @@
 import type { ReportDto } from '@tg-analyzer/shared'
 
 /**
- * Mornings and evenings as one fact in large type, Wrapped-style: the most telling number of
- * the day's edges, then the rest in plain sentences. Counts are the same as in «Итоги».
+ * Mornings and evenings: the most telling fact of the day's edges as the answer, both counts at
+ * the foot, the rest in plain lines. Counts are the same as in «Итоги».
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatNumber, formatPercent } = useI18n()
@@ -50,11 +50,10 @@ const view = computed(() => {
     if (evening) lines.push(evening)
     if (morning) lines.push(morning)
     return {
-      label: null,
-      figure: formatNumber(Math.max(goodNight.mine, goodNight.theirs)),
-      sentence: theirsLead
-        ? t('report.fmt.goodNightTheirs', { ...vars, other: formatNumber(goodNight.mine) })
-        : t('report.fmt.goodNightMine', { ...vars, other: formatNumber(goodNight.theirs) }),
+      answer: theirsLead
+        ? t('report.fmt.goodNightTheirs', { count: formatNumber(goodNight.theirs) })
+        : t('report.fmt.goodNightMine', { count: formatNumber(goodNight.mine) }),
+      sides: { mine: formatNumber(goodNight.mine), theirs: formatNumber(goodNight.theirs), name: name.value },
       lines,
     }
   }
@@ -62,54 +61,31 @@ const view = computed(() => {
   if (morning) lines.push(morning)
   const mineLead = lastShare >= 50
   return {
-    label: t('report.fmt.lastWordLabel'),
-    figure: formatPercent(mineLead ? lastShare : 100 - lastShare),
-    sentence: mineLead ? t('report.fmt.lastWordMine') : t('report.fmt.lastWordTheirs', vars),
+    answer: mineLead
+      ? t('report.fmt.lastWordMine', { pct: formatPercent(lastShare) })
+      : t('report.fmt.lastWordTheirs', { ...vars, pct: formatPercent(100 - lastShare) }),
+    sides: {
+      mine: formatPercent(lastShare),
+      theirs: formatPercent(100 - lastShare),
+      name: name.value,
+    },
     lines,
   }
 })
 </script>
 
 <template>
-  <ReportSection v-if="view" :title="t('report.fmt.ritualsTitle')">
-    <div class="fact">
-      <span v-if="view.label" class="fact__label">{{ view.label }}</span>
-      <p class="fact__figure t-num">{{ view.figure }}</p>
-      <p class="fact__sentence">{{ view.sentence }}</p>
-    </div>
-    <ul class="lines">
+  <ReportSection v-if="view" :title="t('report.fmt.ritualsTitle')" :answer="view.answer" :sides="view.sides">
+    <ul v-if="view.lines.length" class="lines">
       <li v-for="line in view.lines" :key="line">{{ line }}</li>
     </ul>
   </ReportSection>
 </template>
 
 <style scoped>
-.fact {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.fact__label {
-  color: var(--text-muted);
-  font: var(--text-label);
-}
-
-.fact__figure {
-  font: var(--text-figure);
-  letter-spacing: var(--tracking-figure);
-}
-
-.fact__sentence {
-  font: var(--text-lede);
-  font-weight: 500;
-}
-
 .lines {
   display: grid;
   gap: var(--space-2);
-  margin-top: auto;
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border);
   color: var(--text-muted);
   font: var(--text-small);
   list-style: none;

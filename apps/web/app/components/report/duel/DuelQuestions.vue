@@ -34,10 +34,13 @@ const rows = computed(() => [
 </script>
 
 <template>
-  <ReportSection :title="item.title">
-    <p class="lead">{{ answer }}</p>
+  <ReportSection
+    :title="item.title"
+    :answer="answer"
+    :sides="{ mine: pair.mine.text, theirs: pair.theirs.text, name: theirName }"
+  >
     <div v-for="row in rows" :key="row.key" class="units">
-      <span class="units__who t-num">{{ row.who }} · {{ row.side.text }}</span>
+      <span class="units__who">{{ row.who }}</span>
       <div class="units__grid" aria-hidden="true">
         <i v-for="index in row.cells" :key="index" :class="`units__cell--${row.key}`" />
       </div>
@@ -46,12 +49,6 @@ const rows = computed(() => [
 </template>
 
 <style scoped>
-.lead {
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
-  text-wrap: balance;
-}
-
 .units {
   display: grid;
   gap: var(--space-2);

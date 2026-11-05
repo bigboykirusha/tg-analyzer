@@ -23,39 +23,12 @@ const answer = computed(() =>
 </script>
 
 <template>
-  <ReportSection :title="item.title" :text="t('report.speed.text')">
-    <div class="speed">
-      <div class="speed__fact">
-        <p class="speed__answer">{{ answer }}</p>
-        <p class="speed__sides t-num">
-          {{ t('report.you') }} · {{ pair.mine.text }} &nbsp; {{ name }} · {{ pair.theirs.text }}
-        </p>
-      </div>
-      <ReplySpeedChart v-if="hasHistogram" :histogram="responses.histogram!" :received-label="name" />
-    </div>
+  <ReportSection
+    :title="item.title"
+    :text="t('report.speed.text')"
+    :answer="answer"
+    :sides="{ mine: pair.mine.text, theirs: pair.theirs.text, name }"
+  >
+    <ReplySpeedChart v-if="hasHistogram" :histogram="responses.histogram!" :received-label="name" />
   </ReportSection>
 </template>
-
-<style scoped>
-.speed {
-  display: grid;
-  gap: var(--space-4);
-}
-
-.speed__fact {
-  display: grid;
-  align-content: start;
-  gap: var(--space-3);
-}
-
-.speed__answer {
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
-  text-wrap: balance;
-}
-
-.speed__sides {
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-</style>

@@ -8,6 +8,12 @@ const { t, tc } = useI18n()
 const stickers = computed(() => props.data.report.stickers)
 const versus = useVersus(() => props.data)
 const name = computed(() => props.data.summary.title)
+const pair = computed(() => versus.value.stickers?.pairs[0] ?? null)
+const answer = computed(() => {
+  const item = versus.value.stickers
+  if (!item) return null
+  return item.lead ? `${item.figure} — ${item.note}` : t('report.fmt.evenAnswer')
+})
 const variety = computed(() => {
   const stats = stickers.value
   if (!stats?.distinct) return undefined
@@ -17,48 +23,17 @@ const variety = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="stickers?.top.length" :title="t('report.talk.stickersTitle')" :text="variety">
+  <ReportSection
+    v-if="stickers?.top.length"
+    :title="t('report.talk.stickersTitle')"
+    :text="variety"
+    :answer="answer"
+    :sides="pair ? { mine: pair.mine.text, theirs: pair.theirs.text, name } : null"
+  >
     <StickerGrid :stickers="stickers.top" />
-    <div v-if="versus.stickers" class="split">
-      <i class="split__bar" aria-hidden="true">
-        <b :style="{ flexGrow: versus.stickers.pairs[0]!.mine.value }" />
-        <b :style="{ flexGrow: versus.stickers.pairs[0]!.theirs.value }" />
-      </i>
-      <p class="split__legend t-num">
-        <span>{{ t('report.you') }} · {{ versus.stickers.pairs[0]!.mine.text }}</span>
-        <span>{{ name }} · {{ versus.stickers.pairs[0]!.theirs.text }}</span>
-      </p>
-    </div>
+    <i v-if="pair" class="split-bar" aria-hidden="true">
+      <b :style="{ flexGrow: pair.mine.value }" />
+      <b :style="{ flexGrow: pair.theirs.value }" />
+    </i>
   </ReportSection>
 </template>
-
-<style scoped>
-.split {
-  display: grid;
-  gap: var(--space-2);
-  margin-top: auto;
-}
-
-.split__bar {
-  display: flex;
-  gap: 3px;
-  height: var(--bar-height);
-}
-
-.split__bar b {
-  border-radius: var(--radius-full);
-  background: var(--you);
-}
-
-.split__bar b + b {
-  background: var(--them);
-}
-
-.split__legend {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-3);
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-</style>

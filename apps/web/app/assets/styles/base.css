@@ -515,6 +515,22 @@ main:focus {
   font-weight: 500;
 }
 
+/* The split of a comparison: you in ink, the other side in lime, one --bar-height. */
+.split-bar {
+  display: flex;
+  gap: 3px;
+  height: var(--bar-height);
+}
+
+.split-bar b {
+  border-radius: var(--radius-full);
+  background: var(--you);
+}
+
+.split-bar b + b {
+  background: var(--them);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

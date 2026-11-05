@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import { Moon, Sun, Sunrise } from '../../lib/icons'
 
 /**
  * «Ваше время», one card, each fact once: the role (the part of the day with the most messages)
@@ -54,7 +53,6 @@ const top = computed(() => {
   return leaders.find((item) => item.role === windowRole.value) ?? leaders[0] ?? null
 })
 const role = computed<Role | null>(() => top.value?.role ?? null)
-const icon = computed(() => (role.value === 'night' ? Moon : role.value === 'morning' ? Sunrise : Sun))
 
 const busiestDay = computed(() => {
   const weekday = props.data.report.activity.weekday
@@ -81,18 +79,12 @@ const second = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="window && role" :title="t('report.fmt.clockTitle')" wide>
-    <div class="role">
-      <component :is="icon" class="role__icon" aria-hidden="true" />
-      <div class="role__copy">
-        <p class="role__name">{{ t(`report.fmt.role.${role}`) }}</p>
-        <p class="role__text">
-          {{ t('report.fmt.rolePeak', { from: window.from, to: window.to }) }}
-          <template v-if="busiestDay"> · {{ t('report.fmt.clockDay', { day: busiestDay }) }}</template>
-          <template v-if="second"> · {{ second }}</template>
-        </p>
-      </div>
-    </div>
+  <ReportSection v-if="window && role" :title="t('report.fmt.clockTitle')" :answer="t(`report.fmt.role.${role}`)" wide>
+    <p class="role__text">
+      {{ t('report.fmt.rolePeak', { from: window.from, to: window.to }) }}
+      <template v-if="busiestDay"> · {{ t('report.fmt.clockDay', { day: busiestDay }) }}</template>
+      <template v-if="second"> · {{ second }}</template>
+    </p>
     <ol class="week" :aria-label="t('report.rhythm.weekdaysTitle')">
       <li v-for="day in week" :key="day.index" class="week__day">
         <i
@@ -108,30 +100,6 @@ const second = computed(() => {
 </template>
 
 <style scoped>
-/* The answer: the role with its icon, the peak window and the busiest day under it. */
-.role {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.role__icon {
-  --icon-size: var(--icon-lg);
-  flex: none;
-  color: var(--heat-4);
-}
-
-.role__copy {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.role__name {
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
-}
-
 .role__text {
   color: var(--text-muted);
   font: var(--text-small);
