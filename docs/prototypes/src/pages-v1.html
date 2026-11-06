@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Главная, приватность, аккаунт — варианты</title>
+    <link rel="stylesheet" href="../../../apps/web/node_modules/@fontsource-variable/geist/index.css" />
+    <link rel="stylesheet" href="../../../apps/web/app/assets/styles/tokens.css" />
+    <link rel="stylesheet" href="report-v2.css" />
+    <link rel="stylesheet" href="report-v3-review.css" />
+    <link rel="stylesheet" href="pages-v1.css" />
+  </head>
+  <body>
+    <main class="review" style="max-width: 1560px">
+      <header class="review__head">
+        <h1>Главная, приватность, аккаунт</h1>
+        <p>
+          По три варианта на страницу, каждый на ПК (1100 px) и на телефоне (390 px). Все на текущей дизайн-системе: те
+          же токены, плитки, пульс тонкими линиями. Данные — демо. Ответ буквами: «Главная Б, Приватность А…».
+        </p>
+        <ol class="toc">
+          <li><a href="#home">Главная кабинета</a></li>
+          <li><a href="#privacy">Приватность</a></li>
+          <li><a href="#account">Аккаунт с устройствами</a></li>
+        </ol>
+      </header>
+
+      <section class="problem" id="home">
+        <h2>1. Главная кабинета</h2>
+        <div class="why">
+          <p>
+            Главная отвечает на два вопроса: «что я уже узнал» и «что ещё разобрать». Сейчас «Чарт месяца» и отчёты —
+            две похожие сетки; карточки отчётов показывают число и пульс, но не говорят ничего о чате.
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Как сейчас, но собранно</figcaption>
+            <p class="note">
+              Чарт месяца ink-плиткой, одна лаймовая полоса «Ещё не разобран» с лидером неразобранных, карточки отчётов
+              получают ответ одной фразой («Пишете на равных»). Минимум переделки.
+            </p>
+            <div class="frames" data-screen="home-a"></div>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Б</b> Итог месяца сверху <em>рекомендую</em></figcaption>
+            <p class="note">
+              Главная как сводка: сколько вы переписывались в этом месяце и с кем больше всего. Ниже рядом «Чарт месяца»
+              и «Ещё не разобраны» с кнопками, отчёты — строками с пульсом. Отвечает на оба вопроса на первом экране.
+            </p>
+            <div class="frames" data-screen="home-b"></div>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>В</b> Полка отчётов</figcaption>
+            <p class="note">
+              Чарт месяца — пять плиток-мест, отчёты — крупные постеры с главным числом и ответом (как обложки
+              «Итогов»), первый — лаймовый. Ярче, но длиннее.
+            </p>
+            <div class="frames" data-screen="home-c"></div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="problem" id="privacy">
+        <h2>2. Приватность</h2>
+        <div class="why">
+          <p>
+            Сейчас шесть одинаковых плиток и аккордеон: всё весит одинаково, главное обещание («тексты не храним»)
+            теряется. Тексты — те же, что на сайте, ничего нового не обещаем.
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Тезис и таблица <em>рекомендую</em></figcaption>
+            <p class="note">
+              Заголовок — само обещание. Таблица «данные × читаем × храним × сколько» отвечает на всё сразу, ниже две
+              кнопки-инструкции и вопросы.
+            </p>
+            <div class="frames" data-screen="privacy-a"></div>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Б</b> Путь чата</figcaption>
+            <p class="note">
+              Пять шагов от входа до отчёта, лаймовый шаг — единственное, что сохраняется. На ПК слева оглавление.
+            </p>
+            <div class="frames" data-screen="privacy-b"></div>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>В</b> Плитки с иерархией</figcaption>
+            <p class="note">
+              Ближе к текущей странице: главное обещание — большой ink-плиткой, остальные три — строками рядом.
+            </p>
+            <div class="frames" data-screen="privacy-c"></div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="problem" id="account">
+        <h2>3. Аккаунт: расширить и добавить устройства</h2>
+        <div class="why">
+          <p>
+            Новое: профиль с замаскированным номером, «Устройства» (где открыт TG Analyzer, завершить один или все),
+            «Telegram» (наш сеанс в Telegram и два переключателя, которые уже есть в базе: отключаться после анализа и
+            писать в бот), «Данные». Для устройств нужна миграция: у `refresh_sessions` нет названия устройства и
+            последнего входа — добавить `user_agent`, `last_used_at` (и город по IP, если захотим). «Завершить» =
+            отозвать семейство токенов, это уже умеет `refresh-sessions.ts`.
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Группы карточками <em>рекомендую</em></figcaption>
+            <p class="note">
+              Профиль, затем четыре группы в две колонки (на телефоне — столбиком), внизу выход и удаление.
+            </p>
+            <div class="frames" data-screen="account-a"></div>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Б</b> Разделы слева</figcaption>
+            <p class="note">
+              На ПК — меню разделов и один раздел справа (на картинке открыты «Устройства»). На телефоне — список
+              разделов, каждый открывается своим экраном, как настройки iOS.
+            </p>
+            <div class="frames" data-screen="account-b"></div>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>В</b> Сводка сверху</figcaption>
+            <p class="note">
+              Три плитки-итога (отчёты, «не храним», устройства), устройства на всю ширину, ниже Telegram и оформление.
+            </p>
+            <div class="frames" data-screen="account-c"></div>
+          </figure>
+        </div>
+      </section>
+    </main>
+
+    <div class="proto">
+      <button data-set-theme="light" class="on">Светлая</button><button data-set-theme="dark">Тёмная</button>
+    </div>
+    <script src="report-v2.js"></script>
+    <script src="pages-v1.js"></script>
+  </body>
+</html>
