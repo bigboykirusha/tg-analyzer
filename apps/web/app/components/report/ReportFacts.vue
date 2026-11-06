@@ -25,7 +25,7 @@ const cols = computed(() => Math.max(1, Math.min(props.columns, props.facts.leng
 <style scoped>
 .facts {
   display: grid;
-  gap: var(--space-5) var(--space-6);
+  gap: var(--space-4) var(--space-6);
 }
 
 .facts--1 {
@@ -57,8 +57,8 @@ const cols = computed(() => Math.max(1, Math.min(props.columns, props.facts.leng
 /* A label may take two lines; the values of one row still sit on one baseline. */
 .fact__value {
   margin-top: auto;
-  font: var(--text-h3);
-  letter-spacing: var(--tracking-h3);
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
   overflow-wrap: anywhere;
 }
 
@@ -69,10 +69,6 @@ const cols = computed(() => Math.max(1, Math.min(props.columns, props.facts.leng
 
   .facts--3 > .fact:last-child:nth-child(odd) {
     grid-column: 1 / -1;
-  }
-
-  .fact__value {
-    font: var(--text-h3);
   }
 }
 </style>

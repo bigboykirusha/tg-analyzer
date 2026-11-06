@@ -117,6 +117,12 @@ svg.lucide {
 
 /* ─── Typography: one scale, see tokens.css ──────────────────────────────── */
 
+/* Two weights only: emphasis is 500, never the browser's bold. */
+b,
+strong {
+  font-weight: 500;
+}
+
 /* The page title: one per page, always through UiPageHeader. */
 .t-h1 {
   font: var(--text-h1);

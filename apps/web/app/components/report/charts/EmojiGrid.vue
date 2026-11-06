@@ -31,13 +31,13 @@ const { t, formatNumber } = useI18n()
 }
 
 .emoji-value {
-  font-size: 28px;
-  line-height: 36px;
+  font-size: var(--emoji-size);
+  line-height: 1;
 }
 
 .emoji-count {
   color: var(--text-muted);
-  font: var(--text-ui);
+  font: var(--text-small);
 }
 
 .emoji-empty {

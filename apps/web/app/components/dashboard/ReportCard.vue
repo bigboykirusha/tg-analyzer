@@ -18,9 +18,20 @@ const subline = computed(() => {
   return [isGroup.value ? t('chatType.group') : null, period].filter(Boolean).join(' · ')
 })
 /** Summaries cached before pulses existed have none. */
-const pulse = computed(() =>
-  props.report.pulse?.some((week) => week.sent || week.received) ? props.report.pulse : null,
-)
+/** The weekly pulse as at most 26 bars, the way the report's top tile draws it. */
+const MAX_BARS = 26
+const pulse = computed(() => {
+  const weeks = props.report.pulse
+  if (!weeks?.some((week) => week.sent || week.received)) return null
+  const size = Math.ceil(weeks.length / MAX_BARS)
+  const bars: { sent: number; received: number }[] = []
+  weeks.forEach((week, index) => {
+    if (index % size === 0) bars.push({ sent: 0, received: 0 })
+    bars[bars.length - 1]!.sent += week.sent
+    bars[bars.length - 1]!.received += week.received
+  })
+  return bars
+})
 /** Keep report size and freshness on separate lines on a phone. */
 const line = computed(() =>
   [isGroup.value ? t('chatType.group') : null, tc('common.messagesCount', props.report.totalMessages)]
@@ -55,6 +66,7 @@ const updated = computed(() =>
       class="report-card__pulse"
       :days="pulse"
       :height="36"
+      bars
       :label="t('dashboard.pulseLabel')"
     />
     <span class="report-card__foot">

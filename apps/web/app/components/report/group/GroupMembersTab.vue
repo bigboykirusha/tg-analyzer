@@ -133,13 +133,14 @@ watch(isMobile, () => {
 
 .member__name {
   overflow: hidden;
-  font-weight: 500;
+  font: var(--text-title);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .member__share {
   color: var(--text-muted);
+  font: var(--text-title);
 }
 
 .member__chevron {

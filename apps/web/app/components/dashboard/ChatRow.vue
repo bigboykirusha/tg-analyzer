@@ -181,7 +181,7 @@ function run(action: 'analyse' | 'delete') {
 
 .chat-row__title {
   overflow: hidden;
-  font: var(--text-ui);
+  font: var(--text-title);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

@@ -187,8 +187,7 @@ onMounted(() => {
 .group__title {
   padding-inline: var(--space-1);
   color: var(--text-muted);
-  font: var(--text-small);
-  font-weight: 500;
+  font: var(--text-caption);
 }
 
 .group__card {
