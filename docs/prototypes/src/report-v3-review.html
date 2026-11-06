@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Отчёт — ревью, раунд 3</title>
+    <link rel="stylesheet" href="../../../apps/web/node_modules/@fontsource-variable/geist/index.css" />
+    <link rel="stylesheet" href="../../../apps/web/app/assets/styles/tokens.css" />
+    <link rel="stylesheet" href="report-v2.css" />
+    <link rel="stylesheet" href="report-v3-review.css" />
+  </head>
+  <body>
+    <main class="review">
+      <header class="review__head">
+        <h1>Отчёт — свежий взгляд, раунд 3</h1>
+        <p>
+          Прошёлся по демо-отчёту (Аня) и по вашему реальному отчёту. Ниже 10 мест: сначала что не так и почему, потом
+          варианты. Каждый вариант нарисован в ширину карточки на ПК и на телефоне 358 px. Буквы вариантов — для ответа
+          («1Б, 2А…»).
+        </p>
+        <ol class="toc">
+          <li><a href="#p1">Пульс и «Объём переписки» — одно и то же</a></li>
+          <li><a href="#p2">«Активность по дням» не держит ширину</a></li>
+          <li><a href="#p3">Ноль рисуется точкой</a></li>
+          <li><a href="#p4">«Любимые эмодзи»</a></li>
+          <li><a href="#p5">«Ваш словарь»: мусорные слова и точки</a></li>
+          <li><a href="#p6">«Слово переписки» режется посреди буквы</a></li>
+          <li><a href="#p7">«Голосовые» без ответа и дырка в колонках</a></li>
+          <li><a href="#p8">Легенда в шапке и пульс-«штрихкод»</a></li>
+          <li><a href="#p9">Стикеры: чьи они?</a></li>
+          <li><a href="#p10">Мелочи: ответы и подписи</a></li>
+          <li><a href="#p11">Голос — три карточки подряд</a></li>
+        </ol>
+      </header>
+
+      <!-- 1 ─────────────────────────────────────────────── -->
+      <section class="problem" id="p1">
+        <h2>1. Пульс и «Объём переписки» показывают одно и то же</h2>
+        <div class="why">
+          <p>
+            Пульс в шапке — сообщения по неделям за всё время. «Объём переписки» в начале «Времени» — снова сообщения по
+            неделям за всё время, только линией и на 500 px высоты. Это самая большая карточка отчёта, и у неё нет
+            ответа (нарушает анатомию «вопрос → ответ → картинка»). На телефоне последняя подпись оси обрезана («15
+            сент»), а при первой отрисовке график может сжаться в полоску 40 px — ECharts мерит ширину до раскладки.
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Убрать карточку, факты — под пульс в шапке <em>рекомендую</em></figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile tile--ink">
+                  <div class="tile__head">
+                    <h3 class="q">Сообщения</h3>
+                    <div class="legend"><span class="key">Вы</span><span class="key key--them">Аня</span></div>
+                  </div>
+                  <div class="figure num">5 078</div>
+                  <svg class="pulse-svg" data-pulse="26" viewBox="0 0 520 64" preserveAspectRatio="none"></svg>
+                  <div class="axis caption num"><span>март 2026</span><span>сентябрь 2026</span></div>
+                  <dl class="facts facts--ink num">
+                    <div>
+                      <dt>Самый активный</dt>
+                      <dd>июль</dd>
+                    </div>
+                    <div>
+                      <dt>3 месяца</dt>
+                      <dd>стабильно</dd>
+                    </div>
+                    <div>
+                      <dt>Пропусков</dt>
+                      <dd>12 дней</dd>
+                    </div>
+                  </dl>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile tile--ink">
+                  <div class="tile__head">
+                    <h3 class="q">Сообщения</h3>
+                    <div class="legend"><span class="key">Вы</span><span class="key key--them">Аня</span></div>
+                  </div>
+                  <div class="figure num">5 078</div>
+                  <svg class="pulse-svg" data-pulse="26" viewBox="0 0 320 56" preserveAspectRatio="none"></svg>
+                  <div class="axis caption num"><span>март</span><span>сент.</span></div>
+                  <dl class="facts facts--ink facts--list num">
+                    <div>
+                      <dt>Самый активный</dt>
+                      <dd>июль</dd>
+                    </div>
+                    <div>
+                      <dt>3 месяца</dt>
+                      <dd>стабильно</dd>
+                    </div>
+                  </dl>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              «Время» начинается сразу с «Ваше время». Минус одна карточка на 500 px, минус ECharts на этой странице.
+            </p>
+          </figure>
+
+          <figure class="variant">
+            <figcaption><b>Б</b> Оставить, но как ответ: месяцы столбиками</figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Как менялась переписка</h3>
+                  <p class="answer">Ровно, с пиком в июле</p>
+                  <svg
+                    class="bars-svg"
+                    data-months="мар,апр,май,июн,июл,авг,сен"
+                    data-values="790,700,610,520,960,820,680"
+                    viewBox="0 0 520 120"
+                  ></svg>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Как менялась переписка</h3>
+                  <p class="answer">Ровно, с пиком в июле</p>
+                  <svg
+                    class="bars-svg"
+                    data-months="мар,апр,май,июн,июл,авг,сен"
+                    data-values="790,700,610,520,960,820,680"
+                    viewBox="0 0 310 110"
+                  ></svg>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              Месяц, а не неделя: пульс уже показывает дробную картину, здесь — крупная. Пик лаймом, остальное
+              нейтральным.
+            </p>
+          </figure>
+
+          <figure class="variant">
+            <figcaption><b>В</b> Оставить линию, но 160 px и с ответом</figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Объём переписки</h3>
+                  <p class="answer">Последние 3 месяца — стабильно</p>
+                  <svg class="area-svg" viewBox="0 0 520 120" preserveAspectRatio="none"></svg>
+                  <div class="axis caption num"><span>3 марта</span><span>июль — пик</span><span>сегодня</span></div>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Объём переписки</h3>
+                  <p class="answer">Последние 3 месяца — стабильно</p>
+                  <svg class="area-svg" viewBox="0 0 310 100" preserveAspectRatio="none"></svg>
+                  <div class="axis caption num"><span>3 марта</span><span>сегодня</span></div>
+                </article>
+              </div>
+            </div>
+            <p class="note">Без шкалы 0–300: точные значения тут никому не нужны, нужна форма.</p>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 2 ─────────────────────────────────────────────── -->
+      <section class="problem" id="p2">
+        <h2>2. «Активность по дням» не держит ширину</h2>
+        <div class="why">
+          <p>
+            На ПК сетка занимает ~55 % карточки, справа пусто, легенда уехала в угол. На телефоне — горизонтальная
+            прокрутка со стрелками, первая колонка обрезана («июнь» срезан), ряды Вт/Чт/Сб без подписей. Пояснение
+            «Каждая клетка — день: чем ярче…» занимает две строки и дублирует легенду.
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Календарь месяцами <em>рекомендую</em></figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Активность по дням</h3>
+                  <p class="answer">Не пропали ни одной недели</p>
+                  <div class="months" data-cal="7"></div>
+                  <div class="heat-legend caption">
+                    <span>Тише</span><i></i><i></i><i></i><i></i><i></i><span>Больше</span>
+                  </div>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Активность по дням</h3>
+                  <p class="answer">Не пропали ни одной недели</p>
+                  <div class="months months--m" data-cal="6"></div>
+                  <div class="heat-legend caption">
+                    <span>Тише</span><i></i><i></i><i></i><i></i><i></i><span>Больше</span>
+                  </div>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              Каждый месяц — свой маленький календарь (7 столбцов-дней недели). На ПК — в ряд, на телефоне — по 3 в ряд,
+              последние 6 месяцев без прокрутки. Даты читаются как в обычном календаре.
+            </p>
+          </figure>
+
+          <figure class="variant">
+            <figcaption><b>Б</b> Та же сетка, но на всю ширину</figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Активность по дням</h3>
+                  <p class="answer">Не пропали ни одной недели</p>
+                  <div class="gh" data-weeks="28"></div>
+                  <div class="heat-legend caption">
+                    <span>Тише</span><i></i><i></i><i></i><i></i><i></i><span>Больше</span>
+                  </div>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Активность по дням</h3>
+                  <p class="answer">Не пропали ни одной недели</p>
+                  <div class="gh" data-weeks="16"></div>
+                  <div class="heat-legend caption">
+                    <span>Тише</span><i></i><i></i><i></i><i></i><i></i><span>Больше</span>
+                  </div>
+                </article>
+              </div>
+            </div>
+            <p class="note">Клетки тянутся под ширину. На телефоне — последние 16 недель целиком, без стрелок.</p>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 3 ─────────────────────────────────────────────── -->
+      <section class="problem" id="p3">
+        <h2>3. Ноль рисуется точкой</h2>
+        <div class="why">
+          <p>
+            У полоски сравнения минимальная ширина 6 px, поэтому «0» выглядит как маленький кусочек: «134 ━━━━━━━ • 0».
+            Видно в «Доброе утро», в эмодзи (❤️ 0 · 214) и будет в любом одностороннем случае. Глаз читает точку как
+            «немного».
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>Сейчас</b></figcaption>
+            <div class="frames">
+              <div class="frame frame--d frame--s">
+                <article class="tile">
+                  <div class="row">
+                    <div class="row__head"><i data-icon="sun"></i>Доброе утро</div>
+                    <div data-line="134|0|134|0"></div>
+                  </div>
+                  <div class="row">
+                    <div class="row__head"><i data-icon="moon"></i>Спокойной ночи</div>
+                    <div data-line="111|119|111|119"></div>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>А</b> Ноль — без отрезка и с «—» <em>рекомендую</em></figcaption>
+            <div class="frames">
+              <div class="frame frame--d frame--s">
+                <article class="tile">
+                  <div class="row">
+                    <div class="row__head"><i data-icon="sun"></i>Доброе утро</div>
+                    <div class="line">
+                      <span>134</span>
+                      <div class="split"><b style="flex-grow: 1"></b></div>
+                      <span>—</span>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="row__head"><i data-icon="moon"></i>Спокойной ночи</div>
+                    <div data-line="111|119|111|119"></div>
+                  </div>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              Правка в одном месте — <code>ReportLine</code>: сторона с нулём не рисуется, на конце «—». Если обе
+              стороны нули — строку не показываем.
+            </p>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Б</b> Односторонний случай — фраза вместо полоски</figcaption>
+            <div class="frames">
+              <div class="frame frame--d frame--s">
+                <article class="tile">
+                  <div class="row">
+                    <div class="row__head"><i data-icon="sun"></i>Доброе утро</div>
+                    <p class="small">Только вы · 134 раза</p>
+                  </div>
+                  <div class="row">
+                    <div class="row__head"><i data-icon="moon"></i>Спокойной ночи</div>
+                    <div data-line="111|119|111|119"></div>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 4 ─────────────────────────────────────────────── -->
+      <section class="problem" id="p4">
+        <h2>4. «Любимые эмодзи»</h2>
+        <div class="why">
+          <p>
+            Две колонки по три строки: на ПК полоски по 450 px — сравнивать длинные полоски через всю карточку тяжело,
+            глаз прыгает. Число прилипает к эмодзи («😂118»). Нули — точки (см. п. 3). Нет ответа: что из этого следует?
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Плитки эмодзи <em>рекомендую</em></figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Любимые эмодзи</h3>
+                  <p class="answer">Общий — 😂, остальные у каждого свои</p>
+                  <div class="emo-tiles" data-emo></div>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Любимые эмодзи</h3>
+                  <p class="answer">Общий — 😂, остальные у каждого свои</p>
+                  <div class="emo-tiles emo-tiles--m" data-emo></div>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              Эмодзи крупно, под ним «118 · 327» и короткая полоска. 6 штук — ряд на ПК, 3×2 на телефоне.
+            </p>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Б</b> Одна колонка, полоски в половину ширины</figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Любимые эмодзи</h3>
+                  <p class="answer">Общий — 😂, остальные у каждого свои</p>
+                  <div class="emo-rows" data-emo-rows></div>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Любимые эмодзи</h3>
+                  <p class="answer">Общий — 😂, остальные у каждого свои</p>
+                  <div class="emo-rows" data-emo-rows></div>
+                </article>
+              </div>
+            </div>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>В</b> Как словарь: чьи эмодзи</figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Любимые эмодзи</h3>
+                  <p class="answer">Общий — 😂, остальные у каждого свои</p>
+                  <div class="owners2">
+                    <div class="own">
+                      <span class="avatar avatar--you">Я</span
+                      ><span class="emo-line">👍 <small>123</small> ☀️ <small>134</small> 😂 <small>118</small></span>
+                    </div>
+                    <div class="own">
+                      <span class="avatar">А</span
+                      ><span class="emo-line">❤️ <small>214</small> 😴 <small>124</small> 😅 <small>87</small></span>
+                    </div>
+                    <div class="own own--shared">
+                      <span class="caption">Общие</span
+                      ><span class="emo-line">😂 <small>445</small> ☀️ <small>244</small></span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Любимые эмодзи</h3>
+                  <p class="answer">Общий — 😂, остальные у каждого свои</p>
+                  <div class="owners2">
+                    <div class="own">
+                      <span class="avatar avatar--you">Я</span
+                      ><span class="emo-line">👍 <small>123</small> ☀️ <small>134</small> 😂 <small>118</small></span>
+                    </div>
+                    <div class="own">
+                      <span class="avatar">А</span
+                      ><span class="emo-line">❤️ <small>214</small> 😴 <small>124</small> 😅 <small>87</small></span>
+                    </div>
+                    <div class="own own--shared">
+                      <span class="caption">Общие</span
+                      ><span class="emo-line">😂 <small>445</small> ☀️ <small>244</small></span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              Та же логика, что у «Ваш словарь» (<code>splitVocabulary</code> уже умеет). Две карточки «О чём» станут
+              парой.
+            </p>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 5 ─────────────────────────────────────────────── -->
+      <section class="problem" id="p5">
+        <h2>5. «Ваш словарь»: мусорные слова и лишние точки</h2>
+        <div class="why">
+          <p>
+            В словаре «которую», «семи», «девять», «прошел» — стоп-слова сравниваются как есть, поэтому «который»
+            отсеивается, а «которую» нет; числа словами тоже проходят. Точка перед каждым чипом повторяет аватар слева.
+            Строки «Общие» нет, когда общих слов мало, — карточка тогда выглядит иначе, чем в прототипе. Пояснение «Слов
+            в сообщении: вы — 3,9» к словарю не относится.
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Чище: без точек, три строки всегда <em>рекомендую</em></figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Ваш словарь</h3>
+                  <p class="answer">Вы — про кино, Аня — про кофейни</p>
+                  <div class="owners2">
+                    <div class="own">
+                      <span class="avatar avatar--you">Я</span>
+                      <div class="chips num">
+                        <span class="chip">вечером <small>153</small></span
+                        ><span class="chip">посмотрим <small>153</small></span
+                        ><span class="chip">фильм <small>153</small></span
+                        ><span class="chip">проект <small>149</small></span
+                        ><span class="chip">кофе <small>138</small></span
+                        ><span class="chip">книгу <small>134</small></span>
+                      </div>
+                    </div>
+                    <div class="own">
+                      <span class="avatar">А</span>
+                      <div class="chips num">
+                        <span class="chip">немного <small>150</small></span
+                        ><span class="chip">нормально <small>150</small></span
+                        ><span class="chip">устала <small>150</small></span
+                        ><span class="chip">кофейни <small>138</small></span
+                        ><span class="chip">пришлю <small>129</small></span
+                        ><span class="chip">наконец-то <small>126</small></span>
+                      </div>
+                    </div>
+                    <div class="own own--shared">
+                      <span class="caption">Общие</span>
+                      <div class="chips num">
+                        <span class="chip">утром <small>412</small></span
+                        ><span class="chip">сегодня <small>301</small></span
+                        ><span class="chip">завтра <small>288</small></span
+                        ><span class="chip">спасибо <small>190</small></span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Ваш словарь</h3>
+                  <p class="answer">Вы — про кино, Аня — про кофейни</p>
+                  <div class="owners2">
+                    <div class="own">
+                      <span class="avatar avatar--you">Я</span>
+                      <div class="chips num">
+                        <span class="chip">вечером <small>153</small></span
+                        ><span class="chip">посмотрим <small>153</small></span
+                        ><span class="chip">фильм <small>153</small></span
+                        ><span class="chip">проект <small>149</small></span>
+                      </div>
+                    </div>
+                    <div class="own">
+                      <span class="avatar">А</span>
+                      <div class="chips num">
+                        <span class="chip">немного <small>150</small></span
+                        ><span class="chip">устала <small>150</small></span
+                        ><span class="chip">кофейни <small>138</small></span
+                        ><span class="chip">пришлю <small>129</small></span>
+                      </div>
+                    </div>
+                    <div class="own own--shared">
+                      <span class="caption">Общие</span>
+                      <div class="chips num">
+                        <span class="chip">утром <small>412</small></span
+                        ><span class="chip">сегодня <small>301</small></span
+                        ><span class="chip">завтра <small>288</small></span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              Данные: стоп-слова по основе (первые 5 букв: «котор», «котор-ую»), числительные в стоп-лист. На телефоне —
+              4 слова в строке вместо 8, чтобы карточка не была на 400 px. Ответ-фраза — только если словам есть ярлык;
+              иначе без ответа.
+            </p>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Б</b> Две колонки-рейтинга</figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Ваш словарь</h3>
+                  <div class="rank2">
+                    <div>
+                      <div class="rank__head"><span class="avatar avatar--you">Я</span>Только вы</div>
+                      <ol class="rank num">
+                        <li><span>вечером</span><small>153</small></li>
+                        <li><span>посмотрим</span><small>153</small></li>
+                        <li><span>фильм</span><small>153</small></li>
+                        <li><span>проект</span><small>149</small></li>
+                        <li><span>кофе</span><small>138</small></li>
+                      </ol>
+                    </div>
+                    <div>
+                      <div class="rank__head"><span class="avatar">А</span>Только Аня</div>
+                      <ol class="rank num">
+                        <li><span>немного</span><small>150</small></li>
+                        <li><span>нормально</span><small>150</small></li>
+                        <li><span>устала</span><small>150</small></li>
+                        <li><span>кофейни</span><small>138</small></li>
+                        <li><span>пришлю</span><small>129</small></li>
+                      </ol>
+                    </div>
+                  </div>
+                  <p class="small"><span class="muted">Общие:</span> утром · сегодня · завтра · спасибо</p>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Ваш словарь</h3>
+                  <div class="rank2">
+                    <div>
+                      <div class="rank__head"><span class="avatar avatar--you">Я</span>Только вы</div>
+                      <ol class="rank num">
+                        <li><span>вечером</span><small>153</small></li>
+                        <li><span>посмотрим</span><small>153</small></li>
+                        <li><span>фильм</span><small>153</small></li>
+                      </ol>
+                    </div>
+                    <div>
+                      <div class="rank__head"><span class="avatar">А</span>Только Аня</div>
+                      <ol class="rank num">
+                        <li><span>немного</span><small>150</small></li>
+                        <li><span>устала</span><small>150</small></li>
+                        <li><span>кофейни</span><small>138</small></li>
+                      </ol>
+                    </div>
+                  </div>
+                  <p class="small"><span class="muted">Общие:</span> утром · сегодня · завтра</p>
+                </article>
+              </div>
+            </div>
+            <p class="note">Читается как два чарта, на телефоне тоже две колонки по 3 слова.</p>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 6 ─────────────────────────────────────────────── -->
+      <section class="problem" id="p6">
+        <h2>6. «Слово переписки» режется посреди буквы</h2>
+        <div class="why">
+          <p>
+            Стена повторяет слово до конца строки и обрезает по краю: «УТРОМ УТРОМ УТ». В реальном чате слово «хз» —
+            стена из 48 «ХЗ» читается как шум, а хороший факт «1 210 раз за всё время» стоит мелким пояснением. Маска
+            затемняет край, но обрубок всё равно читается. И сама стена — 3 строки на ~170 px ради одного слова, без
+            числа и без контекста.
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Только целые слова, по центру строки</figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile tile--ink">
+                  <h3 class="q">Слово вашей переписки</h3>
+                  <div class="wall2" data-wall="утром"></div>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile tile--ink">
+                  <h3 class="q">Слово вашей переписки</h3>
+                  <div class="wall2" data-wall="утром"></div>
+                </article>
+              </div>
+            </div>
+            <p class="note">Строка заполняется целыми словами, остаток делится на пробелы. Ничего не режется.</p>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Б</b> Слово + «серебро и бронза» <em>рекомендую</em></figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile tile--ink">
+                  <h3 class="q">Слово вашей переписки</h3>
+                  <p class="word-big">утром</p>
+                  <p class="word-runners num">
+                    <span>2 · сегодня</span><span>3 · завтра</span><span>4 · спасибо</span>
+                  </p>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile tile--ink">
+                  <h3 class="q">Слово вашей переписки</h3>
+                  <p class="word-big">утром</p>
+                  <p class="word-runners num">
+                    <span>2 · сегодня</span><span>3 · завтра</span><span>4 · спасибо</span>
+                  </p>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              Слово в размере главного числа (72/56, как «5 078»), не больше. Под ним — места 2–4. Строчными: заглавные
+              кричат.
+            </p>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 7 ─────────────────────────────────────────────── -->
+      <section class="problem" id="p7">
+        <h2>7. «Голосовые» без ответа и дырка в колонках «Вы двое»</h2>
+        <div class="why">
+          <p>
+            Когда голосовых мало (нет альбома и самого длинного), остаётся карточка «Голосовые» с одной полоской «82 ━━
+            74» — без ответа и без единиц: 82 чего? Она короткая, и левая колонка заканчивается на 100 px раньше правой.
+            Рядом ещё строка «Нет в этом чате: реакции, стикеры» — служебная, её можно не показывать вовсе.
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Голосовые — третьей строкой в «Ваших привычках» <em>рекомендую</em></figcaption>
+            <div class="frames">
+              <div class="frame frame--d frame--s">
+                <article class="tile tile--grey">
+                  <h3 class="q">Ваши привычки</h3>
+                  <div class="rows">
+                    <div class="row">
+                      <div class="row__head">Начинаете разговор · чаще вы</div>
+                      <div data-line="73|27"></div>
+                    </div>
+                    <div class="row">
+                      <div class="row__head">Смеётесь · чаще Аня</div>
+                      <div data-line="234|314|234|314"></div>
+                    </div>
+                    <div class="row">
+                      <div class="row__head">Голосовые · поровну</div>
+                      <div data-line="82|74|82|74"></div>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              Отдельная карточка голосовых остаётся только с альбомом (≥ 30 минут). Строку «Нет в этом чате…» убрать.
+            </p>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Б</b> Карточка с ответом</figcaption>
+            <div class="frames">
+              <div class="frame frame--d frame--s">
+                <article class="tile">
+                  <h3 class="q">Голосовые</h3>
+                  <p class="answer">Поровну — 82 и 74</p>
+                  <div data-line="82|74|82|74"></div>
+                </article>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 8 ─────────────────────────────────────────────── -->
+      <section class="problem" id="p8">
+        <h2>8. Легенда в шапке и пульс-«штрихкод»</h2>
+        <div class="why">
+          <p>
+            Легенда «Сообщения ▮ Вы ▮ Аня» — вертикальные палочки разной высоты, лаймовая ниже белой; везде в отчёте
+            легенда — точки. На вашем реальном чате за год пульс превращается в штрихкод из тонких линий: столбики по
+            неделям слишком узкие на длинном периоде.
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Легенда точками, пульс — не больше 40 столбиков <em>рекомендую</em></figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile tile--ink">
+                  <div class="tile__head">
+                    <h3 class="q">Сообщения</h3>
+                    <div class="legend"><span class="key">Вы</span><span class="key key--them">Маша</span></div>
+                  </div>
+                  <div class="figure num">59 590</div>
+                  <svg class="pulse-svg" data-pulse="40" viewBox="0 0 520 64" preserveAspectRatio="none"></svg>
+                  <div class="axis caption num"><span>октябрь 2025</span><span>ноябрь 2026</span></div>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile tile--ink">
+                  <div class="tile__head">
+                    <h3 class="q">Сообщения</h3>
+                    <div class="legend"><span class="key">Вы</span><span class="key key--them">Маша</span></div>
+                  </div>
+                  <div class="figure num">59 590</div>
+                  <svg class="pulse-svg" data-pulse="26" viewBox="0 0 320 56" preserveAspectRatio="none"></svg>
+                  <div class="axis caption num"><span>окт. 2025</span><span>нояб. 2026</span></div>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              Шаг пульса выбирается от длины: неделя до полугода, две недели до года, месяц дальше. Столбик не уже 6 px.
+            </p>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Сейчас</b> (реальный чат, год)</figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile tile--ink">
+                  <div class="tile__head">
+                    <h3 class="q">Сообщения</h3>
+                    <div class="legend legend--ticks"><span>Вы</span><span class="t">Маша</span></div>
+                  </div>
+                  <div class="figure num">59 590</div>
+                  <svg
+                    class="pulse-svg pulse-svg--thin"
+                    data-pulse="56"
+                    viewBox="0 0 520 64"
+                    preserveAspectRatio="none"
+                  ></svg>
+                  <div class="axis caption num"><span>октябрь 2025</span><span>ноябрь 2026</span></div>
+                </article>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 9 ─────────────────────────────────────────────── -->
+      <section class="problem" id="p9">
+        <h2>9. Стикеры: чьи они?</h2>
+        <div class="why">
+          <p>
+            В реальном чате: ответ «Стикерами — на равных», под ним 8 стикеров с числами — непонятно, кто какой шлёт, а
+            итоговая полоска «213 ━━ 248» внизу без подписей сторон. Сетка 6 + 2 оставляет сирот во втором ряду.
+            Пояснение «192 разных стикера из 38 наборов» — хороший факт, но он серый и мелкий.
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Две строки: ваши и её <em>рекомендую</em></figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Стикеры</h3>
+                  <p class="answer">На равных — 192 разных из 38 наборов</p>
+                  <div class="owners2">
+                    <div class="own">
+                      <span class="avatar avatar--you">Я</span>
+                      <div class="stk" data-stk="😭,🥹,🤯,😵‍💫" data-n="24,15,11,7"></div>
+                    </div>
+                    <div class="own">
+                      <span class="avatar">М</span>
+                      <div class="stk" data-stk="🙂,😭,🐱,🥺" data-n="15,13,12,10"></div>
+                    </div>
+                  </div>
+                  <div data-line="51|49"></div>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Стикеры</h3>
+                  <p class="answer">На равных — 192 разных из 38 наборов</p>
+                  <div class="owners2">
+                    <div class="own">
+                      <span class="avatar avatar--you">Я</span>
+                      <div class="stk" data-stk="😭,🥹,🤯,😵‍💫" data-n="24,15,11,7"></div>
+                    </div>
+                    <div class="own">
+                      <span class="avatar">М</span>
+                      <div class="stk" data-stk="🙂,😭,🐱,🥺" data-n="15,13,12,10"></div>
+                    </div>
+                  </div>
+                  <div data-line="51|49"></div>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              По 4 стикера на сторону — ряд всегда полный, и на телефоне тоже. Эмодзи тут вместо картинок стикеров.
+            </p>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Б</b> Одна сетка 4×2, у каждого стикера аватар отправителя</figcaption>
+            <div class="frames">
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Стикеры</h3>
+                  <p class="answer">На равных — 192 разных из 38 наборов</p>
+                  <div
+                    class="stk stk--grid"
+                    data-stk="😭,🙂,🥹,😭,🐱,🤯,🥺,😵‍💫"
+                    data-n="24,15,15,13,12,11,10,7"
+                    data-who="я,м,я,м,м,я,м,я"
+                  ></div>
+                </article>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 10 ─────────────────────────────────────────────── -->
+      <section class="problem" id="p10">
+        <h2>10. Мелочи: ответы и подписи</h2>
+        <div class="why">
+          <ul class="fixes">
+            <li>
+              <b>«Доброе утро и спокойной ночи»</b>: «Чаще вы — 245 из 364» — непонятно, что из чего. → «Чаще желаете
+              вы: 245 раз, Аня — 119».
+            </li>
+            <li>
+              <b>«Ваши рекорды»</b>: цепочка точек есть только у первой плашки, плашки разной высоты по смыслу; «кто
+              прервал: вы» → «прервали вы».
+            </li>
+            <li>
+              <b>«Ваше время»</b>: в легенде «пик» тёмно-зелёной точкой почти не виден в тёмной теме; полоса частей
+              суток под часами повторяет те же данные. → убрать «пик» из легенды (подсветка и так объяснена пояснением
+              «Пик — 19:00–22:00»).
+            </li>
+            <li>
+              <b>«Кто задаёт вопросы»</b> в реальном чате: 135 квадратов — плотный блок на 6 строк. При шаге «один
+              квадрат — 10» больше 100 квадратов стоит переходить на шаг 20.
+            </li>
+            <li>
+              <b>«Кто отвечает быстрее»</b> при «8 с / 7 с» показывает «Отвечаете синхронно» — хорошо; но полоска 53/47
+              рядом выглядит как перевес. При паритете полоска лишняя → только ответ и «8 с · 7 с».
+            </li>
+          </ul>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>Пример</b> «Кто отвечает быстрее» при паритете</figcaption>
+            <div class="frames">
+              <div class="frame frame--d frame--s">
+                <article class="tile">
+                  <h3 class="q">Кто отвечает быстрее</h3>
+                  <p class="hint">Ночь и долгие паузы не считаются медленным ответом</p>
+                  <p class="answer">Отвечаете синхронно</p>
+                  <p class="pair num">
+                    <span><span class="avatar avatar--you">Я</span>8 с</span
+                    ><span><span class="avatar">М</span>7 с</span>
+                  </p>
+                </article>
+              </div>
+            </div>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Пример</b> «Доброе утро» с понятным ответом</figcaption>
+            <div class="frames">
+              <div class="frame frame--d frame--s">
+                <article class="tile">
+                  <h3 class="q">Доброе утро и спокойной ночи</h3>
+                  <p class="answer">Чаще желаете вы — 245 раз против 119</p>
+                  <div class="row">
+                    <div class="row__head"><i data-icon="sun"></i>Доброе утро</div>
+                    <div class="line">
+                      <span>134</span>
+                      <div class="split"><b style="flex-grow: 1"></b></div>
+                      <span>—</span>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="row__head"><i data-icon="moon"></i>Спокойной ночи</div>
+                    <div data-line="111|119|111|119"></div>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </section>
+      <!-- 11 ─────────────────────────────────────────────── -->
+      <section class="problem" id="p11">
+        <h2>11. Голос — три карточки подряд</h2>
+        <div class="why">
+          <p>
+            В реальном чате голос занимает три карточки: «Кто говорит голосом» (дорожки), «Вы наговорили» (альбом) и
+            «Самое длинное голосовое». Все про одно и то же, а суммарно ~650 px. Альбом и дорожки дважды показывают
+            общее время.
+          </p>
+        </div>
+        <div class="variants">
+          <figure class="variant">
+            <figcaption><b>А</b> Одна карточка «Голос» <em>рекомендую</em></figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Кто говорит голосом</h3>
+                  <p class="answer">Маша — в 9,7 раза больше</p>
+                  <div data-line="103|1005|1 ч 43 мин|16 ч 45 мин"></div>
+                  <dl class="facts num">
+                    <div>
+                      <dt>Вместе</dt>
+                      <dd>18 ч 29 мин — 12 фильмов подряд</dd>
+                    </div>
+                    <div>
+                      <dt>Самое длинное</dt>
+                      <dd>10:29 · Маша · 29 октября</dd>
+                    </div>
+                  </dl>
+                </article>
+              </div>
+              <div class="frame frame--m">
+                <article class="tile">
+                  <h3 class="q">Кто говорит голосом</h3>
+                  <p class="answer">Маша — в 9,7 раза больше</p>
+                  <div data-line="103|1005|1 ч 43 мин|16 ч 45 мин"></div>
+                  <dl class="facts facts--list num">
+                    <div>
+                      <dt>Вместе</dt>
+                      <dd>18 ч 29 мин</dd>
+                    </div>
+                    <div>
+                      <dt>Это</dt>
+                      <dd>12 фильмов подряд</dd>
+                    </div>
+                    <div>
+                      <dt>Самое длинное</dt>
+                      <dd>10:29 · Маша</dd>
+                    </div>
+                  </dl>
+                </article>
+              </div>
+            </div>
+            <p class="note">
+              Альбом и «самое длинное» — в «Итоги», там им место (слайд-обложка). В отчёте — один ответ, одна полоска,
+              два факта. ⚠ Раньше вы сами просили вынести «самое длинное» отдельно, поэтому решать вам; Б — мягче.
+            </p>
+          </figure>
+          <figure class="variant">
+            <figcaption><b>Б</b> Альбом остаётся, дорожки и «самое длинное» — внутрь него</figcaption>
+            <div class="frames">
+              <div class="frame frame--d">
+                <article class="tile">
+                  <h3 class="q">Вы наговорили</h3>
+                  <p class="answer">18 ч 29 мин — 12 фильмов подряд</p>
+                  <div class="rows">
+                    <div class="row">
+                      <div class="row__head">Кто больше · Маша, в 9,7 раза</div>
+                      <div data-line="103|1005|1 ч 43 мин|16 ч 45 мин"></div>
+                    </div>
+                    <div class="row">
+                      <div class="row__head"><i data-icon="mic"></i>Самое длинное · 10:29 · Маша, 29 октября</div>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </section>
+    </main>
+
+    <div class="proto">
+      <button data-set-theme="light" class="on">Светлая</button><button data-set-theme="dark">Тёмная</button>
+    </div>
+    <script src="report-v2.js"></script>
+    <script src="report-v3-review.js"></script>
+  </body>
+</html>

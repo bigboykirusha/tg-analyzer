@@ -22,7 +22,7 @@ const view = computed(() => {
   if (total < MIN_WISHES) return null
   const vars = {
     count: formatNumber(Math.max(mine, theirs)),
-    total: formatNumber(total),
+    other: formatNumber(Math.min(mine, theirs)),
     name: props.data.summary.title,
   }
   const answer =

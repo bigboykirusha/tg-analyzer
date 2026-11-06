@@ -3,7 +3,7 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { Info } from '../../lib/icons'
 
 const props = defineProps<{ data: ReportDto }>()
-const { t, formatNumber } = useI18n()
+const { t, formatNumber, formatMonth } = useI18n()
 
 /** Three parts of one long page: how the two of you talk, when, and with which words. */
 type Part = 'together' | 'time' | 'words'
@@ -15,6 +15,18 @@ const tabs = computed(() => [
 ])
 
 const totals = computed(() => props.data.report.totals)
+/** Reports made before voice and rituals were counted: say so instead of leaving cards out silently. */
+const outdated = computed(() => !props.data.report.voice || !props.data.report.rituals)
+/** The volume in two facts under the pulse: its busiest month and where it is heading. */
+const volumeFacts = computed(() => {
+  const { facts } = props.data.report
+  return [
+    ...(facts.mostActiveMonth
+      ? [{ key: 'month', label: t('report.timeline.mostActiveMonth'), value: formatMonth(facts.mostActiveMonth) }]
+      : []),
+    { key: 'trend', label: t('report.timeline.trend'), value: t(`report.trend.${facts.trend}`) },
+  ]
+})
 const sentShare = computed(() => (totals.value.messages ? (totals.value.sent / totals.value.messages) * 100 : null))
 const mineShare = computed(() => (sentShare.value === null ? null : Math.round(sentShare.value)))
 
@@ -38,7 +50,12 @@ const shareHint = computed(() => {
       {{ t('report.lowData') }}
     </p>
     <!-- Ink: the count and its pulse. Lime: who writes more. -->
-    <ReportHero :data="data" :label="t('report.kpi.messages')" :value="formatNumber(totals.messages)">
+    <ReportHero
+      :data="data"
+      :label="t('report.kpi.messages')"
+      :value="formatNumber(totals.messages)"
+      :facts="volumeFacts"
+    >
       <template #accent>
         <h2 class="share__title">{{ t('report.kpi.whoWritesMore') }}</h2>
         <template v-if="mineShare !== null">
@@ -63,10 +80,12 @@ const shareHint = computed(() => {
     <!-- «Вы двое» is masonry: every card at its own height, no stretched blanks (see useMasonry). -->
     <ReportPart id="together" :title="t('report.tabs.together')" columns>
       <ReportDuel :data="data" />
-      <TalkTab :data="data" />
+      <p v-if="outdated" class="note" role="status">
+        <Info aria-hidden="true" />
+        {{ t('report.talk.outdated') }}
+      </p>
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">
-      <TimelineTab :data="data" />
       <RhythmTab :data="data" />
     </ReportPart>
     <ReportPart id="words" :title="t('report.tabs.words')">

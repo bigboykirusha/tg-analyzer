@@ -2,19 +2,28 @@
 import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 
 /**
- * When you talk, each fact once: «Ваше время» (role, peak window, 24 hours, parts of the day),
- * then every day of the period.
+ * «Время», each fact once: «Ваше время» (role, peak window, 24 hours, parts of the day), the
+ * records, then every day of the period. The volume over time is the pulse at the top.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t } = useI18n()
+const { t, tc, formatNumber } = useI18n()
 
 const report = computed(() => props.data.report)
 const days = computed(() => fillDailyGaps(report.value.activity.daily))
+/** «Писали друг другу 340 из 372 дней». */
+const activeDays = computed(() => {
+  const total = days.value.length
+  if (!total) return undefined
+  return tc('report.rhythm.activeDays', total, {
+    active: formatNumber(days.value.filter((day) => day.total > 0).length),
+  })
+})
 </script>
 
 <template>
   <ReportRole :data="data" />
-  <ReportSection :title="t('report.rhythm.heatmapTitle')" :text="t('report.rhythm.heatmapText')" wide>
+  <ReportRecords :data="data" />
+  <ReportSection :title="t('report.rhythm.heatmapTitle')" :answer="activeDays" wide>
     <ActivityHeatmap :points="days" />
   </ReportSection>
 </template>

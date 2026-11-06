@@ -8,11 +8,11 @@ const { t, tc, formatNumber } = useI18n()
 const times = (value: number) => formatNumber(Math.round(value * 10) / 10)
 
 const pair = computed(() => props.item.pairs[0]!)
-/** At most about 180 squares on both sides together; the step is a round number. */
+/** At most about 100 squares on both sides together (more is a block, not a count); a round step. */
 const STEPS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
 const step = computed(() => {
   const total = pair.value.mine.value + pair.value.theirs.value
-  return STEPS.find((value) => total / value <= 180) ?? 1000
+  return STEPS.find((value) => total / value <= 100) ?? 1000
 })
 const squares = (value: number) => (value > 0 ? Math.max(1, Math.round(value / step.value)) : 0)
 /** The answer as one sentence, like «Кто отвечает быстрее»: «Вы спрашиваете в 3,2 раза чаще». */

@@ -2,55 +2,86 @@
 import type { ReportDto } from '@tg-analyzer/shared'
 
 /**
- * The word of the chat as a wall: three lines of the word repeated, the middle one bright with
- * one copy in lime. The same word as on the «Итоги» slide (there swearing is masked). The count
- * goes to screen readers; the picture says «this word, everywhere».
+ * The word of the chat as a poster: the word itself at the size of the report's one big number,
+ * in lime, how many times it was written, and the next three words as places two to four. The
+ * same word as on the «Итоги» slide.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc } = useI18n()
+const { t, tc, formatNumber } = useI18n()
 
-const word = computed(() => props.data.report.vocabulary.topWords[0] ?? null)
-const REPEAT = 16
+const words = computed(() => props.data.report.vocabulary.topWords)
+const word = computed(() => words.value[0] ?? null)
+const runners = computed(() => words.value.slice(1, 4))
 </script>
 
 <template>
   <ReportSection v-if="word" wide tone="ink" :title="t('report.fmt.wordTitle')">
-    <p class="sr-only">«{{ word.value }}» — {{ tc('report.fmt.wordCount', word.count) }}</p>
-    <div class="wall" aria-hidden="true">
-      <span>{{ `${word.value} `.repeat(REPEAT) }}</span>
-      <span class="wall__hit"
-        >{{ word.value }} <em>{{ word.value }}</em> {{ `${word.value} `.repeat(REPEAT - 2) }}</span
-      >
-      <span>{{ `${word.value} `.repeat(REPEAT) }}</span>
+    <div class="word">
+      <p class="word__value">{{ word.value }}</p>
+      <p class="word__count t-num">{{ tc('report.fmt.wordCount', word.count) }}</p>
     </div>
+    <ol v-if="runners.length" class="runners t-num" :aria-label="t('report.fmt.wordRunners')">
+      <li v-for="(item, index) in runners" :key="item.value">
+        <span class="runners__place">{{ index + 2 }}</span>
+        <span class="runners__word">{{ item.value }}</span>
+        <span class="runners__count">{{ formatNumber(item.count) }}</span>
+      </li>
+    </ol>
   </ReportSection>
 </template>
 
 <style scoped>
-/* The wall runs to the card's edge and fades out instead of cutting a word. */
-.wall {
+.word {
   display: grid;
-  margin-right: calc(-1 * var(--card-padding));
-  overflow: hidden;
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
-  text-transform: uppercase;
-  white-space: nowrap;
-  mask-image: linear-gradient(to right, var(--text) 75%, transparent);
+  gap: var(--space-2);
 }
 
-.wall span {
-  color: var(--text-muted);
-  opacity: 0.4;
-}
-
-.wall .wall__hit {
-  color: var(--text);
-  opacity: 1;
-}
-
-.wall em {
+.word__value {
+  overflow-wrap: anywhere;
   color: var(--them);
-  font-style: normal;
+  font: var(--text-figure-lg);
+  letter-spacing: var(--tracking-figure);
+}
+
+.word__count {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+/* Places two to four: a hairline above, then one row (a list on a phone). */
+.runners {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  list-style: none;
+  font: var(--text-small);
+}
+
+.runners li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.runners__place,
+.runners__count {
+  color: var(--text-muted);
+}
+
+.runners__word {
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .runners {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .runners__count {
+    margin-left: auto;
+  }
 }
 </style>

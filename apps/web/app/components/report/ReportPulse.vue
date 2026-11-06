@@ -10,12 +10,16 @@ const props = defineProps<{ data: ReportDto; bare?: boolean }>()
 const { t, formatMonth } = useI18n()
 const isPhone = useMediaQuery('(max-width: 640px)')
 
-/** Ticks need about 3 px each to stay apart. */
-const maxTicks = computed(() => (isPhone.value ? 110 : 360))
+/**
+ * Hairline ticks need about 3 px each to stay apart. In the report's top tile (`bare`) the pulse
+ * is a few dozen wide bars instead: a year of weekly hairlines reads as a barcode.
+ */
+const BARE_MAX = 40
+const maxTicks = computed(() => (props.bare ? BARE_MAX : isPhone.value ? 110 : 360))
 
 const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
 /** Days per tick: a day, a week or roughly a month, whichever fits. */
-const bucket = computed(() => [1, 7, 30].find((size) => days.value.length / size <= maxTicks.value) ?? 30)
+const bucket = computed(() => [1, 7, 14, 30].find((size) => days.value.length / size <= maxTicks.value) ?? 30)
 const ticks = computed(() => {
   if (bucket.value === 1) return days.value
   const buckets: { sent: number; received: number }[] = []
@@ -59,6 +63,7 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
     <Seismograph
       :days="ticks"
       :height="bare ? 56 : isPhone ? 80 : 96"
+      :bars="bare"
       animate
       :label="data.report.group ? t('report.pulse.labelGroup') : t('report.pulse.label', { name: partner })"
     />
@@ -112,13 +117,13 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
   white-space: nowrap;
 }
 
-/* The legend draws a tick the way the chart does: up for you, down for them. */
+/* Dots, like every legend of the report. */
 .pulse__key::before {
   content: '';
   flex: none;
-  width: 3px;
-  height: 12px;
-  border-radius: 1px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
 }
 
 .pulse__key--you {
@@ -127,7 +132,6 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
 
 .pulse__key--you::before {
   background: var(--you);
-  transform: translateY(-3px);
 }
 
 .pulse__key--them {
@@ -136,7 +140,6 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
 
 .pulse__key--them::before {
   background: var(--them);
-  transform: translateY(3px);
 }
 
 .pulse__axis {

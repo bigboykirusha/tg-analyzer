@@ -1,83 +1,75 @@
 <script setup lang="ts">
+import type { ReportDto } from '@tg-analyzer/shared'
 import type { Versus } from '../../../composables/useVersus'
 
-/** Voice as sound tracks: each side's wave is as long as it talked, voice messages and video notes together. */
-const props = defineProps<{ item: Versus; theirName: string }>()
-const { t, formatDuration } = useI18n()
+/**
+ * Voice in one card: who talks more (voice messages and video notes together, by length), one
+ * line of both lengths, and two facts under it — how long it is all together, with one picture of
+ * that length («12 фильмов подряд»), and the longest voice message.
+ */
+const props = defineProps<{ item: Versus; data: ReportDto }>()
+const { t, tc, formatDuration, formatCountdown, formatDay } = useI18n()
 
-const BARS = 64
-/** Fixed heights that repeat like speech; the same track is cut shorter for the quieter side. */
-const HEIGHTS = Array.from(
-  { length: BARS },
-  (_, index) => 22 + Math.round(78 * Math.abs(Math.sin(index * 1.7) * Math.cos(index * 0.45))),
-)
+/** A picture of the length starts at half an hour; the longest recording at a minute. */
+const MIN_PICTURE_SEC = 30 * 60
+const MIN_LONGEST_SEC = 60
+const FILM_SEC = 90 * 60
+const SONG_SEC = 3 * 60
 
-/** Voice messages and video notes together: one track per side, as long as that side talked. */
-const rows = computed(() => {
+const name = computed(() => props.data.summary.title)
+const sides = computed(() => {
   const total = (key: 'mine' | 'theirs') => props.item.pairs.reduce((sum, pair) => sum + pair[key].value, 0)
-  const mine = total('mine')
-  const theirs = total('theirs')
-  const max = Math.max(mine, theirs) || 1
-  const row = (key: 'mine' | 'theirs', who: string, value: number) => ({
-    key,
-    who,
-    text: formatDuration(value),
-    bars: HEIGHTS.slice(0, value ? Math.max(2, Math.round((value / max) * BARS)) : 0),
-  })
-  // You first, as in every comparison of the report.
-  return [row('mine', t('report.you'), mine), row('theirs', props.theirName, theirs)]
+  return { mine: total('mine'), theirs: total('theirs') }
+})
+const seconds = computed(() => {
+  const stats = props.data.report.voice
+  if (!stats) return 0
+  return stats.voice.seconds.mine + stats.voice.seconds.theirs + stats.round.seconds.mine + stats.round.seconds.theirs
+})
+const sideSeconds = (side: 'mine' | 'theirs') => {
+  const stats = props.data.report.voice
+  return stats ? stats.voice.seconds[side] + stats.round.seconds[side] : 0
+}
+
+const facts = computed(() => {
+  const out: { key: string; label: string; value: string }[] = []
+  if (seconds.value >= MIN_PICTURE_SEC) {
+    const films = Math.round(seconds.value / FILM_SEC)
+    const picture =
+      films >= 2 ? tc('report.album.films', films) : tc('report.album.songs', Math.round(seconds.value / SONG_SEC))
+    out.push({
+      key: 'together',
+      label: t('report.voice.together'),
+      value: `${formatDuration(seconds.value)}, ${picture}`,
+    })
+  }
+  const longest = props.data.report.voice?.voice.longest
+  if (longest && longest.seconds >= MIN_LONGEST_SEC) {
+    const who = longest.mine ? t('report.you') : name.value
+    const day = formatDay(longest.at.slice(0, 10), { day: 'numeric', month: 'long' })
+    out.push({
+      key: 'longest',
+      label: t('report.voice.longest'),
+      value: `${formatCountdown(longest.seconds)} · ${who} · ${day}`,
+    })
+  }
+  return out
 })
 </script>
 
 <template>
   <ReportSection :title="item.title" :answer="item.lead ? `${item.figure} — ${item.note}` : t('report.fmt.voiceEven')">
-    <div class="track">
-      <div v-for="row in rows" :key="row.key" class="wave">
-        <span class="wave__who">{{ row.who }} · {{ row.text }}</span>
-        <span class="wave__bars" :class="`wave__bars--${row.key}`" aria-hidden="true">
-          <i v-for="(height, index) in row.bars" :key="index" :style="{ height: `${height}%` }" />
-        </span>
+    <ReportLine
+      :mine="sides.mine"
+      :theirs="sides.theirs"
+      :left="formatDuration(sideSeconds('mine'))"
+      :right="formatDuration(sideSeconds('theirs'))"
+    />
+    <dl v-if="facts.length" class="fact-line">
+      <div v-for="fact in facts" :key="fact.key">
+        <dt>{{ fact.label }}</dt>
+        <dd class="t-num">{{ fact.value }}</dd>
       </div>
-    </div>
+    </dl>
   </ReportSection>
 </template>
-
-<style scoped>
-.track {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.wave {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.wave__who {
-  overflow: hidden;
-  color: var(--text-muted);
-  font: var(--text-caption);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wave__bars {
-  display: grid;
-  grid-template-columns: repeat(64, minmax(0, 1fr));
-  align-items: center;
-  gap: 2px;
-  height: 32px;
-}
-
-.wave__bars i {
-  border-radius: var(--radius-full);
-}
-
-.wave__bars--mine i {
-  background: var(--you);
-}
-
-.wave__bars--theirs i {
-  background: var(--them);
-}
-</style>

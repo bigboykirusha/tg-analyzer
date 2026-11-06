@@ -39,6 +39,11 @@ test('filler words stay out of the vocabulary, also in reports stored earlier', 
   )
 })
 
+test('forms of «который» and numbers as words are not vocabulary', () => {
+  const words = ['которую', 'семи', 'девять', 'кофейни'].map((value) => ({ value, count: 4 }))
+  assert.deepEqual(withoutStopWords(words), [{ value: 'кофейни', count: 4 }])
+})
+
 test('technical identifiers stay out of new and previously stored vocabularies', () => {
   const identifiers = [
     '7f7b6b14db6c7e7965c0ad01b88043ef',

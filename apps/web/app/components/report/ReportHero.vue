@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
 /**
- * The top of every report: an ink tile with the message count and the pulse (the legend sits on
- * the title row, so the tile stays short), one lime tile with the headline comparison, then any
- * small number tiles.
+ * The top of every report: an ink tile with the message count, the pulse (the legend sits on the
+ * title row, so the tile stays short) and the facts about the volume under it — the only volume
+ * chart of the report — one lime tile with the headline comparison, then any small number tiles.
  */
-defineProps<{ data: ReportDto; label: string; value: string; note?: string | null }>()
+defineProps<{
+  data: ReportDto
+  label: string
+  value: string
+  note?: string | null
+  facts?: { key: string; label: string; value: string }[]
+}>()
 </script>
 
 <template>
@@ -15,6 +21,12 @@ defineProps<{ data: ReportDto; label: string; value: string; note?: string | nul
       <div class="hero__figure t-num">{{ value }}</div>
       <p v-if="note" class="hero__note">{{ note }}</p>
       <ReportPulse :data="data" bare class="hero__pulse" />
+      <dl v-if="facts?.length" class="fact-line hero__facts">
+        <div v-for="item in facts" :key="item.key">
+          <dt>{{ item.label }}</dt>
+          <dd class="t-num">{{ item.value }}</dd>
+        </div>
+      </dl>
     </section>
     <section class="tile tile--lime span-4 hero__accent">
       <slot name="accent" />
@@ -33,7 +45,8 @@ defineProps<{ data: ReportDto; label: string; value: string; note?: string | nul
     'figure figure'
     'note note'
     'chart chart'
-    'axis axis';
+    'axis axis'
+    'facts facts';
   align-content: start;
   gap: var(--space-4) var(--space-4);
 }
@@ -68,6 +81,10 @@ defineProps<{ data: ReportDto; label: string; value: string; note?: string | nul
 .hero__pulse :deep(.seismograph) {
   grid-area: chart;
   align-self: end;
+}
+
+.hero__facts {
+  grid-area: facts;
 }
 
 .hero__pulse :deep(.pulse__axis) {

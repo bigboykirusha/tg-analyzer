@@ -112,7 +112,6 @@ const peakLine = computed(() => {
       <ul class="day__legend" aria-hidden="true">
         <li class="day__key day__key--mine">{{ t('report.you') }}</li>
         <li class="day__key day__key--theirs">{{ name }}</li>
-        <li class="day__key day__key--peak">{{ t('report.fmt.peakLegend') }}</li>
       </ul>
       <div class="day__hours" role="img" :aria-label="summary">
         <div
@@ -181,11 +180,6 @@ const peakLine = computed(() => {
 
 .day__key--theirs::before {
   background: var(--them);
-}
-
-.day__key--peak::before {
-  background: var(--chart-peak);
-  box-shadow: inset 0 0 0 1px var(--heat-2);
 }
 
 /* 24 columns without gaps, so the peak hours join into one lit band behind their bars. */
