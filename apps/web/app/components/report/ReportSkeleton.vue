@@ -14,13 +14,13 @@ defineProps<{ title?: string | null }>()
     <div class="bento bento--split" aria-hidden="true">
       <div class="tile tile--ink span-8 skeleton-tile">
         <UiSkeleton width="30%" />
-        <UiSkeleton width="45%" height="48px" />
-        <UiSkeleton class="skeleton-tile__foot" height="96px" />
+        <UiSkeleton width="45%" height="68px" />
+        <UiSkeleton class="skeleton-tile__foot" height="56px" />
       </div>
       <div class="tile tile--lime span-4 skeleton-tile">
         <UiSkeleton width="55%" />
-        <UiSkeleton width="40%" height="48px" />
-        <UiSkeleton class="skeleton-tile__foot" height="6px" radius="var(--radius-full)" />
+        <UiSkeleton width="40%" height="68px" />
+        <UiSkeleton class="skeleton-tile__foot" height="var(--bar-height)" radius="var(--radius-full)" />
       </div>
     </div>
 
@@ -31,9 +31,9 @@ defineProps<{ title?: string | null }>()
     <div v-for="section in 2" :key="section" class="tile skeleton-section" aria-hidden="true">
       <UiSkeleton width="40%" height="22px" />
       <UiSkeleton width="70%" />
-      <UiSkeleton height="8px" radius="var(--radius-full)" />
+      <UiSkeleton height="var(--bar-height)" radius="var(--radius-full)" />
       <UiSkeleton width="55%" />
-      <UiSkeleton height="8px" radius="var(--radius-full)" />
+      <UiSkeleton height="var(--bar-height)" radius="var(--radius-full)" />
     </div>
   </div>
 </template>

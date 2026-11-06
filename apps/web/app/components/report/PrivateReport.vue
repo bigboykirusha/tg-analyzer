@@ -3,7 +3,7 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { Info } from '../../lib/icons'
 
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatNumber } = useI18n()
+const { t, formatNumber } = useI18n()
 
 /** Three parts of one long page: how the two of you talk, when, and with which words. */
 type Part = 'together' | 'time' | 'words'
@@ -16,33 +16,17 @@ const tabs = computed(() => [
 
 const totals = computed(() => props.data.report.totals)
 const sentShare = computed(() => (totals.value.messages ? (totals.value.sent / totals.value.messages) * 100 : null))
-
 const mineShare = computed(() => (sentShare.value === null ? null : Math.round(sentShare.value)))
 
-/** The whole period in days, first message to last: the base of every «в день». */
-const days = computed(() => {
-  const { firstMessageAt, lastMessageAt } = props.data.report.period
-  if (!firstMessageAt || !lastMessageAt) return null
-  return Math.max(1, Math.round((Date.parse(lastMessageAt) - Date.parse(firstMessageAt)) / 86_400_000) + 1)
-})
-
-/** «Это 158 сообщений в день»: the total said as a daily habit over the whole period. */
-const perDay = computed(() => {
-  if (!days.value) return null
-  const value = totals.value.messages / days.value
-  if (value >= 1) return tc('report.fmt.perDay', Math.round(value))
-  return tc('report.fmt.everyDays', Math.max(2, Math.round(1 / value)))
-})
-const sideDaily = (count: number) =>
-  days.value ? t('report.fmt.sideDaily', { count: formatNumber(Math.round((count / days.value) * 10) / 10) }) : null
-
+/** «Пишете на равных» at 45–55%, otherwise who writes more, with the name. */
 const shareHint = computed(() => {
   const share = sentShare.value
   if (share === null) return null
+  const name = props.data.summary.title
   if (share >= 65) return t('report.kpi.youWriteMuchMore')
   if (share > 55) return t('report.kpi.youWriteMore')
-  if (share <= 35) return t('report.kpi.theyWriteMuchMore')
-  if (share < 45) return t('report.kpi.theyWriteMore')
+  if (share <= 35) return t('report.kpi.theyWriteMuchMore', { name })
+  if (share < 45) return t('report.kpi.theyWriteMore', { name })
   return t('report.kpi.even')
 })
 </script>
@@ -53,39 +37,27 @@ const shareHint = computed(() => {
       <Info aria-hidden="true" />
       {{ t('report.lowData') }}
     </p>
-    <!-- Ink: the count, its pulse and the key facts. Lime: who writes more. -->
-    <ReportHero :data="data" :label="t('report.kpi.messages')" :value="formatNumber(totals.messages)" :note="perDay">
+    <!-- Ink: the count and its pulse. Lime: who writes more. -->
+    <ReportHero :data="data" :label="t('report.kpi.messages')" :value="formatNumber(totals.messages)">
       <template #accent>
-        <div class="tile__label">{{ t('report.kpi.whoWritesMore') }}</div>
+        <h2 class="share__title">{{ t('report.kpi.whoWritesMore') }}</h2>
         <template v-if="mineShare !== null">
           <p v-if="shareHint" class="share__verdict">{{ shareHint }}</p>
           <div class="share__figure t-num">
             <span>{{ mineShare }}</span
-            ><small>/</small><span>{{ 100 - mineShare }}</span>
+            ><span class="share__slash">/</span><span>{{ 100 - mineShare }}</span>
           </div>
-          <i class="share__bar" aria-hidden="true">
-            <b :style="{ flexGrow: totals.sent }" />
-            <b :style="{ flexGrow: totals.received }" />
-          </i>
-          <dl class="share__sides">
-            <div>
-              <dt>{{ t('report.you') }}</dt>
-              <dd class="t-num">{{ formatNumber(totals.sent) }}</dd>
-              <dd v-if="sideDaily(totals.sent)" class="share__daily t-num">{{ sideDaily(totals.sent) }}</dd>
-            </div>
-            <div>
-              <dt>{{ data.summary.title }}</dt>
-              <dd class="t-num">{{ formatNumber(totals.received) }}</dd>
-              <dd v-if="sideDaily(totals.received)" class="share__daily t-num">{{ sideDaily(totals.received) }}</dd>
-            </div>
-          </dl>
+          <ReportLine
+            class="share__line"
+            :mine="totals.sent"
+            :theirs="totals.received"
+            :left="formatNumber(totals.sent)"
+            :right="formatNumber(totals.received)"
+          />
         </template>
-        <div v-else class="tile__figure">{{ t('common.na') }}</div>
+        <p v-else class="share__verdict">{{ t('common.na') }}</p>
       </template>
     </ReportHero>
-
-    <!-- The three most unusual facts of this chat, each opening the part where it lives. -->
-    <ReportHighlights :data="data" />
 
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
     <!-- «Вы двое» is masonry: every card at its own height, no stretched blanks (see useMasonry). -->
@@ -94,10 +66,8 @@ const shareHint = computed(() => {
       <TalkTab :data="data" />
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">
-      <div class="report-grid report-grid--even">
-        <TimelineTab :data="data" />
-        <RhythmTab :data="data" />
-      </div>
+      <TimelineTab :data="data" />
+      <RhythmTab :data="data" />
     </ReportPart>
     <ReportPart id="words" :title="t('report.tabs.words')">
       <WordsTab :data="data" />
@@ -106,76 +76,33 @@ const shareHint = computed(() => {
 </template>
 
 <style scoped>
-/* Who writes more: the answer in words, the split as a figure and a bar, both counts with their daily pace. */
-.share__verdict::first-letter {
-  text-transform: uppercase;
+/* Who writes more: the question, the answer, the split as a figure and both counts on one line. */
+.share__title {
+  font: var(--text-title);
 }
 
 .share__verdict {
-  font: var(--text-h3);
-  letter-spacing: var(--tracking-h3);
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+}
+
+.share__verdict::first-letter {
+  text-transform: uppercase;
 }
 
 .share__figure {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
-  margin-top: auto;
   font: var(--text-figure-lg);
   letter-spacing: var(--tracking-figure);
 }
 
-.share__figure small {
-  font-size: 0.6em;
+.share__slash {
   color: var(--on-lime-muted);
 }
 
-.share__bar {
-  display: flex;
-  gap: 3px;
-  height: var(--bar-height);
-}
-
-.share__bar b {
-  border-radius: var(--radius-full);
-  background: var(--on-lime);
-}
-
-.share__bar b + b {
-  background: var(--on-lime-line);
-}
-
-.share__sides {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-  margin: 0;
-}
-
-.share__sides div {
-  display: grid;
-  min-width: 0;
-}
-
-.share__sides div + div {
-  text-align: right;
-}
-
-.share__sides dt {
-  overflow: hidden;
-  color: var(--on-lime-muted);
-  font: var(--text-caption);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.share__sides dd {
-  margin: 0;
-  font: var(--text-title);
-}
-
-.share__sides .share__daily {
-  color: var(--on-lime-muted);
-  font: var(--text-caption);
+.share__line {
+  margin-top: auto;
 }
 </style>

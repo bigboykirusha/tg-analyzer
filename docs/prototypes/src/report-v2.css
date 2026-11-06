@@ -1,0 +1,1312 @@
+/* Prototype styles for report-v2*.html, on the real tokens (apps/web/app/assets/styles/tokens.css). */
+
+/* Dark lime from docs/report-spec.md §8, a step brighter after review; «.old-lime» brings back today's value. */
+:root[data-theme='dark'] {
+  --lime: #bde26a;
+  --them: #bde26a;
+  --them-ink: #bde26a;
+  --them-on-ink: #bde26a;
+  --heat-4: #bde26a;
+  --heat-3: #8cb045;
+}
+:root[data-theme='dark'].old-lime {
+  --lime: #c6f06a;
+  --them: #c6f06a;
+  --them-ink: #c6f06a;
+  --them-on-ink: #c6f06a;
+  --heat-4: #c6f06a;
+  --heat-3: #8fb83f;
+}
+
+/*
+ * Card system, one scale for every card of the report:
+ *   text     — title 16 (вопрос) · h2 24 (ответ, значения) · figure-lg 72/56 (одно главное число) · small 13 (подписи, значения у полосок) · caption 12 (оси и легенды); ui 14 — только чипы и кнопки
+ *   spacing  — 4 (внутри полоски) · 8 (внутри блока) · 16 (между блоками карточки) · 24/20 (поля карточки ПК/телефон)
+ *   align    — всё по левому краю; по правому — только значение собеседника в конце полоски
+ *   radius   — карточка lg · плашка внутри md · чипы и полоски full · метки графиков 3 px
+ *   emoji    — один размер --emoji-size; иконки 16/20/24
+ */
+:root {
+  --emoji-size: 28px;
+}
+@media (max-width: 640px) {
+  :root {
+    --text-figure-lg: 500 56px/56px var(--font-sans);
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: var(--text-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+svg.i {
+  width: var(--icon-md);
+  height: var(--icon-md);
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.muted {
+  color: var(--text-muted);
+}
+.small {
+  font: var(--text-small);
+}
+.caption {
+  color: var(--text-muted);
+  font: var(--text-caption);
+}
+
+.page {
+  display: grid;
+  gap: var(--page-gap);
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--page-top) var(--page-gutter) var(--page-bottom);
+}
+
+/* Header: back, avatar, name, share; the parts of the report under it, sticky together. */
+.report-top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+}
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--space-4) var(--page-gutter) var(--space-3);
+}
+.bar h1 {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.round {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  border-radius: var(--radius-full);
+  background: var(--avatar-1-bg);
+  color: var(--avatar-1-ink);
+  font: var(--text-ui);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--control-sm);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--text);
+  font: var(--text-ui);
+  font-family: var(--font-sans);
+  white-space: nowrap;
+}
+.btn--primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn svg.i {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+.subbar {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 var(--page-gutter) var(--space-3);
+}
+
+/* Segmented control, as UiSegmentedControl in the app */
+.seg {
+  display: flex;
+  gap: 2px;
+  width: var(--report-nav-width);
+  max-width: 100%;
+  padding: 3px;
+  border-radius: var(--radius-full);
+  background: var(--segment-track);
+}
+.seg a {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  font: var(--text-ui);
+  text-align: center;
+  text-decoration: none;
+}
+.seg a.on {
+  background: var(--thumb);
+  color: var(--text);
+  box-shadow: var(--shadow-segment);
+}
+
+/* Tiles */
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--card-padding);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+}
+.tile--ink {
+  --you: var(--on-tile-ink);
+  --them: var(--them-on-ink);
+  --text: var(--on-tile-ink);
+  --text-muted: var(--on-tile-ink-muted);
+  --border: var(--on-tile-ink-line);
+  --surface-2: var(--on-tile-ink-well);
+  --chart-neutral: var(--on-tile-ink-line);
+  background: var(--tile-ink);
+}
+.tile--lime {
+  --border: var(--on-lime-line);
+  --surface-2: var(--on-lime-well);
+  --text: var(--on-lime);
+  --text-muted: var(--on-lime-muted);
+  --you: var(--on-lime);
+  --them: var(--on-lime-line);
+  background: var(--lime);
+}
+.tile--grey {
+  --border: var(--border-strong);
+  background: var(--tile-grey);
+}
+.q {
+  font: var(--text-title);
+}
+.hint {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+.answer {
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+  text-wrap: balance;
+}
+.figure {
+  font: var(--text-figure-lg);
+  letter-spacing: var(--tracking-figure);
+}
+.figure-lg {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font: var(--text-figure-lg);
+  letter-spacing: var(--tracking-figure);
+}
+.figure-lg small {
+  color: var(--text-muted);
+  font-size: 0.6em;
+}
+
+/* The split line, as on the owner's reference: «52% ━━━━━ ━━━━ 48%», values at the ends. */
+.line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+  font: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+.line > span:first-child {
+  min-width: 3ch;
+}
+.line > span:last-child {
+  min-width: 3ch;
+  text-align: right;
+}
+.split {
+  display: flex;
+  gap: var(--space-1);
+  height: var(--bar-height);
+}
+.split b {
+  min-width: var(--bar-height);
+  border-radius: var(--radius-full);
+  background: var(--you);
+}
+.split b + b {
+  background: var(--them);
+}
+.row {
+  display: grid;
+  gap: var(--space-2);
+}
+.row__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-small);
+}
+.row__head svg.i {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--text-muted);
+}
+.rows {
+  display: grid;
+  gap: var(--space-4);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  color: var(--text-muted);
+  font: var(--text-caption);
+}
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.key::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--you);
+}
+.key--them::before {
+  background: var(--them);
+}
+.key--peak::before {
+  width: 12px;
+  border-radius: 3px;
+  background: var(--heat-1);
+}
+
+/* Facts: one row on wide screens, a label–value list on phones. */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+  font: var(--text-small);
+}
+.facts > div {
+  display: flex;
+  gap: var(--space-2);
+}
+.facts dt {
+  color: var(--text-muted);
+}
+.facts dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-xs);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  font: var(--text-ui);
+}
+.chip small {
+  color: var(--text-muted);
+  font: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Layout */
+.part {
+  display: grid;
+  gap: var(--space-4);
+  scroll-margin-top: 130px;
+}
+.part > h2 {
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
+}
+.masonry {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--card-gap);
+  align-items: start;
+}
+.masonry__col {
+  display: grid;
+  gap: var(--card-gap);
+}
+
+/* Prototype controls */
+.proto {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 9;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  border-radius: var(--radius-md);
+  background: var(--inverse-surface);
+  box-shadow: var(--shadow-overlay);
+}
+.proto button,
+.proto a {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--on-inverse);
+  font: var(--text-caption);
+  font-family: var(--font-sans);
+  text-decoration: none;
+  cursor: pointer;
+}
+.proto .on {
+  background: var(--on-inverse-line);
+}
+
+@media (max-width: 900px) {
+  .masonry {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .masonry__col {
+    display: contents;
+  }
+}
+@media (max-width: 640px) {
+  :root {
+    --page-gutter: var(--space-4);
+    --card-padding: var(--space-5);
+    --page-gap: var(--space-8);
+    --page-top: var(--space-2);
+  }
+  .seg {
+    width: 100%;
+  }
+  .facts {
+    display: grid;
+    gap: 0;
+    padding-top: 0;
+  }
+  .facts > div {
+    justify-content: space-between;
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--border);
+  }
+  .facts dd {
+    text-align: right;
+  }
+}
+
+/* ─── Report cards (moved from report-v2.html) ─── */
+.pulse svg {
+  display: block;
+  width: 100%;
+  height: 80px;
+}
+.pulse__axis {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font: var(--text-caption);
+}
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--card-gap);
+}
+.units {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10px, 1fr));
+  gap: 3px;
+}
+.units i {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--you);
+}
+.units--them i {
+  background: var(--them);
+}
+.stickers {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+.stickers span {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: var(--emoji-size);
+}
+.wave {
+  display: grid;
+  grid-template-columns: repeat(64, minmax(0, 1fr));
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+}
+.wave i {
+  border-radius: var(--radius-full);
+  background: var(--you);
+}
+.wave--them i {
+  background: var(--them);
+}
+.vol {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 140px;
+}
+.vol i {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: var(--chart-neutral);
+}
+.heat {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 3px;
+  overflow: hidden;
+}
+.heat i {
+  aspect-ratio: 1;
+  border-radius: 3px;
+}
+.hours {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  height: 160px;
+}
+.hours div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1px;
+}
+.hours .pk {
+  background: var(--heat-1);
+}
+.hours .pk-s {
+  border-top-left-radius: var(--radius-xs);
+}
+.hours .pk-e {
+  border-top-right-radius: var(--radius-xs);
+}
+.hours i {
+  width: 64%;
+  max-width: 22px;
+  background: var(--you);
+}
+.hours i:first-child {
+  border-radius: 3px 3px 0 0;
+  background: var(--them);
+}
+.dayparts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+}
+.dayparts li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-1);
+  padding-top: var(--space-2);
+  border-top: var(--bar-height) solid var(--chart-neutral);
+  color: var(--text-muted);
+  font: var(--text-caption);
+}
+
+/* Reactions A: podiums with the place on the step */
+.podiums {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.podium {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+.podium > div {
+  display: grid;
+  flex: 1;
+  justify-items: center;
+  gap: var(--space-1);
+}
+.podium em {
+  font-size: var(--emoji-size);
+  font-style: normal;
+  line-height: 1;
+}
+.podium small {
+  color: var(--text-muted);
+  font: var(--text-caption);
+}
+.podium b {
+  display: grid;
+  place-items: start center;
+  width: 100%;
+  padding-top: var(--space-2);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--on-lime);
+  color: var(--lime);
+  font: var(--text-title);
+}
+.podium--them b {
+  background: var(--on-lime-well);
+  color: var(--on-lime);
+}
+
+/* Records A: four wells with icons */
+.medals {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+.medals > div {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+.medals svg.i {
+  margin-bottom: var(--space-2);
+  color: var(--text-muted);
+}
+.medals b {
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+}
+.medals span {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+.chain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: var(--space-2);
+}
+.chain i {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  background: var(--them);
+}
+.sig {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+.absent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+.absent svg.i {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .medals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .pulse svg {
+    height: 56px;
+  }
+  .stickers {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .hours {
+    height: 120px;
+  }
+}
+
+/* Word B: wall */
+.wall {
+  position: relative;
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  font: var(--text-figure-lg);
+  letter-spacing: var(--tracking-h2);
+  white-space: nowrap;
+}
+.wall span {
+  color: var(--text-muted);
+  opacity: 0.35;
+}
+.wall span.hit {
+  color: var(--text);
+  opacity: 1;
+}
+.wall span.hit em {
+  color: var(--them);
+  font-style: normal;
+}
+/* Emoji C: per-emoji duel */
+.eduel {
+  display: grid;
+  gap: var(--space-3);
+}
+.eduel > div {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+}
+.eduel em {
+  font-size: var(--emoji-size);
+  font-style: normal;
+}
+
+/* 3. Podium labels */
+.who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-ui);
+}
+.who .avatar {
+  width: 24px;
+  height: 24px;
+  font: var(--text-caption);
+}
+.avatar--you {
+  background: var(--on-lime);
+  color: var(--lime);
+}
+
+/* 5. Longest */
+.big-time {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font: var(--text-figure-lg);
+  letter-spacing: var(--tracking-figure);
+}
+.big-time svg.i {
+  flex: none;
+  width: var(--control-lg);
+  height: var(--control-lg);
+  padding: var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  color: var(--them-ink);
+}
+.by {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+.by .avatar {
+  width: 24px;
+  height: 24px;
+  font: var(--text-caption);
+}
+
+/* ─── Round 3 (moved from report-v2-variants-3.html) ─── */
+/* ── 1. Share dialog ── */
+.slide {
+  position: relative;
+  display: grid;
+  align-content: space-between;
+  aspect-ratio: 9 / 16;
+  padding: var(--space-4);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--story-gradient-1);
+  color: var(--story-ink);
+}
+.slide__bars {
+  display: flex;
+  gap: 3px;
+}
+.slide__bars i {
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.3;
+}
+.slide__bars i.on {
+  opacity: 1;
+}
+.slide b {
+  font: var(--text-figure);
+  letter-spacing: var(--tracking-figure);
+}
+.slide small {
+  font: var(--text-caption);
+  opacity: 0.8;
+}
+.dlg {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 560px;
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-overlay);
+}
+.dlg__head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.dlg__head h4 {
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+}
+.dlg__split {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: var(--space-5);
+}
+.dlg__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: var(--space-2);
+}
+.dlg__dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--border-strong);
+}
+.dlg__dots i.on {
+  width: 18px;
+  background: var(--text);
+}
+.list {
+  display: grid;
+  gap: 2px;
+}
+.list > div {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font: var(--text-ui);
+}
+.list > div:hover {
+  background: var(--hover);
+}
+.list .ico {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--fill-raised);
+}
+.list .ico svg.i {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+.list small {
+  display: block;
+  color: var(--text-muted);
+  font: var(--text-caption);
+}
+
+@media (max-width: 640px) {
+  .dlg__split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dlg__split .slide {
+    max-width: 150px;
+  }
+}
+
+/* ─── Final: header nav on PC, share dialog (B2a), «Вы наговорили» C1c with the number first ─── */
+.seg--bar {
+  width: var(--report-nav-width);
+  margin-right: var(--space-2);
+}
+.subbar--phone {
+  display: none;
+}
+@media (max-width: 900px) {
+  .seg--bar {
+    display: none;
+  }
+  .subbar--phone {
+    display: block;
+  }
+}
+button.round {
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+}
+.btn--lg {
+  justify-content: center;
+  height: var(--control-md);
+}
+.share-dialog {
+  width: min(560px, calc(100vw - 2 * var(--space-4)));
+  max-width: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.share-dialog::backdrop {
+  background: var(--scrim);
+}
+.share-dialog .dlg {
+  max-width: none;
+}
+.dlg__side {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+}
+@media (max-width: 640px) {
+  .share-dialog {
+    width: calc(100vw - 2 * var(--space-2));
+    margin: auto var(--space-2) var(--space-2);
+  }
+  .share-dialog .slide {
+    max-width: 140px;
+    margin: 0 auto;
+  }
+}
+
+/* ─── Final, pass 2 ─── */
+/* Hero: the legend beside the title and a lower pulse, so the top row stays short on PC. */
+.tile__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+.pulse--compact svg {
+  height: 56px;
+}
+/* Word of the chat: a wall at the answer size, three lines. */
+.wall {
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+}
+/* «Ваш словарь»: each side on its own row — avatar, then its words. */
+.owners {
+  display: grid;
+  gap: var(--space-2);
+}
+.owners > div {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+.owners .avatar {
+  width: var(--control-xs);
+  height: var(--control-xs);
+}
+.stack {
+  display: grid;
+  gap: var(--card-gap);
+}
+/* Emoji rows: two columns on wide screens, so the bars stay readable. */
+@media (min-width: 901px) {
+  .eduel--wide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4) var(--space-8);
+  }
+}
+
+/* ─── Final, pass 3 ─── */
+@media (max-width: 640px) {
+  /* Facts: one hairline from the chart, no lines between the rows. */
+  .facts {
+    padding-top: var(--space-2);
+  }
+  .facts > div {
+    padding: var(--space-1) 0;
+    border-top: 0;
+  }
+  /* Records: one column on phones. */
+  .medals {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* T5 album */
+.album {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+}
+.album__cover {
+  display: grid;
+  align-content: end;
+  aspect-ratio: 1;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--lime);
+  color: var(--on-lime);
+  font: var(--text-title);
+}
+.album__meta {
+  display: grid;
+  gap: var(--space-1);
+}
+.album__meta b {
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+}
+.album__meta span {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+.player {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+  font: var(--text-caption);
+}
+.player__play {
+  display: grid;
+  place-items: center;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  border-radius: var(--radius-full);
+  background: var(--them);
+  color: var(--on-lime);
+}
+.player__play svg.i {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  fill: currentColor;
+}
+.player__track {
+  height: var(--bar-height);
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+}
+.player__track i {
+  display: block;
+  width: 4%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--text);
+}
+@media (max-width: 640px) {
+  .album {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+}
+
+/* ─── Audit pass (four reviews, 06.11) ─── */
+:root[data-theme='dark'] {
+  --tile-grey: #202024;
+  --chart-peak: #2b3420;
+}
+:root {
+  --chart-peak: var(--heat-1);
+}
+.report-top {
+  border-bottom: 1px solid var(--border);
+}
+.nowrap {
+  white-space: nowrap;
+}
+/* Title and hint, answer and its second line: groups with a fixed inner step. */
+.tile__q {
+  display: grid;
+  gap: var(--space-1);
+}
+.answer-group {
+  display: grid;
+  gap: var(--space-2);
+}
+.q {
+  text-wrap: balance;
+}
+/* Hero */
+.tile__head {
+  justify-content: flex-start;
+}
+.hero-share .line {
+  margin-top: auto;
+}
+.figure-lg small {
+  font-size: inherit;
+}
+/* The comparison line: 8 between value and bar; equal ends so bars start on one vertical. */
+.line {
+  gap: var(--space-2);
+}
+.line > span:first-child,
+.line > span:last-child {
+  min-width: 4ch;
+}
+/* Facts */
+.facts {
+  gap: var(--space-2) var(--space-4);
+  padding-top: var(--space-4);
+}
+/* Records: 8 inside a well; the streak is shared, so neutral, in one line. */
+.medals > div {
+  gap: var(--space-2);
+}
+.medals svg.i {
+  margin-bottom: 0;
+}
+.chain {
+  display: grid;
+  grid-template-columns: repeat(23, minmax(0, 1fr));
+  gap: 2px;
+  margin-top: var(--space-2);
+}
+.chain i {
+  width: auto;
+  height: auto;
+  aspect-ratio: 1;
+  background: var(--chart-neutral-strong);
+}
+/* «Ваше время»: the peak band and the leading part. */
+.hours .pk {
+  background: var(--chart-peak);
+}
+.hours .pk-s {
+  border-top-left-radius: 3px;
+}
+.hours .pk-e {
+  border-top-right-radius: 3px;
+}
+.key--peak::before {
+  width: 8px;
+  border-radius: var(--radius-full);
+  background: var(--chart-peak);
+  box-shadow: inset 0 0 0 1px var(--heat-2);
+}
+.hours i {
+  border-radius: 3px 3px 0 0;
+}
+.dayparts b {
+  font-weight: 500;
+}
+.dayparts .is-peak {
+  border-top-color: var(--chart-neutral-strong);
+  color: var(--text);
+}
+.vol i.is-peak {
+  background: var(--chart-neutral-strong);
+}
+/* Heatmap: explicit weeks, nothing cut; phones show the last 26 weeks. */
+.heat {
+  grid-template-columns: repeat(74, minmax(0, 1fr));
+  grid-template-rows: repeat(7, auto);
+  overflow: visible;
+}
+@media (max-width: 640px) {
+  .heat {
+    grid-template-columns: repeat(26, minmax(0, 1fr));
+  }
+  .heat i:nth-child(-n + 336) {
+    display: none;
+  }
+}
+/* Radii: wells md, chart marks 3px. */
+.stickers span {
+  border-radius: var(--radius-md);
+  line-height: 1;
+}
+.podium b {
+  border-radius: 3px 3px 0 0;
+}
+.podium small {
+  font: var(--text-small);
+}
+.podium em,
+.eduel em {
+  line-height: 1;
+}
+@media (max-width: 640px) {
+  .stickers span {
+    aspect-ratio: auto;
+    padding: var(--space-2) 0;
+  }
+}
+/* Avatars: «Я» is ink everywhere; on the lime tile both sides sit on lime wells. */
+.avatar--you {
+  background: var(--you);
+  color: var(--surface);
+}
+.tile--lime .avatar {
+  background: var(--on-lime-well);
+  color: var(--on-lime);
+}
+.tile--lime .avatar--you {
+  background: var(--on-lime);
+  color: var(--lime);
+}
+/* «Вы наговорили»: the cover is the pair (ink), the button is an action (accent). */
+.album__cover {
+  padding: var(--space-4);
+  background: var(--tile-ink);
+  color: var(--on-tile-ink);
+}
+.player {
+  gap: var(--space-2);
+}
+.player__play {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.player__track {
+  background: var(--chart-neutral);
+}
+/* Emoji: ranks read down the columns. */
+@media (min-width: 901px) {
+  .eduel--wide {
+    grid-auto-flow: column;
+    grid-template-rows: repeat(3, auto);
+    gap: var(--space-4);
+  }
+}
+.eduel > div {
+  gap: var(--space-2);
+}
+/* Word wall: runs to the card edge and fades instead of cutting a word. */
+.wall {
+  margin-right: calc(-1 * var(--card-padding));
+  -webkit-mask-image: linear-gradient(to right, #000 75%, transparent);
+  mask-image: linear-gradient(to right, #000 75%, transparent);
+}
+/* Masonry: the last card of each column takes the rest, so the columns end together. */
+.masonry__col {
+  display: flex;
+  flex-direction: column;
+}
+.masonry__col > :last-child {
+  flex: 1;
+}
+/* Header */
+.seg--bar {
+  margin-right: 0;
+}
+.share-dialog {
+  margin: auto;
+}
+.share-dialog .slide > div:last-child {
+  display: grid;
+  gap: var(--space-1);
+}
+.share-dialog .slide small {
+  display: block;
+  line-height: 16px;
+}
+.share-dialog .slide br {
+  display: none;
+}
+.share-dialog button.round {
+  background: var(--surface-2);
+}
+.dlg__side .list > div {
+  padding-inline: 0;
+}
+@media (max-width: 900px) {
+  .bar .round,
+  .bar .btn,
+  .player__play,
+  .share-dialog button.round {
+    width: var(--control-md);
+    min-width: var(--control-md);
+    height: var(--control-md);
+  }
+  .bar .btn {
+    width: auto;
+  }
+  .subbar--phone .seg a {
+    padding-block: var(--space-3);
+  }
+}
+@media (max-width: 640px) {
+  .share-dialog {
+    margin: auto var(--space-2) var(--space-2);
+  }
+}
+/* Numbers: tabular everywhere. The «font:» shorthand resets font-variant-numeric, so this sits on an id selector that outranks every class rule. */
+#report,
+#report * {
+  font-variant-numeric: tabular-nums;
+}

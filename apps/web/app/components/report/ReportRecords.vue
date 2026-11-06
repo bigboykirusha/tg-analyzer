@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
+import { Calendar, Flame, Hourglass, Timer } from '../../lib/icons'
 
 /**
- * Personal records, Strava-style: the longest streak with a strip of its days, then the other
- * bests in a grid, and how long and how often you talk in a quiet row at the end.
+ * Personal records as four wells with icons: the longest streak (with a chain of its days), the
+ * longest conversation, the busiest day and the longest pause. No footer: how long and how often
+ * you talk is not a record. The longest voice message has a card of its own.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatNumber, formatDecimal, formatDuration, formatDay } = useI18n()
+const { t, tc, formatNumber, formatDuration, formatDay } = useI18n()
 
-/** More days than this are drawn as the first ones and a count. */
-const MAX_STRIP = 60
+/** More days than this are drawn as the first ones. */
+const MAX_CHAIN = 30
 
 const report = computed(() => props.data.report)
 const name = computed(() => props.data.summary.title)
@@ -17,35 +19,39 @@ const day = (value: string | null | undefined) =>
   value ? formatDay(value.slice(0, 10), { day: 'numeric', month: 'long' }) : ''
 
 const streak = computed(() => report.value.facts.maxStreak)
-const strip = computed(() => Math.min(MAX_STRIP, streak.value.days))
+const chain = computed(() => Math.min(MAX_CHAIN, streak.value.days))
 
 const records = computed(() => {
-  const { facts, sessions, voice } = report.value
-  const out: { key: string; value: string; label: string }[] = []
+  const { facts, sessions } = report.value
+  const out: { key: string; icon: unknown; value: string; label: string; chain?: boolean }[] = []
+  if (streak.value.days > 1)
+    out.push({
+      key: 'streak',
+      icon: Flame,
+      value: tc('report.fmt.streakDays', streak.value.days),
+      label: t('report.fmt.streakNote'),
+      chain: true,
+    })
   const session = sessions.highlights[0]
   if (session)
     out.push({
       key: 'session',
+      icon: Timer,
       value: formatDuration(session.durationSec),
       label: t('report.fmt.recordSession', { date: day(session.startedAt) }),
     })
   if (facts.mostActiveDate)
     out.push({
       key: 'day',
+      icon: Calendar,
       value: formatNumber(facts.mostActiveDate.total),
       label: t('report.fmt.recordDay', { date: day(facts.mostActiveDate.date) }),
-    })
-  const longest = voice?.voice.longest
-  if (longest)
-    out.push({
-      key: 'voice',
-      value: formatDuration(longest.seconds),
-      label: t('report.fmt.recordVoice', { who: longest.mine ? t('report.fmt.yours') : name.value }),
     })
   const gap = facts.longestGap
   if (gap)
     out.push({
       key: 'gap',
+      icon: Hourglass,
       value: tc('insight.days', Math.max(1, Math.round(gap.seconds / 86400))),
       label:
         gap.brokenByMe === undefined
@@ -54,46 +60,18 @@ const records = computed(() => {
     })
   return out
 })
-
-/** How you talk in conversations, in the quiet row under the bests (it was a card of its own). */
-const sessions = computed(() => report.value.sessions)
-const quiet = computed(() => [
-  {
-    key: 'perWeek',
-    label: t('report.sessions.perWeek'),
-    value: formatDecimal(sessions.value.sessionsPerActiveWeek),
-  },
-  {
-    key: 'size',
-    label: t('report.sessions.averageSize'),
-    value: tc('common.messagesCount', sessions.value.averageSessionMessages),
-  },
-])
 </script>
 
 <template>
-  <ReportSection
-    wide
-    :title="t('report.fmt.recordsTitle')"
-    :answer="streak.days > 1 ? `${tc('report.fmt.streakDays', streak.days)} ${t('report.fmt.streakNote')}` : null"
-  >
-    <div class="records">
-      <div v-if="streak.days > 1" class="streak">
-        <div class="streak__strip" aria-hidden="true">
-          <i v-for="index in strip" :key="index" />
+  <ReportSection v-if="records.length" wide :title="t('report.fmt.recordsTitle')">
+    <dl class="records" :style="{ '--records': records.length }">
+      <div v-for="record in records" :key="record.key" class="records__cell">
+        <component :is="record.icon" class="records__icon icon-md" aria-hidden="true" />
+        <dt class="records__label">{{ record.label }}</dt>
+        <dd class="records__value t-num">{{ record.value }}</dd>
+        <div v-if="record.chain" class="records__chain" :style="{ '--days': chain }" aria-hidden="true">
+          <i v-for="index in chain" :key="index" />
         </div>
-      </div>
-      <dl v-if="records.length" class="board">
-        <div v-for="record in records" :key="record.key" class="board__cell">
-          <dt class="board__label">{{ record.label }}</dt>
-          <dd class="board__value t-num">{{ record.value }}</dd>
-        </div>
-      </dl>
-    </div>
-    <dl class="fact-line">
-      <div v-for="item in quiet" :key="item.key">
-        <dt>{{ item.label }}</dt>
-        <dd class="t-num">{{ item.value }}</dd>
       </div>
     </dl>
   </ReportSection>
@@ -102,61 +80,60 @@ const quiet = computed(() => [
 <style scoped>
 .records {
   display: grid;
-  gap: var(--space-5);
-}
-
-@media (min-width: 901px) {
-  .records {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-    align-items: start;
-  }
-}
-
-.streak {
-  display: grid;
+  grid-template-columns: repeat(var(--records), minmax(0, 1fr));
   gap: var(--space-2);
+  margin: 0;
 }
 
-
-.streak__strip {
+.records__cell {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(8px, 1fr));
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+.records__icon {
+  color: var(--text-muted);
+}
+
+.records__value {
+  margin: 0;
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+}
+
+/* The label comes first for screen readers (dt before dd) and shows under the value. */
+.records__label {
+  order: 1;
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+/* The streak's days in one row, neutral: the streak belongs to both of you. */
+.records__chain {
+  order: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--days), minmax(0, 1fr));
   gap: 2px;
 }
 
-.streak__strip i {
-  height: 14px;
+.records__chain i {
+  height: var(--space-2);
   border-radius: 3px;
-  background: var(--them);
+  background: var(--chart-neutral-strong);
 }
 
-.board {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px;
-  margin: 0;
-  overflow: hidden;
-  border-radius: var(--radius-md);
-  background: var(--border);
+@media (max-width: 900px) {
+  .records {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.board__cell {
-  display: grid;
-  align-content: start;
-  gap: var(--space-1);
-  padding: var(--space-4);
-  background: var(--surface);
-}
-
-.board__value {
-  order: -1;
-  margin: 0;
-  font: var(--text-h3);
-  letter-spacing: var(--tracking-h3);
-}
-
-.board__label {
-  color: var(--text-muted);
-  font: var(--text-small);
+@media (max-width: 640px) {
+  .records {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

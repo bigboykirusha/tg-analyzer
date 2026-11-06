@@ -2,23 +2,23 @@
 import type { ReportDto } from '@tg-analyzer/shared'
 import { AlertCircle } from '../../lib/icons'
 import { ApiClientError } from '../../composables/useApi'
+import type { StoryIntent } from '../../components/report/ShareDialog.vue'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 const route = useRoute()
 const { t } = useI18n()
-const auth = useAuthStore()
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
-const toast = useToast()
 const errorMessage = useErrorMessage()
 
 const chatId = computed(() => String(route.params.id))
 const data = ref<ReportDto | null>(workspace.openedReports[chatId.value] ?? null)
 const loadError = ref<unknown>(null)
 const notFound = ref(false)
-const reanalysing = ref(false)
+const shareOpen = ref(false)
 const storyOpen = ref(false)
+const storyIntent = ref<StoryIntent>('view')
 /** The chat's name from the lists already loaded, so the top bar is right before the report arrives. */
 const knownTitle = computed(
   () =>
@@ -28,7 +28,6 @@ const knownTitle = computed(
 )
 useSeoMeta({ title: () => data.value?.summary.title ?? t('report.title') })
 
-const canReanalyse = computed(() => auth.telegramSessionActive && !analysis.isActive.value && !reanalysing.value)
 
 async function load() {
   loadError.value = null
@@ -41,16 +40,6 @@ async function load() {
   }
 }
 
-async function reanalyse() {
-  reanalysing.value = true
-  try {
-    await analysis.startAnalysis(chatId.value, data.value?.summary.title ?? null)
-  } catch (error) {
-    toast.error(t('analysis.startError'), errorMessage(error))
-  } finally {
-    reanalysing.value = false
-  }
-}
 
 // Reload the report as soon as a fresh analysis of this chat completes.
 watch(analysis.finished, (job) => {
@@ -62,24 +51,24 @@ watch(chatId, () => {
   void load()
 })
 
+function openStory(intent: StoryIntent) {
+  storyIntent.value = intent
+  storyOpen.value = true
+}
+
 onMounted(load)
 </script>
 
 <template>
   <UiPageContainer>
     <div v-if="data" class="page">
-      <ReportHeader
-        :summary="data.summary"
-        :can-reanalyse="canReanalyse"
-        :reanalysing="reanalysing"
-        @reanalyse="reanalyse"
-        @story="storyOpen = true"
-      />
+      <ReportHeader :summary="data.summary" @share="shareOpen = true" />
 
       <GroupReport v-if="data.summary.type === 'group'" :data="data" />
       <PrivateReport v-else :data="data" />
 
-      <ReportStory :open="storyOpen" :data="data" @close="storyOpen = false" />
+      <ShareDialog :open="shareOpen" :data="data" @close="shareOpen = false" @story="openStory" />
+      <ReportStory :open="storyOpen" :data="data" :intent="storyIntent" @close="storyOpen = false" />
     </div>
 
     <UiPageBar v-else-if="notFound || loadError" :title="knownTitle ?? t('nav.back')" back="/dashboard" />

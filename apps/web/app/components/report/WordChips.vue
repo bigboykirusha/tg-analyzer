@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import type { TopItemDto } from '@tg-analyzer/shared'
 
-withDefaults(defineProps<{ items: TopItemDto[]; empty: string; counts?: boolean }>(), { counts: true })
+/** Words or emoji as chips; `side` marks whose they are with a dot in that side's colour. */
+withDefaults(defineProps<{ items: TopItemDto[]; empty: string; counts?: boolean; side?: 'mine' | 'theirs' }>(), {
+  counts: true,
+  side: undefined,
+})
 const { formatNumber } = useI18n()
 </script>
 
 <template>
   <div v-if="items.length" class="chips">
-    <span v-for="item in items" :key="item.value" class="chip">
+    <span v-for="item in items" :key="item.value" class="chip" :class="side && `chip--${side}`">
       {{ item.value }}
       <span v-if="counts" class="chip__count">{{ formatNumber(item.count) }}</span>
     </span>
@@ -34,6 +38,23 @@ const { formatNumber } = useI18n()
   color: var(--text);
   font: var(--text-ui);
   overflow-wrap: anywhere;
+}
+
+.chip--mine::before,
+.chip--theirs::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}
+
+.chip--mine::before {
+  background: var(--you);
+}
+
+.chip--theirs::before {
+  background: var(--them);
 }
 
 .chip__count {

@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Отчёт v2 — прототип</title>
+    <link rel="stylesheet" href="../../../apps/web/node_modules/@fontsource-variable/geist/index.css" />
+    <link rel="stylesheet" href="../../../apps/web/app/assets/styles/tokens.css" />
+    <link rel="stylesheet" href="report-v2.css" />
+  </head>
+  <body id="report">
+    <header class="report-top">
+      <div class="bar">
+        <span class="round" data-icon="arrow-left"></span>
+        <span class="avatar">М</span>
+        <h1>Мила</h1>
+        <!-- ПК: разделы в строке шапки; телефон: отдельной строкой под ней. -->
+        <nav class="seg seg--bar" aria-label="Разделы отчёта">
+          <a href="#part-together" class="on">Вы двое</a><a href="#part-time">Время</a><a href="#part-words">О чём</a>
+        </nav>
+        <button class="btn btn--primary" id="share"><i data-icon="share"></i>Поделиться</button>
+      </div>
+      <div class="subbar subbar--phone">
+        <nav class="seg" aria-label="Разделы отчёта">
+          <a href="#part-together" class="on">Вы двое</a><a href="#part-time">Время</a><a href="#part-words">О чём</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page">
+      <!-- ───── Верх ───── -->
+      <section class="hero">
+        <article class="tile tile--ink">
+          <div class="tile__head">
+            <h3 class="q">Сообщения</h3>
+            <div class="legend"><span class="key">Вы</span><span class="key key--them">Мила</span></div>
+          </div>
+          <div class="figure num">4 800</div>
+          <figure class="pulse pulse--compact" style="margin-top: auto">
+            <svg id="pulse" preserveAspectRatio="none"></svg>
+            <div class="pulse__axis"><span>июнь 2025</span><span>ноябрь 2026</span></div>
+          </figure>
+        </article>
+        <article class="tile tile--lime hero-share">
+          <h3 class="q">Кто пишет больше</h3>
+          <p class="answer">Пишете на равных</p>
+          <div class="figure-lg num"><span>52</span><small>/</small><span>48</span></div>
+          <i data-line="52|48|2 496|2 304"></i>
+        </article>
+      </section>
+
+      <!-- ───── Вы двое ───── -->
+      <section class="part" id="part-together">
+        <h2>Вы двое</h2>
+        <div class="masonry">
+          <article class="tile">
+            <div class="tile__q">
+              <h3 class="q">Кто отвечает быстрее</h3>
+              <p class="hint">Ночь и долгие паузы не считаются медленным ответом</p>
+            </div>
+            <p class="answer">Вы — в 2 раза быстрее</p>
+            <i data-line="33|67|3 мин|6 мин"></i>
+          </article>
+
+          <article class="tile tile--grey">
+            <h3 class="q">Ваши привычки</h3>
+            <div class="rows">
+              <div class="row">
+                <span class="row__head">Начинаете разговор · чаще вы</span><i data-line="58|42"></i>
+              </div>
+              <div class="row"><span class="row__head">Смеётесь · поровну</span><i data-line="51|49|410|395"></i></div>
+            </div>
+          </article>
+
+          <article class="tile">
+            <div class="tile__q">
+              <h3 class="q">Кто задаёт вопросы</h3>
+              <p class="hint">Один квадрат — 2 вопроса</p>
+            </div>
+            <p class="answer">Мила спрашивает в 2,4 раза чаще</p>
+            <div class="row">
+              <span class="caption num">Вы · 104</span>
+              <div class="units" id="units-you"></div>
+            </div>
+            <div class="row">
+              <span class="caption num">Мила · 248</span>
+              <div class="units units--them" id="units-them"></div>
+            </div>
+          </article>
+
+          <article class="tile">
+            <div class="tile__q">
+              <h3 class="q">Стикеры</h3>
+              <p class="hint">57 разных стикеров из 12 наборов</p>
+            </div>
+            <p class="answer">Вы — в 4 раза больше</p>
+            <div class="stickers">
+              <span>🐱</span><span>🦊</span><span>🐻</span><span>🐸</span><span>🐧</span><span>🦄</span><span>🐶</span
+              ><span>🐼</span>
+            </div>
+            <i data-line="80|20|140|35"></i>
+          </article>
+
+          <article class="tile tile--lime">
+            <h3 class="q">Кто ставит реакции</h3>
+            <p class="answer">Идеальный баланс</p>
+            <div class="podiums">
+              <div class="row">
+                <span class="who"><span class="avatar avatar--you">Я</span></span>
+                <div class="podium">
+                  <div><em>😂</em><small class="num">80</small><b style="height: 52px">2</b></div>
+                  <div><em>❤️</em><small class="num">120</small><b style="height: 76px">1</b></div>
+                  <div><em>👍</em><small class="num">40</small><b style="height: 36px">3</b></div>
+                </div>
+              </div>
+              <div class="row">
+                <span class="who"><span class="avatar">М</span></span>
+                <div class="podium podium--them">
+                  <div><em>❤️</em><small class="num">90</small><b style="height: 52px">2</b></div>
+                  <div><em>🔥</em><small class="num">110</small><b style="height: 76px">1</b></div>
+                  <div><em>😁</em><small class="num">30</small><b style="height: 36px">3</b></div>
+                </div>
+              </div>
+            </div>
+            <i data-line="52|48|312|290"></i>
+          </article>
+
+          <article class="tile">
+            <h3 class="q">Кто говорит голосом</h3>
+            <p class="answer">Мила — в 2,4 раза больше</p>
+            <div class="row">
+              <span class="caption num">Вы · 4 ч 10 мин</span>
+              <div class="wave" id="wave-you"></div>
+            </div>
+            <div class="row">
+              <span class="caption num">Мила · 9 ч 55 мин</span>
+              <div class="wave wave--them" id="wave-them"></div>
+            </div>
+          </article>
+
+          <article class="tile">
+            <h3 class="q">Вы наговорили</h3>
+            <div class="album num">
+              <div class="album__cover">Вы и Мила</div>
+              <div class="album__meta">
+                <b>14 ч 5 мин</b><span>412 голосовых</span><span>это 9 фильмов подряд</span>
+              </div>
+            </div>
+            <div class="player num">
+              <span class="player__play" data-icon="play"></span><span class="player__track"><i></i></span
+              ><span>0:00 / 14:05:00</span>
+            </div>
+          </article>
+
+          <article class="tile">
+            <h3 class="q">Самое длинное голосовое</h3>
+            <div class="big-time num"><i data-icon="mic"></i>6:12</div>
+            <span class="by"><span class="avatar">М</span>Мила · 12 марта</span>
+          </article>
+
+          <article class="tile">
+            <h3 class="q">Доброе утро и спокойной ночи</h3>
+            <p class="answer">Чаще вы — 68 из 126</p>
+            <div class="rows">
+              <div class="row">
+                <span class="row__head"><i data-icon="sun"></i>Доброе утро</span><i data-line="20|27|20|27"></i>
+              </div>
+              <div class="row">
+                <span class="row__head"><i data-icon="moon"></i>Спокойной ночи</span><i data-line="48|31|48|31"></i>
+              </div>
+            </div>
+          </article>
+
+          <article class="tile">
+            <h3 class="q">Кто открывает и закрывает день</h3>
+            <p class="answer">Утро начинает Мила, точку ставите вы</p>
+            <div class="rows">
+              <div class="row">
+                <span class="row__head"><i data-icon="sun"></i>Первым утром</span><i data-line="41|59"></i>
+              </div>
+              <div class="row">
+                <span class="row__head"><i data-icon="moon"></i>Последним вечером</span><i data-line="63|37"></i>
+              </div>
+            </div>
+          </article>
+        </div>
+        <p class="absent"><i data-icon="info"></i>Нет в этом чате: кружочки.</p>
+      </section>
+
+      <!-- ───── Время ───── -->
+      <section class="part" id="part-time">
+        <h2>Время</h2>
+        <article class="tile">
+          <div class="tile__q">
+            <h3 class="q">Объём переписки</h3>
+            <p class="hint">По неделям, весь чат</p>
+          </div>
+          <div class="vol" id="vol"></div>
+          <dl class="facts num">
+            <div>
+              <dt>Первое сообщение</dt>
+              <dd>14 июня 2025</dd>
+            </div>
+            <div>
+              <dt>Самый активный месяц</dt>
+              <dd>март 2026</dd>
+            </div>
+            <div>
+              <dt>Последние 3 месяца</dt>
+              <dd>Растёт</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="tile">
+          <h3 class="q">Ваши рекорды</h3>
+          <div class="medals num">
+            <div>
+              <i data-icon="flame"></i><b>23 дня</b><span>подряд без пропусков</span>
+              <div class="chain" id="chain"></div>
+            </div>
+            <div><i data-icon="timer"></i><b>4 ч 12 мин</b><span>самый долгий разговор, 12 марта</span></div>
+            <div><i data-icon="calendar"></i><b>412</b><span>сообщений за день, 8 марта</span></div>
+            <div><i data-icon="hourglass"></i><b>34 дня</b><span>самая долгая пауза, прервали вы</span></div>
+          </div>
+        </article>
+
+        <article class="tile">
+          <h3 class="q">Ваше время</h3>
+          <div class="answer-group">
+            <p class="answer">Вечерние собеседники</p>
+            <p class="answer-sub small muted num">
+              Пик <span class="nowrap">20:00–23:00</span> · второе окно <span class="nowrap">12:00–15:00</span>
+            </p>
+          </div>
+          <div class="row">
+            <div class="legend">
+              <span class="key">Вы</span><span class="key key--them">Мила</span><span class="key key--peak">пик</span>
+            </div>
+            <div class="hours" id="hours"></div>
+            <ol class="dayparts num">
+              <li><span>Ночь</span><b>9%</b></li>
+              <li><span>Утро</span><b>18%</b></li>
+              <li><span>День</span><b>31%</b></li>
+              <li class="is-peak"><span>Вечер</span><b>42%</b></li>
+            </ol>
+          </div>
+        </article>
+
+        <article class="tile">
+          <div class="tile__q">
+            <h3 class="q">Активность по дням</h3>
+            <p class="hint">Каждая клетка — день: чем ярче, тем больше сообщений</p>
+          </div>
+          <div class="heat" id="heat"></div>
+        </article>
+      </section>
+
+      <!-- ───── О чём ───── -->
+      <section class="part" id="part-words">
+        <h2>О чём</h2>
+        <div class="stack">
+          <article class="tile tile--ink">
+            <h3 class="q">Слово вашей переписки</h3>
+            <div class="wall" id="wall"></div>
+          </article>
+
+          <article class="tile">
+            <div class="tile__q">
+              <h3 class="q">Ваш словарь</h3>
+              <p class="hint num">Слов в сообщении: у вас 3,2, у Милы 4,1</p>
+            </div>
+            <div class="owners">
+              <div>
+                <span class="avatar avatar--you">Я</span>
+                <div class="chips num" id="sig-you"></div>
+              </div>
+              <div>
+                <span class="avatar">М</span>
+                <div class="chips num" id="sig-them"></div>
+              </div>
+            </div>
+            <div class="sig">
+              <h4 class="q">Общие</h4>
+              <div class="chips num" id="shared"></div>
+            </div>
+          </article>
+
+          <article class="tile">
+            <h3 class="q">Любимые эмодзи</h3>
+            <div class="eduel eduel--wide num">
+              <div><em>😂</em><i data-line="52|48|333|307"></i></div>
+              <div><em>❤️</em><i data-line="35|65|144|268"></i></div>
+              <div><em>🔥</em><i data-line="60|40|96|64"></i></div>
+              <div><em>🥰</em><i data-line="6|94|5|88"></i></div>
+              <div><em>🤝</em><i data-line="95|5|38|2"></i></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <dialog class="share-dialog" id="share-dialog" aria-label="Итоги с Милой">
+      <div class="dlg">
+        <div class="dlg__head">
+          <h4>Итоги с Милой</h4>
+          <button class="round" data-icon="x" data-close aria-label="Закрыть"></button>
+        </div>
+        <div class="dlg__split">
+          <div>
+            <div class="slide">
+              <div class="slide__bars"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <div><small>Вы и Мила</small><br /><b>4 800</b><br /><small>сообщений за полтора года</small></div>
+            </div>
+            <div class="dlg__dots"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="dlg__side">
+            <p class="small muted">8 слайдов о вашей переписке — как сторис.</p>
+            <button class="btn btn--primary btn--lg"><i data-icon="play"></i>Смотреть итоги</button>
+            <div class="list">
+              <div>
+                <span class="ico" data-icon="download"></span
+                ><span>Сохранить картинками<small>8 файлов 1080×1920</small></span>
+              </div>
+              <div>
+                <span class="ico" data-icon="send"></span
+                ><span>Отправить в Telegram<small>Миле или в избранное</small></span>
+              </div>
+              <div>
+                <span class="ico" data-icon="link"></span
+                ><span>Скопировать ссылку<small>откроется без входа</small></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <div class="proto" role="toolbar" aria-label="Прототип">
+      <button data-set-theme="light" class="on">Светлая</button>
+      <button data-set-theme="dark">Тёмная</button>
+      <button id="lime">Лайм: новый</button>
+    </div>
+
+    <script src="report-v2.js"></script>
+    <script>
+      const fill = (id, html) => (document.getElementById(id).innerHTML = html)
+
+      const weeks = Array.from({ length: 74 }, (_, i) => {
+        const base = 30 + 50 * Math.sin(i / 9) ** 2 + (i > 38 && i < 44 ? 40 : 0)
+        return { mine: base * (0.6 + rnd() * 0.6), theirs: base * (0.6 + rnd() * 0.6) }
+      })
+      const pmax = Math.max(...weeks.flatMap((w) => [w.mine, w.theirs]))
+      document.getElementById('pulse').setAttribute('viewBox', `0 0 ${weeks.length * 4} 100`)
+      fill(
+        'pulse',
+        weeks
+          .map(
+            (w, i) =>
+              `<rect x="${i * 4}" y="${50 - (w.mine / pmax) * 48}" width="2.4" height="${(w.mine / pmax) * 48}" rx="1" fill="var(--you)"/>` +
+              `<rect x="${i * 4}" y="51" width="2.4" height="${(w.theirs / pmax) * 48}" rx="1" fill="var(--them)"/>`,
+          )
+          .join(''),
+      )
+      const vmax = Math.max(...weeks.map((w) => w.mine + w.theirs))
+      fill(
+        'vol',
+        weeks
+          .map(
+            (w) =>
+              `<i class="${w.mine + w.theirs === vmax ? 'is-peak' : ''}" style="height:${((w.mine + w.theirs) / (2 * pmax)) * 100}%"></i>`,
+          )
+          .join(''),
+      )
+
+      // «Поделиться» opens the dialog (B2a); Esc, the cross or the backdrop close it.
+      const dialog = document.getElementById('share-dialog')
+      document.getElementById('share').addEventListener('click', () => dialog.showModal())
+      dialog.addEventListener('click', (event) => {
+        if (event.target === dialog || event.target.closest('[data-close]')) dialog.close()
+      })
+      fill('units-you', '<i></i>'.repeat(52))
+      fill('units-them', '<i></i>'.repeat(124))
+      fill(
+        'wave-you',
+        WAVE.slice(0, 27)
+          .map((h) => `<i style="height:${h}%"></i>`)
+          .join(''),
+      )
+      fill('wave-them', WAVE.map((h) => `<i style="height:${h}%"></i>`).join(''))
+      fill('chain', '<i></i>'.repeat(23))
+
+      const hourly = [8, 5, 3, 2, 1, 1, 2, 6, 14, 18, 20, 22, 30, 32, 28, 24, 22, 26, 34, 40, 52, 58, 55, 30].map(
+        (v, h) => [v * (0.5 + ((h * 7) % 5) / 20), v * (0.45 + ((h * 3) % 5) / 20)],
+      )
+      const hmax = Math.max(...hourly.map(([a, b]) => a + b))
+      fill(
+        'hours',
+        hourly
+          .map(([a, b], h) => {
+            const cls = [h >= 20 && h < 23 && 'pk', h === 20 && 'pk-s', h === 22 && 'pk-e'].filter(Boolean).join(' ')
+            return `<div class="${cls}" title="${h}:00"><i style="height:${(b / hmax) * 100}%"></i><i style="height:${(a / hmax) * 100}%"></i></div>`
+          })
+          .join(''),
+      )
+      const levels = ['var(--surface-2)', 'var(--heat-1)', 'var(--heat-2)', 'var(--heat-3)', 'var(--heat-4)']
+      fill(
+        'heat',
+        Array.from({ length: 74 * 7 }, (_, i) => {
+          const v = rnd() * (0.4 + Math.sin(Math.floor(i / 7) / 9) ** 2)
+          return `<i style="background:${levels[v < 0.12 ? 0 : v < 0.35 ? 1 : v < 0.6 ? 2 : v < 0.85 ? 3 : 4]}"></i>`
+        }).join(''),
+      )
+      const chips = (items, side = '') =>
+        items.map(([v, c]) => `<span class="chip ${side}">${v} <small>${c}</small></span>`).join('')
+      fill(
+        'shared',
+        chips([
+          ['завтра', 186],
+          ['сегодня', 170],
+          ['вечером', 142],
+          ['кино', 98],
+          ['работа', 96],
+          ['дома', 90],
+          ['пойдём', 84],
+          ['утром', 77],
+          ['кофе', 70],
+          ['выходные', 64],
+        ]),
+      )
+      fill(
+        'sig-you',
+        chips(
+          [
+            ['созвон', 44],
+            ['дедлайн', 31],
+            ['спортзал', 22],
+            ['ноут', 18],
+            ['такси', 15],
+          ],
+          'chip--you',
+        ),
+      )
+      fill(
+        'sig-them',
+        chips(
+          [
+            ['зайка', 52],
+            ['рисовать', 28],
+            ['йога', 24],
+            ['мама', 21],
+            ['сериал', 19],
+          ],
+          'chip--them',
+        ),
+      )
+      document.querySelectorAll('[data-n]').forEach((node) => {
+        const [name, value] = node.dataset.n.split('|')
+        const n = Number(value)
+        node.innerHTML =
+          Array.from({ length: Math.floor(n) }, () => `<i data-icon="${name}"></i>`).join('') +
+          (n % 1 ? `<i data-icon="${name}" class="half"></i>` : '')
+      })
+      fill(
+        'wall',
+        Array.from({ length: 3 }, (_, i) =>
+          i === 1
+            ? '<span class="hit">котик <em>котик</em> ' + 'котик '.repeat(12) + '</span>'
+            : '<span>' + 'котик '.repeat(16) + '</span>',
+        ).join(''),
+      )
+      boot()
+    </script>
+  </body>
+</html>

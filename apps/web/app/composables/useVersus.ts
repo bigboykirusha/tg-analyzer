@@ -18,7 +18,7 @@ export interface VersusPair {
 export interface Versus {
   key: string
   title: string
-  /** «Вы», the other name, or «Поровну». */
+  /** «Вы», the other name, or «Поровну» (each card says parity in its own words). */
   figure: string
   /** «в 9,9 раза больше»; empty when even, since the figure already says so. */
   note: string
@@ -41,7 +41,7 @@ type Kind = 'more' | 'often' | 'faster'
  * the sticker card, so one value never gets two answers on the page.
  */
 export function useVersus(data: () => ReportDto) {
-  const { t, tc, formatDuration, formatNumber, formatPercent } = useI18n()
+  const { t, formatDuration, formatNumber, formatPercent } = useI18n()
 
   const side = (value: number, text: string): VersusSide => ({ value, text })
 
@@ -163,26 +163,6 @@ export function useVersus(data: () => ReportDto) {
       )
       result.voice = pairs.length ? card('voice', t('report.duel.voice'), 'more', total, pairs) : null
     } else result.voice = null
-
-    const rituals = report.rituals
-    result.morning = enough(rituals?.morningFirst, MIN_SAMPLES)
-      ? card(
-          'morning',
-          t('report.duel.morning'),
-          'often',
-          [rituals!.morningFirst.mine, rituals!.morningFirst.theirs],
-          [counted(rituals!.morningFirst, (value) => tc('report.talk.mornings', value))],
-        )
-      : null
-    result.night = enough(rituals?.nightLast, MIN_SAMPLES)
-      ? card(
-          'night',
-          t('report.duel.night'),
-          'often',
-          [rituals!.nightLast.mine, rituals!.nightLast.theirs],
-          [counted(rituals!.nightLast, (value) => tc('report.talk.evenings', value))],
-        )
-      : null
 
     return result
   })

@@ -3,7 +3,7 @@ import type { Versus } from '../../../composables/useVersus'
 
 /** Questions as a unit chart: one square is a fixed number of questions, so the gap is counted by eye. */
 const props = defineProps<{ item: Versus; theirName: string }>()
-const { t, formatNumber } = useI18n()
+const { t, tc, formatNumber } = useI18n()
 /** «2», «3,2»: one decimal, no trailing «,0». */
 const times = (value: number) => formatNumber(Math.round(value * 10) / 10)
 
@@ -36,11 +36,11 @@ const rows = computed(() => [
 <template>
   <ReportSection
     :title="item.title"
+    :text="step > 1 ? tc('report.fmt.questionsStep', step) : undefined"
     :answer="answer"
-    :sides="{ mine: pair.mine.text, theirs: pair.theirs.text, name: theirName }"
   >
     <div v-for="row in rows" :key="row.key" class="units">
-      <span class="units__who">{{ row.who }}</span>
+      <span class="units__who">{{ row.who }} · {{ row.side.text }}</span>
       <div class="units__grid" aria-hidden="true">
         <i v-for="index in row.cells" :key="index" :class="`units__cell--${row.key}`" />
       </div>

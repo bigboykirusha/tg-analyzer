@@ -1,24 +1,17 @@
 <script setup lang="ts">
 /**
- * A report card, one anatomy for every card (docs/design-system.md, «Карточка отчёта»):
- * the title as a question, an optional explanation, the answer in one sentence, the card's own
- * picture (the slot), and the two sides at the foot, «Вы» on the left.
+ * A report card, one anatomy for every card (docs/design-system.md, «Карточка отчёта»): the title
+ * as a question, an optional explanation, the answer in one sentence, then the card's own picture
+ * (the slot). The two sides are named inside the picture, never in a footer.
  * `tone` turns it into an ink, lime or grey tile: the accents that break up a page of white cards.
  */
-export interface ReportSides {
-  mine: string
-  theirs: string
-  name: string
-}
 defineProps<{
   title?: string
   text?: string
   answer?: string | null
-  sides?: ReportSides | null
   wide?: boolean
   tone?: 'ink' | 'lime' | 'grey'
 }>()
-const { t } = useI18n()
 </script>
 
 <template>
@@ -34,10 +27,6 @@ const { t } = useI18n()
     </header>
     <p v-if="answer" class="report-section__answer">{{ answer }}</p>
     <slot />
-    <footer v-if="sides" class="report-section__sides t-num">
-      <span>{{ t('report.you') }} · {{ sides.mine }}</span>
-      <span>{{ sides.name }} · {{ sides.theirs }}</span>
-    </footer>
   </article>
 </template>
 
@@ -70,6 +59,7 @@ const { t } = useI18n()
 .report-section__title {
   font: var(--text-title);
   letter-spacing: var(--tracking-title);
+  text-wrap: balance;
 }
 
 .report-section__text {
@@ -82,23 +72,5 @@ const { t } = useI18n()
   font: var(--text-h2);
   letter-spacing: var(--tracking-h2);
   text-wrap: balance;
-}
-
-/* The two sides close the card, after a hairline, always at the bottom. */
-.report-section__sides {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-4);
-  margin-top: auto;
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border);
-  color: var(--text-muted);
-  font: var(--text-small);
-  font-weight: 400;
-  white-space: normal;
-}
-
-.report-section__sides span:last-child {
-  text-align: right;
 }
 </style>

@@ -2,8 +2,8 @@
 import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 
 /**
- * When you talk, each fact once: the role and «Ваше время» (window, weekdays, parts of the day),
- * then every day of the period and every hour of the day.
+ * When you talk, each fact once: «Ваше время» (role, peak window, 24 hours, parts of the day),
+ * then every day of the period.
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t } = useI18n()
@@ -16,10 +16,5 @@ const days = computed(() => fillDailyGaps(report.value.activity.daily))
   <ReportRole :data="data" />
   <ReportSection :title="t('report.rhythm.heatmapTitle')" :text="t('report.rhythm.heatmapText')" wide>
     <ActivityHeatmap :points="days" />
-  </ReportSection>
-
-  <!-- 24 pairs of bars need the full width. -->
-  <ReportSection :title="t('report.rhythm.hoursTitle')" wide>
-    <HourlyChart :hourly="report.activity.hourly" :received-label="data.summary.title" />
   </ReportSection>
 </template>

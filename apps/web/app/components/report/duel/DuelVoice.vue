@@ -30,14 +30,10 @@ const rows = computed(() => {
 </script>
 
 <template>
-  <ReportSection
-    :title="item.title"
-    :answer="item.lead ? `${item.figure} — ${item.note}` : t('report.fmt.voiceEven')"
-    :sides="{ mine: rows[0]!.text, theirs: rows[1]!.text, name: theirName }"
-  >
+  <ReportSection :title="item.title" :answer="item.lead ? `${item.figure} — ${item.note}` : t('report.fmt.voiceEven')">
     <div class="track">
       <div v-for="row in rows" :key="row.key" class="wave">
-        <span class="wave__who">{{ row.who }}</span>
+        <span class="wave__who">{{ row.who }} · {{ row.text }}</span>
         <span class="wave__bars" :class="`wave__bars--${row.key}`" aria-hidden="true">
           <i v-for="(height, index) in row.bars" :key="index" :style="{ height: `${height}%` }" />
         </span>

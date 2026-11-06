@@ -3,8 +3,8 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import type { Versus } from '../../../composables/useVersus'
 
 /**
- * Reactions: both totals as one line, then each side's favourites on a podium — the first
- * place in the middle, as on a real one — and the next three in a quiet row under it.
+ * Reactions: each side's three favourites on a podium (first place in the middle, as on a real
+ * one), the side named by its avatar above, and both totals as one line at the foot.
  */
 const props = defineProps<{ data: ReportDto; item: Versus | null }>()
 const { t, formatNumber } = useI18n()
@@ -12,20 +12,15 @@ const name = computed(() => props.data.summary.title)
 
 // Custom emoji have no picture here, so only regular ones are shown.
 const plain = (items: { value: string; count: number }[]) =>
-  items.filter((entry) => entry.value !== 'custom' && entry.value !== 'paid').slice(0, 6)
+  items.filter((entry) => entry.value !== 'custom' && entry.value !== 'paid').slice(0, 3)
 
 const sides = computed(() => {
   const stats = props.data.report.reactions
   if (!stats) return []
-  const lists = [
-    { key: 'mine', label: t('report.fmt.podiumMine'), items: plain(stats.topBySender.mine) },
-    {
-      key: 'theirs',
-      label: t('report.fmt.podiumTheirs', { name: name.value }),
-      items: plain(stats.topBySender.theirs),
-    },
+  return [
+    { key: 'mine' as const, who: t('report.you'), items: plain(stats.topBySender.mine) },
+    { key: 'theirs' as const, who: name.value, items: plain(stats.topBySender.theirs) },
   ]
-  return lists
     .filter((side) => side.items.length)
     .map((side) => {
       const top = side.items[0]!.count
@@ -35,12 +30,17 @@ const sides = computed(() => {
         .map((entry) => ({
           ...entry,
           place: entry === first ? 1 : entry === second ? 2 : 3,
-          height: 28 + (entry.count / top) * 52,
+          height: 32 + (entry.count / top) * 48,
         }))
       return { ...side, steps }
     })
 })
 const pair = computed(() => props.item?.pairs[0] ?? null)
+const answer = computed(() => {
+  const item = props.item
+  if (!item) return null
+  return item.lead ? `${item.figure} — ${item.note}` : t('report.fmt.reactionsEven')
+})
 </script>
 
 <template>
@@ -48,20 +48,29 @@ const pair = computed(() => props.item?.pairs[0] ?? null)
     v-if="sides.length"
     tone="lime"
     :title="item?.title ?? t('report.talk.reactionsTitle')"
-    :answer="item ? (item.lead ? `${item.figure} — ${item.note}` : t('report.fmt.reactionsEven')) : null"
-    :sides="pair ? { mine: pair.mine.text, theirs: pair.theirs.text, name } : null"
+    :answer="answer"
   >
     <div class="podiums">
       <div v-for="side in sides" :key="side.key" class="podium-side">
-        <span class="podium-side__label">{{ side.label }}</span>
-        <div class="podium" :class="`podium--${side.key}`">
+        <ReportSideAvatar :side="side.key" :name="side.who" />
+        <div class="podium">
           <div v-for="step in side.steps" :key="step.value" class="podium__place">
             <span class="podium__emoji">{{ step.value }}</span>
-            <b class="podium__step t-num" :style="{ height: `${step.height}px` }">{{ formatNumber(step.count) }}</b>
+            <span class="podium__count">{{ formatNumber(step.count) }}</span>
+            <b class="podium__step" :class="`podium__step--${side.key}`" :style="{ height: `${step.height}px` }">
+              {{ step.place }}
+            </b>
           </div>
         </div>
       </div>
     </div>
+    <ReportLine
+      v-if="pair"
+      :mine="pair.mine.value"
+      :theirs="pair.theirs.value"
+      :left="pair.mine.text"
+      :right="pair.theirs.text"
+    />
   </ReportSection>
 </template>
 
@@ -69,8 +78,7 @@ const pair = computed(() => props.item?.pairs[0] ?? null)
 .podiums {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-5);
-  margin-top: auto;
+  gap: var(--space-4);
 }
 
 .podium-side {
@@ -80,18 +88,10 @@ const pair = computed(() => props.item?.pairs[0] ?? null)
   min-width: 0;
 }
 
-.podium-side__label {
-  overflow: hidden;
-  color: var(--text-muted);
-  font: var(--text-caption);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .podium {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .podium__place {
@@ -103,8 +103,13 @@ const pair = computed(() => props.item?.pairs[0] ?? null)
 }
 
 .podium__emoji {
-  font-size: 28px;
-  line-height: 1.1;
+  font-size: var(--emoji-size);
+  line-height: 1;
+}
+
+.podium__count {
+  color: var(--on-lime-muted);
+  font: var(--text-small);
 }
 
 .podium__step {
@@ -112,17 +117,16 @@ const pair = computed(() => props.item?.pairs[0] ?? null)
   place-items: start center;
   width: 100%;
   padding-top: var(--space-2);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  font: var(--text-ui);
-  font-weight: 500;
+  border-radius: 3px 3px 0 0;
+  font: var(--text-title);
 }
 
-.podium--mine .podium__step {
+.podium__step--mine {
   background: var(--on-lime);
   color: var(--lime);
 }
 
-.podium--theirs .podium__step {
+.podium__step--theirs {
   background: var(--on-lime-well);
   color: var(--on-lime);
 }

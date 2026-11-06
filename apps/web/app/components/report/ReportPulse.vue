@@ -58,7 +58,7 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
     </figcaption>
     <Seismograph
       :days="ticks"
-      :height="isPhone ? 80 : 96"
+      :height="bare ? 56 : isPhone ? 80 : 96"
       animate
       :label="data.report.group ? t('report.pulse.labelGroup') : t('report.pulse.label', { name: partner })"
     />

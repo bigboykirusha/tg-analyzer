@@ -27,8 +27,18 @@ body {
   background-color: var(--bg);
   color: var(--text);
   font: var(--text-body);
-  font-variant-numeric: tabular-nums;
   font-optical-sizing: auto;
+}
+
+/*
+ * Every figure is tabular. The «font:» shorthand in a component resets font-variant-numeric, so the
+ * rule sits on the app root id: it outranks every class rule and does not depend on order.
+ */
+#__nuxt,
+#__nuxt *,
+#teleports,
+#teleports * {
+  font-variant-numeric: tabular-nums;
 }
 
 a {
@@ -148,20 +158,8 @@ svg.lucide {
   text-wrap: pretty;
 }
 
-.t-body {
-  font: var(--text-body);
-}
-
-.t-ui {
-  font: var(--text-ui);
-}
-
 .t-small {
   font: var(--text-small);
-}
-
-.t-caption {
-  font: var(--text-caption);
 }
 
 .t-label {
@@ -490,13 +488,13 @@ main:focus {
   outline: none;
 }
 
-/* A quiet row of label–value facts at the foot of a card, after a hairline. */
+/* Facts under a chart: one row on wide screens, a «name — value» list on phones, one hairline from the chart. */
 .fact-line {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-6);
+  gap: var(--space-2) var(--space-4);
   margin: 0;
-  padding-top: var(--space-3);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--border);
 }
 
@@ -515,20 +513,46 @@ main:focus {
   font-weight: 500;
 }
 
-/* The split of a comparison: you in ink, the other side in lime, one --bar-height. */
-.split-bar {
+@media (max-width: 640px) {
+  .fact-line {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .fact-line > div {
+    justify-content: space-between;
+  }
+
+  .fact-line dd {
+    text-align: right;
+  }
+}
+
+/* Rows of a report card: a label (an optional 16 px icon and text) over its line, 16 between rows. */
+.report-rows {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.report-rows__row {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.report-rows__label {
   display: flex;
-  gap: 3px;
-  height: var(--bar-height);
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-small);
 }
 
-.split-bar b {
-  border-radius: var(--radius-full);
-  background: var(--you);
+.report-rows__label svg {
+  color: var(--text-muted);
 }
 
-.split-bar b + b {
-  background: var(--them);
+/* Numbers and time windows never break: «12:00–15:00», «у Милы 4,1». */
+.nowrap {
+  white-space: nowrap;
 }
 
 .sr-only {
@@ -656,10 +680,6 @@ main:focus {
 }
 
 /* Pairs of cards side by side end on one line. */
-.report-grid--even {
-  align-items: stretch;
-}
-
 .report-grid > .report-section--wide {
   grid-column: 1 / -1;
 }

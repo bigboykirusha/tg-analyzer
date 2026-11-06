@@ -74,6 +74,8 @@
   /* Charts of the whole chat (both sides together): grey, with the strong step for the peak. */
   --chart-neutral: #c9ccd1;
   --chart-neutral-strong: #63676e;
+  /* The peak window behind the hourly bars in «Ваше время». */
+  --chart-peak: var(--heat-1);
   --avatar-1-bg: #c6f06a;
   --avatar-1-ink: #0e0f11;
   --avatar-2-bg: #dcd6ff;
@@ -133,15 +135,15 @@
   --you: #f2f2f3;
   --you-ink: #f2f2f3;
   --you-subtle: rgba(242, 242, 243, 0.1);
-  --them: #c6f06a;
-  --them-ink: #c6f06a;
+  --them: #bde26a;
+  --them-ink: #bde26a;
   /* Dark: ink is a raised surface, not a white slab; lime stays the one bright tile. */
   --tile-ink: #2a2a2f;
-  --tile-grey: #1a1a1d;
+  --tile-grey: #202024;
   --on-tile-ink: #f2f2f3;
   --on-tile-ink-muted: rgba(242, 242, 243, 0.6);
-  --lime: #c6f06a;
-  --them-on-ink: #c6f06a;
+  --lime: #bde26a;
+  --them-on-ink: #bde26a;
   --on-lime: #0a0a0b;
   --on-lime-muted: rgba(10, 10, 11, 0.6);
   --on-lime-line: rgba(10, 10, 11, 0.14);
@@ -159,11 +161,12 @@
   --scrim: rgba(0, 0, 0, 0.6);
   --heat-1: #232a17;
   --heat-2: #4b6420;
-  --heat-3: #8fb83f;
-  --heat-4: #c6f06a;
+  --heat-3: #8cb045;
+  --heat-4: #bde26a;
   --chart-neutral: #3a3a40;
   --chart-neutral-strong: #a1a1a8;
-  --avatar-1-bg: #c6f06a;
+  --chart-peak: #2b3420;
+  --avatar-1-bg: #bde26a;
   --avatar-1-ink: #0a0a0b;
   --avatar-2-bg: #b9aeff;
   --avatar-2-ink: #0a0a0b;
@@ -262,9 +265,11 @@
   /* Big figures: tight tracking (see .t-figure). */
   --text-figure: 500 44px/44px var(--font-sans);
   --text-figure-sm: 500 24px/28px var(--font-sans);
-  /* Oversized, for the top of a report only: «52 / 48» in the hero and «Слово вашей переписки».
-   * Cards answer with --text-figure (a number or a short word) or --text-h2 (a phrase). */
+  /* The one big number of a card: the top of a report («4 800», «52 / 48») and poster cards («6:12»).
+   * Every other value in a report card is --text-h2. */
   --text-figure-lg: 500 72px/68px var(--font-sans);
+  /* One size for every emoji in the report (reactions, stickers, emoji rows). */
+  --emoji-size: 28px;
   /* Tracking follows the size: the bigger the type, the tighter. Components use these, not raw em. */
   --tracking-display: -0.05em;
   --tracking-figure: -0.04em;
@@ -341,6 +346,6 @@
     --text-h1: 500 30px/34px var(--font-sans);
     --text-h2: 500 22px/28px var(--font-sans);
     --text-figure: 500 34px/36px var(--font-sans);
-    --text-figure-lg: 500 48px/48px var(--font-sans);
+    --text-figure-lg: 500 56px/56px var(--font-sans);
   }
 }

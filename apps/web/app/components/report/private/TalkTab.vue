@@ -53,16 +53,12 @@ const absent = computed(() =>
 
   <template v-else>
     <ReportSection v-for="item in voiceWithoutDuration" :key="item.label" :title="item.label">
-      <dl class="voice-count">
-        <div>
-          <dt>{{ t('report.you') }}</dt>
-          <dd class="t-num t-h2">{{ formatNumber(item.stats.count.mine) }}</dd>
-        </div>
-        <div>
-          <dt>{{ data.summary.title }}</dt>
-          <dd class="t-num t-h2">{{ formatNumber(item.stats.count.theirs) }}</dd>
-        </div>
-      </dl>
+      <ReportLine
+        :mine="item.stats.count.mine"
+        :theirs="item.stats.count.theirs"
+        :left="formatNumber(item.stats.count.mine)"
+        :right="formatNumber(item.stats.count.theirs)"
+      />
     </ReportSection>
     <p v-if="absent.length" class="note talk__absent">
       <Info aria-hidden="true" />
@@ -70,18 +66,3 @@ const absent = computed(() =>
     </p>
   </template>
 </template>
-
-<style scoped>
-.voice-count {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
-}
-
-.voice-count dt {
-  color: var(--text-muted);
-  font: var(--text-small);
-  margin-bottom: var(--space-2);
-  overflow-wrap: anywhere;
-}
-</style>

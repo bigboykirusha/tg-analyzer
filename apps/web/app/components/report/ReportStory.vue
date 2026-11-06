@@ -23,7 +23,8 @@ const props = defineProps<{
   data: ReportDto
   /** The public example: no account, so no photos to fetch. */
   offline?: boolean
-  /** Opened from «Share»: the share sheet is already up. */
+  /** What «Поделиться» asked for: just watch, save every slide, or send them all to the share sheet. */
+  intent?: 'view' | 'save' | 'share'
 }>()
 const emit = defineEmits<{ close: [] }>()
 
@@ -662,13 +663,33 @@ async function loadAvatars() {
   theirAvatar.value = theirs
 }
 
-watch(open, (value) => {
+/** Every slide as a picture: to the phone's share sheet when it can take files, downloaded otherwise. */
+async function exportAll(send: boolean) {
+  paused.value = true
+  try {
+    await image.run(async () => {
+      const files = await renderFiles(slides.value.map((_, position) => position))
+      if (send && canShare.value) await image.share(files, shareText.value)
+      else files.forEach((file) => image.download(file, file.name))
+    })
+  } catch {
+    toast.error(t('story.saveError'))
+  } finally {
+    exportIndex.value = null
+  }
+}
+
+watch(open, async (value) => {
   if (!value) return
   index.value = 0
   paused.value = false
   shareOpen.value = false
   canShare.value = image.canShareFiles()
   void loadAvatars()
+  if (props.intent === 'save' || props.intent === 'share') {
+    await nextTick()
+    await exportAll(props.intent === 'share')
+  }
 })
 </script>
 

@@ -22,7 +22,7 @@ const { t, formatNumber } = useI18n()
 .stickers {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: var(--space-3);
+  gap: var(--space-2);
   list-style: none;
 }
 
@@ -37,7 +37,7 @@ const { t, formatNumber } = useI18n()
   width: 64px;
   height: 64px;
   place-items: center;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--surface-2);
 }
 
@@ -48,7 +48,7 @@ const { t, formatNumber } = useI18n()
 }
 
 .sticker__emoji {
-  font-size: 34px;
+  font-size: var(--emoji-size);
   line-height: 1;
 }
 
