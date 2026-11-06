@@ -110,6 +110,7 @@ const connections = computed(() =>
   display: flex;
   justify-content: space-between;
   gap: var(--space-3);
+  font: var(--text-title);
   padding: var(--space-2) 0;
   border-bottom: 1px solid var(--border);
 }

@@ -130,4 +130,8 @@ const healthFacts = computed<Fact[]>(() => {
   gap: 2px;
   min-width: 0;
 }
+
+.pair__names strong {
+  font: var(--text-title);
+}
 </style>

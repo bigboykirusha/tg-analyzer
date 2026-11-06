@@ -50,6 +50,10 @@ const signatures = computed(() =>
   gap: var(--space-3);
 }
 
+.signature strong {
+  font: var(--text-title);
+}
+
 .signature {
   display: flex;
   flex-direction: column;
