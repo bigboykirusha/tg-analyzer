@@ -27,16 +27,8 @@ const versus = useVersus(() => data.value)
 const speed = computed(() => versus.value.speed ?? null)
 const tabs = computed(() => [t('report.tabs.together'), t('report.tabs.time'), t('report.tabs.words')])
 const period = computed(() => formatPeriod(data.value.summary.firstMessageAt, data.value.summary.lastMessageAt, true))
-/** Weekly bars, as in the report's top tile. */
-const weeks = computed(() => {
-  const out: { sent: number; received: number }[] = []
-  fillDailyGaps(data.value.report.activity.daily).forEach((day, index) => {
-    if (index % 7 === 0) out.push({ sent: 0, received: 0 })
-    out[out.length - 1]!.sent += day.sent
-    out[out.length - 1]!.received += day.received
-  })
-  return out
-})
+/** Every day, as in the report: Seismograph keeps one density everywhere. */
+const days = computed(() => fillDailyGaps(data.value.report.activity.daily))
 </script>
 
 <template>
@@ -55,7 +47,7 @@ const weeks = computed(() => {
       <div class="tile tile--ink mini__wide">
         <div class="tile__label">{{ t('report.kpi.messages') }}</div>
         <div class="tile__figure">{{ formatNumber(totals.messages) }}</div>
-        <Seismograph :days="weeks" :height="props.phone ? 40 : 72" bars />
+        <Seismograph :days="days" :height="props.phone ? 40 : 96" />
       </div>
       <div class="tile tile--lime mini__side">
         <div class="tile__label">{{ t('report.kpi.whoWritesMore') }}</div>

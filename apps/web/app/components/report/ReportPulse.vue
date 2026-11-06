@@ -10,16 +10,12 @@ const props = defineProps<{ data: ReportDto; bare?: boolean }>()
 const { t, formatMonth } = useI18n()
 const isPhone = useMediaQuery('(max-width: 640px)')
 
-/**
- * Hairline ticks need about 3 px each to stay apart. In the report's top tile (`bare`) the pulse
- * is a few dozen wide bars instead: a year of weekly hairlines reads as a barcode.
- */
-const BARE_MAX = 40
-const maxTicks = computed(() => (props.bare ? BARE_MAX : isPhone.value ? 110 : 360))
+/** Days, weeks or months by length; Seismograph merges further to one tick per 3 px of its width. */
+const maxTicks = 360
 
 const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
 /** Days per tick: a day, a week or roughly a month, whichever fits. */
-const bucket = computed(() => [1, 7, 14, 30].find((size) => days.value.length / size <= maxTicks.value) ?? 30)
+const bucket = computed(() => [1, 7, 30].find((size) => days.value.length / size <= maxTicks) ?? 30)
 const ticks = computed(() => {
   if (bucket.value === 1) return days.value
   const buckets: { sent: number; received: number }[] = []
@@ -63,7 +59,6 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
     <Seismograph
       :days="ticks"
       :height="bare ? 56 : isPhone ? 80 : 96"
-      :bars="bare"
       animate
       :label="data.report.group ? t('report.pulse.labelGroup') : t('report.pulse.label', { name: partner })"
     />
