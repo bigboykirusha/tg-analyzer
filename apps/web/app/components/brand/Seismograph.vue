@@ -31,7 +31,10 @@ const ticks = computed(() =>
  * up, so a viewBox a few dozen units wide turns the bars into blurred columns.
  */
 const unit = computed(() => (props.bars ? 20 : 1))
-const width = computed(() => Math.max(1, props.days.length) * unit.value)
+/** Bars keep a slot for at least 24 of them: a three-week chat draws three bars, not three slabs. */
+const MIN_BAR_SLOTS = 24
+const slots = computed(() => Math.max(1, props.days.length, props.bars ? MIN_BAR_SLOTS : 1))
+const width = computed(() => slots.value * unit.value)
 
 // The drawing is a welcome, not a loading state: the second report of a visit shows at once.
 const SESSION_KEY = 'tg-analyzer-seismograph-played'
