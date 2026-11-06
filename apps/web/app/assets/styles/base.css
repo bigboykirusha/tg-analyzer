@@ -138,23 +138,14 @@ svg.lucide {
   text-wrap: balance;
 }
 
-/* Big figures in reports: tight, even-width digits. */
-.t-figure {
-  font: var(--text-figure);
-  font-variant-numeric: lining-nums tabular-nums;
-  letter-spacing: var(--tracking-figure);
-  white-space: nowrap;
-}
-
 .t-title {
   font: var(--text-title);
-  letter-spacing: var(--tracking-title);
 }
 
 .t-lede {
   max-width: 60ch;
   color: var(--text-muted);
-  font: var(--text-lede);
+  font: var(--text-body);
   text-wrap: pretty;
 }
 
@@ -164,7 +155,7 @@ svg.lucide {
 
 .t-label {
   color: var(--text-muted);
-  font: var(--text-label);
+  font: var(--text-caption);
 }
 
 /* Counts and percentages: the UI font with even-width digits, never the mono face. */
@@ -262,8 +253,7 @@ svg.lucide {
   border-radius: var(--radius-md);
   background: var(--surface-2);
   color: var(--text);
-  font-size: 16px;
-  line-height: 24px;
+  font: var(--text-body);
   outline: none;
   transition:
     background-color var(--transition-fast),
@@ -296,8 +286,7 @@ svg.lucide {
   border: 0;
   background: transparent;
   color: var(--text);
-  font-size: 16px;
-  line-height: 24px;
+  font: var(--text-body);
   outline: none;
 }
 
@@ -410,7 +399,7 @@ svg.lucide {
 
 .menu-divider {
   height: 1px;
-  margin: 6px var(--space-2);
+  margin: var(--space-1) var(--space-2);
   background: var(--border);
 }
 
@@ -436,7 +425,6 @@ svg.lucide {
 
 .menu-identity__name {
   font: var(--text-ui);
-  font-weight: 500;
 }
 
 .menu-identity__sub {
@@ -734,7 +722,7 @@ main:focus {
 .tile {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
   min-width: 0;
   padding: var(--card-padding);
   border-radius: var(--radius-lg);
@@ -749,7 +737,6 @@ main:focus {
   --them-ink: var(--them-on-ink);
   --text: var(--on-tile-ink);
   --text-muted: var(--on-tile-ink-muted);
-  --text-subtle: var(--on-tile-ink-muted);
   --border: var(--on-tile-ink-line);
   --border-strong: var(--on-tile-ink-line);
   --surface-2: var(--on-tile-ink-well);
@@ -763,7 +750,6 @@ main:focus {
   --surface-2: var(--on-lime-well);
   --text: var(--on-lime);
   --text-muted: var(--on-lime-muted);
-  --text-subtle: var(--on-lime-muted);
   --you: var(--on-lime);
   --you-ink: var(--on-lime);
   --them: var(--on-lime-muted);
@@ -783,11 +769,11 @@ main:focus {
   justify-content: space-between;
   gap: var(--space-2);
   color: var(--text-muted);
-  font: var(--text-label);
+  font: var(--text-small);
 }
 
 .tile__figure {
-  font: var(--text-figure);
+  font: var(--text-h1);
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--tracking-figure);
   white-space: nowrap;
@@ -796,14 +782,12 @@ main:focus {
 .tile__figure small {
   color: var(--text-muted);
   font-size: 0.42em;
-  font-weight: 500;
-  letter-spacing: var(--tracking-title);
+  letter-spacing: 0;
 }
 
 .tile__note {
   color: var(--text-muted);
   font: var(--text-small);
-  font-weight: 500;
 }
 
 /* ─── Menu rows (PopoverMenu items, Select options) ─────────────────────── */

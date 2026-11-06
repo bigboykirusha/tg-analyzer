@@ -56,7 +56,7 @@ const rows = computed(() => [
 
 .units__who {
   color: var(--text-muted);
-  font: var(--text-caption);
+  font: var(--text-small);
 }
 
 .units__grid {
@@ -67,7 +67,7 @@ const rows = computed(() => [
 
 .units__grid i {
   aspect-ratio: 1;
-  border-radius: 3px;
+  border-radius: var(--radius-mark);
 }
 
 .units__cell--mine {

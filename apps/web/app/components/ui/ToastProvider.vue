@@ -86,7 +86,7 @@ function runAction(toast: ToastMessage) {
   gap: var(--space-3);
   width: 100%;
   min-width: 0;
-  padding: 14px var(--space-4);
+  padding: var(--space-4);
   border-radius: var(--radius-md);
   background: var(--inverse-surface);
   box-shadow: var(--shadow-overlay);
@@ -119,7 +119,6 @@ function runAction(toast: ToastMessage) {
 .toast__title {
   color: var(--on-inverse);
   font: var(--text-ui);
-  font-weight: 500;
 }
 
 .toast__text {
@@ -130,7 +129,7 @@ function runAction(toast: ToastMessage) {
 }
 
 .toast__action {
-  min-height: 32px;
+  min-height: var(--control-xs);
   padding: 0 var(--space-3);
   border: 1px solid var(--on-inverse-line);
   border-radius: var(--radius-full);
@@ -174,7 +173,7 @@ function runAction(toast: ToastMessage) {
 
   /* On a phone the toast covers the header: keep it to two short lines. */
   .toast {
-    padding: 10px var(--space-3);
+    padding: var(--space-3);
   }
 
   .toast__text {

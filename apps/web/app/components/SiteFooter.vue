@@ -10,7 +10,6 @@ const { t } = useI18n()
       <div class="site-footer__end">
         <nav class="site-footer__nav" :aria-label="t('site.footerNav')">
           <NuxtLink to="/faq">{{ t('site.privacy') }}</NuxtLink>
-          <NuxtLink to="/terms">{{ t('site.terms') }}</NuxtLink>
         </nav>
         <div class="site-footer__prefs">
           <UiLocaleSwitch />

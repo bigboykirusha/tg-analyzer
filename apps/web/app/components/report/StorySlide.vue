@@ -303,7 +303,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   width: 8cqmin;
   height: 8cqmin;
   overflow: hidden;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--story-chip);
   box-shadow: 0 0 0 0.7cqmin var(--story-gradient-1);
   font-size: 3.6cqmin;

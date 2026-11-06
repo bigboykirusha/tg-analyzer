@@ -398,8 +398,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   background: var(--surface-2);
   color: var(--text);
   cursor: pointer;
-  font-size: 16px;
-  line-height: 24px;
+  font: var(--text-body);
   text-align: left;
   transition:
     background-color var(--transition-fast),
@@ -472,7 +471,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   background: transparent;
   color: var(--text);
   cursor: pointer;
-  font-size: 16px;
+  font: var(--text-body);
   white-space: nowrap;
 }
 
@@ -507,7 +506,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   min-width: 232px;
   max-height: 340px;
   overflow: hidden;
-  padding: 6px;
+  padding: var(--space-1);
   border: 0;
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
@@ -535,7 +534,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   align-items: center;
   gap: var(--space-2);
   min-height: var(--control-sm);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-1);
   padding: 0 var(--space-3);
   border-radius: var(--radius-md);
   background: var(--fill-raised);
@@ -548,8 +547,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   border: 0;
   background: transparent;
   color: var(--text);
-  font: var(--text-ui);
-  font-weight: 400;
+  font: var(--text-body);
   outline: none;
 }
 
@@ -570,7 +568,6 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   padding: var(--space-2) var(--space-3) var(--space-1);
   color: var(--text-muted);
   font: var(--text-caption);
-  font-weight: 500;
 }
 
 .select__empty {
@@ -584,7 +581,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: 44px;
+  min-height: var(--control-md);
   padding: 0 var(--space-2);
   border-radius: var(--radius-md);
   color: var(--text);

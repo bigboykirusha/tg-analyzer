@@ -32,7 +32,7 @@
 
 ## Веб-клиент
 
-- Страницы: `/login`, `/dashboard`, `/chat/:id`, `/account`, `/example` (публичный пример отчёта, собирается в браузере тем же `ChatReportBuilder`), `/terms`, `/offline`.
+- Страницы: `/login`, `/dashboard`, `/chat/:id`, `/account`, `/example` (публичный пример отчёта, собирается в браузере тем же `ChatReportBuilder`), `/offline`.
 - Страницы после входа рендерятся только на клиенте (`ssr: false` в `routeRules`): Vue не исправляет расхождения классов после гидратации.
 - Access-token живёт только в памяти; при загрузке страницы клиент обновляет его по HttpOnly refresh-cookie. Вкладки синхронизируют обновление через Web Locks.
 - Аналитика — чистые функции в `packages/shared/src/analytics` с тестами; web и API используют один код.

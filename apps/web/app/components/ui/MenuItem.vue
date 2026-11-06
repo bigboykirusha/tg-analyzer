@@ -42,7 +42,7 @@ withDefaults(
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  min-height: 44px;
+  min-height: var(--control-md);
   padding: 0 var(--space-2);
   border: 0;
   border-radius: var(--radius-md);
@@ -63,7 +63,7 @@ withDefaults(
 }
 
 .menu-item__meta {
-  padding: 2px 6px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-xs);
   background: var(--fill-raised);
   color: var(--text-muted);

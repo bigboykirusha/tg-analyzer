@@ -260,7 +260,7 @@ function signOut() {
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: none;
   cursor: pointer;
 }

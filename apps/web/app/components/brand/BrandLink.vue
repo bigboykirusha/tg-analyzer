@@ -15,7 +15,7 @@ withDefaults(defineProps<{ to?: string }>(), { to: '/' })
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
   border-radius: var(--radius-sm);
   color: var(--text);
   font: var(--text-title);

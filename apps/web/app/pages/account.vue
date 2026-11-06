@@ -155,7 +155,7 @@ onMounted(() => {
         </UiButton>
         <UiButton
           block
-          variant="danger-soft"
+          variant="danger"
           :loading="busy === 'delete'"
           :disabled="busy === 'logout'"
           @click="signOut(true)"

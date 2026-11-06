@@ -75,7 +75,7 @@ useHead({
 
 /* The one display size on the site: only the landing gets it. */
 .hero__title {
-  font: 600 clamp(44px, 5.8vw, 80px) / 0.98 var(--font-sans);
+  font: var(--text-display);
   letter-spacing: var(--tracking-display);
 }
 
@@ -88,7 +88,7 @@ useHead({
   max-width: 34ch;
   margin-top: var(--space-6);
   color: var(--text-muted);
-  font: 400 18px/1.5 var(--font-sans);
+  font: var(--text-body);
 }
 
 .hero__actions {
@@ -104,7 +104,6 @@ useHead({
   align-items: center;
   color: var(--text);
   font: var(--text-ui);
-  font-weight: 500;
   transition: color var(--transition-fast);
 }
 
@@ -180,7 +179,6 @@ useHead({
 
   .hero__lede {
     margin-top: var(--space-4);
-    font-size: 17px;
   }
 
   .hero__actions {

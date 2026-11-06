@@ -58,7 +58,7 @@ defineProps<{
 
 .hero__figure {
   grid-area: figure;
-  font: var(--text-figure-lg);
+  font: var(--text-figure);
   letter-spacing: var(--tracking-figure);
 }
 

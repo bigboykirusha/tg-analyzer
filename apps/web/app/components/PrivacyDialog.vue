@@ -131,7 +131,6 @@ const sections = computed(() => [
 
 .privacy__heading {
   font: var(--text-h3);
-  letter-spacing: var(--tracking-title);
 }
 
 .privacy__text {

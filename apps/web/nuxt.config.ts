@@ -106,6 +106,14 @@ export default defineNuxtConfig({
   // second copy of Vue, lost its injection context and the first render after a cold
   // start failed with a 500 («Cannot destructure property 'size' of useLucideProps()»).
   build: { transpile: ['@lucide/vue'] },
+  hooks: {
+    // The living UI kit (/kit) is a development tool: production builds leave it out.
+    'pages:extend'(pages) {
+      if (process.env.NODE_ENV !== 'production') return
+      const index = pages.findIndex((page) => page.path === '/kit')
+      if (index >= 0) pages.splice(index, 1)
+    },
+  },
   runtimeConfig: {
     // Overridden at runtime by NUXT_API_PROXY_TARGET.
     apiProxyTarget,

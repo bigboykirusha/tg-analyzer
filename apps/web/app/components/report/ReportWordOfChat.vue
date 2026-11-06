@@ -39,7 +39,7 @@ const runners = computed(() => words.value.slice(1, 4))
 .word__value {
   overflow-wrap: anywhere;
   color: var(--them);
-  font: var(--text-figure-lg);
+  font: var(--text-figure);
   letter-spacing: var(--tracking-figure);
 }
 

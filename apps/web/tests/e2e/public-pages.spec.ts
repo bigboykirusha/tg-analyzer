@@ -15,7 +15,7 @@ test('system dark theme hydrates without replacing the theme icon', async ({ pag
 })
 
 // Every public page shares one frame, so all of them get the same checks.
-for (const path of ['/', '/login', '/faq', '/terms', '/example'])
+for (const path of ['/', '/login', '/faq', '/example'])
   for (const theme of ['light', 'dark'] as const) {
     test(`${path} renders without accessibility violations in ${theme}`, async ({ page, context }) => {
       const renderingErrors: string[] = []
@@ -77,13 +77,6 @@ test('the privacy policy opens full screen over the login page', async ({ page, 
   await page.waitForURL('**/faq')
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 })
-
-for (const path of ['/terms']) {
-  test(`${path} is reachable without signing in`, async ({ page }) => {
-    await page.goto(path)
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
-  })
-}
 
 test('protected pages redirect to login', async ({ page }) => {
   await page.goto('/dashboard')

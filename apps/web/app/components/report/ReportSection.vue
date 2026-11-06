@@ -58,7 +58,6 @@ defineProps<{
 /* Tiles are named quietly; the numbers inside carry the weight. */
 .report-section__title {
   font: var(--text-title);
-  letter-spacing: var(--tracking-title);
   text-wrap: balance;
 }
 

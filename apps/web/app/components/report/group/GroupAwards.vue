@@ -133,7 +133,7 @@ const awards = computed(() =>
   gap: var(--space-2);
   margin-bottom: var(--space-2);
   color: var(--text-muted);
-  font: var(--text-label);
+  font: var(--text-small);
 }
 
 .award__winner {

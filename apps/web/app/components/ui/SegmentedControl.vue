@@ -121,14 +121,14 @@ function handleKeydown(event: KeyboardEvent) {
   z-index: 1;
   flex: 1 1 0;
   min-width: 0;
-  min-height: 30px;
+  min-height: calc(var(--control-sm) - 2 * var(--pad));
   padding: 0 var(--space-3);
   border: 0;
   border-radius: var(--radius-full);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  font: var(--text-label);
+  font: var(--text-ui);
   white-space: nowrap;
   transition:
     color var(--transition-fast),
@@ -176,7 +176,7 @@ function handleKeydown(event: KeyboardEvent) {
 
 @media (max-width: 640px) and (pointer: coarse) {
   .segment {
-    min-height: 36px;
+    min-height: var(--control-sm);
   }
 }
 </style>

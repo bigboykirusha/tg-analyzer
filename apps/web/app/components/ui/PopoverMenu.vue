@@ -176,7 +176,7 @@ onBeforeUnmount(() => {
   max-height: 360px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 6px;
+  padding: var(--space-1);
   border: 0;
   border-radius: var(--radius-lg);
   background: var(--surface-raised);

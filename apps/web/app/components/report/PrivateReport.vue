@@ -113,7 +113,7 @@ const shareHint = computed(() => {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
-  font: var(--text-figure-lg);
+  font: var(--text-figure);
   letter-spacing: var(--tracking-figure);
 }
 

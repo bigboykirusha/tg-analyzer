@@ -114,7 +114,7 @@ function describe(cell: Cell) {
 .calendar__cell {
   display: block;
   aspect-ratio: 1;
-  border-radius: 3px;
+  border-radius: var(--radius-mark);
 }
 
 .calendar__cell--pad {

@@ -32,19 +32,9 @@ const data = computed(() => buildExampleReport(t('example.partner')))
 <style scoped>
 .example-end {
   align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-8);
-}
-
-.example-end .btn {
-  margin-top: var(--space-2);
 }
 
 @media (max-width: 640px) {
-  .example-end {
-    padding: var(--space-5);
-  }
-
   .example-end .btn {
     align-self: stretch;
   }

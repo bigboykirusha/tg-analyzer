@@ -28,7 +28,7 @@ defineProps<{
   align-content: start;
   gap: var(--space-3);
   min-width: 0;
-  padding: var(--space-5);
+  padding: var(--card-padding);
   border-radius: var(--radius-lg);
   background: var(--surface);
 }
@@ -42,19 +42,10 @@ defineProps<{
 .metric-value {
   overflow: hidden;
   color: var(--text);
-  /* Scales with the tile, so «17–20 ч» fits four in a row next to the sidebar. */
-  font: 600 clamp(24px, 24cqi, 36px) / 1 var(--font-sans);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: var(--tracking-figure);
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-@media (max-width: 640px) {
-  .metric {
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
-  }
 }
 
 .metric-foot {

@@ -8,34 +8,26 @@ import { buildExampleReport } from '../../lib/example-report'
  * on the landing are real output of the app.
  */
 const props = defineProps<{ phone?: boolean }>()
-const { t, tc, formatNumber, formatDuration, formatPercent, formatPeriod, formatDecimal } = useI18n()
+const { t, formatNumber, formatPeriod } = useI18n()
 
 const data = computed(() => buildExampleReport(t('example.partner')))
 const totals = computed(() => data.value.report.totals)
-const responses = computed(() => data.value.report.responses)
 const mine = computed(() => Math.round((totals.value.sent / Math.max(1, totals.value.messages)) * 100))
-const firstPct = computed(() => responses.value.iWriteFirstPct ?? 50)
-const sent = computed(() => totals.value.sent)
-const received = computed(() => totals.value.received)
-const days = computed(() => {
-  const { firstMessageAt, lastMessageAt } = data.value.summary
-  if (!firstMessageAt || !lastMessageAt) return 1
-  return Math.max(1, Math.round((Date.parse(lastMessageAt) - Date.parse(firstMessageAt)) / 86_400_000) + 1)
-})
-const perDay = computed(() => tc('report.fmt.perDay', Math.max(1, Math.round(totals.value.messages / days.value))))
-/** The same one-line answer the real report gives under «Кто пишет больше». */
+/** The same one-line answers the real report gives. */
 const verdict = computed(() => {
   const text =
     mine.value > 55
       ? t('report.kpi.youWriteMore')
       : mine.value < 45
-        ? t('report.kpi.theyWriteMore')
+        ? t('report.kpi.theyWriteMore', { name: data.value.summary.title })
         : t('report.kpi.even')
   return `${text.charAt(0).toLocaleUpperCase()}${text.slice(1)}`
 })
+const versus = useVersus(() => data.value)
+const speed = computed(() => versus.value.speed ?? null)
 const tabs = computed(() => [t('report.tabs.together'), t('report.tabs.time'), t('report.tabs.words')])
 const period = computed(() => formatPeriod(data.value.summary.firstMessageAt, data.value.summary.lastMessageAt, true))
-/** Weekly ticks: a day per tick is too fine at this size. */
+/** Weekly bars, as in the report's top tile. */
 const weeks = computed(() => {
   const out: { sent: number; received: number }[] = []
   fillDailyGaps(data.value.report.activity.daily).forEach((day, index) => {
@@ -63,31 +55,30 @@ const weeks = computed(() => {
       <div class="tile tile--ink mini__wide">
         <div class="tile__label">{{ t('report.kpi.messages') }}</div>
         <div class="tile__figure">{{ formatNumber(totals.messages) }}</div>
-        <div class="mini__sentence">{{ perDay }}</div>
-        <Seismograph :days="weeks" :height="props.phone ? 40 : 96" />
+        <Seismograph :days="weeks" :height="props.phone ? 40 : 72" bars />
       </div>
       <div class="tile tile--lime mini__side">
         <div class="tile__label">{{ t('report.kpi.whoWritesMore') }}</div>
         <strong class="mini__verdict">{{ verdict }}</strong>
-        <div class="tile__figure mini__share">
-          {{ mine }}<small>/{{ 100 - mine }}</small>
-        </div>
-        <i class="mini__bar"><b :style="{ flexGrow: sent }" /><b :style="{ flexGrow: received }" /></i>
+        <div class="tile__figure mini__share">{{ mine }}<span class="mini__slash">/</span>{{ 100 - mine }}</div>
+        <ReportLine
+          :mine="totals.sent"
+          :theirs="totals.received"
+          :left="formatNumber(totals.sent)"
+          :right="formatNumber(totals.received)"
+        />
       </div>
-      <div class="tile mini__small">
-        <div class="tile__label">{{ t('report.kpi.replyMedian') }}</div>
-        <div class="tile__figure">{{ formatDuration(responses.medianMineSec) }}</div>
-      </div>
-      <div class="tile mini__small">
-        <div class="tile__label">{{ t('report.kpi.starts') }}</div>
-        <div class="tile__figure">{{ formatPercent(responses.iWriteFirstPct) }}</div>
-        <i class="mini__bar"><b :style="{ flexGrow: firstPct }" /><b :style="{ flexGrow: 100 - firstPct }" /></i>
-      </div>
-      <div v-if="!props.phone" class="tile mini__small">
-        <div class="tile__label">{{ t('report.kpi.wordsPerMessage') }}</div>
-        <div class="tile__figure">
-          {{ totals.textMessages ? formatDecimal(totals.words / totals.textMessages) : t('common.na') }}
-        </div>
+      <div v-if="speed" class="tile mini__full">
+        <div class="tile__label">{{ speed.title }}</div>
+        <strong class="mini__verdict">{{
+          speed.lead ? `${speed.figure} — ${speed.note}` : t('report.fmt.speedEven')
+        }}</strong>
+        <ReportLine
+          :mine="speed.pairs[0]!.mine.value"
+          :theirs="speed.pairs[0]!.theirs.value"
+          :left="speed.pairs[0]!.mine.text"
+          :right="speed.pairs[0]!.theirs.text"
+        />
       </div>
     </div>
   </div>
@@ -109,12 +100,12 @@ const weeks = computed(() => {
 
 .mini__who {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .mini__who strong {
-  font: 600 24px/1 var(--font-sans);
-  letter-spacing: var(--tracking-figure);
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
 }
 
 .mini__who span {
@@ -125,7 +116,7 @@ const weeks = computed(() => {
 .mini__grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .mini__wide {
@@ -137,41 +128,37 @@ const weeks = computed(() => {
   justify-content: space-between;
 }
 
-.mini__small {
-  grid-column: span 4;
+.mini__full {
+  grid-column: span 12;
+}
+
+.mini__slash {
+  margin: 0 0.1em;
+  color: var(--on-lime-muted);
 }
 
 .mini .tile {
   gap: var(--space-2);
   padding: var(--space-4);
-  border-radius: 18px;
+  border-radius: var(--radius-md);
 }
 
 .mini .tile__label {
-  font-size: 12px;
-}
-
-.mini .tile__figure {
-  font-size: 34px;
-}
-
-.mini__sentence {
-  font: var(--text-small);
-  opacity: 0.85;
+  font: var(--text-caption);
 }
 
 .mini__tabs {
   display: flex;
   gap: 2px;
   margin-left: auto;
-  padding: 3px;
+  padding: 2px;
   border-radius: var(--radius-full);
   background: var(--surface-2);
   font: var(--text-caption);
 }
 
 .mini__tabs i {
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
   color: var(--text-muted);
   font-style: normal;
@@ -180,21 +167,6 @@ const weeks = computed(() => {
 .mini__tabs i.is-on {
   background: var(--surface);
   color: var(--text);
-}
-
-.mini__bar {
-  display: flex;
-  gap: 3px;
-  height: var(--bar-height);
-}
-
-.mini__bar b {
-  border-radius: var(--radius-full);
-  background: var(--you);
-}
-
-.mini__bar b + b {
-  background: var(--them);
 }
 
 /* Who writes more: the answer in words, the split as a figure and a bar. */
@@ -216,33 +188,22 @@ const weeks = computed(() => {
   grid-column: span 12;
 }
 
-.mini--phone .mini__small {
-  grid-column: span 6;
-}
-
 .mini--phone .mini__grid {
-  gap: 7px;
+  gap: var(--space-2);
 }
 
 .mini--phone .tile {
-  padding: 12px;
-  border-radius: 15px;
-}
-
-.mini--phone .tile__label {
-  font-size: 10px;
-  line-height: 14px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
 }
 
 .mini--phone .tile__figure {
-  font-size: 26px;
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
 }
 
 .mini--phone .mini__who strong {
-  font-size: 19px;
-}
-
-.mini--phone .mini__who span {
-  font-size: 10px;
+  font: var(--text-title);
+  letter-spacing: 0;
 }
 </style>

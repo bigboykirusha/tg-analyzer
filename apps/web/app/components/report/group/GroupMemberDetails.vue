@@ -101,7 +101,6 @@ const connections = computed(() =>
 .role__name {
   color: var(--text);
   font: var(--text-ui);
-  font-weight: 500;
 }
 .connections {
   display: grid;

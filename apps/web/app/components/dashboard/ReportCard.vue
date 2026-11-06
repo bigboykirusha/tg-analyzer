@@ -125,7 +125,7 @@ const updated = computed(() =>
 .report-card__count strong {
   margin-right: var(--space-1);
   color: var(--text);
-  font: var(--text-figure-sm);
+  font: var(--text-h2);
   letter-spacing: var(--tracking-h2);
 }
 

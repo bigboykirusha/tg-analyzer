@@ -117,7 +117,7 @@ const answer = computed(() => {
   place-items: start center;
   width: 100%;
   padding-top: var(--space-2);
-  border-radius: 3px 3px 0 0;
+  border-radius: var(--radius-mark) var(--radius-mark) 0 0;
   font: var(--text-title);
 }
 

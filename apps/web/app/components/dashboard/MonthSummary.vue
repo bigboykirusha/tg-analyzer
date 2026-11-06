@@ -222,7 +222,6 @@ button.month__row:disabled {
   gap: var(--space-1);
   color: var(--them);
   font: var(--text-caption);
-  font-weight: 500;
 }
 
 .month__fresh :deep(svg.lucide) {

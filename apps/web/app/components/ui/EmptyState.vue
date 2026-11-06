@@ -59,8 +59,7 @@ withDefaults(
 
 .empty-text {
   color: var(--text-muted);
-  font: var(--text-ui);
-  font-weight: 400;
+  font: var(--text-small);
 }
 
 .empty-action {

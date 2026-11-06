@@ -211,8 +211,7 @@ onMounted(() => {
   border-radius: var(--radius-full);
   background: var(--tile-ink);
   color: var(--on-tile-ink);
-  font: var(--text-label);
-  font-weight: 500;
+  font: var(--text-caption);
 }
 
 .onboard__copy {
@@ -225,7 +224,6 @@ onMounted(() => {
 .onboard__copy strong {
   color: var(--text);
   font: var(--text-ui);
-  font-weight: 500;
 }
 
 @media (max-width: 900px) {

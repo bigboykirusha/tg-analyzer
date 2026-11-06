@@ -31,7 +31,7 @@
 }
 @media (max-width: 640px) {
   :root {
-    --text-figure-lg: 500 56px/56px var(--font-sans);
+    --text-figure: 500 56px/56px var(--font-sans);
   }
 }
 
@@ -228,14 +228,14 @@ svg.i {
   text-wrap: balance;
 }
 .figure {
-  font: var(--text-figure-lg);
+  font: var(--text-figure);
   letter-spacing: var(--tracking-figure);
 }
 .figure-lg {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
-  font: var(--text-figure-lg);
+  font: var(--text-figure);
   letter-spacing: var(--tracking-figure);
 }
 .figure-lg small {
@@ -696,7 +696,7 @@ svg.i {
   display: grid;
   gap: 0;
   overflow: hidden;
-  font: var(--text-figure-lg);
+  font: var(--text-figure);
   letter-spacing: var(--tracking-h2);
   white-space: nowrap;
 }
@@ -750,7 +750,7 @@ svg.i {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  font: var(--text-figure-lg);
+  font: var(--text-figure);
   letter-spacing: var(--tracking-figure);
 }
 .big-time svg.i {

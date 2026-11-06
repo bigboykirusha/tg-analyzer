@@ -68,8 +68,7 @@ withDefaults(
 
 /* Next to an avatar the lede is a meta line (period, handle), not a paragraph. */
 .page-header__lede.is-compact {
-  font: var(--text-ui);
-  font-weight: 400;
+  font: var(--text-small);
 }
 
 .page-header__actions {

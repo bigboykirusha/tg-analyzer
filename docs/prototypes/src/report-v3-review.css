@@ -18,7 +18,7 @@
 .review__head p,
 .why {
   color: var(--text-muted);
-  font: var(--text-lede);
+  font: var(--text-body);
 }
 .toc {
   display: grid;
@@ -120,7 +120,7 @@
 .frame--m {
   width: 358px;
   --card-padding: var(--space-5);
-  --text-figure-lg: 500 56px/56px var(--font-sans);
+  --text-figure: 500 56px/56px var(--font-sans);
 }
 .frame--m::before {
   content: 'Телефон';
@@ -466,7 +466,7 @@
   color: var(--them);
 }
 .word-big {
-  font: var(--text-figure-lg);
+  font: var(--text-figure);
   letter-spacing: var(--tracking-figure);
   color: var(--them);
 }

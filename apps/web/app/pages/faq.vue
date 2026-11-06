@@ -132,8 +132,7 @@ useHead({
 
 .fact__text {
   color: var(--text-muted);
-  font: var(--text-ui);
-  font-weight: 400;
+  font: var(--text-small);
 }
 
 .qa-list {

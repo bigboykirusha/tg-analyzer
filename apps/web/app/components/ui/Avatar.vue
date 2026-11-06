@@ -66,10 +66,8 @@ const tone = computed(() => {
   overflow: hidden;
   width: var(--control-md);
   height: var(--control-md);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   font: var(--text-ui);
-  font-weight: 500;
-  letter-spacing: var(--tracking-initials);
 }
 
 .avatar img {
@@ -82,7 +80,6 @@ const tone = computed(() => {
   width: 24px;
   height: 24px;
   font: var(--text-caption);
-  font-weight: 500;
 }
 
 .avatar--sm {

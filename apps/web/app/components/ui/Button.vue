@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'soft' | 'ghost' | 'danger' | 'danger-soft'
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg'
 
 defineOptions({ inheritAttrs: false })
@@ -150,19 +150,12 @@ const classes = computed(() => [
   color: var(--text);
 }
 
-/* Soft: a quiet action that repeats down a list («Анализ»): a grey chip. */
-.btn--soft {
-  background: var(--surface-2);
-  color: var(--text);
-}
-
 .btn--ghost {
   color: var(--text-muted);
 }
 
 /* Destructive actions stay soft: a pink fill with red text, never a solid red slab. */
-.btn--danger,
-.btn--danger-soft {
+.btn--danger {
   background: var(--danger-subtle);
   color: var(--danger);
 }
@@ -172,8 +165,7 @@ const classes = computed(() => [
     background: var(--accent-hover);
   }
 
-  .btn--secondary:hover,
-  .btn--soft:hover {
+  .btn--secondary:hover {
     background-image: linear-gradient(var(--hover), var(--hover));
   }
 
@@ -182,8 +174,7 @@ const classes = computed(() => [
     color: var(--text);
   }
 
-  .btn--danger:hover,
-  .btn--danger-soft:hover {
+  .btn--danger:hover {
     background: var(--danger-subtle-hover);
   }
 }
@@ -197,8 +188,7 @@ const classes = computed(() => [
 }
 
 .btn--secondary:active,
-.btn--soft:active,
-.btn--danger-soft:active {
+.btn--danger:active {
   background-image: linear-gradient(var(--pressed), var(--pressed));
 }
 
@@ -217,7 +207,7 @@ const classes = computed(() => [
 /* A primary action that is not ready yet turns into a quiet grey pill instead of faded ink. */
 .btn--primary:disabled:not([aria-busy]) {
   background: var(--surface-2);
-  color: var(--text-subtle);
+  color: var(--text-muted);
   opacity: 1;
 }
 

@@ -3,7 +3,7 @@
  * The title of an app screen, shown in the top bar instead of on the page:
  * an optional avatar, the one h1, a short meta line and the screen's actions.
  * The bar stays on screen, so the actions are always at hand. Document pages
- * (FAQ, terms) keep `UiPageHeader` in the page.
+ * (FAQ) keep `UiPageHeader` in the page.
  */
 import { ChevronLeft } from '../../lib/icons'
 

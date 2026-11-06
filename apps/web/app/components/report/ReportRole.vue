@@ -148,7 +148,7 @@ const peakLine = computed(() => {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-4);
-  margin: 0 0 var(--space-1);
+  margin: 0;
   padding: 0;
   color: var(--text-muted);
   font: var(--text-caption);
@@ -219,7 +219,7 @@ const peakLine = computed(() => {
 }
 
 .day__theirs {
-  border-radius: 3px 3px 0 0;
+  border-radius: var(--radius-mark) var(--radius-mark) 0 0;
   background: var(--them);
 }
 
@@ -228,7 +228,7 @@ const peakLine = computed(() => {
 }
 
 .day__theirs[style*='height: 0%'] + .day__mine {
-  border-radius: 3px 3px 0 0;
+  border-radius: var(--radius-mark) var(--radius-mark) 0 0;
 }
 
 /* The parts of the day: each under its six hours, the leading one lit. */
