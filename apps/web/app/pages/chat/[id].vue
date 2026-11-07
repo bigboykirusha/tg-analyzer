@@ -62,7 +62,7 @@ onMounted(load)
 
 <template>
   <div>
-    <ReportPoster v-if="data" :data="data" />
+    <ReportPoster v-if="data || (!notFound && !loadError)" :data="data" :title="knownTitle" />
     <UiPageContainer>
       <div v-if="data" class="page report-page">
         <ReportHeader :summary="data.summary" @share="shareOpen = true" />

@@ -1,15 +1,15 @@
 <script setup lang="ts">
 /**
- * The desktop hero: the example report in a browser window, turned in 3D; it
- * straightens on hover. When the stage has a set height (the one-screen
- * landing), the window scales down to fit it.
+ * The desktop hero: the top of the example report as one object — the person's poster over their
+ * first cards — lying flat, with one soft shadow. No browser chrome, no tilt: the product is the
+ * picture. When the stage has a set height (the one-screen landing), it scales down to fit.
  */
 const { t } = useI18n()
 const stageRef = ref<HTMLElement | null>(null)
 const windowRef = ref<HTMLElement | null>(null)
 const scale = ref(0.9)
 
-/** Room left for the tilt and the shadow. */
+/** Room left for the shadow. */
 const FIT = 0.94
 
 function fit() {
@@ -36,13 +36,7 @@ onBeforeUnmount(() => observer?.disconnect())
 <template>
   <div ref="stageRef" class="stage" :style="{ '--ws': scale }">
     <div ref="windowRef" class="window" role="img" :aria-label="t('landing.windowLabel')">
-      <div class="window__chrome" aria-hidden="true">
-        <i /><i /><i />
-        <span>tganalyzer.app/chat/example</span>
-      </div>
-      <div class="window__inner">
-        <ClientOnly><MiniReport /></ClientOnly>
-      </div>
+      <ClientOnly><MiniReport /></ClientOnly>
     </div>
   </div>
 </template>
@@ -51,72 +45,38 @@ onBeforeUnmount(() => observer?.disconnect())
 .stage {
   display: flex;
   align-items: center;
+  justify-content: center;
   min-width: 0;
-  perspective: 1800px;
 }
 
 .window {
-  --ry: -18deg;
   flex: none;
-  width: 880px;
+  width: 720px;
   overflow: hidden;
-  border-radius: 18px;
-  background: var(--bg);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-window);
-  transform: rotateY(var(--ry)) rotateX(6deg) scale(var(--ws, 0.9));
-  transform-origin: 0 50%;
-  transition: transform 900ms var(--ease-standard);
-  animation: window-in 900ms 80ms var(--ease-standard) backwards;
+  transform: scale(var(--ws, 0.9));
+  transform-origin: 50% 50%;
+  animation: window-in var(--duration-intro) 80ms var(--ease-standard) backwards;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .stage:hover .window {
-    --ry: -8deg;
-  }
-}
-
+/* One authored arrival: the report rises into place once. */
 @keyframes window-in {
   from {
     opacity: 0;
-    translate: 0 32px;
+    translate: 0 24px;
   }
-}
-
-.window__chrome {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 11px 14px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.window__chrome i {
-  width: 11px;
-  height: 11px;
-  border-radius: var(--radius-full);
-  background: var(--border-strong);
-}
-
-.window__chrome span {
-  margin: 0 auto;
-  color: var(--text-muted);
-  font: var(--text-caption);
-}
-
-.window__inner {
-  padding: var(--space-4);
 }
 
 @media (max-width: 1100px) {
   .window {
-    width: 760px;
+    width: 640px;
   }
 }
 
 @media (min-width: 1600px) {
   .window {
-    width: 1120px;
+    width: 880px;
   }
 }
 </style>

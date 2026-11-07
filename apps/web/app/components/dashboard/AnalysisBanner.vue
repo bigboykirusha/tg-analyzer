@@ -45,7 +45,7 @@ const view = computed(() => {
   return {
     chat,
     reached,
-    line: eta ? `${line} · ${eta}` : line,
+    line: eta ? `${line}, ${eta}` : line,
     percent: share === null ? null : Math.round(share * 100),
   }
 })

@@ -41,6 +41,7 @@ const reportCount = computed(() => workspace.reports.length)
 
 /** «Sign out» asks first; the same dialog is where everything gets deleted, so the promise holds. */
 const signOutOpen = ref(false)
+const deleteOpen = ref(false)
 const busy = ref<'logout' | 'delete' | null>(null)
 
 async function signOut(alsoDelete: boolean) {
@@ -74,7 +75,7 @@ onMounted(() => {
     <div class="page account">
       <UiPageBar
         :title="t('accountPage.title')"
-        :lede="[displayName, handle].filter(Boolean).join(' · ')"
+        :lede="[displayName, handle].filter(Boolean).join(' ')"
         back="/dashboard"
       >
         <template #leading><ProfileAvatar :title="displayName" size="sm" /></template>
@@ -130,6 +131,10 @@ onMounted(() => {
               <span class="row__label">{{ t('accountPage.privacy') }}</span>
               <ChevronRight aria-hidden="true" />
             </NuxtLink>
+            <!-- The promise «удалить всё в один клик» lives where the data is, not inside «Sign out». -->
+            <button type="button" class="row row--link row--danger" @click="deleteOpen = true">
+              <span class="row__label">{{ t('accountPage.deleteAll') }}</span>
+            </button>
           </div>
         </section>
       </div>
@@ -167,6 +172,17 @@ onMounted(() => {
         </UiButton>
       </div>
     </UiModalDialog>
+    <UiConfirmDialog
+      :open="deleteOpen"
+      :title="t('accountPage.deleteAllTitle')"
+      :description="t('accountPage.deleteAllText')"
+      :confirm-label="t('accountPage.deleteAllConfirm')"
+      :cancel-label="t('common.cancel')"
+      variant="danger"
+      :loading="busy === 'delete'"
+      @close="deleteOpen = false"
+      @confirm="signOut(true)"
+    />
   </UiPageContainer>
 </template>
 
@@ -228,6 +244,16 @@ onMounted(() => {
 
 .row--link {
   color: var(--text);
+}
+
+.row--danger {
+  width: 100%;
+  border: 0;
+  background: none;
+  color: var(--danger);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
 .row--link svg {

@@ -64,7 +64,10 @@ const rows = computed(() =>
   <ReportSection v-if="rows.length" :title="t('report.habits.title')">
     <div class="report-rows">
       <div v-for="row in rows" :key="row.key" class="report-rows__row">
-        <span class="report-rows__label">{{ row.label }} · {{ row.verdict }}</span>
+        <span class="report-rows__label habit__label">
+          <span>{{ row.label }}</span
+          ><span class="habit__verdict">{{ row.verdict }}</span>
+        </span>
         <ReportLine
           :mine="row.pair.mine.value"
           :theirs="row.pair.theirs.value"
@@ -75,3 +78,14 @@ const rows = computed(() =>
     </div>
   </ReportSection>
 </template>
+
+<style scoped>
+/* The habit on the left, the verdict on the right, quieter. */
+.habit__label {
+  justify-content: space-between;
+}
+
+.habit__verdict {
+  color: var(--text-muted);
+}
+</style>

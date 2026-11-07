@@ -119,7 +119,7 @@ async function remove() {
       <ol class="quiz-step__list">
         <li v-for="item in list" :key="item.id">{{ question(item.id) }}</li>
       </ol>
-      <p v-if="link" class="t-small t-muted">{{ [t('share.quiz.waiting'), until].filter(Boolean).join(' · ') }}</p>
+      <p v-if="link" class="t-small t-muted">{{ [t('share.quiz.waiting'), until].filter(Boolean).join(', ') }}</p>
       <div v-else class="quiz-step__days">
         <span class="t-small">{{ t('share.link.days') }}</span>
         <UiSegmentedControl v-model="days" inline :options="dayOptions" :aria-label="t('share.link.days')" />

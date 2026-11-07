@@ -40,7 +40,10 @@ const rows = computed(() => [
     :answer="answer"
   >
     <div v-for="row in rows" :key="row.key" class="units">
-      <span class="units__who">{{ row.who }} · {{ row.side.text }}</span>
+      <span class="units__who">
+        <span>{{ row.who }}</span
+        ><span class="units__count t-num">{{ row.side.text }}</span>
+      </span>
       <div class="units__grid" aria-hidden="true">
         <i v-for="index in row.cells" :key="index" :class="`units__cell--${row.key}`" />
       </div>
@@ -55,8 +58,13 @@ const rows = computed(() => [
 }
 
 .units__who {
-  color: var(--text-muted);
+  display: flex;
+  gap: var(--space-2);
   font: var(--text-small);
+}
+
+.units__count {
+  color: var(--text-muted);
 }
 
 .units__grid {

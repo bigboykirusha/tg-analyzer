@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Send } from '../lib/icons'
+import { Lock, Send } from '../lib/icons'
 
 definePageMeta({ middleware: ['guest'], fit: true })
 
@@ -32,7 +32,7 @@ useHead({
   <UiPageContainer class="landing">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero__copy">
-        <!-- «Ваши / переписки. / В цифрах.»: the soft part always takes its own line. -->
+        <!-- «Ваши переписки. / В цифрах.»: one voice, the second sentence on its own line. -->
         <h1 id="hero-title" class="hero__title">
           {{ t('landing.title') }} <span>{{ t('landing.titleSoft') }}</span>
         </h1>
@@ -42,6 +42,7 @@ useHead({
           <!-- The example is a quiet link beside the one action (under it on phones), not a second button. -->
           <NuxtLink to="/example" class="hero__example">{{ t('landing.nav.example') }}</NuxtLink>
         </div>
+        <p class="hero__trust"><Lock aria-hidden="true" />{{ t('landing.trust') }}</p>
       </div>
       <div class="hero__visual">
         <ProductWindow class="hero__window" />
@@ -81,7 +82,17 @@ useHead({
 
 .hero__title span {
   display: block;
+}
+
+/* The promise sits right under the one action: trust is decided here. */
+.hero__trust {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: 40ch;
+  margin-top: var(--space-6);
   color: var(--text-muted);
+  font: var(--text-small);
 }
 
 .hero__lede {

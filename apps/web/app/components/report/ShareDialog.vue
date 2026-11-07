@@ -55,7 +55,7 @@ const until = (link: ShareLinkDto) =>
   link.expiresAt ? t('share.until', { date: formatDate(link.expiresAt, { day: 'numeric', month: 'long' }) }) : ''
 const reportStatus = computed(() => {
   const link = reportLink.value
-  return link ? [t('share.link.on'), until(link)].filter(Boolean).join(' · ') : t('share.link.off')
+  return link ? [t('share.link.on'), until(link)].filter(Boolean).join(', ') : t('share.link.off')
 })
 const quizStatus = computed(() => {
   const link = quizLink.value

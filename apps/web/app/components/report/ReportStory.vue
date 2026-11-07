@@ -11,7 +11,7 @@ import {
 import { loadChatAvatar, loadProfileAvatar } from '../../lib/avatar-loader'
 import { maskSwear } from '../../lib/profanity'
 import { ChevronLeft, ChevronRight, Download, Share2, X } from '../../lib/icons'
-import { personaOf, type Persona } from '../../lib/persona'
+import { personaOf } from '../../lib/persona'
 import { isEven } from '../../composables/useVersus'
 import type { StoryBlock, StoryPerson, StorySlideModel } from './StorySlide.vue'
 
@@ -139,7 +139,7 @@ function whoMore(label: string, pair: { mine: number; theirs: number }, accent =
     kind: 'stat',
     label,
     value: even ? t('story.even') : pair.mine > pair.theirs ? myName : otherName,
-    note: `${myName} ${formatNumber(pair.mine)} · ${otherName} ${formatNumber(pair.theirs)}`,
+    note: `${myName} ${formatNumber(pair.mine)}, ${otherName} ${formatNumber(pair.theirs)}`,
     accent,
   }
 }
@@ -208,8 +208,8 @@ const slides = computed<StorySlideModel[]>(() => {
       kind: 'split',
       // The answer is the label: «Мама пишет больше» over «42% ━━ ━━━ 58%».
       label: shareVerdict(mineShare).replace(/^./u, (letter) => letter.toLocaleUpperCase()),
-      left: { label: `${myName} · ${formatNumber(totals.sent)}`, value: formatPercent(mine) },
-      right: { label: `${otherName} · ${formatNumber(totals.received)}`, value: formatPercent(100 - mine) },
+      left: { label: `${myName}, ${formatNumber(totals.sent)}`, value: formatPercent(mine) },
+      right: { label: `${otherName}, ${formatNumber(totals.received)}`, value: formatPercent(100 - mine) },
       mine: totals.sent,
       theirs: totals.received,
     })
@@ -226,7 +226,7 @@ const slides = computed<StorySlideModel[]>(() => {
     durationMs: 9000,
     kicker: t(isGroup.value ? 'story.volumeKickerGroup' : 'story.volumeKicker'),
     title: formatNumber(totals.messages),
-    sub: [tc('story.messagesWord', totals.messages), tc('story.activeDaysCount', facts.activeDays)].join(' · '),
+    sub: [tc('story.messagesWord', totals.messages), tc('story.activeDaysCount', facts.activeDays)].join(', '),
     blocks: overview,
   })
 
@@ -308,7 +308,7 @@ const slides = computed<StorySlideModel[]>(() => {
           label: t('story.voice'),
           value: even ? t('story.even') : seconds.mine > seconds.theirs ? myName : otherName,
           // «23 мин» never breaks between the number and its unit.
-          note: `${myName} ${formatDuration(seconds.mine).replaceAll(' ', ' ')} · ${otherName} ${formatDuration(seconds.theirs).replaceAll(' ', ' ')}`,
+          note: `${myName} ${formatDuration(seconds.mine).replaceAll(' ', ' ')}, ${otherName} ${formatDuration(seconds.theirs).replaceAll(' ', ' ')}`,
         })
       }
     }
@@ -360,7 +360,7 @@ const slides = computed<StorySlideModel[]>(() => {
         label: t('story.busiestDay'),
         // The number alone is the value: «127 сообщений» would not fit half a poster in the serif.
         value: formatNumber(busiest.total),
-        note: `${tc('story.messagesWord', busiest.total)} · ${formatDay(busiest.date, DAY_MONTH).replaceAll(' ', '\u00a0')}`,
+        note: `${tc('story.messagesWord', busiest.total)}, ${formatDay(busiest.date, DAY_MONTH).replaceAll(' ', '\u00a0')}`,
         accent: true,
       })
     // The next round-number message, as in «Круглые сообщения»: a reason to come back.
@@ -422,7 +422,7 @@ const slides = computed<StorySlideModel[]>(() => {
         kind: 'stat',
         label: t('story.longer'),
         value: even ? t('story.even') : wordsMine > wordsTheirs ? myName : otherName,
-        note: `${myName} ${formatDecimal(wordsMine)} · ${otherName} ${formatDecimal(wordsTheirs)}`,
+        note: `${myName} ${formatDecimal(wordsMine)}, ${otherName} ${formatDecimal(wordsTheirs)}`,
       })
     }
     list.push({

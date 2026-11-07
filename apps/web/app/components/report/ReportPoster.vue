@@ -7,11 +7,15 @@ import { computeChapters, type ReportDto } from '@tg-analyzer/shared'
  * below), with its chapters when the history has at least three. Full width under the toolbar, which
  * takes the poster's colour until the page scrolls past it (AppHeader).
  */
-const props = defineProps<{ data: ReportDto }>()
+/** Without `data` it is the loading shape: the name when it is known, quiet bars for the rest. */
+const props = defineProps<{ data?: ReportDto | null; title?: string | null }>()
 const { t, tc, formatDate } = useI18n()
 
-const chapters = computed(() => (props.data.report.group ? [] : computeChapters(props.data.report.activity.daily)))
+const chapters = computed(() =>
+  !props.data || props.data.report.group ? [] : computeChapters(props.data.report.activity.daily),
+)
 const meta = computed(() => {
+  if (!props.data) return ''
   const messages = tc('common.messagesCount', props.data.report.totals.messages)
   const first = props.data.summary.firstMessageAt
   return first
@@ -28,11 +32,16 @@ const meta = computed(() => {
     <UiPageContainer class="poster__in">
       <div class="poster__head">
         <!-- The name is the page's h1 in the toolbar; here it is the picture of it. -->
-        <p class="poster__name" aria-hidden="true">{{ data.summary.title }}</p>
-        <p class="poster__meta">{{ meta }}</p>
+        <p v-if="data || title" class="poster__name" aria-hidden="true">{{ data?.summary.title ?? title }}</p>
+        <UiSkeleton v-else width="40%" height="var(--space-16)" />
+        <p v-if="data" class="poster__meta">{{ meta }}</p>
+        <UiSkeleton v-else width="30%" height="var(--space-4)" />
       </div>
-      <ReportPulse :data="data" bare class="poster__pulse" />
-      <ReportChapters v-if="chapters.length > 2" :chapters="chapters" class="poster__chapters" />
+      <template v-if="data">
+        <ReportPulse :data="data" bare class="poster__pulse" />
+        <ReportChapters v-if="chapters.length > 2" :chapters="chapters" class="poster__chapters" />
+      </template>
+      <UiSkeleton v-else height="var(--space-20)" radius="var(--radius-sm)" aria-hidden="true" />
     </UiPageContainer>
   </section>
 </template>
@@ -49,6 +58,7 @@ const meta = computed(() => {
   --you: var(--on-poster);
   --them: var(--on-poster-muted);
   --them-ink: var(--on-poster-muted);
+  --skeleton: var(--on-poster-well);
   margin-top: calc(-1 * var(--page-top));
   padding: var(--space-6) 0 var(--space-8);
   background: var(--poster);

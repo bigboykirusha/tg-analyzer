@@ -15,7 +15,7 @@ const isGroup = computed(() => props.report.type === 'group')
 const subline = computed(() => {
   const { firstMessageAt, lastMessageAt } = props.report
   const period = firstMessageAt && lastMessageAt ? formatPeriod(firstMessageAt, lastMessageAt, true) : null
-  return [isGroup.value ? t('chatType.group') : null, period].filter(Boolean).join(' · ')
+  return [isGroup.value ? t('chatType.group') : null, period].filter(Boolean).join(', ')
 })
 /** Summaries cached before pulses existed have none. */
 const pulse = computed(() =>

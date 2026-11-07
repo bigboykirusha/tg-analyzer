@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { fillDailyGaps } from '@tg-analyzer/shared'
 import { buildExampleReport } from '../../lib/example-report'
+import { hueOf } from '../../lib/hue'
 
 /**
  * The example report in miniature, for the product window and the phone on
@@ -8,7 +9,7 @@ import { buildExampleReport } from '../../lib/example-report'
  * on the landing are real output of the app.
  */
 const props = defineProps<{ phone?: boolean }>()
-const { t, formatNumber, formatPeriod } = useI18n()
+const { t, tc, formatPeriod } = useI18n()
 
 const data = computed(() => buildExampleReport(t('example.partner')))
 const totals = computed(() => data.value.report.totals)
@@ -25,44 +26,32 @@ const verdict = computed(() => {
 })
 const versus = useVersus(() => data.value)
 const speed = computed(() => versus.value.speed ?? null)
-const tabs = computed(() => [t('report.tabs.together'), t('report.tabs.time'), t('report.tabs.words')])
 const period = computed(() => formatPeriod(data.value.summary.firstMessageAt, data.value.summary.lastMessageAt, true))
+const hue = hueOf('example')
 /** Every day, as in the report: Seismograph keeps one density everywhere. */
 const days = computed(() => fillDailyGaps(data.value.report.activity.daily))
 </script>
 
 <template>
-  <div class="mini" :class="{ 'mini--phone': props.phone }" aria-hidden="true">
-    <div class="mini__head">
-      <UiAvatar :title="data.summary.title" seed="example" :size="props.phone ? 'sm' : 'md'" />
-      <div class="mini__who">
-        <strong>{{ data.summary.title }}</strong>
-        <span>{{ period }}</span>
-      </div>
-      <span v-if="!props.phone" class="mini__tabs">
-        <i v-for="(tab, index) in tabs" :key="tab" :class="{ 'is-on': index === 0 }">{{ tab }}</i>
-      </span>
+  <div class="mini" :class="{ 'mini--phone': props.phone }" :data-hue="hue" aria-hidden="true">
+    <div class="mini__poster">
+      <strong class="mini__name">{{ data.summary.title }}</strong>
+      <span class="mini__meta">{{ tc('common.messagesCount', totals.messages) }}, {{ period }}</span>
+      <Seismograph :days="days" :height="props.phone ? 40 : 72" />
     </div>
-    <div class="mini__grid">
-      <div class="tile tile--ink mini__wide">
-        <div class="tile__label">{{ t('report.kpi.messages') }}</div>
-        <div class="tile__figure">{{ formatNumber(totals.messages) }}</div>
-        <Seismograph :days="days" :height="props.phone ? 40 : 96" />
+    <div class="mini__room">
+      <div class="tile mini__tile">
+        <span class="mini__question">{{ t('report.kpi.whoWritesMore') }}</span>
+        <strong class="mini__answer">{{ verdict }}</strong>
+        <div class="mini__share t-num">
+          <span>{{ mine }}</span
+          ><span class="mini__slash">/</span><span class="mini__theirs">{{ 100 - mine }}</span>
+        </div>
+        <ReportLine :mine="totals.sent" :theirs="totals.received" />
       </div>
-      <div class="tile tile--lime mini__side">
-        <div class="tile__label">{{ t('report.kpi.whoWritesMore') }}</div>
-        <strong class="mini__verdict">{{ verdict }}</strong>
-        <div class="tile__figure mini__share">{{ mine }}<span class="mini__slash">/</span>{{ 100 - mine }}</div>
-        <ReportLine
-          :mine="totals.sent"
-          :theirs="totals.received"
-          :left="formatNumber(totals.sent)"
-          :right="formatNumber(totals.received)"
-        />
-      </div>
-      <div v-if="speed" class="tile mini__full">
-        <div class="tile__label">{{ speed.title }}</div>
-        <strong class="mini__verdict">{{
+      <div v-if="speed && !props.phone" class="tile mini__tile">
+        <span class="mini__question">{{ speed.title }}</span>
+        <strong class="mini__answer">{{
           speed.lead ? `${speed.figure} — ${speed.note}` : t('report.fmt.speedEven')
         }}</strong>
         <ReportLine
@@ -77,125 +66,101 @@ const days = computed(() => fillDailyGaps(data.value.report.activity.daily))
 </template>
 
 <style scoped>
+/* The top of a report in miniature: the person's poster, then their room with two white tiles. */
 .mini {
   display: grid;
-  gap: var(--space-3);
+  background: var(--room);
   pointer-events: none;
   user-select: none;
 }
 
-.mini__head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.mini__who {
+.mini__poster {
+  --you: var(--on-poster);
+  --them: var(--on-poster-muted);
   display: grid;
   gap: var(--space-1);
+  padding: var(--space-8) var(--space-8) var(--space-6);
+  background: var(--poster);
+  color: var(--on-poster);
 }
 
-.mini__who strong {
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
+.mini__name {
+  font: var(--text-figure);
+  letter-spacing: var(--tracking-figure);
 }
 
-.mini__who span {
-  color: var(--text-muted);
-  font: var(--text-caption);
+.mini__meta {
+  margin-bottom: var(--space-4);
+  color: var(--on-poster-muted);
+  font: var(--text-small);
 }
 
-.mini__grid {
+.mini__room {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
+  padding: var(--space-4);
 }
 
-.mini__wide {
-  grid-column: span 8;
-}
-
-.mini__side {
-  grid-column: span 4;
-  justify-content: space-between;
-}
-
-.mini__full {
-  grid-column: span 12;
-}
-
-.mini__slash {
-  margin: 0 var(--space-0-5);
-  color: var(--on-lime-muted);
-}
-
-.mini .tile {
+.mini__tile {
   gap: var(--space-2);
   padding: var(--space-4);
   border-radius: var(--radius-md);
 }
 
-.mini .tile__label {
-  font: var(--text-caption);
-}
-
-.mini__tabs {
-  display: flex;
-  gap: var(--space-0-5);
-  margin-left: auto;
-  padding: var(--space-0-5);
-  border-radius: var(--radius-full);
-  background: var(--surface-2);
-  font: var(--text-caption);
-}
-
-.mini__tabs i {
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
+.mini__question {
   color: var(--text-muted);
-  font-style: normal;
+  font: var(--text-caption);
 }
 
-.mini__tabs i.is-on {
-  background: var(--surface);
-  color: var(--text);
-}
-
-/* Who writes more: the answer in words, the split as a figure and a bar. */
-.mini__verdict {
+.mini__answer {
   font: var(--text-title);
+  font-weight: 600;
 }
 
 .mini__share {
-  margin-top: auto;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  font: var(--text-h1);
+  letter-spacing: var(--tracking-h1);
 }
 
-/* Inside the phone: everything a size down, one column with a pair of small tiles. */
-.mini--phone {
-  gap: var(--space-2);
+.mini__slash {
+  color: var(--border-strong);
+  font-weight: 400;
 }
 
-.mini--phone .mini__wide,
-.mini--phone .mini__side {
-  grid-column: span 12;
+.mini__theirs {
+  color: var(--them-ink);
 }
 
-.mini--phone .mini__grid {
-  gap: var(--space-2);
+/* Inside the phone: one column, a size down. */
+.mini--phone .mini__poster {
+  padding: var(--space-4) var(--space-4) var(--space-3);
 }
 
-.mini--phone .tile {
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-}
-
-.mini--phone .tile__figure {
+.mini--phone .mini__name {
   font: var(--text-h2);
   letter-spacing: var(--tracking-h2);
 }
 
-.mini--phone .mini__who strong {
-  font: var(--text-title);
-  letter-spacing: 0;
+.mini--phone .mini__meta {
+  margin-bottom: var(--space-2);
+  font: var(--text-caption);
+}
+
+.mini--phone .mini__room {
+  grid-template-columns: minmax(0, 1fr);
+  padding: var(--space-2);
+}
+
+.mini--phone .mini__tile {
+  padding: var(--space-3);
+}
+
+.mini--phone .mini__share {
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
 }
 </style>

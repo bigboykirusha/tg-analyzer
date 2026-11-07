@@ -85,7 +85,7 @@ const healthFacts = computed<Fact[]>(() => {
           <span class="pair__names">
             <strong>{{ pair.left }} × {{ pair.right }}</strong>
             <span class="t-small t-muted">
-              {{ tc('group.pairDirectCount', pair.direct) }} · {{ tc('group.pairImpliedCount', pair.implied) }}
+              {{ tc('group.pairDirectCount', pair.direct) }}, {{ tc('group.pairImpliedCount', pair.implied) }}
             </span>
           </span>
         </li>

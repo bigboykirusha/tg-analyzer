@@ -4,7 +4,7 @@
 
 <template>
   <div class="month-skeleton-wrap" aria-hidden="true">
-    <div class="tile tile--ink month-skeleton month-skeleton--ink">
+    <div class="tile month-skeleton">
       <UiSkeleton width="30%" />
       <div class="month-skeleton__rows">
         <div
@@ -34,10 +34,6 @@
 
 .month-skeleton {
   gap: var(--space-4);
-}
-
-.month-skeleton--ink {
-  --skeleton: var(--on-tile-ink-well);
 }
 
 .month-skeleton__rows {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Ban, ChevronDown, Database, Eye, EyeOff, Power, Trash2 } from '../lib/icons'
+import { ChevronDown } from '../lib/icons'
 
 const { t } = useI18n()
 useSeoMeta({
@@ -12,14 +12,7 @@ useSeoMeta({
 /** What happens to the chat, in the order people worry about it. */
 const facts = computed(() =>
   (
-    [
-      { key: 'read', icon: Eye, tone: 'ink' },
-      { key: 'keep', icon: Database, tone: 'plain' },
-      { key: 'notKeep', icon: EyeOff, tone: 'lime' },
-      { key: 'never', icon: Ban, tone: 'plain' },
-      { key: 'off', icon: Power, tone: 'plain' },
-      { key: 'delete', icon: Trash2, tone: 'plain' },
-    ] as const
+    [{ key: 'read' }, { key: 'keep' }, { key: 'notKeep' }, { key: 'never' }, { key: 'off' }, { key: 'delete' }] as const
   ).map((fact) => ({ ...fact, title: t(`faq.${fact.key}.title`), text: t(`faq.${fact.key}.text`) })),
 )
 
@@ -60,20 +53,13 @@ useHead({
         </template>
       </UiPageHeader>
 
-      <ul class="bento faq__facts">
-        <li
-          v-for="fact in facts"
-          :key="fact.key"
-          class="tile span-4 fact"
-          :class="{ 'tile--ink': fact.tone === 'ink', 'tile--lime': fact.tone === 'lime' }"
-        >
-          <span class="fact__icon" aria-hidden="true"><component :is="fact.icon" /></span>
-          <div class="fact__copy">
-            <h2 class="t-title">{{ fact.title }}</h2>
-            <p class="fact__text">{{ fact.text }}</p>
-          </div>
-        </li>
-      </ul>
+      <!-- Six promises as one sheet of facts: the claim on the left, what it means beside it. -->
+      <dl class="tile faq__facts">
+        <div v-for="fact in facts" :key="fact.key" class="fact">
+          <dt class="fact__title">{{ fact.title }}</dt>
+          <dd class="fact__text">{{ fact.text }}</dd>
+        </div>
+      </dl>
 
       <UiPageSection :title="t('faq.questions')">
         <div class="tile qa-list">
@@ -92,47 +78,36 @@ useHead({
 
 <style scoped>
 .faq__facts {
+  gap: 0;
   margin: 0;
-  padding: 0;
-  list-style: none;
+  padding-block: var(--space-2);
 }
 
-/* Read top to bottom: an icon in a well, a title, a sentence. Rows line up at the top. */
 .fact {
-  gap: var(--space-4);
-}
-
-.fact__icon {
   display: grid;
-  flex: none;
-  place-items: center;
-  width: var(--avatar-md);
-  height: var(--avatar-md);
-  border-radius: var(--radius-sm);
-  background: var(--accent-subtle);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--space-2) var(--space-8);
+  padding-block: var(--space-4);
 }
 
-.fact__icon svg {
-  width: var(--icon-md);
-  height: var(--icon-md);
+.fact + .fact {
+  box-shadow: var(--divider-top);
 }
 
-.tile--ink .fact__icon {
-  background: var(--on-tile-ink-well);
-}
-
-.tile--lime .fact__icon {
-  background: var(--on-lime-well);
-}
-
-.fact__copy {
-  display: grid;
-  gap: var(--space-1);
+.fact__title {
+  font: var(--text-title);
 }
 
 .fact__text {
+  margin: 0;
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-body);
+}
+
+@media (max-width: 640px) {
+  .fact {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .qa-list {

@@ -56,7 +56,7 @@ function run(action: 'analyse' | 'delete') {
           <span>{{ t('dashboard.queued') }}</span>
         </span>
         <span v-else-if="analysing && paused" class="chat-row__sub">
-          <span>{{ t('analysis.paused') }} · {{ t('dashboard.analysingNow') }}</span>
+          <span>{{ t('analysis.paused') }}, {{ t('dashboard.analysingNow') }}</span>
         </span>
         <span v-else-if="analysing" class="chat-row__sub">
           <span

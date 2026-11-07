@@ -50,7 +50,7 @@ const losses = computed(() => {
         <div class="subject__text">
           <b class="subject__name">{{ report.title }}</b>
           <small class="subject__meta">
-            {{ t(`chatType.${report.type}`).toLowerCase() }} · {{ tc('common.messagesCount', report.totalMessages) }}
+            {{ t(`chatType.${report.type}`) }}, {{ tc('common.messagesCount', report.totalMessages) }}
           </small>
         </div>
       </div>

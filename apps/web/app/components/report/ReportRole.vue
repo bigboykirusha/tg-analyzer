@@ -78,7 +78,7 @@ const peakLine = computed(() => {
   if (!window.value) return undefined
   const whole = (value: string) => value.replace(/–/g, '\u2060–\u2060')
   const peak = whole(t('report.fmt.rolePeak', { from: window.value.from, to: window.value.to }))
-  return second.value ? `${peak} · ${whole(second.value)}` : peak
+  return second.value ? `${peak}, ${whole(second.value)}` : peak
 })
 </script>
 

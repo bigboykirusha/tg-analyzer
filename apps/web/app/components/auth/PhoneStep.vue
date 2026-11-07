@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Lock } from '../../lib/icons'
 import Button from '../ui/Button.vue'
 import Field from '../ui/Field.vue'
 import Input from '../ui/Input.vue'
@@ -105,6 +106,8 @@ function submit() {
     >
       {{ loading ? t('login.sendingCode') : t('login.getCode') }}
     </Button>
+    <!-- The promise where the number is given, not after it. -->
+    <p class="note"><Lock aria-hidden="true" />{{ t('landing.trust') }}</p>
   </form>
 </template>
 

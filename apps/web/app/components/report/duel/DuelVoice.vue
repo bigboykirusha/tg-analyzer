@@ -50,7 +50,7 @@ const facts = computed(() => {
     out.push({
       key: 'longest',
       label: t('report.voice.longest'),
-      value: `${formatCountdown(longest.seconds)} · ${who} · ${day}`,
+      value: `${formatCountdown(longest.seconds)}, ${who}, ${day}`,
     })
   }
   return out
