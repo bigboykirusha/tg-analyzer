@@ -36,25 +36,29 @@ const type = [
   { role: 'caption', className: 't-caption', sample: t('report.you') },
 ]
 const primitives = [
-  { name: 'sand', steps: ['0', '1', '2', '3', '4', '5', '6', '8', '9', '11', '12'] },
+  { name: 'gray', steps: ['0', '1', '2', '3', '4', '5', '6', '8', '9', '11', '12'] },
   { name: 'night', steps: ['0', '1', '2', '3', '4', '5', '8', '9', '12'] },
-  { name: 'lime', steps: ['1', '2', '3', '4', '6', '7', 'd1', 'd2', 'd3', 'd4', 'd5'] },
+  { name: 'hue-violet', steps: ['mark', 'room', 'tint', 'mark-d', 'poster-d', 'room-d', 'tint-d'] },
+  { name: 'hue-orange', steps: ['mark', 'room', 'tint', 'mark-d', 'poster-d', 'room-d', 'tint-d'] },
+  { name: 'hue-green', steps: ['mark', 'room', 'tint', 'mark-d', 'poster-d', 'room-d', 'tint-d'] },
+  { name: 'hue-blue', steps: ['mark', 'room', 'tint', 'mark-d', 'poster-d', 'room-d', 'tint-d'] },
+  { name: 'hue-pink', steps: ['mark', 'room', 'tint', 'mark-d', 'poster-d', 'room-d', 'tint-d'] },
+  { name: 'hue-teal', steps: ['mark', 'room', 'tint', 'mark-d', 'poster-d', 'room-d', 'tint-d'] },
   { name: 'red', steps: ['1', '2', '6', 'd1', 'd2', 'd6'] },
   { name: 'amber', steps: ['6', 'd6'] },
-  { name: 'pastel', steps: ['lavender', 'peach', 'honey', 'sky'] },
 ]
 const colors = [
   ['bg', 'surface', 'surface-2', 'surface-raised', 'fill-raised'],
   ['border', 'border-strong', 'hover', 'pressed', 'scrim'],
   ['text', 'text-muted', 'accent', 'danger', 'warning'],
-  ['you', 'them', 'lime', 'tile-ink', 'tile-grey'],
-  ['heat-1', 'heat-2', 'heat-3', 'heat-4', 'chart-neutral'],
+  ['you', 'them', 'poster', 'room', 'room-tint'],
+  ['heat-0', 'heat-1', 'heat-2', 'heat-3', 'heat-4'],
   ['avatar-1-bg', 'avatar-2-bg', 'avatar-3-bg', 'avatar-4-bg', 'avatar-5-bg'],
 ]
 const spaces = ['0-5', '1', '2', '3', '4', '6', '8', '10', '12', '16', '20']
 const radii = ['mark', 'xs', 'sm', 'md', 'lg', 'xl', 'full']
 const rings = ['ring-hairline', 'ring-selected', 'divider-top', 'focus-ring', 'focus-ring-field', 'shadow-overlay']
-const tones = ['plain', 'ink', 'lime', 'grey'] as const
+const tones = ['plain', 'ink'] as const
 const variants = ['primary', 'secondary', 'ghost', 'danger'] as const
 const sizes = ['xs', 'sm', 'md', 'lg'] as const
 const avatarSizes = ['xs', 'sm', 'md', 'lg', 'xl'] as const
@@ -103,7 +107,7 @@ function showToast(variant: 'success' | 'error' | 'info' | 'warning') {
       <UiPageHeader title="UI kit" lede="docs/design-system.md · apps/web/app/components/ui" />
 
       <!-- ─── Foundations ─────────────────────────────────────────────── -->
-      <UiPageSection title="Type" hint="Ten roles, two faces (Source Serif 4 · Geist), two weights.">
+      <UiPageSection title="Type" hint="Ten roles, one family (Onest), three weights.">
         <div class="tile kit__list">
           <div v-for="item in type" :key="item.role" class="kit__row">
             <code>.{{ item.className }}</code>
@@ -193,7 +197,7 @@ function showToast(variant: 'success' | 'error' | 'info' | 'warning') {
           <div class="tile kit__grid">
             <div class="kit__inline">
               <UiBadge>+7</UiBadge>
-              <UiBadge tone="lime">{{ t('report.you') }}</UiBadge>
+              <UiBadge tone="them">{{ t('report.you') }}</UiBadge>
               <UiBadge tone="danger">{{ t('report.delete') }}</UiBadge>
             </div>
             <div class="kit__inline">
@@ -280,7 +284,7 @@ function showToast(variant: 'success' | 'error' | 'info' | 'warning') {
             >
               <template #leading><UiAvatar :title="person" /></template>
               <template #trailing>
-                <UiBadge v-if="index === 0" tone="lime">{{ t('common.justNow') }}</UiBadge>
+                <UiBadge v-if="index === 0" tone="them">{{ t('common.justNow') }}</UiBadge>
                 <ChevronRight />
               </template>
             </UiListRow>

@@ -31,6 +31,13 @@ export interface Versus {
 
 /** A side leads when it does at least this many times more. */
 const LEAD_RATIO = 1.25
+
+/** No side leads: the report and «Итоги» call the same pair even (one fact, one answer). */
+export function isEven(mine: number, theirs: number) {
+  const high = Math.max(mine, theirs)
+  const low = Math.min(mine, theirs)
+  return low > 0 ? high / low < LEAD_RATIO : high === 0
+}
 /** Fewer events than this on both sides together is noise. */
 const MIN_SAMPLES = 5
 

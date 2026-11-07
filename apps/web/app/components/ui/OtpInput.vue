@@ -152,7 +152,7 @@ defineExpose({ focus: focusFirstEmpty })
 }
 
 /*
- * A cell is a 56 px well with one digit in Geist (the field face), sized from the cell: 24 px.
+ * A cell is a 56 px well with one digit in the interface face, sized from the cell: 24 px.
  * A token for it would be --text-otp.
  */
 .otp-input {

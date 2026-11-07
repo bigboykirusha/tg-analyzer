@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import type { ReportDto } from '@tg-analyzer/shared'
-import { Calendar, Flame, Hourglass, Timer } from '../../lib/icons'
+import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 
 /**
- * Personal records as four equal wells with icons: the longest streak, the longest conversation,
+ * Personal records as one strip of four values, divided by hairlines: the longest streak, the longest conversation,
  * the busiest day and the longest pause. No footer: how long and how often
  * you talk is not a record. The longest voice message has a card of its own.
  */
@@ -19,11 +18,11 @@ const streak = computed(() => report.value.facts.maxStreak)
 
 const records = computed(() => {
   const { facts, sessions } = report.value
-  const out: { key: string; icon: unknown; value: string; label: string }[] = []
-  if (streak.value.days > 1)
+  const out: { key: string; value: string; label: string }[] = []
+  // A streak as long as the whole chat is the calendar's answer («208 из 208 дней»), not a record.
+  if (streak.value.days > 1 && streak.value.days < fillDailyGaps(report.value.activity.daily).length)
     out.push({
       key: 'streak',
-      icon: Flame,
       value: tc('report.fmt.streakDays', streak.value.days),
       label: t('report.fmt.streakNote'),
     })
@@ -31,14 +30,12 @@ const records = computed(() => {
   if (session)
     out.push({
       key: 'session',
-      icon: Timer,
       value: formatDuration(session.durationSec),
       label: t('report.fmt.recordSession', { date: day(session.startedAt) }),
     })
   if (facts.mostActiveDate)
     out.push({
       key: 'day',
-      icon: Calendar,
       value: formatNumber(facts.mostActiveDate.total),
       label: t('report.fmt.recordDay', { date: day(facts.mostActiveDate.date) }),
     })
@@ -46,7 +43,6 @@ const records = computed(() => {
   if (gap)
     out.push({
       key: 'gap',
-      icon: Hourglass,
       value: tc('insight.days', Math.max(1, Math.round(gap.seconds / 86400))),
       label:
         gap.brokenByMe === undefined
@@ -63,7 +59,6 @@ const records = computed(() => {
   <ReportSection v-if="records.length" wide :title="t('report.fmt.recordsTitle')">
     <dl class="records" :style="{ '--records': records.length }">
       <div v-for="record in records" :key="record.key" class="records__cell">
-        <component :is="record.icon" class="records__icon icon-md" aria-hidden="true" />
         <dt class="records__label">{{ record.label }}</dt>
         <dd class="records__value t-num">{{ record.value }}</dd>
       </div>
@@ -72,24 +67,25 @@ const records = computed(() => {
 </template>
 
 <style scoped>
+/* One strip: four values side by side, hairlines between them, no wells and no icons. */
 .records {
   display: grid;
   grid-template-columns: repeat(var(--records), minmax(0, 1fr));
-  gap: var(--space-2);
   margin: 0;
 }
 
 .records__cell {
   display: grid;
   align-content: start;
-  gap: var(--space-2);
-  padding: var(--space-4);
-  border-radius: var(--radius-inner);
-  background: var(--surface-2);
+  gap: var(--space-1);
+  min-width: 0;
+  padding: 0 var(--space-6);
+  box-shadow: var(--divider-left);
 }
 
-.records__icon {
-  color: var(--text-muted);
+.records__cell:first-child {
+  padding-left: 0;
+  box-shadow: none;
 }
 
 .records__value {
@@ -105,21 +101,20 @@ const records = computed(() => {
   font: var(--text-small);
 }
 
+/* Two by two below 900: hairlines between the columns and between the rows. */
 @media (max-width: 900px) {
   .records {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--space-6);
   }
-}
 
-/* Phones keep two per row: four records in a square, not a tall stack. */
-@media (max-width: 640px) {
+  .records__cell:nth-child(odd) {
+    padding-left: 0;
+    box-shadow: none;
+  }
+
   .records__cell {
-    padding: var(--space-3);
-  }
-
-  .records__value {
-    font: var(--text-h3);
-    letter-spacing: var(--tracking-h3);
+    padding: 0 0 0 var(--space-4);
   }
 }
 </style>

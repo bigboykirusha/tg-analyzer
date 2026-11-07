@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
  * A short label or count next to something: «Новое», «3», «+7». Caption type on a small rounded
- * well (--radius-xs). Tones: neutral (a grey well), lime (the other side, «new»), danger.
+ * well (--radius-xs). Tones: neutral (a grey well), them (the person's colour, «new»), danger.
  */
-withDefaults(defineProps<{ tone?: 'neutral' | 'lime' | 'danger' }>(), { tone: 'neutral' })
+withDefaults(defineProps<{ tone?: 'neutral' | 'them' | 'danger' }>(), { tone: 'neutral' })
 </script>
 
 <template>
@@ -29,9 +29,9 @@ withDefaults(defineProps<{ tone?: 'neutral' | 'lime' | 'danger' }>(), { tone: 'n
   color: var(--text-muted);
 }
 
-.badge--lime {
-  background: var(--lime);
-  color: var(--on-lime);
+.badge--them {
+  background: var(--room-tint);
+  color: var(--them-ink);
 }
 
 .badge--danger {

@@ -36,16 +36,8 @@ const displayName = computed(() => auth.user?.firstName || auth.user?.username |
 const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : ''))
 const isDark = computed(() => resolved.value === 'dark')
 
-/** Clear over the page at the top; once the page scrolls under it, glass and a hairline. */
-const scrolled = ref(false)
-function onScroll() {
-  scrolled.value = window.scrollY > 4
-}
-onMounted(() => {
-  onScroll()
-  window.addEventListener('scroll', onScroll, { passive: true })
-})
-onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
+/** Clear at the top, glass once the page scrolls under it, the poster's colour over a report's poster. */
+const { scrolled, overPoster } = usePosterHeader()
 
 function openAccount() {
   accountOpen.value = false
@@ -59,7 +51,11 @@ function signOut() {
 </script>
 
 <template>
-  <header class="app-navigation" :class="{ 'is-scrolled': scrolled }">
+  <header
+    class="app-navigation"
+    data-toolbar
+    :class="{ 'is-scrolled': scrolled && !overPoster, 'is-over-poster': overPoster }"
+  >
     <UiPageContainer class="topbar">
       <BrandLink to="/dashboard" class="topbar__brand" />
       <!-- Each screen puts its title and actions here (`UiPageBar`). -->
@@ -151,6 +147,35 @@ function signOut() {
   transition:
     background-color var(--transition-normal),
     box-shadow var(--transition-normal);
+}
+
+/*
+ * Over a report's poster the bar is the poster: its colour, light controls, no title (the poster
+ * carries the name). Every control reads the remapped tokens, so nothing is restyled one by one.
+ */
+.app-navigation.is-over-poster {
+  --text: var(--on-poster);
+  --text-muted: var(--on-poster-muted);
+  --border: var(--on-poster-line);
+  --hover: var(--on-poster-well);
+  --pressed: var(--on-poster-line);
+  --accent: var(--on-poster);
+  --accent-hover: var(--on-poster-muted);
+  --on-accent: var(--poster);
+  --segment-track: var(--on-poster-well);
+  --thumb: var(--on-poster);
+  --focus-ring: 0 0 0 2px var(--poster), 0 0 0 4px var(--on-poster);
+  background: var(--poster);
+  color: var(--on-poster);
+}
+
+.app-navigation.is-over-poster :deep(.segment-active) {
+  color: var(--poster);
+}
+
+.app-navigation.is-over-poster :deep(.page-bar__copy),
+.app-navigation.is-over-poster :deep(.report-header__avatar) {
+  visibility: hidden;
 }
 
 .app-navigation.is-scrolled {

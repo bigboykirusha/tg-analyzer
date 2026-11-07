@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { Component } from 'vue'
 import type { GroupParticipantDto, GroupReportDto } from '@tg-analyzer/shared'
-import { Heart, Magnet, Megaphone, Mic, MoonStar, Sunrise } from '../../../lib/icons'
 
 /**
  * «Номинации»: who leads the group in each habit, one tile per award, with the next two
@@ -16,7 +14,6 @@ const MIN_MAGNET_MESSAGES = 10
 
 interface Award {
   key: string
-  icon: Component
   title: string
   winner: string
   value: string
@@ -27,42 +24,36 @@ interface Award {
 const specs = computed(() => [
   {
     key: 'starter',
-    icon: Megaphone,
     title: t('group.awards.starter'),
     amount: (p: GroupParticipantDto) => p.starterShare,
     describe: (value: number) => t('group.awards.starterValue', { share: formatPercent(value) }),
   },
   {
     key: 'magnet',
-    icon: Magnet,
     title: t('group.awards.magnet'),
     amount: (p: GroupParticipantDto) => (p.messageCount >= MIN_MAGNET_MESSAGES ? (p.magnetScore ?? 0) : 0),
     describe: (value: number) => t('group.awards.magnetValue', { value: formatDecimal(value) }),
   },
   {
     key: 'reactions',
-    icon: Heart,
     title: t('group.awards.reactions'),
     amount: (p: GroupParticipantDto) => p.reactionsReceived ?? 0,
     describe: (value: number) => tc('report.talk.reactionCount', value),
   },
   {
     key: 'morning',
-    icon: Sunrise,
     title: t('group.awards.morning'),
     amount: (p: GroupParticipantDto) => p.morningFirst ?? 0,
     describe: (value: number) => tc('report.talk.mornings', value),
   },
   {
     key: 'night',
-    icon: MoonStar,
     title: t('group.awards.night'),
     amount: (p: GroupParticipantDto) => p.nightLast ?? 0,
     describe: (value: number) => tc('report.talk.evenings', value),
   },
   {
     key: 'voice',
-    icon: Mic,
     title: t('group.awards.voice'),
     amount: (p: GroupParticipantDto) => (p.voiceSeconds ?? 0) + (p.roundSeconds ?? 0),
     describe: (value: number) => formatDuration(value),
@@ -79,7 +70,6 @@ const awards = computed(() =>
       if (!first) return null
       return {
         key: spec.key,
-        icon: spec.icon,
         title: spec.title,
         winner: nameOf(first),
         value: spec.describe(spec.amount(first)),
@@ -92,13 +82,10 @@ const awards = computed(() =>
 </script>
 
 <template>
-  <ReportSection v-if="awards.length" wide tone="ink" :title="t('group.awards.title')" :text="insights.join(' ')">
+  <ReportSection v-if="awards.length" wide :title="t('group.awards.title')" :text="insights.join(' ')">
     <ul class="awards">
       <li v-for="item in awards" :key="item.key" class="award">
-        <span class="award__title">
-          <component :is="item.icon" aria-hidden="true" />
-          {{ item.title }}
-        </span>
+        <span class="award__title">{{ item.title }}</span>
         <strong class="award__winner">{{ item.winner }}</strong>
         <span class="award__value t-num">{{ item.value }}</span>
         <span v-if="item.next.length" class="award__next">
@@ -110,10 +97,12 @@ const awards = computed(() =>
 </template>
 
 <style scoped>
+/* Six titles in a grid of cells divided by hairlines: no wells, no icons, the winner's name first. */
 .awards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--card-gap);
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 
@@ -122,16 +111,24 @@ const awards = computed(() =>
   align-content: start;
   gap: var(--space-1);
   min-width: 0;
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
+  padding: var(--space-4) var(--space-6) var(--space-4) var(--space-6);
+  box-shadow: var(--divider-left), var(--divider-top);
+}
+
+.award:nth-child(3n + 1) {
+  padding-left: 0;
+  box-shadow: var(--divider-top);
+}
+
+.award:nth-child(-n + 3) {
+  box-shadow: var(--divider-left);
+}
+
+.award:first-child {
+  box-shadow: none;
 }
 
 .award__title {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-2);
   color: var(--text-muted);
   font: var(--text-small);
 }
@@ -145,43 +142,42 @@ const awards = computed(() =>
 }
 
 .award__value {
-  color: var(--them);
+  color: var(--them-ink);
   font: var(--text-ui);
 }
 
 .award__next {
   overflow: hidden;
-  margin-top: var(--space-2);
   color: var(--text-muted);
   font: var(--text-small);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Two per row below 900 px; the hairlines follow the new rows. */
 @media (max-width: 900px) {
   .awards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
 
-/* Phones keep two awards per row, so six of them stay one screen tall. */
-@media (max-width: 640px) {
-  .award {
-    padding: var(--space-3);
+  .award,
+  .award:nth-child(3n + 1),
+  .award:nth-child(-n + 3) {
+    padding: var(--space-4) 0 var(--space-4) var(--space-4);
+    box-shadow: var(--divider-left), var(--divider-top);
   }
 
-  .award__title {
-    align-items: flex-start;
-    font: var(--text-caption);
+  .award:nth-child(odd) {
+    padding-left: 0;
+    box-shadow: var(--divider-top);
   }
 
-  .award__winner {
-    font: var(--text-title);
+  .award:nth-child(2) {
+    box-shadow: var(--divider-left);
   }
 
-  .award__value,
-  .award__next {
-    font: var(--text-caption);
+  .award:first-child {
+    box-shadow: none;
   }
 
   .award__next {
@@ -192,6 +188,17 @@ const awards = computed(() =>
 @media (max-width: 340px) {
   .awards {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .award,
+  .award:nth-child(odd),
+  .award:nth-child(2) {
+    padding-left: 0;
+    box-shadow: var(--divider-top);
+  }
+
+  .award:first-child {
+    box-shadow: none;
   }
 }
 </style>

@@ -61,7 +61,7 @@ const rows = computed(() =>
 </script>
 
 <template>
-  <ReportSection v-if="rows.length" tone="grey" :title="t('report.habits.title')">
+  <ReportSection v-if="rows.length" :title="t('report.habits.title')">
     <div class="report-rows">
       <div v-for="row in rows" :key="row.key" class="report-rows__row">
         <span class="report-rows__label">{{ row.label }} · {{ row.verdict }}</span>

@@ -92,7 +92,7 @@ const healthFacts = computed<Fact[]>(() => {
       </ol>
     </ReportSection>
 
-    <ReportSection v-if="health" tone="grey" :title="t('group.healthTitle')">
+    <ReportSection v-if="health" :title="t('group.healthTitle')">
       <ReportMeters :meters="healthMeters" />
       <ReportFacts :facts="healthFacts" />
     </ReportSection>

@@ -38,7 +38,7 @@ const runners = computed(() => words.value.slice(1, 4))
 
 .word__value {
   overflow-wrap: anywhere;
-  color: var(--them);
+  color: var(--text);
   font: var(--text-figure);
   letter-spacing: var(--tracking-figure);
 }

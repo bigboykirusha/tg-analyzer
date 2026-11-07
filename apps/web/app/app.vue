@@ -35,7 +35,7 @@ useHead({
     {
       name: 'theme-color',
       tagPriority: -9,
-      content: () => (theme.resolved.value === 'dark' ? '#0e0e0d' : '#f4f3ef'),
+      content: () => (theme.resolved.value === 'dark' ? '#000000' : '#f2f2f5'),
     },
     { name: 'format-detection', content: 'telephone=no' },
   ],

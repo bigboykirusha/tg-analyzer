@@ -31,7 +31,6 @@ const absent = computed(() =>
   <template v-else>
     <ReportSection
       v-if="topReactions.length"
-      tone="lime"
       :title="t('group.talk.reactionsTitle')"
       :text="t('group.talk.reactionsText')"
     >

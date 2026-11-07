@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
+import { personaOf } from '../../lib/persona'
 
 /**
- * «Ваше время», the one dashboard of the day's rhythm, each fact once: the role (the part of the
- * day with the most messages) as the answer, the peak window (`availabilityProfile.peakWindow`, as
+ * «Ваше время», the one dashboard of the day's rhythm, each fact once: the part of the day around
+ * the usual window as the answer (lib/persona, as in «Итоги»), the peak window (`availabilityProfile.peakWindow`, as
  * in «Итоги») under the title and lit on the 24 hours, and the four parts of the day as a band
  * under the same hours. The weekdays have the heatmap below.
  */
@@ -35,33 +36,14 @@ const PARTS = [
   { key: 'afternoon', role: 'day', label: 'chat.bucketAfternoon' },
   { key: 'evening', role: 'evening', label: 'chat.bucketEvening' },
 ] as const
-/** The part of the day the peak window starts in, used only to break a tie. */
-const windowRole = computed<Role | null>(() => {
-  const value = window.value?.start
-  if (value === undefined) return null
-  if (value < 6) return 'night'
-  if (value < 12) return 'morning'
-  if (value < 18) return 'day'
-  return 'evening'
-})
-/**
- * The role is the part of the day with the most messages, so «Ночные совы» never stands over a
- * chat that is mostly written by day. Parts within one point of the top are a tie; the peak
- * window decides it.
- */
 const parts = computed(() => {
   const distribution = props.data.derived.activityDistribution
   const counts = PARTS.map((part) => ({ ...part, count: distribution[part.key].total }))
   const total = counts.reduce((sum, item) => sum + item.count, 0)
   return total ? counts.map((item) => ({ ...item, share: (item.count / total) * 100 })) : []
 })
-const top = computed(() => {
-  if (!parts.value.length) return null
-  const best = Math.max(...parts.value.map((item) => item.share))
-  const leaders = parts.value.filter((item) => best - item.share < 1)
-  return leaders.find((item) => item.role === windowRole.value) ?? leaders[0] ?? null
-})
-const role = computed<Role | null>(() => top.value?.role ?? null)
+/** The answer is the part of the day around the usual window — the same one «Итоги» name (lib/persona). */
+const role = computed<Role | null>(() => personaOf(props.data.derived.availabilityProfile.peakWindow))
 
 /** 24 columns of the whole chat: you at the foot in ink, the other side on top in lime. */
 const hours = computed(() => {
@@ -105,7 +87,7 @@ const peakLine = computed(() => {
     v-if="window && role"
     :title="t('report.fmt.clockTitle')"
     :text="peakLine"
-    :answer="t(`report.fmt.role.${role}`)"
+    :answer="t(`story.persona.${role}`)"
     wide
   >
     <figure class="day">

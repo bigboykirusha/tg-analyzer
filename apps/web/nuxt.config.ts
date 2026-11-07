@@ -58,9 +58,8 @@ export default defineNuxtConfig({
   ],
   css: [
     // Self-hosted variable fonts; unicode-range keeps downloads to the scripts a page uses.
-    '@fontsource-variable/geist/index.css',
-    // Source Serif 4 with the optical-size axis: answers, titles and big figures.
-    '@fontsource-variable/source-serif-4/opsz.css',
+    // Onest: one Cyrillic-first variable family for the whole product.
+    '@fontsource-variable/onest/index.css',
     '~/assets/styles/tokens.css',
     '~/assets/styles/base.css',
   ],
@@ -68,7 +67,7 @@ export default defineNuxtConfig({
     head: {
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { name: 'theme-color', content: '#f4f3ef', tagPriority: -9 },
+        { name: 'theme-color', content: '#f2f2f5', tagPriority: -9 },
       ],
       link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
       // CSR shells have no server theme attribute: preserve the explicit cookie
@@ -76,7 +75,7 @@ export default defineNuxtConfig({
       script: [
         {
           innerHTML:
-            "(function(){var d=document.documentElement;var p=document.cookie.match(/(?:^|; *)tg-analyzer-theme=(light|dark)(?:;|$)/);d.dataset.theme=d.dataset.theme||(p?p[1]:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var m=document.querySelector('meta[name=theme-color]');if(m)m.content=d.dataset.theme==='dark'?'#0e0e0d':'#f4f3ef'})()",
+            "(function(){var d=document.documentElement;var p=document.cookie.match(/(?:^|; *)tg-analyzer-theme=(light|dark)(?:;|$)/);d.dataset.theme=d.dataset.theme||(p?p[1]:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var m=document.querySelector('meta[name=theme-color]');if(m)m.content=d.dataset.theme==='dark'?'#000000':'#f2f2f5'})()",
           tagPosition: 'head',
           tagPriority: 'critical',
         },

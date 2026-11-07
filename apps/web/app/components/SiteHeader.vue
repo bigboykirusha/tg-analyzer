@@ -9,10 +9,12 @@ const { t } = useI18n()
 const route = useRoute()
 /** The example report puts its title and actions into the bar (`UiPageBar`); documents keep theirs. */
 const isReport = computed(() => route.path === '/example')
+/** Over a report's poster the bar takes its colour; past it, the page colour again. */
+const { overPoster } = usePosterHeader()
 </script>
 
 <template>
-  <header class="site-header" :class="{ 'site-header--report': isReport }">
+  <header class="site-header" data-toolbar :class="{ 'site-header--report': isReport, 'is-over-poster': overPoster }">
     <UiPageContainer class="site-header__in">
       <BrandLink class="site-header__brand" :class="{ 'site-header__brand--report': isReport }" />
       <div id="header-page" class="site-header__report" />
@@ -49,6 +51,30 @@ const isReport = computed(() => route.path === '/example')
   padding-top: env(safe-area-inset-top, 0px);
   background: var(--bg);
   transition: background-color var(--transition-slow);
+}
+
+.site-header.is-over-poster {
+  --text: var(--on-poster);
+  --text-muted: var(--on-poster-muted);
+  --border: var(--on-poster-line);
+  --hover: var(--on-poster-well);
+  --pressed: var(--on-poster-line);
+  --accent: var(--on-poster);
+  --accent-hover: var(--on-poster-muted);
+  --on-accent: var(--poster);
+  --segment-track: var(--on-poster-well);
+  --thumb: var(--on-poster);
+  --focus-ring: 0 0 0 2px var(--poster), 0 0 0 4px var(--on-poster);
+  background: var(--poster);
+  color: var(--on-poster);
+}
+
+.site-header.is-over-poster :deep(.segment-active) {
+  color: var(--poster);
+}
+
+.site-header.is-over-poster :deep(.page-bar__copy) {
+  visibility: hidden;
 }
 
 .site-header__in {

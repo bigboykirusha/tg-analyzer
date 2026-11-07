@@ -44,12 +44,7 @@ const answer = computed(() => {
 </script>
 
 <template>
-  <ReportSection
-    v-if="sides.length"
-    tone="lime"
-    :title="item?.title ?? t('report.talk.reactionsTitle')"
-    :answer="answer"
-  >
+  <ReportSection v-if="sides.length" :title="item?.title ?? t('report.talk.reactionsTitle')" :answer="answer">
     <div class="podiums">
       <div v-for="side in sides" :key="side.key" class="podium-side">
         <ReportSideAvatar :side="side.key" :name="side.who" />
@@ -108,7 +103,7 @@ const answer = computed(() => {
 }
 
 .podium__count {
-  color: var(--on-lime-muted);
+  color: var(--text-muted);
   font: var(--text-small);
 }
 
@@ -122,12 +117,12 @@ const answer = computed(() => {
 }
 
 .podium__step--mine {
-  background: var(--on-lime);
-  color: var(--lime);
+  background: var(--you);
+  color: var(--surface);
 }
 
 .podium__step--theirs {
-  background: var(--on-lime-well);
-  color: var(--on-lime);
+  background: var(--them);
+  color: var(--surface);
 }
 </style>

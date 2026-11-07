@@ -102,7 +102,7 @@ const strictValue = ({ props = ALL_PROPS, extra = {} } = {}) => [
 // Raw durations inside transition/animation shorthands: use var(--duration-*) or var(--transition-*).
 const RAW_TIME = String.raw`/(^|[\s,(])(?!0m?s\b)\d*\.?\d+m?s\b/`
 
-const FONT_WEIGHTS = ['400', '500', 'inherit', 'normal', String.raw`/^var\(--[\w-]+\)$/`]
+const FONT_WEIGHTS = ['400', '500', '600', 'inherit', 'normal', String.raw`/^var\(--[\w-]+\)$/`]
 
 // Raw colour functions outside tokens.css; color-mix is banned everywhere.
 const COLOR_FUNCTIONS = ['color-mix', 'rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color']
@@ -161,7 +161,7 @@ export default {
         'scale-unlimited/declaration-strict-value': strictValue({
           props: COLOR_PROPS.filter((prop) => prop !== 'box-shadow'),
         }),
-        'declaration-property-value-allowed-list': { 'font-weight': [...FONT_WEIGHTS, '600'] },
+        'declaration-property-value-allowed-list': { 'font-weight': [...FONT_WEIGHTS] },
         'declaration-property-value-disallowed-list': null,
       },
     },

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { hueIndex } from '../../lib/hue'
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type AvatarSide = 'mine' | 'theirs'
 
@@ -25,7 +26,6 @@ const props = withDefaults(
   },
 )
 
-const TONES = 6
 const { t } = useI18n()
 
 const failed = ref(false)
@@ -49,14 +49,8 @@ const initials = computed(() => {
   return words.map(firstLetter).filter(Boolean).slice(0, 2).join('').toLocaleUpperCase()
 })
 
-/** Stable tone: hash(id) % 6 + 1. The tone carries no meaning. */
-const tone = computed(() => {
-  if (props.side) return null
-  const key = String(props.seed ?? props.title ?? '')
-  let hash = 0
-  for (let index = 0; index < key.length; index += 1) hash = (hash * 31 + key.charCodeAt(index)) | 0
-  return (Math.abs(hash) % TONES) + 1
-})
+/** Stable tone: the person's hue (lib/hue.ts), the same one their report and stories use. */
+const tone = computed(() => (props.side ? null : hueIndex(props.seed ?? props.title ?? '')))
 
 const showImage = computed(() => !props.side && props.src && !failed.value)
 const tooltip = computed(() => {
@@ -76,7 +70,7 @@ const tooltip = computed(() => {
 <style scoped>
 /*
  * Size rules sit in :where() so a caller's class can still resize one avatar without a fight over
- * specificity. Initials are always Geist: the serif is for what the product says, not for letters
+ * specificity. Initials use the interface face at 500
  * in a circle.
  */
 .avatar {
@@ -114,7 +108,7 @@ const tooltip = computed(() => {
 }
 
 /*
- * Big circles: the initials scale with the circle (24 at 64, 27 at 72), still Geist 500. A local
+ * Big circles: the initials scale with the circle (24 at 64, 27 at 72), still 500. A local
  * role until tokens.css has one (--text-initials).
  */
 :where(.avatar--lg, .avatar--xl) {
@@ -160,29 +154,24 @@ const tooltip = computed(() => {
   color: var(--avatar-6-ink);
 }
 
-/* ─── Sides of a two-person report: you are ink, they are lime ─────────── */
+/* ─── Sides of a two-person report: you are ink, they are the person's hue ─ */
 .avatar--mine {
   background: var(--you);
   color: var(--surface);
 }
 
 .avatar--theirs {
-  background: var(--avatar-1-bg);
-  color: var(--avatar-1-ink);
+  background: var(--them);
+  color: var(--surface);
 }
 
-/* On ink «Я» is a light circle: the letter takes the tile's colour. */
+/* On a poster-coloured tile «Я» is a light circle with the tile's colour inside; theirs is a well. */
 .tile--ink .avatar--mine {
   color: var(--tile-ink);
 }
 
-/* On lime both sides keep a visible circle: ink for you, a lime well for them. */
-.tile--lime .avatar--mine {
-  color: var(--lime);
-}
-
-.tile--lime .avatar--theirs {
-  background: var(--on-lime-well);
-  color: var(--on-lime);
+.tile--ink .avatar--theirs {
+  background: var(--on-tile-ink-well);
+  color: var(--on-tile-ink);
 }
 </style>

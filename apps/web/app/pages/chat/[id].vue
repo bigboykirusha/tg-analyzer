@@ -3,6 +3,7 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { AlertCircle } from '../../lib/icons'
 import { ApiClientError } from '../../composables/useApi'
 import type { StoryIntent } from '../../components/report/ShareDialog.vue'
+import { hueOf } from '../../lib/hue'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
@@ -27,7 +28,8 @@ const knownTitle = computed(
     null,
 )
 useSeoMeta({ title: () => data.value?.summary.title ?? t('report.title') })
-
+// The page takes the person's colour: poster, room, their marks in charts and the toolbar over the poster.
+useHead({ htmlAttrs: { 'data-hue': () => hueOf(chatId.value) } })
 
 async function load() {
   loadError.value = null
@@ -39,7 +41,6 @@ async function load() {
     else loadError.value = error
   }
 }
-
 
 // Reload the report as soon as a fresh analysis of this chat completes.
 watch(analysis.finished, (job) => {
@@ -60,42 +61,52 @@ onMounted(load)
 </script>
 
 <template>
-  <UiPageContainer>
-    <div v-if="data" class="page">
-      <ReportHeader :summary="data.summary" @share="shareOpen = true" />
+  <div>
+    <ReportPoster v-if="data" :data="data" />
+    <UiPageContainer>
+      <div v-if="data" class="page report-page">
+        <ReportHeader :summary="data.summary" @share="shareOpen = true" />
 
-      <GroupReport v-if="data.summary.type === 'group'" :data="data" />
-      <PrivateReport v-else :data="data" />
+        <GroupReport v-if="data.summary.type === 'group'" :data="data" />
+        <PrivateReport v-else :data="data" />
 
-      <ShareDialog :open="shareOpen" :data="data" @close="shareOpen = false" @story="openStory" />
-      <ReportStory :open="storyOpen" :data="data" :intent="storyIntent" @close="storyOpen = false" />
-    </div>
+        <ShareDialog :open="shareOpen" :data="data" @close="shareOpen = false" @story="openStory" />
+        <ReportStory :open="storyOpen" :data="data" :intent="storyIntent" @close="storyOpen = false" />
+      </div>
 
-    <UiPageBar v-else-if="notFound || loadError" :title="knownTitle ?? t('nav.back')" back="/dashboard" />
+      <UiPageBar v-else-if="notFound || loadError" :title="knownTitle ?? t('nav.back')" back="/dashboard" />
 
-    <UiEmptyState
-      v-if="!data && notFound"
-      :icon="AlertCircle"
-      :title="t('report.notFoundTitle')"
-      :description="t('report.notFoundText')"
-    >
-      <template #action>
-        <UiButton variant="primary" to="/new">{{ t('common.goToChats') }}</UiButton>
-      </template>
-    </UiEmptyState>
+      <UiEmptyState
+        v-if="!data && notFound"
+        :icon="AlertCircle"
+        :title="t('report.notFoundTitle')"
+        :description="t('report.notFoundText')"
+      >
+        <template #action>
+          <UiButton variant="primary" to="/new">{{ t('common.goToChats') }}</UiButton>
+        </template>
+      </UiEmptyState>
 
-    <UiEmptyState
-      v-else-if="!data && loadError"
-      tone="danger"
-      :icon="AlertCircle"
-      :title="t('report.loadError')"
-      :description="errorMessage(loadError)"
-    >
-      <template #action>
-        <UiButton variant="secondary" @click="load">{{ t('common.retry') }}</UiButton>
-      </template>
-    </UiEmptyState>
+      <UiEmptyState
+        v-else-if="!data && loadError"
+        tone="danger"
+        :icon="AlertCircle"
+        :title="t('report.loadError')"
+        :description="errorMessage(loadError)"
+      >
+        <template #action>
+          <UiButton variant="secondary" @click="load">{{ t('common.retry') }}</UiButton>
+        </template>
+      </UiEmptyState>
 
-    <ReportSkeleton v-if="!data && !notFound && !loadError" :title="knownTitle" />
-  </UiPageContainer>
+      <ReportSkeleton v-if="!data && !notFound && !loadError" :title="knownTitle" />
+    </UiPageContainer>
+  </div>
 </template>
+
+<style scoped>
+/* Under the poster the report starts at the page's own rhythm. */
+.report-page {
+  padding-top: var(--page-top);
+}
+</style>

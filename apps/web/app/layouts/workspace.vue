@@ -87,6 +87,7 @@ watch(analysis.finished, (job) => {
   .workspace-sidebar {
     display: block;
     border-right: 1px solid var(--border);
+    background: var(--sidebar-glass);
   }
 
   /* The signed-in screens fill wide monitors, up to a wider column than the public pages. */

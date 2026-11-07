@@ -2,6 +2,7 @@
 import { buildApiPath, type PublicShareDto, type ReportDto } from '@tg-analyzer/shared'
 import { ofetch } from 'ofetch'
 import { Link2Off } from '../../lib/icons'
+import { hueOf } from '../../lib/hue'
 
 /**
  * What a share link opens, without signing in: the quiz for the other side or the report as its
@@ -17,6 +18,11 @@ useSeoMeta({
   robots: 'noindex, nofollow',
 })
 const state = ref<'loading' | 'ready' | 'gone'>('loading')
+useHead({
+  htmlAttrs: {
+    'data-hue': () => (share.value?.kind === 'report' ? hueOf(share.value.data.summary.chatId) : undefined),
+  },
+})
 
 onMounted(async () => {
   try {
@@ -37,36 +43,43 @@ const report = computed<ReportDto | null>(() => {
 </script>
 
 <template>
-  <UiPageContainer>
-    <div class="page">
-      <p v-if="state === 'loading'" class="public__loading t-small t-muted">
-        <span class="spinner" aria-hidden="true" />{{ t('publicShare.loading') }}
-      </p>
+  <div>
+    <ReportPoster v-if="state === 'ready' && share?.kind === 'report' && report" :data="report" />
+    <UiPageContainer>
+      <div class="page" :class="{ 'public-report': share?.kind === 'report' }">
+        <p v-if="state === 'loading'" class="public__loading t-small t-muted">
+          <span class="spinner" aria-hidden="true" />{{ t('publicShare.loading') }}
+        </p>
 
-      <section v-else-if="state === 'gone'" class="tile public__gone">
-        <span class="public__icon"><Link2Off aria-hidden="true" /></span>
-        <h1 class="t-h2">{{ t('publicShare.goneTitle') }}</h1>
-        <p class="t-small t-muted">{{ t('publicShare.goneText') }}</p>
-        <UiButton variant="primary" block to="/login">{{ t('publicReport.cta') }}</UiButton>
-      </section>
-
-      <PublicQuiz v-else-if="share?.kind === 'quiz'" :quiz="share" :token="token" />
-
-      <template v-else-if="share?.kind === 'report' && report">
-        <ReportHeader :summary="report.summary" demo />
-        <p class="note" role="status">{{ t('publicReport.banner', { name: share.author }) }}</p>
-        <PrivateReport :data="report" :no-words="!share.settings.words" />
-        <section class="tile public__end" aria-labelledby="public-end-title">
-          <h2 id="public-end-title" class="t-h2">{{ t('publicReport.endTitle') }}</h2>
-          <p class="t-lede">{{ t('publicReport.endText') }}</p>
-          <UiButton variant="primary" size="lg" to="/login">{{ t('publicReport.cta') }}</UiButton>
+        <section v-else-if="state === 'gone'" class="tile public__gone">
+          <span class="public__icon"><Link2Off aria-hidden="true" /></span>
+          <h1 class="t-h2">{{ t('publicShare.goneTitle') }}</h1>
+          <p class="t-small t-muted">{{ t('publicShare.goneText') }}</p>
+          <UiButton variant="primary" block to="/login">{{ t('publicReport.cta') }}</UiButton>
         </section>
-      </template>
-    </div>
-  </UiPageContainer>
+
+        <PublicQuiz v-else-if="share?.kind === 'quiz'" :quiz="share" :token="token" />
+
+        <template v-else-if="share?.kind === 'report' && report">
+          <ReportHeader :summary="report.summary" demo />
+          <p class="note" role="status">{{ t('publicReport.banner', { name: share.author }) }}</p>
+          <PrivateReport :data="report" :no-words="!share.settings.words" />
+          <section class="tile public__end" aria-labelledby="public-end-title">
+            <h2 id="public-end-title" class="t-h2">{{ t('publicReport.endTitle') }}</h2>
+            <p class="t-lede">{{ t('publicReport.endText') }}</p>
+            <UiButton variant="primary" size="lg" to="/login">{{ t('publicReport.cta') }}</UiButton>
+          </section>
+        </template>
+      </div>
+    </UiPageContainer>
+  </div>
 </template>
 
 <style scoped>
+.public-report {
+  padding-top: var(--page-top);
+}
+
 .public__loading {
   display: flex;
   align-items: center;

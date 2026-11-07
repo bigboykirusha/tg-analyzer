@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computeChapters, type ReportDto } from '@tg-analyzer/shared'
+import type { ReportDto } from '@tg-analyzer/shared'
 import { Info } from '../../lib/icons'
 
 /** `noWords`: a shared link without words — the «О чём» part goes away instead of standing empty. */
@@ -18,8 +18,6 @@ const tabs = computed(() => [
 const totals = computed(() => props.data.report.totals)
 /** Reports made before voice and rituals were counted: say so instead of leaving cards out silently. */
 const outdated = computed(() => !props.data.report.voice || !props.data.report.rituals)
-/** The history in chapters under the pulse; none for a short or even chat. */
-const chapters = computed(() => computeChapters(props.data.report.activity.daily))
 const sentShare = computed(() => (totals.value.messages ? (totals.value.sent / totals.value.messages) * 100 : null))
 const mineShare = computed(() => (sentShare.value === null ? null : Math.round(sentShare.value)))
 
@@ -42,37 +40,26 @@ const shareHint = computed(() => {
       <Info aria-hidden="true" />
       {{ t('report.lowData') }}
     </p>
-    <!-- Ink: the count and its pulse. Lime: who writes more. -->
-    <ReportHero
-      :data="data"
-      :label="t('report.kpi.messages')"
-      :value="formatNumber(totals.messages)"
-      :chapters="chapters"
-    >
-      <template #accent>
-        <h2 class="share__title">{{ t('report.kpi.whoWritesMore') }}</h2>
+
+    <ReportSince :data="data" />
+    <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
+    <!-- «Вы двое» is masonry: every card at its own height, no stretched blanks (see useMasonry). -->
+    <ReportPart id="together" :title="t('report.tabs.together')" columns>
+      <!-- Who writes more: the split as one figure, theirs in the person's colour. -->
+      <ReportSection :title="t('report.kpi.whoWritesMore')" :answer="mineShare !== null ? shareHint : t('common.na')">
         <template v-if="mineShare !== null">
-          <p v-if="shareHint" class="share__verdict">{{ shareHint }}</p>
-          <div class="share__figure t-num">
+          <div class="share__figure t-num" aria-hidden="true">
             <span>{{ mineShare }}</span
-            ><span class="share__slash">/</span><span>{{ 100 - mineShare }}</span>
+            ><span class="share__slash">/</span><span class="share__theirs">{{ 100 - mineShare }}</span>
           </div>
           <ReportLine
-            class="share__line"
             :mine="totals.sent"
             :theirs="totals.received"
             :left="formatNumber(totals.sent)"
             :right="formatNumber(totals.received)"
           />
         </template>
-        <p v-else class="share__verdict">{{ t('common.na') }}</p>
-      </template>
-    </ReportHero>
-
-    <ReportSince :data="data" />
-    <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
-    <!-- «Вы двое» is masonry: every card at its own height, no stretched blanks (see useMasonry). -->
-    <ReportPart id="together" :title="t('report.tabs.together')" columns>
+      </ReportSection>
       <ReportDuel :data="data" />
       <p v-if="outdated" class="note" role="status">
         <Info aria-hidden="true" />
@@ -89,21 +76,7 @@ const shareHint = computed(() => {
 </template>
 
 <style scoped>
-/* Who writes more: the question, the answer, the split as a figure and both counts on one line. */
-.share__title {
-  color: var(--text-muted);
-  font: var(--text-ui);
-}
-
-.share__verdict {
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
-}
-
-.share__verdict::first-letter {
-  text-transform: uppercase;
-}
-
+/* «51 / 49»: yours in ink, theirs in the person's colour; the slash is only a divider. */
 .share__figure {
   display: flex;
   align-items: baseline;
@@ -113,10 +86,11 @@ const shareHint = computed(() => {
 }
 
 .share__slash {
-  color: var(--on-lime-muted);
+  color: var(--border-strong);
+  font-weight: 400;
 }
 
-.share__line {
-  margin-top: auto;
+.share__theirs {
+  color: var(--them-ink);
 }
 </style>

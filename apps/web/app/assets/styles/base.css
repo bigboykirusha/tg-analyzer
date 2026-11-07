@@ -485,11 +485,6 @@ strong {
 }
 
 /* Every page: header, then sections at one rhythm. */
-.page,
-.stack {
-  counter-reset: report-part;
-}
-
 .page {
   display: flex;
   flex-direction: column;
@@ -796,24 +791,6 @@ main:focus {
   --surface-2: var(--on-tile-ink-well);
   background: var(--tile-ink);
   color: var(--on-tile-ink);
-}
-
-.tile--lime {
-  --border: var(--on-lime-line);
-  --border-strong: var(--on-lime-line);
-  --surface-2: var(--on-lime-well);
-  --text: var(--on-lime);
-  --text-muted: var(--on-lime-muted);
-  --you: var(--on-lime);
-  --them: var(--on-lime-muted);
-  --them-ink: var(--on-lime);
-  background: var(--lime);
-  color: var(--on-lime);
-}
-
-.tile--grey {
-  --border: var(--border-strong);
-  background: var(--tile-grey);
 }
 
 .tile__label {

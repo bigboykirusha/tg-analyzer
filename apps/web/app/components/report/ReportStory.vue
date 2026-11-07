@@ -11,6 +11,8 @@ import {
 import { loadChatAvatar, loadProfileAvatar } from '../../lib/avatar-loader'
 import { maskSwear } from '../../lib/profanity'
 import { ChevronLeft, ChevronRight, Download, Share2, X } from '../../lib/icons'
+import { personaOf, type Persona } from '../../lib/persona'
+import { isEven } from '../../composables/useVersus'
 import type { StoryBlock, StoryPerson, StorySlideModel } from './StorySlide.vue'
 
 /**
@@ -44,7 +46,6 @@ const SWIPE_PX = 40
 const PULSE_TICKS = 90
 
 type ShareTarget = 'instagram' | 'telegram' | 'chat'
-type Persona = 'morning' | 'day' | 'evening' | 'night'
 
 const index = ref(0)
 const paused = ref(false)
@@ -99,27 +100,17 @@ const top = (items: { value: string }[], count = 5) => items.slice(0, count).map
 const topWords = (items: { value: string }[], count: number) => top(items, count).map(maskSwear)
 const hour = (value: number) => String(value).padStart(2, '0')
 
-/** «Вечерние собеседники» from the middle of the usual window. */
-function personaOf(from: number, length: number): Persona {
-  const middle = (from + length / 2) % 24
-  if (middle >= 5 && middle < 11) return 'morning'
-  if (middle >= 11 && middle < 17) return 'day'
-  if (middle >= 17 && middle < 22) return 'evening'
-  return 'night'
-}
-
 /** The usual window, the same one the report shows in Activity. */
 const usual = computed(() => {
   const span = props.data.derived.availabilityProfile.peakWindow
   if (!span) return null
   const [from = 0, to = 0] = span.split('-').map((time) => Number.parseInt(time, 10))
-  const length = (to - from + 24) % 24 || 24
   const weekday = props.data.report.activity.weekday
   const busiest = weekday.reduce((best, value, day) => (value.total > (weekday[best]?.total ?? 0) ? day : best), 0)
   return {
     from,
     to,
-    persona: personaOf(from, length),
+    persona: personaOf(span)!,
     day: weekday[busiest]?.total ? (t('chart.weekdaysLong').split(',')[busiest] ?? '') : '',
   }
 })
@@ -143,7 +134,7 @@ function whoMore(label: string, pair: { mine: number; theirs: number }, accent =
   // Inside the slides you are «Вы», as in the report; your name only heads the cover.
   const myName = t('story.you')
   const otherName = theirName.value
-  const even = Math.abs(pair.mine - pair.theirs) <= Math.max(pair.mine, pair.theirs) * 0.1
+  const even = isEven(pair.mine, pair.theirs)
   return {
     kind: 'stat',
     label,
@@ -267,7 +258,7 @@ const slides = computed<StorySlideModel[]>(() => {
     })
   } else if (!isGroup.value && responses.iWriteFirstPct !== null) {
     const mine = responses.iWriteFirstPct
-    const even = Math.abs(mine - 50) <= 10
+    const even = isEven(mine, 100 - mine)
     const starter = mine >= 50 ? myName : otherName
     const { medianMineSec, medianTheirsSec } = responses
     const blocks: StoryBlock[] = [
@@ -311,7 +302,7 @@ const slides = computed<StorySlideModel[]>(() => {
         theirs: voice.voice.seconds.theirs + voice.round.seconds.theirs,
       }
       if (seconds.mine + seconds.theirs >= 60) {
-        const even = Math.abs(seconds.mine - seconds.theirs) <= Math.max(seconds.mine, seconds.theirs) * 0.1
+        const even = isEven(seconds.mine, seconds.theirs)
         blocks.push({
           kind: 'stat',
           label: t('story.voice'),
@@ -426,7 +417,7 @@ const slides = computed<StorySlideModel[]>(() => {
     // Who writes longer: words in a text message, side by side with who asks more.
     const { mine: wordsMine, theirs: wordsTheirs } = vocabulary.wordsPerMessage
     if (!isGroup.value && wordsMine && wordsTheirs) {
-      const even = Math.abs(wordsMine - wordsTheirs) <= Math.max(wordsMine, wordsTheirs) * 0.1
+      const even = isEven(wordsMine, wordsTheirs)
       blocks.push({
         kind: 'stat',
         label: t('story.longer'),

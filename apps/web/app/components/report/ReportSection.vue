@@ -3,14 +3,14 @@
  * A report card, one anatomy for every card (docs/design-system.md, «Карточка отчёта»): the
  * question in a quiet line, the answer in one sentence in the editorial face, an optional footnote,
  * then the card's own picture (the slot). The two sides are named inside the picture, never in a footer.
- * `tone` turns it into an ink, lime or grey tile: the accents that break up a page of white cards.
+ * `tone="ink"` paints it in the person's poster colour: at most one such tile per part of the report.
  */
 defineProps<{
   title?: string
   text?: string
   answer?: string | null
   wide?: boolean
-  tone?: 'ink' | 'lime' | 'grey'
+  tone?: 'ink'
 }>()
 </script>
 
