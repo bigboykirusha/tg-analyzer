@@ -98,15 +98,13 @@ const { t } = useI18n()
   flex: 1;
 }
 
-@media (max-width: 900px) {
-  .page-bar__copy--untitled {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-  }
+.page-bar__copy--untitled {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 @media (min-width: 901px) {

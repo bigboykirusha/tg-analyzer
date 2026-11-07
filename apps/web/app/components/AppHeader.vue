@@ -49,86 +49,82 @@ function signOut() {
 
 <template>
   <header class="app-navigation">
-    <div class="app-navigation__bar">
-      <!-- Wide screens: the logo stands over the sidebar column, the bar over the page column. -->
-      <div class="app-navigation__brand"><BrandLink to="/dashboard" /></div>
-      <UiPageContainer class="topbar">
-        <BrandLink to="/dashboard" class="topbar__brand" />
-        <!-- Each screen puts its title and actions here (`UiPageBar`). -->
-        <div id="header-page" class="topbar__page" />
-        <nav v-if="navigation.items.value.length > 1" class="main-nav" :aria-label="t('nav.main')">
-          <NuxtLink
-            v-for="item in navigation.items.value"
-            :key="item.to"
-            :to="item.to"
-            class="nav-link"
-            :aria-current="navigation.current.value?.to === item.to ? 'page' : undefined"
-          >
-            {{ item.label }}
-          </NuxtLink>
-        </nav>
-        <div class="topbar-actions">
-          <NuxtLink
-            v-if="activity"
-            to="/dashboard"
-            class="activity"
-            :aria-label="t('header.activityLabel', { chat: activity.chat })"
-            aria-live="polite"
-          >
-            <span class="spinner" aria-hidden="true" />
-            <span class="activity__chat">{{ activity.chat }}</span>
-            <span v-if="activity.percent !== null" class="activity__percent">{{ activity.percent }}%</span>
-            <span v-if="activity.queued" class="activity__queued">+{{ activity.queued }}</span>
-          </NuxtLink>
-          <!-- On the account page itself the profile heads the page: no second avatar in the bar. -->
-          <UiPopoverMenu
-            v-if="route.path !== '/account'"
-            v-model:open="accountOpen"
-            class="topbar__account"
-            align="end"
-            :aria-label="displayName"
-            title=""
-          >
-            <template #trigger>
-              <button
-                type="button"
-                class="account-trigger"
-                aria-haspopup="menu"
-                :aria-expanded="accountOpen"
-                :aria-label="displayName"
-                @click="accountOpen = !accountOpen"
-              >
-                <ProfileAvatar :title="displayName" size="sm" />
-              </button>
-            </template>
-            <div class="menu-identity">
+    <UiPageContainer class="topbar">
+      <BrandLink to="/dashboard" class="topbar__brand" />
+      <!-- Each screen puts its title and actions here (`UiPageBar`). -->
+      <div id="header-page" class="topbar__page" />
+      <nav v-if="navigation.items.value.length > 1" class="main-nav" :aria-label="t('nav.main')">
+        <NuxtLink
+          v-for="item in navigation.items.value"
+          :key="item.to"
+          :to="item.to"
+          class="nav-link"
+          :aria-current="navigation.current.value?.to === item.to ? 'page' : undefined"
+        >
+          {{ item.label }}
+        </NuxtLink>
+      </nav>
+      <div class="topbar-actions">
+        <NuxtLink
+          v-if="activity"
+          to="/dashboard"
+          class="activity"
+          :aria-label="t('header.activityLabel', { chat: activity.chat })"
+          aria-live="polite"
+        >
+          <span class="spinner" aria-hidden="true" />
+          <span class="activity__chat">{{ activity.chat }}</span>
+          <span v-if="activity.percent !== null" class="activity__percent">{{ activity.percent }}%</span>
+          <span v-if="activity.queued" class="activity__queued">+{{ activity.queued }}</span>
+        </NuxtLink>
+        <!-- On the account page itself the profile heads the page: no second avatar in the bar. -->
+        <UiPopoverMenu
+          v-if="route.path !== '/account'"
+          v-model:open="accountOpen"
+          class="topbar__account"
+          align="end"
+          :aria-label="displayName"
+          title=""
+        >
+          <template #trigger>
+            <button
+              type="button"
+              class="account-trigger"
+              aria-haspopup="menu"
+              :aria-expanded="accountOpen"
+              :aria-label="displayName"
+              @click="accountOpen = !accountOpen"
+            >
               <ProfileAvatar :title="displayName" size="sm" />
-              <span class="menu-identity__copy">
-                <strong class="menu-identity__name">{{ displayName }}</strong>
-                <small v-if="handle" class="menu-identity__sub">{{ handle }}</small>
-              </span>
-            </div>
-            <div class="menu-divider" role="separator" />
-            <div class="mobile-preferences">
-              <UiMenuItem
-                role="menuitem"
-                :icon="Globe"
-                :meta="locale.toUpperCase()"
-                @click="setLocale(locale === 'ru' ? 'en' : 'ru')"
-              >
-                {{ t('nav.language') }}
-              </UiMenuItem>
-              <UiMenuItem role="menuitem" :icon="isDark ? Sun : Moon" @click="setPreference(isDark ? 'light' : 'dark')">
-                {{ isDark ? t('theme.light') : t('theme.dark') }}
-              </UiMenuItem>
-            </div>
-            <UiMenuItem role="menuitem" :icon="Settings" @click="openAccount">{{ t('account.settings') }}</UiMenuItem>
-            <div class="menu-divider" role="separator" />
-            <UiMenuItem role="menuitem" :icon="LogOut" @click="signOut">{{ t('account.logout') }}</UiMenuItem>
-          </UiPopoverMenu>
-        </div>
-      </UiPageContainer>
-    </div>
+            </button>
+          </template>
+          <div class="menu-identity">
+            <ProfileAvatar :title="displayName" size="sm" />
+            <span class="menu-identity__copy">
+              <strong class="menu-identity__name">{{ displayName }}</strong>
+              <small v-if="handle" class="menu-identity__sub">{{ handle }}</small>
+            </span>
+          </div>
+          <div class="menu-divider" role="separator" />
+          <div class="mobile-preferences">
+            <UiMenuItem
+              role="menuitem"
+              :icon="Globe"
+              :meta="locale.toUpperCase()"
+              @click="setLocale(locale === 'ru' ? 'en' : 'ru')"
+            >
+              {{ t('nav.language') }}
+            </UiMenuItem>
+            <UiMenuItem role="menuitem" :icon="isDark ? Sun : Moon" @click="setPreference(isDark ? 'light' : 'dark')">
+              {{ isDark ? t('theme.light') : t('theme.dark') }}
+            </UiMenuItem>
+          </div>
+          <UiMenuItem role="menuitem" :icon="Settings" @click="openAccount">{{ t('account.settings') }}</UiMenuItem>
+          <div class="menu-divider" role="separator" />
+          <UiMenuItem role="menuitem" :icon="LogOut" @click="signOut">{{ t('account.logout') }}</UiMenuItem>
+        </UiPopoverMenu>
+      </div>
+    </UiPageContainer>
     <!-- A screen with parts (the report) puts its navigation here: one bar, one material, one blur. -->
     <UiPageContainer id="header-sub" class="header-sub" />
   </header>
@@ -152,38 +148,17 @@ function signOut() {
   height: var(--topbar-height);
 }
 
-.app-navigation__brand {
-  display: none;
-}
-
 /*
- * Wide screens: one bar across the whole width, as on phones. The logo sits in its own cell over
- * the sidebar, the screen's title and actions over the page, the profile at the end; a hairline
- * under the bar joins both columns.
+ * Wide screens: the bar sits at the top of the light panel (its corners follow the panel's), the
+ * logo lives in the menu beside it, the profile stays at the end of the bar.
  */
 @media (min-width: 901px) {
   .app-navigation {
-    border-bottom: 1px solid var(--border);
-  }
-
-  .app-navigation__bar {
-    display: grid;
-    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-  }
-
-  .app-navigation__brand {
-    display: flex;
-    align-items: center;
-    height: var(--topbar-height);
-    padding: 0 var(--space-5);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   }
 
   .topbar__brand {
     display: none;
-  }
-
-  .header-sub {
-    margin-left: var(--sidebar-width);
   }
 }
 

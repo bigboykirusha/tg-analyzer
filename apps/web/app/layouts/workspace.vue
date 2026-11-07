@@ -44,22 +44,30 @@ watch(analysis.finished, (job) => {
   <div class="workspace">
     <!-- Keyboard users skip the sidebar's links straight to the screen. -->
     <a class="skip-link" href="#main">{{ t('common.skipToContent') }}</a>
-    <!-- One header across the whole width, as on phones: logo, the screen's title and actions, profile. -->
-    <AppHeader class="workspace-header" />
     <div class="workspace-sidebar"><AppSidebar /></div>
-    <main id="main" class="workspace-main" tabindex="-1">
-      <slot />
-    </main>
+    <!-- Wide screens: the screen lies on one light panel, and its header belongs to the panel. -->
+    <div class="workspace-panel">
+      <AppHeader />
+      <main id="main" class="workspace-main" tabindex="-1">
+        <slot />
+      </main>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Wide screens: the header on top, the chat list on the left, the page on the right. Phones: one column. */
+/*
+ * Wide screens («inset»): the menu stands at the window's edge on the grey ground, the screen lies
+ * on a light rounded panel beside it, and the header lives inside that panel. Phones: one column.
+ */
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
   min-height: 100dvh;
+}
+
+.workspace-panel {
+  min-width: 0;
 }
 
 .workspace-sidebar {
@@ -74,17 +82,19 @@ watch(analysis.finished, (job) => {
 @media (min-width: 901px) {
   .workspace {
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    background: var(--sidebar);
   }
 
-  .workspace-header {
-    grid-column: 1 / -1;
-  }
-
-  /* The rail runs under the header to the bottom; the list inside stays pinned. */
   .workspace-sidebar {
     display: block;
-    /* A heavier material than the page separates the column; no line needed. */
-    background: var(--sidebar);
+  }
+
+  .workspace-panel {
+    min-height: calc(100dvh - 2 * var(--space-2));
+    margin: var(--space-2) var(--space-2) var(--space-2) 0;
+    border-radius: var(--radius-xl);
+    background: var(--bg);
+    box-shadow: 0 0 0 1px var(--border);
   }
 }
 </style>

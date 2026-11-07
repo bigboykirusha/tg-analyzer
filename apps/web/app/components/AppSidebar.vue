@@ -3,9 +3,9 @@ import type { ReportSummaryDto } from '@tg-analyzer/shared'
 import { LayoutGrid, Plus } from '../lib/icons'
 
 /**
- * The app's left column on wide screens, under the header: home, a new analysis and every
- * analysed chat, personal chats first, so switching between reports is one click. The logo and
- * the profile live in the header.
+ * The app's left column on wide screens, on the window's grey ground beside the light panel: the
+ * logo, home, a new analysis and every analysed chat, personal chats first, so switching between
+ * reports is one click. The profile lives at the end of the header.
  */
 const workspace = useWorkspaceStore()
 const route = useRoute()
@@ -32,6 +32,7 @@ function updating(report: ReportSummaryDto) {
 
 <template>
   <aside class="sidebar" :aria-label="t('sidebar.label')">
+    <div class="sidebar__brand"><BrandLink to="/dashboard" /></div>
     <nav class="sidebar__list" :aria-label="t('sidebar.reports')">
       <NuxtLink to="/dashboard" class="sidebar__item" :aria-current="route.path === '/dashboard' ? 'page' : undefined">
         <span class="sidebar__icon sidebar__icon--plain"><LayoutGrid aria-hidden="true" /></span>
@@ -87,14 +88,22 @@ function updating(report: ReportSummaryDto) {
 .sidebar {
   --skeleton: var(--border-strong);
   position: sticky;
-  top: var(--topbar-height);
+  top: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  height: calc(100dvh - var(--topbar-height));
-  padding: var(--space-3) var(--space-3) var(--space-4);
+  height: 100dvh;
+  padding: 0 var(--space-3) var(--space-4);
   overflow-y: auto;
   scrollbar-width: thin;
+}
+
+.sidebar__brand {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: calc(var(--topbar-height) + var(--space-2));
+  padding: var(--space-2) var(--space-2) 0;
 }
 
 .sidebar__list {
