@@ -58,6 +58,8 @@ export interface StorySlideModel {
   kicker: string
   title: string
   sub?: string
+  /** The cover only: the person's name, set as large as on the report's poster. */
+  display?: string
   blocks: StoryBlock[]
 }
 
@@ -129,6 +131,7 @@ const isLong = (value: string) => longestWord(value) > 8
 
       <div class="story-slide__body">
         <div class="story-slide__head">
+          <strong v-if="slide.display" class="story-slide__display">{{ slide.display }}</strong>
           <span class="story-slide__kicker">{{ slide.kicker }}</span>
           <strong class="story-slide__title" :class="`story-slide__title--${titleSize}`">{{ slide.title }}</strong>
           <p v-if="slide.sub" class="story-slide__sub">{{ slide.sub }}</p>
@@ -349,16 +352,19 @@ const isLong = (value: string) => longestWord(value) > 8
  *
  * The slide's type scale: six roles, all in cqmin of the root. Two weights only.
  *   figure  — the one number of the cover                          (serif)
- *   h1      — the headline of a slide                              (serif)
- *   h2      — a tile's value, the ends of a split line             (serif)
+ *   display — the person's name on the cover, as on the report's poster
+ *   h1      — the headline of a slide
+ *   h2      — a tile's value, the ends of a split line
  *   title   — names, list rows, the brand
  *   body    — the kicker and the line under the headline
  *   caption — tile labels, notes, axes
  */
 .story-slide__canvas {
-  --s-figure: 400 24cqmin / 0.9 var(--font-display);
-  --s-h1: 400 11.5cqmin / 1.02 var(--font-display);
-  --s-h2: 400 6.8cqmin / 1.05 var(--font-display);
+  /* Big type has the report's weight (600), so a number looks the same on the slide and on the page. */
+  --s-display: 600 16cqmin / 0.95 var(--font-display);
+  --s-figure: 600 24cqmin / 0.9 var(--font-display);
+  --s-h1: 600 11.5cqmin / 1.02 var(--font-display);
+  --s-h2: 600 6.8cqmin / 1.05 var(--font-display);
   --s-title: 500 4.2cqmin / 1.2 var(--font-sans);
   --s-body: 400 3.8cqmin / 1.3 var(--font-sans);
   --s-caption: 500 3.1cqmin / 1.25 var(--font-sans);
@@ -481,6 +487,18 @@ const isLong = (value: string) => longestWord(value) > 8
 .story-slide__title {
   overflow-wrap: break-word;
   text-wrap: balance;
+}
+
+/* The name on the cover: the poster's voice, at most two lines. */
+.story-slide__display {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-bottom: 3cqmin;
+  font: var(--s-display);
+  letter-spacing: var(--tracking-display);
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .story-slide__title--figure {

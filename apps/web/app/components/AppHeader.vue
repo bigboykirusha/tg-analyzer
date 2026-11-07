@@ -37,7 +37,7 @@ const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : 
 const isDark = computed(() => resolved.value === 'dark')
 
 /** Clear at the top, glass once the page scrolls under it, the poster's colour over a report's poster. */
-const { scrolled, overPoster } = usePosterHeader()
+const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
 
 function openAccount() {
   accountOpen.value = false
@@ -54,7 +54,12 @@ function signOut() {
   <header
     class="app-navigation"
     data-toolbar
-    :class="{ 'is-scrolled': scrolled && !overPoster, 'is-over-poster': overPoster }"
+    :class="{
+      'is-scrolled': scrolled && !overPoster,
+      'is-over-poster': overPoster,
+      'has-poster': hasPoster,
+    }"
+    :style="hasPoster ? { '--poster-progress': progress } : undefined"
   >
     <UiPageContainer class="topbar">
       <BrandLink to="/dashboard" class="topbar__brand" />
@@ -174,15 +179,38 @@ function signOut() {
   color: var(--poster);
 }
 
-.app-navigation.is-over-poster :deep(.page-bar__copy),
-.app-navigation.is-over-poster :deep(.report-header__avatar) {
-  /* Hidden from sight while the poster shows the name, still the page's h1 for screen readers. */
+/*
+ * On a report the bar is one material driven by the scroll (usePosterHeader): the poster colour is a
+ * layer whose opacity follows --poster-progress, the glass shows through as it fades, and the title
+ * and avatar rise into the bar over the same stretch. Hidden title stays the page's h1 for readers.
+ */
+.app-navigation.has-poster {
+  isolation: isolate;
+  background: var(--toolbar-glass);
+  box-shadow: var(--divider-bottom);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+
+.app-navigation.has-poster::before {
+  content: '';
   position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+  z-index: -1;
+  inset: 0;
+  background: var(--poster);
+  opacity: calc(1 - var(--poster-progress, 1));
+  pointer-events: none;
+}
+
+.app-navigation.is-over-poster {
+  /* Over the poster the bar is the poster; its own background shows nothing else. */
+  box-shadow: none;
+}
+
+.app-navigation.has-poster :deep(.page-bar__copy),
+.app-navigation.has-poster :deep(.report-header__avatar) {
+  opacity: var(--poster-progress, 1);
+  transform: translateY(calc((1 - var(--poster-progress, 1)) * var(--space-1)));
 }
 
 .app-navigation.is-scrolled {

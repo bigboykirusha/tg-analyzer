@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { Share2 } from '../../lib/icons'
+import { Share } from '../../lib/icons'
 
 /**
  * The report's bar: back, the chat's avatar, its name and one action, «Поделиться» (it opens the
@@ -25,7 +25,7 @@ const { t } = useI18n()
     </template>
     <template #actions>
       <UiButton v-if="demo" variant="primary" size="sm" to="/login">{{ t('site.signIn') }}</UiButton>
-      <UiButton v-else variant="primary" size="sm" :icon="Share2" aria-haspopup="dialog" @click="emit('share')">
+      <UiButton v-else variant="primary" size="sm" :icon="Share" aria-haspopup="dialog" @click="emit('share')">
         {{ t('share.open') }}
       </UiButton>
     </template>

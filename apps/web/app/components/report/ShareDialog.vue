@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { fillDailyGaps, type ReportDto, type ShareLinkDto, type ShareLinksResponse } from '@tg-analyzer/shared'
-import { ArrowLeft, ChevronRight, CircleHelp, Download, Link, Play, Share2 } from '../../lib/icons'
+import { ArrowLeft, ChevronRight, CircleHelp, Download, Link, Play, Share } from '../../lib/icons'
 import type { StorySlideModel } from './StorySlide.vue'
 
 /**
@@ -83,8 +83,9 @@ const cover = computed(() => {
   const { firstMessageAt, lastMessageAt } = report.period
   const slide: StorySlideModel = {
     key: 'cover',
-    theme: 1,
+    theme: 2,
     durationMs: 0,
+    display: summary.title,
     kicker: t(isGroup.value ? 'story.volumeKickerGroup' : 'story.volumeKicker'),
     title: formatNumber(report.totals.messages),
     sub: tc('story.messagesWord', report.totals.messages),
@@ -169,7 +170,7 @@ const title = computed(() =>
             @click="pick('share')"
           >
             <template #leading>
-              <span class="share__icon"><Share2 aria-hidden="true" /></span>
+              <span class="share__icon"><Share aria-hidden="true" /></span>
             </template>
           </UiListRow>
         </div>

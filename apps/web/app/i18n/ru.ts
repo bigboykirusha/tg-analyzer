@@ -347,7 +347,7 @@ export const ru: Record<MessageKey, string> = {
   'landing.nav.example': 'Пример отчёта',
   'landing.phoneLabel': 'Пример отчёта на телефоне',
   'landing.seoTitle': 'Статистика переписки в Telegram: кто пишет первым',
-  'landing.title': 'Ваши переписки.',
+  'landing.title': 'Зеркало',
   'landing.titleSoft': 'В цифрах.',
   'landing.trust': 'Тексты сообщений не храним. Удалить всё — одной кнопкой.',
   'landing.windowLabel': 'Пример отчёта',
@@ -465,6 +465,9 @@ export const ru: Record<MessageKey, string> = {
   'report.lose.story': 'Итоги',
   'report.lose.storyValue': 'тоже удалятся',
   'report.lowData': 'Меньше 20 сообщений — часть показателей пока ненадёжна.',
+  'report.ending.lede':
+    'Главное о вашей переписке — четырьмя слайдами, как сторис. Их можно сохранить картинками или отправить.',
+  'report.ending.ledeGroup': 'Главное о группе — слайдами, как сторис. Их можно сохранить картинками или отправить.',
   'report.notFoundKnownText': 'Разберите его — отчёт появится здесь через минуту.',
   'report.analyseHere': 'Разобрать чат',
   'report.notFoundText': 'Выберите этот чат в «Новом анализе», и отчёт появится здесь.',

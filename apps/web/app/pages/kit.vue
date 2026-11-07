@@ -8,7 +8,7 @@ import {
   RotateCw,
   Search,
   Settings,
-  Share2,
+  Share,
   Sun,
   Trash2,
 } from '../lib/icons'
@@ -176,7 +176,7 @@ function showToast(variant: 'success' | 'error' | 'info' | 'warning') {
             </UiButton>
           </div>
           <div class="kit__inline">
-            <UiButton variant="primary" :icon="Share2">{{ t('share.open') }}</UiButton>
+            <UiButton variant="primary" :icon="Share">{{ t('share.open') }}</UiButton>
             <UiButton variant="secondary" loading>{{ t('share.watch') }}</UiButton>
             <UiButton variant="primary" disabled>{{ t('share.watch') }}</UiButton>
             <UiButton variant="secondary" disabled>{{ t('share.watch') }}</UiButton>
@@ -339,7 +339,7 @@ function showToast(variant: 'success' | 'error' | 'info' | 'warning') {
               <UiMenuItem role="menuitem" :icon="RotateCw" @click="menuOpen = false">{{
                 t('common.refresh')
               }}</UiMenuItem>
-              <UiMenuItem role="menuitem" :icon="Share2" @click="menuOpen = false">{{ t('share.open') }}</UiMenuItem>
+              <UiMenuItem role="menuitem" :icon="Share" @click="menuOpen = false">{{ t('share.open') }}</UiMenuItem>
               <div class="menu-divider" role="separator" />
               <UiMenuItem role="menuitem" :icon="Trash2" danger @click="menuOpen = false">
                 {{ t('report.deleteMenu') }}

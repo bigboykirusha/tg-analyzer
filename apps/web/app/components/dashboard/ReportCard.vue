@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
 import { ChevronRight } from '../../lib/icons'
+import { hueOf } from '../../lib/hue'
 
 const props = defineProps<{
   report: ReportSummaryDto
@@ -27,6 +28,8 @@ const line = computed(() =>
     .filter(Boolean)
     .join(' · '),
 )
+/** On wide screens the card is the person's small poster: their colour, their name, their pulse. */
+const hue = computed(() => hueOf(props.report.chatId))
 const updated = computed(() =>
   props.updating
     ? t('dashboard.analysingNow')
@@ -35,7 +38,7 @@ const updated = computed(() =>
 </script>
 
 <template>
-  <NuxtLink :to="`/chat/${report.chatId}`" class="report-card">
+  <NuxtLink :to="`/chat/${report.chatId}`" class="report-card" :data-hue="hue">
     <span class="report-card__head">
       <ChatAvatar :chat-id="report.chatId" :title="report.title" :has-avatar="hasAvatar" />
       <span class="report-card__who">
@@ -81,9 +84,37 @@ const updated = computed(() =>
     transform var(--duration-fast) var(--ease-standard);
 }
 
+/*
+ * Wider screens: a small poster, like the top of the report it opens — the person's colour, light
+ * type, the pulse in the poster's own ink (you solid, them translucent). Tapping it leads into the
+ * same colour. Phones keep a list row, where the avatar carries the colour.
+ */
+@media (min-width: 641px) {
+  .report-card {
+    --text: var(--on-poster);
+    --text-muted: var(--on-poster-muted);
+    --border-strong: var(--on-poster-line);
+    --you: var(--on-poster);
+    --them: var(--on-poster-muted);
+    background: var(--poster);
+    color: var(--text);
+  }
+
+  /* The poster carries the person's colour, so the avatar would only repeat it; the name speaks. */
+  .report-card__head :deep(.avatar),
+  .report-card__head > :first-child {
+    display: none;
+  }
+
+  .report-card__title {
+    font: var(--text-h3);
+    letter-spacing: var(--tracking-h3);
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .report-card:hover {
-    box-shadow: var(--ring-strong);
+    box-shadow: var(--shadow-overlay);
   }
 
   .report-card:hover .report-card__chevron {
@@ -175,7 +206,7 @@ const updated = computed(() =>
   display: none;
 }
 
-/* Phones: a row with readable size and freshness instead of a clipped sentence. */
+/* Phones: a row with readable size and freshness instead of a clipped sentence; the avatar keeps the colour. */
 @media (max-width: 640px) {
   .report-card {
     padding: var(--space-3) 0;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Lock, Share2 } from '../../lib/icons'
+import { Lock, Share } from '../../lib/icons'
 
 /** An iPhone 17 Pro Max-shaped frame with the example report as a website inside. */
 const { t } = useI18n()
@@ -28,7 +28,7 @@ const { t } = useI18n()
       <div class="iphone__site">
         <div class="iphone__bar" aria-hidden="true">
           <span class="iphone__brand"><BrandMark :size="22" />TG Analyzer</span>
-          <span class="iphone__share"><Share2 /></span>
+          <span class="iphone__share"><Share /></span>
         </div>
         <ClientOnly><MiniReport phone /></ClientOnly>
       </div>

@@ -10,7 +10,7 @@ import {
 } from '@tg-analyzer/shared'
 import { loadChatAvatar, loadProfileAvatar } from '../../lib/avatar-loader'
 import { maskSwear } from '../../lib/profanity'
-import { ChevronLeft, ChevronRight, Download, Share2, X } from '../../lib/icons'
+import { ChevronLeft, ChevronRight, Download, Share, X } from '../../lib/icons'
 import { personaOf } from '../../lib/persona'
 import { isEven } from '../../composables/useVersus'
 import type { StoryBlock, StoryPerson, StorySlideModel } from './StorySlide.vue'
@@ -224,8 +224,10 @@ const slides = computed<StorySlideModel[]>(() => {
   )
   list.push({
     key: 'overview',
-    theme: 1,
+    // The cover is the report's poster: the person's colour and their name, large.
+    theme: 2,
     durationMs: 9000,
+    display: props.data.summary.title,
     kicker: t(isGroup.value ? 'story.volumeKickerGroup' : 'story.volumeKicker'),
     title: formatNumber(totals.messages),
     sub: [tc('story.messagesWord', totals.messages), tc('story.activeDaysCount', facts.activeDays)].join(', '),
@@ -376,7 +378,7 @@ const slides = computed<StorySlideModel[]>(() => {
       })
     list.push({
       key: 'time',
-      theme: 4,
+      theme: 3,
       durationMs: 9000,
       kicker: t('story.timeKicker'),
       title: t(`story.persona.${time.persona}`),
@@ -524,7 +526,7 @@ function talkSlide(): StorySlideModel | null {
   const reactionTotal = reactions ? reactions.given.mine + reactions.given.theirs : 0
   return {
     key: 'talk',
-    theme: 5,
+    theme: 3,
     durationMs: 9000,
     kicker: t(isGroup.value ? 'story.talkKickerGroup' : 'story.talkKicker'),
     title:
@@ -875,7 +877,7 @@ watch(open, async (value) => {
               @click="openShare"
             >
               <span v-if="image.busy.value" class="spinner stories__spinner" aria-hidden="true" />
-              <Share2 v-else aria-hidden="true" />
+              <Share v-else aria-hidden="true" />
               {{ t('story.share') }}
             </button>
           </div>

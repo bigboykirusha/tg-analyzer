@@ -57,7 +57,7 @@ export {
   Search,
   Send,
   Settings,
-  Share2,
+  Share,
   Sparkles,
   Sun,
   Sunrise,
