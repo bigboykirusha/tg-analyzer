@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Главная — варианты по референсам</title>
+    <link rel="stylesheet" href="../../../apps/web/node_modules/@fontsource-variable/geist/index.css" />
+    <link rel="stylesheet" href="../../../apps/web/app/assets/styles/tokens.css" />
+    <link rel="stylesheet" href="report-v2.css" />
+    <link rel="stylesheet" href="report-v3-review.css" />
+    <link rel="stylesheet" href="pages-v1.css" />
+    <link rel="stylesheet" href="next-v1.css" />
+    <link rel="stylesheet" href="home-v2.css" />
+  </head>
+  <body>
+    <main class="review" style="max-width: 1560px">
+      <header class="review__head">
+        <h1>Главная кабинета — четыре референса</h1>
+        <p>
+          Главная отвечает на два вопроса: «что я уже узнал» и «что ещё разобрать». Каждый вариант берёт идею у
+          известного продукта, но собран на нашей системе: те же токены, плитки ink, lime и grey. Только реальные
+          данные: последние 30 дней из Telegram без разбора, готовые отчёты, ссылки и угадайки, закреплённые чаты.
+          Сравнений людей по отчётам нет. Ответ буквой: «Главная Б».
+        </p>
+        <ol class="toc">
+          <li><a href="#a">А — «Сводка», как Apple Health</a></li>
+          <li><a href="#b">Б — «Полки», как Spotify</a></li>
+          <li><a href="#c">В — «Список и превью», как Telegram Desktop</a></li>
+          <li><a href="#d">Г — «Входящие», как Linear</a></li>
+        </ol>
+      </header>
+      <section class="problem" id="a">
+        <h2>А — «Сводка», как Apple Health</h2>
+        <div class="why">
+          <p>
+            Лента коротких событий: каждое — одна фраза и маленькая картинка, нажатие ведёт туда, где действие. Сверху
+            закреплённые люди, внизу отчёты. Главная каждый раз новая, есть повод открыть. Для событий нужен список
+            ссылок по всем отчётам (новый эндпоинт), остальное уже есть.
+          </p>
+        </div>
+        <div class="frames" data-screen="a"></div>
+      </section>
+      <section class="problem" id="b">
+        <h2>Б — «Полки», как Spotify</h2>
+        <div class="why">
+          <p>
+            Крупный блок «Ваш ноябрь», дальше полки: отчёты обложками, как альбомы (тон обложки — по правилу плиток), и
+            «Ещё не разобраны» — кружки людей со счётом за месяц. Ярко и «постерно», ближе всего к «Итогам». На телефоне
+            полки листаются вбок внутри себя, страница — нет.
+          </p>
+        </div>
+        <div class="frames" data-screen="b"></div>
+      </section>
+      <section class="problem" id="c">
+        <h2>В — «Список и превью», как Telegram Desktop</h2>
+        <div class="why">
+          <p>
+            Знакомая модель: слева все чаты с пульсом и меткой, справа превью выбранного — у разобранного главные цифры
+            и кнопки «Открыть отчёт» и «Итоги», у неразобранного — счёт за месяц и «Разобрать». «Главная» и «Новый
+            анализ» сливаются в один экран. На телефоне — только список.
+          </p>
+        </div>
+        <div class="frames" data-screen="c"></div>
+      </section>
+      <section class="problem" id="d">
+        <h2>Г — «Входящие», как Linear</h2>
+        <div class="why">
+          <p>
+            Сверху «Сейчас» — то, что ждёт действия: новые сообщения после отчёта, ответ на угадайку, ссылка
+            заканчивается, большой чат не разобран. Ниже — отчёты плотной таблицей с колонками. Самый «рабочий» и
+            спокойный вариант, меньше всего эмоций.
+          </p>
+        </div>
+        <div class="frames" data-screen="d"></div>
+      </section>
+    </main>
+    <div class="proto">
+      <button data-set-theme="light" class="on">Светлая</button><button data-set-theme="dark">Тёмная</button>
+    </div>
+    <script src="report-v2.js"></script>
+    <script src="home-v2.js"></script>
+  </body>
+</html>
