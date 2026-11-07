@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { fillDailyGaps, type ReportDto, type ShareLinkDto, type ShareLinksResponse } from '@tg-analyzer/shared'
-import { ArrowLeft, ChevronRight, CircleHelp, Download, Link, Lock, Play, Share2 } from '../../lib/icons'
+import { ArrowLeft, ChevronRight, CircleHelp, Download, Link, Play, Share2 } from '../../lib/icons'
 import type { StorySlideModel } from './StorySlide.vue'
 
 /**
@@ -203,7 +203,6 @@ const title = computed(() =>
               <template v-if="quizOpen" #trailing><ChevronRight aria-hidden="true" /></template>
             </UiListRow>
           </div>
-          <p class="share__secure"><Lock aria-hidden="true" />{{ t('share.secure') }}</p>
         </template>
       </div>
     </div>
@@ -307,16 +306,6 @@ const title = computed(() =>
   padding-inline: var(--space-1);
   color: var(--text-muted);
   font: var(--text-caption);
-}
-
-.share__secure {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  padding-inline: var(--space-1);
-  color: var(--text-muted);
-  font: var(--text-caption);
-  --icon-size: var(--icon-sm);
 }
 
 /* A second step: «назад» beside its title. */

@@ -187,6 +187,11 @@ watch(open, (value) => value && drag.reset())
   padding: 0 var(--space-6) var(--space-1);
 }
 
+/* Without a button row the body is the last thing in the panel: it keeps the panel's own margin. */
+.modal-body:last-child {
+  padding-bottom: var(--space-6);
+}
+
 /* Two equal buttons side by side: cancel on the left, the action on the right. */
 .modal-actions {
   display: grid;
@@ -233,17 +238,17 @@ watch(open, (value) => value && drag.reset())
 }
 
 @media (max-width: 640px) {
-  /* Phones: the dialog becomes a sheet floating just above the bottom edge. */
+  /* Phones: the dialog becomes a floating sheet, the same gap at the sides and below (above the home indicator). */
   .modal-backdrop {
     align-items: end;
-    padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+    padding: var(--space-2) var(--space-2) max(var(--space-2), env(safe-area-inset-bottom, 0px));
   }
 
   .modal-panel,
   .modal-panel--md,
   .modal-panel--lg {
     max-width: none;
-    max-height: 86dvh;
+    max-height: calc(100dvh - var(--space-12));
     border-width: 0;
     border-radius: var(--radius-xl);
   }

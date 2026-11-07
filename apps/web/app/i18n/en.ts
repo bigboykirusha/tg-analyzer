@@ -818,7 +818,6 @@ export const en = {
   'quiz.words.other': '{count} words a message',
   'share.byLink': 'By link',
   'share.partner': 'Your contact',
-  'share.secure': 'Links hold no message texts — we do not have them either.',
   'share.until': 'until {date}',
   'share.link.title': 'Link to the report',
   'share.link.off': 'Opens without signing in. You choose what it shows',

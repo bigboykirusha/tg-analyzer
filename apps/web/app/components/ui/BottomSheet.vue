@@ -69,14 +69,14 @@ watch(open, (value) => value && drag.reset())
 </template>
 
 <style scoped>
-/* The same floating sheet as a dialog on a phone (ModalDialog): inset from the edges, all corners round. */
+/* The same floating sheet as a dialog on a phone (ModalDialog): one gap at the sides and below, all corners round. */
 .sheet-scrim {
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
   display: flex;
   align-items: flex-end;
-  padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+  padding: var(--space-2) var(--space-2) max(var(--space-2), env(safe-area-inset-bottom, 0px));
   background: var(--scrim);
 }
 
@@ -84,7 +84,7 @@ watch(open, (value) => value && drag.reset())
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-height: 86dvh;
+  max-height: calc(100dvh - var(--space-12));
   overflow: hidden;
   border-radius: var(--radius-xl);
   background: var(--surface-raised);
@@ -146,9 +146,9 @@ watch(open, (value) => value && drag.reset())
   min-height: var(--control-lg);
 }
 
-/* The scrim keeps the sheet above the safe area, so the last block needs only its own padding. */
+/* The last block keeps the sheet's own margin, so nothing runs into its bottom edge. */
 .sheet__body:last-child {
-  padding-bottom: var(--space-3);
+  padding-bottom: var(--space-6);
 }
 
 /* Options and menu items (UiListRow) are 48 px tall inside a sheet: a thumb, not a pointer. */

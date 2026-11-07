@@ -813,7 +813,6 @@ export const ru: Record<MessageKey, string> = {
   'quiz.words.other': '{count} слова в сообщении',
   'share.byLink': 'По ссылке',
   'share.partner': 'Собеседник',
-  'share.secure': 'В ссылках нет текстов сообщений — их нет и у нас.',
   'share.until': 'до {date}',
   'share.link.title': 'Ссылка на отчёт',
   'share.link.off': 'Открывается без входа. Вы решаете, что в ней видно',

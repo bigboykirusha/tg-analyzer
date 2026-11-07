@@ -63,10 +63,11 @@
    * enough for white type at 6:1 and its 80% muted line at 4.6:1), a mark (their side in charts and
    * text, ≥4.6:1 on white), a room (the page
    * behind a report) and a tint (wells on the room); and the same three for dark mode. Built in OKLCH
-   * so every hue has the same lightness.
+   * so every hue has the same lightness. Every point of an avatar's gradient (mark → glow) keeps white
+   * initials at 4.5:1, and every mark keeps 4.6:1 on its own room as well as on white.
    */
   --hue-red-poster: #a8353a;
-  --hue-red-glow: #d56656;
+  --hue-red-glow: #cd4b38;
   --hue-red-glow-d: #ffb1a2;
   --hue-red-mark: #bc484b;
   --hue-red-room: #fff4f3;
@@ -76,9 +77,9 @@
   --hue-red-room-d: #130b0b;
   --hue-red-tint-d: #2f1c1b;
   --hue-violet-poster: #6250b2;
-  --hue-violet-glow: #9578d8;
+  --hue-violet-glow: #8462d2;
   --hue-violet-glow-d: #d0bdff;
-  --hue-violet-mark: #7262c6;
+  --hue-violet-mark: #7161c6;
   --hue-violet-room: #f6f6ff;
   --hue-violet-tint: #eae9ff;
   --hue-violet-mark-d: #b4acfb;
@@ -86,9 +87,9 @@
   --hue-violet-room-d: #0d0c13;
   --hue-violet-tint-d: #211f2f;
   --hue-orange-poster: #9c470d;
-  --hue-orange-glow: #c47639;
+  --hue-orange-glow: #aa6631;
   --hue-orange-glow-d: #f9bc91;
-  --hue-orange-mark: #b05925;
+  --hue-orange-mark: #ae5825;
   --hue-orange-room: #fef5f0;
   --hue-orange-tint: #fde6da;
   --hue-orange-mark-d: #eba480;
@@ -96,9 +97,9 @@
   --hue-orange-room-d: #120b08;
   --hue-orange-tint-d: #2e1d15;
   --hue-green-poster: #1d6d3c;
-  --hue-green-glow: #469b72;
+  --hue-green-glow: #3c8461;
   --hue-green-glow-d: #9fdbb9;
-  --hue-green-mark: #35824f;
+  --hue-green-mark: #347e4d;
   --hue-green-room: #f1f9f3;
   --hue-green-tint: #ddf1e1;
   --hue-green-mark-d: #90c79e;
@@ -106,9 +107,9 @@
   --hue-green-room-d: #090f0a;
   --hue-green-tint-d: #16261a;
   --hue-blue-poster: #1b62a7;
-  --hue-blue-glow: #5f8cd7;
+  --hue-blue-glow: #3f75cf;
   --hue-blue-glow-d: #a8ccff;
-  --hue-blue-mark: #3377be;
+  --hue-blue-mark: #3172b7;
   --hue-blue-room: #f1f8ff;
   --hue-blue-tint: #ddedff;
   --hue-blue-mark-d: #89bcf4;
@@ -116,7 +117,7 @@
   --hue-blue-room-d: #090e13;
   --hue-blue-tint-d: #172330;
   --hue-pink-poster: #9f3960;
-  --hue-pink-glow: #ce667d;
+  --hue-pink-glow: #c64d68;
   --hue-pink-glow-d: #ffb0be;
   --hue-pink-mark: #b34b71;
   --hue-pink-room: #fef4f6;
@@ -126,9 +127,9 @@
   --hue-pink-room-d: #120b0d;
   --hue-pink-tint-d: #2e1c21;
   --hue-teal-poster: #006a7b;
-  --hue-teal-glow: #2d9aa2;
+  --hue-teal-glow: #268289;
   --hue-teal-glow-d: #93d9de;
-  --hue-teal-mark: #008192;
+  --hue-teal-mark: #007b8b;
   --hue-teal-room: #eef9fb;
   --hue-teal-tint: #d5f1f6;
   --hue-teal-mark-d: #7cc5d2;
@@ -223,12 +224,12 @@
   --scrim: rgba(0, 0, 0, 0.32);
   /* Intensity: a neutral ramp (both of you together), stopping short of ink, which means «you». */
   --heat-0: var(--gray-3);
-  --heat-1: #d6d6dc;
-  --heat-2: #b4b4bc;
-  --heat-3: #8a8a93;
-  --heat-4: #5e5e66;
+  --heat-1: #c4c4cc;
+  --heat-2: #9a9aa2;
+  --heat-3: #6e6e76;
+  --heat-4: #48484e;
   /* The whole chat (both sides together): gray, with a strong step for the peak. */
-  --chart-neutral: var(--gray-5);
+  --chart-neutral: var(--gray-6);
   --chart-neutral-strong: var(--gray-9);
   --chart-peak: var(--room-tint);
   /* Avatars outside a report: the person's hue, white initials. */
@@ -328,10 +329,10 @@
   --segment-track: var(--night-a2);
   --scrim: rgba(0, 0, 0, 0.6);
   --heat-0: var(--night-3);
-  --heat-1: #3c3c40;
-  --heat-2: #5a5a60;
-  --heat-3: #84848b;
-  --heat-4: #b4b4ba;
+  --heat-1: #4a4a4f;
+  --heat-2: #6c6c72;
+  --heat-3: #94949b;
+  --heat-4: #c4c4ca;
   --chart-neutral: var(--night-5);
   --chart-neutral-strong: var(--night-8);
   --avatar-1-bg: var(--hue-red-mark-d);
