@@ -1,0 +1,230 @@
+/* Cabinet shell variants on desktop: header, rail, one surface. */
+.frame--xl {
+  width: 1280px;
+}
+.frame--xl::before {
+  content: 'ПК · 1280';
+}
+.tag {
+  margin-left: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--lime);
+  color: var(--on-lime);
+  font: var(--text-caption);
+  font-style: normal;
+  vertical-align: middle;
+}
+.screen {
+  min-height: 720px;
+}
+.t-h1x {
+  font: var(--text-h1);
+  letter-spacing: var(--tracking-h1);
+}
+.logo-mark {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  width: 28px;
+  height: 28px;
+  padding: 7px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--tile-ink);
+}
+.logo-mark i {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--on-tile-ink);
+}
+.logo-mark i:nth-child(2) {
+  height: 60%;
+  background: var(--lime);
+}
+.logo-mark i:nth-child(3) {
+  height: 80%;
+}
+.av--xs {
+  width: 20px;
+  height: 20px;
+  font: var(--text-caption);
+}
+
+/* Header row */
+.hdr {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 64px;
+  padding: 0 var(--space-8);
+}
+.hdr--wide {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.hdr__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-title);
+}
+.hdr__end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+.hdsearch,
+.hsearch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 240px;
+  min-height: var(--control-sm);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+.hsearch span {
+  flex: 1;
+}
+.hsearch kbd {
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  font: var(--text-caption);
+}
+.hsearch svg.i {
+  width: 16px;
+  height: 16px;
+}
+.col {
+  display: grid;
+  gap: var(--space-8);
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-8) var(--space-10);
+}
+.col--narrow {
+  max-width: 880px;
+}
+
+/* 1. Tabs */
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  font: var(--text-ui);
+}
+.tabs span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px var(--space-3);
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+}
+.tabs span.on {
+  background: var(--surface);
+  color: var(--text);
+}
+.cnt {
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  font: var(--text-caption);
+}
+.sh1 .hdr--wide {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 var(--space-8);
+  border-bottom: 0;
+}
+
+/* 2. One surface */
+.sh2,
+.sh4 {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+.rail2 {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding: var(--space-4) var(--space-3);
+  border-right: 1px solid var(--border);
+  font: var(--text-ui);
+}
+.rail2 .hdr__brand {
+  min-height: 32px;
+  margin-bottom: var(--space-5);
+  padding-left: var(--space-2);
+}
+.rail2__end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-10);
+  padding-left: var(--space-2);
+}
+.main2 {
+  min-width: 0;
+}
+.main2 .hdr {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+/* 3. Capsule */
+.capsule {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.sh3 .hdr--wide {
+  position: relative;
+  border-bottom: 0;
+}
+.hello {
+  display: grid;
+  gap: var(--space-1);
+}
+
+/* 4. Icon rail */
+.sh4 {
+  grid-template-columns: 72px minmax(0, 1fr);
+}
+.rail4 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-right: 1px solid var(--border);
+}
+.rail4__logo {
+  margin-bottom: var(--space-3);
+}
+.rail4__btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+}
+.rail4__btn.on {
+  background: var(--surface);
+  color: var(--text);
+}
+.rail4__sep {
+  width: 24px;
+  border-top: 1px solid var(--border);
+}
+.rail4__end {
+  margin-top: auto;
+}
