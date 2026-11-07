@@ -12,7 +12,16 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
-import type { ChatReport, ChatType, JobStatus, ReportSnapshotDto } from '@tg-analyzer/shared'
+import type {
+  ChatReport,
+  ChatType,
+  JobStatus,
+  QuizQuestionDto,
+  ReportDto,
+  ReportSnapshotDto,
+  ShareLinkKind,
+  ShareReportSettings,
+} from '@tg-analyzer/shared'
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 
@@ -145,3 +154,41 @@ export type TelegramSessionRow = typeof telegramSessions.$inferSelect
 export type ParseJobRow = typeof parseJobs.$inferSelect
 export type ChatReportRow = typeof chatReports.$inferSelect
 export type RefreshSessionRow = typeof refreshSessions.$inferSelect
+
+/** What a share link shows, fixed when the link is made: the guest never reads the live report. */
+export type ShareLinkPayload =
+  { kind: 'report'; author: string; data: ReportDto } | { kind: 'quiz'; author: string; questions: QuizQuestionDto[] }
+
+export interface ShareLinkResult {
+  picks: ('author' | 'guest')[]
+  score: number
+  total: number
+  /** The guest let the author see the score. */
+  share: boolean
+  answeredAt: string
+}
+
+export const shareLinks = pgTable(
+  'share_links',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    token: varchar('token', { length: 32 }).notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    reportId: uuid('report_id')
+      .notNull()
+      .references(() => chatReports.id, { onDelete: 'cascade' }),
+    kind: varchar('kind', { length: 16 }).$type<ShareLinkKind>().notNull(),
+    settings: jsonb('settings').$type<ShareReportSettings>(),
+    payload: jsonb('payload').$type<ShareLinkPayload>().notNull(),
+    result: jsonb('result').$type<ShareLinkResult>(),
+    views: integer('views').default(0).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('share_links_token_idx').on(table.token),
+    uniqueIndex('share_links_report_kind_idx').on(table.reportId, table.kind),
+  ],
+)

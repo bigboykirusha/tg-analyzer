@@ -1,5 +1,10 @@
 import { z } from 'zod'
 import type {
+  AnswerQuizBody,
+  CreateShareLinkBody,
+  PublicShareDto,
+  ShareLinkDto,
+  ShareLinksResponse,
   AuthSuccessResponse,
   AvatarsBody,
   AvatarsResponse,
@@ -81,6 +86,26 @@ export const avatarsBodySchema = z.object({
 }) satisfies z.ZodType<AvatarsBody, unknown>
 
 export const chatIdParamsSchema = z.object({ chatId: telegramIdSchema })
+export const shareLinkKindSchema = z.enum(['report', 'quiz'])
+export const shareLinkParamsSchema = z.object({ chatId: telegramIdSchema, kind: shareLinkKindSchema })
+export const shareTokenParamsSchema = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{8,32}$/) })
+export const shareReportSettingsSchema = z.object({
+  showName: z.boolean(),
+  words: z.boolean(),
+  stickers: z.boolean(),
+})
+export const createShareLinkBodySchema = z.object({
+  kind: shareLinkKindSchema,
+  days: z.union([z.literal(7), z.literal(30), z.null()]),
+  settings: shareReportSettingsSchema.optional(),
+}) satisfies z.ZodType<CreateShareLinkBody, unknown>
+export const answerQuizBodySchema = z.object({
+  picks: z
+    .array(z.enum(['author', 'guest']))
+    .min(1)
+    .max(10),
+  share: z.boolean(),
+}) satisfies z.ZodType<AnswerQuizBody, unknown>
 export const jobIdParamsSchema = z.object({ jobId: z.uuid() })
 export const parseStatusQuerySchema = z.object({ jobId: z.uuid().optional() })
 
@@ -122,6 +147,12 @@ export interface ApiEndpointMap {
   'GET /api/v1/reports': Endpoint<undefined, ReportsResponse>
   'GET /api/v1/reports/:chatId': Endpoint<undefined, ReportDto>
   'DELETE /api/v1/reports/:chatId': Endpoint<undefined, SuccessResponse>
+  'GET /api/v1/reports/:chatId/links': Endpoint<undefined, ShareLinksResponse>
+  'POST /api/v1/reports/:chatId/links': Endpoint<CreateShareLinkBody, ShareLinkDto>
+  'DELETE /api/v1/reports/:chatId/links/:kind': Endpoint<undefined, SuccessResponse>
+
+  'GET /api/v1/public/:token': Endpoint<undefined, PublicShareDto>
+  'POST /api/v1/public/:token/answer': Endpoint<AnswerQuizBody, PublicShareDto>
 }
 
 export type ApiOperation = keyof ApiEndpointMap

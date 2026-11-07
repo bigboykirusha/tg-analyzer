@@ -99,6 +99,8 @@ export default defineNuxtConfig({
     // The job log page was removed; old links land on the chats list.
     '/history': { redirect: '/dashboard' },
     '/chat/**': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
+    // Shared reports and quizzes: private by nature, fetched in the browser, never indexed.
+    '/s/**': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
     // Privacy and questions share one page.
     '/privacy': { redirect: '/faq' },
   },

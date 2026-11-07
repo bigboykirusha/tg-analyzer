@@ -2,7 +2,8 @@
 import { computeChapters, type ReportDto } from '@tg-analyzer/shared'
 import { Info } from '../../lib/icons'
 
-const props = defineProps<{ data: ReportDto }>()
+/** `noWords`: a shared link without words — the «О чём» part goes away instead of standing empty. */
+const props = defineProps<{ data: ReportDto; noWords?: boolean }>()
 const { t, formatNumber } = useI18n()
 
 /** Three parts of one long page: how the two of you talk, when, and with which words. */
@@ -11,7 +12,7 @@ const part = ref<Part>('together')
 const tabs = computed(() => [
   { value: 'together' as const, label: t('report.tabs.together') },
   { value: 'time' as const, label: t('report.tabs.time') },
-  { value: 'words' as const, label: t('report.tabs.words') },
+  ...(props.noWords ? [] : [{ value: 'words' as const, label: t('report.tabs.words') }]),
 ])
 
 const totals = computed(() => props.data.report.totals)
@@ -81,7 +82,7 @@ const shareHint = computed(() => {
     <ReportPart id="time" :title="t('report.tabs.time')">
       <RhythmTab :data="data" />
     </ReportPart>
-    <ReportPart id="words" :title="t('report.tabs.words')">
+    <ReportPart v-if="!noWords" id="words" :title="t('report.tabs.words')">
       <WordsTab :data="data" />
     </ReportPart>
   </div>

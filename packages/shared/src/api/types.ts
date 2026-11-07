@@ -32,6 +32,9 @@ export type ApiErrorCode =
   | 'TELEGRAM_UNAVAILABLE'
   // analysis
   | 'CHAT_NOT_FOUND'
+  | 'LINK_NOT_FOUND'
+  | 'QUIZ_UNAVAILABLE'
+  | 'QUIZ_ANSWERED'
   | 'PARSE_ALREADY_RUNNING'
   | 'PARSE_ALREADY_QUEUED'
   | 'PARSE_QUEUE_FULL'
@@ -760,4 +763,91 @@ export interface ReportDto {
   derived: DerivedReportMetrics
   /** The previous analysis of this chat, for «what changed»; null for the first one. */
   previous: ReportSnapshotDto | null
+}
+
+/** A link that opens part of a report without signing in: the report itself or the quiz. */
+export type ShareLinkKind = 'report' | 'quiz'
+
+/** What a report link shows besides the always-shown numbers. */
+export interface ShareReportSettings {
+  /** The other side's name; off by default — the page then says «Собеседник». */
+  showName: boolean
+  /** The «О чём» part: words and emoji. */
+  words: boolean
+  /** Stickers and reactions. */
+  stickers: boolean
+}
+
+/** Days a link stays open; null keeps it open until it is switched off. */
+export type ShareLinkDays = 7 | 30 | null
+
+export interface CreateShareLinkBody {
+  kind: ShareLinkKind
+  days: ShareLinkDays
+  /** Report links only. */
+  settings?: ShareReportSettings
+}
+
+/** The guest's answers, as the owner sees them; only when the guest agreed to share them. */
+export interface QuizResultDto {
+  answeredAt: string
+  /** Null when the guest chose not to show the score. */
+  score: number | null
+  total: number
+  /** Per question, in order: whether the guest was right. Null without consent. */
+  correct: boolean[] | null
+}
+
+export interface ShareLinkDto {
+  kind: ShareLinkKind
+  token: string
+  createdAt: string
+  /** Null: open until switched off. */
+  expiresAt: string | null
+  views: number
+  settings: ShareReportSettings | null
+  /** Quiz links: the questions asked, in the owner's terms. */
+  questions: QuizQuestionDto[] | null
+  result: QuizResultDto | null
+}
+
+export interface ShareLinksResponse {
+  links: ShareLinkDto[]
+  /** Whether this report has enough clear answers for a quiz. */
+  quizAvailable: boolean
+}
+
+/** One quiz question as the guest sees it: «author» is the one who sent the link, «guest» is «you». */
+export interface PublicQuizQuestionDto {
+  id: QuizQuestionId
+  unit: QuizUnit
+  author: number
+  guest: number
+  answer: 'author' | 'guest'
+}
+
+export interface PublicQuizDto {
+  kind: 'quiz'
+  /** The author's first name from Telegram. */
+  author: string
+  expiresAt: string | null
+  questions: PublicQuizQuestionDto[]
+  /** Set once the guest has answered. */
+  answered: { score: number; total: number; picks: ('author' | 'guest')[]; answeredAt: string } | null
+}
+
+export interface PublicReportDto {
+  kind: 'report'
+  author: string
+  expiresAt: string | null
+  settings: ShareReportSettings
+  data: ReportDto
+}
+
+export type PublicShareDto = PublicQuizDto | PublicReportDto
+
+export interface AnswerQuizBody {
+  picks: ('author' | 'guest')[]
+  /** Let the author see the score and the answers. */
+  share: boolean
 }

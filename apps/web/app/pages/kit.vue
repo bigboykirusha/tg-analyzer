@@ -35,6 +35,7 @@ const variants = ['primary', 'secondary', 'ghost', 'danger'] as const
 const sizes = ['xs', 'sm', 'md', 'lg'] as const
 
 const segment = ref<'a' | 'b' | 'c'>('a')
+const switched = ref(true)
 const segments = computed(() => [
   { value: 'a' as const, label: t('report.tabs.together') },
   { value: 'b' as const, label: t('report.tabs.time') },
@@ -162,6 +163,7 @@ const words = [
       <UiPageSection title="Controls">
         <div class="kit__grid">
           <UiSegmentedControl v-model="segment" :options="segments" aria-label="Segments" />
+          <UiSwitch v-model="switched" label="UiSwitch" hint="A setting that applies at once" />
           <div class="kit__field">
             <UiSelect v-model="pick" :options="picks" label="UiSelect" />
           </div>
