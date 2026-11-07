@@ -224,6 +224,8 @@
   --icon-md: 20px;
   --icon-lg: 24px;
   --topbar-height: 64px;
+  /* The chat list on wide screens; the header's logo cell has the same width. */
+  --sidebar-width: 248px;
   --report-nav-width: 420px;
   /* One content column for the header and every page; the gutter follows the screen. */
   --page-max: 1200px;

@@ -3,15 +3,14 @@ import type { ReportSummaryDto } from '@tg-analyzer/shared'
 import { LayoutGrid, Plus } from '../lib/icons'
 
 /**
- * The app's left column on wide screens: every analysed chat, personal chats
- * first, so switching between reports is one click.
+ * The app's left column on wide screens, under the header: home, a new analysis and every
+ * analysed chat, personal chats first, so switching between reports is one click. The logo and
+ * the profile live in the header.
  */
 const workspace = useWorkspaceStore()
 const route = useRoute()
 const { t } = useI18n()
-const auth = useAuthStore()
 const analysis = useAnalysis()
-const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
 
 const personal = computed(() => workspace.reports.filter((report) => report.type !== 'group'))
 const groups = computed(() => workspace.reports.filter((report) => report.type === 'group'))
@@ -33,8 +32,6 @@ function updating(report: ReportSummaryDto) {
 
 <template>
   <aside class="sidebar" :aria-label="t('sidebar.label')">
-    <div class="sidebar__brand"><BrandLink to="/dashboard" /></div>
-
     <nav class="sidebar__list" :aria-label="t('sidebar.reports')">
       <NuxtLink to="/dashboard" class="sidebar__item" :aria-current="route.path === '/dashboard' ? 'page' : undefined">
         <span class="sidebar__icon sidebar__icon--plain"><LayoutGrid aria-hidden="true" /></span>
@@ -83,18 +80,6 @@ function updating(report: ReportSummaryDto) {
         {{ t('sidebar.empty') }}
       </p>
     </nav>
-
-    <NuxtLink
-      to="/account"
-      class="sidebar__item sidebar__foot"
-      :aria-current="route.path === '/account' ? 'page' : undefined"
-    >
-      <ProfileAvatar :title="displayName" size="sm" />
-      <span class="sidebar__who">
-        <span class="sidebar__name">{{ displayName }}</span>
-        <small>{{ t('accountPage.title') }}</small>
-      </span>
-    </NuxtLink>
   </aside>
 </template>
 
@@ -102,22 +87,14 @@ function updating(report: ReportSummaryDto) {
 .sidebar {
   --skeleton: var(--border-strong);
   position: sticky;
-  top: 0;
+  top: var(--topbar-height);
   display: flex;
   flex-direction: column;
   gap: 2px;
-  height: 100dvh;
-  padding: 0 var(--space-3) var(--space-4);
+  height: calc(100dvh - var(--topbar-height));
+  padding: var(--space-3) var(--space-3) var(--space-4);
   overflow-y: auto;
   scrollbar-width: thin;
-}
-
-.sidebar__brand {
-  display: flex;
-  flex: none;
-  align-items: center;
-  height: var(--topbar-height);
-  padding: 0 var(--space-2);
 }
 
 .sidebar__list {
@@ -187,29 +164,9 @@ function updating(report: ReportSummaryDto) {
   margin-left: auto;
 }
 
-.sidebar__who {
-  display: grid;
-  min-width: 0;
-}
-
-.sidebar__who .sidebar__name {
-  color: var(--text);
-  font-weight: 500;
-}
-
-.sidebar__who small {
-  color: var(--text-muted);
-  font: var(--text-caption);
-}
-
 .sidebar__empty {
   padding: var(--space-2);
   color: var(--text-muted);
   font: var(--text-small);
-}
-
-.sidebar__foot {
-  margin-top: var(--space-2);
-  color: var(--text-muted);
 }
 </style>

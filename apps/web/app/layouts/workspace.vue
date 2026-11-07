@@ -44,30 +44,26 @@ watch(analysis.finished, (job) => {
   <div class="workspace">
     <!-- Keyboard users skip the sidebar's links straight to the screen. -->
     <a class="skip-link" href="#main">{{ t('common.skipToContent') }}</a>
+    <!-- One header across the whole width, as on phones: logo, the screen's title and actions, profile. -->
+    <AppHeader class="workspace-header" />
     <div class="workspace-sidebar"><AppSidebar /></div>
-    <div class="workspace-column">
-      <AppHeader />
-      <main id="main" class="workspace-main" tabindex="-1">
-        <slot />
-      </main>
-    </div>
+    <main id="main" class="workspace-main" tabindex="-1">
+      <slot />
+    </main>
   </div>
 </template>
 
 <style scoped>
-/* Wide screens: the chat list on the left, the page on the right. Phones: one column. */
+/* Wide screens: the header on top, the chat list on the left, the page on the right. Phones: one column. */
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
   min-height: 100dvh;
 }
 
 .workspace-sidebar {
   display: none;
-}
-
-.workspace-column {
-  min-width: 0;
 }
 
 .workspace-main {
@@ -77,10 +73,14 @@ watch(analysis.finished, (job) => {
 
 @media (min-width: 901px) {
   .workspace {
-    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   }
 
-  /* The rail runs the full page height; the list inside stays pinned. */
+  .workspace-header {
+    grid-column: 1 / -1;
+  }
+
+  /* The rail runs under the header to the bottom; the list inside stays pinned. */
   .workspace-sidebar {
     display: block;
     /* A heavier material than the page separates the column; no line needed. */
