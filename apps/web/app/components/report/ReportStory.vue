@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import {
+  computeChapters,
   fillDailyGaps,
+  forecastMilestone,
   replyComparisonRatio,
   REPLY_COMPARISON_EVEN_RATIO,
   MIN_REPLY_COMPARISON_SAMPLES as MIN_REPLY_SAMPLES,
@@ -155,12 +157,10 @@ function whoMore(label: string, pair: { mine: number; theirs: number }, accent =
 function shareVerdict(share: number) {
   if (share >= 65) return t('report.kpi.youWriteMuchMore')
   if (share > 55) return t('report.kpi.youWriteMore')
-  if (share <= 35) return t('report.kpi.theyWriteMuchMore')
-  if (share < 45) return t('report.kpi.theyWriteMore')
+  if (share <= 35) return t('report.kpi.theyWriteMuchMore', { name: theirName.value })
+  if (share < 45) return t('report.kpi.theyWriteMore', { name: theirName.value })
   return t('report.kpi.even')
 }
-
-const capitalize = (text: string) => `${text.charAt(0).toLocaleUpperCase()}${text.slice(1)}`
 
 /** Stat tiles sit in pairs; an odd one out takes the full row. */
 function paired(blocks: StoryBlock[]) {
@@ -173,6 +173,8 @@ const slides = computed<StorySlideModel[]>(() => {
   const { report } = props.data
   const { totals, facts, responses, vocabulary, activity, sessions, habits } = report
   const list: StorySlideModel[] = []
+  /** «Вы двое» took voice and reactions in: no separate slide for them. */
+  let together = false
   // Inside the slides you are «Вы», as in the report; your name only heads the cover.
   const myName = t('story.you')
   const otherName = theirName.value
@@ -194,16 +196,31 @@ const slides = computed<StorySlideModel[]>(() => {
   const busiest = facts.mostActiveDate
   // 1. The chat at a glance: how much, how evenly and for how long.
   const overview: StoryBlock[] = []
-  if (pulse.length > 1) overview.push({ kind: 'pulse', label: t('story.pulseLabel'), days: pulse })
-  // Who writes more, as in the report tile: the answer in words and the split, no bar.
+  // The pulse with the chapters of the chat under it, as at the top of the report.
+  const chapterList = isGroup.value ? [] : computeChapters(activity.daily)
+  const chapterDays = chapterList.reduce((sum, chapter) => sum + chapter.days, 0)
+  if (pulse.length > 1)
+    overview.push({
+      kind: 'pulse',
+      label: t('story.pulseLabel'),
+      days: pulse,
+      chapters: chapterList.map((chapter) => ({
+        name: t(`report.chapters.kind.${chapter.kind}`),
+        share: chapter.days / Math.max(1, chapterDays),
+        peak: chapter.kind === 'peak',
+      })),
+    })
+  // Who writes more, as in the report tile: the answer in words over the split line.
   if (totals.messages && !isGroup.value) {
     const mine = Math.round(mineShare)
     overview.push({
-      kind: 'stat',
-      label: t('story.whoWritesMore'),
-      value: `${mine} / ${100 - mine}`,
-      note: `${capitalize(shareVerdict(mineShare))}. ${myName} ${formatNumber(totals.sent)} · ${otherName} ${formatNumber(totals.received)}`,
-      wide: true,
+      kind: 'split',
+      // The answer is the label: «Мама пишет больше» over «42% ━━ ━━━ 58%».
+      label: shareVerdict(mineShare).replace(/^./u, (letter) => letter.toLocaleUpperCase()),
+      left: { label: `${myName} · ${formatNumber(totals.sent)}`, value: formatPercent(mine) },
+      right: { label: `${otherName} · ${formatNumber(totals.received)}`, value: formatPercent(100 - mine) },
+      mine: totals.sent,
+      theirs: totals.received,
     })
   }
   overview.push({ kind: 'stat', label: t('story.perDay'), value: perDay, accent: true })
@@ -255,11 +272,12 @@ const slides = computed<StorySlideModel[]>(() => {
     const { medianMineSec, medianTheirsSec } = responses
     const blocks: StoryBlock[] = [
       {
-        kind: 'stat',
+        kind: 'split',
         label: t('story.startsLabel'),
-        value: `${Math.round(mine)} / ${100 - Math.round(mine)}`,
-        note: `${myName} / ${otherName}`,
-        wide: true,
+        left: { label: myName, value: formatPercent(mine) },
+        right: { label: otherName, value: formatPercent(100 - mine) },
+        mine,
+        theirs: 100 - mine,
       },
     ]
     if (medianMineSec !== null && medianTheirsSec !== null) {
@@ -273,26 +291,39 @@ const slides = computed<StorySlideModel[]>(() => {
               ? t('story.speedFasterYou', { ratio: formatDecimal(ratio) })
               : t('story.speedFaster', { name: otherName, ratio: formatDecimal(ratio) })
       }
+      // The answer is the label («Мама отвечает в 2 раза быстрее»), both times at the ends, no bar:
+      // a longer bar for a slower reply would read as «more».
       blocks.push({
-        kind: 'duel',
-        label: t('story.replySpeed'),
+        kind: 'split',
+        label: note?.replace(/\.$/u, '') ?? t('story.replySpeed'),
         left: { label: myName, value: formatDuration(medianMineSec) },
         right: { label: otherName, value: formatDuration(medianTheirsSec) },
-        note,
+        mine: 0,
+        theirs: 0,
       })
     }
-    // The last word of the evening: the same evenings and the same share as «Утро и вечер» in the report.
-    const evenings = props.data.report.rituals?.nightLast
-    if (evenings && evenings.mine + evenings.theirs >= MIN_REPLY_SAMPLES) {
-      const lastMine = (evenings.mine / (evenings.mine + evenings.theirs)) * 100
-      blocks.push({
-        kind: 'stat',
-        label: t('story.nightLast'),
-        value: Math.abs(lastMine - 50) <= 5 ? t('story.even') : lastMine > 50 ? myName : otherName,
-        note: t('story.lastWordNote', { share: formatPercent(lastMine > 50 ? lastMine : 100 - lastMine) }),
-        accent: true,
-      })
+    // Voice and laughs join this slide as a pair of tiles: one dense «Вы двое» instead of two thin
+    // slides, and three rows fit a 9:16 picture between the safe zones.
+    const voice = report.voice
+    if (voice) {
+      const seconds = {
+        mine: voice.voice.seconds.mine + voice.round.seconds.mine,
+        theirs: voice.voice.seconds.theirs + voice.round.seconds.theirs,
+      }
+      if (seconds.mine + seconds.theirs >= 60) {
+        const even = Math.abs(seconds.mine - seconds.theirs) <= Math.max(seconds.mine, seconds.theirs) * 0.1
+        blocks.push({
+          kind: 'stat',
+          label: t('story.voice'),
+          value: even ? t('story.even') : seconds.mine > seconds.theirs ? myName : otherName,
+          // «23 мин» never breaks between the number and its unit.
+          note: `${myName} ${formatDuration(seconds.mine).replaceAll(' ', ' ')} · ${otherName} ${formatDuration(seconds.theirs).replaceAll(' ', ' ')}`,
+        })
+      }
     }
+    const laughs = habits ? whoMore(t('story.laughs'), habits.laughs, true) : null
+    if (laughs) blocks.push(laughs)
+    together = true
     list.push({
       key: 'starts',
       theme: 3,
@@ -304,7 +335,7 @@ const slides = computed<StorySlideModel[]>(() => {
         : t(mine >= 50 ? 'story.startsSubYou' : 'story.startsSub', {
             share: formatPercent(mine >= 50 ? mine : 100 - mine),
           }),
-      blocks: paired(blocks),
+      blocks: paired(blocks.slice(0, 5)),
     })
   }
 
@@ -340,6 +371,15 @@ const slides = computed<StorySlideModel[]>(() => {
         note: formatDay(busiest.date, DAY_MONTH),
         accent: true,
       })
+    // The next round-number message, as in «Круглые сообщения»: a reason to come back.
+    const next = isGroup.value ? null : forecastMilestone(totals.messages, activity.daily)
+    if (next)
+      blocks.push({
+        kind: 'stat',
+        label: t('story.nextMilestone', { n: formatNumber(next.index) }),
+        value: tc('story.inDays', next.days),
+        wide: true,
+      })
     list.push({
       key: 'time',
       theme: 4,
@@ -354,8 +394,10 @@ const slides = computed<StorySlideModel[]>(() => {
   }
 
   // 4. Habits: voice minutes, reactions and who opens and closes the day.
-  const talk = talkSlide()
-  if (talk) list.push(talk)
+  if (!together) {
+    const talk = talkSlide()
+    if (talk) list.push(talk)
+  }
 
   // 5. Words: the word of the chat, each side's favourites, emoji and habits.
   const myWords = topWords(vocabulary.topWordsBySender.mine, 3)
@@ -378,17 +420,26 @@ const slides = computed<StorySlideModel[]>(() => {
         left: { label: myName, value: myEmoji.join(' ') },
         right: { label: otherName, value: theirEmoji.join(' ') },
       })
-    const laughs = habits ? whoMore(t('story.laughs'), habits.laughs, true) : null
-    if (laughs) blocks.push(laughs)
     const questions = habits ? whoMore(t('story.questions'), habits.questionTurns ?? habits.questions) : null
     if (questions) blocks.push(questions)
+    // Who writes longer: words in a text message, side by side with who asks more.
+    const { mine: wordsMine, theirs: wordsTheirs } = vocabulary.wordsPerMessage
+    if (!isGroup.value && wordsMine && wordsTheirs) {
+      const even = Math.abs(wordsMine - wordsTheirs) <= Math.max(wordsMine, wordsTheirs) * 0.1
+      blocks.push({
+        kind: 'stat',
+        label: t('story.longer'),
+        value: even ? t('story.even') : wordsMine > wordsTheirs ? myName : otherName,
+        note: `${myName} ${formatDecimal(wordsMine)} · ${otherName} ${formatDecimal(wordsTheirs)}`,
+      })
+    }
     list.push({
       key: 'words',
       theme: 6,
       durationMs: 9000,
       kicker: t('story.wordsKicker'),
       title: `«${chatWord}»`,
-      blocks: paired(blocks.slice(0, 6)),
+      blocks: paired(blocks.slice(0, 5)),
     })
   }
 
@@ -454,15 +505,15 @@ function talkSlide(): StorySlideModel | null {
   } else {
     if (voiceTotal)
       blocks.push({
-        kind: 'duel',
+        kind: 'split',
         label: t('story.voice'),
         left: { label: myName, value: formatDuration(seconds.mine) },
         right: { label: otherName, value: formatDuration(seconds.theirs) },
+        mine: seconds.mine,
+        theirs: seconds.theirs,
       })
     // Mornings and evenings live on «Кто ведёт»; this slide is voice and reactions only.
     if (reactions) {
-      const reacts = whoMore(t('story.reactsMore'), reactions.given, true)
-      if (reacts) blocks.push(reacts)
       const mine = plain(reactions.topBySender.mine)
       const theirs = plain(reactions.topBySender.theirs)
       if (mine.length && theirs.length)

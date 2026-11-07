@@ -29,8 +29,15 @@ interface BlockBase {
 export type StoryBlock = BlockBase &
   (
     | { kind: 'stat'; label: string; value: string; note?: string }
-    /** The whole chat as a seismograph: yours up, theirs down. */
-    | { kind: 'pulse'; label: string; days: { sent: number; received: number }[] }
+    /** The whole chat as a seismograph: yours up, theirs down; chapters under it, by share of time. */
+    | {
+        kind: 'pulse'
+        label: string
+        days: { sent: number; received: number }[]
+        chapters?: { name: string; share: number; peak: boolean }[]
+      }
+    /** «52% ━━━━ ━━━ 48%»: two sides of one measure as a split line, names under the ends. */
+    | { kind: 'split'; label: string; left: StoryTile; right: StoryTile; mine: number; theirs: number; note?: string }
     /** Two sides of one measure, side by side. */
     | { kind: 'duel'; label: string; left: StoryTile; right: StoryTile; note?: string }
     /** 24 hourly values; hours from `from` to `to` (inclusive, may wrap past midnight) are lit. */
@@ -140,6 +147,33 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
               <div class="story-tile__pulse" aria-hidden="true">
                 <Seismograph :days="block.days" :height="1" />
               </div>
+              <ol v-if="block.chapters?.length" class="story-tile__chapters">
+                <li
+                  v-for="(chapter, place) in block.chapters"
+                  :key="place"
+                  :class="{ 'is-peak': chapter.peak }"
+                  :style="{ flexGrow: chapter.share }"
+                >
+                  <span v-if="chapter.share >= 0.14">{{ chapter.name }}</span>
+                </li>
+              </ol>
+            </template>
+
+            <template v-else-if="block.kind === 'split'">
+              <span class="story-tile__label">{{ block.label }}</span>
+              <div class="story-tile__split">
+                <strong>{{ block.left.value }}</strong>
+                <span class="story-tile__split-bar" aria-hidden="true">
+                  <i v-if="block.mine > 0" :style="{ flexGrow: block.mine }" />
+                  <i v-if="block.theirs > 0" class="is-them" :style="{ flexGrow: block.theirs }" />
+                </span>
+                <strong>{{ block.right.value }}</strong>
+              </div>
+              <div class="story-tile__split-names">
+                <span>{{ block.left.label }}</span>
+                <span>{{ block.right.label }}</span>
+              </div>
+              <span v-if="block.note" class="story-tile__note">{{ block.note }}</span>
             </template>
 
             <template v-else-if="block.kind === 'duel'">
@@ -510,6 +544,82 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-tile__pulse :deep(line) {
   stroke-width: 0.8cqmin;
+}
+
+/* Chapters under the pulse: a hairline per chapter, the busiest one in the accent. */
+.story-tile__chapters {
+  display: flex;
+  gap: 0.8cqmin;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.story-tile__chapters li {
+  flex-basis: 0;
+  min-width: 0;
+  padding-top: 1cqmin;
+  border-top: 0.5cqmin solid var(--track);
+  font-size: 2.8cqmin;
+  font-weight: 500;
+}
+
+.story-tile__chapters li.is-peak {
+  border-top-color: var(--story-accent);
+}
+
+.story-tile__chapters span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The split line: values at the ends, you in the tile's ink, the other side in the accent. */
+.story-tile__split {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2.4cqmin;
+}
+
+.story-tile__split strong {
+  font-size: 5.6cqmin;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+
+.story-tile__split-bar {
+  display: flex;
+  gap: 0.8cqmin;
+  height: 1.4cqmin;
+}
+
+.story-tile__split-bar i {
+  flex-basis: 0;
+  border-radius: 1cqmin;
+  background: currentColor;
+}
+
+.story-tile__split-bar i.is-them {
+  background: var(--story-accent);
+}
+
+.story-tile__split-names {
+  display: flex;
+  justify-content: space-between;
+  gap: 2cqmin;
+  color: var(--muted);
+  font-size: 3cqmin;
+  font-weight: 500;
+}
+
+.story-tile__split-names span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .story-tile__duel {
