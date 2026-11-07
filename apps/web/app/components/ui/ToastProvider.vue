@@ -99,7 +99,7 @@ function runAction(toast: ToastMessage) {
 }
 
 .toast--success .toast__icon {
-  color: var(--lime);
+  color: var(--brand);
 }
 
 .toast--error .toast__icon {

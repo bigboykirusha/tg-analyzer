@@ -27,14 +27,14 @@ withDefaults(defineProps<{ size?: number }>(), { size: 28 })
 }
 
 .brand-mark__field {
-  fill: var(--tile-ink);
+  fill: var(--brand-square);
 }
 
 .brand-mark__you {
-  fill: var(--on-tile-ink);
+  fill: var(--brand-bar);
 }
 
 .brand-mark__them {
-  fill: var(--lime);
+  fill: var(--brand);
 }
 </style>

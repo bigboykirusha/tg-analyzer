@@ -172,8 +172,8 @@ const since = computed(() =>
   width: var(--icon-lg);
   height: var(--icon-lg);
   border-radius: var(--radius-full);
-  background: var(--lime);
-  color: var(--on-lime);
+  background: var(--room-tint);
+  color: var(--them-ink);
 }
 
 /* Phone: one row per change, the value on the right. */

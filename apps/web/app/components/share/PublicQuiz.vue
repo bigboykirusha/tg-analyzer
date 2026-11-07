@@ -106,7 +106,7 @@ async function finish() {
           />
         </div>
       </div>
-      <section class="tile quiz__card" :class="{ 'tile--lime': stage === 'reveal' }">
+      <section class="tile quiz__card">
         <h1 class="quiz__title">{{ stage === 'reveal' ? reveal : question(current.id) }}</h1>
         <div class="quiz__choices">
           <button
@@ -295,7 +295,7 @@ async function finish() {
 
 .quiz__mark.is-right {
   background: var(--them);
-  color: var(--on-lime);
+  color: var(--surface);
 }
 
 .quiz__consent {

@@ -208,7 +208,10 @@
   --on-lime-muted: var(--text-muted);
   --on-lime-line: var(--border);
   --on-lime-well: var(--surface-2);
+  /* The logo keeps its own colours whoever's report is open. */
   --brand: var(--lime-brand);
+  --brand-square: var(--gray-12);
+  --brand-bar: var(--gray-0);
   --warning: var(--amber-6);
   --danger: var(--red-6);
   --danger-subtle: var(--red-1);
@@ -307,6 +310,8 @@
   --them: var(--night-8);
   --them-ink: var(--night-8);
   --poster: var(--night-2);
+  --brand-square: var(--night-3);
+  --brand-bar: var(--night-12);
   --on-poster: var(--night-12);
   --on-poster-muted: var(--white-a8);
   --on-poster-line: var(--white-a3);

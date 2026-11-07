@@ -204,8 +204,8 @@ async function remove() {
 }
 
 .quiz-step__mark.is-right {
-  background: var(--lime);
-  color: var(--on-lime);
+  background: var(--them);
+  color: var(--surface);
 }
 
 .quiz-step__days {

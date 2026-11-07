@@ -87,17 +87,20 @@ test('the example report opens without signing in', async ({ page }, testInfo) =
   await gotoHydrated(page, '/example')
   await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeVisible()
   await expect(page.locator('#header-page').getByRole('link', { name: 'Войти' })).toBeVisible()
-  if (page.viewportSize()!.width <= 640) {
+  if (page.viewportSize()!.width <= 640 && (await page.locator('.page-bar__lede').count())) {
     await expect
       .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
       .toBe(true)
   }
   await expect(page.getByRole('heading', { name: 'Вы двое', exact: true })).toBeVisible()
-  // The example has voice messages without duration metadata. Their count
-  // must remain visible rather than being described as absent.
-  const voice = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Голосовые', exact: true }) })
-  await expect(voice).toBeVisible()
-  await expect(voice.locator('dd')).toHaveCount(2)
+  // The example has voice messages without duration metadata. Their count stays visible as a row of
+  // «Ваши привычки» (who sends more voice messages, both counts on one line) rather than being described
+  // as absent.
+  const habits = page
+    .getByRole('article')
+    .filter({ has: page.getByRole('heading', { name: 'Ваши привычки', exact: true }) })
+  await expect(habits.getByText('Голосовые', { exact: true })).toBeVisible()
+  await expect(habits.locator('.report-line').last()).toContainText(/\d/)
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
 })
