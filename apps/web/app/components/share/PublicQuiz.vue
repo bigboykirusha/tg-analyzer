@@ -110,7 +110,7 @@ async function finish() {
         <h1 class="quiz__title">{{ stage === 'reveal' ? reveal : question(current.id) }}</h1>
         <div class="quiz__choices">
           <button
-            v-for="side in ['author', 'guest'] as const"
+            v-for="side in ['guest', 'author'] as const"
             :key="side"
             type="button"
             class="quiz__choice"

@@ -160,6 +160,16 @@ function runAction(toast: ToastMessage) {
     transform var(--transition-normal);
 }
 
+.toast-leave-active {
+  /* A leaving toast stops holding its slot, so the rest glide up instead of jumping. */
+  position: absolute;
+  width: 100%;
+}
+
+.toast-move {
+  transition: transform var(--transition-normal);
+}
+
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;

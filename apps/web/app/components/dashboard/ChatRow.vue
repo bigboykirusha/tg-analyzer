@@ -45,20 +45,76 @@ function run(action: 'analyse' | 'delete') {
   else emit('delete')
 }
 
-/** Right click or long press: the row's own menu instead of the browser's, when the row has one. */
+const hasMenu = computed(() => Boolean(props.chat.report) && !props.queued && !props.analysing)
+
+/** Right click: the row's own menu instead of the browser's, when the row has one. */
 function openMenu(event: MouseEvent) {
-  if (!props.chat.report || props.queued || props.analysing) return
+  if (!hasMenu.value) return
   event.preventDefault()
   menuOpen.value = true
 }
+
+// ─── Long press, as in Telegram ─────────────────────────────────────────────
+// iOS Safari never sends `contextmenu` for a long press (it shows its own link preview), so touch
+// gets its own recogniser: hold still for LONG_PRESS_MS and the row lifts, then its menu opens.
+const LONG_PRESS_MS = 450
+/** A finger that moves further than this is scrolling, not pressing. */
+const SLOP_PX = 10
+const holding = ref(false)
+let pressTimer: ReturnType<typeof setTimeout> | undefined
+let pressStart: { x: number; y: number } | null = null
+/**
+ * The menu opened from a hold: the click that some browsers send on release must neither open the
+ * report under the finger nor close the sheet that just appeared under it. One click, captured on
+ * the document, is dropped.
+ */
+function swallowNextClick() {
+  const swallow = (event: Event) => {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+  document.addEventListener('click', swallow, { capture: true, once: true })
+  // A browser that sends no click (iOS) must not eat the next real one.
+  setTimeout(() => document.removeEventListener('click', swallow, { capture: true }), 600)
+}
+
+function pressDown(event: PointerEvent) {
+  if (event.pointerType !== 'touch' || !hasMenu.value) return
+  pressStart = { x: event.clientX, y: event.clientY }
+  holding.value = true
+  clearTimeout(pressTimer)
+  pressTimer = setTimeout(() => {
+    holding.value = false
+    pressStart = null
+    swallowNextClick()
+    menuOpen.value = true
+  }, LONG_PRESS_MS)
+}
+
+function pressMove(event: PointerEvent) {
+  if (!pressStart) return
+  if (Math.hypot(event.clientX - pressStart.x, event.clientY - pressStart.y) > SLOP_PX) pressCancel()
+}
+
+function pressCancel() {
+  clearTimeout(pressTimer)
+  pressStart = null
+  holding.value = false
+}
+
+onBeforeUnmount(() => clearTimeout(pressTimer))
 </script>
 
 <template>
   <!-- As in Telegram, a right click or a long press opens the row's menu. -->
   <div
     class="chat-row"
-    :class="{ 'chat-row--active': analysing, 'chat-row--link': reportPath }"
+    :class="{ 'chat-row--active': analysing, 'chat-row--link': reportPath, 'is-holding': holding }"
     @contextmenu="openMenu"
+    @pointerdown="pressDown"
+    @pointermove="pressMove"
+    @pointerup="pressCancel"
+    @pointercancel="pressCancel"
   >
     <component :is="reportPath ? NuxtLink : 'div'" :to="reportPath ?? undefined" class="chat-row__main">
       <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" />
@@ -152,7 +208,32 @@ function openMenu(event: MouseEvent) {
   gap: var(--space-4);
   min-height: calc(var(--avatar-md) + 2 * var(--space-4));
   padding: var(--space-3) var(--space-4);
-  transition: background-color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    transform var(--duration-slow) var(--ease-standard);
+  /* The long press belongs to the row's menu, not to the browser's link preview. */
+  -webkit-touch-callout: none;
+}
+
+@media (pointer: coarse) {
+  .chat-row {
+    user-select: none;
+  }
+}
+
+/* Touch-down answers at once; the colour leaves gently. */
+.chat-row--link:active {
+  background: var(--pressed);
+  transition-duration: 0ms;
+}
+
+/* Holding a row: it settles under the finger, then its menu opens. */
+.chat-row.is-holding {
+  background: var(--pressed);
+  transform: scale(var(--press-scale-lg));
+  /* The tint lands at once (it is not listed); the row settles over the length of the hold. */
+  transition-property: transform;
+  transition-duration: var(--duration-move);
 }
 
 .chat-row + .chat-row {

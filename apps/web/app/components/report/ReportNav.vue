@@ -10,8 +10,18 @@ import type { SegmentedOption } from '../ui/SegmentedControl.vue'
 const props = defineProps<{ options: SegmentedOption<T>[]; label: string }>()
 const model = defineModel<T>({ required: true })
 
-/** While a jump scrolls the page, the spy keeps quiet so the thumb does not flicker. */
-let jumpingUntil = 0
+/**
+ * While a jump scrolls the page, the spy keeps quiet so the thumb does not flicker. The jump ends
+ * when the scroll does (`scrollend`); the timeout is only a fallback for browsers without it.
+ */
+let jumping = false
+let jumpTimer: ReturnType<typeof setTimeout> | undefined
+
+function endJump() {
+  jumping = false
+  clearTimeout(jumpTimer)
+  spy()
+}
 
 /** The pinned header, navigation included, is what the page scrolls under. */
 function offset() {
@@ -22,7 +32,9 @@ function select(value: T) {
   model.value = value
   const part = document.getElementById(`part-${value}`)
   if (!part) return
-  jumpingUntil = Date.now() + 900
+  jumping = true
+  clearTimeout(jumpTimer)
+  jumpTimer = setTimeout(endJump, 2000)
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   window.scrollTo({
     top: part.getBoundingClientRect().top + window.scrollY - offset() + 1,
@@ -31,7 +43,7 @@ function select(value: T) {
 }
 
 function spy() {
-  if (Date.now() < jumpingUntil) return
+  if (jumping) return
   const line = offset() + 8
   let current = props.options[0]?.value
   for (const option of props.options) {
@@ -44,11 +56,20 @@ function spy() {
   if (current && current !== model.value) model.value = current
 }
 
+function onScrollEnd() {
+  if (jumping) endJump()
+}
+
 onMounted(() => {
   window.addEventListener('scroll', spy, { passive: true })
+  window.addEventListener('scrollend', onScrollEnd)
   spy()
 })
-onBeforeUnmount(() => window.removeEventListener('scroll', spy))
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', spy)
+  window.removeEventListener('scrollend', onScrollEnd)
+  clearTimeout(jumpTimer)
+})
 </script>
 
 <template>

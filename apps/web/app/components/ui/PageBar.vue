@@ -24,6 +24,18 @@ withDefaults(
   { lede: '', back: '', untitled: false, quietOnWide: false },
 )
 const { t } = useI18n()
+const router = useRouter()
+
+/**
+ * Back means pop, as on iPhone: when the person came here from inside the app, the arrow returns to
+ * that screen (and the edge swipe agrees with it). A deep link has nothing to pop, so it goes to `back`.
+ */
+function goBack(event: MouseEvent) {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
+  if (typeof window.history.state?.back !== 'string') return
+  event.preventDefault()
+  router.back()
+}
 </script>
 
 <template>
@@ -34,7 +46,7 @@ const { t } = useI18n()
       :data-untitled="untitled ? '' : undefined"
       :data-leading="$slots.leading ? '' : undefined"
     >
-      <NuxtLink v-if="back" :to="back" class="page-bar__back hit-area" :aria-label="t('nav.back')">
+      <NuxtLink v-if="back" :to="back" class="page-bar__back hit-area" :aria-label="t('nav.back')" @click="goBack">
         <ChevronLeft aria-hidden="true" />
       </NuxtLink>
       <slot name="leading" />

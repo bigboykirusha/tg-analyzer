@@ -52,6 +52,20 @@ watch(chatId, () => {
   void load()
 })
 
+/** A known chat without a report is not a dead end: it can be analysed right here. */
+const knownChat = computed(() => workspace.chats.find((chat) => chat.id === chatId.value) ?? null)
+const starting = ref(false)
+async function analyseHere() {
+  starting.value = true
+  try {
+    await analysis.startAnalysis(chatId.value, knownChat.value?.title ?? null)
+  } catch (error) {
+    loadError.value = error
+  } finally {
+    starting.value = false
+  }
+}
+
 function openStory(intent: StoryIntent) {
   storyIntent.value = intent
   storyOpen.value = true
@@ -80,10 +94,18 @@ onMounted(load)
         v-if="!data && notFound"
         :icon="AlertCircle"
         :title="t('report.notFoundTitle')"
-        :description="t('report.notFoundText')"
+        :description="knownChat ? t('report.notFoundKnownText') : t('report.notFoundText')"
       >
         <template #action>
-          <UiButton variant="primary" to="/new">{{ t('common.goToChats') }}</UiButton>
+          <UiButton
+            v-if="knownChat"
+            variant="primary"
+            :loading="starting || analysis.isActive.value"
+            @click="analyseHere"
+          >
+            {{ t('report.analyseHere') }}
+          </UiButton>
+          <UiButton v-else variant="primary" to="/new">{{ t('common.goToChats') }}</UiButton>
         </template>
       </UiEmptyState>
 

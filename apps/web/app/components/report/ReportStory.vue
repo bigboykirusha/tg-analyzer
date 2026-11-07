@@ -559,23 +559,70 @@ function onSegmentDone() {
   else paused.value = true
 }
 
-// ─── Gestures: touch on phones, mouse elsewhere; holding pauses ──────────────
-let start: { x: number; y: number } | null = null
+// ─── Gestures: touch on phones, mouse elsewhere ──────────────────────────────
+// A tap pages, a hold pauses to read (the chrome steps aside), a horizontal swipe pages and a drag
+// down follows the finger and closes the story — by distance or by a flick.
+let start: { x: number; y: number; at: number } | null = null
+let trail: { y: number; t: number }[] = []
+/** Held longer than this, a press was reading, not tapping: release resumes and never pages. */
+const HOLD_MS = 250
+/** A downward flick faster than this closes however short it was (px per ms). */
+const FLICK_VELOCITY = 0.4
+const holding = ref(false)
+let holdTimer: ReturnType<typeof setTimeout> | undefined
+/** How far the frame follows the finger down; null when nothing is dragging it. */
+const dragY = ref<number | null>(null)
+const frameStyle = computed(() =>
+  dragY.value === null
+    ? undefined
+    : {
+        transform: `translateY(${dragY.value}px) scale(${1 - Math.min(dragY.value, 400) / 2400})`,
+        transition: 'none',
+      },
+)
 
-function begin(x: number, y: number) {
+function begin(x: number, y: number, at: number) {
   byKeys.value = false
-  start = { x, y }
+  start = { x, y, at }
+  trail = [{ y, t: at }]
   paused.value = true
+  clearTimeout(holdTimer)
+  holdTimer = setTimeout(() => (holding.value = true), HOLD_MS)
 }
 
-function end(x: number, y: number, stage: HTMLElement) {
-  paused.value = false
+function move(x: number, y: number, at: number) {
   if (!start) return
   const dx = x - start.x
   const dy = y - start.y
+  trail = [...trail.filter((point) => at - point.t < 100), { y, t: at }]
+  if (dragY.value !== null || (dy > 10 && dy > Math.abs(dx))) {
+    clearTimeout(holdTimer)
+    holding.value = false
+    // Down follows the finger; up resists, since there is nowhere to go.
+    dragY.value = dy >= 0 ? dy : -Math.sqrt(-dy) * 2
+  }
+}
+
+function settle() {
+  clearTimeout(holdTimer)
+  holding.value = false
+  paused.value = false
+  dragY.value = null
+}
+
+function end(x: number, y: number, at: number, stage: HTMLElement) {
+  if (!start) return settle()
+  const dx = x - start.x
+  const dy = y - start.y
+  const held = at - start.at > HOLD_MS
+  const first = trail[0]
+  const velocity = first && at > first.t ? (y - first.y) / (at - first.t) : 0
+  const dragged = dragY.value !== null
   start = null
-  if (dy > 90 && Math.abs(dy) > Math.abs(dx)) {
-    emit('close')
+  settle()
+  if (dragged) {
+    const height = stage.offsetHeight || 1
+    if (dy > 0 && (dy > height * 0.2 || velocity > FLICK_VELOCITY)) emit('close')
     return
   }
   if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
@@ -583,13 +630,20 @@ function end(x: number, y: number, stage: HTMLElement) {
     return
   }
   if (Math.abs(dx) > SWIPE_PX || Math.abs(dy) > SWIPE_PX) return
+  // A hold was reading the slide: let go and the story simply carries on.
+  if (held) return
   const box = stage.getBoundingClientRect()
   go(x - box.left < box.width / 3 ? -1 : 1)
 }
 
 function onTouchStart(event: TouchEvent) {
   const touch = event.touches[0]
-  if (touch) begin(touch.clientX, touch.clientY)
+  if (touch) begin(touch.clientX, touch.clientY, event.timeStamp)
+}
+
+function onTouchMove(event: TouchEvent) {
+  const touch = event.touches[0]
+  if (touch) move(touch.clientX, touch.clientY, event.timeStamp)
 }
 
 function onTouchEnd(event: TouchEvent) {
@@ -597,24 +651,31 @@ function onTouchEnd(event: TouchEvent) {
   if (!touch) return
   // The touch already moved the story; stop the synthetic click that follows.
   event.preventDefault()
-  end(touch.clientX, touch.clientY, event.currentTarget as HTMLElement)
+  end(touch.clientX, touch.clientY, event.timeStamp, event.currentTarget as HTMLElement)
 }
 
 function onPointerDown(event: PointerEvent) {
   if (event.pointerType === 'touch') return
   ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
-  begin(event.clientX, event.clientY)
+  begin(event.clientX, event.clientY, event.timeStamp)
+}
+
+function onPointerMove(event: PointerEvent) {
+  if (event.pointerType === 'touch') return
+  move(event.clientX, event.clientY, event.timeStamp)
 }
 
 function onPointerUp(event: PointerEvent) {
   if (event.pointerType === 'touch') return
-  end(event.clientX, event.clientY, event.currentTarget as HTMLElement)
+  end(event.clientX, event.clientY, event.timeStamp, event.currentTarget as HTMLElement)
 }
 
 function onCancel() {
   start = null
-  paused.value = false
+  settle()
 }
+
+onBeforeUnmount(() => clearTimeout(holdTimer))
 
 /** Paging with the arrow keys is reading, not watching: the next slide is just there. */
 const byKeys = ref(false)
@@ -746,7 +807,8 @@ watch(open, async (value) => {
           ref="panelRef"
           tabindex="-1"
           class="stories__frame"
-          :class="{ 'is-paper': current.theme !== 1 }"
+          :class="{ 'is-paper': current.theme !== 1, 'is-holding': holding, 'is-dragging': dragY !== null }"
+          :style="frameStyle"
           role="dialog"
           aria-modal="true"
           :aria-label="t('story.title')"
@@ -757,9 +819,11 @@ watch(open, async (value) => {
             role="img"
             :aria-label="`${current.kicker}. ${current.title}. ${current.sub ?? ''}`"
             @touchstart.passive="onTouchStart"
+            @touchmove.passive="onTouchMove"
             @touchend="onTouchEnd"
             @touchcancel="onCancel"
             @pointerdown="onPointerDown"
+            @pointermove="onPointerMove"
             @pointerup="onPointerUp"
             @pointercancel="onCancel"
           >
@@ -906,6 +970,14 @@ watch(open, async (value) => {
   overflow: hidden;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-overlay);
+  /* Let go short of closing: the frame springs back from wherever the finger left it. */
+  transition: transform var(--duration-slow) var(--spring-snappy);
+}
+
+/* Holding to read: the chrome steps aside so the slide is all there is. */
+.stories__frame.is-holding .stories__top,
+.stories__frame.is-dragging .stories__top {
+  opacity: 0;
 }
 
 .stories__stage {
@@ -913,8 +985,8 @@ watch(open, async (value) => {
   inset: 0;
   cursor: pointer;
   user-select: none;
-  /* The story handles horizontal swipes itself. */
-  touch-action: pan-y pinch-zoom;
+  /* The story owns every gesture on the slide: taps, holds, swipes and the drag down to close. */
+  touch-action: none;
 }
 
 /* ─── Top overlay: progress and controls ─────────────────────────────────── */
@@ -925,6 +997,7 @@ watch(open, async (value) => {
   gap: var(--space-2);
   padding: max(var(--space-3), env(safe-area-inset-top)) var(--space-3) 0;
   pointer-events: none;
+  transition: opacity var(--duration-normal) var(--ease-standard);
 }
 
 .stories__progress {

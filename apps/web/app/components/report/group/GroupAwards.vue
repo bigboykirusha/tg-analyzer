@@ -185,7 +185,8 @@ const awards = computed(() =>
   }
 }
 
-@media (max-width: 340px) {
+/* Phones: one per row, so a value never runs off the card. */
+@media (max-width: 640px) {
   .awards {
     grid-template-columns: minmax(0, 1fr);
   }

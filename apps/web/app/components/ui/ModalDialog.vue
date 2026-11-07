@@ -35,11 +35,16 @@ const descriptionId = useId()
 const open = toRef(props, 'open')
 
 function close() {
-  if (!props.busy) emit('close')
+  if (props.busy) return false
+  emit('close')
+  return true
 }
 
 useBodyScrollLock(open)
 useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocus?.() ?? panelRef.value })
+// Phones show the dialog as a sheet, and a sheet answers the finger: grab its top and pull it down.
+const drag = useSheetDrag(panelRef, close)
+watch(open, (value) => value && drag.reset())
 </script>
 
 <template>
@@ -50,12 +55,16 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
           ref="panelRef"
           tabindex="-1"
           class="modal-panel"
-          :class="`modal-panel--${size}`"
+          :class="[`modal-panel--${size}`, { 'is-dragging': drag.dragging.value }]"
           :role="role"
           aria-modal="true"
           :aria-labelledby="title || $slots.header ? titleId : undefined"
           :aria-describedby="description ? descriptionId : undefined"
+          :style="drag.style.value"
         >
+          <div class="modal-grab" aria-hidden="true" v-on="drag.handlers">
+            <span class="modal-grabber" />
+          </div>
           <IconButton
             class="modal-close"
             :label="closeLabel || t('common.close')"
@@ -122,6 +131,10 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
 
 .modal-panel--lg {
   max-width: var(--dialog-lg);
+}
+
+.modal-grab {
+  display: none;
 }
 
 .modal-close {
@@ -191,21 +204,25 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
 
 .modal-enter-active,
 .modal-leave-active {
-  transition: opacity var(--transition-normal);
+  /* The scrim fades; the panel itself stays solid while it moves. */
+  transition: background-color var(--transition-normal);
 }
 
 .modal-enter-active .modal-panel,
 .modal-leave-active .modal-panel {
-  transition: transform var(--transition-normal);
+  transition:
+    transform var(--transition-normal),
+    opacity var(--transition-normal);
 }
 
 .modal-enter-from,
 .modal-leave-to {
-  opacity: 0;
+  background-color: transparent;
 }
 
 .modal-enter-from .modal-panel,
 .modal-leave-to .modal-panel {
+  opacity: 0;
   transform: translateY(var(--space-2)) scale(0.98);
 }
 
@@ -231,14 +248,63 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
     border-radius: var(--radius-xl);
   }
 
-  .modal-enter-active .modal-panel,
-  .modal-leave-active .modal-panel {
+  .modal-panel {
+    transform: translateY(var(--sheet-drag, 0));
     transition: transform var(--duration-sheet) var(--ease-drawer);
+  }
+
+  .modal-panel.is-dragging {
+    transition: none;
+  }
+
+  /* The grabber strip: the part of the sheet the finger can pull. */
+  .modal-grab {
+    position: absolute;
+    z-index: 1;
+    inset: 0 var(--space-12) auto;
+    display: flex;
+    justify-content: center;
+    height: var(--space-6);
+    touch-action: none;
+  }
+
+  .modal-grabber {
+    width: var(--control-sm);
+    height: var(--space-1);
+    margin-top: var(--space-2);
+    border-radius: var(--radius-full);
+    background: var(--border-strong);
+  }
+
+  .modal-enter-active,
+  .modal-leave-active {
+    transition-duration: var(--duration-sheet);
+  }
+
+  .modal-leave-active {
+    transition-duration: var(--duration-slow);
+  }
+
+  .modal-enter-active .modal-panel {
+    transition: transform var(--duration-sheet) var(--ease-drawer);
+  }
+
+  .modal-leave-active .modal-panel {
+    transition: transform var(--duration-slow) var(--ease-drawer);
   }
 
   .modal-enter-from .modal-panel,
   .modal-leave-to .modal-panel {
+    opacity: 1;
     transform: translateY(calc(100% + var(--space-4)));
+  }
+}
+
+@media (max-width: 640px) and (prefers-reduced-motion: reduce) {
+  .modal-enter-from .modal-panel,
+  .modal-leave-to .modal-panel {
+    opacity: 0;
+    transform: translateY(var(--sheet-drag, 0));
   }
 }
 </style>

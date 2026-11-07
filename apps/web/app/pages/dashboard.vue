@@ -106,20 +106,6 @@ onMounted(() => {
         </div>
       </template>
 
-      <template v-else-if="reportsFailed">
-        <UiPageBar :title="t('home.title')" />
-        <UiEmptyState
-          tone="danger"
-          :icon="AlertCircle"
-          :title="t('dashboard.reportsError')"
-          :description="errorMessage(reportsError)"
-        >
-          <template #action>
-            <UiButton variant="secondary" @click="loadReports">{{ t('common.retry') }}</UiButton>
-          </template>
-        </UiEmptyState>
-      </template>
-
       <template v-else-if="newcomer">
         <UiPageBar :title="t('home.onboardTitle')" />
 
@@ -161,7 +147,19 @@ onMounted(() => {
         </UiPageSection>
 
         <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
-          <div class="report-cards" :style="{ '--report-cols': Math.min(4, Math.max(3, reports.length)) }">
+          <!-- A failed list fails here alone: the greeting, highlights and «Новый анализ» stay. -->
+          <UiEmptyState
+            v-if="reportsFailed"
+            tone="danger"
+            :icon="AlertCircle"
+            :title="t('dashboard.reportsError')"
+            :description="errorMessage(reportsError)"
+          >
+            <template #action>
+              <UiButton variant="secondary" @click="loadReports">{{ t('common.retry') }}</UiButton>
+            </template>
+          </UiEmptyState>
+          <div v-else class="report-cards" :style="{ '--report-cols': Math.min(4, Math.max(3, reports.length)) }">
             <ReportCard
               v-for="chat in reports"
               :key="chat.id"
