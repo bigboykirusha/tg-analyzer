@@ -57,8 +57,8 @@ watch(analysis.finished, (job) => {
 
 <style scoped>
 /*
- * Wide screens («inset»): the menu stands at the window's edge on the grey ground, the screen lies
- * on a light rounded panel beside it, and the header lives inside that panel. Phones: one column.
+ * Wide screens, as in macOS: the page fills the window, the sidebar floats beside it as a
+ * translucent rounded panel inset from the edges, the toolbar sits over the page. Phones: one column.
  */
 .workspace {
   display: grid;
@@ -82,21 +82,16 @@ watch(analysis.finished, (job) => {
 @media (min-width: 901px) {
   .workspace {
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-    background: var(--sidebar);
   }
 
   .workspace-sidebar {
     display: block;
+    padding: var(--space-2) 0 var(--space-2) var(--space-2);
   }
 
-  /* The panel is the frame now: the screen fills it, up to a wider column than the public pages. */
+  /* The signed-in screens fill wide monitors, up to a wider column than the public pages. */
   .workspace-panel {
     --page-max: var(--page-max-wide);
-    min-height: calc(100dvh - 2 * var(--space-2));
-    margin: var(--space-2) var(--space-2) var(--space-2) 0;
-    border-radius: var(--radius-xl);
-    background: var(--bg);
-    box-shadow: 0 0 0 1px var(--border);
   }
 }
 </style>

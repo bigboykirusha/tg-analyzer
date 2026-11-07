@@ -88,12 +88,17 @@ function updating(report: ReportSummaryDto) {
 .sidebar {
   --skeleton: var(--border-strong);
   position: sticky;
-  top: 0;
+  top: var(--space-2);
   display: flex;
   flex-direction: column;
   gap: 2px;
-  height: 100dvh;
-  padding: 0 var(--space-3) var(--space-4);
+  height: calc(100dvh - 2 * var(--space-2));
+  padding: 0 var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--sidebar-glass);
+  box-shadow: var(--shadow-sidebar);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
   overflow-y: auto;
   scrollbar-width: thin;
 }
@@ -102,8 +107,8 @@ function updating(report: ReportSummaryDto) {
   display: flex;
   flex: none;
   align-items: center;
-  height: calc(var(--topbar-height) + var(--space-2));
-  padding: var(--space-2) var(--space-2) 0;
+  height: var(--topbar-height);
+  padding: 0 var(--space-2);
 }
 
 .sidebar__list {
@@ -123,7 +128,7 @@ function updating(report: ReportSummaryDto) {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 40px;
+  min-height: 32px;
   padding: var(--space-2);
   border-radius: var(--radius-sm);
   font: var(--text-ui);
@@ -131,8 +136,7 @@ function updating(report: ReportSummaryDto) {
 }
 
 .sidebar__item[aria-current='page'] {
-  background: var(--sidebar-selected);
-  box-shadow: var(--shadow-sm);
+  background: var(--sidebar-selection);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -141,25 +145,18 @@ function updating(report: ReportSummaryDto) {
   }
 }
 
+/* Plain symbols, as in a macOS source list; the action is the one in the text colour. */
 .sidebar__icon {
   display: grid;
   flex: none;
   place-items: center;
   width: 24px;
   height: 24px;
-  border-radius: var(--radius-full);
-  background: var(--surface-2);
-  color: var(--text);
-}
-
-.sidebar__icon--plain {
-  background: transparent;
   color: var(--text-muted);
 }
 
 .sidebar__item--action .sidebar__icon {
-  background: var(--accent);
-  color: var(--on-accent);
+  color: var(--text);
 }
 
 .sidebar__name {

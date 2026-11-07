@@ -18,8 +18,12 @@
   /* Grey fill for rows and icon tiles inside overlays (one step up from --surface-raised). */
   --fill-raised: #f2f3f5;
   /* The sidebar is a heavier surface than the page; the selected row is a white plate on it. */
-  --sidebar: #e6e8eb;
-  --sidebar-selected: #ffffff;
+  /* Apple-like chrome: a floating translucent sidebar and a toolbar the page scrolls under. */
+  --sidebar-glass: rgba(255, 255, 255, 0.62);
+  --sidebar-selection: rgba(14, 15, 17, 0.07);
+  --toolbar-glass: rgba(242, 243, 245, 0.78);
+  --glass-filter: saturate(180%) blur(20px);
+  --shadow-sidebar: 0 0 0 1px rgba(14, 15, 17, 0.06), 0 8px 24px rgba(14, 15, 17, 0.06);
   --thumb: #ffffff;
   --border: #e6e8eb;
   --border-strong: #d6d8dc;
@@ -115,8 +119,10 @@
   --fill-hover: #26262a;
   --surface-raised: #1c1c1f;
   --fill-raised: #26262a;
-  --sidebar: #111113;
-  --sidebar-selected: #1c1c1f;
+  --sidebar-glass: rgba(28, 28, 31, 0.66);
+  --sidebar-selection: rgba(242, 242, 243, 0.08);
+  --toolbar-glass: rgba(10, 10, 11, 0.76);
+  --shadow-sidebar: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.4);
   --thumb: #2a2a2e;
   --border: #232326;
   --border-strong: #34343a;

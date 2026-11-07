@@ -136,8 +136,10 @@ function signOut() {
   top: 0;
   z-index: var(--z-header);
   padding-top: env(safe-area-inset-top, 0px);
-  background: var(--bg);
-  transition: background-color var(--duration-slow) ease;
+  /* The page scrolls under a translucent toolbar, as in Apple's apps; no hairline. */
+  background: var(--toolbar-glass);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
 }
 
 /* The same column as the page below, so the logo lines up with the content. */
@@ -148,15 +150,8 @@ function signOut() {
   height: var(--topbar-height);
 }
 
-/*
- * Wide screens: the bar sits at the top of the light panel (its corners follow the panel's), the
- * logo lives in the menu beside it, the profile stays at the end of the bar.
- */
+/* Wide screens: the logo lives in the floating sidebar; the profile stays at the end of the bar. */
 @media (min-width: 901px) {
-  .app-navigation {
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  }
-
   .topbar__brand {
     display: none;
   }
