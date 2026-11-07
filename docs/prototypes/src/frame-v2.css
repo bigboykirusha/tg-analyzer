@@ -212,3 +212,28 @@
   padding: var(--space-3) 0;
   background: var(--sidebar);
 }
+
+/* 8. A dark header across the whole width. */
+.v8 .v8__head {
+  --text: var(--on-tile-ink);
+  border-bottom: 0;
+  background: var(--tile-ink);
+  color: var(--on-tile-ink);
+}
+.v8 .v8__head .logo-mark {
+  background: var(--on-tile-ink-well);
+}
+.v8 .v8__head .pill--primary {
+  background: var(--lime);
+  color: var(--on-lime);
+}
+.v8 .v8__bar {
+  justify-content: flex-end;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+}
+.v8 .v8__side {
+  border-right: 0;
+  background: var(--sidebar);
+}

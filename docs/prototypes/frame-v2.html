@@ -4715,6 +4715,31 @@
         padding: var(--space-3) 0;
         background: var(--sidebar);
       }
+
+      /* 8. A dark header across the whole width. */
+      .v8 .v8__head {
+        --text: var(--on-tile-ink);
+        border-bottom: 0;
+        background: var(--tile-ink);
+        color: var(--on-tile-ink);
+      }
+      .v8 .v8__head .logo-mark {
+        background: var(--on-tile-ink-well);
+      }
+      .v8 .v8__head .pill--primary {
+        background: var(--lime);
+        color: var(--on-lime);
+      }
+      .v8 .v8__bar {
+        justify-content: flex-end;
+        max-width: 1000px;
+        width: 100%;
+        margin: 0 auto;
+      }
+      .v8 .v8__side {
+        border-right: 0;
+        background: var(--sidebar);
+      }
     </style>
   </head>
   <body>
@@ -4722,13 +4747,14 @@
       <header class="review__head">
         <h1>Рамка кабинета на ПК — раунд 2</h1>
         <p>
-          Заголовка «Главная» больше нет: на главной шапка несёт только логотип, поиск, «Новый анализ» и профиль. Внутри
-          везде та же «Сводка» (вариант А). Номера продолжают первый раунд, ответ номером: «Рамка 7».
+          Заголовка «Главная» и поиска нет; аватар — всегда справа в шапке. На главной шапка несёт только логотип,
+          «Новый анализ» и аватар. Внутри везде та же «Сводка» (вариант А). Номера продолжают первый раунд, ответ
+          номером: «Рамка 7».
         </p>
         <ul class="refs">
           <li><b>Spotify</b> — отдельные «острова»: верх, библиотека слева, центральная панель, всё скруглено.</li>
           <li><b>Inset-сайдбар (shadcn)</b> — меню у края окна, контент скруглённой панелью со своей шапкой.</li>
-          <li><b>Linear, Raycast</b> — поиск-командная строка в центре шапки, вызов по ⌘K.</li>
+          <li><b>Telegram Desktop, Things</b> — тёмная или цветная шапка как опора всего окна.</li>
           <li><b>Telegram</b> — полоса «историй»: люди кружками с кольцом, если есть новое.</li>
           <li><b>Notion, ChatGPT</b> — меню сворачивается кнопкой в шапке, остаётся узкая полоса.</li>
         </ul>
@@ -4737,7 +4763,7 @@
         <h2>6. Острова, как Spotify</h2>
         <div class="why">
           <p>
-            Три скруглённые панели на общем фоне: верхняя (логотип, поиск по центру, профиль), левая «Ваши люди» с
+            Три скруглённые панели на общем фоне: верхняя (логотип, «Новый анализ», аватар справа), левая «Ваши люди» с
             фильтром «Личные / Группы» и центральная со «Сводкой». Шапка и меню выглядят одной системой: одинаковые
             панели, одинаковые отступы.
           </p>
@@ -4748,19 +4774,19 @@
         <h2>7. Inset: меню у края, контент панелью <em class="tag">рекомендую</em></h2>
         <div class="why">
           <p>
-            Левое меню во всю высоту без своей плашки: логотип сверху, профиль снизу. Контент — одна светлая панель со
-            скруглением, и шапка живёт внутри неё: поиск и «Новый анализ» справа, на отчёте — назад, имя и вкладки.
-            Шапка цельная, потому что принадлежит тому, что под ней.
+            Левое меню во всю высоту без своей плашки, логотип сверху. Контент — одна светлая панель со скруглением, и
+            шапка живёт внутри неё: «Новый анализ» и аватар справа, на отчёте — назад, имя и вкладки. Шапка цельная,
+            потому что принадлежит тому, что под ней.
           </p>
         </div>
         <div class="frames" data-frame="7"></div>
       </section>
       <section class="problem">
-        <h2>8. Поиск в центре шапки, как Linear</h2>
+        <h2>8. Тёмная шапка на всю ширину</h2>
         <div class="why">
           <p>
-            Шапка на всю ширину: логотип, широкая строка «Найти чат или отчёт ⌘K» посередине, «Новый анализ» и профиль.
-            Левое меню тоньше и тише. Главное действие продукта — найти человека — встаёт в шапку.
+            Шапка — полоса цвета главной плитки отчёта через всё окно: логотип, «Новый анализ» лаймом и аватар справа.
+            Под ней светлое меню и контент. Шапка сразу читается как одна вещь, у кабинета появляется характер.
           </p>
         </div>
         <div class="frames" data-frame="8"></div>
@@ -4907,7 +4933,6 @@
         sparkles:
           '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
         grid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
-        search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
         panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
       })
       const ic = (name) => `<i data-icon="${name}"></i>`
@@ -4956,8 +4981,6 @@
       /* ─── Frame parts ────────────────────────────────────────────────────── */
       const brand = `<div class="fr__brand">${logo}TG Analyzer</div>`
       const me = '<span class="av av--sm av--4">К</span>'
-      const search = (wide = false) =>
-        `<div class="hsearch${wide ? ' hsearch--wide' : ''}">${ic('search')}<span>Найти чат или отчёт</span><kbd>${wide ? '⌘K' : '/'}</kbd></div>`
       const newBtn = pill('Новый анализ', 'pill--primary', 'plus')
       const people = (filter = false) =>
         `${filter ? '<div class="segs segs--sm"><span class="on">Все</span><span>Личные</span><span>Группы</span></div>' : ''}${PEOPLE.slice(
@@ -4978,13 +5001,13 @@
 
       const FRAMES = {
         6: () =>
-          `<div class="screen v6"><header class="isl v6__top">${brand}${search(true)}<div class="hdr__end">${newBtn}${me}</div></header><aside class="isl v6__lib"><div class="v6__libhead"><span class="q">Ваши люди</span>${pill('', 'pill--icon pill--sm', 'plus')}</div>${people(true)}</aside><div class="isl v6__main"><div class="fr__main">${summary()}</div></div></div>`,
+          `<div class="screen v6"><header class="isl v6__top">${brand}<span class="grow"></span><div class="hdr__end">${newBtn}${me}</div></header><aside class="isl v6__lib"><div class="v6__libhead"><span class="q">Ваши люди</span>${pill('', 'pill--icon pill--sm', 'plus')}</div>${people(true)}</aside><div class="isl v6__main"><div class="fr__main">${summary()}</div></div></div>`,
         7: () =>
-          `<div class="screen v7"><aside class="v7__side">${brand}<nav class="fr__nav">${nav}</nav><div class="fr__me">${me}Кирилл</div></aside><div class="v7__panel"><header class="v7__bar">${search()}<span class="grow"></span>${newBtn}</header><div class="fr__main">${summary()}</div></div></div>`,
+          `<div class="screen v7"><aside class="v7__side">${brand}<nav class="fr__nav">${nav}</nav></aside><div class="v7__panel"><header class="v7__bar"><span class="grow"></span>${newBtn}${me}</header><div class="fr__main">${summary()}</div></div></div>`,
         8: () =>
-          `<div class="screen fr v8"><header class="fr__head v8__head">${brand}<div class="v8__bar">${search(true)}<div class="hdr__end">${newBtn}${me}</div></div></header><aside class="fr__side v8__side"><nav class="fr__nav">${nav}</nav></aside><div class="fr__main">${summary()}</div></div>`,
+          `<div class="screen fr v8"><header class="fr__head v8__head">${brand}<div class="v8__bar"><div class="hdr__end">${newBtn}${me}</div></div></header><aside class="fr__side v8__side"><nav class="fr__nav">${nav}</nav></aside><div class="fr__main">${summary()}</div></div>`,
         9: () =>
-          `<div class="screen v9"><header class="v9__head"><div class="v9__in">${brand}${search()}<div class="hdr__end">${newBtn}${me}</div></div></header><div class="v9__stories"><div class="v9__in v9__row">${PEOPLE.concat(
+          `<div class="screen v9"><header class="v9__head"><div class="v9__in">${brand}<div class="hdr__end">${newBtn}${me}</div></div></header><div class="v9__stories"><div class="v9__in v9__row">${PEOPLE.concat(
             [
               ['Анна', 'av--4', false],
               ['Олег', '', false],
@@ -4997,8 +5020,8 @@
             .join(
               '',
             )}<div class="story story--add"><span class="av av--lg">${ic('plus')}</span><span>Разобрать</span></div></div></div><div class="fr__main">${summary(false)}</div></div>`,
-        10: () => `<div class="v10"><div class="screen fr v10a"><header class="fr__head v10__head"><div class="fr__brand"><span class="pill pill--icon pill--ghost">${ic('panel')}</span>${logo}TG Analyzer</div><div class="fr__bar"><span class="grow"></span>${search()}${newBtn}${me}</div></header><aside class="fr__side"><nav class="fr__nav">${nav}</nav></aside><div class="fr__main">${summary()}</div></div>
-    <div class="screen v10b"><header class="v10b__head"><span class="pill pill--icon pill--ghost">${ic('panel')}</span>${logo}<span class="grow"></span>${search()}${newBtn}${me}</header><aside class="v10b__rail"><span class="rail4__btn on">${ic('grid')}</span><span class="rail4__btn">${ic('plus')}</span><span class="rail4__sep"></span>${PEOPLE.slice(
+        10: () => `<div class="v10"><div class="screen fr v10a"><header class="fr__head v10__head"><div class="fr__brand"><span class="pill pill--icon pill--ghost">${ic('panel')}</span>${logo}TG Analyzer</div><div class="fr__bar"><span class="grow"></span>${newBtn}${me}</div></header><aside class="fr__side"><nav class="fr__nav">${nav}</nav></aside><div class="fr__main">${summary()}</div></div>
+    <div class="screen v10b"><header class="v10b__head"><span class="pill pill--icon pill--ghost">${ic('panel')}</span>${logo}<span class="grow"></span>${newBtn}${me}</header><aside class="v10b__rail"><span class="rail4__btn on">${ic('grid')}</span><span class="rail4__btn">${ic('plus')}</span><span class="rail4__sep"></span>${PEOPLE.slice(
       0,
       3,
     )

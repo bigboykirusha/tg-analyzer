@@ -10,7 +10,6 @@ Object.assign(ICONS, {
   sparkles:
     '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
   grid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
-  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
 })
 const ic = (name) => `<i data-icon="${name}"></i>`
@@ -59,8 +58,6 @@ const summary = (pins = true) => `${
 /* ─── Frame parts ────────────────────────────────────────────────────── */
 const brand = `<div class="fr__brand">${logo}TG Analyzer</div>`
 const me = '<span class="av av--sm av--4">К</span>'
-const search = (wide = false) =>
-  `<div class="hsearch${wide ? ' hsearch--wide' : ''}">${ic('search')}<span>Найти чат или отчёт</span><kbd>${wide ? '⌘K' : '/'}</kbd></div>`
 const newBtn = pill('Новый анализ', 'pill--primary', 'plus')
 const people = (filter = false) =>
   `${filter ? '<div class="segs segs--sm"><span class="on">Все</span><span>Личные</span><span>Группы</span></div>' : ''}${PEOPLE.slice(
@@ -81,13 +78,13 @@ const nav = `<div class="side__item on">${ic('grid')}Главная</div><div cl
 
 const FRAMES = {
   6: () =>
-    `<div class="screen v6"><header class="isl v6__top">${brand}${search(true)}<div class="hdr__end">${newBtn}${me}</div></header><aside class="isl v6__lib"><div class="v6__libhead"><span class="q">Ваши люди</span>${pill('', 'pill--icon pill--sm', 'plus')}</div>${people(true)}</aside><div class="isl v6__main"><div class="fr__main">${summary()}</div></div></div>`,
+    `<div class="screen v6"><header class="isl v6__top">${brand}<span class="grow"></span><div class="hdr__end">${newBtn}${me}</div></header><aside class="isl v6__lib"><div class="v6__libhead"><span class="q">Ваши люди</span>${pill('', 'pill--icon pill--sm', 'plus')}</div>${people(true)}</aside><div class="isl v6__main"><div class="fr__main">${summary()}</div></div></div>`,
   7: () =>
-    `<div class="screen v7"><aside class="v7__side">${brand}<nav class="fr__nav">${nav}</nav><div class="fr__me">${me}Кирилл</div></aside><div class="v7__panel"><header class="v7__bar">${search()}<span class="grow"></span>${newBtn}</header><div class="fr__main">${summary()}</div></div></div>`,
+    `<div class="screen v7"><aside class="v7__side">${brand}<nav class="fr__nav">${nav}</nav></aside><div class="v7__panel"><header class="v7__bar"><span class="grow"></span>${newBtn}${me}</header><div class="fr__main">${summary()}</div></div></div>`,
   8: () =>
-    `<div class="screen fr v8"><header class="fr__head v8__head">${brand}<div class="v8__bar">${search(true)}<div class="hdr__end">${newBtn}${me}</div></div></header><aside class="fr__side v8__side"><nav class="fr__nav">${nav}</nav></aside><div class="fr__main">${summary()}</div></div>`,
+    `<div class="screen fr v8"><header class="fr__head v8__head">${brand}<div class="v8__bar"><div class="hdr__end">${newBtn}${me}</div></div></header><aside class="fr__side v8__side"><nav class="fr__nav">${nav}</nav></aside><div class="fr__main">${summary()}</div></div>`,
   9: () =>
-    `<div class="screen v9"><header class="v9__head"><div class="v9__in">${brand}${search()}<div class="hdr__end">${newBtn}${me}</div></div></header><div class="v9__stories"><div class="v9__in v9__row">${PEOPLE.concat(
+    `<div class="screen v9"><header class="v9__head"><div class="v9__in">${brand}<div class="hdr__end">${newBtn}${me}</div></div></header><div class="v9__stories"><div class="v9__in v9__row">${PEOPLE.concat(
       [
         ['Анна', 'av--4', false],
         ['Олег', '', false],
@@ -100,8 +97,8 @@ const FRAMES = {
       .join(
         '',
       )}<div class="story story--add"><span class="av av--lg">${ic('plus')}</span><span>Разобрать</span></div></div></div><div class="fr__main">${summary(false)}</div></div>`,
-  10: () => `<div class="v10"><div class="screen fr v10a"><header class="fr__head v10__head"><div class="fr__brand"><span class="pill pill--icon pill--ghost">${ic('panel')}</span>${logo}TG Analyzer</div><div class="fr__bar"><span class="grow"></span>${search()}${newBtn}${me}</div></header><aside class="fr__side"><nav class="fr__nav">${nav}</nav></aside><div class="fr__main">${summary()}</div></div>
-    <div class="screen v10b"><header class="v10b__head"><span class="pill pill--icon pill--ghost">${ic('panel')}</span>${logo}<span class="grow"></span>${search()}${newBtn}${me}</header><aside class="v10b__rail"><span class="rail4__btn on">${ic('grid')}</span><span class="rail4__btn">${ic('plus')}</span><span class="rail4__sep"></span>${PEOPLE.slice(
+  10: () => `<div class="v10"><div class="screen fr v10a"><header class="fr__head v10__head"><div class="fr__brand"><span class="pill pill--icon pill--ghost">${ic('panel')}</span>${logo}TG Analyzer</div><div class="fr__bar"><span class="grow"></span>${newBtn}${me}</div></header><aside class="fr__side"><nav class="fr__nav">${nav}</nav></aside><div class="fr__main">${summary()}</div></div>
+    <div class="screen v10b"><header class="v10b__head"><span class="pill pill--icon pill--ghost">${ic('panel')}</span>${logo}<span class="grow"></span>${newBtn}${me}</header><aside class="v10b__rail"><span class="rail4__btn on">${ic('grid')}</span><span class="rail4__btn">${ic('plus')}</span><span class="rail4__sep"></span>${PEOPLE.slice(
       0,
       3,
     )
