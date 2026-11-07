@@ -18,4 +18,4 @@ dump.rdb
 *.bundle
 
 # Impeccable live-server runtime state
-.impeccable/live/
+**/.impeccable/live/
