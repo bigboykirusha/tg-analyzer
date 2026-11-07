@@ -29,7 +29,7 @@ const firstName = (title: string) => title.split(/\s+/)[0] ?? title
 .pinned-people {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-5);
+  gap: var(--space-6);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -39,7 +39,7 @@ const firstName = (title: string) => title.split(/\s+/)[0] ?? title
   display: grid;
   justify-items: center;
   gap: var(--space-2);
-  width: 72px;
+  width: calc(var(--avatar-xl) + var(--space-4));
   color: var(--text);
   font: var(--text-small);
   text-align: center;
@@ -64,7 +64,7 @@ const firstName = (title: string) => title.split(/\s+/)[0] ?? title
   }
 
   .pinned-people__item {
-    width: 60px;
+    width: calc(var(--avatar-lg) + var(--space-2));
   }
 }
 </style>

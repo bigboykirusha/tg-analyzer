@@ -24,6 +24,20 @@ const leader = computed(() => {
     null,
   )
 })
+/** Members and the month's active ones sit under the pulse as facts, not as two thin tiles. */
+const heroFacts = computed(() => {
+  const g = group.value
+  if (!g) return []
+  const active = health.value ? formatNumber(health.value.activeMembersLast30Days) : t('common.na')
+  return [
+    {
+      key: 'members',
+      label: t('group.activeMembers'),
+      value: formatNumber(health.value?.activeMembers ?? g.participants.length),
+    },
+    { key: 'active', label: t('group.activeNow'), value: momentum.value ? `${active} · ${momentum.value}` : active },
+  ]
+})
 const momentum = computed(() =>
   health.value && health.value.momentum !== 'unknown' ? t(`group.momentum.${health.value.momentum}`) : null,
 )
@@ -42,6 +56,7 @@ const momentum = computed(() =>
       :data="data"
       :label="t('report.kpi.messages')"
       :value="formatNumber(data.report.totals.messages)"
+      :facts="heroFacts"
       :note="
         t('report.kpi.sentReceived', {
           sent: formatNumber(data.report.totals.sent),
@@ -51,25 +66,12 @@ const momentum = computed(() =>
     >
       <template #accent>
         <div class="tile__label">{{ t('group.mostActive') }}</div>
-        <div class="leader">
-          <div class="leader__name">{{ leader ? nameOf(leader) : t('common.na') }}</div>
-          <p v-if="leader" class="tile__note">
-            {{ t('group.shareOfMessages', { value: formatPercent(leader.messageShare) }) }}
-          </p>
-        </div>
+        <div class="leader__name">{{ leader ? nameOf(leader) : t('common.na') }}</div>
+        <p v-if="leader" class="leader__share">
+          <span class="t-figure">{{ formatPercent(leader.messageShare) }}</span>
+          <span class="t-small">{{ t('group.ofMessages') }}</span>
+        </p>
       </template>
-      <UiMetricCard
-        class="span-6"
-        :label="t('group.activeMembers')"
-        :value="formatNumber(health?.activeMembers ?? group.participants.length)"
-        :sub="t('group.activeMembersSub')"
-      />
-      <UiMetricCard
-        class="span-6"
-        :label="t('group.activeNow')"
-        :value="health ? formatNumber(health.activeMembersLast30Days) : t('common.na')"
-        :sub="momentum"
-      />
     </ReportHero>
 
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
@@ -89,18 +91,26 @@ const momentum = computed(() =>
 </template>
 
 <style scoped>
-.leader {
-  display: grid;
-  gap: var(--space-2);
-}
-
+/* The busiest member: the name in the editorial face, their share as the tile's figure at the bottom. */
 .leader__name {
-  overflow: hidden;
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
-  text-overflow: ellipsis;
   display: -webkit-box;
+  overflow: hidden;
+  font: var(--text-h1);
+  letter-spacing: var(--tracking-h1);
+  overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.leader__share {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: auto;
+  color: var(--text-muted);
+}
+
+.leader__share .t-figure {
+  color: var(--text);
 }
 </style>

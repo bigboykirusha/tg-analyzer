@@ -57,8 +57,8 @@ watch(analysis.finished, (job) => {
 
 <style scoped>
 /*
- * Wide screens, as in macOS: the page fills the window, the sidebar floats beside it as a
- * translucent rounded panel inset from the edges, the toolbar sits over the page. Phones: one column.
+ * Wide screens: a quiet sidebar flush with the window edge, one hairline from the page; the page
+ * scrolls under a clear toolbar. Phones and tablets: one column under the app bar.
  */
 .workspace {
   display: grid;
@@ -86,7 +86,7 @@ watch(analysis.finished, (job) => {
 
   .workspace-sidebar {
     display: block;
-    padding: var(--space-2) 0 var(--space-2) var(--space-2);
+    border-right: 1px solid var(--border);
   }
 
   /* The signed-in screens fill wide monitors, up to a wider column than the public pages. */

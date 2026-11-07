@@ -115,8 +115,8 @@ const visible = computed(() => reached.value.length > 1 || Boolean(forecast.valu
 }
 
 .milestone__dot {
-  width: 12px;
-  height: 12px;
+  width: var(--space-3);
+  height: var(--space-3);
   margin-bottom: var(--space-3);
   border-radius: var(--radius-full);
   background: var(--them);
@@ -147,7 +147,7 @@ const visible = computed(() => reached.value.length > 1 || Boolean(forecast.valu
 @media (max-width: 640px) {
   .milestones {
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-5);
+    gap: var(--space-6);
     padding: 0 0 0 var(--space-6);
   }
 

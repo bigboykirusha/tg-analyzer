@@ -73,7 +73,7 @@ const updated = computed(() =>
   min-width: 0;
   flex-direction: column;
   gap: var(--space-1);
-  padding: var(--space-5);
+  padding: var(--space-6);
   border-radius: var(--radius-lg);
   background: var(--surface);
   transition:
@@ -83,12 +83,12 @@ const updated = computed(() =>
 
 @media (hover: hover) and (pointer: fine) {
   .report-card:hover {
-    box-shadow: 0 0 0 1px var(--border-strong);
+    box-shadow: var(--ring-strong);
   }
 
   .report-card:hover .report-card__chevron {
     color: var(--text);
-    transform: translateX(2px);
+    transform: translateX(var(--space-0-5));
   }
 }
 

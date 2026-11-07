@@ -138,13 +138,13 @@ function run(action: 'analyse' | 'delete') {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-4);
-  min-height: 68px;
-  padding: var(--space-3) var(--space-5);
+  min-height: calc(var(--avatar-md) + 2 * var(--space-4));
+  padding: var(--space-3) var(--space-4);
   transition: background-color var(--transition-fast);
 }
 
 .chat-row + .chat-row {
-  box-shadow: inset 0 1px 0 var(--border);
+  box-shadow: var(--divider-top);
 }
 
 /* Hairlines start under the text, not under the avatar. */
@@ -153,7 +153,7 @@ function run(action: 'analyse' | 'delete') {
     box-shadow: none;
     background-image: linear-gradient(var(--border), var(--border));
     background-repeat: no-repeat;
-    background-position: calc(var(--space-5) + 56px) 0;
+    background-position: calc(var(--space-4) + var(--avatar-md) + var(--space-3)) 0;
     background-size: 100% 1px;
   }
 }
@@ -175,7 +175,7 @@ function run(action: 'analyse' | 'delete') {
 
 .chat-row__copy {
   display: grid;
-  gap: 2px;
+  gap: var(--space-0-5);
   min-width: 0;
 }
 
@@ -204,7 +204,7 @@ function run(action: 'analyse' | 'delete') {
 }
 
 .chat-row__type-icon {
-  --icon-size: 14px;
+  --icon-size: var(--icon-sm);
 }
 
 .chat-row__report-count::before {
@@ -215,8 +215,8 @@ function run(action: 'analyse' | 'delete') {
 .chat-row__track {
   position: relative;
   flex: 1 1 auto;
-  min-width: 48px;
-  max-width: 160px;
+  min-width: var(--space-12);
+  max-width: calc(var(--space-20) * 2);
   height: var(--bar-height);
   overflow: hidden;
   border-radius: var(--radius-full);
@@ -238,7 +238,7 @@ function run(action: 'analyse' | 'delete') {
 
 .chat-row__track > .is-indeterminate {
   width: 34%;
-  animation: row-indeterminate 1.4s var(--ease-standard) infinite;
+  animation: row-indeterminate var(--duration-loop) var(--ease-loop) infinite;
 }
 
 @keyframes row-indeterminate {

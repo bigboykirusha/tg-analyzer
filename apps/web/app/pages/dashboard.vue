@@ -10,6 +10,17 @@ useSeoMeta({ title: () => t('dashboard.title') })
 
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
+const auth = useAuthStore()
+const now = useNow(60_000)
+
+/** «Добрый вечер, Дима»: the home page speaks first, then shows what is new. */
+const greeting = computed(() => {
+  const hour = new Date(now.value).getHours()
+  const part = hour < 5 ? 'night' : hour < 12 ? 'morning' : hour < 18 ? 'day' : hour < 23 ? 'evening' : 'night'
+  const name = auth.user?.firstName?.trim()
+  const hello = t(`home.greeting.${part}`)
+  return name ? `${hello}, ${name}` : hello
+})
 const errorMessage = useErrorMessage()
 
 
@@ -83,7 +94,7 @@ onMounted(() => {
           <div class="report-cards">
             <div v-for="card in 4" :key="card" class="tile home__skeleton-card">
               <div class="home__skeleton-head">
-              <UiSkeleton width="44px" height="44px" radius="50%" />
+              <UiSkeleton width="var(--avatar-md)" height="var(--avatar-md)" radius="50%" />
                 <div class="home__skeleton-copy">
                   <UiSkeleton width="70%" height="20px" />
                   <UiSkeleton width="50%" />
@@ -137,8 +148,11 @@ onMounted(() => {
             }}</UiButton>
           </template>
         </UiPageBar>
+        <header class="home__hello">
+          <p class="t-h1">{{ greeting }}</p>
+          <p class="t-lede">{{ t('home.greeting.lede') }}</p>
+        </header>
         <AnalysisBanner />
-
         <PinnedPeople />
         <UiPageSection :title="t('home.highlights')">
           <HomeEvents v-if="events.length" :events="events" />
@@ -163,6 +177,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.home__hello {
+  display: grid;
+  gap: var(--space-2);
+}
+
 /* Wide screens start a new analysis from the sidebar. */
 @media (min-width: 901px) {
   .home__new {
@@ -171,7 +190,7 @@ onMounted(() => {
 }
 
 .home__skeleton-card {
-  min-height: 200px;
+  min-height: var(--chart-h-sm);
 }
 
 .home__skeleton-head {
@@ -193,7 +212,7 @@ onMounted(() => {
 
 @media (max-width: 640px) {
   .home__skeleton-card {
-    min-height: 72px;
+    min-height: var(--avatar-xl);
     justify-content: center;
     padding: var(--space-3) 0;
     border-radius: 0;
@@ -228,8 +247,8 @@ onMounted(() => {
   display: inline-grid;
   flex: none;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: var(--avatar-sm);
+  height: var(--avatar-sm);
   border-radius: var(--radius-full);
   background: var(--tile-ink);
   color: var(--on-tile-ink);
@@ -238,7 +257,7 @@ onMounted(() => {
 
 .onboard__copy {
   display: grid;
-  gap: 2px;
+  gap: var(--space-0-5);
   color: var(--text-muted);
   font: var(--text-small);
 }
@@ -252,7 +271,7 @@ onMounted(() => {
   .onboard {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
-    padding: var(--space-5);
+    padding: var(--space-6);
   }
 }
 
@@ -261,7 +280,7 @@ onMounted(() => {
 .report-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--space-3);
+  gap: var(--card-gap);
 }
 
 /* Wide screens: three reports fill the row instead of leaving a fourth of it empty; four and more in fours. */

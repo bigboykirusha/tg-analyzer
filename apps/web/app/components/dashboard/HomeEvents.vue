@@ -127,8 +127,15 @@ const ordinal = (index: number) => t('report.milestones.nth', { n: formatNumber(
   gap: var(--card-gap, var(--space-4));
 }
 
+/* Three or more highlights: the month tile spans two rows beside the others, no hole in the grid. */
+@media (min-width: 641px) {
+  .home-events:has(> :nth-child(3)) > .tile--ink:first-child {
+    grid-row: span 2;
+  }
+}
+
 .home-event {
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .home-event--link {

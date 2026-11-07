@@ -71,6 +71,6 @@ const owners = computed(() => {
 }
 
 .owners__avatar {
-  margin-top: var(--space-5);
+  margin-top: var(--space-6);
 }
 </style>

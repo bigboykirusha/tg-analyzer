@@ -101,7 +101,7 @@ const sections = computed(() => [
   align-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-6);
-  padding: max(var(--space-3), env(safe-area-inset-top)) var(--space-3) var(--space-3) var(--space-5);
+  padding: max(var(--space-3), env(safe-area-inset-top)) var(--space-3) var(--space-3) var(--space-6);
   border-bottom: 1px solid var(--border);
   background: var(--bg);
 }
@@ -122,7 +122,7 @@ const sections = computed(() => [
 .privacy__section {
   display: grid;
   gap: var(--space-2);
-  padding-block: var(--space-5);
+  padding-block: var(--space-6);
 }
 
 .privacy__section + .privacy__section {
@@ -141,7 +141,7 @@ const sections = computed(() => [
 .privacy__list {
   display: grid;
   gap: var(--space-1);
-  padding-left: var(--space-5);
+  padding-left: var(--space-6);
   color: var(--text-muted);
   font: var(--text-body);
 }
@@ -165,7 +165,7 @@ const sections = computed(() => [
 
 @media (max-width: 640px) {
   .privacy__body {
-    padding: var(--space-1) var(--space-5);
+    padding: var(--space-1) var(--space-6);
   }
 }
 </style>

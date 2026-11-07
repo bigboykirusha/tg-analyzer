@@ -42,16 +42,16 @@ const { t, formatNumber } = useI18n()
 
 .sticker__art {
   display: grid;
-  width: 64px;
-  height: 64px;
+  width: var(--avatar-lg);
+  height: var(--avatar-lg);
   place-items: center;
   border-radius: var(--radius-md);
   background: var(--surface-2);
 }
 
 .sticker__art img {
-  width: 56px;
-  height: 56px;
+  width: calc(var(--avatar-lg) - var(--space-2));
+  height: calc(var(--avatar-lg) - var(--space-2));
   object-fit: contain;
 }
 

@@ -77,7 +77,7 @@ async function finish() {
       <section class="tile tile--ink quiz__card">
         <div class="quiz__pair" aria-hidden="true">
           <UiAvatar :title="quiz.author" size="md" />
-          <ReportSideAvatar side="mine" :name="quiz.author" class="quiz__you" />
+          <UiAvatar side="mine" :title="t('publicQuiz.you')" size="md" />
         </div>
         <p class="t-small t-muted">{{ t('publicQuiz.from', { name: quiz.author }) }}</p>
         <h1 class="quiz__title">{{ t('publicQuiz.title') }}</h1>
@@ -122,7 +122,7 @@ async function finish() {
             @click="pick(side)"
           >
             <UiAvatar v-if="side === 'author'" :title="quiz.author" size="lg" />
-            <ReportSideAvatar v-else side="mine" :name="quiz.author" class="quiz__you quiz__you--lg" />
+            <UiAvatar v-else side="mine" :title="t('publicQuiz.you')" size="lg" />
             <span>{{ who(side) }}</span>
           </button>
         </div>
@@ -180,7 +180,7 @@ async function finish() {
   display: grid;
   gap: var(--space-4);
   width: 100%;
-  max-width: 440px;
+  max-width: var(--card-focus);
   margin: 0 auto;
 }
 
@@ -194,7 +194,8 @@ async function finish() {
 
 .quiz__pair > * + * {
   margin-left: calc(-1 * var(--space-2));
-  box-shadow: 0 0 0 3px var(--tile-ink);
+  /* A ring in the card's colour cuts the second face out of the first. */
+  outline: 3px solid var(--tile-ink);
 }
 
 .quiz__title {
@@ -244,7 +245,7 @@ async function finish() {
   display: grid;
   justify-items: center;
   gap: var(--space-2);
-  padding: var(--space-5) var(--space-3);
+  padding: var(--space-6) var(--space-3);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
   background: none;
@@ -263,14 +264,7 @@ async function finish() {
 }
 
 .quiz__choice.is-faded {
-  opacity: 0.45;
-}
-
-/* «Вы» as a big circle next to the author's avatar. */
-.quiz__you--lg {
-  width: 48px;
-  height: 48px;
-  font: var(--text-title);
+  opacity: var(--opacity-disabled);
 }
 
 .quiz__list {

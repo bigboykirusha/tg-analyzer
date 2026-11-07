@@ -44,7 +44,7 @@ const { t } = useI18n()
 }
 
 .site-footer__nav {
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
 .site-footer__prefs {

@@ -48,7 +48,7 @@ const silence = Array.from({ length: 64 }, (_, index) =>
   gap: var(--space-4);
   width: 100%;
   margin-bottom: var(--space-4);
-  padding: var(--space-5);
+  padding: var(--space-6);
   border-radius: var(--radius-lg);
   background: var(--tile-ink);
   color: var(--on-tile-ink);

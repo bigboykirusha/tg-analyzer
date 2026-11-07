@@ -7,7 +7,7 @@ withDefaults(
   }>(),
   {
     width: '100%',
-    height: '14px',
+    height: 'var(--space-4)',
     radius: 'var(--radius-xs)',
   },
 )
@@ -32,7 +32,7 @@ withDefaults(
   inset: 0;
   background: linear-gradient(90deg, transparent, var(--hover), transparent);
   transform: translateX(-100%);
-  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  animation: skeleton-shimmer var(--duration-shimmer) var(--ease-loop) infinite;
 }
 
 @keyframes skeleton-shimmer {

@@ -106,15 +106,15 @@ useHead({
   display: grid;
   flex: none;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: var(--avatar-md);
+  height: var(--avatar-md);
   border-radius: var(--radius-sm);
   background: var(--accent-subtle);
 }
 
 .fact__icon svg {
-  width: 20px;
-  height: 20px;
+  width: var(--icon-md);
+  height: var(--icon-md);
 }
 
 .tile--ink .fact__icon {
@@ -149,7 +149,7 @@ useHead({
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  min-height: 56px;
+  min-height: calc(var(--control-md) + var(--space-3));
   padding-block: var(--space-4);
   font: var(--text-title);
   cursor: pointer;
@@ -178,7 +178,7 @@ useHead({
 
 .qa__a {
   max-width: 68ch;
-  padding-bottom: var(--space-5);
+  padding-bottom: var(--space-6);
   color: var(--text-muted);
   font: var(--text-body);
 }

@@ -218,9 +218,9 @@ function changeNumber() {
 .login-panel {
   display: grid;
   justify-items: center;
-  gap: var(--space-5);
+  gap: var(--space-6);
   width: 100%;
-  max-width: 440px;
+  max-width: var(--card-focus);
 }
 
 .login-card {

@@ -41,7 +41,7 @@ defineProps<{ title?: string | null }>()
 <style scoped>
 .skeleton-tile {
   gap: var(--space-3);
-  min-height: 240px;
+  min-height: var(--chart-h-sm);
 }
 
 .skeleton-tile.tile--ink {
@@ -73,7 +73,7 @@ defineProps<{ title?: string | null }>()
 
 @media (max-width: 900px) {
   .skeleton-tile {
-    min-height: 180px;
+    min-height: calc(var(--chart-h-sm) - var(--space-10));
   }
 }
 </style>

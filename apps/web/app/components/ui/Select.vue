@@ -3,6 +3,8 @@ import type { Component } from 'vue'
 import { Check, ChevronDown, Search } from '../../lib/icons'
 import BottomSheet from './BottomSheet.vue'
 import CountryFlag from './CountryFlag.vue'
+import ListRow from './ListRow.vue'
+import MenuPanel from './MenuPanel.vue'
 
 export interface SelectOption<TValue extends string = string> {
   value: TValue
@@ -69,7 +71,6 @@ const activeIndex = ref(-1)
 const openUp = ref(false)
 const isMobile = useMediaQuery('(max-width: 640px)')
 
-const MAX_PANEL_HEIGHT = 320
 const showSearch = computed(() => props.searchable ?? props.options.length > 8)
 const selected = computed(() => props.options.find((option) => option.value === props.modelValue) ?? null)
 const filtered = computed(() => {
@@ -113,7 +114,10 @@ async function show() {
   if (!isMobile.value && triggerRef.value) {
     const rect = triggerRef.value.getBoundingClientRect()
     const below = window.innerHeight - rect.bottom
-    openUp.value = below < MAX_PANEL_HEIGHT && rect.top > below
+    // The panel is at most --menu-max-height tall; open upwards when it would not fit below.
+    const panelHeight =
+      Number.parseFloat(getComputedStyle(triggerRef.value).getPropertyValue('--menu-max-height')) || 360
+    openUp.value = below < panelHeight && rect.top > below
   }
   open.value = true
   await nextTick()
@@ -258,11 +262,13 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
       <ChevronDown class="select__chevron" aria-hidden="true" />
     </button>
 
-    <Transition name="select-pop">
-      <div
+    <Transition name="menu-panel">
+      <MenuPanel
         v-if="open && !isMobile"
         class="select__panel"
-        :class="{ 'select__panel--up': openUp }"
+        align="stretch"
+        :side="openUp ? 'top' : 'bottom'"
+        :scroll="false"
         @keydown="onListKeydown"
       >
         <label v-if="showSearch" class="select__search">
@@ -289,31 +295,31 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
         >
           <template v-for="row in rows" :key="row.option.value">
             <div v-if="row.header" class="select__group" role="presentation">{{ row.header }}</div>
-            <div
+            <ListRow
               :id="optionId(row.index)"
               class="option"
-              :class="{ 'is-active': row.index === activeIndex }"
+              :class="{ 'is-active': row.index === activeIndex, 'option--icon': !!row.option.icon }"
+              interactive
+              :disabled="row.option.disabled"
               role="option"
               :aria-selected="row.option.value === modelValue"
-              :aria-disabled="row.option.disabled || undefined"
               @pointermove="activeIndex = row.index"
               @click="choose(row.option)"
             >
-              <CountryFlag v-if="row.option.flag" class="select__flag" :code="row.option.flag" />
-              <component
-                :is="row.option.icon"
-                v-else-if="row.option.icon"
-                class="option__icon row-icon"
-                aria-hidden="true"
-              />
-              <span class="option__label">{{ row.option.label }}</span>
-              <span v-if="row.option.meta" class="option__meta">{{ row.option.meta }}</span>
-              <Check class="option__check row-check" aria-hidden="true" />
-            </div>
+              <template v-if="row.option.flag || row.option.icon" #leading>
+                <CountryFlag v-if="row.option.flag" class="select__flag" :code="row.option.flag" />
+                <component :is="row.option.icon" v-else class="option__icon row-icon" aria-hidden="true" />
+              </template>
+              {{ row.option.label }}
+              <template #trailing>
+                <span v-if="row.option.meta" class="option__meta">{{ row.option.meta }}</span>
+                <Check class="option__check row-check" aria-hidden="true" />
+              </template>
+            </ListRow>
           </template>
           <p v-if="!rows.length" class="select__empty">{{ t('common.noResults') }}</p>
         </div>
-      </div>
+      </MenuPanel>
     </Transition>
 
     <BottomSheet v-if="isMobile" :open="open" :title="name" @close="hide()">
@@ -343,26 +349,26 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
       >
         <template v-for="row in rows" :key="row.option.value">
           <div v-if="row.header" class="select__group" role="presentation">{{ row.header }}</div>
-          <div
+          <ListRow
             :id="optionId(row.index)"
             class="option"
-            :class="{ 'is-active': row.index === activeIndex }"
+            :class="{ 'is-active': row.index === activeIndex, 'option--icon': !!row.option.icon }"
+            interactive
+            :disabled="row.option.disabled"
             role="option"
             :aria-selected="row.option.value === modelValue"
-            :aria-disabled="row.option.disabled || undefined"
             @click="choose(row.option)"
           >
-            <CountryFlag v-if="row.option.flag" class="select__flag" :code="row.option.flag" />
-            <component
-              :is="row.option.icon"
-              v-else-if="row.option.icon"
-              class="option__icon row-icon"
-              aria-hidden="true"
-            />
-            <span class="option__label">{{ row.option.label }}</span>
-            <span v-if="row.option.meta" class="option__meta">{{ row.option.meta }}</span>
-            <Check class="option__check row-check" aria-hidden="true" />
-          </div>
+            <template v-if="row.option.flag || row.option.icon" #leading>
+              <CountryFlag v-if="row.option.flag" class="select__flag" :code="row.option.flag" />
+              <component :is="row.option.icon" v-else class="option__icon row-icon" aria-hidden="true" />
+            </template>
+            {{ row.option.label }}
+            <template #trailing>
+              <span v-if="row.option.meta" class="option__meta">{{ row.option.meta }}</span>
+              <Check class="option__check row-check" aria-hidden="true" />
+            </template>
+          </ListRow>
         </template>
         <p v-if="!rows.length" class="select__empty">{{ t('common.noResults') }}</p>
       </div>
@@ -487,40 +493,17 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 
 .select__addon:focus-visible {
   outline: none;
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: var(--ring-selected);
 }
 
 .select__flag {
   flex: 0 0 auto;
 }
 
-/* ─── Listbox panel ────────────────────────────────────────────────────── */
-.select__panel {
-  position: absolute;
-  z-index: var(--z-popover);
-  top: calc(100% + var(--space-2));
-  right: 0;
-  left: 0;
-  display: flex;
-  flex-direction: column;
-  min-width: 232px;
-  max-height: 340px;
-  overflow: hidden;
-  padding: var(--space-1);
-  border: 0;
-  border-radius: var(--radius-lg);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-overlay);
-}
-
-.select__panel--up {
-  top: auto;
-  bottom: calc(100% + var(--space-2));
-}
-
+/* ─── Listbox panel (UiMenuPanel) and options (UiListRow) ──────────────── */
 .select__list {
   display: grid;
-  gap: 2px;
+  gap: var(--space-0-5);
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -539,6 +522,9 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   border-radius: var(--radius-md);
   background: var(--fill-raised);
   color: var(--text-muted);
+  transition:
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .select__search input {
@@ -561,11 +547,11 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 
 .select__search:focus-within {
   background: var(--surface);
-  box-shadow: inset 0 0 0 1.5px var(--text);
+  box-shadow: var(--focus-ring-field);
 }
 
 .select__group {
-  padding: var(--space-2) var(--space-3) var(--space-1);
+  padding: var(--space-3) var(--space-3) var(--space-1);
   color: var(--text-muted);
   font: var(--text-caption);
 }
@@ -577,47 +563,17 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   text-align: center;
 }
 
-.option {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: var(--control-md);
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-md);
-  color: var(--text);
-  cursor: pointer;
-  font: var(--text-ui);
-  transition: background-color var(--transition-fast);
+.option--icon {
+  --row-px: var(--space-2);
 }
 
+/* The option under the pointer or the arrow keys; listbox focus stays on the list. */
 .option.is-active {
   background: var(--hover);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .option:hover {
-    background: var(--hover);
-  }
-}
-
-.option:active {
-  background: var(--pressed);
-}
-
 .option__meta {
-  color: var(--text-muted);
-}
-
-.option__label {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.option__meta {
-  font: var(--text-small);
+  font-variant-numeric: tabular-nums;
 }
 
 .option__check {
@@ -632,33 +588,9 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   visibility: visible;
 }
 
-.option[aria-disabled='true'] {
-  background: transparent;
-  opacity: var(--opacity-disabled);
-  cursor: not-allowed;
-}
-
 /* In a sheet the search is pinned above the list and 44px tall. */
 .select__search--sheet {
   min-height: var(--control-md);
   margin-bottom: 0;
-}
-
-.select-pop-enter-active,
-.select-pop-leave-active {
-  transition:
-    opacity var(--transition-normal),
-    transform var(--transition-normal);
-}
-
-.select-pop-enter-from,
-.select-pop-leave-to {
-  opacity: 0;
-  transform: translateY(-4px) scale(0.98);
-}
-
-.select__panel--up.select-pop-enter-from,
-.select__panel--up.select-pop-leave-to {
-  transform: translateY(4px) scale(0.98);
 }
 </style>

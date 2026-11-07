@@ -116,7 +116,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   --gap: var(--space-2);
   position: fixed;
   z-index: var(--z-popover);
-  max-width: 260px;
+  max-width: var(--tooltip-max);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   background: var(--inverse-surface);

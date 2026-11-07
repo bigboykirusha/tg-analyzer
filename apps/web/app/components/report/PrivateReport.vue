@@ -91,7 +91,8 @@ const shareHint = computed(() => {
 <style scoped>
 /* Who writes more: the question, the answer, the split as a figure and both counts on one line. */
 .share__title {
-  font: var(--text-title);
+  color: var(--text-muted);
+  font: var(--text-ui);
 }
 
 .share__verdict {

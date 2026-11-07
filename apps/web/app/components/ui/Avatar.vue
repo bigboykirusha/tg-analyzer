@@ -1,23 +1,32 @@
 <script setup lang="ts">
-export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg'
+export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+export type AvatarSide = 'mine' | 'theirs'
 
 const props = withDefaults(
   defineProps<{
+    /** The person or chat name: initials, and the tooltip of a side avatar. */
     title: string | null | undefined
     src?: string | null
-    /** xs 24 · sm 36 · md 44 · lg 64. */
+    /** xs 24 · sm 32 · md 40 · lg 64 · xl 72 (--avatar-*). */
     size?: AvatarSize
     /** Chat or user id; picks one of six tones. Falls back to the title. */
     seed?: string | number | null
+    /**
+     * One side of a two-person report: `mine` is an ink circle with «Я», `theirs` is the lime
+     * avatar with the first letter of `title`. No photo, no hashed tone.
+     */
+    side?: AvatarSide | null
   }>(),
   {
     src: null,
     size: 'md',
     seed: null,
+    side: null,
   },
 )
 
 const TONES = 6
+const { t } = useI18n()
 
 const failed = ref(false)
 watch(
@@ -28,45 +37,62 @@ watch(
 )
 
 const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
-const initials = computed(() =>
-  (props.title ?? '')
-    .trim()
-    .split(/\s+/u)
-    .map(
-      (word) =>
-        Array.from(graphemes.segment(word), ({ segment }) => segment).find((char) => /[\p{L}\p{N}]/u.test(char)) ?? '',
-    )
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toLocaleUpperCase(),
-)
+/** The first letter or digit of a word, as a whole grapheme (emoji flags, accents). */
+function firstLetter(word: string) {
+  return Array.from(graphemes.segment(word), ({ segment }) => segment).find((char) => /[\p{L}\p{N}]/u.test(char)) ?? ''
+}
+
+const initials = computed(() => {
+  if (props.side === 'mine') return t('report.youInitial')
+  const words = (props.title ?? '').trim().split(/\s+/u)
+  if (props.side === 'theirs') return (firstLetter(words[0] ?? '') || '?').toLocaleUpperCase()
+  return words.map(firstLetter).filter(Boolean).slice(0, 2).join('').toLocaleUpperCase()
+})
 
 /** Stable tone: hash(id) % 6 + 1. The tone carries no meaning. */
 const tone = computed(() => {
+  if (props.side) return null
   const key = String(props.seed ?? props.title ?? '')
   let hash = 0
   for (let index = 0; index < key.length; index += 1) hash = (hash * 31 + key.charCodeAt(index)) | 0
   return (Math.abs(hash) % TONES) + 1
 })
+
+const showImage = computed(() => !props.side && props.src && !failed.value)
+const tooltip = computed(() => {
+  if (props.side === 'mine') return t('report.you')
+  if (props.side === 'theirs') return props.title ?? undefined
+  return undefined
+})
 </script>
 
 <template>
-  <span class="avatar" :class="[`avatar--${size}`, `avatar--t${tone}`]">
-    <img v-if="src && !failed" :src="src" alt="" @error="failed = true" />
+  <span class="avatar" :class="[`avatar--${size}`, side ? `avatar--${side}` : `avatar--t${tone}`]" :title="tooltip">
+    <img v-if="showImage" :src="src ?? undefined" alt="" @error="failed = true" />
     <span v-else aria-hidden="true">{{ initials || 'TG' }}</span>
   </span>
 </template>
 
 <style scoped>
+/*
+ * Size rules sit in :where() so a caller's class can still resize one avatar without a fight over
+ * specificity. Initials are always Geist: the serif is for what the product says, not for letters
+ * in a circle.
+ */
 .avatar {
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
   overflow: hidden;
-  width: var(--control-md);
-  height: var(--control-md);
   border-radius: var(--radius-full);
+  line-height: 1;
+  user-select: none;
+}
+
+:where(.avatar) {
+  --avatar-size: var(--avatar-md);
+  width: var(--avatar-size);
+  height: var(--avatar-size);
   font: var(--text-ui);
 }
 
@@ -76,23 +102,32 @@ const tone = computed(() => {
   object-fit: cover;
 }
 
-.avatar--xs {
-  width: 24px;
-  height: 24px;
+:where(.avatar--xs) {
+  --avatar-size: var(--avatar-xs);
   font: var(--text-caption);
 }
 
-.avatar--sm {
-  width: var(--control-sm);
-  height: var(--control-sm);
+:where(.avatar--sm) {
+  --avatar-size: var(--avatar-sm);
   font: var(--text-small);
   font-weight: 500;
 }
 
-.avatar--lg {
-  width: 64px;
-  height: 64px;
-  font: var(--text-h3);
+/*
+ * Big circles: the initials scale with the circle (24 at 64, 27 at 72), still Geist 500. A local
+ * role until tokens.css has one (--text-initials).
+ */
+:where(.avatar--lg, .avatar--xl) {
+  --avatar-initials: 500 calc(var(--avatar-size) * 0.375) / 1 var(--font-sans);
+  font: var(--avatar-initials);
+}
+
+:where(.avatar--lg) {
+  --avatar-size: var(--avatar-lg);
+}
+
+:where(.avatar--xl) {
+  --avatar-size: var(--avatar-xl);
 }
 
 .avatar--t1 {
@@ -123,5 +158,31 @@ const tone = computed(() => {
 .avatar--t6 {
   background: var(--avatar-6-bg);
   color: var(--avatar-6-ink);
+}
+
+/* ─── Sides of a two-person report: you are ink, they are lime ─────────── */
+.avatar--mine {
+  background: var(--you);
+  color: var(--surface);
+}
+
+.avatar--theirs {
+  background: var(--avatar-1-bg);
+  color: var(--avatar-1-ink);
+}
+
+/* On ink «Я» is a light circle: the letter takes the tile's colour. */
+.tile--ink .avatar--mine {
+  color: var(--tile-ink);
+}
+
+/* On lime both sides keep a visible circle: ink for you, a lime well for them. */
+.tile--lime .avatar--mine {
+  color: var(--lime);
+}
+
+.tile--lime .avatar--theirs {
+  background: var(--on-lime-well);
+  color: var(--on-lime);
 }
 </style>

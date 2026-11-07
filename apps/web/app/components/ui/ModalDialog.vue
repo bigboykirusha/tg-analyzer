@@ -8,7 +8,7 @@ const props = withDefaults(
     title?: string
     description?: string
     closeLabel?: string
-    /** sm 400 · md 520 · lg 680. */
+    /** sm 420 · md 520 · lg 680 (--dialog-*). */
     size?: 'sm' | 'md' | 'lg'
     /** Blocks closing while an action runs. */
     busy?: boolean
@@ -105,9 +105,10 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   position: relative;
   display: flex;
   flex-direction: column;
+  isolation: isolate;
   width: 100%;
-  max-width: 420px;
-  max-height: min(84dvh, 760px);
+  max-width: var(--dialog-sm);
+  max-height: 84dvh;
   overflow: hidden;
   border: 0;
   border-radius: var(--radius-xl);
@@ -116,11 +117,11 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
 }
 
 .modal-panel--md {
-  max-width: 520px;
+  max-width: var(--dialog-md);
 }
 
 .modal-panel--lg {
-  max-width: 680px;
+  max-width: var(--dialog-lg);
 }
 
 .modal-close {
@@ -135,7 +136,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   display: flex;
   align-items: center;
   min-height: var(--control-md);
-  padding: var(--space-5) var(--space-12) 0 var(--space-5);
+  padding: var(--space-6) var(--space-12) 0 var(--space-6);
 }
 
 .modal-header {
@@ -143,12 +144,12 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   flex: 0 0 auto;
   justify-items: start;
   gap: var(--space-2);
-  padding: var(--space-5) var(--space-12) var(--space-4) var(--space-5);
+  padding: var(--space-6) var(--space-12) var(--space-4) var(--space-6);
 }
 
 .modal-top + .modal-header {
-  padding-top: var(--space-5);
-  padding-right: var(--space-5);
+  padding-top: var(--space-6);
+  padding-right: var(--space-6);
 }
 
 .modal-title {
@@ -170,7 +171,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   min-width: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 var(--space-5) var(--space-1);
+  padding: 0 var(--space-6) var(--space-1);
 }
 
 /* Two equal buttons side by side: cancel on the left, the action on the right. */
@@ -180,7 +181,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
   grid-auto-columns: 1fr;
   grid-auto-flow: column;
   gap: var(--space-2);
-  padding: var(--space-4) var(--space-5) var(--space-5);
+  padding: var(--space-4) var(--space-6) var(--space-6);
 }
 
 .modal-actions :deep(.btn) {
@@ -205,7 +206,7 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
 
 .modal-enter-from .modal-panel,
 .modal-leave-to .modal-panel {
-  transform: translateY(8px) scale(0.98);
+  transform: translateY(var(--space-2)) scale(0.98);
 }
 
 /* The dialog takes focus on open without drawing a ring around itself. */

@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'link'
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg'
 
 defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
+    /** `link` is an inline text button: ink, no padding, underlined on hover and focus; it takes the surrounding type. */
     variant?: ButtonVariant
-    /** sm 36 · md 44 · lg 48; xs 32 is for close icons only. */
+    /** sm 36 · md 44 · lg 48; xs 32 is for close icons only. Ignored by `link`. */
     size?: ButtonSize
     icon?: Component | null
     loading?: boolean
@@ -66,7 +67,7 @@ const classes = computed(() => [
   min-width: 0;
   max-width: 100%;
   min-height: var(--control-md);
-  padding: 0 var(--space-5);
+  padding: 0 var(--space-6);
   border: 1px solid transparent;
   border-radius: var(--radius-full);
   background: transparent;
@@ -214,6 +215,49 @@ const classes = computed(() => [
 .btn[aria-busy='true'] {
   cursor: progress;
   pointer-events: none;
+}
+
+/* ─── Link: a button that reads as a word in a sentence ─────────────────── */
+.btn.btn--link {
+  gap: var(--space-1);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  white-space: normal;
+  transition:
+    color var(--transition-fast),
+    text-decoration-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn--link:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+.btn--link:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+.btn--link:active {
+  transform: none;
+  color: var(--text-muted);
+}
+
+/* A link that is not available yet (a countdown) stays legible, just quiet. */
+.btn--link:disabled,
+.btn--link[aria-disabled='true'] {
+  color: var(--text-muted);
+  opacity: 1;
 }
 
 /* ─── Spinner ──────────────────────────────────────────────────────────────── */

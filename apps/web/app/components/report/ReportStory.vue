@@ -367,8 +367,9 @@ const slides = computed<StorySlideModel[]>(() => {
       blocks.push({
         kind: 'stat',
         label: t('story.busiestDay'),
-        value: tc('common.messagesCount', busiest.total),
-        note: formatDay(busiest.date, DAY_MONTH),
+        // The number alone is the value: «127 сообщений» would not fit half a poster in the serif.
+        value: formatNumber(busiest.total),
+        note: `${tc('story.messagesWord', busiest.total)} · ${formatDay(busiest.date, DAY_MONTH).replaceAll(' ', '\u00a0')}`,
         accent: true,
       })
     // The next round-number message, as in «Круглые сообщения»: a reason to come back.
@@ -435,7 +436,7 @@ const slides = computed<StorySlideModel[]>(() => {
     }
     list.push({
       key: 'words',
-      theme: 6,
+      theme: 2,
       durationMs: 9000,
       kicker: t('story.wordsKicker'),
       title: `«${chatWord}»`,
@@ -877,13 +878,22 @@ watch(open, async (value) => {
 </template>
 
 <style scoped>
-/* Controls over a paper slide switch to ink, like the slide itself. */
+/*
+ * Controls over the slide take the slide's colours: light on the ink field, ink on paper and lime.
+ * Local names, so the slide inside keeps reading the --story-* tokens as they are.
+ */
+.stories {
+  --chrome-ink: var(--story-ink);
+  --chrome-on-ink: var(--story-gradient-1);
+  --chrome-track: var(--story-track);
+  --chrome-chip: var(--story-chip);
+}
+
 .stories__frame.is-paper {
-  --story-ink: var(--story-paper-ink);
-  --story-ink-muted: var(--story-paper-ink-muted);
-  --story-track: var(--story-paper-track);
-  --story-chip: var(--story-paper-chip);
-  --story-backdrop: var(--story-gradient-4);
+  --chrome-ink: var(--story-paper-ink);
+  --chrome-on-ink: var(--story-paper-card);
+  --chrome-track: var(--story-paper-track);
+  --chrome-chip: var(--story-paper-chip);
 }
 
 .stories {
@@ -935,7 +945,7 @@ watch(open, async (value) => {
   height: 3px;
   overflow: hidden;
   border-radius: var(--radius-full);
-  background: var(--story-track);
+  background: var(--chrome-track);
 }
 
 .stories__fill {
@@ -943,7 +953,7 @@ watch(open, async (value) => {
   inset: 0;
   transform: scaleX(0);
   transform-origin: left;
-  background: var(--story-ink);
+  background: var(--chrome-ink);
 }
 
 .stories__fill.is-done {
@@ -973,7 +983,7 @@ watch(open, async (value) => {
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-1);
-  color: var(--story-ink);
+  color: var(--chrome-ink);
 }
 
 .stories__icon {
@@ -983,8 +993,8 @@ watch(open, async (value) => {
   height: var(--control-sm);
   border: 0;
   border-radius: var(--radius-full);
-  background: var(--story-chip);
-  color: var(--story-ink);
+  background: var(--chrome-chip);
+  color: var(--chrome-ink);
   cursor: pointer;
   pointer-events: auto;
   --icon-size: var(--icon-md);
@@ -997,12 +1007,13 @@ watch(open, async (value) => {
 .stories__icon:focus-visible,
 .stories__action:focus-visible,
 .stories__arrow:focus-visible {
-  box-shadow: 0 0 0 2px var(--story-ink);
+  outline: 2px solid var(--chrome-ink);
+  outline-offset: 2px;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .stories__icon:hover {
-    background: var(--story-chip);
+    background: var(--chrome-chip);
   }
 }
 
@@ -1024,15 +1035,15 @@ watch(open, async (value) => {
   min-height: var(--control-md);
   border: 0;
   border-radius: var(--radius-full);
-  background: var(--story-chip);
-  color: var(--story-ink);
+  background: var(--chrome-chip);
+  color: var(--chrome-ink);
   cursor: pointer;
   font: var(--text-ui);
 }
 
 .stories__action--primary {
-  background: var(--story-ink);
-  color: var(--story-backdrop);
+  background: var(--chrome-ink);
+  color: var(--chrome-on-ink);
 }
 
 .stories__action:disabled {
@@ -1068,7 +1079,7 @@ watch(open, async (value) => {
 
 .stories__option {
   display: grid;
-  gap: 2px;
+  gap: var(--space-0-5);
   min-height: var(--control-lg);
   padding: var(--space-2) var(--space-4);
   border: 0;

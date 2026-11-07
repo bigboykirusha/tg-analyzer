@@ -102,8 +102,8 @@ const losses = computed(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 2px var(--space-3);
-  min-height: 44px;
+  gap: var(--space-0-5) var(--space-3);
+  min-height: var(--control-md);
   padding-block: var(--space-2);
   font: var(--text-ui);
 }

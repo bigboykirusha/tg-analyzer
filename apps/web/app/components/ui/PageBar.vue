@@ -34,7 +34,7 @@ const { t } = useI18n()
       :data-untitled="untitled ? '' : undefined"
       :data-leading="$slots.leading ? '' : undefined"
     >
-      <NuxtLink v-if="back" :to="back" class="page-bar__back" :aria-label="t('nav.back')">
+      <NuxtLink v-if="back" :to="back" class="page-bar__back hit-area" :aria-label="t('nav.back')">
         <ChevronLeft aria-hidden="true" />
       </NuxtLink>
       <slot name="leading" />
@@ -69,17 +69,6 @@ const { t } = useI18n()
   border-radius: var(--radius-full);
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
-}
-
-/* A 44 px touch area around the 36 px circle. */
-.page-bar__back {
-  position: relative;
-}
-
-.page-bar__back::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
 }
 
 .page-bar__back:active {
@@ -124,6 +113,14 @@ const { t } = useI18n()
   white-space: nowrap;
 }
 
+/* Wide screens: the screen's name in the editorial face. */
+@media (min-width: 901px) {
+  .page-bar__title {
+    font: var(--text-h3);
+    letter-spacing: var(--tracking-h3);
+  }
+}
+
 .page-bar__lede {
   overflow: hidden;
   color: var(--text-muted);
@@ -153,7 +150,7 @@ const { t } = useI18n()
   .page-bar__actions :deep(.btn--sm)::before {
     content: '';
     position: absolute;
-    inset: -4px;
+    inset: calc((var(--control-sm) - var(--hit-min)) / 2);
   }
 }
 </style>

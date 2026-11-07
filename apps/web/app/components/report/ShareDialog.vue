@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import type { ReportDto, ShareLinkDto, ShareLinksResponse } from '@tg-analyzer/shared'
+import { fillDailyGaps, type ReportDto, type ShareLinkDto, type ShareLinksResponse } from '@tg-analyzer/shared'
 import { ArrowLeft, ChevronRight, CircleHelp, Download, Link, Lock, Play, Share2 } from '../../lib/icons'
+import type { StorySlideModel } from './StorySlide.vue'
 
 /**
- * «Поделиться»: the recap («Итоги») with a preview of its first slide on the left and what you can
- * do with it on the right — watch it, save every slide as a 1080×1920 picture, or send them through
- * the phone's share sheet (only where the browser can share files). Under a line, «По ссылке»: the
+ * «Поделиться»: the recap («Итоги») with its cover — the real slide component, scaled down — and
+ * what you can do with it: watch it, save every slide as a 1080×1920 picture, or send them through
+ * the phone's share sheet (only where the browser can share files). Under them, «По ссылке»: the
  * report as a public page and the quiz for the other side; each opens a second step in the same
  * dialog. On phones it is the same content as a floating sheet (`UiModalDialog`).
  */
@@ -13,8 +14,9 @@ export type StoryIntent = 'view' | 'save' | 'share'
 
 const props = defineProps<{ open: boolean; data: ReportDto }>()
 const emit = defineEmits<{ close: []; story: [intent: StoryIntent] }>()
-const { t, tc, formatNumber, formatDate } = useI18n()
+const { t, tc, formatNumber, formatDate, formatPeriod } = useI18n()
 const image = useCardImage()
+const auth = useAuthStore()
 
 const canShare = ref(false)
 const step = ref<'main' | 'link' | 'quiz'>('main')
@@ -73,6 +75,39 @@ function updated(link: ShareLinkDto | null, kind: ShareLinkDto['kind']) {
   }
 }
 
+/** The cover of «Итоги» as it opens: who, the total and the pulse of the whole chat. */
+const isGroup = computed(() => props.data.summary.type === 'group')
+const cover = computed(() => {
+  const { report, summary } = props.data
+  const me = auth.user?.firstName?.trim() || auth.user?.username || t('story.you')
+  const { firstMessageAt, lastMessageAt } = report.period
+  const slide: StorySlideModel = {
+    key: 'cover',
+    theme: 1,
+    durationMs: 0,
+    kicker: t(isGroup.value ? 'story.volumeKickerGroup' : 'story.volumeKicker'),
+    title: formatNumber(report.totals.messages),
+    sub: tc('story.messagesWord', report.totals.messages),
+    blocks: [{ kind: 'pulse', label: t('story.pulseLabel'), days: fillDailyGaps(report.activity.daily) }],
+  }
+  return {
+    slide,
+    people: isGroup.value
+      ? [{ name: summary.title, avatar: null }]
+      : [
+          { name: me, avatar: null },
+          { name: summary.title, avatar: null },
+        ],
+    heading: isGroup.value ? summary.title : `${me} & ${summary.title}`,
+    headingSub:
+      isGroup.value && report.group
+        ? tc('story.members', report.group.participants.length)
+        : firstMessageAt && lastMessageAt
+          ? formatPeriod(firstMessageAt, lastMessageAt, true)
+          : null,
+  }
+})
+
 const title = computed(() =>
   step.value === 'link'
     ? t('share.link.title')
@@ -84,54 +119,95 @@ const title = computed(() =>
 
 <template>
   <UiModalDialog :open="open" size="md" :title="title" @close="emit('close')">
+    <template #header>
+      <div class="share-head">
+        <UiIconButton
+          v-if="step !== 'main'"
+          :icon="ArrowLeft"
+          :label="t('nav.back')"
+          variant="secondary"
+          size="sm"
+          @click="step = 'main'"
+        />
+        <h2 class="t-h2">{{ title }}</h2>
+      </div>
+    </template>
     <div v-if="step === 'main'" class="share">
       <div class="share__preview" aria-hidden="true">
-        <span class="share__bars"><i class="is-on" /><i /><i /><i /><i /><i /></span>
-        <span class="share__slide">
-          <small>{{ t('share.slideWith', { name: data.summary.title }) }}</small>
-          <b class="t-num">{{ formatNumber(data.report.totals.messages) }}</b>
-          <small>{{ tc('share.messages', data.report.totals.messages) }}</small>
-        </span>
+        <StorySlide
+          :slide="cover.slide"
+          :people="cover.people"
+          :heading="cover.heading"
+          :heading-sub="cover.headingSub"
+          still
+        />
       </div>
-      <div class="share__actions">
+      <div class="share__intro">
         <p class="share__lede">{{ t('share.lede') }}</p>
         <UiButton variant="primary" :icon="Play" block @click="pick('view')">{{ t('share.watch') }}</UiButton>
-        <button type="button" class="share__row" @click="pick('save')">
-          <span class="share__icon"><Download aria-hidden="true" /></span>
-          <span
-            >{{ t('share.save') }}<small>{{ t('share.saveNote') }}</small></span
+      </div>
+      <div class="share__main">
+        <div class="share__list">
+          <UiListRow
+            as="button"
+            size="md"
+            :title="t('share.save')"
+            :subtitle="t('share.saveNote')"
+            @click="pick('save')"
           >
-        </button>
-        <button v-if="canShare" type="button" class="share__row" @click="pick('share')">
-          <span class="share__icon"><Share2 aria-hidden="true" /></span>
-          <span
-            >{{ t('share.send') }}<small>{{ t('share.sendNote') }}</small></span
+            <template #leading>
+              <span class="share__icon"><Download aria-hidden="true" /></span>
+            </template>
+          </UiListRow>
+          <UiListRow
+            v-if="canShare"
+            as="button"
+            size="md"
+            divider
+            :title="t('share.send')"
+            :subtitle="t('share.sendNote')"
+            @click="pick('share')"
           >
-        </button>
+            <template #leading>
+              <span class="share__icon"><Share2 aria-hidden="true" /></span>
+            </template>
+          </UiListRow>
+        </div>
         <template v-if="linkable && links">
-          <p class="share__divider">{{ t('share.byLink') }}</p>
-          <button type="button" class="share__row" @click="step = 'link'">
-            <span class="share__icon"><Link aria-hidden="true" /></span>
-            <span class="share__copy"
-              >{{ t('share.link.title') }}<small>{{ reportStatus }}</small></span
+          <p class="share__caption">{{ t('share.byLink') }}</p>
+          <div class="share__list">
+            <UiListRow
+              as="button"
+              size="md"
+              :title="t('share.link.title')"
+              :subtitle="reportStatus"
+              @click="step = 'link'"
             >
-            <ChevronRight aria-hidden="true" class="share__chevron" />
-          </button>
-          <button type="button" class="share__row" :disabled="!quizOpen" @click="step = 'quiz'">
-            <span class="share__icon"><CircleHelp aria-hidden="true" /></span>
-            <span class="share__copy"
-              >{{ t('share.quiz.title', { name: data.summary.title }) }}<small>{{ quizStatus }}</small></span
+              <template #leading>
+                <span class="share__icon"><Link aria-hidden="true" /></span>
+              </template>
+              <template #trailing><ChevronRight aria-hidden="true" /></template>
+            </UiListRow>
+            <UiListRow
+              as="button"
+              size="md"
+              divider
+              :disabled="!quizOpen"
+              :title="t('share.quiz.title', { name: data.summary.title })"
+              :subtitle="quizStatus"
+              @click="step = 'quiz'"
             >
-            <ChevronRight v-if="quizOpen" aria-hidden="true" class="share__chevron" />
-          </button>
+              <template #leading>
+                <span class="share__icon"><CircleHelp aria-hidden="true" /></span>
+              </template>
+              <template v-if="quizOpen" #trailing><ChevronRight aria-hidden="true" /></template>
+            </UiListRow>
+          </div>
           <p class="share__secure"><Lock aria-hidden="true" />{{ t('share.secure') }}</p>
         </template>
       </div>
     </div>
     <div v-else class="share-step">
-      <button type="button" class="share-step__back" :aria-label="t('nav.back')" @click="step = 'main'">
-        <ArrowLeft aria-hidden="true" />
-      </button>
       <ShareLinkStep
         v-if="step === 'link'"
         :chat-id="data.summary.chatId"
@@ -152,131 +228,102 @@ const title = computed(() =>
 </template>
 
 <style scoped>
+/*
+ * The cover on the left, the actions on the right; on phones the cover sits beside the lede and
+ * «Смотреть итоги», and the lists take the full width under them.
+ */
 .share {
+  /* The cover is a 9:16 thumbnail: wide enough to read the total, small beside the actions. */
+  --share-preview: calc(var(--space-20) * 2);
+
   display: grid;
-  grid-template-columns: 160px minmax(0, 1fr);
-  gap: var(--space-5);
+  grid-template-columns: var(--share-preview) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'preview intro'
+    'preview main';
+  gap: var(--space-4) var(--space-6);
 }
 
-/* The first slide of «Итоги», in its own poster colours (the same in both themes). */
+/* The real first slide, in its own poster colours (the same in both themes). */
 .share__preview {
-  display: grid;
-  align-content: space-between;
+  grid-area: preview;
+  align-self: start;
   aspect-ratio: 9 / 16;
-  padding: var(--space-4);
+  overflow: hidden;
   border-radius: var(--radius-md);
-  background: var(--story-gradient-1);
-  color: var(--story-ink);
+  box-shadow: var(--ring-hairline);
 }
 
-.share__bars {
-  display: flex;
-  gap: 3px;
-}
-
-.share__bars i {
-  flex: 1;
-  height: 2px;
-  border-radius: var(--radius-full);
-  background: var(--story-track);
-}
-
-.share__bars .is-on {
-  background: var(--story-ink);
-}
-
-.share__slide {
+.share__intro {
   display: grid;
-  gap: var(--space-1);
-  font: var(--text-caption);
-}
-
-.share__slide small {
-  color: var(--story-ink-muted);
-  font: inherit;
-}
-
-.share__slide b {
-  font: var(--text-h1);
-  letter-spacing: var(--tracking-figure);
-}
-
-.share__actions {
-  display: grid;
-  align-content: start;
+  grid-area: intro;
   gap: var(--space-4);
 }
 
 .share__lede {
   color: var(--text-muted);
   font: var(--text-small);
+  text-wrap: pretty;
 }
 
-.share__row {
-  display: flex;
-  align-items: center;
+.share__main {
+  display: grid;
+  grid-area: main;
+  align-content: start;
   gap: var(--space-3);
-  min-height: var(--hit-min);
-  padding: var(--space-2) 0;
-  border: 0;
-  background: none;
-  color: var(--text);
-  font: var(--text-ui);
-  text-align: left;
-  cursor: pointer;
 }
 
-.share__row small {
-  display: block;
-  color: var(--text-muted);
-  font: var(--text-caption);
+/* Grouped rows in one well, split by hairlines. */
+.share__list {
+  --row-radius: 0;
+  --row-px: var(--space-4);
+
+  display: grid;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--fill-raised);
 }
 
-.share__row:disabled {
-  cursor: default;
-  opacity: 0.6;
+/* Statuses are sentences: they wrap instead of losing their end. */
+.share__list :deep(.list-row__subtitle) {
+  white-space: normal;
 }
 
 .share__icon {
   display: grid;
-  flex: none;
   place-items: center;
-  width: var(--control-sm);
-  height: var(--control-sm);
+  width: var(--control-xs);
+  height: var(--control-xs);
   border-radius: var(--radius-full);
-  background: var(--fill-raised);
+  background: var(--surface-raised);
+  color: var(--text);
+  --icon-size: var(--icon-sm);
 }
 
-.share__copy {
-  flex: 1;
-  min-width: 0;
-}
-
-.share__chevron {
-  color: var(--text-muted);
-}
-
-/* «По ссылке»: a caption on a hairline between the recap and the links. */
-.share__divider {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+/* «По ссылке»: the caption of the second group. */
+.share__caption {
+  margin-top: var(--space-2);
+  padding-inline: var(--space-1);
   color: var(--text-muted);
   font: var(--text-caption);
-}
-
-.share__divider::after {
-  flex: 1;
-  border-top: 1px solid var(--border);
-  content: '';
 }
 
 .share__secure {
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
+  padding-inline: var(--space-1);
   color: var(--text-muted);
   font: var(--text-caption);
+  --icon-size: var(--icon-sm);
+}
+
+/* A second step: «назад» beside its title. */
+.share-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .share-step {
@@ -284,32 +331,19 @@ const title = computed(() =>
   gap: var(--space-4);
 }
 
-.share-step__back {
-  display: grid;
-  place-items: center;
-  width: var(--control-sm);
-  height: var(--control-sm);
-  border: 0;
-  border-radius: var(--radius-full);
-  background: var(--fill-raised);
-  color: var(--text);
-  cursor: pointer;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .share__row:not(:disabled):hover .share__icon,
-  .share-step__back:hover {
-    background: var(--fill-hover);
-  }
-}
-
 @media (max-width: 640px) {
   .share {
-    grid-template-columns: minmax(0, 1fr);
+    --share-preview: calc(var(--space-16) + var(--space-10));
+
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      'preview intro'
+      'main main';
+    column-gap: var(--space-4);
   }
 
-  .share__preview {
-    width: 120px;
+  .share__intro {
+    align-self: end;
   }
 }
 </style>

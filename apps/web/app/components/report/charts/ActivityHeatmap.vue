@@ -108,7 +108,7 @@ function describe(cell: Cell) {
 .month__days {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 3px;
+  gap: var(--space-1);
 }
 
 .calendar__cell {
@@ -150,7 +150,7 @@ function describe(cell: Cell) {
 }
 
 .calendar__legend .calendar__cell {
-  width: 12px;
+  width: var(--space-3);
 }
 
 .calendar__legend span:first-child {

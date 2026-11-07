@@ -15,7 +15,8 @@
     "check": "corepack pnpm -r check",
     "test": "corepack pnpm --filter @tg-analyzer/shared test && corepack pnpm --filter @tg-analyzer/api test",
     "db:migrate": "corepack pnpm --filter @tg-analyzer/api db:migrate",
-    "lint": "eslint .",
+    "lint": "eslint . && stylelint \"apps/web/app/**/*.{vue,css}\"",
+    "lint:css": "stylelint \"apps/web/app/**/*.{vue,css}\"",
     "format:check": "prettier --check .",
     "start": "node scripts/service.mjs start",
     "start:api": "corepack pnpm --filter @tg-analyzer/api start",
@@ -32,7 +33,10 @@
     "eslint": "^10.12.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.11.1",
+    "postcss-html": "^2.0.0",
     "prettier": "^3.9.9",
+    "stylelint": "^17.16.0",
+    "stylelint-declaration-strict-value": "^1.12.1",
     "typescript-eslint": "^8.71.1"
   },
   "pnpm": {

@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
+import Badge from './Badge.vue'
+import ListRow from './ListRow.vue'
 
 defineOptions({ inheritAttrs: false })
 
 withDefaults(
   defineProps<{
     icon?: Component | null
-    /** Current value, shown muted on the right. */
+    /** Current value, shown as a badge on the right. */
     meta?: string | null
     /** Destructive item: last, after a divider; end the label with «…» if a confirmation follows. */
     danger?: boolean
@@ -22,89 +24,29 @@ withDefaults(
 </script>
 
 <template>
-  <button
+  <ListRow
     v-bind="$attrs"
-    type="button"
+    as="button"
+    size="sm"
     class="menu-item"
-    :class="{ 'menu-item--danger': danger }"
+    :class="{ 'menu-item--icon': icon }"
+    :danger="danger"
     :disabled="disabled"
     :aria-disabled="disabled || undefined"
   >
-    <component :is="icon" v-if="icon" class="menu-item__icon row-icon" aria-hidden="true" />
-    <span class="menu-item__label"><slot /></span>
-    <span v-if="meta" class="menu-item__meta">{{ meta }}</span>
-  </button>
+    <template v-if="icon" #leading>
+      <component :is="icon" class="menu-item__icon row-icon" aria-hidden="true" />
+    </template>
+    <slot />
+    <template v-if="meta" #trailing>
+      <Badge class="menu-item__meta">{{ meta }}</Badge>
+    </template>
+  </ListRow>
 </template>
 
 <style scoped>
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  width: 100%;
-  min-height: var(--control-md);
-  padding: 0 var(--space-2);
-  border: 0;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  font: var(--text-ui);
-  text-align: left;
-  transition: background-color var(--transition-fast);
-}
-
-.menu-item__label {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.menu-item__meta {
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-xs);
-  background: var(--fill-raised);
-  color: var(--text-muted);
-  font: var(--text-caption);
-  font-variant-numeric: tabular-nums;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .menu-item:hover {
-    background: var(--hover);
-  }
-}
-
-.menu-item:active {
-  background: var(--pressed);
-}
-
-.menu-item:focus-visible {
-  outline: none;
-  background: var(--hover);
-  box-shadow: inset 0 0 0 2px var(--accent);
-}
-
-.menu-item--danger,
-.menu-item--danger .menu-item__icon {
-  color: var(--danger);
-}
-
-.menu-item--danger .menu-item__icon {
-  background: var(--danger-subtle);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .menu-item--danger:hover {
-    background: var(--danger-subtle);
-  }
-}
-
-.menu-item:disabled {
-  background: transparent;
-  opacity: var(--opacity-disabled);
-  cursor: not-allowed;
+/* A row with an icon tile sits closer to the panel edge, so the tile and the text both line up. */
+.menu-item--icon {
+  --row-px: var(--space-2);
 }
 </style>

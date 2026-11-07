@@ -77,7 +77,7 @@ const report = computed<ReportDto | null>(() => {
 .public__gone {
   justify-items: start;
   width: 100%;
-  max-width: 440px;
+  max-width: var(--card-focus);
   margin: 0 auto;
 }
 

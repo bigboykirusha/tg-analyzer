@@ -36,6 +36,17 @@ const displayName = computed(() => auth.user?.firstName || auth.user?.username |
 const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : ''))
 const isDark = computed(() => resolved.value === 'dark')
 
+/** Clear over the page at the top; once the page scrolls under it, glass and a hairline. */
+const scrolled = ref(false)
+function onScroll() {
+  scrolled.value = window.scrollY > 4
+}
+onMounted(() => {
+  onScroll()
+  window.addEventListener('scroll', onScroll, { passive: true })
+})
+onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
+
 function openAccount() {
   accountOpen.value = false
   void navigateTo('/account')
@@ -48,7 +59,7 @@ function signOut() {
 </script>
 
 <template>
-  <header class="app-navigation">
+  <header class="app-navigation" :class="{ 'is-scrolled': scrolled }">
     <UiPageContainer class="topbar">
       <BrandLink to="/dashboard" class="topbar__brand" />
       <!-- Each screen puts its title and actions here (`UiPageBar`). -->
@@ -89,7 +100,7 @@ function signOut() {
           <template #trigger>
             <button
               type="button"
-              class="account-trigger"
+              class="account-trigger hit-area"
               aria-haspopup="menu"
               :aria-expanded="accountOpen"
               :aria-label="displayName"
@@ -136,8 +147,15 @@ function signOut() {
   top: 0;
   z-index: var(--z-header);
   padding-top: env(safe-area-inset-top, 0px);
-  /* The page scrolls under a translucent toolbar, as in Apple's apps; no hairline. */
+  background: transparent;
+  transition:
+    background-color var(--transition-normal),
+    box-shadow var(--transition-normal);
+}
+
+.app-navigation.is-scrolled {
   background: var(--toolbar-glass);
+  box-shadow: var(--divider-bottom);
   -webkit-backdrop-filter: var(--glass-filter);
   backdrop-filter: var(--glass-filter);
 }
@@ -170,8 +188,13 @@ function signOut() {
  * title on screen, so the logo stays. A report shows the chat's own avatar,
  * so the profile steps aside there.
  */
+@media (max-width: 900px) {
+  .topbar:has(.page-bar:not([data-untitled])) .topbar__brand {
+    display: none;
+  }
+}
+
 @media (max-width: 640px) {
-  .topbar:has(.page-bar:not([data-untitled])) .topbar__brand,
   .topbar:has(.page-bar[data-leading]) .topbar__account,
   .topbar:has(.page-bar[data-leading]) .topbar-actions:not(:has(.activity)) {
     display: none;
@@ -221,15 +244,16 @@ function signOut() {
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
-  max-width: 240px;
+  max-width: calc(var(--sidebar-width) - var(--space-4));
   min-height: var(--control-sm);
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   background: var(--accent-subtle);
-  color: var(--accent-ink);
+  color: var(--accent);
   font: var(--text-small);
   font-weight: 500;
   transition: background-color var(--transition-fast);
+  isolation: isolate;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -265,16 +289,6 @@ function signOut() {
   border-radius: var(--radius-full);
   background: none;
   cursor: pointer;
-}
-
-.account-trigger {
-  position: relative;
-}
-
-.account-trigger::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
 }
 
 .account-trigger:focus-visible,

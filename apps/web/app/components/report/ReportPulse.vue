@@ -115,13 +115,13 @@ const partner = computed(() => (props.data.report.group ? t('report.pulse.others
 .pulse__key::before {
   content: '';
   flex: none;
-  width: 8px;
-  height: 8px;
+  width: var(--space-2);
+  height: var(--space-2);
   border-radius: var(--radius-full);
 }
 
 .pulse__key--you {
-  color: var(--you-ink);
+  color: var(--you);
 }
 
 .pulse__key--you::before {

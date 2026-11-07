@@ -125,7 +125,7 @@ const days = computed(() => fillDailyGaps(data.value.report.activity.daily))
 }
 
 .mini__slash {
-  margin: 0 0.1em;
+  margin: 0 var(--space-0-5);
   color: var(--on-lime-muted);
 }
 
@@ -141,9 +141,9 @@ const days = computed(() => fillDailyGaps(data.value.report.activity.daily))
 
 .mini__tabs {
   display: flex;
-  gap: 2px;
+  gap: var(--space-0-5);
   margin-left: auto;
-  padding: 2px;
+  padding: var(--space-0-5);
   border-radius: var(--radius-full);
   background: var(--surface-2);
   font: var(--text-caption);

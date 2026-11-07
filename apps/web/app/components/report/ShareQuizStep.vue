@@ -155,19 +155,41 @@ async function remove() {
   letter-spacing: var(--tracking-figure);
 }
 
+/* The questions as one well of numbered rows, split by hairlines. */
 .quiz-step__list {
   display: grid;
-  gap: var(--space-2);
   margin: 0;
-  padding: 0;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--fill-raised);
   font: var(--text-small);
   list-style: none;
+  counter-reset: question;
 }
 
 .quiz-step__list li {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  min-height: var(--control-md);
+  padding-block: var(--space-2);
+  counter-increment: question;
+}
+
+.quiz-step__list li + li {
+  box-shadow: var(--divider-top);
+}
+
+.quiz-step__list li::before {
+  min-width: var(--space-4);
+  color: var(--text-muted);
+  font: var(--text-caption);
+  content: counter(question);
+}
+
+/* After the answer, the mark stands for the number. */
+.quiz-step__list li:has(.quiz-step__mark)::before {
+  content: none;
 }
 
 .quiz-step__mark {

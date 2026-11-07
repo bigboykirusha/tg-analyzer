@@ -1,244 +1,358 @@
 /*
- * Design tokens — «Чистый»: cool grey canvas, white cards, ink and lime.
- * You are ink, they are lime; actions are ink. White cards are the default; ink,
- * lime and grey tiles break up a page of them (see «Плитки» in CLAUDE.md).
- * Components use these names only: a new shade is a new token with a value
- * per theme, never color-mix() in a component.
+ * Design tokens — «Зеркало»: warm paper, white cards, an editorial serif for answers and figures.
+ *
+ * Three layers (docs/design-system.md §2):
+ *   1. Primitives  — --sand-*, --sand-a*, --lime-*, --red-*, --amber-*, --pastel-*. Values live here
+ *                    and nowhere else; components never read them.
+ *   2. Semantic    — --bg, --surface, --text, --you, --them, --tile-*… Each points at a primitive and
+ *                    is re-pointed once for the dark theme.
+ *   3. Component   — --sidebar-*, --story-*, --avatar-*… only where a component needs its own knob.
+ *
+ * You are ink, they are lime; actions are ink. A new shade is a new token with a value per theme,
+ * never color-mix() or a raw colour in a component (stylelint enforces it).
  */
+
+/* ─── 1. Primitives ─────────────────────────────────────────────────────── */
+
+:root {
+  /* Sand: a warm neutral ramp, paper to ink. */
+  --sand-0: #ffffff;
+  --sand-1: #fbfaf8;
+  --sand-2: #f4f3ef;
+  --sand-3: #ecebe6;
+  --sand-4: #e4e2dc;
+  --sand-5: #d6d4cd;
+  --sand-6: #c9c7bf;
+  --sand-8: #8d8a82;
+  --sand-9: #6d6b64;
+  --sand-11: #2d2c29;
+  --sand-12: #151513;
+  /* The same ink with alpha: overlays, hairlines on tiles, rings. */
+  --sand-a1: rgba(21, 21, 19, 0.04);
+  --sand-a2: rgba(21, 21, 19, 0.07);
+  --sand-a3: rgba(21, 21, 19, 0.1);
+  --sand-a4: rgba(21, 21, 19, 0.14);
+  --sand-a5: rgba(21, 21, 19, 0.2);
+  --sand-a8: rgba(21, 21, 19, 0.6);
+  --paper-a2: rgba(255, 255, 255, 0.08);
+  --paper-a3: rgba(255, 255, 255, 0.12);
+  --paper-a4: rgba(255, 255, 255, 0.18);
+  --paper-a5: rgba(255, 255, 255, 0.28);
+  --paper-a8: rgba(255, 255, 255, 0.6);
+  --paper-a9: rgba(255, 255, 255, 0.72);
+
+  /* Night sand: the dark ramp, warm charcoal to bone. */
+  --night-0: #0e0e0d;
+  --night-1: #171715;
+  --night-2: #1f1f1c;
+  --night-3: #262623;
+  --night-4: #2e2d29;
+  --night-5: #3a3934;
+  --night-8: #a6a399;
+  --night-9: #9c998f;
+  --night-12: #f2f1ec;
+  --night-a1: rgba(242, 241, 236, 0.05);
+  --night-a2: rgba(242, 241, 236, 0.08);
+  --night-a3: rgba(242, 241, 236, 0.1);
+  --night-a5: rgba(242, 241, 236, 0.24);
+  --night-a8: rgba(242, 241, 236, 0.62);
+
+  /* Lime: the other voice. */
+  --lime-1: #f1f9dc;
+  --lime-2: #dcf3a2;
+  --lime-3: #c6f06a;
+  --lime-4: #b2e34e;
+  --lime-6: #6f9e1f;
+  --lime-7: #4e7a0e;
+  --lime-d1: #222a15;
+  --lime-d2: #2b351c;
+  --lime-d3: #4a6320;
+  --lime-d4: #8cb045;
+  --lime-d5: #bde26a;
+
+  /* Signals. */
+  --red-1: #fbeeec;
+  --red-2: #f6dcd8;
+  --red-6: #c9372f;
+  --red-d1: #33171a;
+  --red-d2: #4a1c1e;
+  --red-d6: #ff6b62;
+  --amber-6: #d98200;
+  --amber-d6: #ffb224;
+
+  /* Pastels for avatars and story posters (light / dark pairs). */
+  --pastel-lavender: #ddd6ff;
+  --pastel-peach: #ffd9c7;
+  --pastel-honey: #ffe3a3;
+  --pastel-sky: #d5ecfa;
+  --pastel-lavender-d: #b9aeff;
+  --pastel-peach-d: #ffb89a;
+  --pastel-honey-d: #f5d27a;
+  --pastel-sky-d: #9fd3f5;
+}
+
+/* ─── 2. Semantic, light ────────────────────────────────────────────────── */
+
 :root {
   color-scheme: light;
-  --bg: #f2f3f5;
-  /* Floating bars: the page colour, translucent, over a blur. */
-  --surface: #ffffff;
-  --surface-2: #f2f3f5;
-  /* Loading placeholders: visible both on the page and inside a white tile. */
-  --skeleton: #e6e8eb;
-  --fill-hover: #e6e8eb;
-  --surface-raised: #ffffff;
-  /* Grey fill for rows and icon tiles inside overlays (one step up from --surface-raised). */
-  --fill-raised: #f2f3f5;
-  /* The sidebar is a heavier surface than the page; the selected row is a white plate on it. */
-  /* Apple-like chrome: a floating translucent sidebar and a toolbar the page scrolls under. */
-  --sidebar-glass: rgba(255, 255, 255, 0.62);
-  --sidebar-selection: rgba(14, 15, 17, 0.07);
-  --toolbar-glass: rgba(242, 243, 245, 0.78);
-  --glass-filter: saturate(180%) blur(20px);
-  --shadow-sidebar: 0 0 0 1px rgba(14, 15, 17, 0.06), 0 8px 24px rgba(14, 15, 17, 0.06);
-  --thumb: #ffffff;
-  --border: #e6e8eb;
-  --border-strong: #d6d8dc;
-  --hover: rgba(14, 15, 17, 0.04);
-  --pressed: rgba(14, 15, 17, 0.08);
-  --text: #0e0f11;
-  --text-muted: #63676e;
+  --bg: var(--sand-2);
+  --surface: var(--sand-0);
+  /* A fill inside a card: wells, fields, chips. */
+  --surface-2: var(--sand-2);
+  --skeleton: var(--sand-3);
+  --fill-hover: var(--sand-3);
+  /* Overlays (menus, dialogs, sheets) and the grey fill of rows inside them. */
+  --surface-raised: var(--sand-0);
+  --fill-raised: var(--sand-2);
+  /* The chrome: the sidebar sits on the page, its selected row is a soft well. */
+  --sidebar-glass: var(--sand-2);
+  --sidebar-selection: var(--sand-a2);
+  --toolbar-glass: rgba(244, 243, 239, 0.86);
+  --glass-filter: saturate(160%) blur(16px);
+  --thumb: var(--sand-0);
+  --border: var(--sand-4);
+  --border-strong: var(--sand-5);
+  --hover: var(--sand-a1);
+  --pressed: var(--sand-a2);
+  --text: var(--sand-12);
+  --text-muted: var(--sand-9);
   /* Actions are ink; lime marks data, never a button. */
-  --accent: #0e0f11;
-  --accent-hover: #2b2d31;
-  --accent-ink: #0e0f11;
-  --accent-subtle: rgba(14, 15, 17, 0.05);
-  --accent-border: rgba(14, 15, 17, 0.2);
-  --on-accent: #ffffff;
+  --accent: var(--sand-12);
+  --accent-hover: var(--sand-11);
+  --accent-subtle: var(--sand-a1);
+  --accent-border: var(--sand-a5);
+  --on-accent: var(--sand-0);
   /* The two voices of a conversation: you are ink, they are lime. */
-  --you: #0e0f11;
-  --you-ink: #0e0f11;
-  --you-subtle: rgba(14, 15, 17, 0.08);
-  --them: #b2e34e;
-  --them-ink: #4e7a0e;
-  /* Tile fills: one ink tile and one lime tile per screen, pastels for avatars. */
-  --tile-ink: #0e0f11;
-  /* A quiet grey tile: one step darker than the page, for cards that should not shout. */
-  --tile-grey: #e6e8eb;
-  --on-tile-ink: #ffffff;
-  --on-tile-ink-muted: rgba(255, 255, 255, 0.55);
-  --lime: #c6f06a;
-  --them-on-ink: #c6f06a;
-  --on-lime: #0e0f11;
-  --on-lime-muted: rgba(14, 15, 17, 0.6);
-  /* Hairlines inside a lime tile. */
-  --on-lime-line: rgba(14, 15, 17, 0.14);
-  --on-lime-well: rgba(14, 15, 17, 0.08);
-  --on-tile-ink-well: rgba(255, 255, 255, 0.12);
-  --on-tile-ink-line: rgba(255, 255, 255, 0.18);
-  --warning: #e08a00;
-  --danger: #d23b40;
-  --danger-subtle: #fdeeee;
-  --danger-subtle-hover: #fbdcdc;
-  --inverse-surface: #0e0f11;
-  --on-inverse: #ffffff;
-  --on-inverse-line: rgba(255, 255, 255, 0.28);
-  /* The pill track: visible on the page and on a white card alike. */
-  --segment-track: #e6e8eb;
-  --scrim: rgba(10, 10, 12, 0.36);
-  --heat-1: #eef8d6;
-  --heat-2: #d9f29c;
-  --heat-3: #b2e34e;
-  /* The busiest cells: a deeper lime, not ink — ink means «you» in every chart. */
-  --heat-4: #6f9e1f;
-  /* Charts of the whole chat (both sides together): grey, with the strong step for the peak. */
-  --chart-neutral: #c9ccd1;
-  --chart-neutral-strong: #63676e;
-  /* The peak window behind the hourly bars in «Ваше время». */
-  --chart-peak: var(--heat-1);
-  --avatar-1-bg: #c6f06a;
-  --avatar-1-ink: #0e0f11;
-  --avatar-2-bg: #dcd6ff;
-  --avatar-2-ink: #0e0f11;
-  --avatar-3-bg: #ffd9c7;
-  --avatar-3-ink: #0e0f11;
-  --avatar-4-bg: #ffe3a3;
-  --avatar-4-ink: #0e0f11;
-  --avatar-5-bg: #d7eefc;
-  --avatar-5-ink: #0e0f11;
-  --avatar-6-bg: #e3e5e9;
-  --avatar-6-ink: #0e0f11;
-  --shadow-sm: 0 1px 2px rgba(14, 15, 17, 0.06), 0 1px 1px rgba(14, 15, 17, 0.03);
-  --shadow-segment: 0 1px 3px rgba(10, 20, 40, 0.1);
-  --shadow-overlay:
-    0 12px 32px rgba(14, 15, 17, 0.12), 0 2px 6px rgba(14, 15, 17, 0.06), 0 0 0 1px rgba(14, 15, 17, 0.05);
-  --shadow-window: 0 0 0 1px #e6e8eb, 0 30px 80px rgba(10, 20, 40, 0.14), 0 8px 24px rgba(10, 20, 40, 0.06);
-  --device-frame: linear-gradient(140deg, #e4e2de 0%, #b9b6b0 22%, #f1efeb 48%, #a9a6a0 76%, #d9d6d1 100%);
-  --device-button: #a9a6a0;
+  --you: var(--sand-12);
+  --you-subtle: var(--sand-a2);
+  --them: var(--lime-4);
+  /* Lime as text on a light surface (it is too pale as a glyph). */
+  --them-ink: var(--lime-7);
+  /* Tiles: ink — the headline of a screen; lime — the answer; grey — quiet reference. */
+  --tile-ink: var(--sand-12);
+  --tile-grey: var(--sand-3);
+  --on-tile-ink: var(--sand-0);
+  --on-tile-ink-muted: var(--paper-a8);
+  --on-tile-ink-well: var(--paper-a3);
+  --on-tile-ink-line: var(--paper-a4);
+  --lime: var(--lime-3);
+  --them-on-ink: var(--lime-3);
+  --on-lime: var(--sand-12);
+  --on-lime-muted: var(--sand-a8);
+  --on-lime-line: var(--sand-a4);
+  --on-lime-well: var(--sand-a2);
+  --warning: var(--amber-6);
+  --danger: var(--red-6);
+  --danger-subtle: var(--red-1);
+  --danger-subtle-hover: var(--red-2);
+  --inverse-surface: var(--sand-12);
+  --on-inverse: var(--sand-0);
+  --on-inverse-line: var(--paper-a5);
+  --segment-track: var(--sand-3);
+  --scrim: rgba(21, 21, 19, 0.4);
+  /* Intensity: four lime steps; the busiest cells are deep lime, never ink (ink means «you»). */
+  --heat-1: var(--lime-1);
+  --heat-2: var(--lime-2);
+  --heat-3: var(--lime-4);
+  --heat-4: var(--lime-6);
+  /* The whole chat (both sides together): sand, with a strong step for the peak. */
+  --chart-neutral: var(--sand-6);
+  --chart-neutral-strong: var(--sand-9);
+  --chart-peak: var(--lime-1);
+  --avatar-1-bg: var(--lime-3);
+  --avatar-1-ink: var(--sand-12);
+  --avatar-2-bg: var(--pastel-lavender);
+  --avatar-2-ink: var(--sand-12);
+  --avatar-3-bg: var(--pastel-peach);
+  --avatar-3-ink: var(--sand-12);
+  --avatar-4-bg: var(--pastel-honey);
+  --avatar-4-ink: var(--sand-12);
+  --avatar-5-bg: var(--pastel-sky);
+  --avatar-5-ink: var(--sand-12);
+  --avatar-6-bg: var(--sand-4);
+  --avatar-6-ink: var(--sand-12);
+
+  /* Elevation: flat cards; overlays lift; the segmented thumb barely does. */
+  --shadow-segment: 0 1px 2px rgba(21, 21, 19, 0.08), 0 0 0 0.5px rgba(21, 21, 19, 0.06);
+  --shadow-overlay: 0 16px 40px rgba(21, 21, 19, 0.12), 0 2px 8px rgba(21, 21, 19, 0.06), 0 0 0 1px var(--sand-a1);
+  --shadow-sidebar: none;
+  --shadow-window: 0 0 0 1px var(--sand-4), 0 32px 80px rgba(40, 30, 10, 0.14), 0 8px 24px rgba(40, 30, 10, 0.06);
+  /* Rings: a hairline outline, a selected option, focus. */
+  --ring-hairline: 0 0 0 1px var(--border);
+  --ring-selected: inset 0 0 0 2px var(--accent);
+  --divider-top: inset 0 1px 0 var(--border);
+  --divider-bottom: inset 0 -1px 0 var(--border);
+  /* A card under the pointer; a chat being read (the other side's colour). */
+  --ring-strong: inset 0 0 0 1px var(--border-strong);
+  --ring-them: inset 0 0 0 2px var(--them);
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  --focus-halo: 0 0 0 4px var(--sand-a3);
+  --focus-halo-danger: 0 0 0 4px rgba(201, 55, 47, 0.14);
+  --focus-ring-field: inset 0 0 0 1.5px var(--text), var(--focus-halo);
+  --focus-ring-field-danger: inset 0 0 0 1.5px var(--danger), var(--focus-halo-danger);
+
+  /* Landing illustrations only (§9). */
+  --device-frame: linear-gradient(140deg, #e6e2da 0%, #bcb7ad 22%, #f3f0ea 48%, #aca79d 76%, #dbd7cf 100%);
+  --device-button: #aca79d;
   --device-black: #000000;
   --device-status-font: 600 14px/1 -apple-system, BlinkMacSystemFont, var(--font-sans);
   --shadow-device:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.6), inset 0 0 0 2.5px rgba(0, 0, 0, 0.12), 0 40px 80px rgba(10, 20, 40, 0.22),
-    0 10px 24px rgba(10, 20, 40, 0.1);
-  --focus-ring: 0 0 0 2px #f2f3f5, 0 0 0 4px #0e0f11;
-  --focus-halo: 0 0 0 4px rgba(14, 15, 17, 0.1);
-  --focus-halo-danger: 0 0 0 4px rgba(210, 59, 64, 0.14);
-  --focus-ring-field: inset 0 0 0 1.5px var(--text), var(--focus-halo);
-  --focus-ring-field-danger: inset 0 0 0 1.5px var(--danger), var(--focus-halo-danger);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6), inset 0 0 0 2.5px rgba(0, 0, 0, 0.12), 0 40px 80px rgba(40, 30, 10, 0.2),
+    0 10px 24px rgba(40, 30, 10, 0.08);
 }
+
+/* ─── 2. Semantic, dark (the only dark block; the head script sets the theme before paint) ─ */
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0a0a0b;
-  --surface: #141416;
-  --surface-2: #1c1c1f;
-  --skeleton: #26262a;
-  --fill-hover: #26262a;
-  --surface-raised: #1c1c1f;
-  --fill-raised: #26262a;
-  --sidebar-glass: rgba(28, 28, 31, 0.66);
-  --sidebar-selection: rgba(242, 242, 243, 0.08);
-  --toolbar-glass: rgba(10, 10, 11, 0.76);
-  --shadow-sidebar: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.4);
-  --thumb: #2a2a2e;
-  --border: #232326;
-  --border-strong: #34343a;
-  --hover: rgba(242, 242, 243, 0.05);
-  --pressed: rgba(242, 242, 243, 0.09);
-  --text: #f2f2f3;
-  --text-muted: #8b8b91;
-  --accent: #f2f2f3;
-  --accent-hover: #ffffff;
-  --accent-ink: #f2f2f3;
-  --accent-subtle: rgba(242, 242, 243, 0.06);
-  --accent-border: rgba(242, 242, 243, 0.24);
-  --on-accent: #0a0a0b;
-  --you: #f2f2f3;
-  --you-ink: #f2f2f3;
-  --you-subtle: rgba(242, 242, 243, 0.1);
-  --them: #bde26a;
-  --them-ink: #bde26a;
-  /* Dark: ink is a raised surface, not a white slab; lime stays the one bright tile. */
-  --tile-ink: #2a2a2f;
-  --tile-grey: #202024;
-  --on-tile-ink: #f2f2f3;
-  --on-tile-ink-muted: rgba(242, 242, 243, 0.6);
-  --lime: #bde26a;
-  --them-on-ink: #bde26a;
-  --on-lime: #0a0a0b;
-  --on-lime-muted: rgba(10, 10, 11, 0.6);
-  --on-lime-line: rgba(10, 10, 11, 0.14);
-  --on-lime-well: rgba(10, 10, 11, 0.08);
-  --on-tile-ink-well: rgba(255, 255, 255, 0.08);
-  --on-tile-ink-line: rgba(255, 255, 255, 0.12);
-  --warning: #ffb224;
-  --danger: #ff6369;
-  --danger-subtle: #33161a;
-  --danger-subtle-hover: #4a1a1d;
-  --inverse-surface: #f2f2f3;
-  --on-inverse: #0a0a0b;
-  --on-inverse-line: rgba(10, 10, 11, 0.24);
-  --segment-track: #1c1c1f;
+  --bg: var(--night-0);
+  --surface: var(--night-1);
+  --surface-2: var(--night-2);
+  --skeleton: var(--night-3);
+  --fill-hover: var(--night-3);
+  --surface-raised: var(--night-2);
+  --fill-raised: var(--night-3);
+  --sidebar-glass: var(--night-0);
+  --sidebar-selection: var(--night-a2);
+  --toolbar-glass: rgba(14, 14, 13, 0.82);
+  --thumb: var(--night-4);
+  --border: var(--night-3);
+  --border-strong: var(--night-5);
+  --hover: var(--night-a1);
+  --pressed: var(--night-a2);
+  --text: var(--night-12);
+  --text-muted: var(--night-9);
+  --accent: var(--night-12);
+  --accent-hover: var(--sand-0);
+  --accent-subtle: var(--night-a1);
+  --accent-border: var(--night-a5);
+  --on-accent: var(--night-0);
+  --you: var(--night-12);
+  --you-subtle: var(--night-a3);
+  --them: var(--lime-d5);
+  --them-ink: var(--lime-d5);
+  /* Dark: ink is a raised warm surface, not a white slab; lime stays the one bright tile. */
+  --tile-ink: var(--night-4);
+  --tile-grey: var(--night-2);
+  --on-tile-ink: var(--night-12);
+  --on-tile-ink-muted: var(--night-a8);
+  --on-tile-ink-well: var(--paper-a2);
+  --on-tile-ink-line: var(--paper-a3);
+  --lime: var(--lime-d5);
+  --them-on-ink: var(--lime-d5);
+  --on-lime: var(--night-0);
+  --on-lime-muted: rgba(14, 14, 13, 0.62);
+  --on-lime-line: rgba(14, 14, 13, 0.14);
+  --on-lime-well: rgba(14, 14, 13, 0.08);
+  --warning: var(--amber-d6);
+  --danger: var(--red-d6);
+  --danger-subtle: var(--red-d1);
+  --danger-subtle-hover: var(--red-d2);
+  --inverse-surface: var(--night-12);
+  --on-inverse: var(--night-0);
+  --on-inverse-line: rgba(14, 14, 13, 0.24);
+  --segment-track: var(--night-2);
   --scrim: rgba(0, 0, 0, 0.6);
-  --heat-1: #232a17;
-  --heat-2: #4b6420;
-  --heat-3: #8cb045;
-  --heat-4: #bde26a;
-  --chart-neutral: #3a3a40;
-  --chart-neutral-strong: #a1a1a8;
-  --chart-peak: #2b3420;
-  --avatar-1-bg: #bde26a;
-  --avatar-1-ink: #0a0a0b;
-  --avatar-2-bg: #b9aeff;
-  --avatar-2-ink: #0a0a0b;
-  --avatar-3-bg: #ffb89a;
-  --avatar-3-ink: #0a0a0b;
-  --avatar-4-bg: #f5d27a;
-  --avatar-4-ink: #0a0a0b;
-  --avatar-5-bg: #9fd3f5;
-  --avatar-5-ink: #0a0a0b;
-  --avatar-6-bg: #4a4a50;
-  --avatar-6-ink: #f2f2f3;
-  --shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --heat-1: var(--lime-d1);
+  --heat-2: var(--lime-d3);
+  --heat-3: var(--lime-d4);
+  --heat-4: var(--lime-d5);
+  --chart-neutral: var(--night-5);
+  --chart-neutral-strong: var(--night-8);
+  --chart-peak: var(--lime-d2);
+  --avatar-1-bg: var(--lime-d5);
+  --avatar-1-ink: var(--night-0);
+  --avatar-2-bg: var(--pastel-lavender-d);
+  --avatar-2-ink: var(--night-0);
+  --avatar-3-bg: var(--pastel-peach-d);
+  --avatar-3-ink: var(--night-0);
+  --avatar-4-bg: var(--pastel-honey-d);
+  --avatar-4-ink: var(--night-0);
+  --avatar-5-bg: var(--pastel-sky-d);
+  --avatar-5-ink: var(--night-0);
+  --avatar-6-bg: var(--night-5);
+  --avatar-6-ink: var(--night-12);
   --shadow-segment: 0 1px 3px rgba(0, 0, 0, 0.5);
-  --shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
-  --shadow-window: 0 0 0 1px #232326, 0 30px 100px rgba(0, 0, 0, 0.7);
-  --device-frame: linear-gradient(140deg, #3c4a63 0%, #1e2738 26%, #4a5a78 50%, #1a2231 78%, #33405a 100%);
-  --device-button: #2a3447;
-  --device-black: #000000;
-  --device-status-font: 600 14px/1 -apple-system, BlinkMacSystemFont, var(--font-sans);
+  --shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--night-a2);
+  --shadow-window: 0 0 0 1px var(--night-3), 0 30px 100px rgba(0, 0, 0, 0.7);
+  --device-frame: linear-gradient(140deg, #4a4538 0%, #24221d 26%, #5a5444 50%, #1e1c18 78%, #3e392e 100%);
+  --device-button: #2e2b24;
   --shadow-device: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 40px 100px rgba(0, 0, 0, 0.7);
-  --focus-ring: 0 0 0 2px #0a0a0b, 0 0 0 4px #f2f2f3;
-  --focus-halo: 0 0 0 4px rgba(255, 255, 255, 0.14);
-  --focus-halo-danger: 0 0 0 4px rgba(255, 99, 105, 0.2);
+  --focus-halo: 0 0 0 4px var(--night-a3);
+  --focus-halo-danger: 0 0 0 4px rgba(255, 107, 98, 0.2);
 }
 
-/* Theme-independent scales. */
+/* ─── Theme-independent scales ──────────────────────────────────────────── */
+
 :root {
+  /*
+   * Space: an 8 px grid. Layout tokens (page, card, section) are multiples of 8; inside a control or
+   * a row the half steps 4 and 12 are allowed, and 2 is the hairline gap between a title and its
+   * subtitle or between list rows.
+   */
+  --space-0-5: 2px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
-  --space-5: 20px;
   --space-6: 24px;
   --space-8: 32px;
   --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
-  /* Corners: mark 3 chart bars and cells, xs 6 badges and flags, sm 10 small tiles and tooltips,
-   * md 14 fields, options, wells inside cards and toasts, lg 22 cards and menus, xl 28 dialogs and
-   * sheets, full for pills (buttons, chips, tabs, avatars). */
-  --radius-mark: 3px;
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 22px;
-  --radius-xl: 28px;
+  --space-20: 80px;
+  /*
+   * Corners on the 4 grid: mark 4 chart bars and cells · xs 8 badges, flags, small wells · sm 12 small
+   * tiles, tooltips, icon tiles · md 16 fields, options, wells inside cards, toasts · lg 24 cards and
+   * menus · xl 32 dialogs and sheets · full pills (buttons, chips, tabs, avatars, bars).
+   * Nested corners are concentric: inner = outer − padding (see --radius-inner).
+   */
+  --radius-mark: 4px;
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
   --radius-full: 999px;
+  /* A well inside a card follows the card's corner. */
+  --radius-inner: max(var(--radius-sm), calc(var(--radius-lg) - var(--card-padding)));
   /* Every proportion bar (compare, meters, day parts, progress) is this thick. */
-  --bar-height: 6px;
+  --bar-height: 8px;
   --control-xs: 32px;
   --control-sm: 36px;
   --control-md: 44px;
   --control-lg: 48px;
-  /* The smallest touch target: a 36px control on a phone still answers a 44px tap (see .btn::after). */
+  /* The smallest touch target: a 36px control on a phone still answers a 44px tap (.hit-area). */
   --hit-min: 44px;
   --icon-sm: 16px;
   --icon-md: 20px;
   --icon-lg: 24px;
+  /* Avatars by role, not by control size. */
+  --avatar-xs: 24px;
+  --avatar-sm: 32px;
+  --avatar-md: 40px;
+  --avatar-lg: 64px;
+  --avatar-xl: 72px;
   --topbar-height: 64px;
-  /* The chat list on wide screens; the header's logo cell has the same width. */
-  --sidebar-width: 248px;
-  --report-nav-width: 420px;
-  /* One content column for the header and every page; the gutter follows the screen. */
+  --sidebar-width: 256px;
+  --report-nav-width: 400px;
+  /* One content column for every page; the gutter follows the screen. */
   --page-max: 1200px;
   --page-max-narrow: 720px;
-  /* The signed-in screens on their panel: wide monitors fill up, ultra-wide ones keep a column. */
-  --page-max-wide: 1440px;
-  --page-gutter: var(--space-8);
+  --page-max-wide: 1280px;
+  --page-gutter: var(--space-10);
+  /* Widths of focused things. */
+  --dialog-sm: 420px;
+  --dialog-md: 520px;
+  --dialog-lg: 680px;
+  --card-focus: 440px;
+  --measure: 60ch;
+  --menu-min: 240px;
+  --menu-max-height: 360px;
+  --tooltip-max: 260px;
+  --chart-h-sm: 220px;
+  --chart-h-md: 300px;
+  --chart-h-lg: 340px;
   /* Shared geometry for cards, including the measured report columns. */
   --card-padding: var(--space-6);
   --card-gap: var(--space-4);
@@ -252,85 +366,96 @@
   --duration-slow: 300ms;
   --duration-sheet: 400ms;
   --duration-chart: 800ms;
-  /* One turn of a spinner. */
+  --duration-intro: 900ms;
   --duration-spin: 800ms;
-  /* Geist for everything; self-hosted, with Cyrillic. One face, no mono. */
+  /* Endless loops: an indeterminate bar and the skeleton shimmer. */
+  --duration-loop: 1400ms;
+  --duration-shimmer: 1600ms;
+
+  /* Two faces: an editorial serif for what the product says, Geist for the interface. No mono. */
   --font-sans: 'Geist Variable', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
+  --font-display: 'Source Serif 4 Variable', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
   /*
-   * One type scale, ten roles, two weights (400 reading, 500 everything else). Phones shrink the
-   * big roles below. See docs/design-system.md, «Типографика».
-   *   display — the landing headline only
-   *   figure  — the one big number of a screen or card («5 078», «52 / 48», the word of the chat)
-   *   h1      — the page title, one per page (UiPageBar / UiPageHeader)
-   *   h2      — the title of a dialog, status or focused card; the answer of a report card
-   *   h3      — a section of a page (UiPageSection)
+   * One type scale, ten roles, two weights (400 reading, 500 everything else). Line heights sit on
+   * the 4 grid. Phones shrink the big roles below. See docs/design-system.md, «Типографика».
+   *   display — the landing headline only                                     (serif)
+   *   figure  — the one big number of a screen or card                         (serif)
+   *   h1      — the page title, one per page (UiPageBar / UiPageHeader)        (serif)
+   *   h2      — a dialog or status title; the answer of a report card          (serif)
+   *   h3      — a section of a page (UiPageSection)                            (serif)
    *   title   — a card question, a tile or a row
    *   body    — reading text and ledes
    *   ui      — buttons, fields, chips, tabs, menu rows
    *   small   — descriptions, hints, values at the ends of a bar
    *   caption — axes, legends, badges, meta
+   * Use the classes (.t-figure, .t-h1 … .t-caption): they carry the tracking too.
    */
-  --text-display: 500 clamp(44px, 5.8vw, 80px) / 0.98 var(--font-sans);
-  --text-figure: 500 72px/68px var(--font-sans);
-  --text-h1: 500 40px/44px var(--font-sans);
-  --text-h2: 500 24px/30px var(--font-sans);
-  --text-h3: 500 20px/26px var(--font-sans);
-  --text-title: 500 16px/22px var(--font-sans);
+  --text-display: 400 clamp(48px, 6.2vw, 96px) / 1 var(--font-display);
+  /* The landing headline when the page must fit one screen: it also follows the height. */
+  --display-fit-size: clamp(48px, min(6.2vw, 10vh), 96px);
+  --text-figure: 400 80px/80px var(--font-display);
+  --text-h1: 400 44px/48px var(--font-display);
+  --text-h2: 400 28px/32px var(--font-display);
+  --text-h3: 400 24px/28px var(--font-display);
+  --text-title: 500 16px/24px var(--font-sans);
   --text-body: 400 16px/24px var(--font-sans);
   --text-ui: 500 14px/20px var(--font-sans);
-  --text-small: 400 13px/18px var(--font-sans);
+  --text-small: 400 13px/20px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
   /* One size for every emoji in the report (reactions, stickers, emoji rows). */
   --emoji-size: 28px;
   /* Tracking follows the size: the bigger the type, the tighter. 16 px and below keep their own. */
-  --tracking-display: -0.05em;
-  --tracking-figure: -0.04em;
-  --tracking-h2: -0.03em;
-  --tracking-h3: -0.02em;
+  --tracking-display: -0.03em;
+  --tracking-figure: -0.03em;
+  --tracking-h1: -0.02em;
+  --tracking-h2: -0.012em;
+  --tracking-h3: -0.008em;
   /* The page frame: space under the header, between sections, and at the bottom. */
   --page-top: var(--space-8);
-  --page-gap: var(--space-10);
-  --page-bottom: var(--space-16);
+  --page-gap: var(--space-12);
+  --page-bottom: var(--space-20);
 
   /* Strong ease-out for everything the user triggers; nothing linear, nothing bouncy. */
   --ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
-  --press-scale: 0.97;
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Endless loops breathe in and out. */
+  --ease-loop: cubic-bezier(0.45, 0, 0.55, 1);
+  --press-scale: 0.97;
   --transition-fast: var(--duration-fast) var(--ease-standard);
   --transition-normal: var(--duration-normal) var(--ease-standard);
   --transition-slow: var(--duration-slow) var(--ease-standard);
 
-  /* «Итоги» story slides: the same in both themes, like exported images. */
-  --story-ink: #ffffff;
-  --story-ink-muted: rgba(255, 255, 255, 0.72);
-  --story-track: rgba(255, 255, 255, 0.28);
+  /*
+   * «Итоги» posters: the same in both themes, like exported images. A slide has a field (ink, lime or
+   * paper) and every field has the same roles: ink, ink-muted, track, chip, card.
+   */
+  --story-backdrop: #050505;
+  --story-gradient-1: var(--sand-12);
+  --story-gradient-2: var(--lime-3);
+  --story-gradient-3: var(--pastel-lavender);
+  --story-gradient-4: var(--sand-2);
+  --story-gradient-5: var(--pastel-peach);
+  --story-gradient-6: var(--pastel-sky);
+  /* On the ink field. */
+  --story-ink: var(--sand-0);
+  --story-ink-muted: var(--paper-a9);
+  --story-track: var(--paper-a5);
   --story-chip: rgba(255, 255, 255, 0.16);
-  --story-backdrop: #050507;
-  /* Poster fields from the app palette: ink, lime, lavender, paper, peach; the same in both themes. */
-  --story-gradient-1: #0e0f11;
-  --story-gradient-2: #c6f06a;
-  --story-gradient-3: #dcd6ff;
-  --story-gradient-4: #f2f3f5;
-  --story-gradient-5: #ffd9c7;
-  --story-gradient-6: #d7eefc;
-  /* Ink on the light fields; lime is the accent on the ink field. */
-  --story-paper-ink: #0e0f11;
-  --story-paper-ink-muted: rgba(14, 15, 17, 0.62);
-  --story-paper-track: rgba(14, 15, 17, 0.14);
-  --story-paper-chip: rgba(14, 15, 17, 0.07);
-  --story-accent: #c6f06a;
-  /* Tiles on the slides: dark on the ink field, white on the paper fields. */
-  --story-card: #1b1c1f;
-  --story-paper-card: #ffffff;
-  --story-accent-ink: #0e0f11;
-  --story-accent-ink-muted: rgba(14, 15, 17, 0.62);
-  --story-accent-track: rgba(14, 15, 17, 0.16);
-  --story-dark-ink-muted: rgba(255, 255, 255, 0.6);
-  --story-dark-track: rgba(255, 255, 255, 0.2);
-  --story-dark-ink: #ffffff;
+  --story-card: #1d1d1b;
+  --story-accent: var(--lime-3);
+  /* On the paper fields. */
+  --story-paper-ink: var(--sand-12);
+  --story-paper-ink-muted: rgba(21, 21, 19, 0.62);
+  --story-paper-track: var(--sand-a4);
+  --story-paper-chip: var(--sand-a2);
+  --story-paper-card: var(--sand-0);
+  /* On the lime field. */
+  --story-accent-ink: var(--sand-12);
+  --story-accent-ink-muted: rgba(21, 21, 19, 0.62);
+  --story-accent-track: rgba(21, 21, 19, 0.16);
 }
 
-/* After the scales above, so the narrower gutters win. */
+/* Narrower screens: tighter gutters; phones also shrink the header, the cards and the big type. */
 @media (max-width: 1024px) {
   :root {
     --page-gutter: var(--space-6);
@@ -340,19 +465,14 @@
 @media (max-width: 640px) {
   :root {
     --page-gutter: var(--space-4);
-  }
-}
-
-/* Phones: a lower header leaves more of the screen to the report. */
-@media (max-width: 640px) {
-  :root {
     --topbar-height: 56px;
-    --page-top: var(--space-5);
+    --page-top: var(--space-6);
     --page-gap: var(--space-8);
-    --card-padding: var(--space-5);
-    --card-gap: var(--space-3);
-    --text-h1: 500 30px/34px var(--font-sans);
-    --text-h2: 500 22px/28px var(--font-sans);
-    --text-figure: 500 56px/56px var(--font-sans);
+    --page-bottom: var(--space-16);
+    --card-padding: var(--space-4);
+    --text-figure: 400 64px/64px var(--font-display);
+    --text-h1: 400 34px/40px var(--font-display);
+    --text-h2: 400 24px/28px var(--font-display);
+    --text-h3: 400 22px/28px var(--font-display);
   }
 }

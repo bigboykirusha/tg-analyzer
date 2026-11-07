@@ -33,18 +33,22 @@ function updating(report: ReportSummaryDto) {
 <template>
   <aside class="sidebar" :aria-label="t('sidebar.label')">
     <div class="sidebar__brand"><BrandLink to="/dashboard" /></div>
+    <!-- The one thing to do next: start a new analysis. -->
+    <UiButton
+      to="/new"
+      variant="primary"
+      size="sm"
+      block
+      class="sidebar__new"
+      :icon="Plus"
+      :aria-current="route.path === '/new' ? 'page' : undefined"
+    >
+      {{ t('sidebar.newAnalysis') }}
+    </UiButton>
     <nav class="sidebar__list" :aria-label="t('sidebar.reports')">
       <NuxtLink to="/dashboard" class="sidebar__item" :aria-current="route.path === '/dashboard' ? 'page' : undefined">
-        <span class="sidebar__icon sidebar__icon--plain"><LayoutGrid aria-hidden="true" /></span>
+        <span class="sidebar__icon"><LayoutGrid aria-hidden="true" /></span>
         <span class="sidebar__name">{{ t('nav.home') }}</span>
-      </NuxtLink>
-      <NuxtLink
-        to="/new"
-        class="sidebar__item sidebar__item--action"
-        :aria-current="route.path === '/new' ? 'page' : undefined"
-      >
-        <span class="sidebar__icon"><Plus aria-hidden="true" /></span>
-        <span class="sidebar__name">{{ t('sidebar.newAnalysis') }}</span>
       </NuxtLink>
 
       <template v-for="section in sections" :key="section.key">
@@ -73,7 +77,7 @@ function updating(report: ReportSummaryDto) {
       >
         <div class="sidebar__heading"><UiSkeleton width="64px" height="10px" /></div>
         <div v-for="row in 4" :key="row" class="sidebar__item">
-          <UiSkeleton width="24px" height="24px" radius="50%" />
+          <UiSkeleton width="var(--avatar-xs)" height="var(--avatar-xs)" radius="50%" />
           <UiSkeleton :width="`${80 - row * 9}%`" />
         </div>
       </div>
@@ -85,20 +89,17 @@ function updating(report: ReportSummaryDto) {
 </template>
 
 <style scoped>
+/* A quiet column on the page colour: the logo, the one primary action, then every report. */
 .sidebar {
   --skeleton: var(--border-strong);
   position: sticky;
-  top: var(--space-2);
+  top: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  height: calc(100dvh - 2 * var(--space-2));
-  padding: 0 var(--space-2) var(--space-3);
-  border-radius: var(--radius-lg);
+  gap: var(--space-0-5);
+  height: 100dvh;
+  padding: 0 var(--space-3) var(--space-4);
   background: var(--sidebar-glass);
-  box-shadow: var(--shadow-sidebar);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
   overflow-y: auto;
   scrollbar-width: thin;
 }
@@ -111,15 +112,20 @@ function updating(report: ReportSummaryDto) {
   padding: 0 var(--space-2);
 }
 
+.sidebar__new {
+  flex: none;
+  margin: 0 0 var(--space-4);
+}
+
 .sidebar__list {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0-5);
 }
 
 .sidebar__heading {
-  padding: var(--space-4) var(--space-2) var(--space-1);
+  padding: var(--space-6) var(--space-2) var(--space-2);
   color: var(--text-muted);
   font: var(--text-caption);
 }
@@ -127,16 +133,23 @@ function updating(report: ReportSummaryDto) {
 .sidebar__item {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  min-height: 32px;
-  padding: var(--space-2);
+  gap: var(--space-3);
+  min-height: var(--control-sm);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
+  color: var(--text);
   font: var(--text-ui);
-  transition: background-color var(--transition-fast);
+  font-weight: 400;
+  transition:
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
+/* The open screen: a white plate lifted off the paper. */
 .sidebar__item[aria-current='page'] {
-  background: var(--sidebar-selection);
+  background: var(--surface);
+  box-shadow: var(--shadow-segment);
+  font-weight: 500;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -145,18 +158,13 @@ function updating(report: ReportSummaryDto) {
   }
 }
 
-/* Plain symbols, as in a macOS source list; the action is the one in the text colour. */
 .sidebar__icon {
   display: grid;
   flex: none;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: var(--avatar-xs);
+  height: var(--avatar-xs);
   color: var(--text-muted);
-}
-
-.sidebar__item--action .sidebar__icon {
-  color: var(--text);
 }
 
 .sidebar__name {

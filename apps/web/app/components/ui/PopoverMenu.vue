@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BottomSheet from './BottomSheet.vue'
 import MenuItem from './MenuItem.vue'
+import MenuPanel from './MenuPanel.vue'
 
 export interface PopoverMenuOption {
   label: string
@@ -27,7 +28,8 @@ const emit = defineEmits<{
 const ITEMS = '[role="menuitem"]:not([disabled]), button:not([disabled]), [href], input:not([disabled])'
 
 const menuRef = ref<HTMLElement | null>(null)
-const panelRef = ref<HTMLElement | null>(null)
+const panelRef = ref<InstanceType<typeof MenuPanel> | null>(null)
+const panelEl = computed(() => panelRef.value?.el ?? null)
 // Phones get a bottom sheet instead of the floating panel.
 const isMobile = useMediaQuery('(max-width: 640px)')
 let previouslyFocused: HTMLElement | null = null
@@ -66,7 +68,7 @@ function handleKeydown(event: KeyboardEvent) {
     closeMenu()
     return
   }
-  const root = (event.currentTarget as HTMLElement | null) ?? panelRef.value
+  const root = (event.currentTarget as HTMLElement | null) ?? panelEl.value
   if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key) || !root) return
   const items = visibleItems(root)
   if (!items.length) return
@@ -91,13 +93,13 @@ watch(
       document.addEventListener('pointerdown', handleDocumentPointerDown, true)
       document.addEventListener('keydown', handleDocumentKeydown)
       // The panel fades in, so the first item may only be focusable on the next frame.
-      requestAnimationFrame(() => visibleItems(panelRef.value)[0]?.focus())
+      requestAnimationFrame(() => visibleItems(panelEl.value)[0]?.focus())
       return
     }
     document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
     document.removeEventListener('keydown', handleDocumentKeydown)
     const active = document.activeElement
-    if (!active || active === document.body || panelRef.value?.contains(active)) {
+    if (!active || active === document.body || panelEl.value?.contains(active)) {
       previouslyFocused?.focus()
     }
   },
@@ -113,12 +115,12 @@ onBeforeUnmount(() => {
 <template>
   <div ref="menuRef" class="popover-root" @click.stop>
     <slot name="trigger" />
-    <Transition name="popover">
-      <div
+    <Transition name="menu-panel">
+      <MenuPanel
         v-if="open && !isMobile"
         ref="panelRef"
         class="popover-panel"
-        :class="[align === 'start' ? 'align-start' : 'align-end', { 'match-trigger': matchTriggerWidth }]"
+        :align="matchTriggerWidth ? 'stretch' : (align ?? 'end')"
         :role="panelRole ?? 'menu'"
         :aria-label="ariaLabel"
         @keydown="handleKeydown"
@@ -134,7 +136,7 @@ onBeforeUnmount(() => {
             {{ option.label }}
           </MenuItem>
         </slot>
-      </div>
+      </MenuPanel>
     </Transition>
     <BottomSheet v-if="isMobile" :open="open" :title="title ?? ariaLabel" @close="closeMenu">
       <div
@@ -166,53 +168,8 @@ onBeforeUnmount(() => {
   max-width: 100%;
 }
 
-.popover-panel {
-  position: absolute;
-  z-index: var(--z-popover);
-  top: calc(100% + var(--space-2));
-  display: grid;
-  gap: 2px;
-  min-width: 232px;
-  max-height: 360px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: var(--space-1);
-  border: 0;
-  border-radius: var(--radius-lg);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-overlay);
-  scrollbar-width: thin;
-}
-
-.match-trigger {
-  width: 100%;
-}
-
-.align-end {
-  right: 0;
-  transform-origin: top right;
-}
-
-.align-start {
-  left: 0;
-  transform-origin: top left;
-}
-
 .popover-sheet {
   display: grid;
-  gap: var(--space-1);
-}
-
-.popover-enter-active,
-.popover-leave-active {
-  transition:
-    opacity var(--transition-normal),
-    transform var(--transition-normal);
-}
-
-.popover-enter-from,
-.popover-leave-to {
-  opacity: 0;
-  transform: translateY(-4px) scale(0.97);
+  gap: var(--space-0-5);
 }
 </style>

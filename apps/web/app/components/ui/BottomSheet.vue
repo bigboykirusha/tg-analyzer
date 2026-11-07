@@ -149,15 +149,15 @@ function onPointerUp() {
 
 .sheet__grabber {
   align-self: center;
-  width: 36px;
-  height: 4px;
+  width: var(--control-sm);
+  height: var(--space-1);
   margin: var(--space-2) 0 var(--space-1);
   border-radius: var(--radius-full);
   background: var(--border-strong);
 }
 
 .sheet__head {
-  padding: var(--space-3) var(--space-5) var(--space-2);
+  padding: var(--space-3) var(--space-6) var(--space-2);
   overflow-wrap: anywhere;
 }
 
@@ -180,7 +180,7 @@ function onPointerUp() {
   flex: 0 0 auto;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-5) var(--space-5);
+  padding: var(--space-3) var(--space-6) var(--space-6);
 }
 
 .sheet__foot :deep(.btn) {
@@ -193,10 +193,10 @@ function onPointerUp() {
   padding-bottom: var(--space-3);
 }
 
-/* Options and menu items are 48px / 15px inside a sheet. */
+/* Options and menu items (UiListRow) are 48 px tall inside a sheet: a thumb, not a pointer. */
 .sheet__body :deep(.menu-item),
 .sheet__body :deep(.option) {
-  min-height: var(--control-lg);
+  --row-height: var(--control-lg);
 }
 
 .sheet-enter-active,

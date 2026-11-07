@@ -201,7 +201,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  min-height: 60px;
+  min-height: calc(var(--control-md) + var(--space-4));
   padding-block: var(--space-2);
   font: var(--text-body);
 }
@@ -212,7 +212,7 @@ onMounted(() => {
 
 .row__label {
   display: grid;
-  gap: 2px;
+  gap: var(--space-0-5);
   min-width: 0;
 }
 

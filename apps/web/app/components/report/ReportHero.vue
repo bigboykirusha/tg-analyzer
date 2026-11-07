@@ -57,7 +57,8 @@ defineProps<{
 
 .hero__label {
   grid-area: label;
-  font: var(--text-title);
+  color: var(--text-muted);
+  font: var(--text-ui);
 }
 
 .hero__figure {

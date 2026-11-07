@@ -34,15 +34,15 @@ const { t } = useI18n()
 <style scoped>
 .chart {
   width: 100%;
-  height: 300px;
+  height: var(--chart-h-md);
 }
 
 .chart--tall {
-  height: 340px;
+  height: var(--chart-h-lg);
 }
 
 .chart--compact {
-  height: 220px;
+  height: var(--chart-h-sm);
 }
 
 .chart-empty {
@@ -57,7 +57,7 @@ const { t } = useI18n()
   .chart,
   .chart--tall,
   .chart--compact {
-    height: 220px;
+    height: var(--chart-h-sm);
   }
 }
 </style>

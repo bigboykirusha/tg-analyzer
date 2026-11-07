@@ -21,7 +21,7 @@ const { t, formatNumber } = useI18n()
 .emoji-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-5);
+  gap: var(--space-2) var(--space-6);
 }
 
 .emoji-card {

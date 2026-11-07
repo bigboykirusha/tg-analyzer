@@ -112,7 +112,7 @@ function runAction(toast: ToastMessage) {
 
 .toast__copy {
   display: grid;
-  gap: 2px;
+  gap: var(--space-0-5);
   min-width: 0;
 }
 
@@ -163,7 +163,7 @@ function runAction(toast: ToastMessage) {
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateY(-8px) scale(0.97);
+  transform: translateY(calc(var(--space-2) * -1)) scale(var(--press-scale));
 }
 
 @media (max-width: 640px) {

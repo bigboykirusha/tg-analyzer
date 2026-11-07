@@ -48,7 +48,7 @@ const isReport = computed(() => route.path === '/example')
   z-index: var(--z-header);
   padding-top: env(safe-area-inset-top, 0px);
   background: var(--bg);
-  transition: background-color var(--duration-slow) ease;
+  transition: background-color var(--transition-slow);
 }
 
 .site-header__in {
@@ -75,7 +75,7 @@ const isReport = computed(() => route.path === '/example')
 .site-header__nav {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
 .site-header__link {
@@ -157,7 +157,7 @@ const isReport = computed(() => route.path === '/example')
   .site-header__nav :deep(.btn--sm)::before {
     content: '';
     position: absolute;
-    inset: -4px;
+    inset: calc((var(--control-sm) - var(--hit-min)) / 2);
   }
 }
 </style>

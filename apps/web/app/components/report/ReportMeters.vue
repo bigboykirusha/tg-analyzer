@@ -39,7 +39,7 @@ const { formatPercent } = useI18n()
 <style scoped>
 .meters {
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
 .meter {
@@ -65,7 +65,7 @@ const { formatPercent } = useI18n()
 }
 
 .meter--self .meter__heading span {
-  color: var(--you-ink);
+  color: var(--you);
   font-weight: 500;
 }
 

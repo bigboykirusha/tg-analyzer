@@ -169,8 +169,8 @@ const peakLine = computed(() => {
 .day__key::before {
   content: '';
   flex: none;
-  width: 8px;
-  height: 8px;
+  width: var(--space-2);
+  height: var(--space-2);
   border-radius: var(--radius-full);
 }
 
@@ -186,7 +186,7 @@ const peakLine = computed(() => {
 .day__hours {
   display: grid;
   grid-template-columns: repeat(24, minmax(0, 1fr));
-  height: 140px;
+  height: calc(var(--chart-h-sm) - var(--space-20));
 }
 
 .day__hour {
@@ -215,7 +215,7 @@ const peakLine = computed(() => {
 .day__hour i {
   flex: none;
   width: 64%;
-  max-width: 18px;
+  max-width: var(--space-4);
 }
 
 .day__theirs {
@@ -235,7 +235,7 @@ const peakLine = computed(() => {
 .day__parts {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 2px;
+  gap: var(--space-0-5);
   margin: 0;
   padding: 0;
   list-style: none;

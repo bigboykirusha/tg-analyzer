@@ -62,7 +62,7 @@ const rows = computed(() => [
 .units__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10px, 1fr));
-  gap: 3px;
+  gap: var(--space-1);
 }
 
 .units__grid i {

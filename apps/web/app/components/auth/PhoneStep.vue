@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import Button from '../ui/Button.vue'
+import Field from '../ui/Field.vue'
+import Input from '../ui/Input.vue'
 import Select, { type SelectOption } from '../ui/Select.vue'
 
 const phone = defineModel<string>('phone', { required: true })
@@ -10,7 +12,6 @@ const { t, locale } = useI18n()
 const phoneInput = usePhoneInput()
 if (phone.value) phoneInput.setFromNormalized(phone.value)
 const phoneDisplay = phoneInput.displayValue
-const phoneInputId = useId()
 
 const countryNames = computed(() => new Intl.DisplayNames([locale.value], { type: 'region' }))
 
@@ -29,13 +30,10 @@ const phonePlaceholder = computed(() => {
   return [prefix, suffix].filter(Boolean).join(' ')
 })
 
-function handleInput(event: Event) {
-  const target = event.target as HTMLInputElement
-  const value = target.value
+/** A pasted or autofilled «+49…» picks the country; anything else is the national number. UiInput shows the formatted value. */
+function handleInput(value: string) {
   if (value.trim().startsWith('+')) phoneInput.setFromNormalized(value)
   else phoneInput.displayValue.value = value
-  // Force update the input value to the formatted one
-  target.value = phoneInput.displayValue.value
 }
 
 // Sync with parent phone model
@@ -71,29 +69,31 @@ function submit() {
 
 <template>
   <form class="auth-form" @submit.prevent="submit">
-    <div class="field">
-      <label class="field__label" :for="phoneInputId">{{ t('login.phoneLabel') }}</label>
-      <div class="input input--lg input--addon phone-field">
-        <Select
-          :model-value="phoneInput.countryCode.value"
-          :options="countryOptions"
-          variant="addon"
-          trigger-class="dial-code"
-          :aria-label="t('login.countryLabel')"
-          :searchable="false"
-          @update:model-value="selectCountry"
-        />
-        <input
-          :id="phoneInputId"
-          :value="phoneDisplay"
-          class="input__control phone-input"
-          :placeholder="phonePlaceholder"
-          inputmode="tel"
-          autocomplete="tel"
-          @input="handleInput"
-        />
-      </div>
-    </div>
+    <Field :label="t('login.phoneLabel')">
+      <Input
+        :model-value="phoneDisplay"
+        size="lg"
+        addon
+        class="phone-field"
+        input-class="phone-input"
+        :placeholder="phonePlaceholder"
+        inputmode="tel"
+        autocomplete="tel"
+        @update:model-value="handleInput"
+      >
+        <template #leading>
+          <Select
+            :model-value="phoneInput.countryCode.value"
+            :options="countryOptions"
+            variant="addon"
+            trigger-class="dial-code"
+            :aria-label="t('login.countryLabel')"
+            :searchable="false"
+            @update:model-value="selectCountry"
+          />
+        </template>
+      </Input>
+    </Field>
 
     <Button
       type="submit"
@@ -109,18 +109,9 @@ function submit() {
 </template>
 
 <style scoped>
-/* Breathing room after the country divider. */
-.phone-field .phone-input {
-  padding-left: var(--space-3);
-}
-
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-}
-
-.phone-input {
-  font-variant-numeric: tabular-nums;
+  gap: var(--space-6);
 }
 </style>

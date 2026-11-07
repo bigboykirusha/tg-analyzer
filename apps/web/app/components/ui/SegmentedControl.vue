@@ -79,8 +79,10 @@ function handleKeydown(event: KeyboardEvent) {
 /* An iOS-style segmented control: a grey pill track and a white thumb that slides. */
 .segmented {
   --gap: 0px;
-  --pad: 3px;
+  /* The thumb sits a hairline step inside the track. */
+  --pad: var(--space-0-5);
   position: relative;
+  isolation: isolate;
   display: flex;
   width: 100%;
   max-width: 100%;
@@ -158,9 +160,8 @@ function handleKeydown(event: KeyboardEvent) {
 
 .segment:focus-visible {
   /* Keep the focus indicator inside the scrollable pill track. */
-  outline: 2px solid var(--text);
-  outline-offset: -2px;
-  box-shadow: none;
+  outline: none;
+  box-shadow: var(--ring-selected);
 }
 
 .segment:disabled {

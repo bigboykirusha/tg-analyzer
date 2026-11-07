@@ -39,7 +39,7 @@ withDefaults(
   display: grid;
   justify-items: center;
   gap: var(--space-4);
-  padding: var(--space-10) var(--space-5);
+  padding: var(--space-10) var(--space-6);
   text-align: center;
 }
 
@@ -50,7 +50,7 @@ withDefaults(
 .empty-copy {
   display: grid;
   gap: var(--space-1);
-  max-width: 360px;
+  max-width: var(--measure);
 }
 
 .empty-title {
@@ -67,6 +67,6 @@ withDefaults(
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-2);
-  margin-top: var(--space-1);
+  margin-top: var(--space-2);
 }
 </style>

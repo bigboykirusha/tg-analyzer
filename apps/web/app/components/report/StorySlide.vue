@@ -2,11 +2,13 @@
 /**
  * One «Итоги» story slide: a headline over a small bento of tiles, the way the
  * app shows a report. Purely presentational, so the same slide renders on
- * screen (any size) and off screen at 9:16 for the exported image.
+ * screen (any size), as the preview in «Поделиться» and off screen at 9:16 for
+ * the exported image.
  *
  * Sizes are in cqmin of the root, which is the size container. Nothing on the
  * root itself uses cq units: on the container they would resolve against the
- * viewport, which differs between the screen and the image renderer.
+ * viewport, which differs between the screen and the image renderer. The
+ * slide's own type scale (six roles) therefore lives on the canvas inside it.
  */
 export interface StoryPerson {
   name: string
@@ -85,19 +87,22 @@ function lit(block: { from: number; to: number }, hour: number) {
 }
 
 /**
- * Numbers get the huge headline; words get a size their longest word fits in,
- * since a headline never breaks inside a word.
+ * Numbers get the figure; words get the serif headline when their longest word fits
+ * the line (a headline never breaks inside a word), the smaller one otherwise.
  */
 const titleSize = computed(() => {
   const title = props.slide.title
-  const longestWord = Math.max(...title.split(/\s+/).map((word) => Array.from(word).length))
-  if (/^[\d\s:.,%–-]+$/.test(title) && title.length <= 7) return 'hero'
-  if (longestWord <= 8 && title.length <= 16) return 'big'
-  return 'mid'
+  if (/^[\d\s:.,%–-]+$/.test(title) && title.length <= 7) return 'figure'
+  if (longestWord(title) <= 13 && title.length <= 28) return 'h1'
+  return 'h2'
 })
 
-/** Tile values with long words drop a size instead of breaking the word. */
-const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => Array.from(word).length)) > 8
+function longestWord(value: string) {
+  return Math.max(...value.split(/\s+/).map((word) => Array.from(word).length))
+}
+
+/** Tile values with long words in a half-width tile drop a size instead of breaking the word. */
+const isLong = (value: string) => longestWord(value) > 8
 </script>
 
 <template>
@@ -138,7 +143,9 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
           >
             <template v-if="block.kind === 'stat'">
               <span class="story-tile__label">{{ block.label }}</span>
-              <strong class="story-tile__value" :class="{ 'is-long': isLong(block.value) }">{{ block.value }}</strong>
+              <strong class="story-tile__value" :class="{ 'is-long': !isWide(block) && isLong(block.value) }">{{
+                block.value
+              }}</strong>
               <span v-if="block.note" class="story-tile__note">{{ block.note }}</span>
             </template>
 
@@ -161,7 +168,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
             <template v-else-if="block.kind === 'split'">
               <span class="story-tile__label">{{ block.label }}</span>
-              <div class="story-tile__split">
+              <div class="story-tile__split" :class="{ 'is-bare': block.mine <= 0 && block.theirs <= 0 }">
                 <strong>{{ block.left.value }}</strong>
                 <span class="story-tile__split-bar" aria-hidden="true">
                   <i v-if="block.mine > 0" :style="{ flexGrow: block.mine }" />
@@ -194,7 +201,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
                   v-for="(value, hour) in block.values"
                   :key="hour"
                   :class="{ 'is-lit': lit(block, hour) }"
-                  :style="{ height: `${Math.max(4, (value / maxOf(block.values)) * 100)}%`, '--bar': hour * 14 }"
+                  :style="{ height: `${Math.max(4, (value / maxOf(block.values)) * 100)}%`, '--bar': hour }"
                 />
               </div>
               <div class="story-tile__axis">
@@ -227,8 +234,10 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
       </div>
 
       <div class="story-slide__brand">
-        <span class="story-slide__brand-mark" aria-hidden="true"><i /><i /><i /></span>
-        TG Analyzer
+        <span class="story-slide__brand-name">
+          <BrandMark class="story-slide__brand-mark" />
+          TG Analyzer
+        </span>
         <!-- The address on every slide: any one of them may be the picture that gets shared. -->
         <span class="story-slide__site">{{ site }}</span>
       </div>
@@ -237,53 +246,80 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 </template>
 
 <style scoped>
-/* The root only sizes the container; the canvas does the layout. */
+/*
+ * Colours: a slide is a field (ink, lime or paper) and every field gives the same roles to its
+ * text, its tiles and its one accent tile. Posters look the same in both themes, so only --story-*
+ * tokens are read here. The root may carry colours, never cq units (see the note in the script).
+ */
 .story-slide {
-  /* Tiles: dark cards and a lime accent on the ink field. */
-  --tile-bg: var(--story-card);
-  --tile-ink: var(--story-ink);
-  --tile-muted: var(--story-dark-ink-muted);
-  --tile-track: var(--story-dark-track);
-  --tile-mark: var(--story-accent);
-  --accent-bg: var(--story-accent);
-  --accent-ink: var(--story-accent-ink);
-  --accent-muted: var(--story-accent-ink-muted);
-  --accent-track: var(--story-accent-track);
-  --accent-mark: var(--story-accent-ink);
+  /* The field. */
+  --s-ink: var(--story-ink);
+  --s-muted: var(--story-ink-muted);
+  --s-track: var(--story-track);
+  --s-chip: var(--story-chip);
+  --s-them: var(--story-accent);
+  /* Tiles: dark cards on the ink field. */
+  --s-card: var(--story-card);
+  --s-card-ink: var(--story-ink);
+  --s-card-muted: var(--story-ink-muted);
+  --s-card-track: var(--story-track);
+  --s-card-mark: var(--story-accent);
+  /* The accent tile: lime on the ink field. */
+  --s-accent: var(--story-accent);
+  --s-accent-ink: var(--story-accent-ink);
+  --s-accent-muted: var(--story-accent-ink-muted);
+  --s-accent-track: var(--story-accent-track);
+  --s-accent-mark: var(--story-accent-ink);
+  /* The square of the logo: a step off the ink field, ink on every other one. */
+  --s-logo: var(--story-card);
 
   width: 100%;
   height: 100%;
   overflow: hidden;
   container-type: size;
-  color: var(--story-ink);
+  display: grid;
+  align-content: center;
+  color: var(--s-ink);
   font-family: var(--font-sans);
-  /* html2canvas draws proportional digits; tabular layout would leave gaps in the image. */
-  font-variant-numeric: normal;
   background: var(--story-gradient-1);
 }
 
-/* Paper fields: white cards, the accent tile is ink with lime marks. */
+/*
+ * html2canvas draws proportional glyphs at tabular positions, which leaves gaps («51 %»). The app
+ * sets tabular figures on every element under #teleports, so only !important wins here.
+ */
+.story-slide,
+.story-slide * {
+  font-variant-numeric: normal !important;
+}
+
+/* Paper fields (and lime): white cards, the accent tile is ink with lime marks. */
 .story-slide--2,
 .story-slide--3,
 .story-slide--4,
 .story-slide--5,
 .story-slide--6 {
-  --story-ink: var(--story-paper-ink);
-  --story-ink-muted: var(--story-paper-ink-muted);
-  --story-chip: var(--story-paper-chip);
-  --tile-bg: var(--story-paper-card);
-  --tile-ink: var(--story-paper-ink);
-  --tile-muted: var(--story-paper-ink-muted);
-  --tile-track: var(--story-paper-track);
-  --tile-mark: var(--story-paper-ink);
-  --accent-bg: var(--story-gradient-1);
-  --accent-ink: var(--story-dark-ink);
-  --accent-muted: var(--story-dark-ink-muted);
-  --accent-track: var(--story-dark-track);
-  --accent-mark: var(--story-accent);
+  --s-ink: var(--story-paper-ink);
+  --s-muted: var(--story-paper-ink-muted);
+  --s-track: var(--story-paper-track);
+  --s-chip: var(--story-paper-chip);
+  --s-card: var(--story-paper-card);
+  --s-card-ink: var(--story-paper-ink);
+  --s-card-muted: var(--story-paper-ink-muted);
+  --s-card-track: var(--story-paper-track);
+  --s-card-mark: var(--story-paper-ink);
+  --s-accent: var(--story-gradient-1);
+  --s-accent-ink: var(--story-ink);
+  --s-accent-muted: var(--story-ink-muted);
+  --s-accent-track: var(--story-track);
+  --s-accent-mark: var(--story-accent);
+  --s-logo: var(--story-gradient-1);
 }
 
 .story-slide--2 {
+  --s-muted: var(--story-accent-ink-muted);
+  --s-track: var(--story-accent-track);
+
   background: var(--story-gradient-2);
 }
 
@@ -304,17 +340,41 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 /*
- * Telegram and Instagram draw the author and progress over the top ~13% of a
- * story and the reply bar over the bottom ~13%: nothing important goes there.
- * The screen uses the same frame, so what you see is what you share.
+ * The canvas is always 9:16 and sits in the middle of whatever holds it, so a tall phone shows
+ * exactly the picture that gets saved. Telegram and Instagram draw the author and progress over the
+ * top ~13% of a story and the reply bar over the bottom ~13%: nothing important goes there.
+ *
+ * The slide's type scale: six roles, all in cqmin of the root. Two weights only.
+ *   figure  — the one number of the cover                          (serif)
+ *   h1      — the headline of a slide                              (serif)
+ *   h2      — a tile's value, the ends of a split line             (serif)
+ *   title   — names, list rows, the brand
+ *   body    — the kicker and the line under the headline
+ *   caption — tile labels, notes, axes
  */
 .story-slide__canvas {
+  --s-figure: 400 24cqmin / 0.9 var(--font-display);
+  --s-h1: 400 11.5cqmin / 1.02 var(--font-display);
+  --s-h2: 400 6.8cqmin / 1.05 var(--font-display);
+  --s-title: 500 4.2cqmin / 1.2 var(--font-sans);
+  --s-body: 400 3.8cqmin / 1.3 var(--font-sans);
+  --s-caption: 500 3.1cqmin / 1.25 var(--font-sans);
+  /* The gutter of the poster and the corner of its tiles. */
+  --s-gutter: 7cqmin;
+  --s-radius: 4.4cqmin;
+  /* Tiles come in one after another. */
+  --s-stagger: calc(var(--duration-chart) / 10);
+
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 4cqmin;
-  height: 100%;
-  padding: 24cqmin 6cqmin 24cqmin;
+  width: 100%;
+  /* Exactly 9:16 even when the content runs long (an aspect-ratio box grows to fit otherwise). */
+  min-height: 0;
+  max-height: 100%;
+  aspect-ratio: 9 / 16;
+  padding: 22cqmin var(--s-gutter) 21cqmin;
 }
 
 /* ─── Who: avatars and the names ─────────────────────────────────────────── */
@@ -334,14 +394,13 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 8cqmin;
-  height: 8cqmin;
+  width: 8.8cqmin;
+  height: 8.8cqmin;
   overflow: hidden;
   border-radius: var(--radius-full);
-  background: var(--story-chip);
+  background: var(--s-chip);
   box-shadow: 0 0 0 0.7cqmin var(--story-gradient-1);
-  font-size: 3.6cqmin;
-  font-weight: 600;
+  font: var(--s-title);
 }
 
 .story-slide--2 .story-slide__face {
@@ -376,8 +435,8 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-slide__heading {
   display: grid;
+  gap: 0.4cqmin;
   min-width: 0;
-  line-height: 1.2;
 }
 
 .story-slide__heading strong,
@@ -388,22 +447,21 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 .story-slide__heading strong {
-  font-size: 4.4cqmin;
-  font-weight: 600;
+  font: var(--s-title);
 }
 
 .story-slide__heading span {
-  color: var(--story-ink-muted);
-  font-size: 3.3cqmin;
-  font-weight: 500;
+  color: var(--s-muted);
+  font: var(--s-caption);
 }
 
 /* ─── Headline ───────────────────────────────────────────────────────────── */
 .story-slide__body {
   display: flex;
-  flex: 1;
+  /* Never shrinks under its tiles: a slide that ever runs long pushes the brand into the margin. */
+  flex: 1 0 auto;
   flex-direction: column;
-  gap: 3cqmin;
+  gap: 4cqmin;
   min-height: 0;
 }
 
@@ -413,38 +471,35 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 .story-slide__kicker {
-  color: var(--story-ink-muted);
-  font-size: 3.8cqmin;
-  font-weight: 500;
+  color: var(--s-muted);
+  font: var(--s-body);
 }
 
 .story-slide__title {
-  font-weight: 600;
-  letter-spacing: -0.045em;
   overflow-wrap: break-word;
+  text-wrap: balance;
 }
 
-.story-slide__title--hero {
-  font-size: 17cqmin;
-  line-height: 0.92;
+.story-slide__title--figure {
+  font: var(--s-figure);
+  letter-spacing: var(--tracking-figure);
 }
 
-.story-slide__title--big {
-  font-size: 11.5cqmin;
-  line-height: 0.98;
+.story-slide__title--h1 {
+  font: var(--s-h1);
+  letter-spacing: var(--tracking-h1);
 }
 
-.story-slide__title--mid {
-  font-size: 8.4cqmin;
-  line-height: 1.02;
+.story-slide__title--h2 {
+  font: var(--s-h2);
+  letter-spacing: var(--tracking-h2);
 }
 
 .story-slide__sub {
   margin: 0;
-  color: var(--story-ink-muted);
-  font-size: 3.8cqmin;
-  font-weight: 500;
-  line-height: 1.3;
+  color: var(--s-muted);
+  font: var(--s-body);
+  text-wrap: pretty;
 }
 
 /* ─── Tiles: a two-column bento, like the report in the app ─────────────── */
@@ -456,39 +511,41 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   grid-template-columns: 1fr 1fr;
   grid-auto-rows: minmax(min-content, auto);
   align-content: end;
-  gap: 1.8cqmin;
+  gap: 2cqmin;
   min-height: 0;
 }
 
 .story-tile {
+  --muted: var(--s-card-muted);
+  --track: var(--s-card-track);
+  --mark: var(--s-card-mark);
+
   display: flex;
   flex-direction: column;
   gap: 1.2cqmin;
   min-width: 0;
-  padding: 3cqmin 3.6cqmin;
-  border-radius: 4cqmin;
-  background: var(--tile-bg);
-  color: var(--tile-ink);
-  --muted: var(--tile-muted);
-  --track: var(--tile-track);
-  --mark: var(--tile-mark);
+  padding: 3.4cqmin 4cqmin;
+  border-radius: var(--s-radius);
+  background: var(--s-card);
+  color: var(--s-card-ink);
 }
 
 /* Three full-width tiles must still leave space for the brand in a 9:16 export. */
 .story-slide.is-dense .story-slide__body {
-  gap: 2.4cqmin;
+  gap: 3cqmin;
 }
 
 .story-slide.is-dense .story-tile {
-  padding-block: 2.4cqmin;
+  padding-block: 2.8cqmin;
 }
 
 .story-tile.is-accent {
-  background: var(--accent-bg);
-  color: var(--accent-ink);
-  --muted: var(--accent-muted);
-  --track: var(--accent-track);
-  --mark: var(--accent-mark);
+  --muted: var(--s-accent-muted);
+  --track: var(--s-accent-track);
+  --mark: var(--s-accent-mark);
+
+  background: var(--s-accent);
+  color: var(--s-accent-ink);
 }
 
 .story-tile.is-wide {
@@ -497,9 +554,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-tile__label {
   color: var(--muted);
-  font-size: 3.2cqmin;
-  font-weight: 500;
-  line-height: 1.25;
+  font: var(--s-caption);
 }
 
 .story-tile__columns .story-tile__label {
@@ -511,31 +566,41 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-tile__value {
   margin-top: auto;
-  font-size: 6.4cqmin;
-  font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.035em;
+  font: var(--s-h2);
+  letter-spacing: var(--tracking-h2);
   overflow-wrap: break-word;
 }
 
 .story-tile__value.is-long {
-  font-size: 4.8cqmin;
+  font: var(--s-title);
 }
 
 .story-tile__note {
   color: var(--muted);
-  font-size: 3.2cqmin;
-  font-weight: 500;
-  line-height: 1.3;
+  font: var(--s-caption);
+}
+
+/* The pulse of the cover lies on the field itself, like a signature, not in a card. */
+.story-tile--pulse {
+  --muted: var(--s-muted);
+  --track: var(--s-track);
+
+  padding: 0;
+  background: none;
+  color: var(--s-ink);
+}
+
+.story-slide.is-dense .story-tile--pulse {
+  padding-block: 0 1cqmin;
 }
 
 /* Sized in cq units by its box; the chart fills it. */
 .story-tile__pulse {
-  --you: var(--tile-ink);
-  --them: var(--story-accent);
-  --border-strong: var(--tile-track);
+  --you: currentColor;
+  --them: var(--s-them);
+  --border-strong: var(--track);
 
-  height: 11cqmin;
+  height: 12cqmin;
 }
 
 .story-tile__pulse :deep(.seismograph) {
@@ -552,20 +617,21 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   gap: 0.8cqmin;
   margin: 0;
   padding: 0;
+  color: var(--muted);
+  font: var(--s-caption);
   list-style: none;
 }
 
 .story-tile__chapters li {
   flex-basis: 0;
   min-width: 0;
-  padding-top: 1cqmin;
+  padding-top: 1.2cqmin;
   border-top: 0.5cqmin solid var(--track);
-  font-size: 2.8cqmin;
-  font-weight: 500;
 }
 
 .story-tile__chapters li.is-peak {
-  border-top-color: var(--story-accent);
+  border-top-color: var(--s-them);
+  color: var(--s-ink);
 }
 
 .story-tile__chapters span {
@@ -575,7 +641,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   white-space: nowrap;
 }
 
-/* The split line: values at the ends, you in the tile's ink, the other side in the accent. */
+/* The split line: values at the ends, you in the tile's ink, the other side in lime. */
 .story-tile__split {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -584,10 +650,8 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 }
 
 .story-tile__split strong {
-  font-size: 5.6cqmin;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.035em;
+  font: var(--s-h2);
+  letter-spacing: var(--tracking-h2);
   white-space: nowrap;
 }
 
@@ -599,12 +663,18 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-tile__split-bar i {
   flex-basis: 0;
-  border-radius: 1cqmin;
+  border-radius: var(--radius-full);
   background: currentColor;
 }
 
 .story-tile__split-bar i.is-them {
-  background: var(--story-accent);
+  background: var(--s-them);
+}
+
+/* Two times without a bar (a longer bar for a slower reply would read as «more»): a hairline. */
+.story-tile__split.is-bare .story-tile__split-bar {
+  height: 0;
+  border-top: 0.3cqmin dashed var(--track);
 }
 
 .story-tile__split-names {
@@ -612,8 +682,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   justify-content: space-between;
   gap: 2cqmin;
   color: var(--muted);
-  font-size: 3cqmin;
-  font-weight: 500;
+  font: var(--s-caption);
 }
 
 .story-tile__split-names span {
@@ -630,24 +699,22 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
 
 .story-tile__duel div {
   display: grid;
-  gap: 0.8cqmin;
+  gap: 1cqmin;
   min-width: 0;
 }
 
 .story-tile__duel span {
   overflow: hidden;
   color: var(--muted);
-  font-size: 3.2cqmin;
-  font-weight: 500;
+  font: var(--s-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .story-tile__duel strong {
-  font-size: 6.4cqmin;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.035em;
+  font: var(--s-h2);
+  letter-spacing: var(--tracking-h2);
+  white-space: nowrap;
 }
 
 .story-tile__bars {
@@ -672,7 +739,7 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   display: flex;
   justify-content: space-between;
   color: var(--muted);
-  font-size: 2.8cqmin;
+  font: var(--s-caption);
 }
 
 .story-tile__ranking {
@@ -688,11 +755,11 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   grid-template-columns: 5cqmin minmax(0, 1fr) auto;
   align-items: baseline;
   row-gap: 1cqmin;
-  font-size: 4.4cqmin;
-  font-weight: 600;
+  font: var(--s-title);
 }
 
-.story-tile__rank {
+.story-tile__rank,
+.story-tile__rank-value {
   color: var(--muted);
 }
 
@@ -702,13 +769,9 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   white-space: nowrap;
 }
 
-.story-tile__rank-value {
-  font-size: 3.8cqmin;
-}
-
 .story-tile__rank-bar {
   grid-column: 2 / -1;
-  height: 1.4cqmin;
+  height: 1.2cqmin;
   overflow: hidden;
   border-radius: var(--radius-full);
   background: var(--track);
@@ -727,14 +790,14 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   gap: 4cqmin;
 }
 
+/* The words themselves are what the reader came for: serif, one per row. */
 .story-tile__columns ol {
   display: grid;
-  gap: 0.8cqmin;
-  margin: 1cqmin 0 0;
+  gap: 0.6cqmin;
+  margin: 1.2cqmin 0 0;
   padding: 0;
-  font-size: 4.2cqmin;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font: var(--s-title);
+  font-family: var(--font-display);
   list-style: none;
 }
 
@@ -744,79 +807,67 @@ const isLong = (value: string) => Math.max(...value.split(/\s+/).map((word) => A
   white-space: nowrap;
 }
 
-/* ─── Brand ──────────────────────────────────────────────────────────────── */
+/* ─── Brand: the logo on the left, the address on the right ──────────────── */
 .story-slide__brand {
   display: flex;
   align-items: center;
-  align-self: flex-start;
-  gap: 1.6cqmin;
-  font-size: 3.8cqmin;
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  justify-content: space-between;
+  gap: 3cqmin;
+  font: var(--s-title);
+}
+
+.story-slide__brand-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 2cqmin;
+  white-space: nowrap;
+}
+
+/* The app's own mark, in poster colours (it reads the theme's tile tokens otherwise). */
+.story-slide__brand-mark {
+  --tile-ink: var(--s-logo);
+  --on-tile-ink: var(--story-ink);
+  --lime: var(--story-accent);
+
+  width: 6.4cqmin;
+  height: 6.4cqmin;
 }
 
 .story-slide__site {
-  margin-left: 1cqmin;
-  color: var(--story-ink-muted);
-  font-weight: 500;
-}
-
-.story-slide__brand-mark {
-  display: inline-flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 0.5cqmin;
-  width: 6.4cqmin;
-  height: 6.4cqmin;
-  padding: 1.4cqmin;
-  border-radius: 1.6cqmin;
-  background: var(--story-ink);
-}
-
-.story-slide__brand-mark i {
-  width: 0.8cqmin;
-  border-radius: var(--radius-full);
-  background: var(--story-accent);
-}
-
-.story-slide__brand-mark i:nth-child(1) {
-  height: 1.6cqmin;
-}
-
-.story-slide__brand-mark i:nth-child(2) {
-  height: 3.2cqmin;
-}
-
-.story-slide__brand-mark i:nth-child(3) {
-  height: 2.2cqmin;
+  overflow: hidden;
+  color: var(--s-muted);
+  font: var(--s-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ─── Entrance: headline first, then the tiles one by one ────────────────── */
 .story-slide:not(.is-still) .story-slide__head,
 .story-slide:not(.is-still) .story-tile {
-  animation: story-rise 520ms var(--ease-standard) both;
+  animation: story-rise var(--duration-sheet) var(--ease-standard) both;
 }
 
 .story-slide:not(.is-still) .story-tile:nth-child(1) {
-  animation-delay: 120ms;
+  animation-delay: calc(var(--s-stagger) * 1.5);
 }
 
 .story-slide:not(.is-still) .story-tile:nth-child(2) {
-  animation-delay: 200ms;
+  animation-delay: calc(var(--s-stagger) * 2.5);
 }
 
 .story-slide:not(.is-still) .story-tile:nth-child(3) {
-  animation-delay: 280ms;
+  animation-delay: calc(var(--s-stagger) * 3.5);
 }
 
 .story-slide:not(.is-still) .story-tile:nth-child(n + 4) {
-  animation-delay: 360ms;
+  animation-delay: calc(var(--s-stagger) * 4.5);
 }
 
+/* The hours rise left to right after the tiles, about a sixth of a step apart. */
 .story-slide:not(.is-still) .story-tile__bars span {
   transform-origin: bottom;
-  animation: story-grow 640ms var(--ease-standard) both;
-  animation-delay: calc(360ms + var(--bar, 0) * 1ms);
+  animation: story-grow var(--duration-chart) var(--ease-standard) both;
+  animation-delay: calc(var(--s-stagger) * (4.5 + var(--bar, 0) / 6));
 }
 
 @keyframes story-rise {

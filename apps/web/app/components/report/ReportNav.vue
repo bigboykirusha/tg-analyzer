@@ -64,8 +64,8 @@ onBeforeUnmount(() => window.removeEventListener('scroll', spy))
   width: 100%;
 }
 
-/* Wide screens: a compact control; phones: the full width, one equal slot per part. */
-@media (min-width: 641px) {
+/* Wide screens: a compact control centred in the header; below that the full width, one equal slot per part. */
+@media (min-width: 1200px) {
   .report-nav {
     width: auto;
   }

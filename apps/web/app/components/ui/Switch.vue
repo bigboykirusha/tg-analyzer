@@ -28,14 +28,14 @@ const model = defineModel<boolean>({ required: true })
 }
 
 .switch-row.is-disabled {
-  cursor: default;
-  opacity: 0.5;
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
 }
 
 .switch-row__copy {
   display: grid;
   flex: 1;
-  gap: var(--space-1);
+  gap: var(--space-0-5);
   min-width: 0;
 }
 
@@ -45,15 +45,21 @@ const model = defineModel<boolean>({ required: true })
 
 .switch-row__hint {
   color: var(--text-muted);
-  font: var(--text-caption);
+  font: var(--text-small);
 }
 
-/* The track and the knob; the knob slides on. */
+/*
+ * The track and the knob; the knob slides on. Track 40 × 24 (--avatar-md × --avatar-xs), knob 20
+ * inset by the hairline step; it travels the track width minus the track height.
+ */
 .switch {
+  --switch-w: var(--avatar-md);
+  --switch-h: var(--avatar-xs);
+  --switch-inset: var(--space-0-5);
   position: relative;
   flex: none;
-  width: 40px;
-  height: 24px;
+  width: var(--switch-w);
+  height: var(--switch-h);
   margin: 0;
   border-radius: var(--radius-full);
   background: var(--border-strong);
@@ -64,10 +70,10 @@ const model = defineModel<boolean>({ required: true })
 
 .switch::after {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
+  top: var(--switch-inset);
+  left: var(--switch-inset);
+  width: calc(var(--switch-h) - var(--switch-inset) * 2);
+  height: calc(var(--switch-h) - var(--switch-inset) * 2);
   border-radius: var(--radius-full);
   background: var(--surface);
   box-shadow: var(--shadow-segment);
@@ -80,7 +86,7 @@ const model = defineModel<boolean>({ required: true })
 }
 
 .switch:checked::after {
-  transform: translateX(16px);
+  transform: translateX(calc(var(--switch-w) - var(--switch-h)));
 }
 
 .switch:focus-visible {

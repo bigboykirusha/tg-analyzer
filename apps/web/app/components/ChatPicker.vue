@@ -122,8 +122,9 @@ onMounted(() => {
 
 <template>
   <div class="picker" :class="{ 'picker--sticky': sticky }">
+    <!-- Newcomers get a head start from the chats pinned in Telegram; later the home page shows them. -->
     <PinnedChats
-      v-if="!firstLoad"
+      v-if="!firstLoad && !workspace.reports.length"
       :chats="pinnedChats"
       :analysing-id="analysis.isActive.value ? analysis.progress.value.chatId : null"
       :queued="new Set(queuedJobs.keys())"
@@ -246,7 +247,7 @@ onMounted(() => {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .picker-tools {

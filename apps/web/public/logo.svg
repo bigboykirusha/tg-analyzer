@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" role="img" aria-labelledby="title">
   <title id="title">TG Analyzer</title>
-  <rect width="28" height="28" rx="8" fill="#0e0f11"/>
+  <rect width="28" height="28" rx="8" fill="#151513"/>
   <g transform="translate(3 3)">
     <rect x="3" y="3" width="3.4" height="9" rx="1.7" fill="#ffffff"/>
     <rect x="9.3" y="1" width="3.4" height="11" rx="1.7" fill="#ffffff"/>

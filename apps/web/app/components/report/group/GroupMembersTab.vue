@@ -83,14 +83,14 @@ watch(isMobile, () => {
 .members {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-  gap: var(--space-5);
+  gap: var(--space-6);
   align-items: start;
 }
 
 .member-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0-5);
   list-style: none;
 }
 

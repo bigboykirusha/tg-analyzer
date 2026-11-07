@@ -15,7 +15,7 @@ html {
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
   /* Focus and anchors land clear of the sticky header and section bar. */
-  scroll-padding-top: calc(var(--topbar-height) + 64px);
+  scroll-padding-top: calc(var(--topbar-height) + var(--space-16));
   scrollbar-gutter: stable;
   touch-action: manipulation;
   background: var(--bg);
@@ -124,9 +124,22 @@ strong {
 }
 
 /* The page title: one per page, always through UiPageHeader. */
+.t-display {
+  font: var(--text-display);
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+
+/* The one big number of a screen or card. */
+.t-figure {
+  font: var(--text-figure);
+  letter-spacing: var(--tracking-figure);
+  white-space: nowrap;
+}
+
 .t-h1 {
   font: var(--text-h1);
-  letter-spacing: var(--tracking-figure);
+  letter-spacing: var(--tracking-h1);
   text-wrap: balance;
 }
 
@@ -157,6 +170,26 @@ strong {
 
 .t-small {
   font: var(--text-small);
+}
+
+/* A value or a name inside small text: the same size, the medium weight. */
+.t-small-strong {
+  font: var(--text-small);
+  font-weight: 500;
+}
+
+.t-ui {
+  font: var(--text-ui);
+}
+
+.t-caption {
+  font: var(--text-caption);
+}
+
+/* Emoji sit on their own line box so rows of them do not jump. */
+.t-emoji {
+  font-size: var(--emoji-size);
+  line-height: 1;
 }
 
 .t-label {
@@ -203,8 +236,8 @@ strong {
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: var(--avatar-md);
+  height: var(--avatar-md);
   border-radius: var(--radius-sm);
   background: var(--surface-2);
   color: var(--text-muted);
@@ -212,8 +245,8 @@ strong {
 }
 
 .icon-tile--lg {
-  width: 48px;
-  height: 48px;
+  width: var(--control-lg);
+  height: var(--control-lg);
   --icon-size: var(--icon-lg);
 }
 
@@ -380,7 +413,7 @@ strong {
 }
 
 .note > svg.lucide {
-  margin-top: 1px;
+  margin-top: var(--space-0-5);
   color: var(--text-muted);
 }
 
@@ -452,6 +485,11 @@ strong {
 }
 
 /* Every page: header, then sections at one rhythm. */
+.page,
+.stack {
+  counter-reset: report-part;
+}
+
 .page {
   display: flex;
   flex-direction: column;
@@ -542,6 +580,17 @@ main:focus {
 
 .report-rows__label svg {
   color: var(--text-muted);
+}
+
+/* A compact control still answers a 44 px tap: an invisible ring around it on touch screens. */
+.hit-area {
+  position: relative;
+}
+
+.hit-area::after {
+  content: '';
+  position: absolute;
+  inset: calc((var(--control-sm) - var(--hit-min)) / 2);
 }
 
 /* Numbers and time windows never break: «12:00–15:00», «у Милы 4,1». */
@@ -738,7 +787,6 @@ main:focus {
 
 .tile--ink {
   --you: var(--on-tile-ink);
-  --you-ink: var(--on-tile-ink);
   --them: var(--them-on-ink);
   --them-ink: var(--them-on-ink);
   --text: var(--on-tile-ink);
@@ -757,7 +805,6 @@ main:focus {
   --text: var(--on-lime);
   --text-muted: var(--on-lime-muted);
   --you: var(--on-lime);
-  --you-ink: var(--on-lime);
   --them: var(--on-lime-muted);
   --them-ink: var(--on-lime);
   background: var(--lime);
@@ -781,13 +828,13 @@ main:focus {
 .tile__figure {
   font: var(--text-h1);
   font-variant-numeric: tabular-nums;
-  letter-spacing: var(--tracking-figure);
+  letter-spacing: var(--tracking-h1);
   white-space: nowrap;
 }
 
 .tile__figure small {
   color: var(--text-muted);
-  font-size: 0.42em;
+  font: var(--text-small);
   letter-spacing: 0;
 }
 
@@ -801,9 +848,9 @@ main:focus {
 /* The leading icon sits in a small grey tile; danger rows tint the tile. */
 svg.row-icon {
   flex: none;
-  width: 28px;
-  height: 28px;
-  padding: 6px;
+  width: var(--avatar-sm);
+  height: var(--avatar-sm);
+  padding: var(--space-2);
   border-radius: var(--radius-sm);
   background: var(--fill-raised);
   color: var(--text);
@@ -812,9 +859,9 @@ svg.row-icon {
 /* Selected option: a lime circle with a check. */
 svg.row-check {
   flex: none;
-  width: 20px;
-  height: 20px;
-  padding: 3px;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  padding: var(--space-0-5);
   border-radius: var(--radius-full);
   background: var(--lime);
   color: var(--on-lime);

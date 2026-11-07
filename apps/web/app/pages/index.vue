@@ -135,11 +135,11 @@ useHead({
     flex: 1;
     grid-template-rows: minmax(0, 1fr);
     min-height: 0;
-    padding-block: clamp(16px, 4vh, 48px);
+    padding-block: clamp(var(--space-4), 4vh, var(--space-12));
   }
 
   .hero__title {
-    font-size: clamp(44px, min(5.8vw, 9vh), 80px);
+    font-size: var(--display-fit-size);
   }
 
   .hero__visual {
@@ -160,7 +160,7 @@ useHead({
   }
 
   .hero__copy {
-    max-width: 560px;
+    max-width: var(--measure);
   }
 
   .hero__window {
@@ -231,7 +231,7 @@ useHead({
     bottom: 0;
     left: -80px;
     z-index: 1;
-    height: 96px;
+    height: calc(var(--space-12) * 2);
     background: linear-gradient(transparent, var(--bg) 85%);
     pointer-events: none;
   }

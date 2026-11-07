@@ -17,12 +17,12 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   <div class="loading-list" aria-hidden="true">
     <template v-if="visible">
       <div v-for="row in rows" :key="row" class="loading-row">
-        <Skeleton v-if="avatar" width="var(--control-md)" height="var(--control-md)" radius="50%" />
+        <Skeleton v-if="avatar" width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-full)" />
         <div class="loading-copy">
-          <Skeleton width="65%" height="14px" />
-          <Skeleton width="42%" height="12px" />
+          <Skeleton width="65%" height="var(--space-4)" />
+          <Skeleton width="42%" height="var(--space-3)" />
         </div>
-        <Skeleton width="88px" height="var(--control-sm)" radius="var(--radius-full)" />
+        <Skeleton width="calc(var(--control-lg) * 2)" height="var(--control-sm)" radius="var(--radius-full)" />
       </div>
     </template>
   </div>
@@ -45,12 +45,13 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
-  min-height: 72px;
+  /* The height of a chat row (UiListRow lg). */
+  min-height: calc(var(--control-md) + var(--space-6));
   padding: var(--space-3) var(--space-4);
 }
 
 .loading-row + .loading-row {
-  box-shadow: inset 0 1px 0 var(--border);
+  box-shadow: var(--divider-top);
 }
 
 .loading-copy {

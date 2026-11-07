@@ -100,7 +100,7 @@ const items = computed(() => props.chats.slice(0, MAX_PINNED))
 
 /* The chat being read: a partner-colour ring, the only accent of the block. */
 .pinned__chat--busy {
-  box-shadow: inset 0 0 0 2px var(--them);
+  box-shadow: var(--ring-them);
 }
 
 .pinned__name {

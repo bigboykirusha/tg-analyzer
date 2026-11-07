@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import Button from '../ui/Button.vue'
+import Field from '../ui/Field.vue'
+import Input from '../ui/Input.vue'
 
 const password = defineModel<string>('password', { required: true })
 defineProps<{ loading: boolean; hint?: string | null }>()
@@ -9,12 +11,11 @@ const { t } = useI18n()
 
 <template>
   <form class="auth-form" @submit.prevent="emit('submit')">
-    <label class="field">
-      <span class="field__label">{{ t('login.passwordLabel') }}</span>
-      <input
+    <Field :label="t('login.passwordLabel')" :hint="hint ? t('login.passwordHint', { hint }) : t('login.passwordHelp')">
+      <Input
         v-model="password"
-        type="password"
-        class="input input--lg"
+        size="lg"
+        revealable
         :placeholder="t('login.passwordPlaceholder')"
         name="current-password"
         autocomplete="current-password"
@@ -22,11 +23,8 @@ const { t } = useI18n()
         autocorrect="off"
         spellcheck="false"
       />
-      <span class="field__hint">
-        {{ hint ? t('login.passwordHint', { hint }) : t('login.passwordHelp') }}
-      </span>
-    </label>
-    <Button variant="primary" size="lg" :loading="loading" block>
+    </Field>
+    <Button type="submit" variant="primary" size="lg" :loading="loading" block>
       {{ loading ? t('login.signingIn') : t('login.signIn') }}
     </Button>
   </form>
@@ -36,6 +34,6 @@ const { t } = useI18n()
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 </style>
