@@ -130,7 +130,8 @@ function handleKeydown(event: KeyboardEvent) {
   border: 0;
   border-radius: var(--radius-full);
   background: transparent;
-  color: var(--text-muted);
+  /* As on iOS, every label is full strength; the thumb alone marks the choice (≥ 4.5:1 on any track). */
+  color: var(--text);
   cursor: pointer;
   font: var(--text-ui);
   white-space: nowrap;

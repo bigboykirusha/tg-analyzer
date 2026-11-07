@@ -49,7 +49,8 @@ export function useChartTheme() {
       barRadius: [3, 3, 0, 0] as [number, number, number, number],
       base: {
         backgroundColor: 'transparent',
-        // Charts draw in on the one long duration of the system, on its ease-out.
+        // Charts draw in on the one long duration of the system, on its ease-out — never with Reduce Motion.
+        animation: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
         animationDuration: px('--duration-chart', 800),
         animationEasing: 'cubicOut' as const,
         textStyle: { fontFamily: font, color: colors.muted },

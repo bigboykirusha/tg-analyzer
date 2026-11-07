@@ -801,7 +801,7 @@ watch(open, async (value) => {
 
 <template>
   <Teleport to="#teleports">
-    <Transition name="stories">
+    <Transition name="stories" appear>
       <div v-if="open" ref="overlayRef" class="stories" @click.self="emit('close')">
         <section
           ref="panelRef"

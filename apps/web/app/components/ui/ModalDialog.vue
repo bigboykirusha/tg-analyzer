@@ -49,7 +49,7 @@ watch(open, (value) => value && drag.reset())
 
 <template>
   <Teleport to="#teleports">
-    <Transition name="modal">
+    <Transition name="modal" appear>
       <div v-if="open" class="modal-backdrop" @click.self="close">
         <section
           ref="panelRef"

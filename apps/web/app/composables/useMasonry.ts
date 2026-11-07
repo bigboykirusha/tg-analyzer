@@ -55,12 +55,17 @@ export function useMasonry(container: Ref<HTMLElement | null>) {
     frame = requestAnimationFrame(layout)
   }
 
+  /**
+   * New cards are laid out at once, not on the next frame: mount and mutation callbacks run before the
+   * browser paints, so the part never shows at its unmeasured height and the parts below never jump.
+   */
   function watch() {
     const element = container.value
     if (!element) return
     resize?.disconnect()
     for (const child of Array.from(element.children)) resize?.observe(child)
-    schedule()
+    cancelAnimationFrame(frame)
+    layout()
   }
 
   onMounted(() => {

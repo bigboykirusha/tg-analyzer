@@ -783,15 +783,16 @@
 }
 
 /* Narrower screens: tighter gutters; phones also shrink the header, the cards and the big type. */
+/* Landscape iPhones: the gutter also clears the sensor housing (viewport-fit=cover makes the sides ours). */
 @media (max-width: 1024px) {
   :root {
-    --page-gutter: var(--space-6);
+    --page-gutter: max(var(--space-6), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   }
 }
 
 @media (max-width: 640px) {
   :root {
-    --page-gutter: var(--space-4);
+    --page-gutter: max(var(--space-4), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
     --topbar-height: 56px;
     --page-top: var(--space-6);
     --page-gap: var(--space-8);
@@ -803,6 +804,38 @@
     --text-h2: 600 20px/28px var(--font-sans);
     --text-h3: 600 18px/24px var(--font-sans);
     --radius-lg: 20px;
+  }
+}
+
+/*
+ * Increase Contrast (iOS, macOS, Windows): secondary text darkens, hairlines become visible lines and
+ * the intensity ramp steepens. Only token overrides — every component follows.
+ */
+@media (prefers-contrast: more) {
+  :root:not([data-theme='dark']) {
+    --text-muted: var(--gray-11);
+    --border: var(--gray-6);
+    --heat-1: #a8a8b0;
+    --heat-2: #7c7c84;
+    --heat-3: #55555c;
+    --heat-4: #2e2e33;
+  }
+
+  :root[data-theme='dark'] {
+    --text-muted: var(--night-8);
+    --border: var(--night-5);
+    --heat-1: #5e5e64;
+    --heat-2: #85858c;
+    --heat-3: #adadb4;
+    --heat-4: #dcdce0;
+  }
+}
+
+/* Reduce Transparency: the glass bars turn solid and lose their blur. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --toolbar-glass: var(--bg);
+    --glass-filter: none;
   }
 }
 

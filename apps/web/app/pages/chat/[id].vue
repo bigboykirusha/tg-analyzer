@@ -66,8 +66,16 @@ async function analyseHere() {
   }
 }
 
+const shareUsed = ref(false)
+const storyUsed = ref(false)
+function openShare() {
+  shareUsed.value = true
+  shareOpen.value = true
+}
+
 function openStory(intent: StoryIntent) {
   storyIntent.value = intent
+  storyUsed.value = true
   storyOpen.value = true
 }
 
@@ -79,13 +87,27 @@ onMounted(load)
     <ReportPoster v-if="data || (!notFound && !loadError)" :data="data" :title="knownTitle" />
     <UiPageContainer>
       <div v-if="data" class="page report-page">
-        <ReportHeader :summary="data.summary" @share="shareOpen = true" />
+        <ReportHeader :summary="data.summary" @share="openShare" />
 
-        <GroupReport v-if="data.summary.type === 'group'" :data="data" />
+        <!-- Charts (ECharts) belong to groups only, and the share sheet and stories load on first use:
+             a private report on a phone downloads neither. -->
+        <LazyGroupReport v-if="data.summary.type === 'group'" :data="data" />
         <PrivateReport v-else :data="data" />
 
-        <ShareDialog :open="shareOpen" :data="data" @close="shareOpen = false" @story="openStory" />
-        <ReportStory :open="storyOpen" :data="data" :intent="storyIntent" @close="storyOpen = false" />
+        <LazyShareDialog
+          v-if="shareUsed"
+          :open="shareOpen"
+          :data="data"
+          @close="shareOpen = false"
+          @story="openStory"
+        />
+        <LazyReportStory
+          v-if="storyUsed"
+          :open="storyOpen"
+          :data="data"
+          :intent="storyIntent"
+          @close="storyOpen = false"
+        />
       </div>
 
       <UiPageBar v-else-if="notFound || loadError" :title="knownTitle ?? t('nav.back')" back="/dashboard" />
