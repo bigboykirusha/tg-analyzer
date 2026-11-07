@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Шапка и левый блок — варианты</title>
+    <link rel="stylesheet" href="../../../apps/web/node_modules/@fontsource-variable/geist/index.css" />
+    <link rel="stylesheet" href="../../../apps/web/app/assets/styles/tokens.css" />
+    <link rel="stylesheet" href="report-v2.css" />
+    <link rel="stylesheet" href="report-v3-review.css" />
+    <link rel="stylesheet" href="pages-v1.css" />
+    <link rel="stylesheet" href="next-v1.css" />
+    <link rel="stylesheet" href="home-v2.css" />
+    <link rel="stylesheet" href="shell-v1.css" />
+    <link rel="stylesheet" href="frame-v1.css" />
+  </head>
+  <body>
+    <main class="review" style="max-width: 1560px">
+      <header class="review__head">
+        <h1>Шапка и левый блок на ПК — пять вариантов</h1>
+        <p>
+          Внутри везде одна и та же «Сводка» (старый вариант А), меняется только рамка: как устроены шапка и левый блок
+          и как они связаны с контентом. Ответ номером: «Рамка 3».
+        </p>
+      </header>
+      <section class="problem">
+        <h2>1. Как сейчас на сайте</h2>
+        <div class="why">
+          <p>
+            Шапка на всю ширину с линией снизу, логотип над левым блоком, левый блок — серая колонка под шапкой. Для
+            сравнения.
+          </p>
+        </div>
+        <div class="frames" data-frame="1"></div>
+      </section>
+      <section class="problem">
+        <h2>2. Рамка буквой «Г», контент на листе <em class="tag">рекомендую</em></h2>
+        <div class="why">
+          <p>
+            Шапка и левый блок — один серый материал, как рамка. Контент лежит на светлом листе со скруглённым углом
+            (как Linear, Arc, Notion). Шапка и меню читаются как одно целое, страница — как документ внутри.
+          </p>
+        </div>
+        <div class="frames" data-frame="2"></div>
+      </section>
+      <section class="problem">
+        <h2>3. Всё на одном фоне, только линии</h2>
+        <div class="why">
+          <p>
+            Ни серой колонки, ни листа: шапка, левый блок и контент на одном фоне, разделены тонкими линиями. Самый
+            спокойный и «плоский» вариант, левый блок перестаёт спорить с карточками.
+          </p>
+        </div>
+        <div class="frames" data-frame="3"></div>
+      </section>
+      <section class="problem">
+        <h2>4. Левый блок карточкой, шапка над контентом</h2>
+        <div class="why">
+          <p>
+            Левый блок — отдельная скруглённая карточка с отступом от краёв, логотип в ней. Шапка — над контентом, в той
+            же строке, что логотип, с общей линией. Всё «плавает» на фоне, как плитки отчёта.
+          </p>
+        </div>
+        <div class="frames" data-frame="4"></div>
+      </section>
+      <section class="problem">
+        <h2>5. Тёмный левый блок</h2>
+        <div class="why">
+          <p>
+            Левый блок и логотип — ink, как главная плитка отчёта; шапка светлая над контентом. Сильный характер и сразу
+            видно, где навигация. В тёмной теме блок — приподнятая тёмная поверхность.
+          </p>
+        </div>
+        <div class="frames" data-frame="5"></div>
+      </section>
+    </main>
+    <div class="proto">
+      <button data-set-theme="light" class="on">Светлая</button><button data-set-theme="dark">Тёмная</button>
+    </div>
+    <script src="report-v2.js"></script>
+    <script src="frame-v1.js"></script>
+  </body>
+</html>

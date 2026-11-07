@@ -1,0 +1,147 @@
+/* The desktop frame in five variants. Shared parts first, then each variant. */
+.av--5 {
+  background: var(--avatar-5-bg);
+}
+.fr {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  grid-template-rows: 64px 1fr;
+  min-height: 860px;
+}
+.fr__head {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 248px minmax(0, 1fr);
+  align-items: center;
+}
+.fr__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 64px;
+  padding: 0 var(--space-5);
+  font: var(--text-title);
+}
+.fr__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 var(--space-8);
+}
+.fr__title {
+  flex: 1;
+  font: var(--text-title);
+}
+.fr__nav {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  font: var(--text-ui);
+}
+.fr__side {
+  padding: var(--space-3);
+}
+.fr__main {
+  display: grid;
+  align-content: start;
+  gap: var(--space-8);
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-8) var(--space-10);
+}
+.fr__me {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding: var(--space-2);
+  font: var(--text-ui);
+}
+
+/* 1. As on the site now: hairline under the header, grey column under it. */
+.fr1 .fr__head {
+  border-bottom: 1px solid var(--border);
+}
+.fr1 .fr__side {
+  background: var(--sidebar);
+}
+
+/* 2. An «Г» frame of one material, the page on a sheet with a rounded corner. */
+.fr2 {
+  background: var(--sidebar);
+}
+.fr2 .fr__sheet {
+  overflow: hidden;
+  margin: 0 var(--space-3) var(--space-3) 0;
+  border-radius: var(--radius-xl);
+  background: var(--bg);
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+/* 3. One background, lines only. */
+.fr3 .fr__head {
+  border-bottom: 1px solid var(--border);
+}
+.fr3 .fr__side {
+  border-right: 1px solid var(--border);
+}
+
+/* 4 and 5: the left block runs the full height, the header sits over the page. */
+.fr4,
+.fr5 {
+  grid-template-rows: 1fr;
+}
+.fr__right {
+  min-width: 0;
+}
+.fr4 .fr__head,
+.fr5 .fr__head {
+  display: block;
+  grid-column: auto;
+}
+.fr4 .fr__bar,
+.fr5 .fr__bar {
+  height: 64px;
+}
+
+/* 4. The left block as a floating card. */
+.fr__card {
+  --sidebar-selected: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  margin: var(--space-3) 0 var(--space-3) var(--space-3);
+  padding: 0 var(--space-3) var(--space-3);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+}
+.fr__card .fr__brand {
+  padding: 0 var(--space-2);
+}
+
+/* 5. A dark left block, like the ink tile. */
+.fr__dark {
+  --text: var(--on-tile-ink);
+  --text-muted: var(--on-tile-ink-muted);
+  --sidebar-selected: var(--on-tile-ink-well);
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--space-3) var(--space-3);
+  background: var(--tile-ink);
+  color: var(--on-tile-ink);
+}
+.fr__dark .fr__brand {
+  padding: 0 var(--space-2);
+}
+.fr__dark .logo-mark {
+  background: var(--on-tile-ink-well);
+}
+.fr__nav--dark .side__item svg.i {
+  color: var(--on-tile-ink-muted);
+}
+.fr__nav--dark .side__item.on {
+  background: var(--on-tile-ink-well);
+}
