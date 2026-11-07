@@ -1,5 +1,5 @@
-// Screens for next-v1.html: the first wave after the 07.11 discussion. Helpers (ICONS, icon, rnd, line, boot) come from report-v2.js.
-/* global ICONS, icon, rnd, line, boot */
+// Screens for next-v1.html: the first wave after the 07.11 discussion. Helpers (ICONS, rnd, line, boot) come from report-v2.js.
+/* global ICONS, rnd, line, boot */
 Object.assign(ICONS, {
   home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
   plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',

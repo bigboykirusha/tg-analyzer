@@ -22,6 +22,7 @@ export function idleProgress(): ParseProgressDto {
     scannedMessages: 0,
     totalMessages: null,
     startedAt: null,
+    reachedAt: null,
     waitSeconds: null,
     error: null,
   }

@@ -3,7 +3,7 @@ import { AlertCircle, Info, MessageSquare, Search, WifiOff, X } from '../lib/ico
 
 /**
  * The user's Telegram chats with search, a private/group filter and the
- * «Анализ» button on every row. Runs and cancels analyses and deletes reports.
+ * «Анализ» button on every row; the chats pinned in Telegram first, as «С кого начать». Runs and cancels analyses and deletes reports.
  * `sticky` pins the search bar under the header (the «New analysis» page).
  */
 withDefaults(defineProps<{ sticky?: boolean }>(), { sticky: false })
@@ -43,6 +43,7 @@ const filteredChats = computed(() => {
   })
 })
 const visibleChats = computed(() => filteredChats.value.slice(0, visibleCount.value))
+const pinnedChats = computed(() => workspace.chats.filter((chat) => chat.pinned))
 
 const firstLoad = computed(
   () => !workspace.chats.length && (workspace.dialogsState === 'loading' || workspace.dialogsState === 'idle'),
@@ -121,6 +122,15 @@ onMounted(() => {
 
 <template>
   <div class="picker" :class="{ 'picker--sticky': sticky }">
+    <PinnedChats
+      v-if="!firstLoad"
+      :chats="pinnedChats"
+      :analysing-id="analysis.isActive.value ? analysis.progress.value.chatId : null"
+      :queued="new Set(queuedJobs.keys())"
+      :starting-id="startingChatId"
+      :disabled="analysisBlocked"
+      @analyse="(chat) => analyse(chat.id, chat.title)"
+    />
     <div class="picker-tools">
       <label class="input input--raised">
         <Search aria-hidden="true" />

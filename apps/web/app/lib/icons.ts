@@ -44,6 +44,7 @@ export {
   MoonStar,
   MoreHorizontal,
   Music,
+  Pin,
   Plane,
   Play,
   Plus,

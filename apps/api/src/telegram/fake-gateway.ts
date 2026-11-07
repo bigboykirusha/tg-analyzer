@@ -32,6 +32,9 @@ interface FakeChatSpec {
   members?: string[]
 }
 
+/** Chats the demo user pinned in Telegram: «С кого начать» on the new analysis page. */
+const PINNED_IDS = new Set(['1001', '1002', '-1002001'])
+
 // prettier-ignore
 const CHATS: FakeChatSpec[] = [
   { id: '1001', title: 'Мила', type: 'private', messages: 4800, days: 420, myShare: 0.52 },
@@ -99,11 +102,15 @@ function generateChat(spec: FakeChatSpec, now: number): MessageInput[] {
   const start = now - spec.days * DAY_MS
   const gapMs = (spec.days * DAY_MS) / Math.max(spec.messages, 1)
   let ts = start
+  // Busier and quieter months, as in a real chat: the pause between conversations swells and shrinks
+  // around its average along the history (one and a half waves, shifted per chat).
+  const shift = hashToUnit(`${spec.id}:season`)
 
   for (let id = 1; id <= spec.messages; id += 1) {
     // Bursty rhythm: short replies inside a conversation, long pauses between them.
     const burst = rand() < 0.82
-    ts += burst ? rand() * Math.min(gapMs, 6 * MINUTE_MS) : rand() * gapMs * 4
+    const season = 1 + 0.65 * Math.sin(2 * Math.PI * (1.5 * (id / spec.messages) + shift))
+    ts += burst ? rand() * Math.min(gapMs, 6 * MINUTE_MS) : rand() * gapMs * 4 * season
     const local = new Date(ts)
     // Pull night messages towards the evening for a believable daily curve.
     if (local.getUTCHours() < 6 && rand() < 0.75) ts += (6 + rand() * 4) * HOUR_MS
@@ -186,6 +193,7 @@ function toDialog(spec: FakeChatSpec, lastMessage: MessageInput | undefined): Te
     type: spec.type,
     hasAvatar: false,
     lastMessageAt: lastMessage?.date.toISOString() ?? null,
+    pinned: PINNED_IDS.has(spec.id),
   }
 }
 

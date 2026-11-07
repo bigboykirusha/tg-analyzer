@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { ReportDto } from '@tg-analyzer/shared'
+import { computeChapters, type ReportDto } from '@tg-analyzer/shared'
 import { Info } from '../../lib/icons'
 
 const props = defineProps<{ data: ReportDto }>()
-const { t, formatNumber, formatMonth } = useI18n()
+const { t, formatNumber } = useI18n()
 
 /** Three parts of one long page: how the two of you talk, when, and with which words. */
 type Part = 'together' | 'time' | 'words'
@@ -17,16 +17,8 @@ const tabs = computed(() => [
 const totals = computed(() => props.data.report.totals)
 /** Reports made before voice and rituals were counted: say so instead of leaving cards out silently. */
 const outdated = computed(() => !props.data.report.voice || !props.data.report.rituals)
-/** The volume in two facts under the pulse: its busiest month and where it is heading. */
-const volumeFacts = computed(() => {
-  const { facts } = props.data.report
-  return [
-    ...(facts.mostActiveMonth
-      ? [{ key: 'month', label: t('report.timeline.mostActiveMonth'), value: formatMonth(facts.mostActiveMonth) }]
-      : []),
-    { key: 'trend', label: t('report.timeline.trend'), value: t(`report.trend.${facts.trend}`) },
-  ]
-})
+/** The history in chapters under the pulse; none for a short or even chat. */
+const chapters = computed(() => computeChapters(props.data.report.activity.daily))
 const sentShare = computed(() => (totals.value.messages ? (totals.value.sent / totals.value.messages) * 100 : null))
 const mineShare = computed(() => (sentShare.value === null ? null : Math.round(sentShare.value)))
 
@@ -54,7 +46,7 @@ const shareHint = computed(() => {
       :data="data"
       :label="t('report.kpi.messages')"
       :value="formatNumber(totals.messages)"
-      :facts="volumeFacts"
+      :chapters="chapters"
     >
       <template #accent>
         <h2 class="share__title">{{ t('report.kpi.whoWritesMore') }}</h2>
@@ -76,6 +68,7 @@ const shareHint = computed(() => {
       </template>
     </ReportHero>
 
+    <ReportSince :data="data" />
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
     <!-- «Вы двое» is masonry: every card at its own height, no stretched blanks (see useMasonry). -->
     <ReportPart id="together" :title="t('report.tabs.together')" columns>

@@ -224,6 +224,8 @@ async function scanChat(
 
     for (const message of page.messages) builder.add(message)
     progress.scannedMessages = builder.messageCount
+    const oldest = page.messages[page.messages.length - 1]
+    if (oldest) progress.reachedAt = oldest.date.toISOString()
     progress.totalMessages = page.total ?? progress.totalMessages
     offsetId = page.nextOffsetId
     await publish()

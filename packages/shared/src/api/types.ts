@@ -161,6 +161,8 @@ export interface DialogDto {
   hasAvatar: boolean
   /** ISO time of the newest message; null when unknown (or cached by an older version). */
   lastMessageAt: string | null
+  /** Pinned by the user in Telegram; absent in lists cached by an older version. */
+  pinned?: boolean
 }
 
 export interface DialogsResponse {
@@ -241,6 +243,8 @@ export interface ParseProgressDto {
   totalMessages: number | null
   /** Unix epoch milliseconds. */
   startedAt: number | null
+  /** ISO time of the oldest message read so far: the history is read from today backwards. */
+  reachedAt?: string | null
   /** Seconds Telegram asked us to wait (phase `waiting`). */
   waitSeconds: number | null
   error: ParseErrorCode | null

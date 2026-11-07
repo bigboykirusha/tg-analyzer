@@ -18,6 +18,8 @@ export interface WorkspaceChat {
   hasAvatar: boolean
   /** Missing in dialog lists cached by older versions. */
   lastMessageAt?: string | null
+  /** Pinned in Telegram; missing for chats known only from a report. */
+  pinned?: boolean
   report: ReportSummaryDto | null
 }
 

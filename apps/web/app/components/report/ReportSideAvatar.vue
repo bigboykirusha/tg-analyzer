@@ -42,6 +42,11 @@ const letter = computed(() =>
   color: var(--lime);
 }
 
+/* On ink «Я» is a light circle: the letter takes the tile's colour. */
+.tile--ink .side-avatar--mine {
+  color: var(--tile-ink);
+}
+
 .tile--lime .side-avatar--theirs {
   background: var(--on-lime-well);
   color: var(--on-lime);

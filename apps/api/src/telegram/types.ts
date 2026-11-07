@@ -14,6 +14,8 @@ export interface TelegramDialog {
   hasAvatar: boolean
   /** ISO time of the newest message, when Telegram reports it. */
   lastMessageAt: string | null
+  /** Pinned by the user in their chat list. */
+  pinned: boolean
 }
 
 export interface HistoryPage {

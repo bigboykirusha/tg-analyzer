@@ -2,11 +2,12 @@
 import { Send } from '../../lib/icons'
 
 /**
- * While an analysis runs: which chat, how far, roughly how long, and that the
- * tab may be closed. A long chat takes minutes, and a thin bar in a list row
- * did not say any of that. Offers the bot when it is set up but not on.
+ * While an analysis runs: which chat, how far back in time the reading got («Дошли до 4 марта
+ * 2025»), how many messages, roughly how long, and that the tab may be closed. The history is
+ * read from today backwards, so the bar fills from its right end. Offers the bot when it is set
+ * up but not on.
  */
-const { t, tc, formatNumber, formatCountdown } = useI18n()
+const { t, tc, formatNumber, formatCountdown, formatDate } = useI18n()
 const analysis = useAnalysis()
 const auth = useAuthStore()
 const now = useNow()
@@ -17,7 +18,8 @@ const MIN_ETA_MS = 5_000
 
 const view = computed(() => {
   if (!analysis.isActive.value) return null
-  const { scannedMessages, totalMessages, phase, chatTitle, startedAt, waitSeconds } = analysis.progress.value
+  const { scannedMessages, totalMessages, phase, chatTitle, startedAt, waitSeconds, reachedAt } =
+    analysis.progress.value
   const chat = chatTitle || t('analysis.untitledChat')
   const share = totalMessages ? Math.min(1, scannedMessages / totalMessages) : null
   let eta: string | null = null
@@ -34,7 +36,18 @@ const view = computed(() => {
   else if (totalMessages)
     line = t('analysis.banner.read', { done: formatNumber(scannedMessages), total: formatNumber(totalMessages) })
   else line = t('analysis.banner.connecting')
-  return { chat, line: eta ? `${line} · ${eta}` : line, percent: share === null ? null : Math.round(share * 100) }
+  const reached =
+    reachedAt && phase === 'scanning'
+      ? t('analysis.banner.reached', {
+          date: formatDate(reachedAt, { day: 'numeric', month: 'long', year: 'numeric' }),
+        })
+      : null
+  return {
+    chat,
+    reached,
+    line: eta ? `${line} · ${eta}` : line,
+    percent: share === null ? null : Math.round(share * 100),
+  }
 })
 const botUrl = computed(() => (auth.user?.botUrl && !auth.user.botNotify ? auth.user.botUrl : null))
 </script>
@@ -45,6 +58,7 @@ const botUrl = computed(() => (auth.user?.botUrl && !auth.user.botNotify ? auth.
       <span class="spinner analysis-banner__spinner" aria-hidden="true" />
       <strong class="t-title">{{ t('analysis.banner.title', { chat: view.chat }) }}</strong>
     </div>
+    <p v-if="view.reached" class="analysis-banner__reached t-num">{{ view.reached }}</p>
     <p class="t-small t-muted t-num">{{ view.line }}</p>
     <div
       v-if="view.percent !== null"
@@ -99,8 +113,15 @@ const botUrl = computed(() => (auth.user?.botUrl && !auth.user.botNotify ? auth.
   background: var(--surface-2);
 }
 
+.analysis-banner__reached {
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+}
+
+/* From today backwards: the filled part grows from the right end. */
 .analysis-banner__bar i {
   display: block;
+  margin-left: auto;
   height: 100%;
   border-radius: inherit;
   background: var(--you);

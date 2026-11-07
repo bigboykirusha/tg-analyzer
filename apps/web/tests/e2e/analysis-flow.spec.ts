@@ -55,8 +55,8 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
     await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
   }
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
-  // «май 2026 г.» under the volume chart never breaks between the year and «г.».
-  const month = page.locator('.fact-line > div').filter({ hasText: 'Самый активный месяц' }).locator('dd')
+  // «октябрь 2026 г.» on the axis under the pulse (a short chat has no chapters) never breaks before «г.».
+  const month = page.locator('.hero .pulse__axis span').first()
   expect(
     await month.evaluate((element) => {
       const text = element.textContent!
