@@ -89,7 +89,9 @@ watch(analysis.finished, (job) => {
     display: block;
   }
 
+  /* The panel is the frame now: the screen fills it, up to a wider column than the public pages. */
   .workspace-panel {
+    --page-max: var(--page-max-wide);
     min-height: calc(100dvh - 2 * var(--space-2));
     margin: var(--space-2) var(--space-2) var(--space-2) 0;
     border-radius: var(--radius-xl);

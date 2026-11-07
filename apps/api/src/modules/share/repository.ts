@@ -9,8 +9,9 @@ import {
   type ShareLinkKind,
   type ShareLinksResponse,
   type ShareReportSettings,
+  type UserShareLinkDto,
 } from '@tg-analyzer/shared'
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { db, schema } from '../../db'
 import type { ShareLinkPayload, ShareLinkResult } from '../../db/schema'
 import { ApiError, conflict, notFound } from '../../lib/errors'
@@ -224,4 +225,24 @@ export async function answerQuiz(
     .where(eq(schema.shareLinks.id, row.id))
     .returning()
   return toPublic(updated!)
+}
+
+/** Every live link of the user with its chat, newest first: the home summary reads quiz answers from it. */
+export async function listUserLinks(userId: string): Promise<UserShareLinkDto[]> {
+  const rows = await db
+    .select({ link: schema.shareLinks, chatId: schema.chatReports.tgChatId, title: schema.chatReports.title })
+    .from(schema.shareLinks)
+    .innerJoin(schema.chatReports, eq(schema.chatReports.id, schema.shareLinks.reportId))
+    .where(eq(schema.shareLinks.userId, userId))
+    .orderBy(desc(schema.shareLinks.createdAt))
+  const now = Date.now()
+  return rows
+    .filter(({ link }) => !link.expiresAt || link.expiresAt.getTime() > now)
+    .map(({ link, chatId, title }) => ({
+      chatId: String(chatId),
+      title,
+      kind: link.kind,
+      expiresAt: link.expiresAt?.toISOString() ?? null,
+      result: toResult(link),
+    }))
 }

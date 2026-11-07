@@ -11,7 +11,7 @@ import { authRoutes } from '../modules/auth/routes'
 import { parseRoutes } from '../modules/parse/routes'
 import { progressSocketRoutes } from '../modules/parse/progress-socket'
 import { reportRoutes } from '../modules/reports/routes'
-import { publicShareRoutes, shareLinkRoutes } from '../modules/share/routes'
+import { publicShareRoutes, shareLinkRoutes, userLinkRoutes } from '../modules/share/routes'
 import { systemRoutes } from '../modules/system/routes'
 import { isOriginAllowed } from './origin'
 
@@ -77,6 +77,7 @@ export async function buildServer() {
   await app.register(reportRoutes, { prefix: '/api/v1/reports' })
   await app.register(shareLinkRoutes, { prefix: '/api/v1/reports' })
   await app.register(publicShareRoutes, { prefix: '/api/v1/public' })
+  await app.register(userLinkRoutes, { prefix: '/api/v1/links' })
   await app.register(progressSocketRoutes, { prefix: '/ws' })
 
   return app

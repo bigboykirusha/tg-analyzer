@@ -851,3 +851,16 @@ export interface AnswerQuizBody {
   /** Let the author see the score and the answers. */
   share: boolean
 }
+
+/** One link of the user's, with the chat it belongs to: what the home summary needs. */
+export interface UserShareLinkDto {
+  chatId: string
+  title: string
+  kind: ShareLinkKind
+  expiresAt: string | null
+  result: QuizResultDto | null
+}
+
+export interface UserShareLinksResponse {
+  links: UserShareLinkDto[]
+}

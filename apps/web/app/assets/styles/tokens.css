@@ -230,6 +230,8 @@
   /* One content column for the header and every page; the gutter follows the screen. */
   --page-max: 1200px;
   --page-max-narrow: 720px;
+  /* The signed-in screens on their panel: wide monitors fill up, ultra-wide ones keep a column. */
+  --page-max-wide: 1440px;
   --page-gutter: var(--space-8);
   /* Shared geometry for cards, including the measured report columns. */
   --card-padding: var(--space-6);

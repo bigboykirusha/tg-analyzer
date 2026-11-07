@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { deriveHomeEvents, type UserShareLinkDto } from '@tg-analyzer/shared'
 import { AlertCircle, BarChart2, Lock, MessageSquare, Plus } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
@@ -18,7 +19,23 @@ const reports = computed(() =>
     .filter((chat) => chat.report)
     .sort((left, right) => Date.parse(right.report!.analyzedAt) - Date.parse(left.report!.analyzedAt)),
 )
-const reportIds = computed(() => new Set(reports.value.map((chat) => chat.id)))
+/** The user's quiz answers for «Главное»; the summary works without them. */
+const links = ref<UserShareLinkDto[]>([])
+async function loadLinks() {
+  try {
+    links.value = (await api('GET /api/v1/links')).links
+  } catch {
+    links.value = []
+  }
+}
+/** «Главное»: the month, new messages, a quiz answer, the next round number, a chat without a report. */
+const events = computed(() =>
+  deriveHomeEvents(
+    reports.value.map((chat) => chat.report!),
+    workspace.recent,
+    links.value,
+  ),
+)
 
 /** Returning users wait for their reports instead of seeing the newcomer screen flash by. */
 const loadingReports = computed(
@@ -49,6 +66,7 @@ function isUpdating(chatId: string) {
 onMounted(() => {
   void workspace.loadDialogs()
   void workspace.loadRecent()
+  void loadLinks()
   // The failure is shown in place (see `reportsFailed`); a toast would say it twice.
   loadReports()
 })
@@ -121,8 +139,12 @@ onMounted(() => {
         </UiPageBar>
         <AnalysisBanner />
 
-        <MonthSummary v-if="workspace.recent" :recent="workspace.recent" :report-ids="reportIds" />
-        <MonthSkeleton v-else-if="workspace.recentState !== 'error'" />
+        <PinnedPeople />
+        <UiPageSection :title="t('home.highlights')">
+          <HomeEvents v-if="events.length" :events="events" />
+          <MonthSkeleton v-else-if="!workspace.recent && workspace.recentState !== 'error'" />
+          <p v-else class="tile__note">{{ t('month.empty') }}</p>
+        </UiPageSection>
 
         <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
           <div class="report-cards" :style="{ '--report-cols': Math.min(4, Math.max(3, reports.length)) }">

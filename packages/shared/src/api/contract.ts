@@ -5,6 +5,7 @@ import type {
   PublicShareDto,
   ShareLinkDto,
   ShareLinksResponse,
+  UserShareLinksResponse,
   AuthSuccessResponse,
   AvatarsBody,
   AvatarsResponse,
@@ -150,6 +151,8 @@ export interface ApiEndpointMap {
   'GET /api/v1/reports/:chatId/links': Endpoint<undefined, ShareLinksResponse>
   'POST /api/v1/reports/:chatId/links': Endpoint<CreateShareLinkBody, ShareLinkDto>
   'DELETE /api/v1/reports/:chatId/links/:kind': Endpoint<undefined, SuccessResponse>
+
+  'GET /api/v1/links': Endpoint<undefined, UserShareLinksResponse>
 
   'GET /api/v1/public/:token': Endpoint<undefined, PublicShareDto>
   'POST /api/v1/public/:token/answer': Endpoint<AnswerQuizBody, PublicShareDto>

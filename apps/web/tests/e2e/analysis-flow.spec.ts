@@ -33,8 +33,8 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
           .evaluate((element) => element.scrollWidth <= element.clientWidth),
       )
       .toBe(true)
-    // A chat of the month without a report starts its analysis from its own row, and the row fits.
-    const waiting = page.locator('button.month__row').first()
+    // The busiest chat of the month without a report starts its analysis from its tile, and the button fits.
+    const waiting = page.locator('.home-event__analyse').first()
     await expect(waiting).toContainText('Разобрать чат')
     expect(await waiting.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
   }

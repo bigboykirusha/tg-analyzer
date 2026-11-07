@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** The shape of `MonthSummary` while it loads: the chart (leader and four rows) and the slim next-chat strip. */
+/** The shape of «Главное» while the month loads: a leader row and four more, then a slim strip. */
 </script>
 
 <template>
