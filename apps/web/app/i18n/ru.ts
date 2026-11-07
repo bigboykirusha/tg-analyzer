@@ -127,6 +127,7 @@ export const ru: Record<MessageKey, string> = {
   'dashboard.removeFromQueue': 'Убрать из очереди',
   'dashboard.reportsError': 'Не удалось загрузить отчёты',
   'dashboard.search': 'Поиск чата Telegram',
+  'dashboard.searchPlaceholder': 'Поиск чата Telegram…',
   'dashboard.sessionInactive': 'Сеанс Telegram завершился. Чтобы разобрать новый чат, войдите снова.',
   'dashboard.shown': 'Показано {shown} из {total}',
   'dashboard.staleDialogs': 'Telegram занят анализом — показан последний загруженный список.',

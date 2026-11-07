@@ -78,6 +78,8 @@ function submit() {
         class="phone-field"
         input-class="phone-input"
         :placeholder="phonePlaceholder"
+        type="tel"
+        name="phone"
         inputmode="tel"
         autocomplete="tel"
         @update:model-value="handleInput"

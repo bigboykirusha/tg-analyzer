@@ -44,10 +44,22 @@ function run(action: 'analyse' | 'delete') {
   if (action === 'analyse') emit('analyse')
   else emit('delete')
 }
+
+/** Right click or long press: the row's own menu instead of the browser's, when the row has one. */
+function openMenu(event: MouseEvent) {
+  if (!props.chat.report || props.queued || props.analysing) return
+  event.preventDefault()
+  menuOpen.value = true
+}
 </script>
 
 <template>
-  <div class="chat-row" :class="{ 'chat-row--active': analysing, 'chat-row--link': reportPath }">
+  <!-- As in Telegram, a right click or a long press opens the row's menu. -->
+  <div
+    class="chat-row"
+    :class="{ 'chat-row--active': analysing, 'chat-row--link': reportPath }"
+    @contextmenu="openMenu"
+  >
     <component :is="reportPath ? NuxtLink : 'div'" :to="reportPath ?? undefined" class="chat-row__main">
       <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" />
       <span class="chat-row__copy">

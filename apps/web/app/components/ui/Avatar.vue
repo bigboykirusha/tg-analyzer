@@ -125,33 +125,53 @@ const tooltip = computed(() => {
 }
 
 .avatar--t1 {
-  background: var(--avatar-1-bg);
-  color: var(--avatar-1-ink);
+  --avatar-bg: var(--avatar-1-bg);
+  --avatar-glow: var(--avatar-1-glow);
 }
 
 .avatar--t2 {
-  background: var(--avatar-2-bg);
-  color: var(--avatar-2-ink);
+  --avatar-bg: var(--avatar-2-bg);
+  --avatar-glow: var(--avatar-2-glow);
 }
 
 .avatar--t3 {
-  background: var(--avatar-3-bg);
-  color: var(--avatar-3-ink);
+  --avatar-bg: var(--avatar-3-bg);
+  --avatar-glow: var(--avatar-3-glow);
 }
 
 .avatar--t4 {
-  background: var(--avatar-4-bg);
-  color: var(--avatar-4-ink);
+  --avatar-bg: var(--avatar-4-bg);
+  --avatar-glow: var(--avatar-4-glow);
 }
 
 .avatar--t5 {
-  background: var(--avatar-5-bg);
-  color: var(--avatar-5-ink);
+  --avatar-bg: var(--avatar-5-bg);
+  --avatar-glow: var(--avatar-5-glow);
+}
+
+/*
+ * A person's hue as a soft vertical gradient, base at the top and a lighter step at the bottom — the
+ * same families Telegram gives their avatar, so a face is recognisable here at a glance.
+ */
+.avatar--t1,
+.avatar--t2,
+.avatar--t3,
+.avatar--t4,
+.avatar--t5,
+.avatar--t6,
+.avatar--t7 {
+  background: linear-gradient(var(--avatar-bg), var(--avatar-glow));
+  color: var(--avatar-ink);
+}
+
+.avatar--t7 {
+  --avatar-bg: var(--avatar-7-bg);
+  --avatar-glow: var(--avatar-7-glow);
 }
 
 .avatar--t6 {
-  background: var(--avatar-6-bg);
-  color: var(--avatar-6-ink);
+  --avatar-bg: var(--avatar-6-bg);
+  --avatar-glow: var(--avatar-6-glow);
 }
 
 /* ─── Sides of a two-person report: you are ink, they are the person's hue ─ */

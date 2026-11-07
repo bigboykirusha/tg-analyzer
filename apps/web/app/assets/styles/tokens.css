@@ -39,7 +39,7 @@
   --white-a3: rgba(255, 255, 255, 0.16);
   --white-a4: rgba(255, 255, 255, 0.24);
   --white-a6: rgba(255, 255, 255, 0.4);
-  --white-a8: rgba(255, 255, 255, 0.72);
+  --white-a8: rgba(255, 255, 255, 0.8);
   --white-a9: rgba(255, 255, 255, 0.86);
 
   /* Neutral grays, dark: true black ground, raised grays above it (dimmer ground, brighter type). */
@@ -58,11 +58,26 @@
   --night-a5: rgba(245, 245, 247, 0.28);
 
   /*
-   * People: six hues, picked by a stable hash of the chat id (lib/hue.ts). Each hue has a mark (their
-   * side in charts and text; also the poster in light mode, white type ≥4.7:1), a room (the page
+   * People: seven hues, the same families Telegram gives the person's avatar (abs(peer id) % 7 —
+   * red, orange, violet, green, teal, blue, pink; lib/hue.ts), tuned to one lightness here. Each hue has a poster (deep
+   * enough for white type at 6:1 and its 80% muted line at 4.6:1), a mark (their side in charts and
+   * text, ≥4.6:1 on white), a room (the page
    * behind a report) and a tint (wells on the room); and the same three for dark mode. Built in OKLCH
    * so every hue has the same lightness.
    */
+  --hue-red-poster: #a8353a;
+  --hue-red-glow: #d56656;
+  --hue-red-glow-d: #ffb1a2;
+  --hue-red-mark: #bc484b;
+  --hue-red-room: #fff4f3;
+  --hue-red-tint: #ffe4e2;
+  --hue-red-mark-d: #f79a97;
+  --hue-red-poster-d: #6a2023;
+  --hue-red-room-d: #130b0b;
+  --hue-red-tint-d: #2f1c1b;
+  --hue-violet-poster: #6250b2;
+  --hue-violet-glow: #9578d8;
+  --hue-violet-glow-d: #d0bdff;
   --hue-violet-mark: #7262c6;
   --hue-violet-room: #f6f6ff;
   --hue-violet-tint: #eae9ff;
@@ -70,6 +85,9 @@
   --hue-violet-poster-d: #3c3170;
   --hue-violet-room-d: #0d0c13;
   --hue-violet-tint-d: #211f2f;
+  --hue-orange-poster: #9c470d;
+  --hue-orange-glow: #c47639;
+  --hue-orange-glow-d: #f9bc91;
   --hue-orange-mark: #b05925;
   --hue-orange-room: #fef5f0;
   --hue-orange-tint: #fde6da;
@@ -77,6 +95,9 @@
   --hue-orange-poster-d: #622b08;
   --hue-orange-room-d: #120b08;
   --hue-orange-tint-d: #2e1d15;
+  --hue-green-poster: #1d6d3c;
+  --hue-green-glow: #469b72;
+  --hue-green-glow-d: #9fdbb9;
   --hue-green-mark: #35824f;
   --hue-green-room: #f1f9f3;
   --hue-green-tint: #ddf1e1;
@@ -84,6 +105,9 @@
   --hue-green-poster-d: #174828;
   --hue-green-room-d: #090f0a;
   --hue-green-tint-d: #16261a;
+  --hue-blue-poster: #1b62a7;
+  --hue-blue-glow: #5f8cd7;
+  --hue-blue-glow-d: #a8ccff;
   --hue-blue-mark: #3377be;
   --hue-blue-room: #f1f8ff;
   --hue-blue-tint: #ddedff;
@@ -91,6 +115,9 @@
   --hue-blue-poster-d: #123e6b;
   --hue-blue-room-d: #090e13;
   --hue-blue-tint-d: #172330;
+  --hue-pink-poster: #9f3960;
+  --hue-pink-glow: #ce667d;
+  --hue-pink-glow-d: #ffb0be;
   --hue-pink-mark: #b34b71;
   --hue-pink-room: #fef4f6;
   --hue-pink-tint: #fee3ea;
@@ -98,6 +125,9 @@
   --hue-pink-poster-d: #64223b;
   --hue-pink-room-d: #120b0d;
   --hue-pink-tint-d: #2e1c21;
+  --hue-teal-poster: #006a7b;
+  --hue-teal-glow: #2d9aa2;
+  --hue-teal-glow-d: #93d9de;
   --hue-teal-mark: #008192;
   --hue-teal-room: #eef9fb;
   --hue-teal-tint: #d5f1f6;
@@ -161,7 +191,7 @@
   --on-poster: var(--gray-0);
   --on-poster-muted: var(--white-a8);
   --on-poster-line: var(--white-a4);
-  --on-poster-well: var(--white-a3);
+  --on-poster-well: var(--white-a2);
   --room: var(--gray-2);
   --room-tint: var(--gray-3);
   /* Tiles: one poster-coloured tile may carry a part's headline; every other tile is plain white. */
@@ -199,18 +229,22 @@
   --chart-neutral-strong: var(--gray-9);
   --chart-peak: var(--room-tint);
   /* Avatars outside a report: the person's hue, white initials. */
-  --avatar-1-bg: var(--hue-violet-mark);
+  --avatar-1-bg: var(--hue-red-mark);
+  --avatar-1-glow: var(--hue-red-glow);
   --avatar-2-bg: var(--hue-orange-mark);
-  --avatar-3-bg: var(--hue-green-mark);
-  --avatar-4-bg: var(--hue-blue-mark);
-  --avatar-5-bg: var(--hue-pink-mark);
-  --avatar-6-bg: var(--hue-teal-mark);
-  --avatar-1-ink: var(--gray-0);
-  --avatar-2-ink: var(--gray-0);
-  --avatar-3-ink: var(--gray-0);
-  --avatar-4-ink: var(--gray-0);
-  --avatar-5-ink: var(--gray-0);
-  --avatar-6-ink: var(--gray-0);
+  --avatar-2-glow: var(--hue-orange-glow);
+  --avatar-3-bg: var(--hue-violet-mark);
+  --avatar-3-glow: var(--hue-violet-glow);
+  --avatar-4-bg: var(--hue-green-mark);
+  --avatar-4-glow: var(--hue-green-glow);
+  --avatar-5-bg: var(--hue-teal-mark);
+  --avatar-5-glow: var(--hue-teal-glow);
+  --avatar-6-bg: var(--hue-blue-mark);
+  --avatar-6-glow: var(--hue-blue-glow);
+  --avatar-7-bg: var(--hue-pink-mark);
+  --avatar-7-glow: var(--hue-pink-glow);
+  /* Initials on every hue. */
+  --avatar-ink: var(--gray-0);
 
   /* Elevation: flat content; only floating layers cast a shadow. */
   --shadow-segment: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
@@ -295,18 +329,21 @@
   --heat-4: #b4b4ba;
   --chart-neutral: var(--night-5);
   --chart-neutral-strong: var(--night-8);
-  --avatar-1-bg: var(--hue-violet-mark-d);
+  --avatar-1-bg: var(--hue-red-mark-d);
+  --avatar-1-glow: var(--hue-red-glow-d);
   --avatar-2-bg: var(--hue-orange-mark-d);
-  --avatar-3-bg: var(--hue-green-mark-d);
-  --avatar-4-bg: var(--hue-blue-mark-d);
-  --avatar-5-bg: var(--hue-pink-mark-d);
-  --avatar-6-bg: var(--hue-teal-mark-d);
-  --avatar-1-ink: var(--night-0);
-  --avatar-2-ink: var(--night-0);
-  --avatar-3-ink: var(--night-0);
-  --avatar-4-ink: var(--night-0);
-  --avatar-5-ink: var(--night-0);
-  --avatar-6-ink: var(--night-0);
+  --avatar-2-glow: var(--hue-orange-glow-d);
+  --avatar-3-bg: var(--hue-violet-mark-d);
+  --avatar-3-glow: var(--hue-violet-glow-d);
+  --avatar-4-bg: var(--hue-green-mark-d);
+  --avatar-4-glow: var(--hue-green-glow-d);
+  --avatar-5-bg: var(--hue-teal-mark-d);
+  --avatar-5-glow: var(--hue-teal-glow-d);
+  --avatar-6-bg: var(--hue-blue-mark-d);
+  --avatar-6-glow: var(--hue-blue-glow-d);
+  --avatar-7-bg: var(--hue-pink-mark-d);
+  --avatar-7-glow: var(--hue-pink-glow-d);
+  --avatar-ink: var(--night-0);
   --shadow-segment: 0 1px 3px rgba(0, 0, 0, 0.5);
   --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 0 0.5px var(--night-a3);
   --shadow-float: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 0 0.5px var(--night-a3);
@@ -333,15 +370,31 @@
  * data-hue on <html> (a report page) or on any element (a report card on home) re-points the person's
  * tokens for that subtree. Light first, then dark.
  */
+:root[data-hue='red'],
+[data-hue='red'] {
+  /* «Итоги» are pictures: the person's light colours in both themes. */
+  --story-gradient-2: var(--hue-red-poster);
+  --story-gradient-3: var(--hue-red-room);
+  --story-accent: var(--hue-red-mark);
+  --them: var(--hue-red-mark);
+  --them-ink: var(--hue-red-mark);
+  --poster: var(--hue-red-poster);
+  --room: var(--hue-red-room);
+  --room-tint: var(--hue-red-tint);
+  --tile-ink: var(--poster);
+  --chart-peak: var(--room-tint);
+  --ring-them: inset 0 0 0 2px var(--them);
+}
+
 :root[data-hue='violet'],
 [data-hue='violet'] {
   /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-violet-mark);
+  --story-gradient-2: var(--hue-violet-poster);
   --story-gradient-3: var(--hue-violet-room);
   --story-accent: var(--hue-violet-mark);
   --them: var(--hue-violet-mark);
   --them-ink: var(--hue-violet-mark);
-  --poster: var(--hue-violet-mark);
+  --poster: var(--hue-violet-poster);
   --room: var(--hue-violet-room);
   --room-tint: var(--hue-violet-tint);
   --tile-ink: var(--poster);
@@ -352,12 +405,12 @@
 :root[data-hue='orange'],
 [data-hue='orange'] {
   /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-orange-mark);
+  --story-gradient-2: var(--hue-orange-poster);
   --story-gradient-3: var(--hue-orange-room);
   --story-accent: var(--hue-orange-mark);
   --them: var(--hue-orange-mark);
   --them-ink: var(--hue-orange-mark);
-  --poster: var(--hue-orange-mark);
+  --poster: var(--hue-orange-poster);
   --room: var(--hue-orange-room);
   --room-tint: var(--hue-orange-tint);
   --tile-ink: var(--poster);
@@ -368,12 +421,12 @@
 :root[data-hue='green'],
 [data-hue='green'] {
   /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-green-mark);
+  --story-gradient-2: var(--hue-green-poster);
   --story-gradient-3: var(--hue-green-room);
   --story-accent: var(--hue-green-mark);
   --them: var(--hue-green-mark);
   --them-ink: var(--hue-green-mark);
-  --poster: var(--hue-green-mark);
+  --poster: var(--hue-green-poster);
   --room: var(--hue-green-room);
   --room-tint: var(--hue-green-tint);
   --tile-ink: var(--poster);
@@ -384,12 +437,12 @@
 :root[data-hue='blue'],
 [data-hue='blue'] {
   /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-blue-mark);
+  --story-gradient-2: var(--hue-blue-poster);
   --story-gradient-3: var(--hue-blue-room);
   --story-accent: var(--hue-blue-mark);
   --them: var(--hue-blue-mark);
   --them-ink: var(--hue-blue-mark);
-  --poster: var(--hue-blue-mark);
+  --poster: var(--hue-blue-poster);
   --room: var(--hue-blue-room);
   --room-tint: var(--hue-blue-tint);
   --tile-ink: var(--poster);
@@ -400,12 +453,12 @@
 :root[data-hue='pink'],
 [data-hue='pink'] {
   /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-pink-mark);
+  --story-gradient-2: var(--hue-pink-poster);
   --story-gradient-3: var(--hue-pink-room);
   --story-accent: var(--hue-pink-mark);
   --them: var(--hue-pink-mark);
   --them-ink: var(--hue-pink-mark);
-  --poster: var(--hue-pink-mark);
+  --poster: var(--hue-pink-poster);
   --room: var(--hue-pink-room);
   --room-tint: var(--hue-pink-tint);
   --tile-ink: var(--poster);
@@ -416,14 +469,26 @@
 :root[data-hue='teal'],
 [data-hue='teal'] {
   /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-teal-mark);
+  --story-gradient-2: var(--hue-teal-poster);
   --story-gradient-3: var(--hue-teal-room);
   --story-accent: var(--hue-teal-mark);
   --them: var(--hue-teal-mark);
   --them-ink: var(--hue-teal-mark);
-  --poster: var(--hue-teal-mark);
+  --poster: var(--hue-teal-poster);
   --room: var(--hue-teal-room);
   --room-tint: var(--hue-teal-tint);
+  --tile-ink: var(--poster);
+  --chart-peak: var(--room-tint);
+  --ring-them: inset 0 0 0 2px var(--them);
+}
+
+:root[data-theme='dark'][data-hue='red'],
+:root[data-theme='dark'] [data-hue='red'] {
+  --them: var(--hue-red-mark-d);
+  --them-ink: var(--hue-red-mark-d);
+  --poster: var(--hue-red-poster-d);
+  --room: var(--hue-red-room-d);
+  --room-tint: var(--hue-red-tint-d);
   --tile-ink: var(--poster);
   --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
@@ -687,7 +752,7 @@
    */
   --story-backdrop: #050505;
   --story-gradient-1: var(--gray-12);
-  --story-gradient-2: var(--hue-violet-mark);
+  --story-gradient-2: var(--hue-violet-poster);
   --story-gradient-3: var(--hue-violet-room);
   --story-gradient-4: var(--gray-2);
   --story-gradient-5: var(--hue-orange-room);

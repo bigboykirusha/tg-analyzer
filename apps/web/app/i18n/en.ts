@@ -128,6 +128,7 @@ export const en = {
   'dashboard.removeFromQueue': 'Remove from queue',
   'dashboard.reportsError': 'Could not load reports',
   'dashboard.search': 'Search a Telegram chat',
+  'dashboard.searchPlaceholder': 'Search a Telegram chat…',
   'dashboard.sessionInactive': 'Your Telegram session ended. Sign in again to analyse new chats.',
   'dashboard.shown': 'Shown {shown} of {total}',
   'dashboard.staleDialogs': 'Telegram is busy with an analysis, showing the last loaded list.',

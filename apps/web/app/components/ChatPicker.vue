@@ -138,8 +138,11 @@ onMounted(() => {
         <input
           v-model="search"
           type="search"
+          name="chat-search"
+          autocomplete="off"
+          spellcheck="false"
           class="input__control"
-          :placeholder="t('dashboard.search')"
+          :placeholder="t('dashboard.searchPlaceholder')"
           :aria-label="t('dashboard.search')"
         />
         <button v-if="search" type="button" class="input__clear" :aria-label="t('common.clear')" @click="search = ''">

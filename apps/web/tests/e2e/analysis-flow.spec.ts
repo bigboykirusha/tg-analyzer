@@ -55,8 +55,8 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
     await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
   }
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
-  // «октябрь 2026 г.» on the axis under the pulse (a short chat has no chapters) never breaks before «г.».
-  const month = page.locator('.hero .pulse__axis span').first()
+  // «октябрь 2026 г.» on the axis under the pulse (on the poster; a short chat has no chapters) never breaks before «г.».
+  const month = page.locator('.poster .pulse__axis span').first()
   expect(
     await month.evaluate((element) => {
       const text = element.textContent!

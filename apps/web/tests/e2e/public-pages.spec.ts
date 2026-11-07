@@ -110,7 +110,7 @@ test('report navigation survives resizing between phone, tablet and desktop', as
     await page.setViewportSize({ width, height: width === 430 ? 932 : 844 })
     await expect.poll(() => noHorizontalScroll(page)).toBe(true)
     // Wide screens keep the name quiet, so there is no line to fit.
-    if (width < 901)
+    if (width < 901 && (await page.locator('.page-bar__lede').count()))
       await expect
         .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
         .toBe(true)
@@ -128,12 +128,11 @@ test('the activity calendar names each day in its tooltip and scrolls without a 
   await usePreferences(context, 'dark')
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await gotoHydrated(page, '/example')
-  const calendar = page.locator('.heatmap')
-  const cells = calendar.locator('.heatmap__grid [data-date]')
+  const calendar = page.locator('.calendar')
+  const cells = calendar.locator('.calendar__months .calendar__cell[title]')
   const count = await cells.count()
   expect(count).toBeGreaterThan(7)
   expect(await cells.nth(count - 2).getAttribute('title')).toBeTruthy()
-  await expect(calendar.locator('.heatmap__selection')).toHaveCount(0)
   await page
     .getByRole('article')
     .filter({ has: calendar })

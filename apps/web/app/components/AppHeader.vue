@@ -155,7 +155,8 @@ function signOut() {
  */
 .app-navigation.is-over-poster {
   --text: var(--on-poster);
-  --text-muted: var(--on-poster-muted);
+  /* Light type stays full strength on the poster's wells (segments), so it keeps 4.5:1. */
+  --text-muted: var(--on-poster);
   --border: var(--on-poster-line);
   --hover: var(--on-poster-well);
   --pressed: var(--on-poster-line);
@@ -175,7 +176,13 @@ function signOut() {
 
 .app-navigation.is-over-poster :deep(.page-bar__copy),
 .app-navigation.is-over-poster :deep(.report-header__avatar) {
-  visibility: hidden;
+  /* Hidden from sight while the poster shows the name, still the page's h1 for screen readers. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .app-navigation.is-scrolled {

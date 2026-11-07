@@ -38,6 +38,7 @@ const type = [
 const primitives = [
   { name: 'gray', steps: ['0', '1', '2', '3', '4', '5', '6', '8', '9', '11', '12'] },
   { name: 'night', steps: ['0', '1', '2', '3', '4', '5', '8', '9', '12'] },
+  { name: 'hue-red', steps: ['poster', 'mark', 'glow', 'room', 'tint', 'mark-d', 'poster-d', 'room-d', 'tint-d'] },
   { name: 'hue-violet', steps: ['mark', 'room', 'tint', 'mark-d', 'poster-d', 'room-d', 'tint-d'] },
   { name: 'hue-orange', steps: ['mark', 'room', 'tint', 'mark-d', 'poster-d', 'room-d', 'tint-d'] },
   { name: 'hue-green', steps: ['mark', 'room', 'tint', 'mark-d', 'poster-d', 'room-d', 'tint-d'] },
