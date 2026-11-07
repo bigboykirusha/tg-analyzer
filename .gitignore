@@ -16,3 +16,6 @@ dump.rdb
 # local tooling and archives
 .claude/
 *.bundle
+
+# Impeccable live-server runtime state
+.impeccable/live/
