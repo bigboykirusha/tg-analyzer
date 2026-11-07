@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Рамка кабинета — раунд 2</title>
+    <link rel="stylesheet" href="../../../apps/web/node_modules/@fontsource-variable/geist/index.css" />
+    <link rel="stylesheet" href="../../../apps/web/app/assets/styles/tokens.css" />
+    <link rel="stylesheet" href="report-v2.css" />
+    <link rel="stylesheet" href="report-v3-review.css" />
+    <link rel="stylesheet" href="pages-v1.css" />
+    <link rel="stylesheet" href="next-v1.css" />
+    <link rel="stylesheet" href="home-v2.css" />
+    <link rel="stylesheet" href="shell-v1.css" />
+    <link rel="stylesheet" href="frame-v1.css" />
+    <link rel="stylesheet" href="frame-v2.css" />
+  </head>
+  <body>
+    <main class="review" style="max-width: 1560px">
+      <header class="review__head">
+        <h1>Рамка кабинета на ПК — раунд 2</h1>
+        <p>
+          Заголовка «Главная» больше нет: на главной шапка несёт только логотип, поиск, «Новый анализ» и профиль. Внутри
+          везде та же «Сводка» (вариант А). Номера продолжают первый раунд, ответ номером: «Рамка 7».
+        </p>
+        <ul class="refs">
+          <li><b>Spotify</b> — отдельные «острова»: верх, библиотека слева, центральная панель, всё скруглено.</li>
+          <li><b>Inset-сайдбар (shadcn)</b> — меню у края окна, контент скруглённой панелью со своей шапкой.</li>
+          <li><b>Linear, Raycast</b> — поиск-командная строка в центре шапки, вызов по ⌘K.</li>
+          <li><b>Telegram</b> — полоса «историй»: люди кружками с кольцом, если есть новое.</li>
+          <li><b>Notion, ChatGPT</b> — меню сворачивается кнопкой в шапке, остаётся узкая полоса.</li>
+        </ul>
+      </header>
+      <section class="problem">
+        <h2>6. Острова, как Spotify</h2>
+        <div class="why">
+          <p>
+            Три скруглённые панели на общем фоне: верхняя (логотип, поиск по центру, профиль), левая «Ваши люди» с
+            фильтром «Личные / Группы» и центральная со «Сводкой». Шапка и меню выглядят одной системой: одинаковые
+            панели, одинаковые отступы.
+          </p>
+        </div>
+        <div class="frames" data-frame="6"></div>
+      </section>
+      <section class="problem">
+        <h2>7. Inset: меню у края, контент панелью <em class="tag">рекомендую</em></h2>
+        <div class="why">
+          <p>
+            Левое меню во всю высоту без своей плашки: логотип сверху, профиль снизу. Контент — одна светлая панель со
+            скруглением, и шапка живёт внутри неё: поиск и «Новый анализ» справа, на отчёте — назад, имя и вкладки.
+            Шапка цельная, потому что принадлежит тому, что под ней.
+          </p>
+        </div>
+        <div class="frames" data-frame="7"></div>
+      </section>
+      <section class="problem">
+        <h2>8. Поиск в центре шапки, как Linear</h2>
+        <div class="why">
+          <p>
+            Шапка на всю ширину: логотип, широкая строка «Найти чат или отчёт ⌘K» посередине, «Новый анализ» и профиль.
+            Левое меню тоньше и тише. Главное действие продукта — найти человека — встаёт в шапку.
+          </p>
+        </div>
+        <div class="frames" data-frame="8"></div>
+      </section>
+      <section class="problem">
+        <h2>9. Без левого меню, люди «историями»</h2>
+        <div class="why">
+          <p>
+            Как на телефоне: одна шапка и одна колонка. Под шапкой — полоса людей кружками, кольцо лаймом, если есть
+            новое (свежие сообщения, ответ на угадайку). Переход к отчёту — один клик, но без отдельного меню.
+          </p>
+        </div>
+        <div class="frames" data-frame="9"></div>
+      </section>
+      <section class="problem">
+        <h2>10. Сворачиваемое меню, как Notion</h2>
+        <div class="why">
+          <p>
+            Кнопка в начале шапки сворачивает меню в узкую полосу аватаров. По умолчанию открыто; на ноутбуке с узким
+            экраном — свёрнуто. Показаны оба состояния.
+          </p>
+        </div>
+        <div class="frames" data-frame="10"></div>
+      </section>
+    </main>
+    <div class="proto">
+      <button data-set-theme="light" class="on">Светлая</button><button data-set-theme="dark">Тёмная</button>
+    </div>
+    <script src="report-v2.js"></script>
+    <script src="frame-v2.js"></script>
+  </body>
+</html>
