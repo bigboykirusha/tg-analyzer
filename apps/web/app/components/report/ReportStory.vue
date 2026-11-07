@@ -188,7 +188,9 @@ const slides = computed<StorySlideModel[]>(() => {
   // 1. The chat at a glance: how much, how evenly and for how long.
   const overview: StoryBlock[] = []
   // The pulse with the chapters of the chat under it, as at the top of the report.
-  const chapterList = isGroup.value ? [] : computeChapters(activity.daily)
+  // As on the poster: chapters only when the history has at least three, never a lone «Ровно».
+  const allChapters = isGroup.value ? [] : computeChapters(activity.daily)
+  const chapterList = allChapters.length > 2 ? allChapters : []
   const chapterDays = chapterList.reduce((sum, chapter) => sum + chapter.days, 0)
   if (pulse.length > 1)
     overview.push({

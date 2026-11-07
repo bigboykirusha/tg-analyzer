@@ -109,12 +109,14 @@ function handleKeydown(event: KeyboardEvent) {
   z-index: 0;
   top: var(--pad);
   bottom: var(--pad);
-  left: calc(var(--pad) + var(--index) * var(--slot));
+  left: var(--pad);
   width: var(--slot);
   border-radius: var(--radius-full);
   background: var(--thumb);
   box-shadow: var(--shadow-segment);
-  transition: left var(--duration-slow) var(--ease-standard);
+  /* Moves on the compositor: a spring-like glide, never a layout property. */
+  transform: translateX(calc(var(--index) * 100%));
+  transition: transform var(--duration-move) var(--spring-snappy);
   pointer-events: none;
 }
 

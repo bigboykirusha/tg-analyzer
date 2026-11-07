@@ -93,7 +93,8 @@ const updated = computed(() =>
 }
 
 .report-card:active {
-  transform: scale(var(--press-scale));
+  transform: scale(var(--press-scale-lg));
+  transition-duration: var(--duration-press);
 }
 
 .report-card__head {

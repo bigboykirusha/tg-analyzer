@@ -69,7 +69,7 @@ const botUrl = computed(() => (auth.user?.botUrl && !auth.user.botNotify ? auth.
       aria-valuemax="100"
       :aria-label="t('analysis.progressLabel')"
     >
-      <i :style="{ width: `${view.percent}%` }" />
+      <i :style="{ transform: `scaleX(${view.percent / 100})` }" />
     </div>
     <p class="t-small">{{ t('analysis.banner.closeTab') }}</p>
     <UiButton
@@ -121,11 +121,12 @@ const botUrl = computed(() => (auth.user?.botUrl && !auth.user.botNotify ? auth.
 /* From today backwards: the filled part grows from the right end. */
 .analysis-banner__bar i {
   display: block;
-  margin-left: auto;
+  width: 100%;
   height: 100%;
   border-radius: inherit;
   background: var(--you);
-  transition: width var(--duration-slow) var(--ease-standard);
+  transform-origin: right;
+  transition: transform var(--duration-slow) var(--ease-standard);
 }
 
 .analysis-banner .btn {

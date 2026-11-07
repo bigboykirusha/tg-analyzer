@@ -25,8 +25,19 @@ export function useTheme() {
     preference.value === 'system' ? (systemDark.value ? 'dark' : 'light') : preference.value,
   )
 
+  /** Switch in one frame: transitions pause so the page never shows half light, half dark. */
+  function withoutTransitions(change: () => void) {
+    if (!import.meta.client) return change()
+    const root = document.documentElement
+    root.setAttribute('data-theme-switching', '')
+    change()
+    requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-theme-switching')))
+  }
+
   function setPreference(next: ThemePreference) {
-    cookie.value = next
+    withoutTransitions(() => {
+      cookie.value = next
+    })
   }
 
   /** Call once from the app root. */
@@ -42,7 +53,9 @@ export function useTheme() {
       const media = window.matchMedia('(prefers-color-scheme: dark)')
       systemDark.value = media.matches
       media.addEventListener('change', (event) => {
-        systemDark.value = event.matches
+        withoutTransitions(() => {
+          systemDark.value = event.matches
+        })
       })
     })
   }

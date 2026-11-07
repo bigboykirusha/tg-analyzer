@@ -69,7 +69,7 @@ function run(action: 'analyse' | 'delete') {
           >
             <span
               :class="{ 'is-indeterminate': progress == null }"
-              :style="progress == null ? undefined : { width: `${Math.max(2, progress * 100)}%` }"
+              :style="progress == null ? undefined : { transform: `scaleX(${Math.max(0.02, progress)})` }"
             />
           </span>
           <span class="chat-row__percent t-num">{{
@@ -230,13 +230,15 @@ function run(action: 'analyse' | 'delete') {
 
 .chat-row__track > span {
   position: absolute;
-  inset: 0 auto 0 0;
+  inset: 0;
   border-radius: inherit;
   background: var(--accent);
-  transition: width var(--transition-slow);
+  transform-origin: left;
+  transition: transform var(--transition-slow);
 }
 
 .chat-row__track > .is-indeterminate {
+  right: auto;
   width: 34%;
   animation: row-indeterminate var(--duration-loop) var(--ease-loop) infinite;
 }

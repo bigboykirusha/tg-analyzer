@@ -180,8 +180,10 @@ const classes = computed(() => [
   }
 }
 
-.btn:active {
+.btn:active:not(:disabled) {
   transform: scale(var(--press-scale));
+  /* The press lands at once; the release eases back on the slower default. */
+  transition-duration: var(--duration-press);
 }
 
 .btn--ghost:active {

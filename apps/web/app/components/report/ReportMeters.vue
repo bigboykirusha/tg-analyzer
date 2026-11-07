@@ -29,7 +29,7 @@ const { formatPercent } = useI18n()
         aria-valuemax="100"
         :aria-valuenow="meter.value"
       >
-        <span :style="{ width: `${Math.min(100, Math.max(0, meter.value))}%` }" />
+        <span :style="{ transform: `scaleX(${Math.min(100, Math.max(0, meter.value)) / 100})` }" />
       </div>
       <span v-if="meter.detail" class="meter__detail">{{ meter.detail }}</span>
     </div>
@@ -84,8 +84,10 @@ const { formatPercent } = useI18n()
 .meter__track span {
   display: block;
   height: 100%;
+  width: 100%;
   border-radius: inherit;
   background: var(--text);
-  transition: width var(--transition-slow);
+  transform-origin: left;
+  transition: transform var(--transition-slow);
 }
 </style>

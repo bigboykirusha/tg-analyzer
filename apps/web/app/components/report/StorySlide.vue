@@ -264,7 +264,7 @@ const isLong = (value: string) => longestWord(value) > 8
   --s-card-muted: var(--story-ink-muted);
   --s-card-track: var(--story-track);
   --s-card-mark: var(--story-accent);
-  /* The accent tile: lime on the ink field. */
+  /* The accent tile: the person's colour on the ink field. */
   --s-accent: var(--story-accent);
   --s-accent-ink: var(--story-accent-ink);
   --s-accent-muted: var(--story-accent-ink-muted);
@@ -293,7 +293,7 @@ const isLong = (value: string) => longestWord(value) > 8
   font-variant-numeric: normal !important;
 }
 
-/* Paper fields (and lime): white cards, the accent tile is ink with lime marks. */
+/* Paper fields (and the person's colour): white cards, the accent tile is ink with their marks. */
 .story-slide--2,
 .story-slide--3,
 .story-slide--4,
@@ -317,8 +317,11 @@ const isLong = (value: string) => longestWord(value) > 8
 }
 
 .story-slide--2 {
+  /* The person's own colour: light type on it, white cards with dark type. */
+  --s-ink: var(--story-accent-ink);
   --s-muted: var(--story-accent-ink-muted);
   --s-track: var(--story-accent-track);
+  --s-chip: var(--story-chip);
 
   background: var(--story-gradient-2);
 }

@@ -4,6 +4,8 @@ const runtimeConfig = useRuntimeConfig()
 const { locale, t } = useI18n()
 const theme = useTheme()
 theme.install()
+// iOS fires :active only when the page listens for touches: press feedback on every control.
+onMounted(() => document.addEventListener('touchstart', () => undefined, { passive: true }))
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()

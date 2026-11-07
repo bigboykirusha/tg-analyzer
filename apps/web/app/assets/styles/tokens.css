@@ -333,7 +333,12 @@
  * data-hue on <html> (a report page) or on any element (a report card on home) re-points the person's
  * tokens for that subtree. Light first, then dark.
  */
+:root[data-hue='violet'],
 [data-hue='violet'] {
+  /* «Итоги» are pictures: the person's light colours in both themes. */
+  --story-gradient-2: var(--hue-violet-mark);
+  --story-gradient-3: var(--hue-violet-room);
+  --story-accent: var(--hue-violet-mark);
   --them: var(--hue-violet-mark);
   --them-ink: var(--hue-violet-mark);
   --poster: var(--hue-violet-mark);
@@ -344,7 +349,12 @@
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
+:root[data-hue='orange'],
 [data-hue='orange'] {
+  /* «Итоги» are pictures: the person's light colours in both themes. */
+  --story-gradient-2: var(--hue-orange-mark);
+  --story-gradient-3: var(--hue-orange-room);
+  --story-accent: var(--hue-orange-mark);
   --them: var(--hue-orange-mark);
   --them-ink: var(--hue-orange-mark);
   --poster: var(--hue-orange-mark);
@@ -355,7 +365,12 @@
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
+:root[data-hue='green'],
 [data-hue='green'] {
+  /* «Итоги» are pictures: the person's light colours in both themes. */
+  --story-gradient-2: var(--hue-green-mark);
+  --story-gradient-3: var(--hue-green-room);
+  --story-accent: var(--hue-green-mark);
   --them: var(--hue-green-mark);
   --them-ink: var(--hue-green-mark);
   --poster: var(--hue-green-mark);
@@ -366,7 +381,12 @@
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
+:root[data-hue='blue'],
 [data-hue='blue'] {
+  /* «Итоги» are pictures: the person's light colours in both themes. */
+  --story-gradient-2: var(--hue-blue-mark);
+  --story-gradient-3: var(--hue-blue-room);
+  --story-accent: var(--hue-blue-mark);
   --them: var(--hue-blue-mark);
   --them-ink: var(--hue-blue-mark);
   --poster: var(--hue-blue-mark);
@@ -377,7 +397,12 @@
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
+:root[data-hue='pink'],
 [data-hue='pink'] {
+  /* «Итоги» are pictures: the person's light colours in both themes. */
+  --story-gradient-2: var(--hue-pink-mark);
+  --story-gradient-3: var(--hue-pink-room);
+  --story-accent: var(--hue-pink-mark);
   --them: var(--hue-pink-mark);
   --them-ink: var(--hue-pink-mark);
   --poster: var(--hue-pink-mark);
@@ -388,7 +413,12 @@
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
+:root[data-hue='teal'],
 [data-hue='teal'] {
+  /* «Итоги» are pictures: the person's light colours in both themes. */
+  --story-gradient-2: var(--hue-teal-mark);
+  --story-gradient-3: var(--hue-teal-room);
+  --story-accent: var(--hue-teal-mark);
   --them: var(--hue-teal-mark);
   --them-ink: var(--hue-teal-mark);
   --poster: var(--hue-teal-mark);
@@ -550,13 +580,19 @@
   --z-popover: 30;
   --z-modal: 90;
   --z-toast: 100;
+  /* A press lands in 90 ms and releases on --duration-fast. */
+  --duration-press: 90ms;
   --duration-fast: 150ms;
   --duration-normal: 200ms;
   --duration-slow: 300ms;
   --duration-sheet: 400ms;
   --duration-chart: 800ms;
   --duration-intro: 900ms;
-  --duration-spin: 800ms;
+  --duration-spin: 700ms;
+  /* The spinner under reduced motion: still turning, slower. */
+  --duration-spin-calm: 1200ms;
+  /* Something moving on screen (a segmented thumb, a switch knob): a critically damped spring. */
+  --duration-move: 500ms;
   /* Endless loops: an indeterminate bar and the skeleton shimmer. */
   --duration-loop: 1400ms;
   --duration-shimmer: 1600ms;
@@ -611,7 +647,36 @@
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   /* Endless loops breathe in and out. */
   --ease-loop: cubic-bezier(0.45, 0, 0.55, 1);
+  /*
+   * Apple's critically damped spring (damping 1, response 0.35 s) sampled into linear(); browsers
+   * without linear() fall back to the strong ease-out below.
+   */
+  --spring-snappy: linear(
+    0,
+    0.075,
+    0.227,
+    0.39,
+    0.536,
+    0.656,
+    0.75,
+    0.821,
+    0.873,
+    0.911,
+    0.938,
+    0.957,
+    0.971,
+    0.98,
+    0.986,
+    0.991,
+    0.994,
+    0.996,
+    0.997,
+    0.998,
+    1
+  );
   --press-scale: 0.97;
+  /* Large surfaces (cards) press less, so their edges do not jump. */
+  --press-scale-lg: 0.985;
   --transition-fast: var(--duration-fast) var(--ease-standard);
   --transition-normal: var(--duration-normal) var(--ease-standard);
   --transition-slow: var(--duration-slow) var(--ease-standard);
@@ -633,7 +698,7 @@
   --story-track: var(--white-a4);
   --story-chip: rgba(255, 255, 255, 0.16);
   --story-card: var(--night-1);
-  --story-accent: var(--white-a9);
+  --story-accent: var(--hue-violet-mark);
   /* On the paper fields. */
   --story-paper-ink: var(--gray-12);
   --story-paper-ink-muted: var(--gray-a8);
@@ -667,5 +732,11 @@
     --text-h2: 600 20px/28px var(--font-sans);
     --text-h3: 600 18px/24px var(--font-sans);
     --radius-lg: 20px;
+  }
+}
+
+@supports not (transition-timing-function: linear(0, 1)) {
+  :root {
+    --spring-snappy: var(--ease-standard);
   }
 }

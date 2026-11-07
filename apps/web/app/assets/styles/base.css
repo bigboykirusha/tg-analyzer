@@ -626,7 +626,16 @@ main:focus {
   animation: spin var(--duration-spin) linear infinite;
 }
 
+/*
+ * Reduced motion is gentler motion, not none: nothing travels or scales, brief fades stay so a
+ * change is still visible, and a spinner keeps turning (a frozen ring reads as broken).
+ */
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --press-scale: 1;
+    --press-scale-lg: 1;
+  }
+
   *,
   *::before,
   *::after {
@@ -634,9 +643,27 @@ main:focus {
     animation-duration: 1ms !important;
     animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
+    transition-property: opacity, color, background-color, border-color !important;
+    transition-duration: var(--duration-fast) !important;
     transition-delay: 0ms !important;
   }
+
+  .spinner {
+    animation-duration: var(--duration-spin-calm) !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/* The focus ring answers a key press: it appears at once, never fades in. */
+:focus-visible {
+  transition-duration: 0ms !important;
+}
+
+/* While the theme switches, nothing tweens: the whole page changes in one frame. */
+:root[data-theme-switching] *,
+:root[data-theme-switching] *::before,
+:root[data-theme-switching] *::after {
+  transition: none !important;
 }
 
 @media print {
