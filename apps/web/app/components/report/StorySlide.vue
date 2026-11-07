@@ -608,7 +608,7 @@ const isLong = (value: string) => longestWord(value) > 8
 }
 
 .story-tile__pulse :deep(line) {
-  stroke-width: 0.8cqmin;
+  stroke-width: 0.55cqmin;
 }
 
 /* Chapters under the pulse: a hairline per chapter, the busiest one in the accent. */
