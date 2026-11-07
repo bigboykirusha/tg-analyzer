@@ -238,19 +238,24 @@ watch(open, (value) => value && drag.reset())
 }
 
 @media (max-width: 640px) {
-  /* Phones: the dialog becomes a floating sheet, the same gap at the sides and below (above the home indicator). */
+  /* Phones: the dialog becomes a sheet edge to edge, attached to the bottom; its last row clears the home indicator. */
   .modal-backdrop {
     align-items: end;
-    padding: var(--space-2) var(--space-2) max(var(--space-2), env(safe-area-inset-bottom, 0px));
+    padding: var(--space-12) 0 0;
   }
 
   .modal-panel,
   .modal-panel--md,
   .modal-panel--lg {
     max-width: none;
-    max-height: calc(100dvh - var(--space-12));
+    max-height: 100%;
     border-width: 0;
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
+
+  .modal-body:last-child,
+  .modal-actions {
+    padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
   }
 
   .modal-panel {
