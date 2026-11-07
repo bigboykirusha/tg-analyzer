@@ -1,0 +1,270 @@
+/* «Сводка» in four layouts, in the current shell. */
+.frames {
+  flex-direction: column;
+}
+.wrap {
+  white-space: normal;
+}
+.av--5 {
+  background: var(--avatar-5-bg);
+}
+
+/* The current shell: header across, sidebar under it. */
+.cur {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+}
+.cur__hdr {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 248px minmax(0, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.cur__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 64px;
+  padding: 0 var(--space-5);
+  font: var(--text-title);
+}
+.cur__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 var(--space-8);
+}
+.cur__title {
+  flex: 1;
+  font: var(--text-title);
+}
+.cur__side {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding: var(--space-3);
+  background: var(--sidebar);
+  font: var(--text-ui);
+}
+.cur__main {
+  display: grid;
+  align-content: start;
+  gap: var(--space-6);
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-8) var(--space-10);
+}
+.phone-top .logo-mark {
+  margin-right: var(--space-2);
+}
+
+/* The month tile */
+.mtile {
+  gap: var(--space-4);
+}
+.mtile__copy {
+  display: grid;
+  gap: var(--space-1);
+}
+.mtile__num {
+  font: var(--text-figure);
+  letter-spacing: var(--tracking-figure);
+}
+.mtile--slim {
+  flex-direction: row;
+  align-items: baseline;
+  padding-block: var(--space-4);
+}
+.mtile--slim .mtile__copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+}
+.mtile--slim .mtile__num {
+  font: var(--text-h2);
+}
+.mtop {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) 0 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+  font: var(--text-small);
+}
+.mtop li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.mtop b {
+  width: 1ch;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.mtop span:not(.av):not(.num) {
+  flex: 1;
+}
+
+/* 1 */
+.v1 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+.v1--m {
+  grid-template-columns: minmax(0, 1fr);
+}
+.erows {
+  gap: 0;
+}
+.erows .sec__head {
+  margin-bottom: var(--space-2);
+}
+.erow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 64px;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border);
+}
+.erows .sec__head + .erow,
+.erow:first-child {
+  border-top: 0;
+}
+
+/* 2 */
+.pcards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.pcards--m {
+  grid-template-columns: minmax(0, 1fr);
+}
+.pcard {
+  gap: var(--space-3);
+}
+.pcard__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.pcard__head > svg.i {
+  color: var(--text-muted);
+}
+.pcard__facts {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) 0 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+  font: var(--text-small);
+}
+.pcard__facts li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.pcard__facts span {
+  color: var(--text-muted);
+}
+.pcard__facts b {
+  font-weight: 500;
+}
+.pcard__foot {
+  display: flex;
+}
+.sec__head .hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.sec__head .hint svg.i {
+  width: 14px;
+  height: 14px;
+}
+
+/* 3 */
+.bento3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.bento3--m {
+  grid-template-columns: minmax(0, 1fr);
+}
+.b-month {
+  display: grid;
+  grid-column: span 2;
+  grid-row: span 2;
+}
+.bento3--m .b-month,
+.bento3--m .b-pins {
+  grid-column: auto;
+  grid-row: auto;
+}
+.b-pins {
+  grid-column: span 2;
+}
+.b-quiz .q,
+.b-small .hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.b-quiz svg.i,
+.b-small svg.i {
+  width: 16px;
+  height: 16px;
+}
+.b-quiz .dots5 {
+  margin-top: auto;
+}
+.b-small .answer {
+  font: var(--text-title);
+}
+.pinrow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.pinx {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+/* 4 */
+.v4 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--space-6);
+  align-items: start;
+}
+.side4 {
+  display: grid;
+  gap: var(--space-4);
+}
+.feed {
+  display: grid;
+  gap: var(--space-5);
+}
+.day {
+  display: grid;
+  gap: var(--space-2);
+}
+.day__title {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
