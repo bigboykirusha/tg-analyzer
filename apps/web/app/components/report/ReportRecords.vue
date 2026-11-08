@@ -57,7 +57,7 @@ const records = computed(() => {
 
 <template>
   <ReportSection v-if="records.length" wide :title="t('report.fmt.recordsTitle')">
-    <dl class="records" :style="{ '--records': records.length }">
+    <dl class="records">
       <div v-for="record in records" :key="record.key" class="records__cell">
         <dt class="records__label">{{ record.label }}</dt>
         <dd class="records__value t-num">{{ record.value }}</dd>
@@ -67,31 +67,33 @@ const records = computed(() => {
 </template>
 
 <style scoped>
-/* One strip: four values side by side, hairlines between them, no wells and no icons. */
+/* A column: each value large, the sentence with its date under it, hairlines between the rows. */
 .records {
   display: grid;
-  grid-template-columns: repeat(var(--records), minmax(0, 1fr));
   margin: 0;
 }
 
 .records__cell {
   display: grid;
-  align-content: start;
-  gap: var(--space-1);
+  gap: var(--space-0-5);
   min-width: 0;
-  padding: 0 var(--space-6);
-  box-shadow: var(--divider-left);
+  padding: var(--space-3) 0;
+  box-shadow: var(--divider-top);
 }
 
 .records__cell:first-child {
-  padding-left: 0;
+  padding-top: 0;
   box-shadow: none;
+}
+
+.records__cell:last-child {
+  padding-bottom: 0;
 }
 
 .records__value {
   margin: 0;
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
+  font: var(--text-h1);
+  letter-spacing: var(--tracking-h1);
 }
 
 /* The label comes first for screen readers (dt before dd) and shows under the value. */
@@ -99,22 +101,5 @@ const records = computed(() => {
   order: 1;
   color: var(--text-muted);
   font: var(--text-small);
-}
-
-/* Two by two below 900: hairlines between the columns and between the rows. */
-@media (max-width: 900px) {
-  .records {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: var(--space-6);
-  }
-
-  .records__cell:nth-child(odd) {
-    padding-left: 0;
-    box-shadow: none;
-  }
-
-  .records__cell {
-    padding: 0 0 0 var(--space-4);
-  }
 }
 </style>

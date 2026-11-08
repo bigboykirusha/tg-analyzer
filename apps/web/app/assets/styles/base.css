@@ -818,6 +818,8 @@ main:focus {
 .tile--ink {
   --you: var(--on-tile-ink);
   --them: var(--them-on-ink);
+  --on-you: var(--tile-ink);
+  --on-them: var(--tile-ink);
   --them-ink: var(--them-on-ink);
   --text: var(--on-tile-ink);
   --text-muted: var(--on-tile-ink-muted);

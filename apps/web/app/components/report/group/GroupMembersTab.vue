@@ -42,7 +42,12 @@ watch(isMobile, () => {
             :aria-expanded="isMobile && participant.id === selected?.id ? detailsOpen : undefined"
             @click="selectMember(participant.id, $event)"
           >
-            <UiAvatar :title="nameOf(participant)" :side="participant.isSelf ? 'mine' : null" size="sm" />
+            <UiAvatar
+              :title="nameOf(participant)"
+              :seed="participant.id"
+              :side="participant.isSelf ? 'mine' : null"
+              size="sm"
+            />
             <span class="member__copy">
               <span class="member__name">{{ nameOf(participant) }}</span>
               <span class="t-small t-muted">{{ t(`group.roles.${participant.role}`) }}</span>

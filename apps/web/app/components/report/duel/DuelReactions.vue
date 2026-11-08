@@ -35,7 +35,6 @@ const sides = computed(() => {
       return { ...side, steps }
     })
 })
-const pair = computed(() => props.item?.pairs[0] ?? null)
 const answer = computed(() => {
   const item = props.item
   if (!item) return null
@@ -59,13 +58,6 @@ const answer = computed(() => {
         </div>
       </div>
     </div>
-    <ReportLine
-      v-if="pair"
-      :mine="pair.mine.value"
-      :theirs="pair.theirs.value"
-      :left="pair.mine.text"
-      :right="pair.theirs.text"
-    />
   </ReportSection>
 </template>
 

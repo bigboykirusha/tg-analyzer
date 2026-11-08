@@ -185,6 +185,9 @@
   /* The two voices: you are ink everywhere; they are the person's hue (neutral outside a report). */
   --you: var(--gray-12);
   --you-subtle: var(--gray-a2);
+  /* Type inside a side's own fill (plaque «Б», ReportLine). */
+  --on-you: var(--gray-0);
+  --on-them: var(--gray-0);
   --them: var(--gray-8);
   --them-ink: var(--gray-9);
   /* The person's poster, their room behind the tiles and the wells on it; neutral by default. */
@@ -312,6 +315,8 @@
   --on-accent: var(--night-0);
   --you: var(--night-12);
   --you-subtle: var(--night-a3);
+  --on-you: var(--night-0);
+  --on-them: var(--night-0);
   --them: var(--night-8);
   --them-ink: var(--night-8);
   --poster: var(--night-2);

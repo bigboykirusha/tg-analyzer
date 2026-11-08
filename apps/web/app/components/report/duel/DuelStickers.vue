@@ -13,7 +13,6 @@ const PER_SIDE = 4
 const stickers = computed(() => props.data.report.stickers)
 const name = computed(() => props.data.summary.title)
 const versus = useVersus(() => props.data)
-const pair = computed(() => versus.value.stickers?.pairs[0] ?? null)
 const answer = computed(() => {
   const item = versus.value.stickers
   if (!item) return null
@@ -47,13 +46,6 @@ const owners = computed(() => {
         <StickerGrid :stickers="owner.items" :side="owner.key" />
       </div>
     </div>
-    <ReportLine
-      v-if="pair"
-      :mine="pair.mine.value"
-      :theirs="pair.theirs.value"
-      :left="pair.mine.text"
-      :right="pair.theirs.text"
-    />
   </ReportSection>
 </template>
 

@@ -43,16 +43,18 @@ const answerOf = (id: string) => headlines.value.find((headline) => headline.id 
       <!-- Who writes more: the split as one figure, theirs in the person's colour. -->
       <ReportSection :title="t('report.kpi.whoWritesMore')" :answer="mineShare !== null ? shareHint : t('common.na')">
         <template v-if="mineShare !== null">
-          <div class="share__figure t-num" aria-hidden="true">
-            <span>{{ mineShare }}</span
-            ><span class="share__slash">/</span><span class="share__theirs">{{ 100 - mineShare }}</span>
-          </div>
           <ReportLine
+            size="lg"
             :mine="totals.sent"
             :theirs="totals.received"
-            :left="formatNumber(totals.sent)"
-            :right="formatNumber(totals.received)"
+            :left-name="t('report.you')"
+            :right-name="data.summary.title"
+            :left="`${mineShare}%`"
+            :right="`${100 - mineShare}%`"
           />
+          <p class="share__counts t-num">
+            {{ t('report.kpi.counts', { mine: formatNumber(totals.sent), theirs: formatNumber(totals.received) }) }}
+          </p>
         </template>
       </ReportSection>
       <ReportDuel :data="data" />
@@ -71,21 +73,9 @@ const answerOf = (id: string) => headlines.value.find((headline) => headline.id 
 </template>
 
 <style scoped>
-/* «51 / 49»: yours in ink, theirs in the person's colour; the slash is only a divider. */
-.share__figure {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  font: var(--text-figure);
-  letter-spacing: var(--tracking-figure);
-}
-
-.share__slash {
-  color: var(--border-strong);
-  font-weight: 400;
-}
-
-.share__theirs {
-  color: var(--them-ink);
+.share__counts {
+  color: var(--text-muted);
+  font: var(--text-small);
+  text-align: center;
 }
 </style>

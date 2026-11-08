@@ -2,48 +2,80 @@
 import type { Versus } from '../../../composables/useVersus'
 
 /**
- * Who replies faster: the answer in one sentence and one line of the two usual reply times. The
- * longer part of the line is the slower side. When neither leads, a line would still look like a
- * lead, so the two times stand side by side instead.
+ * Who replies faster, in words (plaque «Е»): «×3» large in the faster side's colour, the answer as a
+ * sentence, and one line of the two usual reply times. When neither leads there is no multiplier:
+ * the answer says so and the line gives both times.
  */
 const props = defineProps<{ item: Versus; theirName: string }>()
-const { t } = useI18n()
+const { t, formatNumber } = useI18n()
 const pair = computed(() => props.item.pairs[0]!)
 
-/** «Мила — в 2 раза быстрее», or «Отвечаете синхронно» when neither leads. */
-const answer = computed(() =>
-  props.item.lead ? `${props.item.figure} — ${props.item.note}` : t('report.fmt.speedEven'),
+const times = computed(() => (Number.isFinite(props.item.ratio) ? Math.round(props.item.ratio * 10) / 10 : null))
+const answer = computed(() => {
+  const { lead, note } = props.item
+  if (lead === 'mine') return t('report.speed.answerMine', { note })
+  if (lead === 'theirs') return t('report.speed.answerTheirs', { name: props.theirName, note })
+  return t('report.fmt.speedEven')
+})
+/** «обычно за 3 мин, вы — за 11 мин»: the faster side first. */
+const usual = computed(() =>
+  props.item.lead === 'mine'
+    ? t('report.speed.usualMine', { mine: pair.value.mine.text, name: props.theirName, theirs: pair.value.theirs.text })
+    : t('report.speed.usualTheirs', { theirs: pair.value.theirs.text, mine: pair.value.mine.text }),
 )
 </script>
 
 <template>
-  <ReportSection :title="item.title" :text="t('report.speed.text')" :answer="answer">
-    <ReportLine
-      v-if="item.lead"
-      :mine="pair.mine.value"
-      :theirs="pair.theirs.value"
-      :left="pair.mine.text"
-      :right="pair.theirs.text"
-    />
-    <p v-else class="speed-pair t-num">
-      <span><ReportSideAvatar side="mine" :name="theirName" />{{ pair.mine.text }}</span>
-      <span><ReportSideAvatar side="theirs" :name="theirName" />{{ pair.theirs.text }}</span>
+  <ReportSection :title="item.title" class="speed" :class="{ 'speed--lead': item.lead && times }">
+    <p v-if="item.lead && times" class="speed__times t-num" :class="`speed__times--${item.lead}`" aria-hidden="true">
+      ×{{ formatNumber(times) }}
     </p>
+    <p class="speed__answer">{{ answer }}</p>
+    <p class="speed__usual t-num">{{ usual }}</p>
+    <p class="speed__note">{{ t('report.speed.text') }}</p>
   </ReportSection>
 </template>
 
 <style scoped>
-.speed-pair {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-6);
-  font: var(--text-small);
-  color: var(--text-muted);
+/* With a multiplier the card is a centred figure; without one it reads like the other cards. */
+.speed--lead :deep(.report-section__head) {
+  justify-items: center;
+  text-align: center;
 }
 
-.speed-pair > span {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+.speed__times {
+  font: var(--text-figure);
+  letter-spacing: var(--tracking-figure);
+  text-align: center;
+}
+
+.speed__times--mine {
+  color: var(--you);
+}
+
+.speed__times--theirs {
+  color: var(--them-ink);
+}
+
+.speed__answer {
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
+  text-wrap: balance;
+}
+
+.speed__usual,
+.speed__note {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.speed--lead .speed__answer,
+.speed--lead .speed__usual,
+.speed--lead .speed__note {
+  text-align: center;
+}
+
+.speed__note {
+  font: var(--text-caption);
 }
 </style>

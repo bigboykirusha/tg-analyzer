@@ -24,7 +24,6 @@ const activeDays = computed(() => {
 <template>
   <ReportRole :data="data" />
   <ReportRecords :data="data" />
-  <ReportMilestones :data="data" />
   <ReportSection :title="t('report.rhythm.heatmapTitle')" :answer="activeDays" wide>
     <ActivityHeatmap :points="days" />
   </ReportSection>

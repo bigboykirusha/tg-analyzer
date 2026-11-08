@@ -1,61 +1,83 @@
 <script setup lang="ts">
 /**
- * The one comparison line of the report: «value ━━━━ ━━ value», you in ink on the left, the
- * other side in lime on the right. The values default to the two shares in percent. A side with
- * nothing has no stub (a 6 px dot reads as «a little») and «—» at its end.
+ * The one comparison of two sides in the report — plaque «Б»: one bar in two parts, the labels inside
+ * them. You on the left in ink, the other side on the right in their colour. The labels default to
+ * the two shares in percent; `leftName` / `rightName` put a name before them («Вы 51%», «Мила 49%»).
+ * A side with nothing has no part, and the other one fills the bar. `size="lg"` (32 px) carries a
+ * card's main share; rows use the default (24 px).
  */
-const props = defineProps<{ mine: number; theirs: number; left?: string; right?: string; label?: string }>()
-const { formatPercent } = useI18n()
+const props = withDefaults(
+  defineProps<{
+    mine: number
+    theirs: number
+    left?: string
+    right?: string
+    leftName?: string
+    rightName?: string
+    label?: string
+    size?: 'sm' | 'lg'
+  }>(),
+  { left: undefined, right: undefined, leftName: undefined, rightName: undefined, label: undefined, size: 'sm' },
+)
+const { t, formatPercent } = useI18n()
 
 const total = computed(() => props.mine + props.theirs)
 const share = (value: number) => (total.value ? (value / total.value) * 100 : 50)
-const NONE = '—'
-const leftText = computed(() =>
-  props.mine === 0 && total.value ? NONE : (props.left ?? formatPercent(share(props.mine))),
-)
-const rightText = computed(() =>
-  props.theirs === 0 && total.value ? NONE : (props.right ?? formatPercent(share(props.theirs))),
+const join = (name: string | undefined, value: string) => (name ? `${name} ${value}` : value)
+const leftText = computed(() => join(props.leftName, props.left ?? formatPercent(share(props.mine))))
+const rightText = computed(() => join(props.rightName, props.right ?? formatPercent(share(props.theirs))))
+/** Read aloud with both sides named, whatever is drawn. */
+const spoken = computed(
+  () =>
+    props.label ??
+    `${props.leftName ?? t('report.you')}: ${props.left ?? formatPercent(share(props.mine))}; ${
+      props.rightName ?? t('chart.them')
+    }: ${props.right ?? formatPercent(share(props.theirs))}`,
 )
 </script>
 
 <template>
-  <div class="report-line t-num" role="img" :aria-label="label ?? `${left ?? ''} / ${right ?? ''}`">
-    <span>{{ leftText }}</span>
-    <i class="report-line__bar" aria-hidden="true">
-      <b v-if="mine || !total" :style="{ flexGrow: share(mine) }" />
-      <b v-if="theirs || !total" class="report-line__them" :style="{ flexGrow: share(theirs) }" />
-    </i>
-    <span>{{ rightText }}</span>
+  <div class="plaque t-num" :class="`plaque--${size}`" role="img" :aria-label="spoken">
+    <span v-if="mine || !total" class="plaque__part plaque__part--mine" :style="{ flexGrow: share(mine) }">{{
+      leftText
+    }}</span>
+    <span v-if="theirs || !total" class="plaque__part plaque__part--theirs" :style="{ flexGrow: share(theirs) }">{{
+      rightText
+    }}</span>
   </div>
 </template>
 
 <style scoped>
-.report-line {
-  display: grid;
-  grid-template-columns: minmax(4ch, auto) minmax(0, 1fr) minmax(4ch, auto);
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-
-.report-line > span:last-child {
-  text-align: right;
-}
-
-.report-line__bar {
+.plaque {
   display: flex;
-  gap: var(--space-1);
-  height: var(--bar-height);
+  gap: var(--space-0-5);
+  height: var(--space-6);
+  font: var(--text-caption);
+  font-weight: 600;
 }
 
-.report-line__bar b {
-  min-width: var(--bar-height);
+.plaque--lg {
+  height: var(--space-8);
+  font: var(--text-small);
+  font-weight: 600;
+}
+
+/* Each part is at least as wide as its label; the rest is shared by the two counts. */
+.plaque__part {
+  display: flex;
+  flex-basis: 0;
+  align-items: center;
+  min-width: max-content;
+  padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   background: var(--you);
+  color: var(--on-you);
+  white-space: nowrap;
 }
 
-.report-line__bar .report-line__them {
+.plaque__part--theirs {
+  justify-content: flex-end;
   background: var(--them);
+  color: var(--on-them);
 }
 </style>
