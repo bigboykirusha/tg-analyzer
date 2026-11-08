@@ -44,11 +44,21 @@ export async function backendAvailable(baseURL: string) {
 }
 
 /**
- * Opens a chapter of a report. Phones and tablets have no chapter tabs: the capsule in the header opens
- * a sheet of chapters (it shows up once the poster's name has gone under the bar). Wide screens keep tabs.
+ * Opens a chapter of a report. Wide screens (≥ 1200) have the table of contents beside the chapters;
+ * between 901 and 1199 the header keeps its tabs; phones and tablets have the capsule, which opens a
+ * sheet of chapters once the poster's name has gone under the bar.
  */
 export async function openChapter(page: Page, name: string) {
-  if (page.viewportSize()!.width > 900) {
+  const width = page.viewportSize()!.width
+  // Wide screens: the table of contents beside the chapters.
+  if (width >= 1200) {
+    await page
+      .locator('.toc__row')
+      .filter({ has: page.getByText(name, { exact: true }) })
+      .click()
+    return
+  }
+  if (width > 900) {
     await page.getByRole('tab', { name }).click()
     return
   }

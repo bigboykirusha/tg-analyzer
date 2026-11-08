@@ -29,46 +29,49 @@ const answerOf = (id: string) => headlines.value.find((headline) => headline.id 
 </script>
 
 <template>
-  <div class="stack stack--lg">
-    <p v-if="totals.messages < 20" class="note" role="status">
-      <Info aria-hidden="true" />
-      {{ t('report.lowData') }}
-    </p>
-
-    <ReportHighlights :headlines="headlines" />
-    <ReportSince :data="data" />
-    <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
-    <!-- «Вы двое» is masonry: every card at its own height, no stretched blanks (see useMasonry). -->
-    <ReportPart id="together" :title="t('report.tabs.together')" :answer="answerOf('together')" columns>
-      <!-- Who writes more: the split as one figure, theirs in the person's colour. -->
-      <ReportSection :title="t('report.kpi.whoWritesMore')" :answer="mineShare !== null ? shareHint : t('common.na')">
-        <template v-if="mineShare !== null">
-          <ReportLine
-            size="lg"
-            :mine="totals.sent"
-            :theirs="totals.received"
-            :left-name="t('report.you')"
-            :right-name="data.summary.title"
-            :left="`${mineShare}%`"
-            :right="`${100 - mineShare}%`"
-          />
-          <p class="share__counts t-num">
-            {{ t('report.kpi.counts', { mine: formatNumber(totals.sent), theirs: formatNumber(totals.received) }) }}
-          </p>
-        </template>
-      </ReportSection>
-      <ReportDuel :data="data" />
-      <p v-if="outdated" class="note" role="status">
+  <div class="report-layout">
+    <ReportToc :headlines="headlines" />
+    <div class="stack stack--lg">
+      <p v-if="totals.messages < 20" class="note" role="status">
         <Info aria-hidden="true" />
-        {{ t('report.talk.outdated') }}
+        {{ t('report.lowData') }}
       </p>
-    </ReportPart>
-    <ReportPart id="time" :title="t('report.tabs.time')" :answer="answerOf('time')">
-      <RhythmTab :data="data" />
-    </ReportPart>
-    <ReportPart v-if="!noWords" id="words" :title="t('report.tabs.words')" :answer="answerOf('words')">
-      <WordsTab :data="data" />
-    </ReportPart>
+
+      <ReportHighlights :headlines="headlines" />
+      <ReportSince :data="data" />
+      <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
+      <!-- «Вы двое» is masonry: every card at its own height, no stretched blanks (see useMasonry). -->
+      <ReportPart id="together" :title="t('report.tabs.together')" :answer="answerOf('together')" columns>
+        <!-- Who writes more: the split as one figure, theirs in the person's colour. -->
+        <ReportSection :title="t('report.kpi.whoWritesMore')" :answer="mineShare !== null ? shareHint : t('common.na')">
+          <template v-if="mineShare !== null">
+            <ReportLine
+              size="lg"
+              :mine="totals.sent"
+              :theirs="totals.received"
+              :left-name="t('report.you')"
+              :right-name="data.summary.title"
+              :left="`${mineShare}%`"
+              :right="`${100 - mineShare}%`"
+            />
+            <p class="share__counts t-num">
+              {{ t('report.kpi.counts', { mine: formatNumber(totals.sent), theirs: formatNumber(totals.received) }) }}
+            </p>
+          </template>
+        </ReportSection>
+        <ReportDuel :data="data" />
+        <p v-if="outdated" class="note" role="status">
+          <Info aria-hidden="true" />
+          {{ t('report.talk.outdated') }}
+        </p>
+      </ReportPart>
+      <ReportPart id="time" :title="t('report.tabs.time')" :answer="answerOf('time')">
+        <RhythmTab :data="data" />
+      </ReportPart>
+      <ReportPart v-if="!noWords" id="words" :title="t('report.tabs.words')" :answer="answerOf('words')">
+        <WordsTab :data="data" />
+      </ReportPart>
+    </div>
   </div>
 </template>
 

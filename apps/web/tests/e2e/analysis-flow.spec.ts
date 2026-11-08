@@ -52,8 +52,9 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   ]) {
     await openChapter(page, tab)
     await expect(page.locator(`#part-${part}`)).toBeInViewport()
-    if (page.viewportSize()!.width > 900)
-      await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
+    const width = page.viewportSize()!.width
+    if (width >= 1200) await expect(page.locator('.toc__row[aria-current]')).toContainText(tab)
+    else if (width > 900) await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
     else await expect(page.locator('.capsule__status')).toContainText(tab)
   }
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)

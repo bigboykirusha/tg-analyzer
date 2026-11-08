@@ -117,9 +117,17 @@ test('report navigation survives resizing between phone, tablet and desktop', as
       await expect
         .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
         .toBe(true)
-    await page.getByRole('tab', { name: 'Время', exact: true }).click()
+    // The example has no capsule (no sheet of chapters): tabs below 1200, the table of contents above.
+    const open = (name: string) =>
+      width >= 1200
+        ? page
+            .locator('.toc__row')
+            .filter({ has: page.getByText(name, { exact: true }) })
+            .click()
+        : page.getByRole('tab', { name, exact: true }).click()
+    await open('Время')
     await expect(page.locator('#part-time')).toBeInViewport()
-    await page.getByRole('tab', { name: 'Вы двое', exact: true }).click()
+    await open('Вы двое')
     await expect(page.locator('#part-together')).toBeInViewport()
   }
 })

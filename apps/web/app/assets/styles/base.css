@@ -882,9 +882,35 @@ svg.row-check {
   stroke-width: 2.4;
 }
 
-/* Phones and tablets: the header is one bar, with no chapter tabs under it. */
-@media (max-width: 900px) {
+/* Phones and tablets, and wide screens with the report's table of contents: no chapter tabs under the bar. */
+@media (max-width: 900px), (min-width: 1200px) {
   html {
     scroll-padding-top: var(--topbar-height);
+  }
+}
+
+/*
+ * The report beside its table of contents (ReportToc) on wide screens: the overview card and the tab
+ * bar step aside there, the contents column takes their job. Below 1200 px the column is not drawn.
+ */
+.report-layout > .toc {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .report-layout {
+    display: grid;
+    grid-template-columns: var(--toc-width) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-8);
+  }
+
+  .report-layout > .toc {
+    display: grid;
+  }
+
+  .report-layout .highlights,
+  .report-nav {
+    display: none;
   }
 }

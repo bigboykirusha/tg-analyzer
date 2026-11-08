@@ -35,30 +35,33 @@ const clearLeader = computed(() => {
     :description="t('group.noGroupDataText')"
   />
 
-  <div v-else class="stack stack--lg">
-    <ReportHighlights :headlines="headlines" group />
-    <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
-    <ReportPart id="people" :title="t('group.tabs.people')" :answer="answerOf('people')">
-      <ReportSection
-        :title="t('group.mostActive')"
-        :answer="clearLeader ? nameOf(clearLeader) : t('group.leader.even')"
-      >
-        <p v-if="clearLeader" class="leader__share">
-          <span class="t-figure">{{ formatPercent(clearLeader.messageShare) }}</span>
-          <span class="t-small">{{ t('group.ofMessages') }}</span>
-        </p>
-      </ReportSection>
-      <GroupOverviewTab :group="group" />
-      <GroupMembersTab :group="group" />
-      <GroupNetworkTab :group="group" />
-    </ReportPart>
-    <ReportPart id="talk" :title="t('group.tabs.talk')" :answer="answerOf('talk')" columns>
-      <GroupTalkTab :data="data" :group="group" />
-      <GroupContentTab :data="data" :group="group" />
-    </ReportPart>
-    <ReportPart id="time" :title="t('report.tabs.time')" :answer="answerOf('time')">
-      <GroupDynamicsTab :data="data" />
-    </ReportPart>
+  <div v-else class="report-layout">
+    <ReportToc :headlines="headlines" group />
+    <div class="stack stack--lg">
+      <ReportHighlights :headlines="headlines" group />
+      <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
+      <ReportPart id="people" :title="t('group.tabs.people')" :answer="answerOf('people')">
+        <ReportSection
+          :title="t('group.mostActive')"
+          :answer="clearLeader ? nameOf(clearLeader) : t('group.leader.even')"
+        >
+          <p v-if="clearLeader" class="leader__share">
+            <span class="t-figure">{{ formatPercent(clearLeader.messageShare) }}</span>
+            <span class="t-small">{{ t('group.ofMessages') }}</span>
+          </p>
+        </ReportSection>
+        <GroupOverviewTab :group="group" />
+        <GroupMembersTab :group="group" />
+        <GroupNetworkTab :group="group" />
+      </ReportPart>
+      <ReportPart id="talk" :title="t('group.tabs.talk')" :answer="answerOf('talk')" columns>
+        <GroupTalkTab :data="data" :group="group" />
+        <GroupContentTab :data="data" :group="group" />
+      </ReportPart>
+      <ReportPart id="time" :title="t('report.tabs.time')" :answer="answerOf('time')">
+        <GroupDynamicsTab :data="data" />
+      </ReportPart>
+    </div>
   </div>
 </template>
 

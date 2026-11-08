@@ -648,6 +648,8 @@
   --dialog-md: 520px;
   --dialog-lg: 680px;
   --card-focus: 440px;
+  /* The report's table of contents beside its chapters (ReportToc, ≥ 1200 px). */
+  --toc-width: 264px;
   --measure: 60ch;
   --menu-min: 240px;
   --menu-max-height: 360px;
