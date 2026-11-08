@@ -16,6 +16,8 @@ const tabs = computed(() => [
 ])
 
 const group = computed(() => props.data.report.group)
+const headlines = useChapterHeadlines(() => props.data)
+const answerOf = (id: string) => headlines.value.find((headline) => headline.id === id)?.text ?? null
 /** A clear leader only: a one-point lead is not a finding (25% more messages than the next one). */
 const clearLeader = computed(() => {
   const participants = [...(group.value?.participants ?? [])].sort((a, b) => b.messageCount - a.messageCount)
@@ -34,8 +36,9 @@ const clearLeader = computed(() => {
   />
 
   <div v-else class="stack stack--lg">
+    <ReportHighlights :headlines="headlines" group />
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
-    <ReportPart id="people" :title="t('group.tabs.people')">
+    <ReportPart id="people" :title="t('group.tabs.people')" :answer="answerOf('people')">
       <ReportSection
         :title="t('group.mostActive')"
         :answer="clearLeader ? nameOf(clearLeader) : t('group.leader.even')"
@@ -49,11 +52,11 @@ const clearLeader = computed(() => {
       <GroupMembersTab :group="group" />
       <GroupNetworkTab :group="group" />
     </ReportPart>
-    <ReportPart id="talk" :title="t('group.tabs.talk')" columns>
+    <ReportPart id="talk" :title="t('group.tabs.talk')" :answer="answerOf('talk')" columns>
       <GroupTalkTab :data="data" :group="group" />
       <GroupContentTab :data="data" :group="group" />
     </ReportPart>
-    <ReportPart id="time" :title="t('report.tabs.time')">
+    <ReportPart id="time" :title="t('report.tabs.time')" :answer="answerOf('time')">
       <GroupDynamicsTab :data="data" />
     </ReportPart>
   </div>

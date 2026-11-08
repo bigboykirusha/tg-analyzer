@@ -4,14 +4,18 @@
  * its cards are laid out as masonry (two columns on wide screens, each card at its
  * own height); the tabs inside then render their cards without a wrapper of their own.
  */
-defineProps<{ id: string; title: string; columns?: boolean }>()
+/** `answer`: the chapter's finding in one sentence, the same one «Главное» shows (useChapterHeadlines). */
+defineProps<{ id: string; title: string; columns?: boolean; answer?: string | null }>()
 const columnsRef = ref<HTMLElement | null>(null)
 const { ready } = useMasonry(columnsRef)
 </script>
 
 <template>
   <section :id="`part-${id}`" class="report-part" :aria-labelledby="`part-${id}-title`">
-    <h2 :id="`part-${id}-title`" class="t-h1">{{ title }}</h2>
+    <header class="report-part__head">
+      <h2 :id="`part-${id}-title`" class="t-h1">{{ title }}</h2>
+      <p v-if="answer" class="report-part__answer">{{ answer }}</p>
+    </header>
     <div v-if="columns" ref="columnsRef" class="report-columns" :class="{ 'is-ready': ready }"><slot /></div>
     <slot v-else />
   </section>
@@ -24,6 +28,18 @@ const { ready } = useMasonry(columnsRef)
   gap: var(--space-4);
   padding-top: var(--space-8);
   scroll-margin-top: calc(var(--topbar-height) + var(--space-16));
+}
+
+.report-part__head {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.report-part__answer {
+  max-width: var(--measure);
+  color: var(--text-muted);
+  font: var(--text-body);
+  text-wrap: pretty;
 }
 
 @media (max-width: 640px) {

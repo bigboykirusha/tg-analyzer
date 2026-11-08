@@ -21,17 +21,11 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
 const sentShare = computed(() => (totals.value.messages ? (totals.value.sent / totals.value.messages) * 100 : null))
 const mineShare = computed(() => (sentShare.value === null ? null : Math.round(sentShare.value)))
 
-/** «Пишете на равных» at 45–55%, otherwise who writes more, with the name. */
-const shareHint = computed(() => {
-  const share = sentShare.value
-  if (share === null) return null
-  const name = props.data.summary.title
-  if (share >= 65) return t('report.kpi.youWriteMuchMore')
-  if (share > 55) return t('report.kpi.youWriteMore')
-  if (share <= 35) return t('report.kpi.theyWriteMuchMore', { name })
-  if (share < 45) return t('report.kpi.theyWriteMore', { name })
-  return t('report.kpi.even')
-})
+/** «Пишете на равных» at 45–55%, otherwise who writes more, with the name (the same words as «Главное»). */
+const verdict = useShareVerdict(() => props.data)
+const shareHint = computed(() => verdict.value?.replace(/^./u, (letter) => letter.toLocaleUpperCase()) ?? null)
+const headlines = useChapterHeadlines(() => props.data, { noWords: () => Boolean(props.noWords) })
+const answerOf = (id: string) => headlines.value.find((headline) => headline.id === id)?.text ?? null
 </script>
 
 <template>
@@ -41,10 +35,11 @@ const shareHint = computed(() => {
       {{ t('report.lowData') }}
     </p>
 
+    <ReportHighlights :headlines="headlines" />
     <ReportSince :data="data" />
     <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
     <!-- «Вы двое» is masonry: every card at its own height, no stretched blanks (see useMasonry). -->
-    <ReportPart id="together" :title="t('report.tabs.together')" columns>
+    <ReportPart id="together" :title="t('report.tabs.together')" :answer="answerOf('together')" columns>
       <!-- Who writes more: the split as one figure, theirs in the person's colour. -->
       <ReportSection :title="t('report.kpi.whoWritesMore')" :answer="mineShare !== null ? shareHint : t('common.na')">
         <template v-if="mineShare !== null">
@@ -66,10 +61,10 @@ const shareHint = computed(() => {
         {{ t('report.talk.outdated') }}
       </p>
     </ReportPart>
-    <ReportPart id="time" :title="t('report.tabs.time')">
+    <ReportPart id="time" :title="t('report.tabs.time')" :answer="answerOf('time')">
       <RhythmTab :data="data" />
     </ReportPart>
-    <ReportPart v-if="!noWords" id="words" :title="t('report.tabs.words')">
+    <ReportPart v-if="!noWords" id="words" :title="t('report.tabs.words')" :answer="answerOf('words')">
       <WordsTab :data="data" />
     </ReportPart>
   </div>
