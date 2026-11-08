@@ -15,6 +15,7 @@ html {
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
   /* Focus and anchors land clear of the sticky header and section bar. */
+  /* Anchors land below the sticky header (and the chapter tabs on wide screens); a target adds its own margin. */
   scroll-padding-top: calc(var(--topbar-height) + var(--space-16));
   scrollbar-gutter: stable;
   touch-action: manipulation;
@@ -877,4 +878,11 @@ svg.row-check {
   background: var(--lime);
   color: var(--on-lime);
   stroke-width: 2.4;
+}
+
+/* Phones and tablets: the header is one bar, with no chapter tabs under it. */
+@media (max-width: 900px) {
+  html {
+    scroll-padding-top: var(--topbar-height);
+  }
 }

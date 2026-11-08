@@ -8,7 +8,7 @@ import { hueOf } from '../../lib/hue'
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 const route = useRoute()
-const { t } = useI18n()
+const { t, tc } = useI18n()
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
 const errorMessage = useErrorMessage()
@@ -52,6 +52,9 @@ watch(chatId, () => {
   void load()
 })
 
+/** The chapters and their answers for the header's capsule; the report itself reads the same composable. */
+const headlines = useChapterHeadlines(() => data.value!)
+
 /** A known chat without a report is not a dead end: it can be analysed right here. */
 const knownChat = computed(() => workspace.chats.find((chat) => chat.id === chatId.value) ?? null)
 const starting = ref(false)
@@ -84,10 +87,24 @@ onMounted(load)
 
 <template>
   <div>
-    <ReportPoster v-if="data || (!notFound && !loadError)" :data="data" :title="knownTitle" />
+    <ReportPoster
+      v-if="data || (!notFound && !loadError)"
+      :data="data"
+      :title="knownTitle"
+      story
+      @story="openStory('view')"
+    />
     <UiPageContainer>
       <div v-if="data" class="page report-page">
-        <ReportHeader :summary="data.summary" @share="openShare" />
+        <ReportHeader
+          :summary="data.summary"
+          :headlines="headlines"
+          :meta="tc('common.messagesCount', data.report.totals.messages)"
+          :can-reanalyse="Boolean(knownChat)"
+          @share="openShare"
+          @story="openStory('view')"
+          @reanalyse="analyseHere"
+        />
 
         <!-- Charts (ECharts) belong to groups only, and the share sheet and stories load on first use:
              a private report on a phone downloads neither. -->

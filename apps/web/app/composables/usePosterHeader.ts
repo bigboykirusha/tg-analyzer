@@ -1,5 +1,7 @@
 /** Over this many pixels after the poster's edge reaches the bar, the bar turns from poster into glass. */
 const BLEND_PX = 56
+/** Over the first this-many pixels of scroll the poster's big name goes under the bar and the capsule rises. */
+const TITLE_PX = 56
 
 /**
  * The toolbar over a page: at the top of a report it is the poster (the name is on the poster, so the
@@ -13,6 +15,8 @@ const BLEND_PX = 56
 export function usePosterHeader() {
   const scrolled = ref(false)
   const progress = ref(1)
+  /** 0 at the top of a report (the name is on the poster), 1 once the name has gone under the bar. */
+  const titleProgress = ref(1)
   const hasPoster = ref(false)
   const overPoster = computed(() => hasPoster.value && progress.value < 0.5)
   let observer: ResizeObserver | null = null
@@ -32,8 +36,10 @@ export function usePosterHeader() {
     hasPoster.value = Boolean(poster)
     if (!poster) {
       progress.value = 1
+      titleProgress.value = 1
       return
     }
+    titleProgress.value = Math.min(1, Math.max(0, window.scrollY / TITLE_PX))
     const left = poster.getBoundingClientRect().bottom - (bar?.offsetHeight ?? 64)
     // While the poster is under the bar, the bar is the poster: no lighter band over it. Once its edge
     // has passed under, the colour the bar carries melts into glass over the next stretch.
@@ -71,5 +77,5 @@ export function usePosterHeader() {
       }),
   )
 
-  return { scrolled, overPoster, progress, hasPoster }
+  return { scrolled, overPoster, progress, titleProgress, hasPoster }
 }

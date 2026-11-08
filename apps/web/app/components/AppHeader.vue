@@ -37,7 +37,7 @@ const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : 
 const isDark = computed(() => resolved.value === 'dark')
 
 /** Clear at the top, glass once the page scrolls under it, the poster's colour over a report's poster. */
-const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
+const { scrolled, overPoster, progress, titleProgress, hasPoster } = usePosterHeader()
 
 function openAccount() {
   accountOpen.value = false
@@ -58,8 +58,9 @@ function signOut() {
       'is-scrolled': scrolled && !overPoster,
       'is-over-poster': overPoster,
       'has-poster': hasPoster,
+      'is-title-hidden': hasPoster && titleProgress === 0,
     }"
-    :style="hasPoster ? { '--poster-progress': progress } : undefined"
+    :style="hasPoster ? { '--poster-progress': progress, '--title-progress': titleProgress } : undefined"
   >
     <UiPageContainer class="topbar">
       <BrandLink to="/dashboard" class="topbar__brand" />
@@ -171,8 +172,43 @@ function signOut() {
   --segment-track: var(--on-poster-well);
   --thumb: var(--on-poster);
   --focus-ring: 0 0 0 2px var(--poster), 0 0 0 4px var(--on-poster);
+  --header-chip: var(--on-poster-chip);
+  --header-chip-ring: none;
   background: var(--poster);
   color: var(--on-poster);
+}
+
+/*
+ * Phones and tablets, a report with a capsule (ReportHeader): the capsule carries the name, so the
+ * bar's own title is for screen readers only, and there is no second bar of chapter tabs (frame 2a).
+ * Before the name has gone under the bar, the capsule cannot be tapped.
+ */
+@media (max-width: 900px) {
+  .app-navigation:has(.capsule) :deep(.page-bar__copy) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .app-navigation:has(.capsule) .header-sub {
+    display: none;
+  }
+
+  .app-navigation.is-title-hidden :deep(.capsule) {
+    visibility: hidden;
+  }
+
+  /* Back is the same 48 px circle as «Поделиться»: a well on the poster, a chip on glass. */
+  .app-navigation:has(.capsule) :deep(.page-bar__back) {
+    width: var(--control-lg);
+    height: var(--control-lg);
+    margin-left: 0;
+    background: var(--header-chip);
+    box-shadow: var(--header-chip-ring);
+  }
 }
 
 .app-navigation.is-over-poster :deep(.segment-active) {

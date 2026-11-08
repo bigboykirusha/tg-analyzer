@@ -193,6 +193,10 @@
   --on-poster-muted: var(--white-a8);
   --on-poster-line: var(--white-a4);
   --on-poster-well: var(--white-a2);
+  /* The report bar's circles and capsule: a well over the poster, a raised chip on glass (AppHeader). */
+  --on-poster-chip: var(--white-a3);
+  --header-chip: var(--surface-raised);
+  --header-chip-ring: var(--ring-hairline);
   --room: var(--gray-2);
   --room-tint: var(--gray-3);
   /* Tiles: one poster-coloured tile may carry a part's headline; every other tile is plain white. */
@@ -317,6 +321,7 @@
   --on-poster-muted: var(--white-a8);
   --on-poster-line: var(--white-a3);
   --on-poster-well: var(--white-a2);
+  --on-poster-chip: var(--white-a3);
   --room: var(--night-0);
   --room-tint: var(--night-2);
   --warning: var(--amber-d6);

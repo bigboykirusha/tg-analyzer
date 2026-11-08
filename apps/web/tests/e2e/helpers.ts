@@ -1,4 +1,4 @@
-import type { BrowserContext, Page } from '@playwright/test'
+import { expect, type BrowserContext, type Page } from '@playwright/test'
 
 export async function usePreferences(context: BrowserContext, theme: 'light' | 'dark', locale: 'ru' | 'en' = 'ru') {
   const url = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000'
@@ -41,4 +41,32 @@ export async function backendAvailable(baseURL: string) {
   } catch {
     return false
   }
+}
+
+/**
+ * Opens a chapter of a report. Phones and tablets have no chapter tabs: the capsule in the header opens
+ * a sheet of chapters (it shows up once the poster's name has gone under the bar). Wide screens keep tabs.
+ */
+export async function openChapter(page: Page, name: string) {
+  if (page.viewportSize()!.width > 900) {
+    await page.getByRole('tab', { name }).click()
+    return
+  }
+  const capsule = page.locator('.capsule')
+  await capsule.waitFor({ state: 'attached' })
+  // The capsule rises once the name on the poster has gone under the bar.
+  await expect
+    .poll(async () => {
+      await page.evaluate(() => {
+        if (window.scrollY < 80) window.scrollTo({ top: 120, behavior: 'instant' })
+      })
+      return capsule.isVisible()
+    })
+    .toBe(true)
+  // A pinned bar: Playwright's scroll-into-view would take the page back to the top, where the capsule hides.
+  await capsule.evaluate((element: HTMLElement) => element.click())
+  await page
+    .locator('.chapters__row')
+    .filter({ has: page.getByText(name, { exact: true }) })
+    .click()
 }

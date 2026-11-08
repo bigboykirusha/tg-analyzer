@@ -27,7 +27,8 @@ const { ready } = useMasonry(columnsRef)
   display: grid;
   gap: var(--space-4);
   padding-top: var(--space-8);
-  scroll-margin-top: calc(var(--topbar-height) + var(--space-16));
+  /* Below the scroll padding of the page (base.css), a little air above the chapter's title. */
+  scroll-margin-top: var(--space-6);
 }
 
 .report-part__head {

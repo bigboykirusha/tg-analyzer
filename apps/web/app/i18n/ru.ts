@@ -447,6 +447,8 @@ export const ru: Record<MessageKey, string> = {
   'report.highlights.days.many': '{count} дней',
   'report.highlights.days.one': '{count} день',
   'report.highlights.days.other': '{count} дня',
+  'report.capsule.chapter': '{name} · {at} из {total}',
+  'report.capsule.open': 'Главы отчёта «{name}»',
   'report.headline.title': 'Главное о вас двоих',
   'report.headline.titleGroup': 'Главное о группе',
   'report.headline.speedMine': 'вы отвечаете {note}',

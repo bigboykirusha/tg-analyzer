@@ -449,6 +449,8 @@ export const en = {
   'report.highlights.days.many': '{count} days',
   'report.highlights.days.one': '{count} day',
   'report.highlights.days.other': '{count} days',
+  'report.capsule.chapter': '{name} · {at} of {total}',
+  'report.capsule.open': 'Chapters of “{name}”',
   'report.headline.title': 'The two of you, in short',
   'report.headline.titleGroup': 'The group, in short',
   'report.headline.speedMine': 'you reply {note}',

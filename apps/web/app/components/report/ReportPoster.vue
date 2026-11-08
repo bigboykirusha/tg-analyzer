@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computeChapters, type ReportDto } from '@tg-analyzer/shared'
+import { Play } from '../../lib/icons'
 
 /**
  * The top of a report, like a contact poster: the person's name very large on their own colour,
@@ -8,7 +9,9 @@ import { computeChapters, type ReportDto } from '@tg-analyzer/shared'
  * takes the poster's colour until the page scrolls past it (AppHeader).
  */
 /** Without `data` it is the loading shape: the name when it is known, quiet bars for the rest. */
-const props = defineProps<{ data?: ReportDto | null; title?: string | null }>()
+/** `story`: the poster offers «Смотреть итоги» — the recap one tap from the top, not only at the end. */
+const props = defineProps<{ data?: ReportDto | null; title?: string | null; story?: boolean }>()
+const emit = defineEmits<{ story: [] }>()
 const { t, tc, formatDate } = useI18n()
 
 const chapters = computed(() =>
@@ -40,6 +43,9 @@ const meta = computed(() => {
       <template v-if="data">
         <ReportPulse :data="data" bare class="poster__pulse" />
         <ReportChapters v-if="chapters.length > 2" :chapters="chapters" class="poster__chapters" />
+        <UiButton v-if="story" class="poster__story" variant="primary" size="lg" :icon="Play" @click="emit('story')">
+          {{ t('share.watch') }}
+        </UiButton>
       </template>
       <UiSkeleton v-else height="var(--space-20)" radius="var(--radius-sm)" aria-hidden="true" />
     </UiPageContainer>
@@ -59,6 +65,11 @@ const meta = computed(() => {
   --them: var(--on-poster-muted);
   --them-ink: var(--on-poster-muted);
   --skeleton: var(--on-poster-well);
+  /* Its one button is light on the person's colour, as on the report's ending. */
+  --accent: var(--on-poster);
+  --accent-hover: var(--on-poster-muted);
+  --on-accent: var(--poster);
+  --focus-ring: 0 0 0 2px var(--poster), 0 0 0 4px var(--on-poster);
   margin-top: calc(-1 * var(--page-top));
   padding: var(--space-6) 0 var(--space-8);
   background: var(--poster);
@@ -90,6 +101,10 @@ const meta = computed(() => {
   font-weight: 400;
 }
 
+.poster__story {
+  justify-self: start;
+}
+
 .poster__chapters {
   margin-top: calc(-1 * var(--space-4));
 }
@@ -101,6 +116,10 @@ const meta = computed(() => {
 
   .poster__in {
     gap: var(--space-6);
+  }
+
+  .poster__story {
+    justify-self: stretch;
   }
 
   /* A long name wraps to two lines instead of losing its end. */

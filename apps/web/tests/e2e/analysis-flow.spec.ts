@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { backendAvailable, gotoHydrated, noHorizontalScroll, signIn, usePreferences } from './helpers'
+import { backendAvailable, gotoHydrated, noHorizontalScroll, openChapter, signIn, usePreferences } from './helpers'
 
 // A full flow includes login, background processing and image export.
 test.describe.configure({ timeout: 60_000 })
@@ -42,7 +42,7 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   await page.goto('/new')
   await page.locator('.chat-row').filter({ hasText: 'Катя' }).getByRole('link', { name: 'Открыть отчёт' }).click()
   await page.waitForURL('**/chat/1006')
-  await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Катя', exact: true })).toBeVisible()
 
   // One long page: the nav jumps to each part and marks it.
   for (const [tab, part] of [
@@ -50,9 +50,11 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
     ['О чём', 'words'],
     ['Вы двое', 'together'],
   ]) {
-    await page.getByRole('tab', { name: tab }).click()
+    await openChapter(page, tab)
     await expect(page.locator(`#part-${part}`)).toBeInViewport()
-    await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
+    if (page.viewportSize()!.width > 900)
+      await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
+    else await expect(page.locator('.capsule__status')).toContainText(tab)
   }
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   // «октябрь 2026 г.» on the axis under the pulse (on the poster; a short chat has no chapters) never breaks before «г.».
@@ -90,7 +92,7 @@ test('group chats get the group report', async ({ page }, testInfo) => {
     ['Время', 'time'],
     ['Люди', 'people'],
   ]) {
-    await page.getByRole('tab', { name: tab }).click()
+    await openChapter(page, tab)
     await expect(page.locator(`#part-${part}`)).toBeInViewport()
   }
   const member = page.locator('.member').first()
@@ -122,7 +124,7 @@ test('a completed analysis is recovered when websocket progress is unavailable',
     .getByRole('button', { name: 'Разобрать', exact: true })
     .click()
   await page.waitForURL('**/chat/1006', { timeout: 30_000 })
-  await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Катя', exact: true })).toBeVisible()
 })
 
 test('code autofill and two-step verification complete sign-in', async ({ page }) => {
@@ -246,7 +248,7 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
   await row.getByRole('button', { name: 'Разобрать', exact: true }).click()
   await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 30_000 })
   await page.goto('/chat/1006')
-  await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('heading', { name: 'Катя', exact: true })).toBeVisible({ timeout: 15_000 })
 
   // Match the fixed 9:16 export, which has less vertical room than a tall phone.
   await page.setViewportSize({ width: 360, height: 640 })

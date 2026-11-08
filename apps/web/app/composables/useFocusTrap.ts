@@ -62,7 +62,8 @@ export function useFocusTrap(
         target?.focus()
       } else {
         document.removeEventListener('keydown', handleKeydown)
-        previouslyFocused?.focus()
+        // Returning focus must not scroll: an action in the dialog may have just started a scroll of its own.
+        previouslyFocused?.focus({ preventScroll: true })
         previouslyFocused = null
       }
     },
