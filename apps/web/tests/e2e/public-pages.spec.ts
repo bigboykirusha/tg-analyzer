@@ -100,7 +100,7 @@ test('the example report opens without signing in', async ({ page }, testInfo) =
     .getByRole('article')
     .filter({ has: page.getByRole('heading', { name: 'Ваши привычки', exact: true }) })
   await expect(habits.getByText('Голосовые', { exact: true })).toBeVisible()
-  await expect(habits.locator('.report-line').last()).toContainText(/\d/)
+  await expect(habits.locator('.plaque').last()).toContainText(/\d/)
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
 })

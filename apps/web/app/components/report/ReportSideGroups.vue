@@ -56,6 +56,11 @@ const groups = computed(() =>
   background: var(--room-tint);
 }
 
+/* Grey counts lose contrast on the tint; on it they take the text's own colour. */
+.side-groups__group--theirs :deep(.chip__count) {
+  color: var(--text);
+}
+
 @media (max-width: 640px) {
   .side-groups :deep(.chip:nth-child(n + 9)) {
     display: none;
