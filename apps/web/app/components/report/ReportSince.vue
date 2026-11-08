@@ -1,205 +1,92 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import { ArrowDown, ArrowUp } from '../../lib/icons'
 
 /**
- * «С прошлого анализа»: a white strip under the hero, only after a chat was analysed again.
- * Three changes against the kept snapshot (`previous`): new messages, your reply time and who
- * starts the conversations. Each value shows what it was; the arrow says which way it went.
- * Without new messages there is nothing to tell, and the strip stays away.
+ * «С прошлого анализа» (card 18): only after a chat was analysed again and something new was written.
+ * The answer is how many messages came since; under it, rows «было → стало» for your reply time and
+ * who starts the conversations — the same snapshot (`previous`) the report keeps.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, formatNumber, formatDuration, formatPercent, formatDate } = useI18n()
+const { t, formatNumber, formatDuration, formatDate } = useI18n()
 
 const previous = computed(() => (props.data.report.group ? null : props.data.previous))
 
-/** Changes smaller than this are «as before»: a median moves a little with every new week. */
-const REPLY_RATIO = 0.1
-const STARTS_POINTS = 3
+/** «вы», «Мила» or «поровну»: who starts more, from the share of conversations you start. */
+function starter(pct: number) {
+  if (pct > 55) return t('report.since.starterMine')
+  if (pct < 45) return props.data.summary.title
+  return t('report.since.starterEven')
+}
 
-type Cell = { key: string; label: string; value: string; was: string; arrow: 'up' | 'down' | null }
-
-const cells = computed<Cell[]>(() => {
+const view = computed(() => {
   const before = previous.value
-  if (!before) return []
+  if (!before) return null
   const { totals, responses } = props.data.report
-  const out: Cell[] = []
-
-  // Nothing new since then: every number is as before, the strip would say nothing.
   const added = totals.messages - before.messages
-  if (added <= 0) return []
-  out.push({
-    key: 'messages',
-    label: t('report.since.messages'),
-    value: `+${formatNumber(added)}`,
-    was: t('report.since.was', { value: formatNumber(before.messages) }),
-    arrow: null,
-  })
-
+  // Nothing new since then: every number is as before, and the card would say nothing.
+  if (added <= 0) return null
+  const rows: { key: string; label: string; from: string; to: string }[] = []
   const now = responses.medianMineSec
   const then = before.medianMineSec
-  if (now !== null && then !== null && then > 0) {
-    const change = (now - then) / then
-    out.push({
-      key: 'reply',
-      label:
-        change <= -REPLY_RATIO
-          ? t('report.since.replyFaster')
-          : change >= REPLY_RATIO
-            ? t('report.since.replySlower')
-            : t('report.since.replySame'),
-      value: formatDuration(now),
-      was: t('report.since.was', { value: formatDuration(then) }),
-      arrow: Math.abs(change) < REPLY_RATIO ? null : change < 0 ? 'down' : 'up',
-    })
-  }
-
+  if (now !== null && then !== null)
+    rows.push({ key: 'reply', label: t('report.since.reply'), from: formatDuration(then), to: formatDuration(now) })
   const starts = responses.iWriteFirstPct
   const startsBefore = before.iWriteFirstPct
-  if (starts !== null && startsBefore !== null) {
-    const diff = starts - startsBefore
-    out.push({
-      key: 'starts',
-      label:
-        diff >= STARTS_POINTS
-          ? t('report.since.startsMore')
-          : diff <= -STARTS_POINTS
-            ? t('report.since.startsLess', { name: props.data.summary.title })
-            : t('report.since.startsSame'),
-      value: formatPercent(starts),
-      was: t('report.since.was', { value: formatPercent(startsBefore) }),
-      arrow: Math.abs(diff) < STARTS_POINTS ? null : diff > 0 ? 'up' : 'down',
-    })
+  if (starts !== null && startsBefore !== null)
+    rows.push({ key: 'starts', label: t('report.since.starts'), from: starter(startsBefore), to: starter(starts) })
+  return {
+    title: t('report.since.titleDate', { date: formatDate(before.analyzedAt, { day: 'numeric', month: 'long' }) }),
+    answer: t('report.since.added', { count: formatNumber(added) }),
+    rows,
   }
-  return out
 })
-
-const since = computed(() =>
-  previous.value ? formatDate(previous.value.analyzedAt, { day: 'numeric', month: 'long' }) : '',
-)
 </script>
 
 <template>
-  <section v-if="cells.length" class="tile since" :aria-label="t('report.since.title')">
-    <header class="since__head">
-      <h2 class="since__title">{{ t('report.since.title') }}</h2>
-      <span class="since__range">{{ t('report.since.range', { date: since }) }}</span>
-    </header>
-    <dl class="since__cells">
-      <div v-for="cell in cells" :key="cell.key" class="since__cell">
-        <dt class="since__label">{{ cell.label }}</dt>
-        <dd class="since__value t-num">
-          <span v-if="cell.arrow" class="since__arrow" aria-hidden="true">
-            <ArrowUp v-if="cell.arrow === 'up'" />
-            <ArrowDown v-else />
-          </span>
-          {{ cell.value }}
+  <ReportSection v-if="view" :title="view.title" :answer="view.answer" class="since">
+    <dl v-if="view.rows.length" class="since__rows">
+      <div v-for="row in view.rows" :key="row.key" class="since__row">
+        <dt>{{ row.label }}</dt>
+        <dd class="t-num">
+          {{ row.from }}<span class="since__arrow" aria-hidden="true">→</span
+          ><span class="sr-only">{{ t('report.since.became') }}</span
+          >{{ row.to }}
         </dd>
-        <dd class="since__was t-num">{{ cell.was }}</dd>
       </div>
     </dl>
-  </section>
+  </ReportSection>
 </template>
 
 <style scoped>
-.since__head {
+.since__rows {
+  display: grid;
+  margin: 0;
+}
+
+.since__row {
   display: flex;
-  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
-}
-
-.since__title {
-  font: var(--text-title);
-}
-
-.since__range {
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-
-.since__cells {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-  grid-auto-flow: column;
   gap: var(--space-4);
-  margin: 0;
+  padding: var(--space-3) 0;
+  box-shadow: var(--divider-top);
 }
 
-.since__cell {
-  display: grid;
-  align-content: start;
-  gap: var(--space-1);
-  min-width: 0;
-  padding-left: var(--space-4);
-  border-left: 1px solid var(--border);
-}
-
-.since__cell:first-child {
-  padding-left: 0;
-  border-left: 0;
-}
-
-.since__label,
-.since__was {
-  margin: 0;
+.since__row dt {
   color: var(--text-muted);
+  font: var(--text-ui);
+  font-weight: 400;
 }
 
-.since__label {
-  font: var(--text-small);
-}
-
-.since__was {
-  font: var(--text-caption);
-}
-
-.since__value {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+.since__row dd {
   margin: 0;
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
+  font: var(--text-title);
+  font-weight: 600;
 }
 
-/* The direction in a lime dot: lime marks data, never a button. */
 .since__arrow {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: var(--icon-lg);
-  height: var(--icon-lg);
-  border-radius: var(--radius-full);
-  background: var(--room-tint);
-  color: var(--them-ink);
-}
-
-/* Phone: one row per change, the value on the right. */
-@media (max-width: 640px) {
-  .since__cells {
-    grid-auto-flow: row;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
-
-  .since__cell {
-    grid-template-columns: minmax(0, 1fr) auto;
-    padding: var(--space-3) 0;
-    border-top: 1px solid var(--border);
-    border-left: 0;
-  }
-
-  .since__cell:first-child {
-    padding-top: 0;
-    border-top: 0;
-  }
-
-  .since__value {
-    grid-row: span 2;
-    grid-column: 2;
-    font: var(--text-title);
-  }
+  margin: 0 var(--space-1);
+  color: var(--text-muted);
+  font-weight: 400;
 }
 </style>

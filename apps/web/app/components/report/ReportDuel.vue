@@ -4,7 +4,7 @@ import type { ReportDto } from '@tg-analyzer/shared'
 /**
  * «Вы двое»: every two-sided habit in a picture of its own — a line for reply time, the small
  * habits as rows, squares for questions, stickers by side, podiums for reactions, one voice card,
- * the care rituals and the edges of the day. The
+ * morning and night in one card. The
  * numbers all come from `useVersus`, so one value never gets two answers.
  */
 const props = defineProps<{ data: ReportDto }>()
@@ -33,6 +33,5 @@ const voiceCounts = computed(() => {
   <DuelStickers :data="data" />
   <DuelReactions :data="data" :item="cards.reactions ?? null" />
   <DuelVoice v-if="cards.voice" :item="cards.voice" :data="data" />
-  <DuelCare :data="data" />
-  <DuelDayEdges :data="data" />
+  <DuelMornings :data="data" />
 </template>

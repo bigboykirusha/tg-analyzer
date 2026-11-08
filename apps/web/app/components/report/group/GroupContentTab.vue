@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { hueOf } from '../../../lib/hue'
 import type { GroupReportDto, ReportDto } from '@tg-analyzer/shared'
 
 const props = defineProps<{ data: ReportDto; group: GroupReportDto }>()
@@ -32,7 +33,9 @@ const signatures = computed(() =>
   <ReportSection v-if="signatures.length" wide :title="t('group.signatures')">
     <div class="signatures">
       <div v-for="p in signatures" :key="p.id" class="signature">
-        <strong>{{ nameOf(p) }}</strong>
+        <strong :data-hue="p.isSelf ? undefined : hueOf(p.id)" :class="{ signature__you: p.isSelf }">{{
+          nameOf(p)
+        }}</strong>
         <WordChips :items="p.topicSignature" :empty="t('group.noWords')" :counts="false" />
       </div>
     </div>
@@ -63,9 +66,14 @@ const signatures = computed(() =>
 
 .signature strong {
   overflow: hidden;
+  color: var(--them-ink);
   font: var(--text-title);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.signature strong.signature__you {
+  color: var(--you);
 }
 
 @media (max-width: 640px) {

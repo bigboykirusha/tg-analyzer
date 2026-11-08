@@ -67,29 +67,15 @@ const summary = computed(() => {
   return t('chart.hourlySummary', { sent: formatNumber(sum('sent')), received: formatNumber(sum('received')) })
 })
 
-const second = computed(() => {
-  const window = props.data.derived.availabilityProfile.secondaryWindow
-  if (!window) return null
-  const [from = '', to = ''] = window.split('-')
-  return t('report.fmt.clockSecond', { from, to })
-})
-/** «Пик — 20:00–23:00 · Второе окно: 12:00–15:00»; word joiners keep each window whole. */
-const peakLine = computed(() => {
-  if (!window.value) return undefined
-  const whole = (value: string) => value.replace(/–/g, '\u2060–\u2060')
-  const peak = whole(t('report.fmt.rolePeak', { from: window.value.from, to: window.value.to }))
-  return second.value ? `${peak}, ${whole(second.value)}` : peak
-})
+/** «Ночные совы: чаще всего с 22:00 до 01:00» — the same sentence the chapter opens with. */
+const headlines = useChapterHeadlines(() => props.data)
+const answer = computed(
+  () => headlines.value.find((headline) => headline.id === 'time')?.text ?? t(`story.persona.${role.value!}`),
+)
 </script>
 
 <template>
-  <ReportSection
-    v-if="window && role"
-    :title="t('report.fmt.clockTitle')"
-    :text="peakLine"
-    :answer="t(`story.persona.${role}`)"
-    wide
-  >
+  <ReportSection v-if="window && role" :title="t('report.fmt.clockTitle')" :answer="answer" wide>
     <figure class="day">
       <ul class="day__legend" aria-hidden="true">
         <li class="day__key day__key--mine">{{ t('report.you') }}</li>
@@ -110,8 +96,8 @@ const peakLine = computed(() => {
       <!-- The four parts of the day under their own six hours each: the share said once, here. -->
       <ol class="day__parts">
         <li v-for="part in parts" :key="part.key" :class="{ 'is-peak': part.role === role }">
-          <span>{{ t(part.label) }}</span>
           <b class="t-num">{{ Math.round(part.share) }}%</b>
+          <span>{{ t(part.label) }}</span>
         </li>
       </ol>
     </figure>
@@ -224,22 +210,24 @@ const peakLine = computed(() => {
 }
 
 .day__parts li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--space-1);
+  display: grid;
+  justify-items: center;
   min-width: 0;
   padding-top: var(--space-2);
-  border-top: var(--bar-height) solid var(--chart-neutral);
+  box-shadow: var(--divider-top);
   color: var(--text-muted);
   font: var(--text-caption);
+  text-align: center;
 }
 
+/* The share of each part of the day, said right under its six hours. */
 .day__parts b {
-  font-weight: 500;
+  color: var(--text);
+  font: var(--text-small);
+  font-weight: 600;
 }
 
-.day__parts .is-peak {
-  border-top-color: var(--chart-neutral-strong);
-  color: var(--text);
+.day__parts .is-peak b {
+  color: var(--them-ink);
 }
 </style>
