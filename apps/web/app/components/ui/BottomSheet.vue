@@ -26,7 +26,8 @@ function close() {
 }
 
 useBodyScrollLock(open)
-useFocusTrap(panelRef, open, { onEscape: close })
+// The sheet itself takes focus: a search field first would pop the keyboard over the list on a phone.
+useFocusTrap(panelRef, open, { onEscape: close, initial: () => panelRef.value })
 const drag = useSheetDrag(panelRef, close)
 watch(open, (value) => value && drag.reset())
 </script>

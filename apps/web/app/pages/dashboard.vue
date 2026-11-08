@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { deriveHomeEvents, type UserShareLinkDto } from '@tg-analyzer/shared'
-import { AlertCircle, BarChart2, Lock, MessageSquare, Plus } from '../lib/icons'
+import { AlertCircle, Plus } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
@@ -25,6 +25,10 @@ const errorMessage = useErrorMessage()
 
 
 /** Finished reports, newest first: what the user has already learned. */
+/** Phones open the chat list as a sheet over the home screen (`?pick`); wide screens go to `/new`. */
+const isPhone = useMediaQuery('(max-width: 640px)')
+const newAnalysisLink = computed(() => (isPhone.value ? '/dashboard?pick' : '/new'))
+
 /** The reports, the chats pinned in Telegram first (they have no block of their own), then the freshest. */
 const reports = computed(() =>
   workspace.chats
@@ -69,11 +73,6 @@ function loadReports() {
   void workspace.loadReports().catch((error) => (reportsError.value = error))
 }
 
-const steps = computed(() => [
-  { icon: MessageSquare, title: t('dashboard.intro.step1Title'), text: t('dashboard.intro.step1Text') },
-  { icon: Lock, title: t('dashboard.intro.step2Title'), text: t('dashboard.intro.step2Text') },
-  { icon: BarChart2, title: t('dashboard.intro.step3Title'), text: t('dashboard.intro.step3Text') },
-])
 
 const queuedJobs = computed(() => new Set(analysis.queued.value.map((item) => item.chatId)))
 function isUpdating(chatId: string) {
@@ -113,29 +112,26 @@ onMounted(() => {
       </template>
 
       <template v-else-if="newcomer">
-        <UiPageBar :title="t('home.onboardTitle')" />
+        <UiPageBar :title="t('home.firstTitle')" untitled />
 
         <AnalysisBanner />
 
-        <ol class="tile tile--lime onboard">
-          <li v-for="(step, index) in steps" :key="index" class="onboard__step">
-            <span class="onboard__num">{{ index + 1 }}</span>
-            <span class="onboard__copy">
-              <strong>{{ step.title }}</strong>
-              <span>{{ step.text }}</span>
-            </span>
-          </li>
-        </ol>
+        <!-- First run: one question, the busiest chats under it, and the promise where trust is decided. -->
+        <header class="home__hello">
+          <p class="t-h1">{{ t('home.firstTitle') }}</p>
+          <p class="t-lede">{{ t('home.firstLede') }}</p>
+        </header>
 
         <UiPageSection id="chats" :title="t('dashboard.chatsTitle')">
           <ChatPicker />
+          <p class="home__privacy t-small t-muted">{{ t('home.firstPrivacy') }}</p>
         </UiPageSection>
       </template>
 
       <template v-else>
         <UiPageBar :title="t('home.title')" untitled>
           <template #actions>
-            <UiButton class="home__new" variant="primary" to="/new" size="sm" :icon="Plus">{{
+            <UiButton class="home__new" variant="primary" :to="newAnalysisLink" size="sm" :icon="Plus">{{
               t('nav.newAnalysis')
             }}</UiButton>
           </template>
@@ -233,51 +229,10 @@ onMounted(() => {
 }
 
 /* ─── Newcomer: three steps in one lime tile ─── */
-.onboard {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-6);
-  margin: 0;
-  padding: var(--space-6);
-  list-style: none;
-}
 
-.onboard__step {
-  display: flex;
-  gap: var(--space-3);
-}
 
-.onboard__num {
-  display: inline-grid;
-  flex: none;
-  place-items: center;
-  width: var(--avatar-sm);
-  height: var(--avatar-sm);
-  border-radius: var(--radius-full);
-  background: var(--tile-ink);
-  color: var(--on-tile-ink);
-  font: var(--text-caption);
-}
 
-.onboard__copy {
-  display: grid;
-  gap: var(--space-0-5);
-  color: var(--text-muted);
-  font: var(--text-small);
-}
 
-.onboard__copy strong {
-  color: var(--text);
-  font: var(--text-ui);
-}
-
-@media (max-width: 900px) {
-  .onboard {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-4);
-    padding: var(--space-6);
-  }
-}
 
 /* ─── Reports ─── */
 /* As many cards per row as fit, so a few reports never leave one orphan below. */
@@ -300,5 +255,8 @@ onMounted(() => {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
   }
+}
+.home__privacy {
+  margin-top: var(--space-4);
 }
 </style>

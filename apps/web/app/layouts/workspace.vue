@@ -52,6 +52,7 @@ watch(analysis.finished, (job) => {
         <slot />
       </main>
     </div>
+    <ChatPickerSheet />
   </div>
 </template>
 
