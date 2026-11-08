@@ -49,10 +49,10 @@ export function useChapterSpy(ids: () => string[]) {
     if (reduce) return
     // A smooth scroll can be cut short (a sheet letting go of the page, a card growing above): once it
     // stops, the chapter checks where it landed and, if it is off, takes its place without animation.
-    let settled = false
+    let checks = 0
     const settle = () => {
-      if (settled) return
-      settled = true
+      // Checked when the scroll ends and again a little later, in case something grew in between.
+      if (++checks > 3) return
       window.removeEventListener('scrollend', settle)
       const target = document.getElementById(`part-${id}`)
       if (!target) return
@@ -62,8 +62,9 @@ export function useChapterSpy(ids: () => string[]) {
       if (!atBottom && Math.abs(target.getBoundingClientRect().top - padding - margin) > 24)
         target.scrollIntoView({ behavior: 'instant', block: 'start' })
     }
-    window.addEventListener('scrollend', settle)
-    setTimeout(settle, 1600)
+    window.addEventListener('scrollend', settle, { once: true })
+    setTimeout(settle, 1200)
+    setTimeout(settle, 2400)
   }
 
   return { current, go }

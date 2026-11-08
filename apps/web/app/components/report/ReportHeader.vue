@@ -46,8 +46,9 @@ const sheetOpen = ref(false)
 
 function jump(id: string) {
   sheetOpen.value = false
-  // After the sheet has let go of the page (its scroll lock and focus return come with closing).
-  setTimeout(() => spy.go(id), 0)
+  // After the sheet has let go of the page (its scroll lock and focus return come with closing): two
+  // frames, so a slow device has painted the sheet's exit before the page starts to move.
+  requestAnimationFrame(() => requestAnimationFrame(() => spy.go(id)))
 }
 
 function act(action: 'share' | 'story' | 'reanalyse') {
