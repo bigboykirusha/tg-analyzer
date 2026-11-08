@@ -142,7 +142,8 @@ const awards = computed(() =>
 }
 
 .award__value {
-  color: var(--them-ink);
+  /* A group has no single «them»: the value is plain text, the winner's name carries the weight. */
+  color: var(--text-muted);
   font: var(--text-ui);
 }
 

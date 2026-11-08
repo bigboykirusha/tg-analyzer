@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import { Play, Share } from '../../lib/icons'
+import { Play, Send, Share } from '../../lib/icons'
 
 /**
  * The end of a report mirrors its start: the poster again, full width, with the same pulse, and the
- * two things worth doing next — watch «Итоги» and share. The report closes on the person, not on the
- * last table.
+ * things worth doing next — your own report: watch «Итоги» and share; the example and a shared link:
+ * an invitation to make one's own (`invite`). Every report closes on the person, not on the last table.
  */
-const props = defineProps<{ data: ReportDto }>()
+const props = defineProps<{
+  data: ReportDto
+  /** The example or a shared link: one action, to the reader's own report. */
+  invite?: { title: string; text: string; cta: string }
+}>()
 const emit = defineEmits<{ story: []; share: [] }>()
 const { t } = useI18n()
 const titleId = useId()
@@ -18,11 +22,18 @@ const isGroup = computed(() => props.data.summary.type === 'group')
   <section class="ending no-print" :aria-labelledby="titleId">
     <UiPageContainer class="ending__in">
       <ReportPulse :data="data" bare class="ending__pulse" />
-      <div class="ending__copy">
+      <div v-if="invite" class="ending__copy">
+        <h2 :id="titleId" class="ending__title">{{ invite.title }}</h2>
+        <p class="ending__lede">{{ invite.text }}</p>
+      </div>
+      <div v-else class="ending__copy">
         <h2 :id="titleId" class="ending__title">{{ t('share.title', { name: data.summary.title }) }}</h2>
         <p class="ending__lede">{{ isGroup ? t('report.ending.ledeGroup') : t('report.ending.lede') }}</p>
       </div>
-      <div class="ending__actions">
+      <div v-if="invite" class="ending__actions">
+        <UiButton variant="primary" size="lg" :icon="Send" to="/login">{{ invite.cta }}</UiButton>
+      </div>
+      <div v-else class="ending__actions">
         <UiButton variant="primary" size="lg" :icon="Play" @click="emit('story')">{{ t('share.watch') }}</UiButton>
         <UiButton variant="ghost" size="lg" :icon="Share" aria-haspopup="dialog" @click="emit('share')">
           {{ t('share.open') }}

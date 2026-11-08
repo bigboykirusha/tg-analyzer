@@ -40,6 +40,8 @@ watch(
     step.value = 'main'
     if (linkable.value) void loadLinks()
   },
+  // The sheet is loaded lazily and mounts already open: the first open must load its links too.
+  { immediate: true },
 )
 
 function pick(intent: StoryIntent) {
@@ -318,7 +320,9 @@ const title = computed(() =>
 
 .share-step {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
+  min-width: 0;
 }
 
 @media (max-width: 640px) {

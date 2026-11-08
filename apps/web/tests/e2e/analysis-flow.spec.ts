@@ -15,7 +15,7 @@ test.beforeEach(async ({ baseURL, context }) => {
 test('sign in, analyse a private chat and read the report', async ({ page }, testInfo) => {
   await signIn(page)
   const row = page.locator('.chat-row').filter({ hasText: 'Катя' })
-  await row.getByRole('button', { name: 'Анализ' }).click()
+  await row.getByRole('button', { name: 'Разобрать', exact: true }).click()
   await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 30_000 })
 
   // The very first report opens by itself.
@@ -81,7 +81,7 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
 test('group chats get the group report', async ({ page }, testInfo) => {
   await signIn(page)
   const row = page.locator('.chat-row').filter({ hasText: 'Weekend plans' })
-  await row.getByRole('button', { name: 'Анализ' }).click()
+  await row.getByRole('button', { name: 'Разобрать', exact: true }).click()
   await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 60_000 })
 
   await page.goto('/chat/-1002004')
@@ -116,7 +116,11 @@ test('a completed analysis is recovered when websocket progress is unavailable',
   test.setTimeout(60_000)
   await page.routeWebSocket('**/ws/parse-progress**', (socket) => socket.close())
   await signIn(page)
-  await page.locator('.chat-row').filter({ hasText: 'Катя' }).getByRole('button', { name: 'Анализ' }).click()
+  await page
+    .locator('.chat-row')
+    .filter({ hasText: 'Катя' })
+    .getByRole('button', { name: 'Разобрать', exact: true })
+    .click()
   await page.waitForURL('**/chat/1006', { timeout: 30_000 })
   await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible()
 })
@@ -239,7 +243,7 @@ test('a late dialog response cannot populate the next account', async ({ page })
 test('the recap opens as stories with both names and saves a slide', async ({ page }, testInfo) => {
   await signIn(page)
   const row = page.locator('.chat-row').filter({ hasText: 'Катя' })
-  await row.getByRole('button', { name: 'Анализ' }).click()
+  await row.getByRole('button', { name: 'Разобрать', exact: true }).click()
   await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 30_000 })
   await page.goto('/chat/1006')
   await expect(page.getByRole('heading', { name: 'Катя' })).toBeVisible({ timeout: 15_000 })

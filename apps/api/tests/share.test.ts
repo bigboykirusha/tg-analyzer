@@ -1,6 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import type { PublicQuizDto, PublicReportDto, ShareLinkDto, ShareLinksResponse } from '@tg-analyzer/shared'
+import {
+  telegramHueIndex,
+  type PublicQuizDto,
+  type PublicReportDto,
+  type ShareLinkDto,
+  type ShareLinksResponse,
+} from '@tg-analyzer/shared'
 import { ORIGIN, app, login, processJob, useTestServer, type Session } from './helpers'
 
 useTestServer()
@@ -35,6 +41,8 @@ test('a report link shows only what the owner allowed, to anyone, until it is tu
   assert.ok(!opened.body.includes(`"${CHAT}"`))
   assert.ok(page.data.report.milestones?.every((milestone) => !milestone.messageId && !milestone.senderId))
   assert.deepEqual(page.data.report.vocabulary.topWords, [])
+  // The id is hidden, the colour is not: the guest sees the person in the colour the owner does.
+  assert.equal(page.hue, telegramHueIndex(CHAT))
 
   const list = await app.inject({ url: `/api/v1/reports/${CHAT}/links`, headers: session.headers })
   assert.equal(list.json<ShareLinksResponse>().links[0]?.views, 1)

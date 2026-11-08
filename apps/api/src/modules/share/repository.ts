@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import {
   deriveQuiz,
+  telegramHueIndex,
   type CreateShareLinkBody,
   type PublicShareDto,
   type QuizQuestionDto,
@@ -166,14 +167,24 @@ async function openRow(token: string): Promise<Row> {
   return row
 }
 
+/** The colour family of the shared chat, so the guest sees the person in the colour the owner does. */
+async function hueOf(row: Row) {
+  const report = await db.query.chatReports.findFirst({
+    where: eq(schema.chatReports.id, row.reportId),
+    columns: { tgChatId: true },
+  })
+  return telegramHueIndex(report?.tgChatId ?? row.token)
+}
+
 /** The quiz in the guest's terms: the author's «mine» is «author», «theirs» is the guest. */
-function toPublic(row: Row): PublicShareDto {
+function toPublic(row: Row, hue: number): PublicShareDto {
   const { payload } = row
   const expiresAt = row.expiresAt?.toISOString() ?? null
   if (payload.kind === 'report') {
     return {
       kind: 'report',
       author: payload.author,
+      hue,
       expiresAt,
       settings: row.settings ?? DEFAULT_REPORT_SETTINGS,
       data: payload.data,
@@ -183,6 +194,7 @@ function toPublic(row: Row): PublicShareDto {
   return {
     kind: 'quiz',
     author: payload.author,
+    hue,
     expiresAt,
     questions: payload.questions.map((question) => ({
       id: question.id,
@@ -203,7 +215,7 @@ export async function openLink(token: string): Promise<PublicShareDto> {
     .update(schema.shareLinks)
     .set({ views: row.views + 1 })
     .where(eq(schema.shareLinks.id, row.id))
-  return toPublic(row)
+  return toPublic(row, await hueOf(row))
 }
 
 /** Stores the guest's answers once; a second answer gets the first result back. */
@@ -224,7 +236,7 @@ export async function answerQuiz(
     .set({ result })
     .where(eq(schema.shareLinks.id, row.id))
     .returning()
-  return toPublic(updated!)
+  return toPublic(updated!, await hueOf(updated!))
 }
 
 /** Every live link of the user with its chat, newest first: the home summary reads quiz answers from it. */

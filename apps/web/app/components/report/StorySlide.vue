@@ -131,7 +131,12 @@ const isLong = (value: string) => longestWord(value) > 8
 
       <div class="story-slide__body">
         <div class="story-slide__head">
-          <strong v-if="slide.display" class="story-slide__display">{{ slide.display }}</strong>
+          <strong
+            v-if="slide.display"
+            class="story-slide__display"
+            :class="{ 'story-slide__display--long': slide.display.length > 12 }"
+            >{{ slide.display }}</strong
+          >
           <span class="story-slide__kicker">{{ slide.kicker }}</span>
           <strong class="story-slide__title" :class="`story-slide__title--${titleSize}`">{{ slide.title }}</strong>
           <p v-if="slide.sub" class="story-slide__sub">{{ slide.sub }}</p>
@@ -320,7 +325,12 @@ const isLong = (value: string) => longestWord(value) > 8
 }
 
 .story-slide--2 {
-  /* The person's own colour: light type on it, white cards with dark type. */
+  /* The person's own colour: light type on it, white cards with dark type; the accent tile is white too, in their colour. */
+  --s-accent: var(--story-paper-card);
+  --s-accent-ink: var(--story-gradient-2);
+  --s-accent-muted: var(--story-paper-ink-muted);
+  --s-accent-track: var(--story-paper-track);
+  --s-accent-mark: var(--story-gradient-2);
   --s-ink: var(--story-accent-ink);
   --s-muted: var(--story-accent-ink-muted);
   --s-track: var(--story-accent-track);
@@ -330,6 +340,13 @@ const isLong = (value: string) => longestWord(value) > 8
 }
 
 .story-slide--3 {
+  /* The person's room: white cards; the accent tile is their poster, as `tone="ink"` in the report. */
+  --s-accent: var(--story-gradient-2);
+  --s-accent-ink: var(--story-accent-ink);
+  --s-accent-muted: var(--story-accent-ink-muted);
+  --s-accent-track: var(--story-accent-track);
+  --s-accent-mark: var(--story-accent-ink);
+  --s-logo: var(--story-gradient-2);
   background: var(--story-gradient-3);
 }
 
@@ -496,9 +513,16 @@ const isLong = (value: string) => longestWord(value) > 8
   margin-bottom: 3cqmin;
   font: var(--s-display);
   letter-spacing: var(--tracking-display);
-  overflow-wrap: anywhere;
+  /* Between words; a single word longer than the line is hyphenated, never cut mid-letter. */
+  overflow-wrap: normal;
+  hyphens: auto;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+/* A long name («Продуктовая команда») steps down so it wraps between its words. */
+.story-slide__display--long {
+  font-size: 11.5cqmin;
 }
 
 .story-slide__title--figure {

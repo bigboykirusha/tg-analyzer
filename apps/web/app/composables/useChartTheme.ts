@@ -67,8 +67,10 @@ export function useChartTheme() {
           textStyle: { color: colors.text, fontSize: 13, fontFamily: font },
           extraCssText: `border-radius: ${cssVar('--radius-sm') || '10px'}; box-shadow: ${cssVar('--shadow-overlay')};`,
         },
+        // The legend sits where the report's own legends sit: dots at the top left.
         legend: {
-          bottom: 0,
+          top: 0,
+          left: 0,
           icon: 'circle',
           itemWidth: 8,
           itemHeight: 8,
@@ -83,13 +85,15 @@ export function useChartTheme() {
         axisTick: { show: false },
         axisLabel: { ...axisLabel, ...extra },
       }),
+      // The report's own drawing language: shapes and their peaks, no scale and no grid. Exact values
+      // live in the tooltip, as everywhere else the report says a number only when it matters.
       valueAxis: {
         type: 'value' as const,
         minInterval: 1,
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { ...axisLabel, formatter: number },
-        splitLine: { lineStyle: { color: colors.border } },
+        axisLabel: { show: false },
+        splitLine: { show: false },
       },
     }
   })

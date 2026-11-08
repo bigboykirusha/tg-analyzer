@@ -25,7 +25,8 @@ const option = computed(() => {
   })
   return {
     ...base,
-    grid: { ...base.grid, bottom: 40 },
+    // Room above the plot for the legend dots.
+    grid: { ...base.grid, top: 32 },
     xAxis: categoryAxis(
       props.hourly.map((_, hour) => `${hour}:00`),
       { interval: isPhone.value ? 5 : 2 },

@@ -2,7 +2,7 @@
 import { buildApiPath, type PublicShareDto, type ReportDto } from '@tg-analyzer/shared'
 import { ofetch } from 'ofetch'
 import { Link2Off } from '../../lib/icons'
-import { hueOf } from '../../lib/hue'
+import { hueAt } from '../../lib/hue'
 
 /**
  * What a share link opens, without signing in: the quiz for the other side or the report as its
@@ -20,7 +20,8 @@ useSeoMeta({
 const state = ref<'loading' | 'ready' | 'gone'>('loading')
 useHead({
   htmlAttrs: {
-    'data-hue': () => (share.value?.kind === 'report' ? hueOf(share.value.data.summary.chatId) : undefined),
+    // The person keeps the colour the owner sees them in; the quiz wears it too.
+    'data-hue': () => (share.value ? hueAt(share.value.hue) : undefined),
   },
 })
 
@@ -61,17 +62,17 @@ const report = computed<ReportDto | null>(() => {
         <PublicQuiz v-else-if="share?.kind === 'quiz'" :quiz="share" :token="token" />
 
         <template v-else-if="share?.kind === 'report' && report">
-          <ReportHeader :summary="report.summary" demo />
+          <ReportHeader :summary="report.summary" guest />
           <p class="note" role="status">{{ t('publicReport.banner', { name: share.author }) }}</p>
           <PrivateReport :data="report" :no-words="!share.settings.words" />
-          <section class="tile public__end" aria-labelledby="public-end-title">
-            <h2 id="public-end-title" class="t-h2">{{ t('publicReport.endTitle') }}</h2>
-            <p class="t-lede">{{ t('publicReport.endText') }}</p>
-            <UiButton variant="primary" size="lg" to="/login">{{ t('publicReport.cta') }}</UiButton>
-          </section>
         </template>
       </div>
     </UiPageContainer>
+    <ReportEnding
+      v-if="state === 'ready' && share?.kind === 'report' && report"
+      :data="report"
+      :invite="{ title: t('publicReport.endTitle'), text: t('publicReport.endText'), cta: t('publicReport.cta') }"
+    />
   </div>
 </template>
 
@@ -101,15 +102,5 @@ const report = computed<ReportDto | null>(() => {
   height: var(--control-md);
   border-radius: var(--radius-md);
   background: var(--surface-2);
-}
-
-.public__end {
-  align-items: flex-start;
-}
-
-@media (max-width: 640px) {
-  .public__end .btn {
-    align-self: stretch;
-  }
 }
 </style>

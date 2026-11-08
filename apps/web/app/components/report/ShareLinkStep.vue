@@ -105,7 +105,9 @@ async function remove() {
 <style scoped>
 .link-step {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
+  min-width: 0;
 }
 
 .link-step__settings {
@@ -135,6 +137,7 @@ async function remove() {
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  min-width: 0;
   border-radius: var(--radius-md);
   background: var(--surface-2);
 }

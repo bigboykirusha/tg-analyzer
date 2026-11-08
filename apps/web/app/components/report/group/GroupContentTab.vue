@@ -44,22 +44,34 @@ const signatures = computed(() =>
 </template>
 
 <style scoped>
+/* One row per person, divided by hairlines: no boxes inside the card. */
 .signatures {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
-  gap: var(--space-3);
-}
-
-.signature strong {
-  font: var(--text-title);
 }
 
 .signature {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  display: grid;
+  grid-template-columns: minmax(var(--space-20), calc(var(--space-20) * 2)) minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-block: var(--space-3);
+}
+
+.signature + .signature {
+  box-shadow: var(--divider-top);
+}
+
+.signature strong {
+  overflow: hidden;
+  font: var(--text-title);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .signature {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+  }
 }
 </style>

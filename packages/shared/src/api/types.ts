@@ -830,6 +830,8 @@ export interface PublicQuizDto {
   kind: 'quiz'
   /** The author's first name from Telegram. */
   author: string
+  /** The chat's colour family (1–7, `telegramHueIndex`): the link hides the chat id, not its colour. */
+  hue: number
   expiresAt: string | null
   questions: PublicQuizQuestionDto[]
   /** Set once the guest has answered. */
@@ -839,6 +841,8 @@ export interface PublicQuizDto {
 export interface PublicReportDto {
   kind: 'report'
   author: string
+  /** The chat's colour family (1–7), as in the owner's report. */
+  hue: number
   expiresAt: string | null
   settings: ShareReportSettings
   data: ReportDto

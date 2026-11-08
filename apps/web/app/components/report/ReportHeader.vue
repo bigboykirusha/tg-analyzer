@@ -11,19 +11,21 @@ withDefaults(
     summary: ReportSummaryDto
     /** The demo report: one action, «Sign in»; nothing to share. */
     demo?: boolean
+    /** A shared link: just the name; the site header already offers «Войти», and there is nowhere to go back to. */
+    guest?: boolean
   }>(),
-  { demo: false },
+  { demo: false, guest: false },
 )
 const emit = defineEmits<{ share: [] }>()
 const { t } = useI18n()
 </script>
 
 <template>
-  <UiPageBar :title="summary.title" :back="demo ? '/' : '/dashboard'" :quiet-on-wide="demo">
-    <template v-if="!demo" #leading>
+  <UiPageBar :title="summary.title" :back="guest ? '' : demo ? '/' : '/dashboard'" :quiet-on-wide="demo || guest">
+    <template v-if="!demo && !guest" #leading>
       <ChatAvatar class="report-header__avatar" :chat-id="summary.chatId" :title="summary.title" size="sm" />
     </template>
-    <template #actions>
+    <template v-if="!guest" #actions>
       <UiButton v-if="demo" variant="primary" size="sm" to="/login">{{ t('site.signIn') }}</UiButton>
       <UiButton v-else variant="primary" size="sm" :icon="Share" aria-haspopup="dialog" @click="emit('share')">
         {{ t('share.open') }}

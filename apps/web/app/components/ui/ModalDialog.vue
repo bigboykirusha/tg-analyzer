@@ -179,6 +179,8 @@ watch(open, (value) => value && drag.reset())
 
 .modal-body {
   display: grid;
+  /* One column that never grows past the panel, whatever a long line inside wants. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   min-height: 0;
   min-width: 0;
