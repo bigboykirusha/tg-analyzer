@@ -37,6 +37,7 @@ const view = computed(() => {
       verdict: side === 'even' ? t('report.habits.even') : side === 'mine' ? t('report.mornings.you') : name,
       count: morning,
       percent: true,
+      theirs: side === 'theirs',
     })
   }
   if (wishes) {
@@ -57,6 +58,7 @@ const view = computed(() => {
             }),
       count: wishes,
       percent: false,
+      theirs: side === 'theirs',
     })
   }
   const answer = parts.join(', ')
@@ -70,7 +72,9 @@ const view = computed(() => {
       <div v-for="row in view.rows" :key="row.key" class="report-rows__row">
         <span class="report-rows__label mornings__label">
           <span>{{ row.label }}</span
-          ><strong class="mornings__verdict">{{ row.verdict }}</strong>
+          ><strong class="mornings__verdict" :class="{ 'mornings__verdict--theirs': row.theirs }">{{
+            row.verdict
+          }}</strong>
         </span>
         <ReportLine
           :mine="row.count.mine"
@@ -86,9 +90,15 @@ const view = computed(() => {
 <style scoped>
 .mornings__label {
   justify-content: space-between;
+  color: var(--text-muted);
 }
 
 .mornings__verdict {
+  color: var(--text);
   font-weight: 600;
+}
+
+.mornings__verdict--theirs {
+  color: var(--them-ink);
 }
 </style>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
 import { LayoutGrid } from '../../lib/icons'
+import { hueOf } from '../../lib/hue'
 
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatPercent } = useI18n()
@@ -43,8 +44,9 @@ const clearLeader = computed(() => {
         <ReportSection
           :title="t('group.mostActive')"
           :answer="clearLeader ? nameOf(clearLeader) : t('group.leader.even')"
+          :data-hue="clearLeader && !clearLeader.isSelf ? hueOf(clearLeader.id) : undefined"
         >
-          <p v-if="clearLeader" class="leader__share">
+          <p v-if="clearLeader" class="leader__share" :class="{ 'leader__share--you': clearLeader.isSelf }">
             <span class="t-figure">{{ formatPercent(clearLeader.messageShare) }}</span>
             <span class="t-small">{{ t('group.ofMessages') }}</span>
           </p>
@@ -74,5 +76,9 @@ const clearLeader = computed(() => {
 
 .leader__share .t-figure {
   color: var(--them-ink);
+}
+
+.leader__share--you .t-figure {
+  color: var(--you);
 }
 </style>

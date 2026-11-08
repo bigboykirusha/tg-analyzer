@@ -34,48 +34,70 @@ const rows = computed(() => [
 </script>
 
 <template>
-  <ReportSection
-    :title="item.title"
-    :text="step > 1 ? tc('report.fmt.questionsStep', step) : undefined"
-    :answer="answer"
-  >
-    <div v-for="row in rows" :key="row.key" class="units">
-      <span class="units__who">
-        <span>{{ row.who }}</span
-        ><span class="units__count t-num">{{ row.side.text }}</span>
+  <ReportSection :title="item.title" :answer="answer">
+    <template #aside>
+      <span class="units__legend t-num">
+        <i aria-hidden="true" /><span aria-hidden="true">= {{ formatNumber(step) }}</span
+        ><span class="sr-only">{{ tc('report.fmt.questionsStep', step) }}</span>
       </span>
-      <div class="units__grid" aria-hidden="true">
-        <i v-for="index in row.cells" :key="index" :class="`units__cell--${row.key}`" />
-      </div>
+    </template>
+    <div class="units">
+      <template v-for="row in rows" :key="row.key">
+        <span class="units__who"
+          >{{ row.who }}<span class="sr-only">: {{ row.side.text }}</span></span
+        >
+        <span class="units__grid" aria-hidden="true">
+          <i v-for="index in row.cells" :key="index" :class="`units__cell--${row.key}`" />
+        </span>
+      </template>
     </div>
   </ReportSection>
 </template>
 
 <style scoped>
+/* «▪ = 10» beside the question: what one square counts, so no line of text is needed. */
+.units__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font: var(--text-small);
+  white-space: nowrap;
+}
+
+.units__legend i,
+.units__grid i {
+  width: var(--space-3);
+  height: var(--space-3);
+  border-radius: var(--radius-mark);
+}
+
+.units__legend i {
+  background: var(--chart-neutral);
+}
+
+/* Each side a row: its name in a narrow column, then its squares. */
 .units {
   display: grid;
-  gap: var(--space-2);
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
 }
 
 .units__who {
-  display: flex;
-  gap: var(--space-2);
-  font: var(--text-small);
-}
-
-.units__count {
+  max-width: var(--space-20);
+  overflow: hidden;
   color: var(--text-muted);
+  font: var(--text-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .units__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(10px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-1);
-}
-
-.units__grid i {
-  aspect-ratio: 1;
-  border-radius: var(--radius-mark);
+  padding-top: var(--space-0-5);
 }
 
 .units__cell--mine {

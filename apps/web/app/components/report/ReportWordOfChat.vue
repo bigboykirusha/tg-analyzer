@@ -22,8 +22,7 @@ const runners = computed(() => words.value.slice(1, 4))
     </div>
     <ol v-if="runners.length" class="runners t-num" :aria-label="t('report.fmt.wordRunners')">
       <li v-for="(item, index) in runners" :key="item.value">
-        <span class="runners__place">{{ index + 2 }}</span>
-        <span class="runners__word">{{ item.value }}</span>
+        <span class="runners__word">{{ index + 2 }}. {{ item.value }}</span>
         <span class="runners__count">{{ formatNumber(item.count) }}</span>
       </li>
     </ol>
@@ -48,40 +47,30 @@ const runners = computed(() => words.value.slice(1, 4))
   font: var(--text-small);
 }
 
-/* Places two to four: a hairline above, then one row (a list on a phone). */
+/* Places two to four under a hairline, three columns: «2. завтра» and how often under it. */
 .runners {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-6);
-  padding-top: var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--border);
   list-style: none;
-  font: var(--text-small);
+  font: var(--text-ui);
 }
 
 .runners li {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-}
-
-.runners__place,
-.runners__count {
-  color: var(--text-muted);
+  display: grid;
+  min-width: 0;
 }
 
 .runners__word {
-  font-weight: 500;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-@media (max-width: 640px) {
-  .runners {
-    display: grid;
-    gap: var(--space-1);
-  }
-
-  .runners__count {
-    margin-left: auto;
-  }
+.runners__count {
+  color: var(--text-muted);
 }
 </style>

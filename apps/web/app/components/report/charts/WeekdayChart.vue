@@ -1,44 +1,69 @@
 <script setup lang="ts">
 import type { DirectionalCountDto } from '@tg-analyzer/shared'
 
+/** Seven bars, Monday first: the whole chat in grey, the busiest day a step darker, the day under each. */
 const props = defineProps<{ weekday: DirectionalCountDto[] }>()
 const { t, formatNumber } = useI18n()
-const theme = useChartTheme()
 
 // Reports store Sunday first; charts start the week on Monday.
 const order = [1, 2, 3, 4, 5, 6, 0]
-const values = computed(() => order.map((day) => chartCount(props.weekday[day]?.total)))
-const total = computed(() => values.value.reduce((sum, value) => sum + value, 0))
-const peak = computed(() => Math.max(...values.value))
-
-const option = computed(() => {
-  const { base, colors, barRadius, categoryAxis, valueAxis } = theme.value
+const days = computed(() => {
   const names = t('chart.weekdaysShort').split(',')
-  return {
-    ...base,
-    xAxis: categoryAxis(order.map((day) => names[day] ?? '')),
-    yAxis: valueAxis,
-    series: [
-      {
-        type: 'bar',
-        // The whole chat in grey; the busiest day takes the strong step, so it reads at a glance.
-        data: values.value.map((value) => ({
-          value,
-          itemStyle: { color: value === peak.value && value > 0 ? colors.neutralStrong : colors.neutral },
-        })),
-        barMaxWidth: 28,
-        itemStyle: { borderRadius: barRadius },
-      },
-    ],
-  }
+  const values = order.map((day) => props.weekday[day]?.total ?? 0)
+  const peak = Math.max(1, ...values)
+  return order.map((day, index) => ({
+    key: day,
+    name: names[day] ?? '',
+    height: (values[index]! / peak) * 100,
+    peak: values[index] === peak && peak > 0,
+  }))
 })
+const total = computed(() => props.weekday.reduce((sum, day) => sum + (day?.total ?? 0), 0))
 </script>
 
 <template>
-  <ChartFrame
-    :option="option"
-    :label="t('chart.weekdaySummary', { messages: formatNumber(total) })"
-    :empty="total === 0"
-    compact
-  />
+  <ol class="week" role="img" :aria-label="t('chart.weekdaySummary', { messages: formatNumber(total) })">
+    <li v-for="day in days" :key="day.key" class="week__day">
+      <i
+        class="week__bar"
+        :class="{ 'week__bar--peak': day.peak }"
+        :style="{ height: `${Math.max(day.height, 2)}%` }"
+      />
+      <span>{{ day.name }}</span>
+    </li>
+  </ol>
 </template>
+
+<style scoped>
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+  height: calc(var(--space-20) + var(--space-8));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.week__day {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: stretch;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--text-muted);
+  font: var(--text-caption);
+  text-align: center;
+}
+
+.week__bar {
+  display: block;
+  align-self: end;
+  border-radius: var(--radius-mark);
+  background: var(--chart-neutral);
+}
+
+.week__bar--peak {
+  background: var(--chart-neutral-strong);
+}
+</style>

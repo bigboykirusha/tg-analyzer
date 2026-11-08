@@ -2,8 +2,9 @@
 import type { ReportDto } from '@tg-analyzer/shared'
 
 /**
- * Stickers: who sends them more often in the answer, then one favourite of each side, large — yours
- * on a grey card, theirs on their tint — with how many times it was sent and whose it is.
+ * Stickers: who sends them more often in the answer («Мила шлёт их в 2 раза чаще»), then one
+ * favourite of each side, large — yours on a grey card, theirs on their tint — named by its side
+ * (theirs in their colour) with how many times it was sent.
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, tc } = useI18n()
@@ -14,13 +15,13 @@ const versus = useVersus(() => props.data)
 const answer = computed(() => {
   const item = versus.value.stickers
   if (!item) return null
-  return item.lead ? `${item.figure} — ${item.note}` : t('report.fmt.stickersEven')
-})
-const variety = computed(() => {
-  const stats = stickers.value
-  if (!stats?.distinct) return undefined
-  const kinds = tc('report.talk.stickerKinds', stats.distinct)
-  return stats.packs ? `${kinds} ${tc('report.talk.packs', stats.packs)}` : kinds
+  if (!item.lead) return t('report.fmt.stickersEven')
+  const mine = item.lead === 'mine'
+  if (!Number.isFinite(item.ratio))
+    return mine ? t('report.stickers.answer.onlyMine') : t('report.stickers.answer.onlyTheirs', { name: name.value })
+  return mine
+    ? t('report.stickers.answer.mine', { note: item.note })
+    : t('report.stickers.answer.theirs', { name: name.value, note: item.note })
 })
 /** Each side's favourite: the sticker it sent most. */
 const favourites = computed(() => {
@@ -28,14 +29,14 @@ const favourites = computed(() => {
   const best = (side: 'mine' | 'theirs') =>
     [...top].filter((sticker) => sticker[side] > 0).sort((left, right) => right[side] - left[side])[0] ?? null
   return [
-    { key: 'mine' as const, label: t('report.stickers.mine'), sticker: best('mine') },
-    { key: 'theirs' as const, label: t('report.stickers.theirs', { name: name.value }), sticker: best('theirs') },
+    { key: 'mine' as const, label: t('report.you'), sticker: best('mine') },
+    { key: 'theirs' as const, label: name.value, sticker: best('theirs') },
   ].filter((item) => item.sticker)
 })
 </script>
 
 <template>
-  <ReportSection v-if="favourites.length" :title="t('report.talk.stickersTitle')" :text="variety" :answer="answer">
+  <ReportSection v-if="favourites.length" :title="t('report.talk.stickersTitle')" :answer="answer">
     <ul class="favourites">
       <li v-for="item in favourites" :key="item.key" class="favourite" :class="`favourite--${item.key}`">
         <span class="favourite__art">
@@ -47,7 +48,7 @@ const favourites = computed(() => {
           <span v-else class="favourite__emoji" aria-hidden="true">{{ item.sticker!.emoji ?? '🃏' }}</span>
         </span>
         <strong class="favourite__who">{{ item.label }}</strong>
-        <span class="favourite__count t-num">{{ tc('report.stickers.times', item.sticker![item.key]) }}</span>
+        <span class="favourite__count t-num">{{ tc('report.stickers.favourite', item.sticker![item.key]) }}</span>
       </li>
     </ul>
   </ReportSection>
@@ -73,7 +74,7 @@ const favourites = computed(() => {
 .favourite__art {
   display: grid;
   place-items: center;
-  width: calc(var(--space-20) + var(--space-6));
+  width: calc(var(--space-20) + var(--space-4));
   aspect-ratio: 1;
   margin-bottom: var(--space-2);
   border-radius: var(--radius-lg);
@@ -95,8 +96,12 @@ const favourites = computed(() => {
 }
 
 .favourite__who {
+  max-width: 100%;
+  overflow: hidden;
   font: var(--text-title);
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .favourite--theirs .favourite__who {

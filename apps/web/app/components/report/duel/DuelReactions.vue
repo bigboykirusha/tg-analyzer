@@ -3,11 +3,12 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import type { Versus } from '../../../composables/useVersus'
 
 /**
- * Reactions: each side's three favourites on a podium (first place in the middle, as on a real
- * one), the side named by its avatar above, and both totals as one line at the foot.
+ * Reactions: each side's three favourites over a podium — first place in the middle and taller, as on
+ * a real one, the emoji above its step and the place inside it. The first step is the side's ink
+ * (yours black, theirs their colour), the other two quiet. Under it, whose podium it is.
  */
 const props = defineProps<{ data: ReportDto; item: Versus | null }>()
-const { t, formatNumber } = useI18n()
+const { t } = useI18n()
 const name = computed(() => props.data.summary.title)
 
 // Custom emoji have no picture here, so only regular ones are shown.
@@ -18,44 +19,68 @@ const sides = computed(() => {
   const stats = props.data.report.reactions
   if (!stats) return []
   return [
-    { key: 'mine' as const, who: t('report.you'), items: plain(stats.topBySender.mine) },
+    { key: 'mine' as const, who: t('report.reactions.mine'), items: plain(stats.topBySender.mine) },
     { key: 'theirs' as const, who: name.value, items: plain(stats.topBySender.theirs) },
   ]
     .filter((side) => side.items.length)
     .map((side) => {
-      const top = side.items[0]!.count
       const [first, second, third] = side.items
-      const steps = [second, first, third]
-        .filter((entry): entry is { value: string; count: number } => Boolean(entry))
-        .map((entry) => ({
-          ...entry,
-          place: entry === first ? 1 : entry === second ? 2 : 3,
-          height: 32 + (entry.count / top) * 48,
-        }))
-      return { ...side, steps }
+      const steps = [
+        second && { ...second, place: 2 },
+        first && { ...first, place: 1 },
+        third && { ...third, place: 3 },
+      ].filter((entry): entry is { value: string; count: number; place: number } => Boolean(entry))
+      return { ...side, top: first?.value ?? null, steps }
     })
 })
+
+/** «Ставите поровну, любимые — разные»: who reacts more, then whether the favourite is the same. */
 const answer = computed(() => {
   const item = props.item
-  if (!item) return null
-  return item.lead ? `${item.figure} — ${item.note}` : t('report.fmt.reactionsEven')
+  const parts: string[] = []
+  if (item) {
+    const mine = item.lead === 'mine'
+    if (!item.lead) parts.push(t('report.reactions.answer.even'))
+    else if (!Number.isFinite(item.ratio))
+      parts.push(
+        mine ? t('report.reactions.answer.onlyMine') : t('report.reactions.answer.onlyTheirs', { name: name.value }),
+      )
+    else
+      parts.push(
+        mine
+          ? t('report.reactions.answer.mine', { note: item.note })
+          : t('report.reactions.answer.theirs', { name: name.value, note: item.note }),
+      )
+  }
+  const [mine, theirs] = sides.value
+  if (mine?.top && theirs?.top)
+    parts.push(
+      mine.top === theirs.top ? t('report.reactions.same', { emoji: mine.top }) : t('report.reactions.different'),
+    )
+  return parts.length ? parts.join(', ') : null
 })
 </script>
 
 <template>
-  <ReportSection v-if="sides.length" :title="item?.title ?? t('report.talk.reactionsTitle')" :answer="answer">
+  <ReportSection v-if="sides.length" :title="t('report.talk.reactionsTitle')" :answer="answer">
     <div class="podiums">
-      <div v-for="side in sides" :key="side.key" class="podium-side">
-        <ReportSideAvatar :side="side.key" :name="side.who" />
-        <div class="podium">
-          <div v-for="step in side.steps" :key="step.value" class="podium__place">
-            <span class="podium__emoji">{{ step.value }}</span>
-            <span class="podium__count">{{ formatNumber(step.count) }}</span>
-            <b class="podium__step" :class="`podium__step--${side.key}`" :style="{ height: `${step.height}px` }">
-              {{ step.place }}
-            </b>
-          </div>
+      <div v-for="side in sides" :key="side.key" class="podium-side" :class="`podium-side--${side.key}`">
+        <div class="podium__emojis" aria-hidden="true">
+          <span v-for="step in side.steps" :key="step.value" :class="{ 'podium__emoji--first': step.place === 1 }">
+            {{ step.value }}
+          </span>
         </div>
+        <ol class="podium">
+          <li
+            v-for="step in side.steps"
+            :key="step.value"
+            class="podium__step t-num"
+            :class="`podium__step--${step.place}`"
+          >
+            {{ step.place }}<span class="sr-only">: {{ step.value }}</span>
+          </li>
+        </ol>
+        <span class="podium__who">{{ side.who }}</span>
       </div>
     </div>
   </ReportSection>
@@ -70,51 +95,81 @@ const answer = computed(() => {
 
 .podium-side {
   display: grid;
+  justify-items: center;
   align-content: end;
   gap: var(--space-2);
   min-width: 0;
 }
 
-.podium {
+.podium,
+.podium__emojis {
   display: flex;
   align-items: flex-end;
   gap: var(--space-1);
+  width: 100%;
+  max-width: calc(var(--space-12) * 3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.podium__place {
-  display: grid;
+/* The three favourites in one row over their steps, the winner a size larger. */
+.podium__emojis span {
   flex: 1;
-  justify-items: center;
-  gap: var(--space-1);
   min-width: 0;
-}
-
-.podium__emoji {
   font-size: var(--emoji-size);
   line-height: 1;
+  text-align: center;
 }
 
-.podium__count {
-  color: var(--text-muted);
-  font: var(--text-small);
+.podium__emojis .podium__emoji--first {
+  font-size: var(--emoji-size-lg);
 }
 
+/* Steps of a real podium: the winner tallest, second and third lower. */
 .podium__step {
   display: grid;
+  flex: 1;
   place-items: start center;
-  width: 100%;
-  padding-top: var(--space-2);
-  border-radius: var(--radius-mark) var(--radius-mark) 0 0;
-  font: var(--text-title);
+  min-width: 0;
+  height: var(--space-12);
+  padding-top: var(--space-1);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--surface-2);
+  color: var(--text);
+  font: var(--text-small);
+  font-weight: 600;
 }
 
-.podium__step--mine {
+.podium__step--1 {
+  height: calc(var(--space-16) + var(--space-3));
   background: var(--you);
-  color: var(--surface);
+  color: var(--on-you);
 }
 
-.podium__step--theirs {
+.podium__step--3 {
+  height: calc(var(--space-8) + var(--space-1));
+}
+
+.podium-side--theirs .podium__step {
+  background: var(--room-tint);
+}
+
+.podium-side--theirs .podium__step--1 {
   background: var(--them);
-  color: var(--surface);
+  color: var(--on-them);
+}
+
+.podium__who {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-muted);
+  font: var(--text-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium-side--theirs .podium__who {
+  color: var(--them-ink);
 }
 </style>

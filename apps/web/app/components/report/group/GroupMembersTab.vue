@@ -9,7 +9,7 @@ const ranked = computed(() => [...props.group.participants].sort((a, b) => b.mes
 const selectedId = ref<string | null>(null)
 
 // A long list shows the most active members first; the rest open on request, without a scroll inside the page.
-const MEMBER_PREVIEW = 8
+const MEMBER_PREVIEW = 4
 const showAllMembers = ref(false)
 const visibleMembers = computed(() => (showAllMembers.value ? ranked.value : ranked.value.slice(0, MEMBER_PREVIEW)))
 const selected = computed(() => ranked.value.find((item) => item.id === selectedId.value) ?? ranked.value[0] ?? null)
@@ -36,8 +36,8 @@ watch(isMobile, () => {
           <button
             type="button"
             class="member"
-            :class="{ 'member--active': participant.id === selected?.id }"
-            :aria-pressed="participant.id === selected?.id"
+            :class="{ 'member--active': !isMobile && participant.id === selected?.id }"
+            :aria-pressed="isMobile ? undefined : participant.id === selected?.id"
             :aria-haspopup="isMobile ? 'dialog' : undefined"
             :aria-expanded="isMobile && participant.id === selected?.id ? detailsOpen : undefined"
             @click="selectMember(participant.id, $event)"
@@ -53,19 +53,26 @@ watch(isMobile, () => {
               <span class="t-small t-muted">{{ t(`group.roles.${participant.role}`) }}</span>
             </span>
             <span class="member__share t-num">{{ formatPercent(participant.messageShare) }}</span>
-            <ChevronRight class="member__chevron" aria-hidden="true" />
+          </button>
+        </li>
+        <li v-if="ranked.length > MEMBER_PREVIEW">
+          <button
+            type="button"
+            class="member member--more"
+            :aria-expanded="showAllMembers"
+            @click="showAllMembers = !showAllMembers"
+          >
+            <span class="member__copy member__name">
+              {{ showAllMembers ? t('group.membersCollapse') : t('group.membersShowAll', { count: ranked.length }) }}
+            </span>
+            <ChevronRight
+              class="member__chevron"
+              :class="{ 'member__chevron--up': showAllMembers }"
+              aria-hidden="true"
+            />
           </button>
         </li>
       </ul>
-      <UiButton
-        v-if="ranked.length > MEMBER_PREVIEW"
-        class="members__more"
-        variant="ghost"
-        size="sm"
-        @click="showAllMembers = !showAllMembers"
-      >
-        {{ showAllMembers ? t('group.membersCollapse') : t('group.membersShowAll', { count: ranked.length }) }}
-      </UiButton>
     </ReportSection>
 
     <ReportSection v-if="selected && !isMobile" :title="nameOf(selected)">
@@ -95,13 +102,12 @@ watch(isMobile, () => {
 .member-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-0-5);
   list-style: none;
 }
 
-.members__more {
-  align-self: flex-start;
-  justify-self: start;
+/* Rows divided by hairlines, like every list inside a card. */
+.member-list li + li {
+  box-shadow: var(--divider-top);
 }
 
 .member {
@@ -109,24 +115,29 @@ watch(isMobile, () => {
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  min-height: var(--hit-min);
+  padding: var(--space-2) 0;
+  border: 0;
+  border-radius: 0;
   background: transparent;
+  color: var(--text);
   cursor: pointer;
   text-align: left;
-  transition: background var(--transition-fast);
+}
+
+/* Wide screens: the member whose details are open beside the list is a selected row. */
+.member--active {
+  margin-inline: calc(-1 * var(--space-3));
+  padding-inline: var(--space-3);
+  width: calc(100% + var(--space-3) * 2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .member:hover {
-    background: var(--surface-2);
+  .member:not(.member--active):hover .member__name {
+    text-decoration: underline;
   }
-}
-
-.member--active {
-  border-color: var(--accent-border);
-  background: var(--accent-subtle);
 }
 
 .member__copy {
@@ -143,24 +154,29 @@ watch(isMobile, () => {
   white-space: nowrap;
 }
 
+.member--more .member__name {
+  font: var(--text-ui);
+}
+
 .member__share {
-  color: var(--text-muted);
+  color: var(--text);
   font: var(--text-title);
+  font-weight: 600;
 }
 
 .member__chevron {
-  display: none;
-  color: var(--text-muted);
   flex: none;
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.member__chevron--up {
+  transform: rotate(-90deg);
 }
 
 @media (max-width: 900px) {
   .members {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .member__chevron {
-    display: block;
   }
 }
 </style>

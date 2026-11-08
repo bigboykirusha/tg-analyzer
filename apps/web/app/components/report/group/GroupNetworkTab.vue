@@ -5,7 +5,7 @@ import { hueOf } from '../../../lib/hue'
 /**
  * How the group holds together. «Самые плотные пары» (card 24): the closest pair is the answer, the
  * others are only names. «Кто держит разговор» (card 25, instead of the old health meters): a hundred
- * dots, each a hundredth of the messages, in each member's colour, the biggest voices first.
+ * squares, each a hundredth of the messages, in each member's colour, the biggest voices first.
  */
 const props = defineProps<{ group: GroupReportDto }>()
 const { t, tc, formatNumber } = useI18n()
@@ -20,7 +20,7 @@ const person = (id: string, fallback: string) => {
 }
 
 const pairs = computed(() =>
-  props.group.topPairs.map((pair) => ({
+  props.group.topPairs.slice(0, 3).map((pair) => ({
     key: `${pair.leftParticipantId}-${pair.rightParticipantId}`,
     left: person(pair.leftParticipantId, pair.leftParticipantName),
     right: person(pair.rightParticipantId, pair.rightParticipantName),
@@ -147,7 +147,7 @@ const voices = computed(() => {
   font: var(--text-title);
 }
 
-/* A hundred dots in ten rows: each is a hundredth of the messages, in its writer's colour. */
+/* A hundred squares in five rows: each is a hundredth of the messages, in its writer's colour. */
 .voices {
   display: grid;
   grid-template-columns: repeat(20, minmax(0, 1fr));
@@ -158,7 +158,7 @@ const voices = computed(() => {
   display: inline-block;
   aspect-ratio: 1;
   min-width: var(--space-2);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-mark);
   background: var(--them);
 }
 

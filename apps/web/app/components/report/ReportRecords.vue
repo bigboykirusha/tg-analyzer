@@ -7,7 +7,7 @@ import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
  * you talk is not a record. The longest voice message has a card of its own.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatNumber, formatDuration, formatDay } = useI18n()
+const { t, tc, formatDuration, formatDay } = useI18n()
 
 const report = computed(() => props.data.report)
 const name = computed(() => props.data.summary.title)
@@ -36,7 +36,7 @@ const records = computed(() => {
   if (facts.mostActiveDate)
     out.push({
       key: 'day',
-      value: formatNumber(facts.mostActiveDate.total),
+      value: tc('common.messagesCount', facts.mostActiveDate.total),
       label: t('report.fmt.recordDay', { date: day(facts.mostActiveDate.date) }),
     })
   const gap = facts.longestGap

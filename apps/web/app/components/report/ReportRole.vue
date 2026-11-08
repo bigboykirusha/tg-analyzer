@@ -5,7 +5,7 @@ import { personaOf } from '../../lib/persona'
 /**
  * «Ваше время», the one dashboard of the day's rhythm, each fact once: the part of the day around
  * the usual window as the answer (lib/persona, as in «Итоги»), the peak window (`availabilityProfile.peakWindow`, as
- * in «Итоги») under the title and lit on the 24 hours, and the four parts of the day as a band
+ * in «Итоги») lit in the person's colour on the 24 hours, and the four parts of the day as a band
  * under the same hours. The weekdays have the heatmap below.
  */
 const props = defineProps<{ data: ReportDto }>()
@@ -45,7 +45,7 @@ const parts = computed(() => {
 /** The answer is the part of the day around the usual window — the same one «Итоги» name (lib/persona). */
 const role = computed<Role | null>(() => personaOf(props.data.derived.availabilityProfile.peakWindow))
 
-/** 24 columns of the whole chat: you at the foot in ink, the other side on top in lime. */
+/** 24 columns of the whole chat, one per hour: the usual window in the person's colour, the rest neutral. */
 const hours = computed(() => {
   const hourly = props.data.report.activity.hourly
   const max = Math.max(1, ...hourly.map((hour) => hour.sent + hour.received))
@@ -55,8 +55,7 @@ const hours = computed(() => {
     return {
       hour,
       peak: inPeak(hour),
-      mine: (sent / max) * 100,
-      theirs: (received / max) * 100,
+      height: ((sent + received) / max) * 100,
       title: `${hour}:00 · ${t('report.you')} ${formatNumber(sent)} · ${name.value} ${formatNumber(received)}`,
     }
   })
@@ -77,21 +76,15 @@ const answer = computed(
 <template>
   <ReportSection v-if="window && role" :title="t('report.fmt.clockTitle')" :answer="answer" wide>
     <figure class="day">
-      <ul class="day__legend" aria-hidden="true">
-        <li class="day__key day__key--mine">{{ t('report.you') }}</li>
-        <li class="day__key day__key--theirs">{{ name }}</li>
-      </ul>
       <div class="day__hours" role="img" :aria-label="summary">
-        <div
+        <i
           v-for="hour in hours"
           :key="hour.hour"
           class="day__hour"
           :class="{ 'day__hour--peak': hour.peak }"
+          :style="{ height: `${Math.max(hour.height, 2)}%` }"
           :title="hour.title"
-        >
-          <i class="day__theirs" :style="{ height: `${hour.theirs}%` }" />
-          <i class="day__mine" :style="{ height: `${hour.mine}%` }" />
-        </div>
+        />
       </div>
       <!-- The four parts of the day under their own six hours each: the share said once, here. -->
       <ol class="day__parts">
@@ -112,98 +105,30 @@ const answer = computed(
   margin: 0;
 }
 
-.day__legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-4);
-  margin: 0;
-  padding: 0;
-  color: var(--text-muted);
-  font: var(--text-caption);
-  list-style: none;
-}
-
-.day__key {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.day__key::before {
-  content: '';
-  flex: none;
-  width: var(--space-2);
-  height: var(--space-2);
-  border-radius: var(--radius-full);
-}
-
-.day__key--mine::before {
-  background: var(--you);
-}
-
-.day__key--theirs::before {
-  background: var(--them);
-}
-
-/* 24 columns without gaps, so the peak hours join into one lit band behind their bars. */
+/* 24 columns, one per hour; the usual window lit in the person's colour. */
 .day__hours {
   display: grid;
   grid-template-columns: repeat(24, minmax(0, 1fr));
+  align-items: end;
+  gap: var(--space-0-5);
   height: calc(var(--chart-h-sm) - var(--space-20));
 }
 
 .day__hour {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1px;
-  padding-top: var(--space-2);
+  display: block;
+  border-radius: var(--radius-mark) var(--radius-mark) 0 0;
+  background: var(--chart-neutral);
 }
 
 .day__hour--peak {
-  background: var(--chart-peak);
-}
-
-.day__hour--peak:first-child,
-.day__hour:not(.day__hour--peak) + .day__hour--peak {
-  border-top-left-radius: 3px;
-}
-
-.day__hour--peak:last-child,
-.day__hour--peak:has(+ .day__hour:not(.day__hour--peak)) {
-  border-top-right-radius: 3px;
-}
-
-.day__hour i {
-  flex: none;
-  width: 64%;
-  max-width: var(--space-4);
-}
-
-.day__theirs {
-  border-radius: var(--radius-mark) var(--radius-mark) 0 0;
   background: var(--them);
-}
-
-.day__mine {
-  background: var(--you);
-}
-
-.day__theirs[style*='height: 0%'] + .day__mine {
-  border-radius: var(--radius-mark) var(--radius-mark) 0 0;
 }
 
 /* The parts of the day: each under its six hours, the leading one lit. */
 .day__parts {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-0-5);
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;

@@ -32,7 +32,6 @@ const usual = computed(() =>
     </p>
     <p class="speed__answer">{{ answer }}</p>
     <p class="speed__usual t-num">{{ usual }}</p>
-    <p class="speed__note">{{ t('report.speed.text') }}</p>
   </ReportSection>
 </template>
 
@@ -63,19 +62,13 @@ const usual = computed(() =>
   text-wrap: balance;
 }
 
-.speed__usual,
-.speed__note {
+.speed__usual {
   color: var(--text-muted);
   font: var(--text-small);
 }
 
 .speed--lead .speed__answer,
-.speed--lead .speed__usual,
-.speed--lead .speed__note {
+.speed--lead .speed__usual {
   text-align: center;
-}
-
-.speed__note {
-  font: var(--text-caption);
 }
 </style>

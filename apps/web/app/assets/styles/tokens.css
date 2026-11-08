@@ -238,7 +238,6 @@
   /* The whole chat (both sides together): gray, with a strong step for the peak. */
   --chart-neutral: var(--gray-6);
   --chart-neutral-strong: var(--gray-9);
-  --chart-peak: var(--room-tint);
   /* Avatars outside a report: the person's hue, white initials. */
   --avatar-1-bg: var(--hue-red-mark);
   --avatar-1-glow: var(--hue-red-glow);
@@ -400,7 +399,6 @@
   --room: var(--hue-red-room);
   --room-tint: var(--hue-red-tint);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -416,7 +414,6 @@
   --room: var(--hue-violet-room);
   --room-tint: var(--hue-violet-tint);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -432,7 +429,6 @@
   --room: var(--hue-orange-room);
   --room-tint: var(--hue-orange-tint);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -448,7 +444,6 @@
   --room: var(--hue-green-room);
   --room-tint: var(--hue-green-tint);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -464,7 +459,6 @@
   --room: var(--hue-blue-room);
   --room-tint: var(--hue-blue-tint);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -480,7 +474,6 @@
   --room: var(--hue-pink-room);
   --room-tint: var(--hue-pink-tint);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -496,7 +489,6 @@
   --room: var(--hue-teal-room);
   --room-tint: var(--hue-teal-tint);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -508,7 +500,6 @@
   --room: var(--hue-red-room-d);
   --room-tint: var(--hue-red-tint-d);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -520,7 +511,6 @@
   --room: var(--hue-violet-room-d);
   --room-tint: var(--hue-violet-tint-d);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -532,7 +522,6 @@
   --room: var(--hue-orange-room-d);
   --room-tint: var(--hue-orange-tint-d);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -544,7 +533,6 @@
   --room: var(--hue-green-room-d);
   --room-tint: var(--hue-green-tint-d);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -556,7 +544,6 @@
   --room: var(--hue-blue-room-d);
   --room-tint: var(--hue-blue-tint-d);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -568,7 +555,6 @@
   --room: var(--hue-pink-room-d);
   --room-tint: var(--hue-pink-tint-d);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -580,7 +566,6 @@
   --room: var(--hue-teal-room-d);
   --room-tint: var(--hue-teal-tint-d);
   --tile-ink: var(--poster);
-  --chart-peak: var(--room-tint);
   --ring-them: inset 0 0 0 2px var(--them);
 }
 
@@ -716,6 +701,7 @@
   --text-caption: 500 12px/16px var(--font-sans);
   /* One size for every emoji in the report (reactions, stickers, emoji rows). */
   --emoji-size: 28px;
+  --emoji-size-lg: 36px;
   /* Tracking follows the size: the bigger the type, the tighter. 16 px and below keep their own. */
   --tracking-display: -0.045em;
   --tracking-figure: -0.04em;

@@ -38,12 +38,7 @@ const peakHour = computed(() => {
     <ReportSection wide :title="t('group.dailyTitle')">
       <DailyVolumeChart :days="days" />
     </ReportSection>
-    <ReportSection
-      wide
-      :title="t('report.rhythm.heatmapTitle')"
-      :answer="activeDays"
-      :text="t('report.rhythm.heatmapText')"
-    >
+    <ReportSection wide :title="t('report.rhythm.heatmapTitle')" :answer="activeDays">
       <ActivityHeatmap :points="days" />
     </ReportSection>
     <!-- Months are not charted apart: the weekly line above already shows them. -->
@@ -51,7 +46,7 @@ const peakHour = computed(() => {
       <WeekdayChart :weekday="data.report.activity.weekday" />
     </ReportSection>
     <ReportSection wide :title="t('group.hoursTitle')" :answer="peakHour">
-      <HourlyChart :hourly="data.report.activity.hourly" :received-label="t('group.others')" />
+      <HourlyChart :hourly="data.report.activity.hourly" />
     </ReportSection>
   </div>
 </template>

@@ -2,10 +2,14 @@
 import type { TopItemDto } from '@tg-analyzer/shared'
 
 /**
- * Words or emoji in three groups — «Только вы», «Только <имя>», «Общие» — as chips with counts. Whose
- * they are is said by the group's label, in the person's colour for their group; no avatars.
+ * Words or emoji in three groups — «Только вы», «Только <имя>», «Общие» — as chips (emoji with counts,
+ * words without). Whose they are is said by the group's label, in the person's colour for their group;
+ * yours are grey, theirs on their tint, the shared ones outlined. No avatars.
  */
-const props = defineProps<{ mine: TopItemDto[]; theirs: TopItemDto[]; shared: TopItemDto[]; name: string }>()
+const props = withDefaults(
+  defineProps<{ mine: TopItemDto[]; theirs: TopItemDto[]; shared: TopItemDto[]; name: string; counts?: boolean }>(),
+  { counts: true },
+)
 const { t } = useI18n()
 const groups = computed(() =>
   [
@@ -25,7 +29,7 @@ const groups = computed(() =>
       :class="`side-groups__group--${group.key}`"
     >
       <span class="side-groups__label">{{ group.label }}</span>
-      <WordChips :items="group.items" :empty="t('report.words.none')" />
+      <WordChips :items="group.items" :empty="t('report.words.none')" :counts="counts" />
     </div>
   </div>
 </template>
@@ -44,7 +48,7 @@ const groups = computed(() =>
 .side-groups__label {
   color: var(--text-muted);
   font: var(--text-small);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* The other side's group carries their colour: its label and a tint of their room on the chips. */
@@ -59,6 +63,12 @@ const groups = computed(() =>
 /* Grey counts lose contrast on the tint; on it they take the text's own colour. */
 .side-groups__group--theirs :deep(.chip__count) {
   color: var(--text);
+}
+
+/* The shared group belongs to both: outlined, on the card's own white. */
+.side-groups__group--shared :deep(.chip) {
+  background: var(--surface);
+  box-shadow: var(--ring-strong);
 }
 
 @media (max-width: 640px) {

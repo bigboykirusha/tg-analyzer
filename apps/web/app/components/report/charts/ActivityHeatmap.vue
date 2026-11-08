@@ -10,7 +10,6 @@ const { t, tc, formatDay } = useI18n()
 
 const MAX_MONTHS = 12
 const PHONE_MONTHS = 6
-const LEVELS = [0, 1, 2, 3, 4] as const
 
 interface Cell {
   date: string
@@ -41,7 +40,8 @@ const months = computed(() => {
     ]
     return {
       key,
-      name: formatDay(`${key}-01`, { month: 'short' }),
+      // «Сентябрь»: the full name, as a paper calendar heads its page.
+      name: formatDay(`${key}-01`, { month: 'long' }).replace(/^./u, (letter) => letter.toLocaleUpperCase()),
       year: key.slice(0, 4),
       cells,
       old: keys.length - index > PHONE_MONTHS,
@@ -72,11 +72,6 @@ function describe(cell: Cell) {
           />
         </div>
       </div>
-    </div>
-    <div class="calendar__legend" aria-hidden="true">
-      <span>{{ t('chart.less') }}</span>
-      <span v-for="level in LEVELS" :key="level" class="calendar__cell" :class="`calendar__cell--${level}`" />
-      <span>{{ t('chart.more') }}</span>
     </div>
   </div>
   <div v-else class="calendar-empty t-small">{{ t('chart.noActivity') }}</div>
@@ -139,26 +134,6 @@ function describe(cell: Cell) {
 
 .calendar__cell--4 {
   background: var(--heat-4);
-}
-
-.calendar__legend {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--text-muted);
-  font: var(--text-caption);
-}
-
-.calendar__legend .calendar__cell {
-  width: var(--space-3);
-}
-
-.calendar__legend span:first-child {
-  margin-right: var(--space-1);
-}
-
-.calendar__legend span:last-child {
-  margin-left: var(--space-1);
 }
 
 .calendar-empty {

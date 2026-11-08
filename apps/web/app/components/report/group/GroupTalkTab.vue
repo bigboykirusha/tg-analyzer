@@ -15,10 +15,9 @@ const topReactions = computed(() =>
 const podium = computed(() => {
   const [first, second, third] = topReactions.value
   if (!first) return []
-  const max = first.count
-  return [second && { ...second, place: 2 }, { ...first, place: 1 }, third && { ...third, place: 3 }]
-    .filter((item): item is NonNullable<typeof item> => Boolean(item))
-    .map((item) => ({ ...item, height: Math.max(24, (item.count / max) * 100) }))
+  return [second && { ...second, place: 2 }, { ...first, place: 1 }, third && { ...third, place: 3 }].filter(
+    (item): item is NonNullable<typeof item> => Boolean(item),
+  )
 })
 const reactionAnswer = computed(() => {
   const first = topReactions.value[0]
@@ -45,25 +44,18 @@ const absent = computed(() =>
 
   <template v-else>
     <ReportSection v-if="topReactions.length" :title="t('group.talk.reactionsTitle')" :answer="reactionAnswer">
-      <ol
-        class="podium"
-        :aria-label="
-          topReactions
-            .slice(0, 3)
-            .map((item) => `${item.value} ${item.count}`)
-            .join(', ')
-        "
-      >
-        <li
-          v-for="item in podium"
-          :key="item.value"
-          class="podium__place"
-          :class="{ 'podium__place--first': item.place === 1 }"
-        >
-          <span class="podium__emoji t-emoji" aria-hidden="true">{{ item.value }}</span>
-          <span class="podium__bar t-num" :style="{ height: `${item.height}%` }">{{ formatNumber(item.count) }}</span>
-        </li>
-      </ol>
+      <div class="podium-wrap">
+        <div class="podium__emojis" aria-hidden="true">
+          <span v-for="item in podium" :key="item.value" :class="{ 'podium__emoji--first': item.place === 1 }">
+            {{ item.value }}
+          </span>
+        </div>
+        <ol class="podium">
+          <li v-for="item in podium" :key="item.value" class="podium__bar t-num" :class="`podium__bar--${item.place}`">
+            <span class="sr-only">{{ item.value }}:</span>{{ formatNumber(item.count) }}
+          </li>
+        </ol>
+      </div>
     </ReportSection>
 
     <ReportSection
@@ -82,41 +74,53 @@ const absent = computed(() =>
 </template>
 
 <style scoped>
-.podium {
+/* Emoji in one row over their steps, the favourite a size larger; the steps of a real podium. */
+.podium-wrap {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+}
+
+.podium,
+.podium__emojis {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: end;
   gap: var(--space-2);
   width: min(100%, calc(var(--space-20) * 3));
-  height: calc(var(--space-20) * 2);
-  margin: 0 auto;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.podium__place {
-  display: flex;
-  height: 100%;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
+.podium__emojis span {
+  font-size: var(--emoji-size);
+  line-height: 1;
+  text-align: center;
+}
+
+.podium__emojis .podium__emoji--first {
+  font-size: var(--emoji-size-lg);
 }
 
 .podium__bar {
   display: grid;
-  width: 100%;
-  min-height: var(--space-8);
+  height: calc(var(--space-12) + var(--space-3));
   place-items: start center;
   padding-top: var(--space-2);
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   background: var(--room-tint);
-  font: var(--text-caption);
+  font: var(--text-small);
   font-weight: 600;
 }
 
-.podium__place--first .podium__bar {
+.podium__bar--1 {
+  height: calc(var(--space-20) + var(--space-2));
   background: var(--them);
   color: var(--on-them);
+}
+
+.podium__bar--3 {
+  height: var(--space-10);
 }
 </style>

@@ -60,7 +60,7 @@ const rows = computed(() => {
 </script>
 
 <template>
-  <ReportSection :title="item.title">
+  <ReportSection :title="t('report.duel.voiceLabel')">
     <div v-if="together" class="voice__total">
       <p class="voice__figure t-num">{{ together.value }}</p>
       <p v-if="together.note" class="voice__note">{{ together.note }}</p>

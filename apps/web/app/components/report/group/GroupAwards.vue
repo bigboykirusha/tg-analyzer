@@ -6,7 +6,7 @@ import { hueOf } from '../../../lib/hue'
  * «Номинации»: who leads the group in each habit, one row per award — the award, the winner's name in
  * their own colour (you in ink) and the value. Replaces a wall of near-identical ranking lists.
  */
-const props = defineProps<{ group: GroupReportDto; insights: string[] }>()
+const props = defineProps<{ group: GroupReportDto }>()
 const { t, tc, formatDecimal, formatDuration, formatPercent } = useI18n()
 const nameOf = useParticipantName()
 
@@ -45,13 +45,13 @@ const specs = computed(() => [
     key: 'morning',
     title: t('group.awards.morning'),
     amount: (p: GroupParticipantDto) => p.morningFirst ?? 0,
-    describe: (value: number) => tc('report.talk.mornings', value),
+    describe: (value: number) => tc('group.awards.times', value),
   },
   {
     key: 'night',
     title: t('group.awards.night'),
     amount: (p: GroupParticipantDto) => p.nightLast ?? 0,
-    describe: (value: number) => tc('report.talk.evenings', value),
+    describe: (value: number) => tc('group.awards.times', value),
   },
   {
     key: 'voice',
@@ -82,7 +82,7 @@ const awards = computed(() =>
 </script>
 
 <template>
-  <ReportSection v-if="awards.length" wide :title="t('group.awards.title')" :text="insights.join(' ')">
+  <ReportSection v-if="awards.length" wide :title="t('group.awards.title')">
     <ul class="awards">
       <li v-for="item in awards" :key="item.key" class="award" :data-hue="item.hue ?? undefined">
         <span class="award__who">
@@ -112,11 +112,6 @@ const awards = computed(() =>
   min-width: 0;
   padding: var(--space-3) 0;
   box-shadow: var(--divider-top);
-}
-
-.award:first-child {
-  padding-top: 0;
-  box-shadow: none;
 }
 
 .award__who {

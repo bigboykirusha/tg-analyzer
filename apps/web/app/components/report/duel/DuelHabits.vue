@@ -36,6 +36,7 @@ const rows = computed(() =>
       key: 'starts',
       label: t('report.habits.starts'),
       verdict: verdict(props.starts, t('report.habits.startsEven')),
+      theirs: props.starts.lead === 'theirs',
       pair: props.starts.pairs[0]!,
       percent: true,
     },
@@ -43,6 +44,7 @@ const rows = computed(() =>
       key: 'laughs',
       label: t('report.habits.laughs'),
       verdict: verdict(props.laughs, t('report.habits.even')),
+      theirs: props.laughs.lead === 'theirs',
       pair: props.laughs.pairs[0]!,
       percent: false,
     },
@@ -50,6 +52,7 @@ const rows = computed(() =>
       key: 'voice',
       label: t('report.habits.voice'),
       verdict: voiceVerdict(props.voice.mine, props.voice.theirs),
+      theirs: props.voice.theirs >= LEAD * props.voice.mine && props.voice.theirs > 0,
       pair: {
         mine: { value: props.voice.mine, text: formatNumber(props.voice.mine) },
         theirs: { value: props.voice.theirs, text: formatNumber(props.voice.theirs) },
@@ -66,7 +69,7 @@ const rows = computed(() =>
       <div v-for="row in rows" :key="row.key" class="report-rows__row">
         <span class="report-rows__label habit__label">
           <span>{{ row.label }}</span
-          ><span class="habit__verdict">{{ row.verdict }}</span>
+          ><strong class="habit__verdict" :class="{ 'habit__verdict--theirs': row.theirs }">{{ row.verdict }}</strong>
         </span>
         <ReportLine
           :mine="row.pair.mine.value"
@@ -80,12 +83,18 @@ const rows = computed(() =>
 </template>
 
 <style scoped>
-/* The habit on the left, the verdict on the right, quieter. */
+/* The habit on the left, quiet; the verdict on the right, in the leading side's ink. */
 .habit__label {
   justify-content: space-between;
+  color: var(--text-muted);
 }
 
 .habit__verdict {
-  color: var(--text-muted);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.habit__verdict--theirs {
+  color: var(--them-ink);
 }
 </style>

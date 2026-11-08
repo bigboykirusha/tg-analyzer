@@ -22,6 +22,6 @@ const hasWords = computed(() => split.value.shared.length + split.value.mine.len
 
 <template>
   <ReportSection v-if="hasWords" :title="t('report.words.title')">
-    <ReportSideGroups :mine="split.mine" :theirs="split.theirs" :shared="split.shared" :name="name" />
+    <ReportSideGroups :mine="split.mine" :theirs="split.theirs" :shared="split.shared" :name="name" :counts="false" />
   </ReportSection>
 </template>

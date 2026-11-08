@@ -16,7 +16,7 @@ defineProps<{
 
 <template>
   <article class="tile report-section" :class="[{ 'report-section--wide': wide }, tone && `tile--${tone}`]">
-    <header v-if="title || answer || text || $slots.actions" class="report-section__head">
+    <header v-if="title || answer || text || $slots.actions || $slots.aside" class="report-section__head">
       <div class="report-section__copy">
         <h3 v-if="title" class="report-section__title">{{ title }}</h3>
         <p v-if="answer" class="report-section__answer">{{ answer }}</p>
@@ -24,6 +24,9 @@ defineProps<{
       </div>
       <div v-if="$slots.actions" class="report-section__actions no-print">
         <slot name="actions" />
+      </div>
+      <div v-if="$slots.aside" class="report-section__aside">
+        <slot name="aside" />
       </div>
     </header>
     <slot />
