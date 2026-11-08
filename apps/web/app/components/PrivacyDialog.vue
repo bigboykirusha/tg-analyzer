@@ -157,6 +157,12 @@ const sections = computed(() => [
     transform var(--transition-normal);
 }
 
+.privacy-leave-active {
+  transition:
+    opacity var(--transition-exit),
+    transform var(--transition-exit);
+}
+
 .privacy-enter-from,
 .privacy-leave-to {
   opacity: 0;

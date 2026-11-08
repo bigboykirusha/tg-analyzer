@@ -222,6 +222,12 @@ watch(open, (value) => value && drag.reset())
     opacity var(--transition-normal);
 }
 
+.modal-leave-active,
+.modal-leave-active .modal-panel {
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-exit);
+}
+
 .modal-enter-from,
 .modal-leave-to {
   background-color: transparent;

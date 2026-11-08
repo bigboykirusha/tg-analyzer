@@ -102,6 +102,7 @@ defineExpose({ el })
 
 .menu-panel-leave-active {
   transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-exit);
 }
 
 .menu-panel-enter-from,

@@ -645,11 +645,17 @@
   /* Shared geometry for cards, including the measured report columns. */
   --card-padding: var(--space-6);
   --card-gap: var(--space-4);
-  --opacity-disabled: 0.4;
-  --z-header: 20;
-  --z-popover: 30;
-  --z-modal: 90;
-  --z-toast: 100;
+  --opacity-disabled: 0.38;
+  /*
+   * Layers, from Primer's semantic z-index scale (sticky 100 · overlay 300 · modal 400 · popover 500 ·
+   * skip link 600) with Atlassian's rule that a flag (toast) sits above a modal. Menus and tooltips
+   * are above modals, so one opened from a dialog or a sheet is never hidden under it.
+   */
+  --z-header: 100;
+  --z-modal: 400;
+  --z-toast: 450;
+  --z-popover: 500;
+  --z-skip-link: 600;
   /* A press lands in 90 ms and releases on --duration-fast. */
   --duration-press: 90ms;
   --duration-fast: 150ms;
@@ -716,6 +722,12 @@
   /* Strong ease-out for everything the user triggers; nothing linear, nothing bouncy. */
   --ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /*
+   * Leaving, from Material 3 (emphasized accelerate): what goes away speeds up and is shorter than its
+   * entrance (--transition-exit), so closing never feels sluggish. Not for sheets a finger throws away:
+   * they keep --ease-drawer and the speed of the gesture.
+   */
+  --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
   /* Endless loops breathe in and out. */
   --ease-loop: cubic-bezier(0.45, 0, 0.55, 1);
   /*
@@ -751,6 +763,7 @@
   --transition-fast: var(--duration-fast) var(--ease-standard);
   --transition-normal: var(--duration-normal) var(--ease-standard);
   --transition-slow: var(--duration-slow) var(--ease-standard);
+  --transition-exit: var(--duration-fast) var(--ease-exit);
 
   /*
    * «Итоги» posters: the same in both themes, like exported images. A slide has a field (ink, lime or
