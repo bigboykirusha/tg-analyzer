@@ -901,7 +901,6 @@ svg.row-check {
     gap: var(--space-8);
   }
 
-  .report-layout .highlights,
   .report-nav {
     display: none;
   }

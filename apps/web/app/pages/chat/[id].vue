@@ -76,30 +76,6 @@ function openShare() {
   shareOpen.value = true
 }
 
-/** «Кого разобрать следующим»: the busiest chat of the month that has no report yet (not this one). */
-const nextChat = computed(() => {
-  const withReport = new Set(workspace.reports.map((report) => report.chatId))
-  const chat = workspace.recent?.chats.find((item) => item.id !== chatId.value && !withReport.has(item.id))
-  return chat ? { chatId: chat.id, title: chat.title, messages: chat.messages } : null
-})
-const nextStarting = ref(false)
-const nextBusy = computed(
-  () =>
-    nextStarting.value ||
-    analysis.progress.value.chatId === nextChat.value?.chatId ||
-    analysis.queued.value.some((job) => job.chatId === nextChat.value?.chatId),
-)
-async function analyseNext(id: string) {
-  nextStarting.value = true
-  try {
-    await analysis.startAnalysis(id, nextChat.value?.title ?? null)
-  } finally {
-    nextStarting.value = false
-  }
-}
-onMounted(() => {
-  if (!workspace.recent) void workspace.loadRecent()
-})
 
 /** «Вся глава» from a story slide: the story closes and the report opens at that chapter. */
 function openChapter(id: string) {
@@ -134,10 +110,7 @@ onMounted(load)
           :summary="data.summary"
           :headlines="headlines"
           :meta="tc('common.messagesCount', data.report.totals.messages)"
-          :can-reanalyse="Boolean(knownChat)"
           @share="openShare"
-          @story="openStory('view')"
-          @reanalyse="analyseHere"
         />
 
         <!-- Charts (ECharts) belong to groups only, and the share sheet and stories load on first use:
@@ -201,11 +174,8 @@ onMounted(load)
     <ReportEnding
       v-if="data"
       :data="data"
-      :next="nextChat"
-      :next-busy="nextBusy"
       @story="openStory('view')"
       @share="openShare"
-      @analyse="analyseNext"
     />
   </div>
 </template>

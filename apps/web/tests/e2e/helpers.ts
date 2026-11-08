@@ -1,4 +1,4 @@
-import { expect, type BrowserContext, type Page } from '@playwright/test'
+import type { BrowserContext, Page } from '@playwright/test'
 
 export async function usePreferences(context: BrowserContext, theme: 'light' | 'dark', locale: 'ru' | 'en' = 'ru') {
   const url = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000'
@@ -45,8 +45,7 @@ export async function backendAvailable(baseURL: string) {
 
 /**
  * Opens a chapter of a report. Wide screens (≥ 1200) have the table of contents beside the chapters;
- * between 901 and 1199 the header keeps its tabs; phones and tablets have the capsule, which opens a
- * sheet of chapters once the poster's name has gone under the bar.
+ * between 901 and 1199 the header keeps its tabs; on phones and tablets the reader scrolls there.
  */
 export async function openChapter(page: Page, name: string) {
   const width = page.viewportSize()!.width
@@ -62,21 +61,9 @@ export async function openChapter(page: Page, name: string) {
     await page.getByRole('tab', { name }).click()
     return
   }
-  const capsule = page.locator('.capsule')
-  await capsule.waitFor({ state: 'attached' })
-  // The capsule rises once the name on the poster has gone under the bar.
-  await expect
-    .poll(async () => {
-      await page.evaluate(() => {
-        if (window.scrollY < 80) window.scrollTo({ top: 120, behavior: 'instant' })
-      })
-      return capsule.isVisible()
-    })
-    .toBe(true)
-  // A pinned bar: Playwright's scroll-into-view would take the page back to the top, where the capsule hides.
-  await capsule.evaluate((element: HTMLElement) => element.click())
+  // Phones and tablets have no chapter navigation of their own: the reader scrolls, and the capsule in
+  // the header says which chapter they are in.
   await page
-    .locator('.chapters__row')
-    .filter({ has: page.getByText(name, { exact: true }) })
-    .click()
+    .locator(`.report-part:has(h2:text-is("${name}"))`)
+    .evaluate((element) => element.scrollIntoView({ behavior: 'instant', block: 'start' }))
 }

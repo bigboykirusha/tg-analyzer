@@ -201,10 +201,10 @@ function signOut() {
     visibility: hidden;
   }
 
-  /* Back is the same 48 px circle as «Поделиться»: a well on the poster, a chip on glass. */
+  /* Back is the same 36 px circle as «Поделиться»: a well on the poster, a chip on glass. */
   .app-navigation:has(.capsule) :deep(.page-bar__back) {
-    width: var(--control-lg);
-    height: var(--control-lg);
+    width: var(--control-sm);
+    height: var(--control-sm);
     margin-left: 0;
     background: var(--header-chip);
     box-shadow: var(--header-chip-ring);

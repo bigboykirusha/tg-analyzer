@@ -37,7 +37,6 @@ const answerOf = (id: string) => headlines.value.find((headline) => headline.id 
         {{ t('report.lowData') }}
       </p>
 
-      <ReportHighlights :headlines="headlines" />
       <ReportSince :data="data" />
       <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
       <!-- «Вы двое» is masonry: every card at its own height, no stretched blanks (see useMasonry). -->

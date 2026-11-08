@@ -38,7 +38,6 @@ const clearLeader = computed(() => {
   <div v-else class="report-layout">
     <ReportToc :headlines="headlines" group />
     <div class="stack stack--lg">
-      <ReportHighlights :headlines="headlines" group />
       <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
       <ReportPart id="people" :title="t('group.tabs.people')" :answer="answerOf('people')">
         <ReportSection

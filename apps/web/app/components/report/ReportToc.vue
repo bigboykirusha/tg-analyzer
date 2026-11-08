@@ -14,7 +14,6 @@ const current = computed(() => spy.current.value ?? props.headlines[0]?.id ?? nu
 
 <template>
   <nav class="toc no-print" :aria-label="group ? t('report.headline.titleGroup') : t('report.headline.title')">
-    <p class="toc__title">{{ group ? t('report.headline.titleGroup') : t('report.headline.title') }}</p>
     <a
       v-for="headline in headlines"
       :key="headline.id"
@@ -43,12 +42,6 @@ const current = computed(() => spy.current.value ?? props.headlines[0]?.id ?? nu
     gap: var(--space-1);
     align-self: start;
   }
-}
-
-.toc__title {
-  padding: 0 var(--space-4) var(--space-2);
-  color: var(--text-muted);
-  font: var(--text-small);
 }
 
 .toc__row {
