@@ -1,5 +1,5 @@
 import { MAX_AVATAR_BATCH } from '@tg-analyzer/shared'
-import { api } from '../composables/useApi'
+import { api, ApiClientError } from '../composables/useApi'
 
 /**
  * Collects avatar requests from all rendered chats for a moment and fetches
@@ -76,8 +76,10 @@ export function loadProfileAvatar() {
   const currentGeneration = generation
   profileRequest ??= api('GET /api/v1/auth/avatar')
     .then((blob) => (generation === currentGeneration ? URL.createObjectURL(blob) : null))
-    .catch(() => {
-      if (generation === currentGeneration) profileRequest = null
+    .catch((error: unknown) => {
+      // No photo (404) is an answer, not a failure: keep it, so every page does not ask again.
+      const noPhoto = error instanceof ApiClientError && error.status === 404
+      if (generation === currentGeneration && !noPhoto) profileRequest = null
       return null
     })
   return profileRequest

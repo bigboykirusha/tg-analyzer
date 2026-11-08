@@ -22,10 +22,19 @@ const podium = computed(() => {
 const reactionAnswer = computed(() => {
   const first = topReactions.value[0]
   return first
-    ? tc('group.talk.reactionsAnswer', first.count, { emoji: first.value, count: formatNumber(first.count) })
+    ? tc('group.favouriteAnswer', first.count, { emoji: first.value, count: formatNumber(first.count) })
     : null
 })
 const stickers = computed(() => report.value.stickers)
+/** «🐱 — 117 раз»: the favourite sticker, by its emoji when Telegram gave one. */
+const stickerAnswer = computed(() => {
+  const first = stickers.value?.top[0]
+  if (!first) return null
+  const count = first.mine + first.theirs
+  return first.emoji
+    ? tc('group.favouriteAnswer', count, { emoji: first.emoji, count: formatNumber(count) })
+    : tc('group.stickerAnswer', count, { count: formatNumber(count) })
+})
 
 /** Sections with nothing to show collapse into one quiet line at the end. */
 const absent = computed(() =>
@@ -58,11 +67,7 @@ const absent = computed(() =>
       </div>
     </ReportSection>
 
-    <ReportSection
-      v-if="stickers?.top.length"
-      :title="t('report.talk.stickersTitle')"
-      :text="t('report.talk.stickersText')"
-    >
+    <ReportSection v-if="stickers?.top.length" :title="t('report.talk.stickersTitle')" :answer="stickerAnswer">
       <StickerGrid :stickers="stickers.top" />
     </ReportSection>
 

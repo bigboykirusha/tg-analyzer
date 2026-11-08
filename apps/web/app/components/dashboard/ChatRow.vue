@@ -26,13 +26,15 @@ const reportPath = computed(() => (props.chat.report ? `/chat/${props.chat.id}` 
 const reportMeta = computed(() => {
   const report = props.chat.report
   if (!report) return ''
-  return t('dashboard.analysed', { time: formatRelative(report.analyzedAt) })
+  const count = tc('common.messagesCount', report.totalMessages)
+  return `${t('dashboard.analysed', { time: formatRelative(report.analyzedAt) })}, ${count}`
 })
-/** Phones keep the line under the name whole: «Обновлён 39 мин. назад». */
+/** One line under the name, without dots between facts: «Обновлён 39 мин. назад, 4 800 сообщений». */
 const reportMetaShort = computed(() => {
   const report = props.chat.report
   if (!report) return ''
-  return t('dashboard.analysed', { time: formatRelative(report.analyzedAt, 'short') })
+  const count = tc('common.messagesCount', report.totalMessages)
+  return `${t('dashboard.analysed', { time: formatRelative(report.analyzedAt, 'short') })}, ${count}`
 })
 
 /** The type is shown by the icon; its name is only read aloud, so the time fits on a phone. */
@@ -144,15 +146,14 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
             progress == null ? t('dashboard.analysingNow') : formatPercent(progress * 100)
           }}</span>
         </span>
-        <span v-else-if="chat.report" class="chat-row__sub chat-row__sub--report">
-          <span class="chat-row__meta-long">{{ reportMeta }}</span>
-          <span class="chat-row__meta-short" aria-hidden="true">{{ reportMetaShort }}</span>
-          <span class="chat-row__report-count">{{ tc('common.messagesCount', chat.report.totalMessages) }}</span>
-        </span>
-        <span v-else class="chat-row__sub">
+        <span v-else class="chat-row__sub" :class="{ 'chat-row__sub--report': chat.report }">
           <component :is="chat.type === 'private' ? User : Users" class="chat-row__type-icon" aria-hidden="true" />
           <span class="sr-only">{{ typeLabel }}</span>
-          <span>{{ lastActivity }}</span>
+          <template v-if="chat.report">
+            <span class="chat-row__meta-long">{{ reportMeta }}</span>
+            <span class="chat-row__meta-short" aria-hidden="true">{{ reportMetaShort }}</span>
+          </template>
+          <span v-else>{{ lastActivity }}</span>
         </span>
       </span>
     </component>
@@ -289,7 +290,7 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
 }
 
 .chat-row__sub > span:last-child,
-.chat-row__sub--report > span:first-child,
+.chat-row__sub--report > .chat-row__meta-long,
 .chat-row__sub--report > .chat-row__meta-short {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -298,11 +299,6 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
 
 .chat-row__type-icon {
   --icon-size: var(--icon-sm);
-}
-
-.chat-row__report-count::before {
-  content: '·';
-  margin-right: var(--space-2);
 }
 
 .chat-row__track {

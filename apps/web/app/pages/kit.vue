@@ -448,7 +448,6 @@ function showToast(variant: 'success' | 'error' | 'info' | 'warning') {
 
       <UiPageSection title="States">
         <div class="kit__tiles">
-          <UiMetricCard :label="t('report.kpi.messages')" value="5 078" sub="+12%" />
           <div class="tile">
             <UiEmptyState :title="t('chart.noActivity')" :description="t('report.words.none')" compact />
           </div>

@@ -66,11 +66,9 @@ const summary = computed(() => {
   return t('chart.hourlySummary', { sent: formatNumber(sum('sent')), received: formatNumber(sum('received')) })
 })
 
-/** «Ночные совы: чаще всего с 22:00 до 01:00» — the same sentence the chapter opens with. */
-const headlines = useChapterHeadlines(() => props.data)
-const answer = computed(
-  () => headlines.value.find((headline) => headline.id === 'time')?.text ?? t(`story.persona.${role.value!}`),
-)
+/** «Ночные совы: чаще всего с 22:00 до 01:00» — the group's «Время» opens with the same sentence. */
+const timeAnswer = useTimeAnswer(() => props.data)
+const answer = computed(() => timeAnswer.value ?? t(`story.persona.${role.value!}`))
 </script>
 
 <template>

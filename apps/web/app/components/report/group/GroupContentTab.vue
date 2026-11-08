@@ -8,10 +8,20 @@ import type { GroupReportDto, ReportDto } from '@tg-analyzer/shared'
  * name in their colour, three words as plain text) — and the popular emoji.
  */
 const props = defineProps<{ data: ReportDto; group: GroupReportDto }>()
-const { t } = useI18n()
+const { t, tc, formatNumber } = useI18n()
 const nameOf = useParticipantName()
 
-const shared = computed(() => props.group.sharedVocabulary.slice(0, 10))
+const top = computed(() => props.group.sharedVocabulary[0] ?? null)
+/** The first shared word answers the card; the chips go on from the second, so no word is said twice. */
+const shared = computed(() => props.group.sharedVocabulary.slice(1, 11))
+const wordAnswer = computed(() => (top.value ? t('group.sharedVocabularyAnswer', { word: top.value.value }) : null))
+const emoji = computed(() => props.data.report.vocabulary.topEmoji.slice(0, 12))
+const emojiAnswer = computed(() => {
+  const first = emoji.value[0]
+  return first
+    ? tc('group.favouriteAnswer', first.count, { emoji: first.value, count: formatNumber(first.count) })
+    : null
+})
 const signatures = computed(() =>
   [...props.group.participants]
     .filter((p) => p.topicSignature.length)
@@ -28,7 +38,7 @@ const signatures = computed(() =>
 </script>
 
 <template>
-  <ReportSection v-if="shared.length || signatures.length" :title="t('group.sharedVocabulary')">
+  <ReportSection v-if="top || signatures.length" :title="t('group.sharedVocabulary')" :answer="wordAnswer">
     <WordChips v-if="shared.length" :items="shared" :empty="t('group.noWords')" :counts="false" />
     <div v-if="signatures.length" class="signatures">
       <h4 class="signatures__title">{{ t('group.signatures') }}</h4>
@@ -41,8 +51,8 @@ const signatures = computed(() =>
     </div>
   </ReportSection>
 
-  <ReportSection :title="t('group.topEmoji')">
-    <EmojiGrid :items="data.report.vocabulary.topEmoji.slice(0, 12)" />
+  <ReportSection v-if="emoji.length" :title="t('group.topEmoji')" :answer="emojiAnswer">
+    <EmojiGrid :items="emoji" />
   </ReportSection>
 </template>
 

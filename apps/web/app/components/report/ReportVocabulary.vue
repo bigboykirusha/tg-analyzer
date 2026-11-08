@@ -17,11 +17,20 @@ const split = computed(() =>
     exclude: vocabulary.value.topWords.slice(0, 1).map((item) => item.value),
   }),
 )
+/** «Вы чаще пишете «кофе», Мила — «job»»: each side's own word; «Говорите одними словами» when none. */
+const answer = computed(() => {
+  const mine = split.value.mine[0]?.value
+  const theirs = split.value.theirs[0]?.value
+  if (mine && theirs) return t('report.words.answerBoth', { mine, theirs, name: name.value })
+  if (mine) return t('report.words.answerMine', { word: mine })
+  if (theirs) return t('report.words.answerTheirs', { word: theirs, name: name.value })
+  return t('report.words.answerShared')
+})
 const hasWords = computed(() => split.value.shared.length + split.value.mine.length + split.value.theirs.length > 0)
 </script>
 
 <template>
-  <ReportSection v-if="hasWords" :title="t('report.words.title')">
+  <ReportSection v-if="hasWords" :title="t('report.words.title')" :answer="answer">
     <ReportSideGroups :mine="split.mine" :theirs="split.theirs" :shared="split.shared" :name="name" :counts="false" />
   </ReportSection>
 </template>

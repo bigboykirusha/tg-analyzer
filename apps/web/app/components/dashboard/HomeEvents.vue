@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HomeEvent } from '@tg-analyzer/shared'
 import { hueOf } from '../../lib/hue'
+import { ChevronRight } from '../../lib/icons'
 
 /**
  * «Главное» on the home screen: a few tiles, each one sentence about what is new — the month, new
@@ -104,6 +105,9 @@ const ordinal = (index: number) => t('report.milestones.nth', { n: formatNumber(
         <span class="home-event__dots" aria-hidden="true">
           <i v-for="place in event.total" :key="place" :class="{ 'is-on': place <= event.score }" />
         </span>
+        <span class="home-event__link-foot" aria-hidden="true">
+          {{ t('dashboard.openReport') }}<ChevronRight class="icon-md" />
+        </span>
       </NuxtLink>
 
       <NuxtLink
@@ -117,6 +121,9 @@ const ordinal = (index: number) => t('report.milestones.nth', { n: formatNumber(
           <ChatAvatar :chat-id="event.chatId" :title="event.title" size="xs" />{{ event.title }}
         </p>
         <p class="home-event__title">{{ tc('home.milestoneTitle', event.days, { n: ordinal(event.index) }) }}</p>
+        <span class="home-event__link-foot" aria-hidden="true">
+          {{ t('dashboard.openReport') }}<ChevronRight class="icon-md" />
+        </span>
       </NuxtLink>
 
       <article
@@ -267,7 +274,17 @@ const ordinal = (index: number) => t('report.milestones.nth', { n: formatNumber(
 .home-event__dots {
   display: flex;
   gap: var(--space-2);
+}
+
+/* A tile that opens a report says so at its foot, like the report cards below it. */
+.home-event__link-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
   margin-top: auto;
+  color: var(--text-muted);
+  font: var(--text-small);
 }
 
 .home-event__dots i {

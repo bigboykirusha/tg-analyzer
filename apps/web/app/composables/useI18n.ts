@@ -92,6 +92,13 @@ export function useI18n() {
     const from = new Date(`${first.slice(0, 10)}T12:00:00Z`)
     const to = new Date(`${last.slice(0, 10)}T12:00:00Z`)
     if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return t('common.na')
+    if (short && from.getUTCFullYear() === to.getUTCFullYear()) {
+      // ICU repeats the year in Russian («янв. 2026 г. – нояб. 2026 г.»); one year is said once: «янв. – нояб. 2026».
+      const month = new Intl.DateTimeFormat(intlLocale.value, { month: 'short', timeZone: 'UTC' })
+      const year = new Intl.DateTimeFormat(intlLocale.value, { year: 'numeric', timeZone: 'UTC' }).format(to)
+      const months = month.formatRange(from, to)
+      return `${months} ${year.replace(/\s?г\./gu, '')}`
+    }
     const range = new Intl.DateTimeFormat(intlLocale.value, options).formatRange(from, to)
     // «окт. 2025 г. – окт. 2026 г.» → «окт. 2025 – окт. 2026»: the year is plain from the number.
     return short ? range.replace(/\s?г\./gu, '') : range

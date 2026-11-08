@@ -35,13 +35,10 @@ const peakHour = computed(() => {
 
 <template>
   <div class="report-grid">
-    <ReportSection wide :title="t('group.dailyTitle')">
-      <DailyVolumeChart :days="days" />
-    </ReportSection>
     <ReportSection wide :title="t('report.rhythm.heatmapTitle')" :answer="activeDays">
       <ActivityHeatmap :points="days" />
     </ReportSection>
-    <!-- Months are not charted apart: the weekly line above already shows them. -->
+    <!-- Volume over time is the pulse on the poster: no line chart repeats it here. -->
     <ReportSection wide :title="t('report.rhythm.weekdaysTitle')" :answer="busiestDay">
       <WeekdayChart :weekday="data.report.activity.weekday" />
     </ReportSection>

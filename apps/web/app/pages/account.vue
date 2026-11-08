@@ -25,8 +25,12 @@ const timezoneLabel = computed(() => {
   }
   // «Москва, стандартное время» → «Москва»; Chromium has no short Russian names.
   const name = part('longGeneric')?.split(',')[0]?.trim()
-  const offset = part('shortOffset')?.replace(/^GMT/, 'UTC')
-  return name && offset ? `${name}, ${offset === 'UTC' ? 'UTC+0' : offset}` : zone
+  const raw = part('shortOffset')?.replace(/^GMT/, 'UTC')
+  const offset = raw === 'UTC' ? 'UTC+0' : raw
+  // A zone without a place name comes back as an offset («GMT+00:00»): the offset alone says it once.
+  const placeless = !name || /^(GMT|UTC)/u.test(name)
+  if (!offset) return zone
+  return placeless ? offset : `${name}, ${offset}`
 })
 
 const workspace = useWorkspaceStore()

@@ -1,4 +1,4 @@
-import type { ReportDto } from '@tg-analyzer/shared'
+import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 import { personaOf, parseWindow } from '../lib/persona'
 
 /** One chapter of the report: its anchor (`#part-<id>`), its name and its answer in one sentence. */
@@ -24,22 +24,10 @@ export function useShareVerdict(data: () => ReportDto) {
   })
 }
 
-const capital = (value: string) => value.replace(/^./u, (letter) => letter.toLocaleUpperCase())
-
-/**
- * The answer of every chapter, overview first: «Главное о вас двоих» under the poster, the line under
- * each chapter's title and the chapter list in the header all read it here, from the same pieces the
- * cards answer with (who writes more, `useVersus` speed, `lib/persona`, the word of the chat) — so a
- * chapter never says something its cards contradict.
- */
-export function useChapterHeadlines(data: () => ReportDto, options: { noWords?: () => boolean } = {}) {
-  const { t, formatPercent } = useI18n()
-  const versus = useVersus(data)
-  const verdict = useShareVerdict(data)
-  const nameOf = useParticipantName()
-
-  /** «Ночные совы: чаще всего с 22:00 до 01:00». */
-  const time = computed(() => {
+/** «Ночные совы: чаще всего с 22:00 до 01:00» — the answer of «Ваше время», from `lib/persona`. */
+export function useTimeAnswer(data: () => ReportDto) {
+  const { t } = useI18n()
+  return computed(() => {
     const peak = data().derived.availabilityProfile.peakWindow
     const persona = personaOf(peak)
     const window = parseWindow(peak)
@@ -49,6 +37,38 @@ export function useChapterHeadlines(data: () => ReportDto, options: { noWords?: 
       from: window.from,
       to: window.to,
     }).replace(/–/gu, '⁠–⁠')
+  })
+}
+
+const capital = (value: string) => value.replace(/^./u, (letter) => letter.toLocaleUpperCase())
+
+/**
+ * The answer of every chapter, overview first: «Главное о вас двоих» under the poster, the line under
+ * each chapter's title and the chapter list in the header all read it here, from the same pieces the
+ * cards answer with (who writes more, `useVersus` speed, `lib/persona`, the word of the chat) — so a
+ * chapter never says something its cards contradict.
+ */
+export function useChapterHeadlines(data: () => ReportDto, options: { noWords?: () => boolean } = {}) {
+  const { t, tc, formatNumber, formatPercent } = useI18n()
+  const versus = useVersus(data)
+  const verdict = useShareVerdict(data)
+  const nameOf = useParticipantName()
+
+  const time = useTimeAnswer(data)
+  /**
+   * A private chat sums its time up from two cards, the way «Вы двое» does: the rhythm and the calendar
+   * («Дневной ритм, на связи 208 из 208 дней»), so the line under the title never repeats the first card
+   * word for word. A group keeps the rhythm with its hours: its first card is the calendar.
+   */
+  const timeChapter = computed(() => {
+    const persona = personaOf(data().derived.availabilityProfile.peakWindow)
+    const days = fillDailyGaps(data().report.activity.daily)
+    if (!persona || !days.length || data().summary.type === 'group') return time.value
+    const active = days.filter((day) => day.total > 0).length
+    const name = t(`story.persona.${persona}`)
+    return active === days.length
+      ? t('report.headline.timeEveryDay', { persona: name })
+      : tc('report.headline.timeDays', days.length, { persona: name, active: formatNumber(active) })
   })
 
   const together = computed(() => {
@@ -107,7 +127,7 @@ export function useChapterHeadlines(data: () => ReportDto, options: { noWords?: 
         ]
       : [
           { id: 'together', label: t('report.tabs.together'), text: together.value },
-          { id: 'time', label: t('report.tabs.time'), text: time.value },
+          { id: 'time', label: t('report.tabs.time'), text: timeChapter.value },
           ...(options.noWords?.() ? [] : [{ id: 'words', label: t('report.tabs.words'), text: words.value }]),
         ],
   )
