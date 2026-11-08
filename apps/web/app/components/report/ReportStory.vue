@@ -10,7 +10,7 @@ import {
 } from '@tg-analyzer/shared'
 import { loadChatAvatar, loadProfileAvatar } from '../../lib/avatar-loader'
 import { maskSwear } from '../../lib/profanity'
-import { ChevronLeft, ChevronRight, Download, Share, X } from '../../lib/icons'
+import { ChevronLeft, ChevronRight, ChevronUp, Download, Pause, Play, Share, X } from '../../lib/icons'
 import { personaOf } from '../../lib/persona'
 import { isEven } from '../../composables/useVersus'
 import type { StoryBlock, StoryPerson, StorySlideModel } from './StorySlide.vue'
@@ -30,7 +30,8 @@ const props = defineProps<{
   /** What «Поделиться» asked for: just watch, save every slide, or send them all to the share sheet. */
   intent?: 'view' | 'save' | 'share'
 }>()
-const emit = defineEmits<{ close: [] }>()
+/** `chapter`: «Вся глава» — close the story and open that chapter of the report. */
+const emit = defineEmits<{ close: []; chapter: [id: string] }>()
 
 const { t, tc, formatNumber, formatPercent, formatDuration, formatDay, formatDecimal, formatMonth, formatPeriod } =
   useI18n()
@@ -49,6 +50,8 @@ type ShareTarget = 'instagram' | 'telegram' | 'chat'
 
 const index = ref(0)
 const paused = ref(false)
+/** Paused with the button (WCAG 2.2.2): a hold or a tap never undoes it. */
+const userPaused = ref(false)
 const shareOpen = ref(false)
 const canShare = ref(false)
 const myAvatar = ref<string | null>(null)
@@ -541,6 +544,19 @@ function talkSlide(): StorySlideModel | null {
   }
 }
 
+/** Each slide is a chapter of the report seen from afar: «Вся глава» opens it in full. */
+function chapterOf(key: string) {
+  const map: Record<string, [string, string]> = {
+    starts: ['together', 'report.tabs.together'],
+    time: ['time', 'report.tabs.time'],
+    words: ['words', 'report.tabs.words'],
+    voices: ['people', 'group.tabs.people'],
+    talk: ['talk', 'group.tabs.talk'],
+  }
+  const entry = map[key]
+  return entry ? { id: entry[0], label: t(entry[1] as never) } : null
+}
+
 const current = computed(() => slides.value[Math.min(index.value, slides.value.length - 1)]!)
 const exportSlide = computed(() => (exportIndex.value === null ? null : slides.value[exportIndex.value]))
 
@@ -850,7 +866,7 @@ watch(open, async (value) => {
                   class="stories__fill is-active"
                   :style="{
                     animationDuration: `${current.durationMs}ms`,
-                    animationPlayState: paused || image.busy.value ? 'paused' : 'running',
+                    animationPlayState: paused || userPaused || image.busy.value ? 'paused' : 'running',
                   }"
                   @animationend="onSegmentDone"
                 />
@@ -858,6 +874,16 @@ watch(open, async (value) => {
               </span>
             </div>
             <div class="stories__bar">
+              <button
+                type="button"
+                class="stories__icon"
+                :aria-label="userPaused ? t('story.play') : t('story.pause')"
+                :aria-pressed="userPaused"
+                @click="userPaused = !userPaused"
+              >
+                <Play v-if="userPaused" aria-hidden="true" />
+                <Pause v-else aria-hidden="true" />
+              </button>
               <button type="button" class="stories__icon" :aria-label="t('common.close')" @click="emit('close')">
                 <X aria-hidden="true" />
               </button>
@@ -865,6 +891,15 @@ watch(open, async (value) => {
           </div>
 
           <div class="stories__actions">
+            <button
+              v-if="chapterOf(current.key)"
+              type="button"
+              class="stories__action stories__action--chapter"
+              @click="emit('chapter', chapterOf(current.key)!.id)"
+            >
+              <ChevronUp aria-hidden="true" />
+              {{ t('story.chapter', { name: chapterOf(current.key)!.label }) }}
+            </button>
             <button type="button" class="stories__action" :disabled="image.busy.value" @click="saveCurrent">
               <Download aria-hidden="true" />
               {{ t('story.saveSlide') }}
@@ -1090,8 +1125,13 @@ watch(open, async (value) => {
   position: absolute;
   inset: auto 0 0;
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-3) max(var(--space-3), env(safe-area-inset-bottom));
+}
+
+.stories__action--chapter {
+  flex-basis: 100%;
 }
 
 .stories__action {
