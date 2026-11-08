@@ -244,7 +244,7 @@ const slides = computed<StorySlideModel[]>(() => {
     const most = Math.max(...voices.map((person) => person.messageShare), 1)
     list.push({
       key: 'voices',
-      theme: 3,
+      theme: 2,
       durationMs: 9000,
       kicker: t('story.voicesKicker'),
       title: nameOf(leader),
@@ -324,7 +324,7 @@ const slides = computed<StorySlideModel[]>(() => {
     together = true
     list.push({
       key: 'starts',
-      theme: 3,
+      theme: 2,
       durationMs: 9000,
       kicker: t('story.startsKicker'),
       title: even ? t('story.startsEvenTitle') : starter,
@@ -381,7 +381,7 @@ const slides = computed<StorySlideModel[]>(() => {
       })
     list.push({
       key: 'time',
-      theme: 3,
+      theme: 2,
       durationMs: 9000,
       kicker: t('story.timeKicker'),
       title: t(`story.persona.${time.persona}`),
@@ -529,7 +529,7 @@ function talkSlide(): StorySlideModel | null {
   const reactionTotal = reactions ? reactions.given.mine + reactions.given.theirs : 0
   return {
     key: 'talk',
-    theme: 3,
+    theme: 2,
     durationMs: 9000,
     kicker: t(isGroup.value ? 'story.talkKickerGroup' : 'story.talkKicker'),
     title:
@@ -1130,10 +1130,6 @@ watch(open, async (value) => {
   padding: var(--space-3) var(--space-3) max(var(--space-3), env(safe-area-inset-bottom));
 }
 
-.stories__action--chapter {
-  flex-basis: 100%;
-}
-
 .stories__action {
   display: inline-flex;
   flex: 1;
@@ -1147,6 +1143,11 @@ watch(open, async (value) => {
   color: var(--chrome-ink);
   cursor: pointer;
   font: var(--text-ui);
+}
+
+/* «Вся глава» has a row of its own above saving and sharing. */
+.stories__action.stories__action--chapter {
+  flex: 1 0 100%;
 }
 
 .stories__action--primary {

@@ -339,6 +339,29 @@ const isLong = (value: string) => longestWord(value) > 8
   background: var(--story-gradient-2);
 }
 
+/*
+ * The poster's own language (frame v3): no white bento on the person's colour — facts stand on
+ * hairlines in light type, the way the report's poster draws them. The headline carries the slide.
+ */
+.story-slide--2 {
+  --s-card: transparent;
+  --s-card-ink: var(--s-ink);
+  --s-card-muted: var(--s-muted);
+  --s-card-track: var(--s-track);
+  --s-card-mark: var(--s-ink);
+  --s-accent: transparent;
+  --s-accent-ink: var(--s-ink);
+  --s-accent-muted: var(--s-muted);
+  --s-accent-track: var(--s-track);
+  --s-accent-mark: var(--s-ink);
+}
+
+.story-slide--2 .story-tile {
+  padding-inline: 0;
+  border-radius: 0;
+  box-shadow: inset 0 0.25cqmin 0 var(--s-track);
+}
+
 .story-slide--3 {
   /* The person's room: white cards; the accent tile is their poster, as `tone="ink"` in the report. */
   --s-accent: var(--story-gradient-2);
