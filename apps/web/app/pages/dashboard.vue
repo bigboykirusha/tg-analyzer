@@ -25,10 +25,15 @@ const errorMessage = useErrorMessage()
 
 
 /** Finished reports, newest first: what the user has already learned. */
+/** The reports, the chats pinned in Telegram first (they have no block of their own), then the freshest. */
 const reports = computed(() =>
   workspace.chats
     .filter((chat) => chat.report)
-    .sort((left, right) => Date.parse(right.report!.analyzedAt) - Date.parse(left.report!.analyzedAt)),
+    .sort(
+      (left, right) =>
+        Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)) ||
+        Date.parse(right.report!.analyzedAt) - Date.parse(left.report!.analyzedAt),
+    ),
 )
 /** The user's quiz answers for «Главное»; the summary works without them. */
 const links = ref<UserShareLinkDto[]>([])
@@ -41,11 +46,12 @@ async function loadLinks() {
 }
 /** «Главное»: the month, new messages, a quiz answer, the next round number, a chat without a report. */
 const events = computed(() =>
+  // A chat without a report has a row of its own, «Ещё не разобраны» (HomeUnanalysed).
   deriveHomeEvents(
     reports.value.map((chat) => chat.report!),
     workspace.recent,
     links.value,
-  ),
+  ).filter((event) => event.kind !== 'unanalysed'),
 )
 
 /** Returning users wait for their reports instead of seeing the newcomer screen flash by. */
@@ -139,7 +145,6 @@ onMounted(() => {
           <p class="t-lede">{{ t('home.greeting.lede') }}</p>
         </header>
         <AnalysisBanner />
-        <PinnedPeople />
         <UiPageSection :title="t('home.highlights')">
           <HomeEvents v-if="events.length" :events="events" />
           <MonthSkeleton v-else-if="!workspace.recent && workspace.recentState !== 'error'" />
@@ -169,6 +174,7 @@ onMounted(() => {
             />
           </div>
         </UiPageSection>
+        <HomeUnanalysed />
       </template>
     </div>
   </UiPageContainer>
@@ -288,15 +294,11 @@ onMounted(() => {
   }
 }
 
-/* Phones: one card per row — a list you scroll down, not a carousel that hides the rest. */
-/* Phones: one white card holding the reports as rows. */
+/* Phones: the reports as small posters, two to a row. */
 @media (max-width: 640px) {
   .report-cards {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-    padding: var(--space-1) var(--space-4);
-    border-radius: var(--radius-lg);
-    background: var(--surface);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
   }
 }
 </style>

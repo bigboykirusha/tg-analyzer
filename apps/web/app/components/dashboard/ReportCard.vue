@@ -22,12 +22,6 @@ const subline = computed(() => {
 const pulse = computed(() =>
   props.report.pulse?.some((week) => week.sent || week.received) ? props.report.pulse : null,
 )
-/** Keep report size and freshness on separate lines on a phone. */
-const line = computed(() =>
-  [isGroup.value ? t('chatType.group') : null, tc('common.messagesCount', props.report.totalMessages)]
-    .filter(Boolean)
-    .join(' · '),
-)
 /** On wide screens the card is the person's small poster: their colour, their name, their pulse. */
 const hue = computed(() => hueOf(props.report.chatId))
 const updated = computed(() =>
@@ -44,10 +38,7 @@ const updated = computed(() =>
       <span class="report-card__who">
         <span class="report-card__title">{{ report.title }}</span>
         <span class="report-card__meta">{{ subline }}</span>
-        <span class="report-card__line">{{ line }}</span>
-        <span class="report-card__updated">{{ updated }}</span>
       </span>
-      <ChevronRight class="report-card__row-chevron" aria-hidden="true" />
     </span>
     <span class="report-card__count">
       <strong class="t-num">{{ formatNumber(report.totalMessages) }}</strong>
@@ -85,33 +76,29 @@ const updated = computed(() =>
 }
 
 /*
- * Wider screens: a small poster, like the top of the report it opens — the person's colour, light
- * type, the pulse in the poster's own ink (you solid, them translucent). Tapping it leads into the
- * same colour. Phones keep a list row, where the avatar carries the colour.
+ * A small poster, like the top of the report it opens — the person's colour, light type, the pulse in
+ * the poster's own ink (you solid, them translucent). Tapping it leads into the same colour.
  */
-@media (min-width: 641px) {
-  .report-card {
-    --text: var(--on-poster);
-    --text-muted: var(--on-poster-muted);
-    --border-strong: var(--on-poster-line);
-    --you: var(--on-poster);
-    --them: var(--on-poster-muted);
-    background: var(--poster);
-    color: var(--text);
-  }
-
-  /* The poster carries the person's colour, so the avatar would only repeat it; the name speaks. */
-  .report-card__head :deep(.avatar),
-  .report-card__head > :first-child {
-    display: none;
-  }
-
-  .report-card__title {
-    font: var(--text-h3);
-    letter-spacing: var(--tracking-h3);
-  }
+.report-card {
+  --text: var(--on-poster);
+  --text-muted: var(--on-poster-muted);
+  --border-strong: var(--on-poster-line);
+  --you: var(--on-poster);
+  --them: var(--on-poster-muted);
+  background: var(--poster);
+  color: var(--text);
 }
 
+/* The poster carries the person's colour, so the avatar would only repeat it; the name speaks. */
+.report-card__head :deep(.avatar),
+.report-card__head > :first-child {
+  display: none;
+}
+
+.report-card__title {
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
+}
 @media (hover: hover) and (pointer: fine) {
   .report-card:hover {
     box-shadow: var(--shadow-overlay);
@@ -200,65 +187,41 @@ const updated = computed(() =>
     transform var(--transition-fast);
 }
 
-.report-card__line,
-.report-card__updated,
-.report-card__row-chevron {
-  display: none;
-}
-
-/* Phones: a row with readable size and freshness instead of a clipped sentence; the avatar keeps the colour. */
+/* Phones: the same small poster, two to a row — the name, the size of the chat and its pulse. */
 @media (max-width: 640px) {
   .report-card {
-    padding: var(--space-3) 0;
-    border-radius: 0;
-    background: none;
-  }
-
-  .report-card + .report-card {
-    border-top: 1px solid var(--border);
+    gap: var(--space-1);
+    min-height: calc(var(--space-20) * 2);
+    padding: var(--space-4);
   }
 
   .report-card__head {
     margin-bottom: 0;
   }
 
-  .report-card__who {
-    flex: 1;
-  }
-
   .report-card__meta,
-  .report-card__count,
-  .report-card__pulse,
   .report-card__foot {
     display: none;
   }
 
-  /* Up to two lines: the time of the analysis is the part that gets cut first otherwise. */
-  .report-card__line {
-    display: block;
-    color: var(--text-muted);
-    font: var(--text-small);
-    overflow-wrap: anywhere;
-  }
-
-  .report-card__updated {
-    display: block;
-    color: var(--text-muted);
-    font: var(--text-caption);
-  }
-
   .report-card__title {
     display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    font: var(--text-title);
+    font-weight: 600;
     white-space: normal;
     overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
-  .report-card__row-chevron {
-    display: block;
-    flex: none;
-    color: var(--text-muted);
+  .report-card__count strong {
+    font: var(--text-small);
+    font-weight: 600;
+  }
+
+  .report-card__pulse {
+    margin-top: auto;
+    padding-top: var(--space-3);
   }
 }
 </style>

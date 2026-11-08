@@ -24,18 +24,18 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   // With a first report the home page turns into the summary; the chat list lives on /new.
   await expect(page.getByRole('heading', { name: 'Главная' })).toBeVisible()
   if (page.viewportSize()!.width <= 640) {
-    await expect(page.locator('.report-card__updated').first()).toHaveText(/^Обновлён/)
+    // Reports are small posters two to a row: the name fits its card.
     await expect
       .poll(() =>
         page
-          .locator('.report-card__line')
+          .locator('.report-card__title')
           .first()
           .evaluate((element) => element.scrollWidth <= element.clientWidth),
       )
       .toBe(true)
-    // The busiest chat of the month without a report starts its analysis from its tile, and the button fits.
-    const waiting = page.locator('.home-event__analyse').first()
-    await expect(waiting).toContainText('Разобрать чат')
+    // The busiest chats of the month without a report wait in «Ещё не разобраны»; each starts its analysis.
+    const waiting = page.locator('.unanalysed__item').first()
+    await expect(waiting).toHaveAccessibleName(/^Разобрать чат/)
     expect(await waiting.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
   }
   await page.screenshot({ path: testInfo.outputPath('dashboard.png'), fullPage: true, animations: 'disabled' })

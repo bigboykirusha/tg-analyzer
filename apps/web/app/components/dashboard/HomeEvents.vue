@@ -30,6 +30,12 @@ const busy = (chatId: string) =>
   (analysis.isActive.value && analysis.progress.value.chatId === chatId) ||
   analysis.queued.value.some((item) => item.chatId === chatId)
 
+/**
+ * «Сейчас главное»: the first highlight about one person leads, painted in their colour like a small
+ * poster. Phones show only it; the busiest chats without a report have their own row below the reports.
+ */
+const lead = computed(() => props.events.find((event) => event.kind !== 'month')?.kind ?? null)
+
 const maxTop = computed(() => {
   const month = props.events.find((event) => event.kind === 'month')
   return month?.kind === 'month' ? Math.max(...month.top.map((chat) => chat.messages), 1) : 1
@@ -57,7 +63,12 @@ const ordinal = (index: number) => t('report.milestones.nth', { n: formatNumber(
         </p>
       </article>
 
-      <article v-else-if="event.kind === 'new'" class="tile home-event" :data-hue="hueOf(event.chatId)">
+      <article
+        v-else-if="event.kind === 'new'"
+        class="tile home-event"
+        :class="{ 'is-lead': event.kind === lead }"
+        :data-hue="hueOf(event.chatId)"
+      >
         <p class="home-event__label">
           <ChatAvatar :chat-id="event.chatId" :title="event.title" size="xs" />{{ event.title }}
         </p>
@@ -81,6 +92,7 @@ const ordinal = (index: number) => t('report.milestones.nth', { n: formatNumber(
         v-else-if="event.kind === 'quiz'"
         :to="`/chat/${event.chatId}`"
         class="tile home-event home-event--link"
+        :class="{ 'is-lead': event.kind === lead }"
         :data-hue="hueOf(event.chatId)"
       >
         <p class="home-event__label">
@@ -98,6 +110,7 @@ const ordinal = (index: number) => t('report.milestones.nth', { n: formatNumber(
         v-else-if="event.kind === 'milestone'"
         :to="`/chat/${event.chatId}`"
         class="tile home-event home-event--link"
+        :class="{ 'is-lead': event.kind === lead }"
         :data-hue="hueOf(event.chatId)"
       >
         <p class="home-event__label">
@@ -106,7 +119,12 @@ const ordinal = (index: number) => t('report.milestones.nth', { n: formatNumber(
         <p class="home-event__title">{{ tc('home.milestoneTitle', event.days, { n: ordinal(event.index) }) }}</p>
       </NuxtLink>
 
-      <article v-else-if="event.kind === 'unanalysed'" class="tile home-event" :data-hue="hueOf(event.chatId)">
+      <article
+        v-else-if="event.kind === 'unanalysed'"
+        class="tile home-event"
+        :class="{ 'is-lead': event.kind === lead }"
+        :data-hue="hueOf(event.chatId)"
+      >
         <p class="home-event__label">
           <ChatAvatar :chat-id="event.chatId" :title="event.title" size="xs" />{{ event.title }}
         </p>
@@ -145,6 +163,37 @@ const ordinal = (index: number) => t('report.milestones.nth', { n: formatNumber(
 
 .home-event {
   gap: var(--space-4);
+}
+
+/* The lead highlight is the person's small poster: their colour, light type, a light button. */
+.home-event.is-lead {
+  --text: var(--on-poster);
+  --text-muted: var(--on-poster-muted);
+  --accent: var(--on-poster);
+  --on-accent: var(--poster);
+  --surface-raised: var(--on-poster-chip);
+  --border: var(--on-poster-line);
+  --border-strong: var(--on-poster-line);
+  --hover: var(--on-poster-well);
+  background: var(--poster);
+  color: var(--on-poster);
+}
+
+.home-event.is-lead :deep(.btn--secondary) {
+  background: var(--on-poster);
+  color: var(--poster);
+  box-shadow: none;
+}
+
+/* Phones: one thing first — the lead highlight alone. */
+@media (max-width: 640px) {
+  .home-event:not(.is-lead) {
+    display: none;
+  }
+
+  .home-events {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .home-event--link {
