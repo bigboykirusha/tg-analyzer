@@ -893,10 +893,6 @@ svg.row-check {
  * The report beside its table of contents (ReportToc) on wide screens: the overview card and the tab
  * bar step aside there, the contents column takes their job. Below 1200 px the column is not drawn.
  */
-.report-layout > .toc {
-  display: none;
-}
-
 @media (min-width: 1200px) {
   .report-layout {
     display: grid;
@@ -905,12 +901,15 @@ svg.row-check {
     gap: var(--space-8);
   }
 
-  .report-layout > .toc {
-    display: grid;
-  }
-
   .report-layout .highlights,
   .report-nav {
     display: none;
+  }
+}
+
+/* Installed on the home screen: the report's dock sits at the bottom, so the page ends above it. */
+@media (display-mode: standalone) and (max-width: 900px) {
+  body:has(.report-dock) {
+    padding-bottom: calc(var(--control-md) + var(--space-8) + env(safe-area-inset-bottom, 0px));
   }
 }

@@ -31,11 +31,18 @@ const current = computed(() => spy.current.value ?? props.headlines[0]?.id ?? nu
 
 <style scoped>
 .toc {
-  position: sticky;
-  top: calc(var(--topbar-height) + var(--space-6));
-  display: grid;
-  gap: var(--space-1);
-  align-self: start;
+  display: none;
+}
+
+/* Only wide screens draw the column; phones and tablets keep the overview card and the capsule. */
+@media (min-width: 1200px) {
+  .toc {
+    position: sticky;
+    top: calc(var(--topbar-height) + var(--space-6));
+    display: grid;
+    gap: var(--space-1);
+    align-self: start;
+  }
 }
 
 .toc__title {

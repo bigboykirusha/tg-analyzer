@@ -103,6 +103,28 @@ function act(action: 'share' | 'story' | 'reanalyse') {
     </template>
   </UiPageBar>
 
+  <!--
+    Installed on the home screen (display-mode: standalone) there is no Safari bar at the bottom: the
+    chapters and «Поделиться» move to a dock under the thumb. In a browser tab it is never drawn.
+  -->
+  <nav v-if="capsule" class="report-dock no-print" :aria-label="t('report.tabs.label')">
+    <div class="report-dock__chapters">
+      <button
+        v-for="headline in headlines"
+        :key="headline.id"
+        type="button"
+        class="report-dock__chapter"
+        :aria-current="headline.id === spy.current.value ? 'location' : undefined"
+        @click="spy.go(headline.id)"
+      >
+        {{ headline.label }}
+      </button>
+    </div>
+    <button type="button" class="report-dock__share" :aria-label="t('share.open')" @click="emit('share')">
+      <Share aria-hidden="true" />
+    </button>
+  </nav>
+
   <UiBottomSheet v-if="capsule" :open="sheetOpen" :title="summary.title" @close="sheetOpen = false">
     <p class="chapters__meta t-small t-muted">{{ meta }}</p>
     <nav class="chapters" :aria-label="t('report.tabs.label')">
@@ -207,6 +229,68 @@ function act(action: 'share' | 'story' | 'reanalyse') {
   .report-bar__circle:active,
   .capsule:active {
     transform: scale(var(--press-scale));
+  }
+}
+
+.report-dock {
+  display: none;
+}
+
+@media (display-mode: standalone) and (max-width: 900px) {
+  .report-dock {
+    position: fixed;
+    z-index: var(--z-header);
+    inset: auto var(--space-3) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .report-dock__chapters {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-1);
+    border-radius: var(--radius-full);
+    background: var(--toolbar-glass);
+    box-shadow: var(--shadow-overlay);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+  }
+
+  .report-dock__chapter {
+    flex: 1;
+    min-width: 0;
+    min-height: var(--control-md);
+    border: 0;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font: var(--text-ui);
+    white-space: nowrap;
+  }
+
+  .report-dock__chapter[aria-current] {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .report-dock__share {
+    display: grid;
+    flex: none;
+    width: calc(var(--control-md) + var(--space-2));
+    height: calc(var(--control-md) + var(--space-2));
+    place-items: center;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--toolbar-glass);
+    box-shadow: var(--shadow-overlay);
+    color: var(--text);
+    cursor: pointer;
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    --icon-size: var(--icon-md);
   }
 }
 
