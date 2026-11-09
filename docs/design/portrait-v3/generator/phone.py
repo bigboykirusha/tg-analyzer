@@ -1,11 +1,11 @@
 """Phone screens (390×844). Mila's report is stale (640 new since 2 Nov) on every screen that shows it."""
 from kit import *
 
-FAB = btn('Новый анализ', 'primary', 'xl fab', 'plus')
+FAB = btn('Новый анализ', 'primary', 'fab', 'plus')
 LIVE_PCT = 63
-DOCK = (f'<div class="dock"><a href="#" class="live" aria-label="Разбираем «Дима (работа)», {LIVE_PCT}%. Подробнее">{ring(LIVE_PCT, av("dima", 32), 40)}'
-        f'<span class="grow stack"><span class="t-small-strong trunc">Разбираем «Дима (работа)»</span><span class="t-small muted">{LIVE_PCT}%, ещё около минуты</span></span>{ic("up", "chev")}</a>'
-        f'<button class="fab-round" aria-label="Новый анализ">{ic("plus")}</button></div>')
+DOCK = (f'<div class="dock"><a href="#" class="live" aria-label="Разбираем «Дима (работа)», {LIVE_PCT}%. Подробнее">{ring(LIVE_PCT, av("dima", 24), 36)}'
+        f'<span class="t-small-strong trunc">Разбираем «Дима (работа)»</span><span class="t-small muted">{LIVE_PCT}%</span>{ic("up", "chev")}</a>'
+        '</div>')
 
 
 def sec(title, inner):
@@ -31,7 +31,7 @@ def lead_mila():
   <a href="#" class="ev-label t-small muted">{av('mila', 24)}Мила</a>
   <h3 class="t-h3">640 новых сообщений с 2 ноября</h3>
   <p class="t-small muted">Отчёт пока о переписке до 2 ноября.</p>
-  <div class="row-f gap-2 mt-auto">{btn('Обновить отчёт', 'poster-2', 'md', 'refresh')}{btn('Открыть', 'plain', 'md', tag='a')}</div></article>'''
+  <div class="row-f gap-2 mt-auto">{btn('Обновить отчёт', 'poster-2', '', 'refresh')}{btn('Открыть', 'plain', '', tag='a')}</div></article>'''
 
 
 def home(lead, theme=None, fab=FAB):
@@ -67,7 +67,7 @@ def S_progress_open():
   {sheet_head('Разбираем переписку')}
   {progress_body()}
   <div class="stack">{row('', 'Написать, когда будет готов', 'Сообщение придёт в Telegram', switch(True, 'Написать в Telegram, когда отчёт будет готов'))}</div>
-  {btn('Отменить разбор', 'tinted', 'lg block')}
+  {btn('Отменить разбор', 'tinted', 'xl block')}
 </section>'''
     return page('Разбор — подробности', dim_home() + '<div class="scrim"></div>' + sheet)
 
@@ -77,7 +77,7 @@ def S_session():
   <span class="empty-ic">{ic('power')}</span>
   <h3 class="t-h3">Telegram завершил сеанс</h3>
   <p class="t-small muted">Отчёты на месте. Чтобы разбирать новые чаты и обновлять отчёты, войдите снова — это займёт минуту.</p>
-  {btn('Войти снова', 'primary', 'md')}</article>'''
+  {btn('Войти снова', 'primary')}</article>'''
     return home(lead, fab='')
 
 
@@ -244,7 +244,7 @@ def stories_feature(size='md'):
     cover = f'<span class="cover-thumb" aria-hidden="true"><span class="story-seg" style="grid-template-columns:repeat(4,1fr)"><i class="on"></i><i></i><i></i><i></i></span><span class="stack gap-1"><b class="t-small-strong">Мила</b>{pulse(12, 8, 1.0)}</span></span>'
     return f'''<a href="#" class="feature poster" data-hue="red">{cover}
   <span class="grow stack gap-1"><b class="t-h3">Итоги: Мила</b><span class="t-small muted">Четыре кадра о вашей переписке</span>
-  <span style="margin-top:var(--space-3)">{btn('Смотреть', 'poster', size, 'play', tag='span')}</span></span></a>'''
+  <span style="margin-top:var(--space-3)">{btn('Смотреть', 'poster', '', 'play', tag='span')}</span></span></a>'''
 
 
 SHARE_ROWS = f'''<div class="stack">{row(lead_ic('download'), 'Сохранить в галерею', '4 картинки для сторис', '', '', False, True)}{row(lead_ic('send'), 'Отправить', 'В Telegram или другое приложение', '', '', False, True)}</div>
@@ -388,7 +388,7 @@ def S_guest():
     main = f'''<main class="cards" style="padding:var(--space-4) var(--page-gutter) var(--fab-clearance)"><h2 class="sr-only">Главное</h2>
   {tile('Кто пишет больше', 'Пишете на равных', cmp('Дима', 'Мила', '51%', '49%', 51))}
   {tile('Коротко', None, kv('Отвечаете', 'оба за 3 мин') + kv('Пик', 'с 11:00 до 14:00') + kv('Писали друг другу', '196 из 208 дней'), rows=True)}
-</main>{btn('Разобрать свои переписки', 'primary', 'xl fab', tag='a')}'''
+</main>{btn('Разобрать свои переписки', 'primary', 'fab', tag='a')}'''
     return page('Гость — отчёт по ссылке', poster + main, hue='red', room=True)
 
 
@@ -545,7 +545,7 @@ def S_landing():
   <div class="cards" aria-label="Примеры" style="margin-top:var(--space-3)">{person('mila', 'Пишете на равных', 'Мила, 51 на 49', 1)}{person('artyom', 'Отвечает быстрее вас', 'Артём, в 3 раза', 2)}</div>
 </main>'''
     nav = f'<header class="nav-ph between">{logo(28, word=True)}<a href="#" class="t-ui">Войти</a></header>'
-    bar = f'<div class="stack gap-2" style="position:absolute;left:0;right:0;bottom:0;padding:var(--space-3) var(--page-gutter) var(--safe-bottom);background:var(--bg)">{btn("Войти через Telegram", "primary", "xl block", tag="a")}{btn("Посмотреть пример отчёта", "plain", "md block", tag="a")}</div>'
+    bar = f'<div class="stack gap-2" style="position:absolute;left:0;right:0;bottom:0;padding:var(--space-3) var(--page-gutter) var(--safe-bottom);background:var(--bg)">{btn("Войти через Telegram", "primary", "xl block", tag="a")}{btn("Посмотреть пример отчёта", "plain", "block", tag="a")}</div>'
     return page('Лендинг', nav + hero_ + bar)
 
 

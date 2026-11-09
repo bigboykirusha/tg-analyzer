@@ -56,7 +56,7 @@ CSS = r"""
   --scrim: rgba(0,0,0,0.32);
   --bar-glass: rgba(242,242,247,0.8); --room-glass: var(--bar-glass); --glass-filter: saturate(180%) blur(20px);
   --shadow-overlay: 0 16px 48px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.04);
-  --shadow-float: 0 8px 24px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.08);
+  --shadow-float: 0 4px 16px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
   --opacity-disabled: 0.38; --press-scale: 0.97;
   --heat-0: #EEEEF2; --heat-1: #C7C7CC; --heat-2: #9C9CA3; --heat-3: #6C6C72; --heat-4: #3A3A3C;
   --chart-neutral: #C7C7CC; --chart-neutral-strong: #3A3A3C;
@@ -77,7 +77,7 @@ CSS = r"""
   --text-small-strong: 500 14px/20px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
   --radius-mark: 4px; --radius-xs: 8px; --radius-sm: 12px; --radius-md: 16px; --radius-lg: 20px; --radius-xl: 32px; --radius-full: 999px;
-  --control-sm: 36px; --control-md: 36px; --control-lg: 44px; --control-xl: 48px; --row: 56px;
+  --control-sm: 36px; --control-md: 36px; --control-lg: 44px; --control-xl: 56px; --row: 56px;
   --card-padding: 16px; --card-gap: 12px; --page-gutter: 16px; --page-gap: 32px;
 }
 .pc {
@@ -183,7 +183,7 @@ CSS = r"""
 .room .icon-btn { background: var(--surface); }
 .sheet .icon-btn, .dialog .icon-btn { background: var(--fill-raised); }
 .icon-btn.on-poster { background: var(--on-poster-chip); color: var(--on-poster); }
-.icon-btn.lg { width: var(--control-xl); height: var(--control-xl); background: var(--surface); }
+.icon-btn.lg { width: var(--control-lg); height: var(--control-lg); }
 .icon-btn.sm { width: var(--control-sm); height: var(--control-sm); }
 /* avatars 24 / 32 / 40 / 48 / 64 */
 .av { border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center;
@@ -224,6 +224,12 @@ CSS = r"""
 .group-f { font: var(--text-small); color: var(--text-muted); padding: var(--space-2) var(--space-4) 0; }
 .row { position: relative; display: flex; align-items: center; gap: var(--space-3); min-height: var(--row); padding: var(--space-2) 0; box-shadow: inset 0 -1px 0 var(--border); width: 100%; }
 .row:last-child { box-shadow: none; }
+/* the separator starts where the text starts, as in iOS lists */
+.row:has(> .av, > .lead-ic, > span > .av) { box-shadow: none; }
+.row:has(> .av, > .lead-ic, > span > .av)::after { content: ''; position: absolute; right: 0; bottom: 0; height: 1px; background: var(--border); left: var(--row-inset, 52px); }
+.row:has(> .av-32, > .lead-ic) { --row-inset: 44px; } .row:has(> .av-24) { --row-inset: 36px; }
+.row:last-child::after { display: none; }
+.poster .row:has(> .av, > .lead-ic)::after { background: var(--on-poster-line); }
 .row.compact { min-height: 44px; }
 .row .t { font: var(--text-title); }
 .row .m { font: var(--text-small); color: var(--text-muted); }
@@ -285,7 +291,7 @@ CSS = r"""
 .podium i.first { background: var(--chart-neutral-strong); }
 .podium b { display: block; font: var(--text-small); color: var(--text-muted); margin-top: var(--space-1); font-weight: 400; }
 /* bars: the one place for material — only over scrolling content */
-.nav-ph { position: relative; display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--page-gutter); min-height: var(--row); }
+.nav-ph { position: relative; display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--page-gutter); min-height: var(--row); }
 .material { background: var(--bar-glass); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); box-shadow: inset 0 -1px 0 var(--border); }
 .room .material { background: var(--room-glass); }
 .nav-title { flex: 1; min-width: 0; text-align: center; display: flex; flex-direction: column; }
@@ -382,12 +388,12 @@ CSS = r"""
 .ring { position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center; }
 .ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 .ring .track { stroke: var(--surface-2); } .ring .val { stroke: var(--accent); }
-.dock { position: absolute; left: var(--page-gutter); right: var(--page-gutter); bottom: var(--safe-bottom); display: flex; gap: var(--space-2); align-items: center; }
-.live { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-3); height: 56px; padding: 0 var(--space-4) 0 var(--space-2); border-radius: var(--radius-full);
-  background: var(--surface-raised); color: var(--text); box-shadow: var(--shadow-float); }
+.dock { position: absolute; left: 50%; transform: translateX(-50%); max-width: calc(100% - 2 * var(--page-gutter)); bottom: var(--safe-bottom); display: flex; }
+.account-btn { width: var(--control-lg); height: var(--control-lg); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--surface-raised); box-shadow: inset 0 0 0 1px var(--border), var(--shadow-float); position: relative; }
+.live { min-width: 0; display: flex; align-items: center; gap: var(--space-2); height: var(--control-lg); padding: 0 var(--space-3) 0 var(--space-1); border-radius: var(--radius-full); color: var(--text); }
 .live .chev { width: 16px; height: 16px; color: var(--text-faint); }
-.fab-round { width: var(--row); height: var(--row); border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-float); display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.fab-round svg { width: 24px; height: 24px; }
+.fab-round { width: var(--control-lg); height: var(--control-lg); border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-float); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.fab-round svg { width: 20px; height: 20px; }
 .sb-live { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--surface-2); margin: var(--space-2) 0; }
 .sb-live .ring .track { stroke: var(--surface); }
 /* flags: drawn, because Windows shows letters instead of flag emoji */
@@ -404,12 +410,12 @@ CSS = r"""
 .feature { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); }
 .fan { position: relative; width: 88px; height: 112px; flex: none; }
 .fan .thumb916 { position: absolute; top: 0; width: 64px; box-shadow: 0 0 0 1px var(--on-poster-line); background: var(--poster); }
-.lead-ic { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-2); display: inline-flex; align-items: center; justify-content: center; flex: none; color: var(--text); }
-.sheet .lead-ic, .dialog .lead-ic { background: var(--fill-raised); }
+.lead-ic { width: 32px; height: 32px; border-radius: 50%; background: none; display: inline-flex; align-items: center; justify-content: center; flex: none; color: var(--text); }
+
 .lead-ic svg { width: 20px; height: 20px; }
 .big .cmp .num { font: var(--text-figure); letter-spacing: var(--tracking-figure); } .big .bar { height: 12px; }
 .row.few .t { color: var(--text-muted); }
-.lead-ic.danger { color: var(--danger); background: var(--danger-soft); }
+.lead-ic.danger { color: var(--danger); }
 .poster .av:not(.you):not(.add) { background: var(--avatar-on-poster); color: var(--on-them); }
 .poster .choice .av:not(.you) { background: linear-gradient(var(--room-tint), var(--poster)); color: var(--on-poster); }
 .heat i.none { background: none; }
@@ -437,6 +443,15 @@ CSS = r"""
 .cover-thumb { width: 72px; height: 128px; flex: none; border-radius: var(--radius-sm); background: var(--poster); box-shadow: inset 0 0 0 1px var(--on-poster-line);
   padding: var(--space-2); display: flex; flex-direction: column; justify-content: space-between; }
 .story-body { justify-content: flex-start; padding-top: var(--space-16); }
+/* Controls that float over content — header circles, sheet close, the bottom pill, the progress capsule, «+» — are one family:
+   44 on the phone, pill or circle, raised surface, hairline ring, one soft shadow. On a poster the same shape, translucent. */
+.ph .icon-btn { width: var(--control-lg); height: var(--control-lg); }
+.ph .icon-btn.sm { width: var(--control-sm); height: var(--control-sm); }
+.nav-ph .icon-btn:not(.on-poster), .icon-btn.lg, .live { background: var(--surface-raised); box-shadow: inset 0 0 0 1px var(--border), var(--shadow-float); }
+.sheet-h .icon-btn, .dialog .icon-btn { background: var(--surface-raised); box-shadow: inset 0 0 0 1px var(--border); }
+.icon-btn.on-poster { box-shadow: inset 0 0 0 1px var(--on-poster-line); }
+.fab, .fab-round { box-shadow: var(--shadow-float); }
+.pc { --control-xl: 44px; }
 .tab { --page-gutter: 32px; }
 .tab .column { width: 100%; max-width: 720px; margin: 0 auto; }
 .tab .poster > * { width: 100%; max-width: calc(720px - 2 * var(--page-gutter)); margin-left: auto; margin-right: auto; }

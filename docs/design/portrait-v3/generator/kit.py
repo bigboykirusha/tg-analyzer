@@ -292,7 +292,7 @@ renderVals() {{ return {{}}; }}
 
 
 def ph_home_nav():
-    return f'<header class="nav-ph between">{logo(32)}<a href="#" class="hit" style="position:relative;border-radius:50%" aria-label="Аккаунт">{av(None, 32, you=True)}</a></header>'
+    return f'<header class="nav-ph between">{logo(32)}<a href="#" class="account-btn" aria-label="Аккаунт">{av(None, 32, you=True)}</a></header>'
 
 
 def ph_report_nav(name, chapter, material=True):
