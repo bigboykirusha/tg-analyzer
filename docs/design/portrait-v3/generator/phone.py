@@ -28,10 +28,10 @@ REPORT_TILES = ('<div class="grid-2">' + mini_poster('mila', '4 800 сообще
 
 def lead_mila():
     return f'''<article class="tile poster" data-hue="red">
-  <a href="#" class="row-f gap-2 t-small muted">{av('mila', 24)}Мила</a>
+  <a href="#" class="ev-label t-small muted">{av('mila', 24)}Мила</a>
   <h3 class="t-h3">640 новых сообщений с 2 ноября</h3>
   <p class="t-small muted">Отчёт пока о переписке до 2 ноября.</p>
-  <div class="row-f gap-2">{btn('Обновить отчёт', 'poster-2', 'md', 'refresh')}{btn('Открыть', 'plain', 'md', tag='a')}</div></article>'''
+  <div class="row-f gap-2 mt-auto">{btn('Обновить отчёт', 'poster-2', 'md', 'refresh')}{btn('Открыть', 'plain', 'md', tag='a')}</div></article>'''
 
 
 def home(lead, theme=None, fab=FAB):
@@ -139,7 +139,8 @@ def report_actions(key='mila'):
 def S_menu():
     sheet = f'''<section class="sheet" role="dialog" aria-modal="true" aria-label="Отчёт «Мила»">
   <span class="grabber"></span>
-  <div class="row-f gap-3">{av('mila', 40)}<div class="grow stack"><h2 class="t-h3">Мила</h2><p class="t-small muted">Отчёт от 2 ноября, 4 800 сообщений</p></div>{ibtn('x', 'Закрыть')}</div>
+  {sheet_head('Отчёт')}
+  <div class="stack">{row(av('mila'), 'Мила', 'Отчёт от 2 ноября, 4 800 сообщений')}</div>
   {report_actions()}
 </section>'''
     return page('Действия с отчётом («⋯» на карточке)', dim_home() + '<div class="scrim"></div>' + sheet)
@@ -180,7 +181,7 @@ def chapter_head(title, lede):
 
 
 HERO_SHARE = hero('Кто пишет больше', 'Пишете на равных', cmp('Вы', 'Мила', '51%', '49%', 51) + '<p class="t-small muted">2 434 и 2 366 сообщений</p>')
-T_SPEED = tile('Кто отвечает быстрее', 'Отвечаете одинаково быстро', cmp('Вы', 'Мила', '3 мин', '3 мин') + '<p class="note">Обычно — за 3 минуты. Ночью дольше у обоих.</p>')
+T_SPEED = tile('Кто отвечает быстрее', 'Отвечаете одинаково быстро', cmp('Вы', 'Мила', '3 мин', '3 мин') + '<p class="note">Обычно — за 3 минуты. Ночью дольше у обоих.</p>')
 T_QUESTIONS = tile('Кто задаёт вопросы', 'Спрашиваете поровну',
                    '<div style="display:grid;grid-template-columns:var(--space-12) minmax(0,1fr);gap:var(--space-2) var(--space-3);align-items:center">'
                    '<span class="t-small muted">Вы</span><span class="squares">' + '<i></i>' * 22 + '</span>'
@@ -239,16 +240,9 @@ def S_ending():
     return page('Отчёт — конец', ph_report_nav('Мила', 'О чём, 3 из 3') + scrolled + ending(), hue='red', room=True)
 
 
-def fan():
-    cards = ''
-    for i, (x, y, r) in enumerate([(0, 6, -8), (12, 2, -2), (24, 0, 5)]):
-        inner = f'<span class="story-seg" style="grid-template-columns:repeat(4,1fr)"><i class="on"></i><i></i><i></i><i></i></span><span class="stack gap-1"><b>Мила</b>{pulse(10, 5, 1.0)}</span>' if i == 2 else ''
-        cards += f'<span class="thumb916" style="left:{x}px;top:{y}px;transform:rotate({r}deg);padding:var(--space-2)">{inner}</span>'
-    return f'<span class="fan" aria-hidden="true">{cards}</span>'
-
-
 def stories_feature(size='md'):
-    return f'''<a href="#" class="feature poster" data-hue="red">{fan()}
+    cover = f'<span class="cover-thumb" aria-hidden="true"><span class="story-seg" style="grid-template-columns:repeat(4,1fr)"><i class="on"></i><i></i><i></i><i></i></span><span class="stack gap-1"><b class="t-small-strong">Мила</b>{pulse(12, 8, 1.0)}</span></span>'
+    return f'''<a href="#" class="feature poster" data-hue="red">{cover}
   <span class="grow stack gap-1"><b class="t-h3">Итоги: Мила</b><span class="t-small muted">Четыре кадра о вашей переписке</span>
   <span style="margin-top:var(--space-3)">{btn('Смотреть', 'poster', size, 'play', tag='span')}</span></span></a>'''
 
@@ -300,7 +294,7 @@ def story(content, i=1, n=4, label='Итоги: Мила'):
 
 
 def S_story_cover():
-    c = f'''<div class="stack grow gap-6" style="justify-content:center">
+    c = f'''<div class="stack grow gap-6 story-body">
   {pulse(40, 72, 1.0)}
   <div class="stack gap-3 poster-name"><h1 class="t-display">Мила</h1><p class="t-h3">4 800 сообщений за 208 дней</p>
   <p class="t-small muted">С 9 апреля по 2 ноября 2026</p></div>
@@ -308,7 +302,7 @@ def S_story_cover():
     return page('Итоги — обложка', story(c, 1, label='Итоги, 1 из 4'), hue='red')
 
 
-STORY_TOGETHER = f'''<div class="stack grow gap-8" style="justify-content:center">
+STORY_TOGETHER = f'''<div class="stack grow gap-8 story-body">
   <div class="stack gap-3"><h1 class="t-display">На равных</h1><p class="t-body muted">51 на 49, и отвечаете одинаково быстро</p></div>
   <div class="big">{cmp('Вы', 'Мила', '51%', '49%', 51)}</div>
   <div class="facts"><div><b>3 мин</b><span>отвечаете оба</span></div><div><b>по очереди</b><span>начинаете разговор</span></div>
@@ -321,7 +315,7 @@ def S_story():
 
 
 def S_story_end():
-    c = f'''<div class="stack grow gap-8" style="justify-content:center">
+    c = f'''<div class="stack grow gap-8 story-body">
   <h1 class="t-display">Вы и Мила</h1>
   <div class="facts"><div><b>51 на 49</b><span>пишете на равных</span></div><div><b>11–14</b><span>ваши часы</span></div>
   <div><b>«good»</b><span>слово переписки</span></div><div><b>196 дней</b><span>из 208 на связи</span></div></div>
@@ -336,12 +330,13 @@ def member_rows(sel=None):
     out = ''
     for k, n, role, s in GROUP_MEMBERS:
         a = av(None, 40, True) if k == 'you' else av(k)
-        out += row(a, n, role, f'<span class="t-ui muted">{s}</span>', 'compact' + (' is-selected' if k == sel else ''), k != 'you', k != 'you')
+        trail = f'<span class="val">{s}</span>' + ('<span class="chev-space"></span>' if k == 'you' else '')
+        out += row(a, n, role, trail, 'compact' + (' is-selected' if k == sel else ''), k != 'you', k != 'you')
     return out
 
 
 def awards_tile():
-    return tile('Номинации', None, ''.join(row(av(k, 32), t, f'<span class="them-ink" data-hue="{P[k][2]}">{P[k][0]}</span>, {v}', '', 'compact') for k, t, v in [
+    return tile('Номинации', None, ''.join(row(av(k, 32), t, f'{P[k][0]}, {v}', '', 'compact') for k, t, v in [
         ('yulia', 'Заводит разговоры', '15% разговоров'), ('alexey', 'Отвечает больше всех', '41 ответ в день'), ('sergey', 'Звезда реакций', '468 реакций'), ('maria', 'Укладывает чат спать', '24 раза')]), rows=True)
 
 
@@ -351,16 +346,14 @@ def S_group():
 
 
 def pairs_tile():
-    def nm(k):
-        return f'<span class="them-ink" data-hue="{P[k][2]}">{P[k][0]}</span>'
-    return tile('Самые плотные пары', 'Наташа и Мария', ''.join(row('', f'{nm(a)} и {nm(b)}', m, f'<span class="t-ui muted">{c}</span>', 'compact') for a, b, m, c in [
+    def duo(a, b):
+        return f'<span class="row-f" style="flex:none">{av(a, 24)}<span style="margin-left:calc(-1 * var(--space-2))">{av(b, 24)}</span></span>'
+    return tile('Самые плотные пары', 'Наташа и Мария', ''.join(row(duo(a, b), f'{P[a][0]} и {P[b][0]}', m, f'<span class="val">{c}</span>', 'compact') for a, b, m, c in [
         ('natasha', 'maria', 'Отвечают друг другу чаще всех', '309'), ('natasha', 'sergey', '', '214'), ('natasha', 'yulia', '', '188')]), rows=True)
 
 
 def starts_tile():
-    def nm(k):
-        return f'<span class="them-ink" data-hue="{P[k][2]}">{P[k][0]}</span>'
-    return tile('Кто начинает разговоры', 'Чаще всех — Юля', ''.join(kv(nm(k), v) for k, v in [('yulia', '15%'), ('alexey', '13%'), ('sergey', '11%')]), rows=True)
+    return tile('Кто начинает разговоры', 'Чаще всех — Юля', ''.join(row(av(k, 24), P[k][0], '', f'<span class="val">{v}</span>', 'compact') for k, v in [('yulia', '15%'), ('alexey', '13%'), ('sergey', '11%')]), rows=True)
 
 
 def S_group_talk():
@@ -374,7 +367,7 @@ def member_body():
     return f'''<div class="row-f gap-3">{av('sergey', 64)}<div class="grow stack"><h3 class="t-h2">Сергей</h3><p class="t-small muted">Ядро, 22% сообщений</p></div></div>
   <div class="stack">{kv('Сообщений', '1 980')}{kv('Начинает разговоры', '11%')}{kv('Получает ответов', '154')}{kv('Отвечает обычно', 'за 2 мин')}{kv('Последнее сообщение', '8 ноября')}</div>
   <div class="stack gap-2"><p class="t-small muted">Частые слова</p>{chips(['макет', 'бэклог', 'еду', 'запиши', 'перенесли'])}</div>
-  <div class="stack"><p class="t-small muted">Чаще всего отвечает</p>{row(av('natasha', 32), 'Наташе', '', '<span class="t-ui muted">214</span>', 'compact')}{row(av('maria', 32), 'Марии', '', '<span class="t-ui muted">156</span>', 'compact')}</div>'''
+  <div class="stack"><p class="t-small muted">Чаще всего отвечает</p>{row(av('natasha', 32), 'Наташе', '', '<span class="val">214</span>', 'compact')}{row(av('maria', 32), 'Марии', '', '<span class="val">156</span>', 'compact')}</div>'''
 
 
 def S_member():

@@ -161,7 +161,7 @@ def chips(words, kind=''):
 
 
 def pulse(n=64, h=32, seed=1.0, mirrored=True, read_from=None, up_scale=1.0):
-    up = [max(2, round(v * up_scale)) for v in bars(n, seed, hi=h, lo=3)]
+    up = [max(4, round(v * up_scale)) for v in bars(n, seed, hi=h, lo=3)]
     if not mirrored:
         cells = ''.join(f'<i class="{"off" if read_from is not None and i < read_from else ""}" style="height:{(v if read_from is None or i >= read_from else 3)}px"></i>' for i, v in enumerate(up))
         return f'<div class="pulse" aria-hidden="true"><div class="one" style="height:{h}px">{cells}</div></div>'

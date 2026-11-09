@@ -19,7 +19,7 @@ def sec(title, inner, extra=''):
 def quiz_tile():
     dots = ''.join(f'<i style="width:20px;height:20px;border-radius:50%;background:{"var(--you)" if k < 4 else "var(--surface-2)"}"></i>' for k in range(5))
     return f'''<a href="#" class="tile">
-  <span class="row-f gap-2 t-small muted">{av('mama', 24)}Мама ответила на угадайку</span>
+  <span class="ev-label t-small muted">{av('mama', 24)}Мама ответила на угадайку</span>
   <h3 class="a">Угадала 4 из 5</h3><span class="row-f gap-2" aria-hidden="true">{dots}</span>
   <span class="row-f between t-small muted mt-auto">Открыть отчёт{ic('chev', 'chev')}</span></a>'''
 
@@ -27,15 +27,15 @@ def quiz_tile():
 def month_tile():
     data = [('mila', 980), ('dima', 413), ('anna', 304)]
     segs = ''.join(f'<i data-hue="{P[k][2]}" style="flex:{n};background:var(--them)"></i>' for k, n in data) + '<i style="flex:838;background:var(--chart-neutral)"></i>'
-    rows = ''.join(f'<div class="row-f gap-2">{av(k, 24)}<span class="t-small grow trunc">{P[k][0]}</span><span class="t-small-strong">{n}</span></div>' for k, n in data)
-    return f'''<article class="tile"><p class="q">Ваши 30 дней</p><h3 class="a">Больше всего — с Милой</h3>
+    rows = ''.join(f'<div class="row-f gap-2">{av(k, 24)}<span class="t-small grow trunc">{P[k][0]}</span><span class="val">{n}</span></div>' for k, n in data)
+    return f'''<article class="tile"><p class="q ev-label">Ваши 30 дней</p><h3 class="a">Больше всего — с Милой</h3>
   <div class="bar" role="img" aria-label="Мила 980, Дима (работа) 413, Анна Петрова 304, остальные 838">{segs}</div>
   <div class="stack gap-2">{rows}</div><p class="note mt-auto">2 535 сообщений в 7 личных чатах</p></article>'''
 
 
 def home_reports(menu=''):
-    return ('<div class="grid-4">' + mini_poster('mila', '4 800 сообщений', 1, 188, 'апр. – нояб. 2026', menu=menu) + mini_poster('mama', '1 900 сообщений', 2, 188, 'янв. – нояб. 2026')
-            + mini_poster('team', '9 000 сообщений', 3, 188, 'Группа, апр. – нояб.') + mini_poster('katya', '130 сообщений', 4, 188, 'окт. – нояб. 2026') + '</div>')
+    return ('<div class="grid-4">' + mini_poster('mila', '4 800 сообщений', 1, 188, menu=menu) + mini_poster('mama', '1 900 сообщений', 2, 188)
+            + mini_poster('team', '9 000 сообщений', 3, 188) + mini_poster('katya', '130 сообщений', 4, 188) + '</div>')
 
 
 def home_main(menu='', busy=None):
@@ -86,9 +86,10 @@ def poster_pc(name='Мила', meta='4 800 сообщений с 9 апреля 
 </section>'''
 
 
-def report_bar(name):
-    """The header after the poster has scrolled away: material, the name and one action. No chapter switcher."""
-    return f'<div class="row-f gap-4 material" style="padding:var(--space-3) var(--page-gutter)"><span class="t-h3 grow">{name}</span>{btn("Поделиться", "secondary", "md", "share")}</div>'
+def report_bar(name, chapter=''):
+    """The header after the poster has scrolled away: material, the name, the chapter under it, one action. No chapter switcher."""
+    ch = f'<span class="t-caption muted" style="font-weight:400">{chapter}</span>' if chapter else ''
+    return f'<div class="row-f gap-4 material" style="padding:var(--space-2) var(--page-gutter)"><span class="grow stack"><b class="t-title" style="font-weight:600">{name}</b>{ch}</span>{btn("Поделиться", "secondary", "md", "share")}</div>'
 
 
 T_VOICE = tile('Голосовые', 'Мила записывает дольше', cmp('Вы', 'Мила', '1 ч 12 мин', '1 ч 45 мин', 41)
@@ -112,11 +113,11 @@ def D_time():
     body = f'''<div class="cards" style="flex:1;min-height:0;overflow:hidden;padding:var(--space-6) var(--page-gutter)">{chapter_head('Время', LEDE['time'])}
   {T_HOURS}{records_pc()}{heat_tile}
   <div style="height:var(--space-6)"></div>{chapter_head('О чём', LEDE['words'])}<div class="grid-2">{WORD}{VOCAB}</div></div>'''
-    return shell(sidebar('mila'), report_bar('Мила') + body, title='Отчёт — Время', hue='red', room=True)
+    return shell(sidebar('mila'), report_bar('Мила', 'Время, 2 из 3') + body, title='Отчёт — Время', hue='red', room=True)
 
 
 def records_pc():
-    facts = ''.join(f'<div class="stack gap-1"><span class="t-small muted">{k}</span><b class="t-h2">{v}</b><span class="t-small muted">{d}</span></div>'
+    facts = ''.join(f'<div class="stack gap-1"><span class="t-small muted">{k}</span><b class="t-title" style="font-weight:600">{v}</b><span class="t-small muted">{d}</span></div>'
                     for k, v, d in [('Самый долгий разговор', '14 ч 39 мин', '23 апреля'), ('Больше всего за день', '96 сообщений', '23 апреля'), ('Самая длинная пауза', '6 дней', 'в июле')])
     return tile('Ваши рекорды', '23 апреля — ваш день рекордов', f'<div class="grid-3">{facts}</div>')
 
@@ -131,7 +132,7 @@ def ending_pc():
 def D_words():
     body = f'''<div class="cards" style="flex:1;min-height:0;justify-content:flex-end;overflow:hidden;padding:0 var(--page-gutter) var(--space-10)">{chapter_head('О чём', LEDE['words'])}
   <div class="grid-2">{WORD}{VOCAB}</div>{EMOJI}{ending_pc()}</div>'''
-    return shell(sidebar('mila'), report_bar('Мила') + body, title='Отчёт — О чём', hue='red', room=True)
+    return shell(sidebar('mila'), report_bar('Мила', 'О чём, 3 из 3') + body, title='Отчёт — О чём', hue='red', room=True)
 
 
 def D_group():
@@ -139,8 +140,8 @@ def D_group():
     poster = poster_pc('Продуктовая команда', '9 000 сообщений, 8 участников, с 30 апреля 2026', ('Вы', 'Остальные'), cast, up_scale=0.2)
     members = tile('Кто и как участвует', 'Ядро — четыре человека', member_rows('sergey') + row('', 'Все участники (8)', '', '', 'compact', True, True), rows=True)
     inspector = f'<aside class="inspector" aria-label="Сергей">{member_body()}</aside>'
-    body = f'''<div style="display:grid;grid-template-columns:minmax(0,1fr) var(--inspector);gap:var(--card-gap);padding:var(--space-6) var(--page-gutter);align-items:start">
-  <div class="cards">{chapter_head('Люди', 'Пишут все понемногу, без явных лидеров')}{members}{awards_tile()}</div>{inspector}</div>'''
+    body = f'''<div style="padding:var(--space-6) var(--page-gutter) 0">{chapter_head('Люди', 'Пишут все понемногу, без явных лидеров')}</div><div style="display:grid;grid-template-columns:minmax(0,1fr) var(--inspector);gap:var(--card-gap);padding:var(--space-3) var(--page-gutter);align-items:start">
+  <div class="cards">{members}{awards_tile()}</div>{inspector}</div>'''
     return shell(sidebar('team'), poster + body, title='Группа — Люди', hue='pink', room=True)
 
 
@@ -187,12 +188,12 @@ def D_share():
 
 
 def D_stories():
-    slide = f'''<div class="poster stack" data-hue="red" role="dialog" aria-modal="true" aria-label="Итоги, кадр 2 из 4" style="position:absolute;left:50%;top:48px;width:440px;height:782px;margin-left:-220px;border-radius:var(--radius-lg);padding:var(--space-3) var(--space-6) var(--space-6);overflow:hidden">
+    slide = f'''<div class="poster stack phone-scale" data-hue="red" role="dialog" aria-modal="true" aria-label="Итоги, кадр 2 из 4" style="position:absolute;left:50%;top:48px;width:440px;height:782px;margin-left:-220px;border-radius:var(--radius-lg);padding:var(--space-3) var(--space-6) var(--space-6);overflow:hidden">
   <div class="story-seg" style="grid-template-columns:repeat(4,1fr)"><i class="on"></i><i class="on"></i><i></i><i></i></div>
   <div class="row-f between" style="margin-top:var(--space-3)"><span class="t-ui">Вы двое, 2 из 4</span>{ibtn('pause', 'Пауза', 'on-poster')}</div>
   {STORY_TOGETHER}{STORY_ACTIONS.replace('"btn btn-poster-2 lg', '"btn btn-poster-2 md')}</div>'''
-    nav = (f'<button class="icon-btn lg" aria-label="Предыдущий кадр" style="position:absolute;left:452px;top:415px">{ic("back")}</button>'
-           f'<button class="icon-btn lg" aria-label="Следующий кадр" style="position:absolute;right:452px;top:415px">{ic("chev")}</button>'
+    nav = (f'<button class="icon-btn lg" aria-label="Предыдущий кадр" style="position:absolute;left:428px;top:415px">{ic("back")}</button>'
+           f'<button class="icon-btn lg" aria-label="Следующий кадр" style="position:absolute;right:428px;top:415px">{ic("chev")}</button>'
            f'<button class="icon-btn lg" aria-label="Закрыть" style="position:absolute;right:var(--space-6);top:var(--space-6)">{ic("x")}</button>'
            f'<p class="t-small" style="position:absolute;left:var(--space-6);bottom:var(--space-6);color:var(--story-hint)">← → листать, пробел — пауза, Esc — закрыть</p>')
     return page('Итоги на ПК', f'<div class="backdrop" style="position:absolute;inset:0"></div>{slide}{nav}', pc=True)
@@ -241,10 +242,10 @@ def D_guest():
   <div class="row-f between">{logo(32, word=True)}<a href="#" class="t-ui">Приватность</a></div>
   <div class="poster-name" style="margin-top:var(--space-10)"><h1 class="t-display">Дима и Мила</h1></div>
   <p class="t-body muted">Дима поделился с вами отчётом о переписке: 4 800 сообщений с 9 апреля 2026.</p>
-  <div style="margin-top:var(--space-4)">{pulse(150, 32, 1.0)}</div></section>'''
+  <div style="margin-top:var(--space-4)">{pulse(150, 32, 1.0)}</div><div class="axis"><span>апрель 2026</span><span>ноябрь 2026</span></div></section>'''
     tiles = f'''<h2 class="sr-only">Главное</h2><div class="grid-3" style="padding:var(--space-8) max(var(--page-gutter), calc((100% - var(--page-max)) / 2 + var(--page-gutter)));align-items:stretch">
   {tile('Кто пишет больше', 'Пишете на равных', cmp('Дима', 'Мила', '51%', '49%', 51))}
-  {tile('Кто отвечает быстрее', 'Отвечаете одинаково быстро', cmp('Дима', 'Мила', '3 мин', '3 мин'))}
+  {tile('Кто отвечает быстрее', 'Отвечаете одинаково быстро', cmp('Дима', 'Мила', '3 мин', '3 мин') + '<p class="note">Обычно — за 3 минуты.</p>')}
   {tile('Ваше время', 'Пик — с 11:00 до 14:00', hours(h=64))}
   <div style="grid-column:1/3">{tile('Активность по дням', 'Писали друг другу 196 из 208 дней', months_heat(MONTHS[2:], 6))}</div>
   <section class="tile" style="justify-content:space-between"><div class="stack gap-2"><h3 class="a">А как у вас?</h3><p class="note">Разберите любой свой чат Telegram — отчёт будет готов через минуту-две.</p></div>{btn('Разобрать свои переписки', 'primary', 'md block', tag='a')}</section>
@@ -266,7 +267,7 @@ def T_home():
 
 
 def T_report():
-    body = f'''{poster_ph()}<div class="cards column" style="padding:var(--space-6) var(--page-gutter)">{stale()}{chapter_head('Вы двое', LEDE['together'])}{HERO_SHARE}{cols2(T_SPEED, T_QUESTIONS)}{T_HABITS}</div>'''
+    body = f'''{poster_ph()}<div class="cards column" style="padding:var(--space-6) var(--page-gutter)">{stale()}{chapter_head('Вы двое', LEDE['together'])}{HERO_SHARE}<div class="grid-2">{T_SPEED}{T_QUESTIONS}</div>{T_HABITS}</div>'''
     return page('Планшет — отчёт', body, w=820, h=1180, hue='red', room=True).replace('class="app ph', 'class="app ph tab', 1)
 
 

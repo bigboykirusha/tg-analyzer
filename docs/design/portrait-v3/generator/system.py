@@ -10,17 +10,36 @@ targets, sheets, bar material), Radix Themes (space 4…80), Primer (layers), Ma
 # on_them = the person on their own poster (lower pulse, their bar, their name; ≥ 4.5:1 on the poster);
 # tint = chips and avatar tops; room = page tint; poster_d = dark theme poster, dimmed so it does not glare.
 # One ladder for all seven (OKLCH L): poster .82–.85 (each family the lightest step that keeps its chroma), tint .92, them .62, them_ink .52,
-# on_them .41, room .977, dark poster = poster − .07 —
+# on_them .41, room .977, dark poster = poster − .12, dark room = the hue at L .18 C .02 —
 # every person is equally loud; each keeps its own hue angle and as much chroma as sRGB allows.
 HUES = {
-    'red':    dict(poster='#FEABA1', tint='#FFDBD5', them='#E04C3E', them_ink='#B92E23', on_them='#7C2C24', room='#FEF5F3', poster_d='#ED9186'),
-    'orange': dict(poster='#FFBB69', tint='#FEDFB8', them='#C66B01', them_ink='#9F5104', on_them='#6F3C02', room='#FEF6EB', poster_d='#E7A556'),
-    'violet': dict(poster='#C6B9FE', tint='#E7DFFF', them='#846CEF', them_ink='#634AD6', on_them='#45339E', room='#F8F6FF', poster_d='#B1A0EF'),
-    'green':  dict(poster='#B8DF5E', tint='#DDEEAC', them='#649820', them_ink='#4A7812', on_them='#365502', room='#F4FBE7', poster_d='#A2C756'),
-    'teal':   dict(poster='#6CE6D2', tint='#BEF1E8', them='#149B8C', them_ink='#147A6A', on_them='#0A574C', room='#EEFBF8', poster_d='#62CDBB'),
-    'blue':   dict(poster='#92CAFE', tint='#D1E7FF', them='#2A89E1', them_ink='#1869BD', on_them='#104A88', room='#F2F8FE', poster_d='#7EB4E5'),
-    'pink':   dict(poster='#FFA4DA', tint='#FFD7EF', them='#D544A4', them_ink='#AE297F', on_them='#7C1F5A', room='#FFF4FA', poster_d='#E68FC3'),
+    'red':    dict(poster='#FEABA1', tint='#FFDBD5', them='#E04C3E', them_ink='#B92E23', on_them='#7C2C24', room='#FEF5F3', poster_d='#DC8177'),
+    'orange': dict(poster='#FFBB69', tint='#FEDFB8', them='#C66B01', them_ink='#9F5104', on_them='#6F3C02', room='#FEF6EB', poster_d='#D69546'),
+    'violet': dict(poster='#C6B9FE', tint='#E7DFFF', them='#846CEF', them_ink='#634AD6', on_them='#45339E', room='#F8F6FF', poster_d='#A191DF'),
+    'green':  dict(poster='#B8DF5E', tint='#DDEEAC', them='#649820', them_ink='#4A7812', on_them='#365502', room='#F4FBE7', poster_d='#93B745'),
+    'teal':   dict(poster='#6CE6D2', tint='#BEF1E8', them='#149B8C', them_ink='#147A6A', on_them='#0A574C', room='#EEFBF8', poster_d='#50BDAB'),
+    'blue':   dict(poster='#92CAFE', tint='#D1E7FF', them='#2A89E1', them_ink='#1869BD', on_them='#104A88', room='#F2F8FE', poster_d='#6EA4D4'),
+    'pink':   dict(poster='#FFA4DA', tint='#FFD7EF', them='#D544A4', them_ink='#AE297F', on_them='#7C1F5A', room='#FFF4FA', poster_d='#D580B3'),
 }
+
+def _dark_room(room):
+    """Dark theme room: the person's hue at L .18, C .02 — tinted black, not pure black."""
+    import math
+    r, g, b = [int(room[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+    lin = [x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in (r, g, b)]
+    l = (0.4122214708 * lin[0] + 0.5363325363 * lin[1] + 0.0514459929 * lin[2]) ** (1 / 3)
+    m = (0.2119034982 * lin[0] + 0.6806995451 * lin[1] + 0.1073969566 * lin[2]) ** (1 / 3)
+    s_ = (0.0883024619 * lin[0] + 0.2817188376 * lin[1] + 0.6299787005 * lin[2]) ** (1 / 3)
+    A = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s_
+    B = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s_
+    H = math.atan2(B, A)
+    L, C = 0.18, 0.02
+    a_, b_ = C * math.cos(H), C * math.sin(H)
+    l2, m2, s2 = [(L + x * a_ + y * b_) ** 3 for x, y in ((0.3963377774, 0.2158037573), (-0.1055613458, -0.0638541728), (-0.0894841775, -1.2914855480))]
+    rgb = [4.0767416621 * l2 - 3.3077115913 * m2 + 0.2309699292 * s2, -1.2684380046 * l2 + 2.6097574011 * m2 - 0.3413193965 * s2, -0.0041960863 * l2 - 0.7034186147 * m2 + 1.7076147010 * s2]
+    enc = [round(255 * min(1, max(0, 12.92 * x if x <= 0.0031308 else 1.055 * x ** (1 / 2.4) - 0.055))) for x in rgb]
+    return '#%02X%02X%02X' % tuple(enc)
+
 
 CSS = r"""
 :root, .app {
@@ -83,7 +102,7 @@ CSS = r"""
 }
 """ + ''.join(
     "[data-hue={n}]{{--poster:{poster};--room-tint:{tint};--them:{them};--them-ink:{them_ink};--on-them:{on_them};--room:{room};--room-glass:{glass};}}\n"
-    "[data-theme=dark] [data-hue={n}],[data-theme=dark][data-hue={n}]{{--poster:{poster_d};--room:var(--bg);--room-glass:var(--bar-glass);--room-tint:var(--surface-2);--them:{poster};--them-ink:{poster};}}\n".format(n=n, glass='rgba({},{},{},0.8)'.format(*[int(h['room'][i:i + 2], 16) for i in (1, 3, 5)]), **h)
+    "[data-theme=dark] [data-hue={n}],[data-theme=dark][data-hue={n}]{{--poster:{poster_d};--room:{room_d};--room-glass:var(--bar-glass);--room-tint:var(--surface-2);--them:{poster};--them-ink:{poster};}}\n".format(n=n, room_d=_dark_room(h['room']), glass='rgba({},{},{},0.8)'.format(*[int(h['room'][i:i + 2], 16) for i in (1, 3, 5)]), **h)
     for n, h in HUES.items()) + r"""
 * { box-sizing: border-box; }
 .app { font-family: var(--font-sans); color: var(--text); background: var(--bg); position: relative; overflow: hidden;
@@ -216,7 +235,7 @@ CSS = r"""
 .row > * { position: relative; }
 .kv { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); padding: var(--space-3) 0; box-shadow: inset 0 -1px 0 var(--border); font: var(--text-small); }
 .kv:last-child { box-shadow: none; }
-.kv > b { font-weight: 600; text-align: right; white-space: nowrap; }
+.kv > b { font: var(--text-ui); text-align: right; white-space: nowrap; color: var(--text); }
 .kv .sub { display: block; font: var(--text-caption); font-weight: 400; color: var(--text-muted); }
 .poster .kv .sub { color: var(--on-poster-muted); }
 .slot { width: 168px; display: flex; justify-content: flex-end; align-items: center; gap: var(--space-2); flex: none; }
@@ -403,6 +422,19 @@ CSS = r"""
 .link { text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
 .mask { letter-spacing: 0.2em; }
 .page-max { width: 100%; max-width: var(--page-max); }
+/* one row value: ui 500, ink, tabular, a fixed right column; rows without a chevron keep its place */
+.val { font: var(--text-ui); color: var(--text); white-space: nowrap; text-align: right; }
+.poster .val { color: var(--on-poster); }
+.chev-space { width: 16px; flex: none; }
+.row .btn.sm { min-width: 96px; }
+.ev-label { min-height: 24px; display: flex; align-items: center; gap: var(--space-2); }
+.pc .hero { max-width: var(--page-max-narrow); }
+/* a phone-size frame on desktop (stories) keeps the phone type */
+.pc .phone-scale { --text-display: 600 56px/56px var(--font-sans); --text-figure: 600 44px/48px var(--font-sans); --text-h1: 600 30px/36px var(--font-sans);
+  --text-h2: 600 24px/32px var(--font-sans); --text-h3: 600 20px/28px var(--font-sans); }
+.cover-thumb { width: 72px; height: 128px; flex: none; border-radius: var(--radius-sm); background: var(--poster); box-shadow: inset 0 0 0 1px var(--on-poster-line);
+  padding: var(--space-2); display: flex; flex-direction: column; justify-content: space-between; }
+.story-body { justify-content: flex-start; padding-top: var(--space-16); }
 .tab { --page-gutter: 32px; }
 .tab .column { width: 100%; max-width: 720px; margin: 0 auto; }
 .tab .poster > * { width: 100%; max-width: calc(720px - 2 * var(--page-gutter)); margin-left: auto; margin-right: auto; }
