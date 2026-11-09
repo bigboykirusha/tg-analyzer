@@ -10,10 +10,11 @@ targets, sheets, bar material), Radix Themes (space 4…80), Primer (layers), Ma
 # on_them = the person on their own poster (lower pulse, their bar, their name; ≥ 4.5:1 on the poster);
 # tint = chips and avatar tops; room = page tint; poster_d = dark theme poster, dimmed so it does not glare.
 # One ladder for all seven (OKLCH L): poster .82–.85 (each family the lightest step that keeps its chroma), tint .92, them .62, them_ink .52,
-# on_them .41, room .977, dark poster = poster − .12, dark room = the hue at L .18 C .02 —
+# on_them .41, room .977, dark poster = poster − .12, dark room = the hue at L .18 C .02.
+# Yellow sits one step higher (poster .88): at .85 the eye reads yellow as mustard. —
 # every person is equally loud; each keeps its own hue angle and as much chroma as sRGB allows.
 HUES = {
-    'red':    dict(poster='#FEABA1', tint='#FFDBD5', them='#E04C3E', them_ink='#B92E23', on_them='#7C2C24', room='#FEF5F3', poster_d='#DC8177'),
+    'yellow': dict(poster='#FBD530', tint='#FCEBAE', them='#9E8406', them_ink='#7C6702', on_them='#594900', room='#FEF8E1', poster_d='#CFAF1D'),
     'orange': dict(poster='#FFBB69', tint='#FEDFB8', them='#C66B01', them_ink='#9F5104', on_them='#6F3C02', room='#FEF6EB', poster_d='#D69546'),
     'violet': dict(poster='#C6B9FE', tint='#E7DFFF', them='#846CEF', them_ink='#634AD6', on_them='#45339E', room='#F8F6FF', poster_d='#A191DF'),
     'green':  dict(poster='#B8DF5E', tint='#DDEEAC', them='#649820', them_ink='#4A7812', on_them='#365502', room='#F4FBE7', poster_d='#93B745'),
@@ -222,7 +223,7 @@ CSS = r"""
 .pc .group { border-radius: var(--radius-lg); padding: 0 var(--space-6); }
 .group-h { font: var(--text-small); color: var(--text-muted); padding: 0 var(--space-4) var(--space-2); }
 .group-f { font: var(--text-small); color: var(--text-muted); padding: var(--space-2) var(--space-4) 0; }
-.row { position: relative; display: flex; align-items: center; gap: var(--space-3); min-height: var(--row); padding: var(--space-2) 0; box-shadow: inset 0 -1px 0 var(--border); width: 100%; }
+.row { position: relative; display: flex; align-items: center; gap: var(--space-3); min-height: var(--row); padding: var(--space-1) 0; box-shadow: inset 0 -1px 0 var(--border); width: 100%; }
 .row:last-child { box-shadow: none; }
 /* the separator starts where the text starts, as in iOS lists */
 .row:has(> .av, > .lead-ic, > span > .av) { box-shadow: none; }
@@ -230,7 +231,7 @@ CSS = r"""
 .row:has(> .av-32, > .lead-ic) { --row-inset: 44px; } .row:has(> .av-24) { --row-inset: 36px; }
 .row:last-child::after { display: none; }
 .poster .row:has(> .av, > .lead-ic)::after { background: var(--on-poster-line); }
-.row.compact { min-height: 44px; }
+.row.compact { min-height: var(--row); }
 .row .t { font: var(--text-title); }
 .row .m { font: var(--text-small); color: var(--text-muted); }
 .row .v { font: var(--text-body); color: var(--text-muted); white-space: nowrap; }
@@ -309,7 +310,7 @@ CSS = r"""
 .sb-h { font: var(--text-caption); color: var(--text-muted); padding: var(--space-4) var(--space-2) var(--space-1); }
 .logo .logo-up { fill: var(--you); } .poster .logo .logo-up { fill: var(--on-poster); }
 .logo-rect { fill: #1D1D1F; } .logo-tile .logo-up { fill: #FFFFFF; } 
-.sb-row.home { min-height: 44px; gap: var(--space-2); }
+.sb-row.home { min-height: 48px; gap: var(--space-3); padding-left: var(--space-1); }
 .wordmark { font: 600 16px/24px var(--font-sans); letter-spacing: -0.01em; }
 /* overlays */
 .scrim { position: absolute; inset: 0; background: var(--scrim); }
@@ -419,6 +420,9 @@ CSS = r"""
 .poster .av:not(.you):not(.add) { background: var(--avatar-on-poster); color: var(--on-them); }
 .poster .choice .av:not(.you) { background: linear-gradient(var(--room-tint), var(--poster)); color: var(--on-poster); }
 .heat i.none { background: none; }
+.row.wrap { padding: var(--space-3) 0; align-items: flex-start; }
+.row.wrap > .lead-ic { margin-top: var(--space-0-5); }
+.row.wrap .stack { gap: var(--space-0-5); }
 .row.wrap .m { white-space: normal; overflow: visible; }
 /* device keyboard — not product UI, shown so a focused field explains the space below it */
 .kb { position: absolute; left: 0; right: 0; bottom: 0; background: #D1D4DA; padding: 8px 4px 34px; display: grid; gap: 8px; }

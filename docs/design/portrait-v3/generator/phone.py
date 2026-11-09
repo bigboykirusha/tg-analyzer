@@ -27,7 +27,7 @@ REPORT_TILES = ('<div class="grid-2">' + mini_poster('mila', '4 800 сообще
 
 
 def lead_mila():
-    return f'''<article class="tile poster" data-hue="red">
+    return f'''<article class="tile poster" data-hue="yellow">
   <a href="#" class="ev-label t-small muted">{av('mila', 24)}Мила</a>
   <h3 class="t-h3">640 новых сообщений с 2 ноября</h3>
   <p class="t-small muted">Отчёт пока о переписке до 2 ноября.</p>
@@ -82,7 +82,7 @@ def S_session():
 
 
 def S_first():
-    feat = f'''<article class="tile poster" data-hue="red" style="gap:var(--space-1);padding:var(--space-6) var(--card-padding) var(--card-padding)">
+    feat = f'''<article class="tile poster" data-hue="yellow" style="gap:var(--space-1);padding:var(--space-6) var(--card-padding) var(--card-padding)">
   {av('mila', 64)}
   <h2 class="t-h2" style="margin-top:var(--space-3)">Мила</h2>
   <p class="t-small muted">Чаще всех — 980 сообщений за месяц</p>
@@ -90,7 +90,7 @@ def S_first():
     rows = [('dima', '413 за месяц'), ('anna', '304 за месяц'), ('artyom', '268 за месяц'), ('family', 'Группа, 180 за месяц')]
     g = group([row(av(k), P[k][0], m, btn('Разобрать', 'secondary', 'sm', aria=f'Разобрать: {P[k][0]}')) for k, m in rows]
               + [row(lead_ic('search'), 'Все чаты Telegram', '', '', '', True, True)], 'Или кто-то ещё')
-    return page('Первый вход', ph_home_nav() + f'''<main class="page" style="gap:var(--space-6)">
+    return page('Первый вход', ph_home_nav() + f'''<main class="page">
   <div class="stack gap-2"><h1 class="t-h1">С кого начнём?</h1><p class="t-body muted">Отчёт будет готов через минуту-две.</p></div>
   {feat}
   {g}
@@ -102,8 +102,8 @@ def dim_home(tiles_first=False):
     return f'<div aria-hidden="true" inert>{ph_home_nav()}<main class="page"><div class="stack gap-1"><h1 class="t-h1">Добрый вечер, Дима</h1><p class="t-small muted">Вот что нового в ваших переписках.</p></div>{lead}{sec("Отчёты", REPORT_TILES)}</main></div>'
 
 
-NEW_DATA = [('mila', 'Отчёт от 2 ноября, 640 новых', 'update'), ('run', 'Группа, писали 4 часа назад', 'new'), ('dima', 'Писали 7 часов назад', 'new'),
-            ('anna', 'Писали 13 часов назад', 'new'), ('family', 'Группа, писали 13 часов назад', 'new'), ('mama', 'Отчёт от вчера', 'done'),
+NEW_DATA = [('mila', '640 новых сообщений', 'update'), ('run', 'Группа, 4 часа назад', 'new'), ('dima', 'Писали 7 часов назад', 'new'),
+            ('anna', 'Писали 13 часов назад', 'new'), ('family', 'Группа, 13 часов назад', 'new'), ('mama', 'Отчёт от вчера', 'done'),
             ('team', 'Группа, отчёт от вчера', 'done'), ('artyom', 'Писали 4 дня назад', 'new'), ('katya', 'Отчёт от 1 ноября', 'done'),
             ('sofia', 'Писали 12 дней назад', 'new'), ('oleg', '60 сообщений, для отчёта нужно 100', 'few')]
 
@@ -192,11 +192,11 @@ LEDE = {'together': 'Баланс почти идеальный — и в сло
 
 
 def S_report(theme=None):
-    return page('Отчёт — постер', poster_ph() + f'<main class="cards" style="padding:var(--space-4) var(--page-gutter)">{stale()}{chapter_head("Вы двое", LEDE["together"])}{HERO_SHARE}</main>', theme=theme, hue='red', room=True)
+    return page('Отчёт — постер', poster_ph() + f'<main class="cards" style="padding:var(--space-4) var(--page-gutter)">{stale()}{chapter_head("Вы двое", LEDE["together"])}{HERO_SHARE}</main>', theme=theme, hue='yellow', room=True)
 
 
 def S_together():
-    return page('Отчёт — Вы двое', ph_report_nav('Мила', 'Вы двое, 1 из 3') + f'<main class="cards" style="padding:var(--space-2) var(--page-gutter)"><h2 class="sr-only">Вы двое</h2>{HERO_SHARE}{"".join(TOGETHER)}</main>', hue='red', room=True)
+    return page('Отчёт — Вы двое', ph_report_nav('Мила', 'Вы двое, 1 из 3') + f'<main class="cards" style="padding:var(--space-2) var(--page-gutter)"><h2 class="sr-only">Вы двое</h2>{HERO_SHARE}{"".join(TOGETHER)}</main>', hue='yellow', room=True)
 
 
 PARTS = ('<div class="grid-4" style="text-align:center;gap:0">' + ''.join(
@@ -210,7 +210,7 @@ T_HEAT = tile('Активность по дням', 'Писали друг др�
 
 
 def S_time():
-    return page('Отчёт — Время', ph_report_nav('Мила', 'Время, 2 из 3') + f'<main class="cards" style="padding:var(--space-2) var(--page-gutter)">{chapter_head("Время", LEDE["time"])}{T_HOURS}{T_RECORDS}{T_HEAT}</main>', hue='red', room=True)
+    return page('Отчёт — Время', ph_report_nav('Мила', 'Время, 2 из 3') + f'<main class="cards" style="padding:var(--space-2) var(--page-gutter)">{chapter_head("Время", LEDE["time"])}{T_HOURS}{T_RECORDS}{T_HEAT}</main>', hue='yellow', room=True)
 
 
 WORD = ('<section class="tile poster"><p class="q">Слово вашей переписки</p><p class="t-figure">good</p><p class="t-small muted">214 раз за всё время</p>'
@@ -224,10 +224,10 @@ EMOJI = tile('Любимые эмодзи', '☀️ — общее любимо�
 
 
 def S_words():
-    return page('Отчёт — О чём', ph_report_nav('Мила', 'О чём, 3 из 3') + f'<main class="cards" style="padding:var(--space-2) var(--page-gutter)">{chapter_head("О чём", LEDE["words"])}{WORD}{VOCAB}{EMOJI}</main>', hue='red', room=True)
+    return page('Отчёт — О чём', ph_report_nav('Мила', 'О чём, 3 из 3') + f'<main class="cards" style="padding:var(--space-2) var(--page-gutter)">{chapter_head("О чём", LEDE["words"])}{WORD}{VOCAB}{EMOJI}</main>', hue='yellow', room=True)
 
 
-def ending(pad='var(--space-8) var(--page-gutter) var(--space-10)', fill=False):
+def ending(pad='var(--space-6) var(--page-gutter) var(--space-6)', fill=False):
     return f'''<section class="poster stack gap-3" style="padding:{pad};{'flex:1' if fill else ''}">
   {pulse(56, 24, 3.0)}
   <h2 class="t-h1" style="margin-top:var(--space-3)">Итоги: Мила</h2>
@@ -237,12 +237,12 @@ def ending(pad='var(--space-8) var(--page-gutter) var(--space-10)', fill=False):
 
 def S_ending():
     scrolled = f'<main class="cards" style="flex:1;min-height:0;justify-content:flex-end;overflow:hidden;padding:0 var(--page-gutter) var(--space-6)">{VOCAB}{EMOJI}</main>'
-    return page('Отчёт — конец', ph_report_nav('Мила', 'О чём, 3 из 3') + scrolled + ending(), hue='red', room=True)
+    return page('Отчёт — конец', ph_report_nav('Мила', 'О чём, 3 из 3') + scrolled + ending(), hue='yellow', room=True)
 
 
 def stories_feature(size='md'):
     cover = f'<span class="cover-thumb" aria-hidden="true"><span class="story-seg" style="grid-template-columns:repeat(4,1fr)"><i class="on"></i><i></i><i></i><i></i></span><span class="stack gap-1"><b class="t-small-strong">Мила</b>{pulse(12, 8, 1.0)}</span></span>'
-    return f'''<a href="#" class="feature poster" data-hue="red">{cover}
+    return f'''<a href="#" class="feature poster" data-hue="yellow">{cover}
   <span class="grow stack gap-1"><b class="t-h3">Итоги: Мила</b><span class="t-small muted">Четыре кадра о вашей переписке</span>
   <span style="margin-top:var(--space-3)">{btn('Смотреть', 'poster', '', 'play', tag='span')}</span></span></a>'''
 
@@ -260,7 +260,7 @@ def S_share():
   {stories_feature()}
   {SHARE_ROWS}
 </section>'''
-    return page('Лист «Поделиться»', poster_ph(action=False) + '<div class="scrim"></div>' + sheet, hue='red', room=True)
+    return page('Лист «Поделиться»', poster_ph(action=False) + '<div class="scrim"></div>' + sheet, hue='yellow', room=True)
 
 
 def link_preview():
@@ -277,7 +277,7 @@ def S_link():
   {row('', 'Показывать слова и эмодзи', 'Без них в отчёте только числа', switch(False, 'Показывать слова и эмодзи'))}</div>
   <div class="stack gap-3">{btn('Скопировать ссылку', 'primary', 'xl block', 'copy')}<p class="t-small muted" style="text-align:center">Выключить ссылку можно в аккаунте</p></div>
 </section>'''
-    return page('Ссылка на отчёт', poster_ph(action=False) + '<div class="scrim"></div>' + sheet, hue='red', room=True)
+    return page('Ссылка на отчёт', poster_ph(action=False) + '<div class="scrim"></div>' + sheet, hue='yellow', room=True)
 
 
 STORY_ACTIONS = f'<div class="story-actions">{btn("Сохранить", "poster-2", "lg", "download")}{btn("Поделиться", "poster-2", "lg", "share")}</div>'
@@ -299,7 +299,7 @@ def S_story_cover():
   <div class="stack gap-3 poster-name"><h1 class="t-display">Мила</h1><p class="t-h3">4 800 сообщений за 208 дней</p>
   <p class="t-small muted">С 9 апреля по 2 ноября 2026</p></div>
 </div>'''
-    return page('Итоги — обложка', story(c, 1, label='Итоги, 1 из 4'), hue='red')
+    return page('Итоги — обложка', story(c, 1, label='Итоги, 1 из 4'), hue='yellow')
 
 
 STORY_TOGETHER = f'''<div class="stack grow gap-8 story-body">
@@ -311,7 +311,7 @@ STORY_TOGETHER = f'''<div class="stack grow gap-8 story-body">
 
 
 def S_story():
-    return page('Итоги — Вы двое', story(STORY_TOGETHER, 2, label='Вы двое, 2 из 4'), hue='red')
+    return page('Итоги — Вы двое', story(STORY_TOGETHER, 2, label='Вы двое, 2 из 4'), hue='yellow')
 
 
 def S_story_end():
@@ -320,7 +320,7 @@ def S_story_end():
   <div class="facts"><div><b>51 на 49</b><span>пишете на равных</span></div><div><b>11–14</b><span>ваши часы</span></div>
   <div><b>«good»</b><span>слово переписки</span></div><div><b>196 дней</b><span>из 208 на связи</span></div></div>
 </div>'''
-    return page('Итоги — последний кадр', story(c, 4, label='Итоги, 4 из 4'), hue='red')
+    return page('Итоги — последний кадр', story(c, 4, label='Итоги, 4 из 4'), hue='yellow')
 
 
 GROUP_MEMBERS = [('you', 'Вы', 'Иногда', '9%'), ('sergey', 'Сергей', 'Ядро', '22%'), ('alexey', 'Алексей', 'Ядро', '19%'), ('natasha', 'Наташа', 'Ядро', '17%'), ('maria', 'Мария', 'Ядро', '15%')]
@@ -380,8 +380,8 @@ PRIVACY_NOTE = 'В отчёте только подсчёты и частые с
 
 
 def S_guest():
-    poster = f'''<section class="poster stack gap-3" style="padding:var(--space-3) var(--page-gutter) var(--space-6)">
-  <div class="row-f between">{logo(28, word=True)}<a href="#" class="t-small muted">Приватность</a></div>
+    poster = f'''<section class="poster stack gap-3" style="padding:var(--space-2) var(--page-gutter) var(--space-6)">
+  <div class="row-f between" style="min-height:var(--control-lg)">{logo(28, word=True)}<a href="#" class="t-small muted">Приватность</a></div>
   <div class="stack gap-2 poster-name" style="margin-top:var(--space-6)"><h1 class="t-display">Дима и Мила</h1><p class="t-small muted">Дима поделился с вами отчётом о переписке: 4 800 сообщений с 9 апреля.</p></div>
   {pulse(56, 24, 1.0)}
 </section>'''
@@ -389,7 +389,7 @@ def S_guest():
   {tile('Кто пишет больше', 'Пишете на равных', cmp('Дима', 'Мила', '51%', '49%', 51))}
   {tile('Коротко', None, kv('Отвечаете', 'оба за 3 мин') + kv('Пик', 'с 11:00 до 14:00') + kv('Писали друг другу', '196 из 208 дней'), rows=True)}
 </main>{btn('Разобрать свои переписки', 'primary', 'fab', tag='a')}'''
-    return page('Гость — отчёт по ссылке', poster + main, hue='red', room=True)
+    return page('Гость — отчёт по ссылке', poster + main, hue='yellow', room=True)
 
 
 def quiz_shell(content, step=None):
@@ -405,7 +405,7 @@ def S_quiz_start():
   <h1 class="t-figure">Дима позвал вас в угадайку</h1>
   <p class="t-body muted">Пять вопросов о вашей переписке: кто дольше записывает голосовые, кто желает спокойной ночи, чьё это слово.</p></div>
   <div class="stack gap-3"><p class="t-small muted" style="text-align:center">Дима увидит, сколько вы угадали</p>{btn('Начать', 'poster', 'xl block')}</div>'''
-    return page('Гость — угадайка, старт', quiz_shell(c), hue='red')
+    return page('Гость — угадайка, старт', quiz_shell(c), hue='yellow')
 
 
 def S_quiz():
@@ -418,7 +418,7 @@ def S_quiz():
   <div class="stack gap-2" role="radiogroup" aria-label="Ответ" style="margin-top:var(--space-8)">{ch(None, 'Дима')}{ch('mila', 'Я, Мила', 'on', '81 раз')}</div>
   <p class="t-ui" role="status" style="margin-top:var(--space-4)">Верно — это вы, 81 раз против 66.</p></div>
   <div>{btn('Следующий вопрос', 'poster', 'xl block')}</div>'''
-    return page('Гость — угадайка, вопрос', quiz_shell(c, 3), hue='red')
+    return page('Гость — угадайка, вопрос', quiz_shell(c, 3), hue='yellow')
 
 
 def S_quiz_end():
@@ -427,7 +427,7 @@ def S_quiz_end():
   <h1 class="t-h2">Вы хорошо знаете эту переписку</h1>
   <p class="t-body muted">Не угадали один вопрос — кто дольше записывает голосовые. Дима уже видит результат.</p></div>
   <div class="stack gap-2">{btn('Разобрать свои переписки', 'poster', 'xl block', tag='a')}{btn('Открыть отчёт Димы', 'poster-2', 'xl block', tag='a')}</div>'''
-    return page('Гость — угадайка, итог', quiz_shell(c, 6), hue='red')
+    return page('Гость — угадайка, итог', quiz_shell(c, 6), hue='yellow')
 
 
 def S_link_off():

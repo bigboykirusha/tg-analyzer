@@ -105,7 +105,7 @@ CH = ['Вы двое', 'Время', 'О чём']
 
 def D_report(theme=None):
     body = f'''<div class="cards" style="padding:var(--space-6) var(--page-gutter)">{stale()}{chapter_head('Вы двое', LEDE['together'])}{HERO_SHARE}{cols2(T_SPEED + T_HABITS, T_QUESTIONS + T_VOICE)}</div>'''
-    return shell(sidebar('mila'), poster_pc() + body, title='Отчёт — Вы двое', hue='red', room=True, theme=theme)
+    return shell(sidebar('mila'), poster_pc() + body, title='Отчёт — Вы двое', hue='yellow', room=True, theme=theme)
 
 
 def D_time():
@@ -113,7 +113,7 @@ def D_time():
     body = f'''<div class="cards" style="flex:1;min-height:0;overflow:hidden;padding:var(--space-6) var(--page-gutter)">{chapter_head('Время', LEDE['time'])}
   {T_HOURS}{records_pc()}{heat_tile}
   <div style="height:var(--space-6)"></div>{chapter_head('О чём', LEDE['words'])}<div class="grid-2">{WORD}{VOCAB}</div></div>'''
-    return shell(sidebar('mila'), report_bar('Мила', 'Время, 2 из 3') + body, title='Отчёт — Время', hue='red', room=True)
+    return shell(sidebar('mila'), report_bar('Мила', 'Время, 2 из 3') + body, title='Отчёт — Время', hue='yellow', room=True)
 
 
 def records_pc():
@@ -132,7 +132,7 @@ def ending_pc():
 def D_words():
     body = f'''<div class="cards" style="flex:1;min-height:0;justify-content:flex-end;overflow:hidden;padding:0 var(--page-gutter) var(--space-10)">{chapter_head('О чём', LEDE['words'])}
   <div class="grid-2">{WORD}{VOCAB}</div>{EMOJI}{ending_pc()}</div>'''
-    return shell(sidebar('mila'), report_bar('Мила', 'О чём, 3 из 3') + body, title='Отчёт — О чём', hue='red', room=True)
+    return shell(sidebar('mila'), report_bar('Мила', 'О чём, 3 из 3') + body, title='Отчёт — О чём', hue='yellow', room=True)
 
 
 def D_group():
@@ -169,7 +169,7 @@ def D_new():
 
 
 def story_cover_card():
-    return f'''<div class="poster stack" data-hue="red" style="width:240px;aspect-ratio:9/16;border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4) var(--space-4);flex:none">
+    return f'''<div class="poster stack" data-hue="yellow" style="width:240px;aspect-ratio:9/16;border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4) var(--space-4);flex:none">
   <div class="story-seg" style="grid-template-columns:repeat(4,1fr)"><i class="on"></i><i></i><i></i><i></i></div>
   <div class="stack grow gap-3" style="justify-content:center">{pulse(24, 28, 1.0)}<div class="stack gap-1"><b class="t-h1">Мила</b><span class="t-small muted">4 800 сообщений за 208 дней</span></div></div>
   {btn('Смотреть итоги', 'poster', 'md block', 'play')}</div>'''
@@ -184,11 +184,11 @@ def D_share():
   {row(lead_ic('link'), 'Ссылка на отчёт', 'Откроется без входа', '', '', True, True)}
   {row(lead_ic('users'), 'Угадайка', 'Мила угадывает, кто что пишет', '', '', True, True)}</div></div></section>'''
     behind = f'<div style="display:flex;height:100%" aria-hidden="true" inert>{sidebar("mila")}<main style="{MAIN}">{poster_pc()}</main></div>'
-    return page('Окно «Поделиться»', behind + '<div class="scrim"></div>' + dlg, pc=True, hue='red', room=True)
+    return page('Окно «Поделиться»', behind + '<div class="scrim"></div>' + dlg, pc=True, hue='yellow', room=True)
 
 
 def D_stories():
-    slide = f'''<div class="poster stack phone-scale" data-hue="red" role="dialog" aria-modal="true" aria-label="Итоги, кадр 2 из 4" style="position:absolute;left:50%;top:48px;width:440px;height:782px;margin-left:-220px;border-radius:var(--radius-lg);padding:var(--space-3) var(--space-6) var(--space-6);overflow:hidden">
+    slide = f'''<div class="poster stack phone-scale" data-hue="yellow" role="dialog" aria-modal="true" aria-label="Итоги, кадр 2 из 4" style="position:absolute;left:50%;top:48px;width:440px;height:782px;margin-left:-220px;border-radius:var(--radius-lg);padding:var(--space-3) var(--space-6) var(--space-6);overflow:hidden">
   <div class="story-seg" style="grid-template-columns:repeat(4,1fr)"><i class="on"></i><i class="on"></i><i></i><i></i></div>
   <div class="row-f between" style="margin-top:var(--space-3)"><span class="t-ui">Вы двое, 2 из 4</span>{ibtn('pause', 'Пауза', 'on-poster')}</div>
   {STORY_TOGETHER}{STORY_ACTIONS.replace('"btn btn-poster-2 lg', '"btn btn-poster-2 md')}</div>'''
@@ -203,9 +203,23 @@ def D_account():
     look, notify, links, devices, out = account_groups(pc=True)
     main = f'''<div class="page page-max">
   <div class="row-f gap-4">{av(None, 64, True)}<div class="stack"><h1 class="t-h1">Дима</h1><p class="t-small muted">@dima_k, +7 912 •••-••-89</p></div></div>
-  <div class="grid-2" style="gap:var(--space-8);align-items:start"><div class="stack gap-8">{look}{notify}{out}</div><div class="stack gap-8">{links}{devices}</div></div>
+  <div class="grid-2" style="gap:var(--page-gap);align-items:start"><div class="stack gap-8">{look}{notify}{out}</div><div class="stack gap-8">{links}{devices}</div></div>
 </div>'''
     return page('Аккаунт', f'<div style="display:flex;height:100%">{sidebar("account")}<main style="{MAIN}">{main}</main></div>', pc=True)
+
+
+def pub_header(nav=True):
+    """Header of every public desktop page: logo on the column edge, site links on the right."""
+    links = (f'<nav class="row-f gap-8 t-ui" aria-label="Сайт"><a href="#" class="muted">Пример отчёта</a><a href="#" class="muted">Приватность</a>'
+             f'{btn("Войти", "secondary", "md", tag="a")}</nav>') if nav else ''
+    return f'<header class="row-f between" style="padding:var(--space-6) var(--page-gutter);width:100%;max-width:var(--page-max);margin:0 auto">{logo(32, word=True)}{links}</header>'
+
+
+def pub_footer():
+    return (f'<footer class="row-f between t-small muted" style="padding:var(--space-6) var(--page-gutter);width:100%;max-width:var(--page-max);margin:0 auto">'
+            f'<span>Неофициальный сервис, работает через Telegram API</span>'
+            f'<span class="row-f gap-4"><a href="#">Приватность</a><a href="#" class="row-f gap-2" aria-label="Язык: русский">{ic("globe")}RU</a>'
+            f'<button class="icon-btn sm" style="background:none;color:var(--text-muted)" aria-label="Тема: как в системе">{ic("moon")}</button></span></footer>')
 
 
 def D_login():
@@ -215,10 +229,9 @@ def D_login():
   <label class="label" style="margin:var(--space-6) 0 var(--space-2)">Номер телефона</label>
   {phone_field()}
   <div style="margin-top:var(--space-6)">{btn('Получить код', 'primary', 'xl block')}</div></section>'''
-    body = f'''<header class="row-f between" style="padding:var(--space-6) var(--space-12)">{logo(32, word=True)}</header>
+    body = f'''{pub_header(nav=False)}
   <main class="grow row-f center">{card}</main>
-  <footer class="row-f between t-small muted" style="padding:var(--space-6) var(--space-12)"><span>Неофициальный сервис, работает через Telegram API</span>
-  <span class="row-f gap-4"><a href="#">Приватность</a><a href="#" class="row-f gap-2" aria-label="Язык: русский">{ic('globe')}RU</a><button class="icon-btn sm" style="background:none;color:var(--text-muted)" aria-label="Тема: как в системе">{ic('moon')}</button></span></footer>'''
+  {pub_footer()}'''
     return page('Вход', body, pc=True)
 
 
@@ -229,7 +242,7 @@ def D_landing():
             return f'<div class="tile poster" data-hue="{hue}" style="grid-column:1/-1;gap:var(--space-1);padding:var(--space-8);border-radius:var(--radius-xl)"><span class="t-h1">{value}</span><span class="t-body muted">{fact}</span><span style="margin-top:var(--space-6)">{pulse(90, 34, seed)}</span></div>'
         return f'<div class="tile poster" data-hue="{hue}" style="gap:var(--space-1)"><span class="t-h3">{value}</span><span class="t-small muted">{fact}</span><span style="margin-top:var(--space-4)">{pulse(40, 16, seed)}</span></div>'
     comp = f'<div class="grid-2" aria-label="Примеры">{person("mila", "Пишете на равных, отвечаете одинаково быстро", "Мила, 51 на 49", 1, True)}{person("artyom", "Отвечает быстрее вас", "Артём, в 3 раза", 2)}{person("mama", "Чаще всего пишете вечером", "Мама, с 19 до 22", 3)}</div>'
-    body = f'''<header class="row-f between" style="padding:var(--space-6) var(--page-gutter);width:100%;max-width:var(--page-max);margin:0 auto">{logo(32, word=True)}<nav class="row-f gap-8 t-ui" aria-label="Сайт"><a href="#" class="muted">Пример отчёта</a><a href="#" class="muted">Приватность</a>{btn('Войти', 'secondary', 'md', tag='a')}</nav></header>
+    body = f'''{pub_header()}
   <main class="grow" style="display:grid;grid-template-columns:5fr 6fr;gap:var(--space-16);align-items:center;padding:0 var(--page-gutter) var(--space-10);width:100%;max-width:var(--page-max);margin:0 auto">
   <div class="stack gap-6"><h1 class="t-display">Зеркало ваших переписок</h1>
   <p class="t-body muted" style="max-width:60ch">Кто пишет первым, кто отвечает быстрее, о чём вы говорите и когда. Отчёт по любому чату Telegram за пару минут — без хранения текстов.</p>
@@ -250,7 +263,7 @@ def D_guest():
   <div style="grid-column:1/3">{tile('Активность по дням', 'Писали друг другу 196 из 208 дней', months_heat(MONTHS[2:], 6))}</div>
   <section class="tile" style="justify-content:space-between"><div class="stack gap-2"><h3 class="a">А как у вас?</h3><p class="note">Разберите любой свой чат Telegram — отчёт будет готов через минуту-две.</p></div>{btn('Разобрать свои переписки', 'primary', 'md block', tag='a')}</section>
   </div>'''
-    return page('Гость — отчёт по ссылке', poster + tiles, pc=True, hue='red', room=True)
+    return page('Гость — отчёт по ссылке', poster + tiles, pc=True, hue='yellow', room=True)
 
 
 # ─── tablet: the phone shell, one centred column up to 720 ─────────────────
@@ -268,7 +281,7 @@ def T_home():
 
 def T_report():
     body = f'''{poster_ph()}<div class="cards column" style="padding:var(--space-6) var(--page-gutter)">{stale()}{chapter_head('Вы двое', LEDE['together'])}{HERO_SHARE}<div class="grid-2">{T_SPEED}{T_QUESTIONS}</div>{T_HABITS}</div>'''
-    return page('Планшет — отчёт', body, w=820, h=1180, hue='red', room=True).replace('class="app ph', 'class="app ph tab', 1)
+    return page('Планшет — отчёт', body, w=820, h=1180, hue='yellow', room=True).replace('class="app ph', 'class="app ph tab', 1)
 
 
 SCREENS = [

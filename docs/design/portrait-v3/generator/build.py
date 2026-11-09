@@ -7,6 +7,12 @@ try:
 except ImportError:
     PC = []
 try:
+    from extra import PH_EXTRA, PC_EXTRA
+    PH = PH + PH_EXTRA
+    PC = PC + PC_EXTRA
+except ImportError as e:
+    print('extra:', e)
+try:
     from systemboards import SCREENS as SY
 except ImportError:
     SY = []

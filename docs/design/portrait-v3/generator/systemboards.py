@@ -4,7 +4,7 @@ from kit import *
 from system import HUES, CSS
 from phone import phone_field
 
-HUE_NAMES = {'red': 'Коралловый', 'orange': 'Апельсиновый', 'violet': 'Лавандовый', 'green': 'Лайм', 'teal': 'Мятный', 'blue': 'Голубой', 'pink': 'Розовый'}
+HUE_NAMES = {'yellow': 'Солнечный', 'orange': 'Апельсиновый', 'violet': 'Лавандовый', 'green': 'Лайм', 'teal': 'Мятный', 'blue': 'Голубой', 'pink': 'Розовый'}
 
 
 def tok(name, dark=False):
@@ -81,7 +81,7 @@ def S_tokens():
   <div class="grid-2" style="gap:var(--space-6)">{blk('Линии и тени', lines_, 'Одна толщина линии — 1 px. Кольцо выбора и фокуса — 2 px. Тени — два уровня и только у плавающего; плитки плоские.')}
   {blk('Движение', motion, 'Анимируются только transform и opacity. При reduced motion — короче и без сдвига, но не ноль.')}</div>
   <div class="grid-2" style="gap:var(--space-6)">{blk('Ширины экрана', bps)}
-  {blk('Знак', f'<div class="row-f gap-8" style="align-items:center">{logo(32, word=True)}<span data-hue="red" class="row-f">{logo(32, word=True)}</span><span class="tile poster" data-hue="teal" style="flex-direction:row;padding:var(--space-3)">{logo(28, word=True)}</span>{logo(48, tile=True)}</div>', 'Знак — зеркальный пульс продукта: сверху «вы» чернилами, снизу семь цветов людей, с которыми вы переписываетесь. Единственное место, где цвет означает людей вообще, а не одного человека. Надпись — Onest 600. Плитка — только у иконки приложения. На ПК строка знака — это «Главная».')}</div>
+  {blk('Знак', f'<div class="row-f gap-8" style="align-items:center">{logo(32, word=True)}<span data-hue="yellow" class="row-f">{logo(32, word=True)}</span><span class="tile poster" data-hue="teal" style="flex-direction:row;padding:var(--space-3)">{logo(28, word=True)}</span>{logo(48, tile=True)}</div>', 'Знак — зеркальный пульс продукта: сверху «вы» чернилами, снизу семь цветов людей, с которыми вы переписываетесь. Единственное место, где цвет означает людей вообще, а не одного человека. Надпись — Onest 600. Плитка — только у иконки приложения. На ПК строка знака — это «Главная».')}</div>
 </main>'''
     return page('Система — токены', body, pc=True, h=4110)
 
@@ -90,7 +90,7 @@ def S_components():
     states = ''.join(f'<div class="stack gap-2 start">{btn("Разобрать", "primary", "md", state=s)}<span class="spec">{n}</span></div>' for s, n in [('', 'обычная'), ('is-hover', 'наведение'), ('is-press', 'нажатие'), ('is-focus', 'фокус'), ('is-disabled', 'неактивна')])
     states += '<div class="stack gap-2 start"><button class="btn btn-primary md"><span class="spin"></span>Разбираем…</button><span class="spec">загрузка</span></div>'
     kinds = ''.join(f'<div class="stack gap-2 start">{btn(l, k, "md")}<span class="spec">{n}</span></div>' for k, l, n in [('primary', 'Новый анализ', 'главная'), ('secondary', 'Разобрать', 'вторичная'), ('tinted', 'Все чаты', 'тихая'), ('plain', 'Отменить', 'текстовая'), ('danger', 'Удалить', 'опасная')])
-    poster_btns = f'<div class="tile poster" data-hue="red" style="flex-direction:row;gap:var(--space-2);align-items:center">{btn("Смотреть итоги", "poster", "md", "play")}{btn("Обновить отчёт", "poster-2", "md", "refresh")}{ibtn("back", "Назад", "on-poster")}<span class="spec muted">на постере</span></div>'
+    poster_btns = f'<div class="tile poster" data-hue="yellow" style="flex-direction:row;gap:var(--space-2);align-items:center">{btn("Смотреть итоги", "poster", "md", "play")}{btn("Обновить отчёт", "poster-2", "md", "refresh")}{ibtn("back", "Назад", "on-poster")}<span class="spec muted">на постере</span></div>'
     fields = f'''<div class="grid-2" style="gap:var(--space-4)">
   <div class="stack gap-2"><span class="label">Номер телефона</span>{phone_field(number='<span class="ph">912 345-67-89</span>', state='')}<span class="hint">пусто; код страны — по стране входа</span></div>
   <div class="stack gap-2"><span class="label">Номер телефона</span>{phone_field()}<span class="hint">фокус</span></div>
@@ -98,7 +98,7 @@ def S_components():
   <div class="otp" style="max-width:360px"><span>1</span><span>2</span><span>3</span><span class="focus"></span><span></span></div>'''
     controls = f'''<div class="stack gap-4"><div style="max-width:420px">{search('Поиск чата')}</div>
   <div class="row-f gap-6" style="flex-wrap:wrap">{filters(['Все', 'Личные', 'Группы'], 0, 'Чаты')}
-  {switch(True, 'Вкл')}{switch(False, 'Выкл')}{chips(['кофе'])}<span data-hue="red">{chips(['дедлайн'], 'them')}</span>{chips(['спасибо'], 'shared')}{ibtn('share', 'Поделиться')}{ibtn('x', 'Закрыть')}</div>
+  {switch(True, 'Вкл')}{switch(False, 'Выкл')}{chips(['кофе'])}<span data-hue="yellow">{chips(['дедлайн'], 'them')}</span>{chips(['спасибо'], 'shared')}{ibtn('share', 'Поделиться')}{ibtn('x', 'Закрыть')}</div>
   <div class="row-f gap-3">{''.join(flag(c, 24) for c, _, _ in COUNTRIES)}{flag('gb', 24)}<span class="spec">флаги кодов страны рисуем сами: Windows вместо эмодзи-флага пишет «RU». Язык — по-прежнему «RU» с глобусом</span></div></div>'''
     rows = group([row(av('dima'), 'Дима (работа)', 'Писали 7 часов назад', btn('Разобрать', 'secondary', 'sm')), row(av('mila'), 'Мила', 'Отчёт от 2 ноября, 640 новых', btn('Обновить', 'secondary', 'sm')),
                   row(av('oleg'), 'Олег Смирнов', '38 сообщений, для отчёта нужно 100', '', 'few'),
@@ -109,7 +109,7 @@ def S_components():
   <a class="sb-row person">{av('mila', 32)}<span class="grow stack"><span>Мила</span><span class="m new">640 новых сообщений</span></span></a>
   <a class="sb-row person">{av('katya', 32)}<span class="grow stack"><span>Катя</span><span class="m">130 сообщений</span></span></a>
   {live_card('dima', 63)}</div>'''
-    anatomy = f'''<div class="grid-3" style="gap:var(--space-4);align-items:start" data-hue="red">
+    anatomy = f'''<div class="grid-3" style="gap:var(--space-4);align-items:start" data-hue="yellow">
   {tile('Кто пишет больше', 'Пишете на равных', cmp('Вы', 'Мила', '51%', '49%', 51) + '<p class="note">2 434 и 2 366 сообщений</p>')}
   <div class="stack gap-2"><p class="t-small"><b>1. Вопрос</b> называет метрику — тихая строка, не надзаголовок.</p><p class="t-small"><b>2. Ответ</b> — одна фраза. Есть у каждой карточки; фраза главы не повторяет её слово в слово.</p><p class="t-small"><b>3. Сравнение</b> — две цифры и одна полоска 8 px; вы — чернила слева, человек — его метка справа.</p><p class="t-small"><b>4. Первая находка главы</b> стоит без карточки, крупно; мелкие факты — строками с линиями.</p></div>
   <section class="tile poster"><p class="q">Слово вашей переписки</p><p class="t-figure">good</p><p class="t-small muted">Плитка цвета постера — не больше одной на главу.</p></section></div>

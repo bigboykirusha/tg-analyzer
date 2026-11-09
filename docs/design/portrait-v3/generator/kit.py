@@ -3,12 +3,12 @@ import re
 from system import CSS, bars
 
 P = {  # people of the demo account: name, initials, colour family
-    'mila': ('Мила', 'М', 'red'), 'mama': ('Мама', 'М', 'orange'), 'team': ('Продуктовая команда', 'ПК', 'pink'),
+    'mila': ('Мила', 'М', 'yellow'), 'mama': ('Мама', 'М', 'orange'), 'team': ('Продуктовая команда', 'ПК', 'pink'),
     'katya': ('Катя', 'К', 'blue'), 'dima': ('Дима (работа)', 'ДР', 'teal'), 'anna': ('Анна Петрова', 'АП', 'green'),
     'artyom': ('Артём Ковалёв', 'АК', 'violet'), 'sofia': ('Sofia Martins', 'SM', 'green'), 'oleg': ('Олег Смирнов', 'ОС', 'pink'),
-    'family': ('Семья', 'С', 'red'), 'run': ('Бег по утрам', 'БП', 'orange'),
+    'family': ('Семья', 'С', 'yellow'), 'run': ('Бег по утрам', 'БП', 'orange'),
     'sergey': ('Сергей', 'С', 'teal'), 'alexey': ('Алексей', 'А', 'orange'), 'natasha': ('Наташа', 'Н', 'blue'),
-    'maria': ('Мария', 'М', 'red'), 'yulia': ('Юля', 'Ю', 'green'),
+    'maria': ('Мария', 'М', 'yellow'), 'yulia': ('Юля', 'Ю', 'green'),
 }
 
 _I = {
@@ -48,7 +48,7 @@ def ic(name, cls=''):
             f'stroke-linejoin="round" aria-hidden="true">{_I[name]}</svg>')
 
 
-LOGO_ORDER = ['red', 'orange', 'green', 'teal', 'blue', 'violet', 'pink']
+LOGO_ORDER = ['yellow', 'orange', 'green', 'teal', 'blue', 'violet', 'pink']
 
 
 def logo(size=32, word=False, tile=False, bare=False):
@@ -232,7 +232,7 @@ def mini_poster(key, meta, seed, h=148, period='', more=True, menu=''):
 
 def thumb(kind, title, n=4, i=0):
     seg_ = '<span class="story-seg" style="grid-template-columns:repeat(4,1fr)">' + ''.join(f'<i class="{"on" if k <= i else ""}"></i>' for k in range(n)) + '</span>'
-    return f'<div class="thumb916" data-hue="red">{seg_}<span class="stack gap-1"><small>{kind}</small><b>{title}</b>{pulse(14, 7, 1.0 + i)}</span></div>'
+    return f'<div class="thumb916" data-hue="yellow">{seg_}<span class="stack gap-1"><small>{kind}</small><b>{title}</b>{pulse(14, 7, 1.0 + i)}</span></div>'
 
 
 def thumbs():
