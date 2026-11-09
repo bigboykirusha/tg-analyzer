@@ -48,15 +48,19 @@ def ic(name, cls=''):
             f'stroke-linejoin="round" aria-hidden="true">{_I[name]}</svg>')
 
 
+LOGO_ORDER = ['red', 'orange', 'green', 'teal', 'blue', 'violet', 'pink']
+
+
 def logo(size=32, word=False, tile=False, bare=False):
-    """The mark is the product's own mirrored pulse: you on top in ink, the other side below in their colour —
-    neutral grey outside a report, the person's colour inside one. A tile only for the app icon."""
-    up, dn = [4, 8, 11, 7, 5], [3, 5, 8, 4, 3]
-    x0 = 4.4 if tile else 2.2
-    step = 4.1 if tile else 5.0
-    w = 2.8 if tile else 3.4
-    bars_ = ''.join(f'<rect class="logo-up" x="{x0 + i * step:.1f}" y="{14 - u * (1 if tile else 1.15):.1f}" width="{w}" height="{u * (1 if tile else 1.15):.1f}" rx="{w / 2}"/>'
-                    f'<rect class="logo-dn" x="{x0 + i * step:.1f}" y="15" width="{w}" height="{d * (1 if tile else 1.15):.1f}" rx="{w / 2}"/>' for i, (u, d) in enumerate(zip(up, dn)))
+    """The mark is the product's mirrored pulse: you on top in ink, below — the seven colours of the people you write to.
+    The tile (ink, people in their poster tones) is only for the app icon."""
+    from system import HUES
+    up, dn = [5, 9, 13, 8, 11, 6, 4], [4, 7, 10, 6, 8, 5, 3]
+    w, gap = 2.6, 1.1
+    x0 = (28 - (7 * w + 6 * gap)) / 2
+    k_ = 'poster' if tile else 'them'
+    bars_ = ''.join(f'<rect class="logo-up" x="{x0 + i * (w + gap):.2f}" y="{14 - up[i] * 0.9:.2f}" width="{w}" height="{up[i] * 0.9:.2f}" rx="{w / 2}"/>'
+                    f'<rect x="{x0 + i * (w + gap):.2f}" y="15" width="{w}" height="{dn[i] * 0.9:.2f}" rx="{w / 2}" fill="{HUES[LOGO_ORDER[i]][k_]}"/>' for i in range(7))
     rect = '<rect class="logo-rect" width="28" height="28" rx="8"/>' if tile else ''
     mark = f'<svg class="{"logo-tile" if tile else "logo"}" style="width:{size}px;height:{size}px" viewBox="0 0 28 28" aria-hidden="true">{rect}{bars_}</svg>'
     if bare:

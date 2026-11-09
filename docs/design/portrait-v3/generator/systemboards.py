@@ -81,7 +81,7 @@ def S_tokens():
   <div class="grid-2" style="gap:var(--space-6)">{blk('Линии и тени', lines_, 'Одна толщина линии — 1 px. Кольцо выбора и фокуса — 2 px. Тени — два уровня и только у плавающего; плитки плоские.')}
   {blk('Движение', motion, 'Анимируются только transform и opacity. При reduced motion — короче и без сдвига, но не ноль.')}</div>
   <div class="grid-2" style="gap:var(--space-6)">{blk('Ширины экрана', bps)}
-  {blk('Знак', f'<div class="row-f gap-8" style="align-items:center">{logo(32, word=True)}<span data-hue="red" class="row-f">{logo(32, word=True)}</span><span class="tile poster" data-hue="teal" style="flex-direction:row;padding:var(--space-3)">{logo(28, word=True)}</span>{logo(48, tile=True)}</div>', 'Знак — зеркальный пульс продукта, без плитки: сверху «вы» чернилами, снизу собеседник — серый вне отчёта, цвет человека внутри него. Надпись — Onest 600. Плитка — только у иконки приложения (вкладка, ярлык). На ПК строка знака — это «Главная».')}</div>
+  {blk('Знак', f'<div class="row-f gap-8" style="align-items:center">{logo(32, word=True)}<span data-hue="red" class="row-f">{logo(32, word=True)}</span><span class="tile poster" data-hue="teal" style="flex-direction:row;padding:var(--space-3)">{logo(28, word=True)}</span>{logo(48, tile=True)}</div>', 'Знак — зеркальный пульс продукта: сверху «вы» чернилами, снизу семь цветов людей, с которыми вы переписываетесь. Единственное место, где цвет означает людей вообще, а не одного человека. Надпись — Onest 600. Плитка — только у иконки приложения. На ПК строка знака — это «Главная».')}</div>
 </main>'''
     return page('Система — токены', body, pc=True, h=4110)
 

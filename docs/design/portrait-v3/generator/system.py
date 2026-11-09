@@ -301,9 +301,8 @@ CSS = r"""
 .sb-row .lead svg { width: 20px; height: 20px; }
 .sb-row .m.new { color: var(--text); font-weight: 500; }
 .sb-h { font: var(--text-caption); color: var(--text-muted); padding: var(--space-4) var(--space-2) var(--space-1); }
-.logo .logo-up { fill: var(--you); } .logo .logo-dn { fill: var(--them); }
-.poster .logo .logo-up { fill: var(--on-poster); } .poster .logo .logo-dn { fill: var(--on-them); }
-.logo-rect { fill: #1D1D1F; } .logo-tile .logo-up { fill: #FFFFFF; } .logo-tile .logo-dn { fill: #8E8E93; }
+.logo .logo-up { fill: var(--you); } .poster .logo .logo-up { fill: var(--on-poster); }
+.logo-rect { fill: #1D1D1F; } .logo-tile .logo-up { fill: #FFFFFF; } 
 .sb-row.home { min-height: 44px; gap: var(--space-2); }
 .wordmark { font: 600 16px/24px var(--font-sans); letter-spacing: -0.01em; }
 /* overlays */
