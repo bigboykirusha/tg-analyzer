@@ -317,19 +317,23 @@ FRAME_COVER = f'''{who()}
   <p class="t-small muted">С 9 апреля по 2 ноября 2026</p></div>
   <div class="st-lines"><p>Самый громкий день — <b>23 апреля</b></p><p>Голосовых вместе — <b>2 ч 57 мин</b></p></div>'''
 
-# a conversation: her bubbles left in her deep tone, yours right in ink, facts as plain lines under the dialogue
-FRAME_TOGETHER = f'''{who()}<h1 class="t-display">На равных</h1>
-  <div class="st-chat" role="img" aria-label="Мила — 49%, вы — 51%">
-  <div class="bubble them"><span>Мила</span><b>49%</b><span>2 366 сообщений</span></div>
-  <div class="bubble you"><span>Вы</span><b>51%</b><span>2 434 сообщения</span></div>
-  <div class="bubble them sm">«Спокойной ночи» — 81 раз</div>
-  <div class="bubble you sm">«Доброе утро» — 74 раза</div></div>
-  <div class="st-lines"><p>Отвечаете оба <b>за 3 минуты</b></p><p>Разговор начинаете <b>по очереди</b></p></div>'''
+# a conversation of short bubbles: hers on the left in her deep tone, yours on the right in ink
+def msg(text, side):
+    return f'<div class="bubble {side}">{text}</div>'
+
+
+FRAME_TOGETHER = (f'''{who()}<h1 class="t-display">На равных</h1><div class="st-chat" role="img" aria-label="Мила — 49% сообщений, вы — 51%">'''
+                  + msg('<b>2 366</b> сообщений — <b>49%</b>', 'them')
+                  + msg('<b>2 434</b> сообщения — <b>51%</b>', 'you')
+                  + msg('«Спокойной ночи» — <b>81 раз</b>', 'them')
+                  + msg('«Доброе утро» — <b>74 раза</b>', 'you')
+                  + '''</div>
+  <div class="st-lines"><p>Отвечаете оба <b>за 3 минуты</b></p><p>Разговор начинаете <b>по очереди</b></p></div>''')
 
 _HOURS = [2, 1, 1, 0, 0, 1, 4, 9, 14, 15, 17, 19, 21, 20, 16, 18, 13, 12, 14, 16, 17, 15, 18, 20]
 
 
-def _dial(size=300):
+def _dial(size=300):  # drawn at 300, shown at 180
     c, r0 = size / 2, 60
     rays = ''
     for k, v in enumerate(_HOURS):
@@ -337,9 +341,9 @@ def _dial(size=300):
         r1 = r0 + 10 + v / 21 * 54
         rays += (f'<line x1="{c + r0 * math.cos(ang):.1f}" y1="{c + r0 * math.sin(ang):.1f}" x2="{c + r1 * math.cos(ang):.1f}" y2="{c + r1 * math.sin(ang):.1f}" '
                  f'class="{"hot" if 11 <= k <= 13 else ""}"/>')
-    marks = ''.join(f'<text x="{c + 140 * math.cos(math.radians(h * 15 - 90)):.1f}" y="{c + 140 * math.sin(math.radians(h * 15 - 90)) + 4:.1f}">{h}</text>' for h in (0, 6, 12, 18))
+    marks = ''.join(f'<text x="{c + 144 * math.cos(math.radians(h * 15 - 90)):.1f}" y="{c + 144 * math.sin(math.radians(h * 15 - 90)) + 6:.1f}">{h}</text>' for h in (0, 6, 12, 18))
     return (f'<svg class="st-dial" viewBox="0 0 {size} {size}" role="img" aria-label="Сутки по часам: больше всего с 11 до 14">{rays}{marks}'
-            f'<text x="{c}" y="{c + 2}" class="big">11–14</text><text x="{c}" y="{c + 24}" class="cap">ваши часы</text></svg>')
+            f'<text x="{c}" y="{c + 8}" class="big">11–14</text><text x="{c}" y="{c + 38}" class="cap">ваши часы</text></svg>')
 
 
 # a clock face: the day as a dial, the peak in ink, the parts of the day under it
@@ -350,8 +354,9 @@ FRAME_TIME = f'''{who()}<div class="stack gap-1"><h1 class="t-display">Днём<
 
 # a top five, numbered like a chart; emoji and the words only one of you uses under it
 _TOP = [('good', 214), ('дела', 152), ('great', 142), ('job', 142), ('кофе', 96)]
-FRAME_WORDS = (f'''{who()}<h1 class="t-display">О чём</h1><ol class="st-top">'''
-               + ''.join(f'<li><span class="n">{i}</span><b>{w}</b><span class="c">{n}</span></li>' for i, (w, n) in enumerate(_TOP, 1))
+FRAME_WORDS = (f'''{who()}<h1 class="t-display">О чём</h1>
+  <div class="st-top1"><span class="n">1</span><b>{_TOP[0][0]}</b><span class="c">{_TOP[0][1]} раз</span></div><ol class="st-top" start="2">'''
+               + ''.join(f'<li><span class="n">{i}</span><b>{w}</b><span class="c">{n}</span></li>' for i, (w, n) in enumerate(_TOP[1:], 2))
                + '</ol><div class="st-parts emo">' + ''.join(f'<span><i>{e}</i><b>{n}</b></span>' for e, n in [('☀️', 161), ('🎉', 142), ('👍', 125)]) + '</div>'
                + '<div class="st-lines"><p>У вас — <b>«кофе»</b>, у Милы — <b>«дедлайн»</b></p></div>')
 
