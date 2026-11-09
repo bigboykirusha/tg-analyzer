@@ -35,7 +35,7 @@ def lead_mila():
 
 
 def home(lead, theme=None, fab=FAB):
-    body = f'''{ph_home_nav()}<main class="page" style="padding-bottom:120px">
+    body = f'''{ph_home_nav()}<main class="page" style="padding-bottom:var(--fab-clearance)">
   <div class="stack gap-1"><h1 class="t-h1">Добрый вечер, Дима</h1><p class="t-small muted">Вот что нового в ваших переписках.</p></div>
   {sec('Сейчас главное', lead)}
   {sec('Отчёты', REPORT_TILES)}
@@ -139,7 +139,7 @@ def report_actions(key='mila'):
 def S_menu():
     sheet = f'''<section class="sheet" role="dialog" aria-modal="true" aria-label="Отчёт «Мила»">
   <span class="grabber"></span>
-  <div class="row-f gap-3">{av('mila', 48)}<div class="grow stack"><h2 class="t-h3">Мила</h2><p class="t-small muted">Отчёт от 2 ноября, 4 800 сообщений</p></div>{ibtn('x', 'Закрыть')}</div>
+  <div class="row-f gap-3">{av('mila', 40)}<div class="grow stack"><h2 class="t-h3">Мила</h2><p class="t-small muted">Отчёт от 2 ноября, 4 800 сообщений</p></div>{ibtn('x', 'Закрыть')}</div>
   {report_actions()}
 </section>'''
     return page('Действия с отчётом («⋯» на карточке)', dim_home() + '<div class="scrim"></div>' + sheet)
@@ -182,12 +182,12 @@ def chapter_head(title, lede):
 HERO_SHARE = hero('Кто пишет больше', 'Пишете на равных', cmp('Вы', 'Мила', '51%', '49%', 51) + '<p class="t-small muted">2 434 и 2 366 сообщений</p>')
 T_SPEED = tile('Кто отвечает быстрее', 'Отвечаете одинаково быстро', cmp('Вы', 'Мила', '3 мин', '3 мин') + '<p class="note">Обычно — за 3 минуты. Ночью дольше у обоих.</p>')
 T_QUESTIONS = tile('Кто задаёт вопросы', 'Спрашиваете поровну',
-                   '<div style="display:grid;grid-template-columns:48px minmax(0,1fr);gap:var(--space-2) var(--space-3);align-items:center">'
+                   '<div style="display:grid;grid-template-columns:var(--space-12) minmax(0,1fr);gap:var(--space-2) var(--space-3);align-items:center">'
                    '<span class="t-small muted">Вы</span><span class="squares">' + '<i></i>' * 22 + '</span>'
                    '<span class="t-small them-ink">Мила</span><span class="squares them">' + '<i></i>' * 21 + '</span></div><p class="note">Один квадрат — 10 вопросов</p>')
 T_HABITS = tile('Ваши привычки', 'Разговор начинаете по очереди', kv('Первым пишет утром', 'по очереди') + kv('Чаще смеётся', 'поровну') + kv('«Спокойной ночи» желает', 'Мила', '81 раз против 66'), rows=True)
 TOGETHER = [T_SPEED, T_QUESTIONS, T_HABITS]
-LEDE = {'together': 'Пишете на равных и отвечаете одинаково быстро', 'time': 'Дневной ритм, на связи почти каждый день', 'words': '«good» на двоих, а у каждого свои слова'}
+LEDE = {'together': 'Баланс почти идеальный — и в словах, и в скорости', 'time': 'Дневной ритм, на связи почти каждый день', 'words': '«good» на двоих, а у каждого свои слова'}
 
 
 def S_report(theme=None):
@@ -201,7 +201,7 @@ def S_together():
 PARTS = ('<div class="grid-4" style="text-align:center;gap:0">' + ''.join(
     f'<span class="stack"><b class="t-small-strong">{v}</b><span class="t-caption muted" style="font-weight:400">{k}</span></span>'
     for k, v in [('ночь', '1%'), ('утро', '27%'), ('день', '38%'), ('вечер', '34%')]) + '</div>')
-T_HOURS = tile('Ваше время', 'Пик — с 11:00 до 14:00', hours() + PARTS)
+T_HOURS = hero('Ваше время', 'Пик — с 11:00 до 14:00', hours() + PARTS)
 T_RECORDS = tile('Ваши рекорды', '23 апреля — ваш день рекордов', kv('Самый долгий разговор', '14 ч 39 мин', '23 апреля') + kv('Больше всего за день', '96 сообщений', '23 апреля') + kv('Самая длинная пауза', '6 дней', 'в июле'), rows=True)
 
 
@@ -214,7 +214,7 @@ def S_time():
 
 WORD = ('<section class="tile poster"><p class="q">Слово вашей переписки</p><p class="t-figure">good</p><p class="t-small muted">214 раз за всё время</p>'
         + cmp('Вы', 'Мила', '118', '96', 55)
-        + '<div class="grid-3 mt-auto" style="gap:var(--space-2);padding-top:var(--space-3);box-shadow:inset 0 0.5px 0 var(--on-poster-line)">'
+        + '<div class="grid-3 mt-auto" style="gap:var(--space-2);padding-top:var(--space-3);box-shadow:inset 0 1px 0 var(--on-poster-line)">'
         + ''.join(f'<span class="stack"><b class="t-small-strong">{w}</b><span class="t-small muted">{n}</span></span>' for w, n in [('дела', 152), ('great', 142), ('job', 142)]) + '</div></section>')
 VOCAB = tile('Ваш словарь', 'Вы чаще пишете «кофе», Мила — «дедлайн»',
              '<p class="t-small muted">Только вы</p>' + chips(['кофе', 'выходных', 'ладно']) + '<p class="t-small them-ink">Только Мила</p>' + chips(['дедлайн', 'созвон', 'релиз'], 'them')
@@ -242,8 +242,8 @@ def S_ending():
 def fan():
     cards = ''
     for i, (x, y, r) in enumerate([(0, 6, -8), (12, 2, -2), (24, 0, 5)]):
-        inner = f'<span class="story-seg" style="grid-template-columns:repeat(4,1fr)"><i class="on"></i><i></i><i></i><i></i></span><span class="stack gap-1"><b style="font-size:12px;line-height:14px">Мила</b>{pulse(10, 5, 1.0)}</span>' if i == 2 else ''
-        cards += f'<span class="thumb916" style="left:{x}px;top:{y}px;transform:rotate({r}deg);padding:6px">{inner}</span>'
+        inner = f'<span class="story-seg" style="grid-template-columns:repeat(4,1fr)"><i class="on"></i><i></i><i></i><i></i></span><span class="stack gap-1"><b>Мила</b>{pulse(10, 5, 1.0)}</span>' if i == 2 else ''
+        cards += f'<span class="thumb916" style="left:{x}px;top:{y}px;transform:rotate({r}deg);padding:var(--space-2)">{inner}</span>'
     return f'<span class="fan" aria-hidden="true">{cards}</span>'
 
 
@@ -302,14 +302,14 @@ def story(content, i=1, n=4, label='Итоги: Мила'):
 def S_story_cover():
     c = f'''<div class="stack grow gap-6" style="justify-content:center">
   {pulse(40, 72, 1.0)}
-  <div class="stack gap-3 poster-name"><h1 class="t-display" style="--display-max:88px">Мила</h1><p class="t-h3">4 800 сообщений за 208 дней</p>
+  <div class="stack gap-3 poster-name"><h1 class="t-display">Мила</h1><p class="t-h3">4 800 сообщений за 208 дней</p>
   <p class="t-small muted">С 9 апреля по 2 ноября 2026</p></div>
 </div>'''
     return page('Итоги — обложка', story(c, 1, label='Итоги, 1 из 4'), hue='red')
 
 
 STORY_TOGETHER = f'''<div class="stack grow gap-8" style="justify-content:center">
-  <div class="stack gap-3"><h1 class="t-display" style="font-size:56px;line-height:56px">На равных</h1><p class="t-body muted">51 на 49, и отвечаете одинаково быстро</p></div>
+  <div class="stack gap-3"><h1 class="t-display">На равных</h1><p class="t-body muted">51 на 49, и отвечаете одинаково быстро</p></div>
   <div class="big">{cmp('Вы', 'Мила', '51%', '49%', 51)}</div>
   <div class="facts"><div><b>3 мин</b><span>отвечаете оба</span></div><div><b>по очереди</b><span>начинаете разговор</span></div>
   <div><b>2 ч 57 мин</b><span>голосовых вместе</span></div><div><b>поровну</b><span>смеётесь</span></div></div>
@@ -322,7 +322,7 @@ def S_story():
 
 def S_story_end():
     c = f'''<div class="stack grow gap-8" style="justify-content:center">
-  <h1 class="t-display" style="font-size:56px;line-height:56px">Вы и Мила</h1>
+  <h1 class="t-display">Вы и Мила</h1>
   <div class="facts"><div><b>51 на 49</b><span>пишете на равных</span></div><div><b>11–14</b><span>ваши часы</span></div>
   <div><b>«good»</b><span>слово переписки</span></div><div><b>196 дней</b><span>из 208 на связи</span></div></div>
 </div>'''
@@ -392,7 +392,7 @@ def S_guest():
   <div class="stack gap-2 poster-name" style="margin-top:var(--space-6)"><h1 class="t-display">Дима и Мила</h1><p class="t-small muted">Дима поделился с вами отчётом о переписке: 4 800 сообщений с 9 апреля.</p></div>
   {pulse(56, 24, 1.0)}
 </section>'''
-    main = f'''<main class="cards" style="padding:var(--space-4) var(--page-gutter) 140px"><h2 class="sr-only">Главное</h2>
+    main = f'''<main class="cards" style="padding:var(--space-4) var(--page-gutter) var(--fab-clearance)"><h2 class="sr-only">Главное</h2>
   {tile('Кто пишет больше', 'Пишете на равных', cmp('Дима', 'Мила', '51%', '49%', 51))}
   {tile('Коротко', None, kv('Отвечаете', 'оба за 3 мин') + kv('Пик', 'с 11:00 до 14:00') + kv('Писали друг другу', '196 из 208 дней'), rows=True)}
 </main>{btn('Разобрать свои переписки', 'primary', 'xl fab', tag='a')}'''
@@ -409,7 +409,7 @@ def quiz_shell(content, step=None):
 def S_quiz_start():
     c = f'''<div class="row-f between">{logo(28, word=True)}<a href="#" class="t-small muted">Приватность</a></div>
   <div class="stack gap-4 grow" style="justify-content:center">{pulse(40, 40, 1.0)}
-  <h1 class="t-h1" style="font-size:40px;line-height:44px">Дима позвал вас в угадайку</h1>
+  <h1 class="t-figure">Дима позвал вас в угадайку</h1>
   <p class="t-body muted">Пять вопросов о вашей переписке: кто дольше записывает голосовые, кто желает спокойной ночи, чьё это слово.</p></div>
   <div class="stack gap-3"><p class="t-small muted" style="text-align:center">Дима увидит, сколько вы угадали</p>{btn('Начать', 'poster', 'xl block')}</div>'''
     return page('Гость — угадайка, старт', quiz_shell(c), hue='red')
@@ -421,7 +421,7 @@ def S_quiz():
         mark = f'<span class="row-f gap-1 t-small muted">{ic("check")}{note}</span>' if cls == 'on' else ''
         return f'<button class="choice {cls}" role="radio" aria-checked="{str(cls == "on").lower()}">{a}<span class="t-title grow">{name}</span>{mark}</button>'
     c = f'''<p class="t-small muted">Вопрос 3 из 5</p>
-  <div class="stack grow" style="justify-content:center"><h1 class="t-h1" style="font-size:36px;line-height:40px">Кто чаще желает «спокойной ночи»?</h1>
+  <div class="stack grow" style="justify-content:center"><h1 class="t-figure">Кто чаще желает «спокойной ночи»?</h1>
   <div class="stack gap-2" role="radiogroup" aria-label="Ответ" style="margin-top:var(--space-8)">{ch(None, 'Дима')}{ch('mila', 'Я, Мила', 'on', '81 раз')}</div>
   <p class="t-ui" role="status" style="margin-top:var(--space-4)">Верно — это вы, 81 раз против 66.</p></div>
   <div>{btn('Следующий вопрос', 'poster', 'xl block')}</div>'''
@@ -430,7 +430,7 @@ def S_quiz():
 
 def S_quiz_end():
     c = f'''<div class="stack gap-3 grow" style="justify-content:center"><p class="t-small muted">Угадайка от Димы</p>
-  <p class="t-figure" style="font-size:96px;line-height:96px">4 из 5</p>
+  <p class="t-display">4 из 5</p>
   <h1 class="t-h2">Вы хорошо знаете эту переписку</h1>
   <p class="t-body muted">Не угадали один вопрос — кто дольше записывает голосовые. Дима уже видит результат.</p></div>
   <div class="stack gap-2">{btn('Разобрать свои переписки', 'poster', 'xl block', tag='a')}{btn('Открыть отчёт Димы', 'poster-2', 'xl block', tag='a')}</div>'''
@@ -524,7 +524,7 @@ def S_login(menu=False):
 
 def S_code():
     c = f'''<h1 class="t-h1">Код из Telegram</h1>
-  <p class="t-body muted" style="margin-top:var(--space-2)">Отправили в приложение Telegram на +7 912 345-67-89. <a href="#" style="color:var(--text);text-decoration:underline;text-underline-offset:3px">Изменить номер</a></p>
+  <p class="t-body muted" style="margin-top:var(--space-2)">Отправили в приложение Telegram на +7 912 345-67-89. <a href="#" class="link" style="color:var(--text)">Изменить номер</a></p>
   <div class="otp" style="margin-top:var(--space-8)" role="group" aria-label="Код из пяти цифр, одно поле"><span>1</span><span>2</span><span>3</span><span class="focus"></span><span></span></div>
   <p class="t-small muted" style="margin-top:var(--space-3)">Отправить снова через 0:42</p>
   <div style="margin-top:var(--space-6)">{btn('Войти', 'primary', 'xl block')}</div>'''
@@ -535,7 +535,7 @@ def S_password():
     c = f'''<h1 class="t-h1">Облачный пароль</h1>
   <p class="t-body muted" style="margin-top:var(--space-2)">В Telegram включена двухэтапная защита. Пароль проверяет Telegram, мы его не храним.</p>
   <label class="label" style="margin:var(--space-8) 0 var(--space-2)">Пароль</label>
-  <div class="field error" style="padding-right:var(--space-1)"><span class="grow" style="font-size:20px;letter-spacing:3px">••••••••</span><button class="icon-btn" style="background:none;color:var(--text-muted)" aria-label="Показать пароль" aria-pressed="false">{ic('eye')}</button></div>
+  <div class="field error" style="padding-right:var(--space-1)"><span class="grow mask">••••••••</span><button class="icon-btn" style="background:none;color:var(--text-muted)" aria-label="Показать пароль" aria-pressed="false">{ic('eye')}</button></div>
   <p class="err" role="alert" style="margin-top:var(--space-2)">{ic('alert')}Пароль не подошёл. Подсказка: «кот»</p>
   <div style="margin-top:var(--space-6)">{btn('Войти', 'primary', 'xl block')}</div>
   <a href="#" class="t-small muted" style="margin-top:var(--space-4);text-align:center">Забыли пароль? Сбросить его можно только в Telegram</a>'''
@@ -546,13 +546,13 @@ def S_landing():
     def person(key, fact, value, seed):
         name, _, hue = P[key]
         return f'<div class="tile poster" data-hue="{hue}" style="gap:var(--space-1)"><span class="t-h3">{value}</span><span class="t-small muted">{fact}</span><span style="margin-top:var(--space-2)">{pulse(40, 12, seed)}</span></div>'
-    hero_ = f'''<main class="stack gap-4" style="padding:var(--space-6) var(--page-gutter) 160px">
-  <h1 class="t-display" style="font-size:52px;line-height:52px">Зеркало ваших переписок</h1>
+    hero_ = f'''<main class="stack gap-4" style="padding:var(--space-6) var(--page-gutter) var(--fab-clearance)">
+  <h1 class="t-display">Зеркало ваших переписок</h1>
   <p class="t-body muted">Кто пишет первым, кто отвечает быстрее, о чём вы говорите и когда. Отчёт по любому чату Telegram за пару минут — без хранения текстов.</p>
   <div class="cards" aria-label="Примеры" style="margin-top:var(--space-3)">{person('mila', 'Пишете на равных', 'Мила, 51 на 49', 1)}{person('artyom', 'Отвечает быстрее вас', 'Артём, в 3 раза', 2)}</div>
 </main>'''
     nav = f'<header class="nav-ph between">{logo(28, word=True)}<a href="#" class="t-ui">Войти</a></header>'
-    bar = f'<div class="stack gap-2" style="position:absolute;left:0;right:0;bottom:0;padding:var(--space-3) var(--page-gutter) 34px;background:var(--bg)">{btn("Войти через Telegram", "primary", "xl block", tag="a")}{btn("Посмотреть пример отчёта", "plain", "md block", tag="a")}</div>'
+    bar = f'<div class="stack gap-2" style="position:absolute;left:0;right:0;bottom:0;padding:var(--space-3) var(--page-gutter) var(--safe-bottom);background:var(--bg)">{btn("Войти через Telegram", "primary", "xl block", tag="a")}{btn("Посмотреть пример отчёта", "plain", "md block", tag="a")}</div>'
     return page('Лендинг', nav + hero_ + bar)
 
 

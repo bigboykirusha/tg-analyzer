@@ -39,7 +39,7 @@ def home_reports(menu=''):
 
 
 def home_main(menu='', busy=None):
-    return f'''<div class="page" style="max-width:1160px">
+    return f'''<div class="page page-max">
   <div class="stack gap-1"><h1 class="t-h1">Добрый вечер, Дима</h1><p class="t-body muted">Вот что нового в ваших переписках.</p></div>
   {sec('Сейчас главное', f'<div class="grid-3">{lead_mila()}{quiz_tile()}{month_tile()}</div>')}
   {sec('Отчёты', home_reports(menu))}
@@ -61,7 +61,7 @@ def D_menu():
 def D_first():
     def card(key, meta, seed, primary):
         name, _, hue = P[key]
-        return f'''<article class="tile poster" data-hue="{hue}" style="gap:var(--space-1);padding:var(--space-6)">{av(key, 48)}
+        return f'''<article class="tile poster" data-hue="{hue}" style="gap:var(--space-1);padding:var(--space-6)">{av(key, 40)}
   <h2 class="t-h3" style="margin-top:var(--space-3)">{name}</h2><p class="t-small muted">{meta}</p>
   <span style="margin:var(--space-4) 0">{pulse(36, 10, seed, mirrored=False)}</span>
   <div class="mt-auto">{btn('Разобрать', 'poster' if primary else 'poster-2', 'md', aria=f'Разобрать: {name}')}</div></article>'''
@@ -69,7 +69,7 @@ def D_first():
     rows = [('artyom', '268 сообщений за месяц'), ('mama', '240 сообщений за месяц'), ('sofia', '200 сообщений за месяц'), ('family', 'Группа, 180 сообщений за месяц'), ('katya', '130 сообщений за месяц'), ('run', 'Группа, 120 сообщений за месяц')]
     g = group([row(av(k), P[k][0], m, btn('Разобрать', 'secondary', 'md', aria=f'Разобрать: {P[k][0]}')) for k, m in rows]
               + [row(lead_ic('search'), 'Все чаты Telegram', '', '', '', True, True)], 'Или кто-то ещё')
-    main = f'''<div class="page" style="max-width:1160px">
+    main = f'''<div class="page page-max">
   <div class="stack gap-2"><h1 class="t-h1">С кого начнём?</h1><p class="t-body muted">Самые активные чаты месяца. Отчёт будет готов через минуту-две.</p></div>
   {top}{g}</div>'''
     return shell(sidebar('home', empty=True), main, title='Первый вход')
@@ -110,9 +110,15 @@ def D_report(theme=None):
 def D_time():
     heat_tile = tile('Активность по дням', 'Писали друг другу 196 из 208 дней', months_heat())
     body = f'''<div class="cards" style="flex:1;min-height:0;overflow:hidden;padding:var(--space-6) var(--page-gutter)">{chapter_head('Время', LEDE['time'])}
-  <div style="display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:var(--card-gap);align-items:start">{T_HOURS}{T_RECORDS}</div>{heat_tile}
+  {T_HOURS}{records_pc()}{heat_tile}
   <div style="height:var(--space-6)"></div>{chapter_head('О чём', LEDE['words'])}<div class="grid-2">{WORD}{VOCAB}</div></div>'''
     return shell(sidebar('mila'), report_bar('Мила') + body, title='Отчёт — Время', hue='red', room=True)
+
+
+def records_pc():
+    facts = ''.join(f'<div class="stack gap-1"><span class="t-small muted">{k}</span><b class="t-h2">{v}</b><span class="t-small muted">{d}</span></div>'
+                    for k, v, d in [('Самый долгий разговор', '14 ч 39 мин', '23 апреля'), ('Больше всего за день', '96 сообщений', '23 апреля'), ('Самая длинная пауза', '6 дней', 'в июле')])
+    return tile('Ваши рекорды', '23 апреля — ваш день рекордов', f'<div class="grid-3">{facts}</div>')
 
 
 def ending_pc():
@@ -133,7 +139,7 @@ def D_group():
     poster = poster_pc('Продуктовая команда', '9 000 сообщений, 8 участников, с 30 апреля 2026', ('Вы', 'Остальные'), cast, up_scale=0.2)
     members = tile('Кто и как участвует', 'Ядро — четыре человека', member_rows('sergey') + row('', 'Все участники (8)', '', '', 'compact', True, True), rows=True)
     inspector = f'<aside class="inspector" aria-label="Сергей">{member_body()}</aside>'
-    body = f'''<div style="display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:var(--card-gap);padding:var(--space-6) var(--page-gutter);align-items:start">
+    body = f'''<div style="display:grid;grid-template-columns:minmax(0,1fr) var(--inspector);gap:var(--card-gap);padding:var(--space-6) var(--page-gutter);align-items:start">
   <div class="cards">{chapter_head('Люди', 'Пишут все понемногу, без явных лидеров')}{members}{awards_tile()}</div>{inspector}</div>'''
     return shell(sidebar('team'), poster + body, title='Группа — Люди', hue='pink', room=True)
 
@@ -154,7 +160,7 @@ def D_progress_open():
 
 def D_new():
     data = NEW_DATA + [('run', 'Группа, писали 4 часа назад', 'new')]
-    main = f'''<div class="page" style="max-width:880px">
+    main = f'''<div class="page" style="max-width:var(--page-max-narrow)">
   <div class="stack gap-1"><h1 class="t-h1">Новый анализ</h1><p class="t-body muted">Выберите чат — отчёт будет готов через минуту-две.</p></div>
   <div class="row-f gap-4">{search('Поиск чата', '<span class="kbd">/</span>').replace('class="search"', 'class="search grow"')}{filters(['Все', 'Личные', 'Группы'], 0, 'Какие чаты')}</div>
   <div class="group">{new_rows('md', data)}</div></div>'''
@@ -188,13 +194,13 @@ def D_stories():
     nav = (f'<button class="icon-btn lg" aria-label="Предыдущий кадр" style="position:absolute;left:452px;top:415px">{ic("back")}</button>'
            f'<button class="icon-btn lg" aria-label="Следующий кадр" style="position:absolute;right:452px;top:415px">{ic("chev")}</button>'
            f'<button class="icon-btn lg" aria-label="Закрыть" style="position:absolute;right:var(--space-6);top:var(--space-6)">{ic("x")}</button>'
-           f'<p class="t-small" style="position:absolute;left:var(--space-6);bottom:var(--space-6);color:#A1A1A8">← → листать, пробел — пауза, Esc — закрыть</p>')
+           f'<p class="t-small" style="position:absolute;left:var(--space-6);bottom:var(--space-6);color:var(--story-hint)">← → листать, пробел — пауза, Esc — закрыть</p>')
     return page('Итоги на ПК', f'<div class="backdrop" style="position:absolute;inset:0"></div>{slide}{nav}', pc=True)
 
 
 def D_account():
     look, notify, links, devices, out = account_groups(pc=True)
-    main = f'''<div class="page" style="max-width:1160px">
+    main = f'''<div class="page page-max">
   <div class="row-f gap-4">{av(None, 64, True)}<div class="stack"><h1 class="t-h1">Дима</h1><p class="t-small muted">@dima_k, +7 912 •••-••-89</p></div></div>
   <div class="grid-2" style="gap:var(--space-8);align-items:start"><div class="stack gap-8">{look}{notify}{out}</div><div class="stack gap-8">{links}{devices}</div></div>
 </div>'''
@@ -222,21 +228,21 @@ def D_landing():
             return f'<div class="tile poster" data-hue="{hue}" style="grid-column:1/-1;gap:var(--space-1);padding:var(--space-8);border-radius:var(--radius-xl)"><span class="t-h1">{value}</span><span class="t-body muted">{fact}</span><span style="margin-top:var(--space-6)">{pulse(90, 34, seed)}</span></div>'
         return f'<div class="tile poster" data-hue="{hue}" style="gap:var(--space-1)"><span class="t-h3">{value}</span><span class="t-small muted">{fact}</span><span style="margin-top:var(--space-4)">{pulse(40, 16, seed)}</span></div>'
     comp = f'<div class="grid-2" aria-label="Примеры">{person("mila", "Пишете на равных, отвечаете одинаково быстро", "Мила, 51 на 49", 1, True)}{person("artyom", "Отвечает быстрее вас", "Артём, в 3 раза", 2)}{person("mama", "Чаще всего пишете вечером", "Мама, с 19 до 22", 3)}</div>'
-    body = f'''<header class="row-f between" style="padding:var(--space-6) 120px">{logo(32, word=True)}<nav class="row-f gap-8 t-ui" aria-label="Сайт"><a href="#" class="muted">Пример отчёта</a><a href="#" class="muted">Приватность</a>{btn('Войти', 'secondary', 'md', tag='a')}</nav></header>
-  <main class="grow" style="display:grid;grid-template-columns:5fr 6fr;gap:var(--space-16);align-items:center;padding:0 120px var(--space-10)">
+    body = f'''<header class="row-f between" style="padding:var(--space-6) var(--page-gutter);width:100%;max-width:var(--page-max);margin:0 auto">{logo(32, word=True)}<nav class="row-f gap-8 t-ui" aria-label="Сайт"><a href="#" class="muted">Пример отчёта</a><a href="#" class="muted">Приватность</a>{btn('Войти', 'secondary', 'md', tag='a')}</nav></header>
+  <main class="grow" style="display:grid;grid-template-columns:5fr 6fr;gap:var(--space-16);align-items:center;padding:0 var(--page-gutter) var(--space-10);width:100%;max-width:var(--page-max);margin:0 auto">
   <div class="stack gap-6"><h1 class="t-display">Зеркало ваших переписок</h1>
-  <p class="t-body muted" style="font-size:20px;line-height:28px;max-width:520px">Кто пишет первым, кто отвечает быстрее, о чём вы говорите и когда. Отчёт по любому чату Telegram за пару минут — без хранения текстов.</p>
+  <p class="t-body muted" style="max-width:60ch">Кто пишет первым, кто отвечает быстрее, о чём вы говорите и когда. Отчёт по любому чату Telegram за пару минут — без хранения текстов.</p>
   <div class="row-f gap-3">{btn('Войти через Telegram', 'primary', 'xl', tag='a')}{btn('Пример отчёта', 'secondary', 'xl', tag='a')}</div></div>{comp}</main>'''
     return page('Лендинг', body, pc=True)
 
 
 def D_guest():
-    poster = f'''<section class="poster stack gap-3" style="padding:var(--space-6) 120px var(--space-8)">
+    poster = f'''<section class="poster stack gap-3" style="padding:var(--space-6) max(var(--page-gutter), calc((100% - var(--page-max)) / 2 + var(--page-gutter))) var(--space-8)">
   <div class="row-f between">{logo(32, word=True)}<a href="#" class="t-ui">Приватность</a></div>
   <div class="poster-name" style="margin-top:var(--space-10)"><h1 class="t-display">Дима и Мила</h1></div>
   <p class="t-body muted">Дима поделился с вами отчётом о переписке: 4 800 сообщений с 9 апреля 2026.</p>
   <div style="margin-top:var(--space-4)">{pulse(150, 32, 1.0)}</div></section>'''
-    tiles = f'''<h2 class="sr-only">Главное</h2><div class="grid-3" style="padding:var(--space-8) 120px;align-items:stretch">
+    tiles = f'''<h2 class="sr-only">Главное</h2><div class="grid-3" style="padding:var(--space-8) max(var(--page-gutter), calc((100% - var(--page-max)) / 2 + var(--page-gutter)));align-items:stretch">
   {tile('Кто пишет больше', 'Пишете на равных', cmp('Дима', 'Мила', '51%', '49%', 51))}
   {tile('Кто отвечает быстрее', 'Отвечаете одинаково быстро', cmp('Дима', 'Мила', '3 мин', '3 мин'))}
   {tile('Ваше время', 'Пик — с 11:00 до 14:00', hours(h=64))}
@@ -251,7 +257,7 @@ def D_guest():
 def T_home():
     reports = ('<div class="grid-4">' + mini_poster('mila', '4 800 сообщений', 1, 160) + mini_poster('mama', '1 900 сообщений', 2, 160)
                + mini_poster('team', '9 000 сообщений', 3, 160) + mini_poster('katya', '130 сообщений', 4, 160) + '</div>')
-    body = f'''{ph_home_nav()}<main class="page column" style="padding-bottom:140px">
+    body = f'''{ph_home_nav()}<main class="page column" style="padding-bottom:var(--fab-clearance)">
   <div class="stack gap-1"><h1 class="t-h1">Добрый вечер, Дима</h1><p class="t-small muted">Вот что нового в ваших переписках.</p></div>
   <section class="section"><h2 class="t-h2">Сейчас главное</h2><div class="grid-2">{lead_mila()}{quiz_tile()}<div style="grid-column:1/-1">{month_tile()}</div></div></section>
   <section class="section"><h2 class="t-h2">Отчёты</h2>{reports}</section>

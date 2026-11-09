@@ -31,19 +31,39 @@ def S_tokens():
 <span class="spec">постер {h['poster']} · тёмная {h['poster_d']}<br>на белом: метка {h['them']}, имя <b style="color:{h['them_ink']}">{h['them_ink']}</b><br>на постере: {h['on_them']}</span></div>''' for k, h in HUES.items())
     types = [('display', 'Мила', 'Имя на постере, лендинг', '56/56 · 88/88, 600, до 3 строк, кегль от ширины'), ('figure', 'good', 'Одно главное слово или число', '44/48 · 56/60, 600'),
              ('h1', 'Добрый вечер, Дима', 'Экран, глава', '30/36 · 34/40, 600'), ('h2', 'Сейчас главное', 'Раздел страницы, находка главы', '24/32 · 28/36, 600'),
-             ('h3', 'Пишете на равных', 'Ответ карточки, заголовок листа', '20/28 · 22/28, 600'), ('num', '51%', 'Числа сравнения сторон', '24/28, 500'),
+             ('h3', 'Пишете на равных', 'Ответ карточки, заголовок листа', '20/28 · 22/28, 600'), ('num', '51%', 'Числа сравнения сторон — размер h2', '24/32, 500'),
              ('title', 'Дима (работа)', 'Строка, имя', '16/24, 500'), ('body', 'Кто пишет первым, кто отвечает быстрее', 'Чтение', '16/24, 400'),
              ('ui', 'Новый анализ', 'Кнопки, фильтры, меню', '15/20, 500'), ('small', 'Писали 7 часов назад', 'Вопрос карточки, мета, подсказки', '14/20, 400'),
              ('caption', 'апрель · 0:00', 'Оси, легенды', '12/16, 500')]
     trows = ''.join(f'<div class="row-f gap-6" style="padding:var(--space-3) 0;box-shadow:inset 0 -0.5px 0 var(--border)"><span class="t-{k} trunc" style="width:440px;flex:none">{s}</span><span class="grow stack"><b class="t-small-strong">.t-{k} — {u}</b><span class="spec">{spec}</span></span></div>' for k, s, u, spec in types)
-    space = ''.join(f'<div class="stack gap-1" style="align-items:center"><span style="width:{v}px;height:{v}px;background:var(--accent);border-radius:2px"></span><span class="spec">{v}</span></div>' for v in [2, 4, 8, 12, 16, 24, 32, 40, 48, 64, 80])
+    space = ''.join(f'<div class="stack gap-1" style="align-items:center"><span style="width:{v}px;height:{v}px;background:var(--accent);border-radius:var(--radius-mark)"></span><span class="spec">{v}</span></div>' for v in [2, 4, 8, 12, 16, 24, 32, 40, 48, 64])
     radii = ''.join(f'<div class="stack gap-1" style="align-items:center"><span style="width:72px;height:56px;background:var(--surface-2);border-radius:{v}px"></span><span class="spec">{v} {n}</span></div>' for v, n in [(4, 'метка'), (8, 'строка панели'), (12, 'поле'), (16, 'группа, меню'), (20, 'плитка, телефон'), (24, 'плитка, ПК'), (32, 'лист, окно')])
-    ctrls = ''.join(f'<div class="stack gap-2 start">{btn(n, "secondary", s)}<span class="spec">{h}</span></div>' for n, s, h in [('Маленькая', 'sm', '32 — в строках'), ('Средняя', 'md', '36 — ПК'), ('Обычная', '', '44 — телефон'), ('Главная', 'xl', '48 — одна на экран')])
-    avs = ''.join(f'<div class="stack gap-1" style="align-items:center">{av("mila", s)}<span class="spec">{s}</span></div>' for s in [24, 32, 40, 48, 64])
+    ctrls = ''.join(f'<div class="stack gap-2 start">{btn(n, "secondary", s)}<span class="spec">{h}</span></div>' for n, s, h in [('Компактная', 'sm', '36 — в строках, ПК'), ('Обычная', '', '44 — телефон'), ('Главная', 'xl', '48 — одна на экран')])
+    avs = ''.join(f'<div class="stack gap-1" style="align-items:center">{av("mila", s)}<span class="spec">{s}</span></div>' for s in [24, 32, 40, 64])
     bps = group([row('', 'до 640', 'Телефон: одна колонка, поля 16, главное действие — плавающая кнопка внизу; в «Сейчас главное» одна плитка', '', 'wrap'),
                  row('', '641–900', 'Планшет: та же оболочка, колонка до 720 по центру, поля 32; «Отчёты» плитками не уже 150 (на 820 — по четыре), «Сейчас главное» по два', '', 'wrap'),
                  row('', '901–1199', 'Панель людей 280; колонка в один ряд плиток, инспектор участника — лист', '', 'wrap'),
                  row('', '1200+', 'Панель людей и две колонки плиток; инспектор участника — справа, сдвигает контент', '', 'wrap')])
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'inv'))
+    try:
+        from oklch import hex_to_oklch
+    except ImportError:
+        hex_to_oklch = None
+    roles = [('poster', 'постер'), ('tint', 'оттенок'), ('them', 'метка'), ('them_ink', 'имя'), ('on_them', 'тон на постере'), ('room', 'комната')]
+    def cell(hx):
+        l = f'L {hex_to_oklch(hx)[0]:.2f}' if hex_to_oklch else hx
+        return f'<div class="stack gap-1"><span class="sw" style="height:40px;background:{hx}"></span><span class="spec">{l}</span></div>'
+    ladder = ('<div style="display:grid;grid-template-columns:120px repeat(7,minmax(0,1fr));gap:var(--space-2) var(--space-3);align-items:center">'
+              + '<span></span>' + ''.join(f'<b class="t-small-strong">{HUE_NAMES[k]}</b>' for k in HUES)
+              + ''.join(f'<span class="t-small muted">{rn}</span>' + ''.join(cell(HUES[k][r]) for k in HUES) for r, rn in roles) + '</div>')
+    lines_ = (f'<div class="stack gap-3"><div class="row" style="min-height:auto">Линия списка — 1 px, --border</div>'
+              f'<div class="row-f gap-4">{btn("Вторичная", "secondary", "md")}<span class="spec">кольцо 1 px, --border-strong</span></div>'
+              f'<div class="row-f gap-4"><span class="field focus" style="width:200px"><span>Фокус поля</span></span><span class="spec">2 px, чернила</span></div>'
+              f'<div class="row-f gap-6"><span class="menu" style="position:static;min-width:120px;padding:var(--space-3)">меню, лист</span><span class="spec">--shadow-overlay</span>'
+              f'<span class="fab-round">{ic("plus")}</span><span class="spec">--shadow-float</span></div></div>')
+    motion = group([row('', 'Нажатие — 90 мс', 'масштаб 0.97, без кривой', ''), row('', 'Смена состояния — 150 мс', 'кривая входа: быстрый старт, мягкий конец', ''),
+                    row('', 'Лист, окно, капсула → лист — 400 мс', 'пружина на входе, уход M3 exit за 150 мс', '')])
     body = f'''<main class="page" style="padding:var(--space-12)">
   {head('«Портрет»: токены', 'Интерфейс нейтральный и плоский, цвет приносит человек. Имена токенов — как в apps/web/app/assets/styles/tokens.css. Значения сверены с Apple HIG, Radix Themes, Primer и Material 3 (docs/design-system.md §13). Шрифт один — Onest.')}
   <div class="grid-2" style="gap:var(--space-6)">
@@ -52,15 +72,18 @@ def S_tokens():
   </div>
   {blk('Типографика', trows, 'Начертания 400 / 500 / 600. Межстрочные на сетке 4. Цифры табличные, число и единица не разрываются. Раздел крупнее ответа карточки, ответ — весомее чисел. Надзаголовков, капса и строк через «·» нет.')}
   <div class="grid-2" style="gap:var(--space-6)">
-  {blk('Отступы — --space-*', f'<div class="row-f gap-4" style="align-items:flex-end">{space}</div>', 'Сетка 8, полушаги 4 и 12 внутри контролов. Поля страницы 16 / 32 / 40, между карточками 12 / 16, внутри 16 / 24, между разделами 32 / 40.')}
+  {blk('Отступы — --space-*', f'<div class="row-f gap-4" style="align-items:flex-end">{space}</div>', 'Каждый шаг — одна роль. 2 — волосяной зазор (полоски, пульс); 4 — внутри контрола; 8 — связанные элементы; 12 — между карточками на телефоне, внутри строки; 16 — поля телефона, отступ карточки, между карточками на ПК; 24 — отступ карточки на ПК; 32 — между разделами, поля планшета; 40 — поля ПК, разделы на ПК; 48 / 64 — воздух экранов входа и лендинга. Внутри группы всегда меньше, чем между группами.')}
   {blk('Скругления — --radius-*', f'<div class="row-f gap-3" style="flex-wrap:wrap">{radii}</div>', 'Кнопки, фильтры, чипы и аватары — пилюля. Вложенные углы концентричны.')}
-  {blk('Контролы — --control-*', f'<div class="row-f gap-4" style="align-items:flex-end">{ctrls}</div>', 'Цель касания ≥ 44 у всех: у маленьких — невидимое поле вокруг.')}
+  {blk('Контролы — --control-*', f'<div class="row-f gap-4" style="align-items:flex-end">{ctrls}</div>', 'Три высоты: 36 — компактная (строки, фильтры, ПК), 44 — обычная на телефоне, 48 — одна главная на экране. Строка — 56. Цель касания ≥ 44 у всех.')}
   {blk('Аватары', f'<div class="row-f gap-6" style="align-items:flex-end">{avs}</div>', 'Цвет человека мягким градиентом, инициалы чернилами. Ваш — чернила.')}
   </div>
+  {blk('Лестница людей — OKLCH', ladder, 'Семь семей идут одной лестницей: у каждой роли одна светлота L, оттенок свой. Ни один человек не громче другого. Контраст: метка на белом ≥ 3:1, имя ≥ 4.5:1, свой тон на постере ≥ 5:1, чернила на постере ≥ 9:1.')}
+  <div class="grid-2" style="gap:var(--space-6)">{blk('Линии и тени', lines_, 'Одна толщина линии — 1 px. Кольцо выбора и фокуса — 2 px. Тени — два уровня и только у плавающего; плитки плоские.')}
+  {blk('Движение', motion, 'Анимируются только transform и opacity. При reduced motion — короче и без сдвига, но не ноль.')}</div>
   <div class="grid-2" style="gap:var(--space-6)">{blk('Ширины экрана', bps)}
   {blk('Знак', f'<div class="row-f gap-8" style="align-items:center">{logo(64)}{logo(32, word=True)}<span class="tile" data-hue="red" style="flex-direction:row;padding:var(--space-3);background:var(--poster)">{logo(28, word=True)}</span></div>', 'Маленький постер в фирменном лайме: тот же зеркальный пульс, что у каждого отчёта, сверху чернила, снизу глубокий тон. Надпись — Onest 600. Лайм — только в знаке.')}</div>
 </main>'''
-    return page('Система — токены', body, pc=True, h=3010)
+    return page('Система — токены', body, pc=True, h=4110)
 
 
 def S_components():
