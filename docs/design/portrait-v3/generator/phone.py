@@ -286,42 +286,82 @@ STORY_ACTIONS = f'<div class="story-actions">{btn("Сохранить", "poster-
 
 def story(content, i=1, n=4, label='Итоги: Мила'):
     seg_ = f'<div class="story-seg" style="grid-template-columns:repeat({n},1fr)" role="progressbar" aria-valuemin="1" aria-valuemax="{n}" aria-valuenow="{i}" aria-label="Кадр {i} из {n}">' + ''.join(f'<i class="{"on" if k < i else ""}"></i>' for k in range(n)) + '</div>'
-    return f'''<div class="poster stack" style="height:100%;padding:var(--space-3) var(--page-gutter) var(--space-8)" role="dialog" aria-modal="true" aria-label="Итоги">
+    return f'''<div class="poster stack story" style="height:100%;padding:var(--space-3) var(--page-gutter) var(--space-8)" role="dialog" aria-modal="true" aria-label="Итоги">
   {seg_}
   <div class="row-f between" style="margin-top:var(--space-3)"><span class="t-ui">{label}</span><span class="row-f gap-2">{ibtn('pause', 'Пауза', 'on-poster')}{ibtn('x', 'Закрыть', 'on-poster')}</span></div>
-  {content}
+  <div class="story-body">{content}</div>
   {STORY_ACTIONS}
 </div>'''
 
 
+def story_still(content, w=390):
+    """The saved 1080 × 1920 picture: the same frame without controls, the mark at the foot, all of it inside the stories safe zone."""
+    return (f'<div class="poster stack story still" style="width:{w}px;aspect-ratio:9/16">'
+            f'<div class="story-body">{content}</div><div class="story-mark">{logo(20, bare=True)}<span>TG Analyzer</span></div></div>')
+
+
+# Four frames, four devices (after Spotify Wrapped, Strava, Duolingo): the cover pulse, a chat, a clock face, a top-five list.
+# Shared only by the poster colour, Onest and ink for «you»; each frame has its own composition.
+import math
+
+FRAME_COVER = f'''<div class="st-art">{pulse(40, 72, 1.0)}</div>
+  <div class="stack gap-3 poster-name"><h1 class="t-display">Мила</h1><p class="st-lede">4 800 сообщений за 208 дней</p>
+  <p class="t-small muted">С 9 апреля по 2 ноября 2026</p></div>'''
+
+# a conversation: her bubble on the left in her deep tone, yours on the right in ink, a Telegram service pill between
+FRAME_TOGETHER = '''<h1 class="t-display">На равных</h1>
+  <div class="st-chat" role="img" aria-label="Мила — 49%, вы — 51%">
+  <div class="bubble them"><span>Мила</span><b>49%</b><span>2 366 сообщений</span></div>
+  <p class="service">Отвечаете оба за 3 минуты</p>
+  <div class="bubble you"><span>Вы</span><b>51%</b><span>2 434 сообщения</span></div>
+  <p class="service">Разговор начинаете по очереди</p></div>'''
+
+_HOURS = [2, 1, 1, 0, 0, 1, 4, 9, 14, 15, 17, 19, 21, 20, 16, 18, 13, 12, 14, 16, 17, 15, 18, 20]
+
+
+def _dial(size=300):
+    c, r0 = size / 2, 60
+    rays = ''
+    for k, v in enumerate(_HOURS):
+        ang = math.radians(k * 15 - 90)
+        r1 = r0 + 10 + v / 21 * 54
+        rays += (f'<line x1="{c + r0 * math.cos(ang):.1f}" y1="{c + r0 * math.sin(ang):.1f}" x2="{c + r1 * math.cos(ang):.1f}" y2="{c + r1 * math.sin(ang):.1f}" '
+                 f'class="{"hot" if 11 <= k <= 13 else ""}"/>')
+    marks = ''.join(f'<text x="{c + 140 * math.cos(math.radians(h * 15 - 90)):.1f}" y="{c + 140 * math.sin(math.radians(h * 15 - 90)) + 4:.1f}">{h}</text>' for h in (0, 6, 12, 18))
+    return (f'<svg class="st-dial" viewBox="0 0 {size} {size}" role="img" aria-label="Сутки по часам: больше всего с 11 до 14">{rays}{marks}'
+            f'<text x="{c}" y="{c + 2}" class="big">11–14</text><text x="{c}" y="{c + 24}" class="cap">ваши часы</text></svg>')
+
+
+# a clock face: the day as a dial, the peak in ink
+FRAME_TIME = f'''<div class="st-dial-wrap">{_dial()}</div>
+  <div class="stack gap-2"><h1 class="t-display">Днём</h1>
+  <p class="st-lede">На связи 196 дней из 208. Самый долгий разговор — 14 ч 39 мин</p></div>'''
+
+# a top five, numbered like a chart, with the favourite emoji as a sticker
+_TOP = [('good', 214), ('дела', 152), ('great', 142), ('job', 142), ('кофе', 96)]
+FRAME_WORDS = ('''<div class="stack gap-2"><h1 class="t-display">О чём</h1><p class="st-lede">Ваши слова за 208 дней</p></div>
+  <div class="st-top-wrap"><ol class="st-top">'''
+               + ''.join(f'<li><span class="n">{i}</span><b>{w}</b><span class="c">{n}</span></li>' for i, (w, n) in enumerate(_TOP, 1))
+               + '''</ol><span class="st-sticker" aria-label="Любимый эмодзи — солнце, 161 раз">☀️ 161</span></div>''')
+
+STORY_TOGETHER = FRAME_TOGETHER  # used by the desktop stories board
+N = 4
+
+
 def S_story_cover():
-    c = f'''<div class="stack grow gap-6 story-body">
-  {pulse(40, 72, 1.0)}
-  <div class="stack gap-3 poster-name"><h1 class="t-display">Мила</h1><p class="t-h3">4 800 сообщений за 208 дней</p>
-  <p class="t-small muted">С 9 апреля по 2 ноября 2026</p></div>
-</div>'''
-    return page('Итоги — обложка', story(c, 1, label='Итоги, 1 из 4'), hue='green')
-
-
-STORY_TOGETHER = f'''<div class="stack grow gap-8 story-body">
-  <div class="stack gap-3"><h1 class="t-display">На равных</h1><p class="t-body muted">51 на 49, и отвечаете одинаково быстро</p></div>
-  <div class="big">{cmp('Вы', 'Мила', '51%', '49%', 51)}</div>
-  <div class="facts"><div><b>3 мин</b><span>отвечаете оба</span></div><div><b>по очереди</b><span>начинаете разговор</span></div>
-  <div><b>2 ч 57 мин</b><span>голосовых вместе</span></div><div><b>поровну</b><span>смеётесь</span></div></div>
-</div>'''
+    return page('Итоги — обложка', story(FRAME_COVER, 1, N, label='Итоги, 1 из 4'), hue='green')
 
 
 def S_story():
-    return page('Итоги — Вы двое', story(STORY_TOGETHER, 2, label='Вы двое, 2 из 4'), hue='green')
+    return page('Итоги — Вы двое', story(FRAME_TOGETHER, 2, N, label='Вы двое, 2 из 4'), hue='green')
+
+
+def S_story_time():
+    return page('Итоги — Ваше время', story(FRAME_TIME, 3, N, label='Ваше время, 3 из 4'), hue='green')
 
 
 def S_story_end():
-    c = f'''<div class="stack grow gap-8 story-body">
-  <h1 class="t-display">Вы и Мила</h1>
-  <div class="facts"><div><b>51 на 49</b><span>пишете на равных</span></div><div><b>11–14</b><span>ваши часы</span></div>
-  <div><b>«good»</b><span>слово переписки</span></div><div><b>196 дней</b><span>из 208 на связи</span></div></div>
-</div>'''
-    return page('Итоги — последний кадр', story(c, 4, label='Итоги, 4 из 4'), hue='green')
+    return page('Итоги — О чём', story(FRAME_WORDS, 4, N, label='О чём, 4 из 4'), hue='green')
 
 
 GROUP_MEMBERS = [('you', 'Вы', 'Иногда', '9%'), ('sergey', 'Сергей', 'Ядро', '22%'), ('alexey', 'Алексей', 'Ядро', '19%'), ('natasha', 'Наташа', 'Ядро', '17%'), ('maria', 'Мария', 'Ядро', '15%')]
@@ -497,8 +537,9 @@ def login(content):
 
 
 def phone_field(code='ru', dial='+7', number='912 345-67-89', state='focus'):
-    return (f'<div class="field {state}" style="padding-left:var(--space-2)"><button class="row-f gap-2 t-ui" style="height:36px;padding:0 var(--space-2);border-radius:var(--radius-xs);background:var(--surface-2)" '
-            f'aria-label="Код страны: {dial}" aria-haspopup="menu">{flag(code, 20)}{dial}{ic("down")}</button><span>{number}</span></div>')
+    # the code is part of the field, not a pill inside it: one inset, a hairline between code and number
+    return (f'<div class="field {state}"><button class="cc" aria-label="Код страны: {dial}" aria-haspopup="menu">{flag(code, 20)}<span>{dial}</span>{ic("down")}</button>'
+            f'<span>{number}</span></div>')
 
 
 def country_menu(top, left, width):
@@ -557,8 +598,8 @@ SCREENS = [
     ('ph-session', 'Сеанс Telegram завершён', S_session), ('ph-account', 'Аккаунт', S_account), ('ph-privacy', 'Как мы обращаемся с данными', S_privacy),
     ('ph-report', 'Отчёт — постер', S_report), ('ph-together', 'Отчёт — Вы двое', S_together), ('ph-time', 'Отчёт — Время', S_time),
     ('ph-words', 'Отчёт — О чём', S_words), ('ph-ending', 'Отчёт — конец', S_ending), ('ph-share', 'Лист «Поделиться»', S_share),
-    ('ph-link', 'Ссылка на отчёт', S_link), ('ph-story-cover', 'Итоги — обложка', S_story_cover), ('ph-story', 'Итоги — Вы двое', S_story),
-    ('ph-story-end', 'Итоги — последний кадр', S_story_end), ('ph-group', 'Группа — Люди', S_group), ('ph-group-talk', 'Группа — Общение', S_group_talk),
+    ('ph-link', 'Ссылка на отчёт', S_link), ('ph-story-cover', 'Итоги — обложка', S_story_cover), ('ph-story', 'Итоги — Вы двое', S_story), ('ph-story-time', 'Итоги — Ваше время', S_story_time),
+    ('ph-story-end', 'Итоги — О чём', S_story_end), ('ph-group', 'Группа — Люди', S_group), ('ph-group-talk', 'Группа — Общение', S_group_talk),
     ('ph-member', 'Группа — участник', S_member), ('ph-guest', 'Гость — отчёт', S_guest), ('ph-quiz-start', 'Гость — угадайка, старт', S_quiz_start),
     ('ph-quiz', 'Гость — угадайка, вопрос', S_quiz), ('ph-quiz-end', 'Гость — угадайка, итог', S_quiz_end), ('ph-link-off', 'Гость — ссылка не работает', S_link_off),
     ('ph-dark-home', 'Тёмная — главная', lambda: S_home('dark')), ('ph-dark-report', 'Тёмная — отчёт', lambda: S_report('dark')),

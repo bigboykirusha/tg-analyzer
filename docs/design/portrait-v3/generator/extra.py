@@ -1,7 +1,7 @@
 """States and screens that complete the set: loading, errors, limits, empty, narrow, English, FAQ, 404, group stories.
 Built only from kit/phone/desktop parts — if a screen needs something new, the system is incomplete."""
 from kit import *
-from phone import (home, lead_mila, FAB, sec, REPORT_TILES, waiting_rows, poster_ph, chapter_head, story, STORY_ACTIONS, dim_home,
+from phone import (FRAME_COVER, FRAME_TOGETHER, FRAME_TIME, FRAME_WORDS, story_still, home, lead_mila, FAB, sec, REPORT_TILES, waiting_rows, poster_ph, chapter_head, story, STORY_ACTIONS, dim_home,
                    sheet_head, new_rows, NEW_DATA, S_share, SHARE_ROWS, stories_feature, ph_plain_nav, S_report, S_together)
 from desktop import shell, home_main, sec as dsec, pub_header, pub_footer
 
@@ -111,12 +111,15 @@ def S_404():
     return page('404', body)
 
 
+# a class photo: the four who carry the chat, their share pinned on as stickers
+GROUP_CAST = [('sergey', 'ядро чата', 22), ('alexey', 'всем отвечает', 19), ('natasha', 'пара с Марией', 17), ('maria', 'пишет последней', 15)]
+FRAME_GROUP = ('<div class="stack gap-2"><h1 class="t-display">В ролях</h1><p class="st-lede">8 человек, ядро — четверо</p></div><div class="st-cast">'
+               + ''.join(f'<div><span class="pic">{av(k, 64)}<i class="pct">{v}%</i></span><b class="t-title">{P[k][0]}</b><span class="t-small muted">{r}</span></div>' for k, r, v in GROUP_CAST)
+               + '</div>')
+
+
 def S_group_story():
-    c = f'''<div class="stack grow gap-8 story-body">
-  <div class="stack gap-3"><h1 class="t-display">В ролях</h1><p class="t-body muted">Пишут все понемногу, ядро — четыре человека</p></div>
-  <div class="stack">{''.join(row(av(k, 40), P[k][0], role, f'<span class="val">{v}</span>') for k, role, v in [('sergey', 'Ядро', '22%'), ('alexey', 'Отвечает больше всех', '19%'), ('natasha', 'Пара с Марией', '17%'), ('maria', 'Укладывает чат спать', '15%')])}</div>
-</div>'''
-    return page('Итоги группы — В ролях', story(c, 2, label='Люди, 2 из 4'), hue='pink')
+    return page('Итоги группы — В ролях', story(FRAME_GROUP, 2, label='Люди, 2 из 4'), hue='pink')
 
 
 def S_dark_share():
@@ -153,7 +156,22 @@ def D_404():
     return page('404', pub_header(nav=False) + f'<main class="grow row-f center">{card}</main>' + pub_footer(), pc=True)
 
 
+def D_story_export():
+    """What «Сохранить» puts in the gallery: 1080 × 1920, no controls, the mark at the foot, nothing under the stories interface."""
+    frames = [(FRAME_COVER, 'green', 'Обложка'), (FRAME_TOGETHER, 'green', 'Вы двое'), (FRAME_TIME, 'green', 'Ваше время'), (FRAME_WORDS, 'green', 'О чём'), (FRAME_GROUP, 'pink', 'Группа')]
+    zones = ('<span class="safe-zone" style="top:0;height:13%">имя и время сторис</span>'
+             '<span class="safe-zone" style="bottom:0;height:17.7%">ответ и реакции</span>')
+    cells = ''.join(f'''<figure class="stack gap-3" style="margin:0;width:257px"><div style="width:257px;height:457px;position:relative">
+  <div data-hue="{h}" class="phone-scale" style="transform:scale(0.66);transform-origin:top left;position:absolute;inset:0 auto auto 0">{story_still(c).replace('style="width:390px;aspect-ratio:9/16"', 'style="width:390px;aspect-ratio:9/16;position:relative"').replace('<div class="story-body">', zones + '<div class="story-body">', 1)}</div></div>
+  <figcaption class="t-small muted">{t}</figcaption></figure>''' for c, h, t in frames)
+    body = f'''<main class="page" style="padding:var(--space-10) var(--page-gutter)">
+  <div class="stack gap-2"><h1 class="t-h1">Итоги — картинки для сторис</h1>
+  <p class="t-body muted" style="max-width:72ch">«Сохранить» кладёт в галерею кадры 1080 × 1920 без кнопок и полосок. Сверху 250 px и снизу 340 px закрывает интерфейс сторис — там только фон. Знак внизу, над строкой ответа.</p></div>
+  <div class="row-f" style="gap:var(--space-4);align-items:flex-start">{cells}</div></main>'''
+    return page('Итоги — картинки для сторис', body, pc=True, h=720)
+
+
 PH_EXTRA = [('ph-loading', 'Главная — загрузка', S_loading), ('ph-failed', 'Разбор не удался', S_failed), ('ph-limit', 'Лимит на сегодня', S_limit),
             ('ph-empty', 'Нет чатов для разбора', S_empty), ('ph-narrow', '360 px, длинные имена', S_narrow), ('ph-english', 'Отчёт на английском', S_english),
             ('ph-faq', 'Вопросы и ответы', S_faq), ('ph-404', '404', S_404), ('ph-group-story', 'Итоги группы', S_group_story), ('ph-dark-share', 'Тёмная — «Поделиться»', S_dark_share)]
-PC_EXTRA = [('pc-loading', 'Главная — загрузка', D_loading), ('pc-faq', 'Вопросы и ответы', D_faq), ('pc-404', '404', D_404)]
+PC_EXTRA = [('pc-story-export', 'Итоги — картинки для сторис', D_story_export), ('pc-loading', 'Главная — загрузка', D_loading), ('pc-faq', 'Вопросы и ответы', D_faq), ('pc-404', '404', D_404)]

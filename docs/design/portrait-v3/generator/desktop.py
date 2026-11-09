@@ -191,10 +191,10 @@ def D_share():
 
 
 def D_stories():
-    slide = f'''<div class="poster stack phone-scale" data-hue="green" role="dialog" aria-modal="true" aria-label="Итоги, кадр 2 из 4" style="position:absolute;left:50%;top:48px;width:440px;height:782px;margin-left:-220px;border-radius:var(--radius-lg);padding:var(--space-3) var(--space-6) var(--space-6);overflow:hidden">
+    slide = f'''<div class="poster stack story phone-scale" data-hue="green" role="dialog" aria-modal="true" aria-label="Итоги, кадр 2 из 4" style="position:absolute;left:50%;top:48px;width:440px;height:782px;margin-left:-220px;border-radius:var(--radius-lg);padding:var(--space-3) var(--space-6) var(--space-6);overflow:hidden">
   <div class="story-seg" style="grid-template-columns:repeat(4,1fr)"><i class="on"></i><i class="on"></i><i></i><i></i></div>
   <div class="row-f between" style="margin-top:var(--space-3)"><span class="t-ui">Вы двое, 2 из 4</span>{ibtn('pause', 'Пауза', 'on-poster')}</div>
-  {STORY_TOGETHER}{STORY_ACTIONS.replace('"btn btn-poster-2 lg', '"btn btn-poster-2 md')}</div>'''
+  <div class="story-body">{STORY_TOGETHER}</div>{STORY_ACTIONS.replace('"btn btn-poster-2 lg', '"btn btn-poster-2 md')}</div>'''
     nav = (f'<button class="icon-btn lg" aria-label="Предыдущий кадр" style="position:absolute;left:428px;top:415px">{ic("back")}</button>'
            f'<button class="icon-btn lg" aria-label="Следующий кадр" style="position:absolute;right:428px;top:415px">{ic("chev")}</button>'
            f'<button class="icon-btn lg" aria-label="Закрыть" style="position:absolute;right:var(--space-6);top:var(--space-6)">{ic("x")}</button>'
