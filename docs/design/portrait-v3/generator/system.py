@@ -77,7 +77,7 @@ CSS = r"""
   --text-small-strong: 500 14px/20px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
   --radius-mark: 4px; --radius-xs: 8px; --radius-sm: 12px; --radius-md: 16px; --radius-lg: 20px; --radius-xl: 32px; --radius-full: 999px;
-  --control-sm: 36px; --control-md: 36px; --control-lg: 44px; --control-xl: 56px; --row: 56px;
+  --control-sm: 36px; --control-md: 36px; --control-lg: 44px; --control-xl: 44px; --row: 56px;
   --card-padding: 16px; --card-gap: 12px; --page-gutter: 16px; --page-gap: 32px;
 }
 .pc {
@@ -158,7 +158,7 @@ CSS = r"""
 .btn.sm { height: var(--control-sm); padding: 0 var(--space-3); font: var(--text-small-strong); gap: var(--space-1); }
 .btn.sm svg { width: 16px; height: 16px; }
 .btn.md { height: var(--control-md); padding: 0 var(--space-4); }
-.btn.xl { height: var(--control-xl); padding: 0 var(--space-6); font: var(--text-title); }
+.btn.xl { height: var(--control-xl); padding: 0 var(--space-6); }
 .btn.block { width: 100%; }
 .btn.sm::before, .btn.md::before, .hit::before { content: ''; position: absolute; inset: -6px -4px; }
 .icon-btn::before { content: ''; position: absolute; inset: -6px; }
@@ -334,7 +334,7 @@ CSS = r"""
 /* fields */
 .label { font: var(--text-small-strong); }
 .hint { font: var(--text-small); color: var(--text-muted); }
-.field { display: flex; align-items: center; gap: var(--space-3); height: var(--control-xl); padding: 0 var(--space-4); border-radius: var(--radius-sm); background: var(--surface-2); font: var(--text-body); box-shadow: inset 0 0 0 1px var(--border); }
+.field { display: flex; align-items: center; gap: var(--space-3); height: var(--control-lg); padding: 0 var(--space-4); border-radius: var(--radius-sm); background: var(--surface-2); font: var(--text-body); box-shadow: inset 0 0 0 1px var(--border); }
 .sheet .field { background: var(--fill-raised); }
 .field.focus { box-shadow: inset 0 0 0 2px var(--accent); background: var(--surface); }
 .field.error { box-shadow: inset 0 0 0 2px var(--danger); }
