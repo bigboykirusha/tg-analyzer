@@ -1,70 +1,82 @@
 <script setup lang="ts">
-/** Full-page states (not found, error, offline) inside the site frame: a flat seismograph — nothing is being said here. */
-defineProps<{ code: string; title: string; text: string; action: string }>()
-defineEmits<{ action: [] }>()
+import type { RouteLocationRaw } from 'vue-router'
 
-const silence = Array.from({ length: 64 }, (_, index) =>
-  index < 18 ? { sent: (index * 7) % 5, received: (index * 3) % 4 } : { sent: 0, received: 0 },
-)
+/**
+ * A full-page state (not found, an error, offline, a link that no longer works): the title, one line on
+ * what happened, the way on. Phones: the page itself, left-aligned, the action full width. Desktop: one
+ * 440 card in the middle — the same anatomy as sign-in.
+ */
+defineProps<{ title: string; text: string; action: string; to?: RouteLocationRaw; secondary?: string; secondaryTo?: RouteLocationRaw }>()
+defineEmits<{ action: [] }>()
 </script>
 
 <template>
-  <UiPageContainer class="status-page">
-    <section class="status-body" aria-labelledby="status-title">
-      <div class="status-tile">
-        <p class="status-code">{{ code }}</p>
-        <Seismograph :days="silence" :height="64" />
+  <div class="status">
+    <section class="status__card" aria-labelledby="status-title">
+      <h1 id="status-title" class="status__title">{{ title }}</h1>
+      <p class="status__text">{{ text }}</p>
+      <div class="status__actions">
+        <UiButton variant="primary" size="lg" block :to="to" @click="!to && $emit('action')">{{ action }}</UiButton>
+        <UiButton v-if="secondary" variant="plain" size="lg" block :to="secondaryTo">{{ secondary }}</UiButton>
       </div>
-      <h1 id="status-title" class="t-h2">{{ title }}</h1>
-      <p class="t-lede status-text">{{ text }}</p>
-      <UiButton variant="primary" size="lg" @click="$emit('action')">{{ action }}</UiButton>
     </section>
-  </UiPageContainer>
+  </div>
 </template>
 
 <style scoped>
-.status-page {
-  display: grid;
+.status {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-6) var(--page-gutter) var(--space-16);
 }
 
-.status-body {
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: var(--space-4);
-  width: min(100%, 440px);
-  margin: 0 auto;
-  text-align: center;
-}
-
-/* The ink tile from the report: a flat line where the messages should be. */
-.status-tile {
-  --you: var(--on-tile-ink);
-  --them: var(--them-on-ink);
-  --border-strong: var(--on-tile-ink-muted);
-
-  display: grid;
-  gap: var(--space-4);
+.status__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   width: 100%;
-  margin-bottom: var(--space-4);
-  padding: var(--space-6);
-  border-radius: var(--radius-lg);
-  background: var(--tile-ink);
-  color: var(--on-tile-ink);
-  text-align: left;
 }
 
-.status-code {
-  color: var(--on-tile-ink-muted);
-  font: var(--text-ui);
+.status__title {
+  font: var(--text-h1);
+  letter-spacing: var(--tracking-h1);
+  text-wrap: balance;
 }
 
-.status-text {
-  max-width: 36ch;
+.status__text {
+  color: var(--text-muted);
+  font: var(--text-body);
 }
 
-.status-body .btn {
-  margin-top: var(--space-2);
+.status__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+@media (min-width: 901px) {
+  .status {
+    align-items: center;
+    padding-block: var(--space-10);
+  }
+
+  .status__card {
+    max-width: var(--card-focus);
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+  }
+
+  .status__title {
+    font: var(--text-h2);
+    letter-spacing: var(--tracking-h2);
+  }
+
+  .status__actions {
+    margin-top: var(--space-2);
+  }
 }
 </style>

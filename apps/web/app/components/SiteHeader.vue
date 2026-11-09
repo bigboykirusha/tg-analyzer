@@ -1,45 +1,64 @@
 <script setup lang="ts">
+import { ArrowLeft } from '../lib/icons'
+
 /**
- * The header of every public page: the logo on the left, the privacy page and
- * «Sign in» on the right. The example report puts its own title and the one
- * action («Analyse a chat») into the bar. On the landing a phone has the big
- * button right under the title, so the bar keeps the logo only.
+ * The header of every public page.
+ * Phones: the mark with its word and one quiet link (on the landing «Войти», elsewhere «Приватность»);
+ * a step inside a flow (sign-in, FAQ, privacy) has a back circle instead of the mark.
+ * Desktop: the mark on the column's edge; «Пример отчёта», «Приватность» and «Войти» on the right —
+ * except on sign-in, where the footer carries the documents.
+ * The example report puts its own bar here (UiPageBar), like a report in the app.
  */
 const { t } = useI18n()
 const route = useRoute()
-/** The example report puts its title and actions into the bar (`UiPageBar`); documents keep theirs. */
-const isReport = computed(() => route.path === '/example')
-/** Over a report's poster the bar takes its colour; past it, the page colour again. */
+const router = useRouter()
+const step = computed(() => ['/login', '/faq', '/privacy'].includes(route.path))
+const showNav = computed(() => route.path !== '/login')
 const { overPoster } = usePosterHeader()
+
+function back(event: MouseEvent) {
+  if (typeof window.history.state?.back !== 'string') return
+  event.preventDefault()
+  router.back()
+}
 </script>
 
 <template>
-  <header class="site-header" data-toolbar :class="{ 'site-header--report': isReport, 'is-over-poster': overPoster }">
-    <UiPageContainer class="site-header__in">
-      <BrandLink class="site-header__brand" :class="{ 'site-header__brand--report': isReport }" />
-      <div id="header-page" class="site-header__report" />
-      <nav class="site-header__nav" :aria-label="t('nav.main')">
-        <NuxtLink
-          v-if="!isReport"
-          to="/faq"
-          class="site-header__link"
-          :aria-current="route.path === '/faq' ? 'page' : undefined"
-        >
-          {{ t('site.privacy') }}
-        </NuxtLink>
-        <UiButton
-          v-if="!isReport && route.path !== '/login'"
-          :class="{ 'site-header__signin--landing': route.path === '/' }"
-          variant="secondary"
-          size="sm"
-          to="/login"
-        >
-          {{ t('site.signIn') }}
-        </UiButton>
-      </nav>
-    </UiPageContainer>
-    <!-- A screen with parts (the report) puts its navigation here: one bar, one material, one blur. -->
-    <UiPageContainer id="header-sub" class="header-sub" />
+  <header class="site-header" data-toolbar :class="{ 'is-over-poster': overPoster }">
+    <div class="site-header__in">
+      <div id="header-page" class="site-header__page" />
+      <div class="site-header__default">
+        <UiIconButton
+          v-if="step"
+          class="site-header__back"
+          to="/"
+          :label="t('common.back')"
+          :icon="ArrowLeft"
+          tone="chrome"
+          no-tooltip
+          @click="back"
+        />
+        <BrandLink class="site-header__brand" :class="{ 'site-header__brand--step': step }" />
+        <nav class="site-header__nav" :aria-label="t('nav.main')">
+          <template v-if="showNav">
+            <NuxtLink to="/example" class="nav-link nav-link--wide">{{ t('site.example') }}</NuxtLink>
+            <NuxtLink
+              to="/privacy"
+              class="nav-link"
+              :class="{ 'nav-link--narrow-hidden': route.path === '/' }"
+              :aria-current="route.path === '/privacy' ? 'page' : undefined"
+            >
+              {{ t('site.privacy') }}
+            </NuxtLink>
+            <NuxtLink v-if="route.path === '/'" to="/login" class="nav-link nav-link--ink site-header__signin-narrow">
+              {{ t('site.signIn') }}
+            </NuxtLink>
+            <UiButton to="/login" size="md" class="site-header__signin-wide">{{ t('site.signIn') }}</UiButton>
+          </template>
+          <NuxtLink v-else to="/privacy" class="nav-link site-header__privacy-narrow">{{ t('site.privacy') }}</NuxtLink>
+        </nav>
+      </div>
+    </div>
   </header>
 </template>
 
@@ -50,147 +69,111 @@ const { overPoster } = usePosterHeader()
   z-index: var(--z-header);
   padding-top: env(safe-area-inset-top, 0px);
   background: var(--bg);
-  transition: background-color var(--transition-slow);
+  transition: background-color var(--transition-fast);
 }
 
 .site-header.is-over-poster {
-  --text: var(--on-poster);
-  /* Light type stays full strength on the poster's wells (segments), so it keeps 4.5:1. */
-  --text-muted: var(--on-poster);
-  --border: var(--on-poster-line);
-  --hover: var(--on-poster-well);
-  --pressed: var(--on-poster-line);
-  --accent: var(--on-poster);
-  --accent-hover: var(--on-poster-muted);
-  --on-accent: var(--poster);
-  --segment-track: var(--on-poster-well);
-  --thumb: var(--on-poster);
-  --focus-ring: 0 0 0 2px var(--poster), 0 0 0 4px var(--on-poster);
   background: var(--poster);
   color: var(--on-poster);
 }
 
-.site-header.is-over-poster :deep(.segment-active) {
-  color: var(--poster);
-}
-
-.site-header.is-over-poster :deep(.page-bar__copy) {
-  /* Hidden from sight while the poster shows the name, still the page's h1 for screen readers. */
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+.site-header.is-over-poster :deep(.icon-btn--chrome) {
+  background: var(--on-poster-chip);
+  box-shadow: none;
+  color: var(--on-poster);
 }
 
 .site-header__in {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  height: var(--topbar-height);
+  width: 100%;
+  max-width: calc(var(--page-max) + var(--page-gutter) * 2);
+  min-height: var(--topbar-height);
+  margin: 0 auto;
+  padding: 0 var(--page-gutter);
 }
 
-.site-header__report {
+.site-header__page {
   display: flex;
+  flex: 1;
   min-width: 0;
+}
+
+.site-header__default {
+  display: flex;
   flex: 1;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
 }
 
-@media (max-width: 900px) {
-  .site-header__brand--report {
-    display: none;
-  }
+.site-header:not(:has(.page-bar)) .site-header__page,
+.site-header:has(.page-bar) .site-header__default {
+  display: none;
 }
 
 .site-header__nav {
   display: flex;
   align-items: center;
-  gap: var(--space-6);
+  gap: var(--space-8);
 }
 
-.site-header__link {
+/* Text links in headers: one look, a full hit area. */
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-md);
   color: var(--text-muted);
   font: var(--text-ui);
-  transition: color var(--transition-fast);
 }
 
-@media (pointer: coarse) {
-  .site-header__link {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--control-md);
-  }
+.nav-link--ink {
+  color: var(--text);
 }
 
-.site-header__link[aria-current='page'] {
+.nav-link[aria-current='page'] {
   color: var(--text);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .site-header__link:hover {
+  .nav-link:hover {
     color: var(--text);
   }
 }
 
-@media (max-width: 640px) {
-  .site-header__nav {
-    gap: var(--space-4);
-  }
+.nav-link--wide,
+.site-header__signin-wide {
+  display: none;
 }
-/* Phones: «Privacy» lives in the footer, and the landing's own button is under the title. */
-@media (max-width: 640px) {
-  .site-header__link,
-  .site-header__nav .site-header__signin--landing {
+
+/* Phones: a step shows the back circle instead of the mark. */
+@media (max-width: 900px) {
+  .site-header__brand--step {
+    display: none;
+  }
+
+  .nav-link--narrow-hidden {
     display: none;
   }
 }
 
-/*
- * The screen's navigation (`ReportNav`) sits in the header itself. Phones and
- * tablets give it a second row; wide screens centre it in the first.
- */
-.header-sub:empty {
-  display: none;
-}
-
-.header-sub {
-  padding-bottom: var(--space-2);
-}
-
-@media (min-width: 1200px) {
-  .header-sub {
-    position: absolute;
-    inset: env(safe-area-inset-top, 0px) 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: var(--topbar-height);
-    padding-bottom: 0;
-    pointer-events: none;
+@media (min-width: 901px) {
+  .site-header__back,
+  .site-header__signin-narrow {
+    display: none;
   }
 
-  .header-sub > :deep(*) {
-    pointer-events: auto;
+  .nav-link--wide,
+  .site-header__signin-wide {
+    display: inline-flex;
   }
-}
 
-/* Header buttons are 36 px on phones too; the touch area still reaches 44 px. */
-@media (max-width: 640px) and (pointer: coarse) {
-  .site-header__nav :deep(.btn--sm) {
+  .site-header__privacy-narrow {
+    display: none;
+  }
+
+  .nav-link {
     min-height: var(--control-sm);
-  }
-
-  .site-header__nav :deep(.btn--icon-only.btn--sm) {
-    width: var(--control-sm);
-  }
-
-  .site-header__nav :deep(.btn--sm)::before {
-    content: '';
-    position: absolute;
-    inset: calc((var(--control-sm) - var(--hit-min)) / 2);
   }
 }
 </style>

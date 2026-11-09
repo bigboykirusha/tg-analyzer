@@ -11,7 +11,7 @@ function toggleLocale() {
 
 <template>
   <span class="locale-switch">
-    <Button type="button" variant="ghost" size="sm" :icon="Globe" :aria-label="t('nav.language')" @click="toggleLocale">
+    <Button variant="plain" size="sm" :icon="Globe" :aria-label="t('nav.language')" @click="toggleLocale">
       {{ locale.toUpperCase() }}
     </Button>
   </span>
@@ -23,6 +23,6 @@ function toggleLocale() {
 }
 
 .locale-switch :deep(.btn) {
-  padding-inline: var(--space-3);
+  color: inherit;
 }
 </style>

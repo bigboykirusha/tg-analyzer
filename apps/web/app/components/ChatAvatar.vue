@@ -7,8 +7,14 @@ import type { AvatarSize } from './ui/Avatar.vue'
  * sidebar) the photo is asked for anyway: the server remembers chats without one.
  */
 const props = withDefaults(
-  defineProps<{ chatId: string; title: string | null | undefined; hasAvatar?: boolean | null; size?: AvatarSize }>(),
-  { hasAvatar: null, size: 'md' },
+  defineProps<{
+    chatId: string
+    title: string | null | undefined
+    hasAvatar?: boolean | null
+    size?: AvatarSize
+    onPoster?: boolean
+  }>(),
+  { hasAvatar: null, size: 'md', onPoster: false },
 )
 
 const src = ref<string | null>(null)
@@ -26,5 +32,5 @@ watch(
 </script>
 
 <template>
-  <UiAvatar :title="title" :src="src" :size="size" :seed="chatId" />
+  <UiAvatar :title="title" :src="src" :size="size" :seed="chatId" :on-poster="onPoster" />
 </template>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
 import { ApiClientError } from '../composables/useApi'
-import { AlertCircle, Info } from '../lib/icons'
 
 definePageMeta({ middleware: ['guest'] })
 
@@ -24,21 +23,14 @@ const error = ref('')
 const resendAvailableAt = ref(0)
 const now = useNow(1000)
 const resendSeconds = computed(() => Math.max(0, Math.ceil((resendAvailableAt.value - now.value) / 1000)))
-const stepIndex = computed(() => ({ phone: 0, code: 1, password: 2 })[step.value])
 
-// The policy opens over the login page; old /privacy links land here with #privacy.
 const route = useRoute()
 /** Came back after Telegram ended the session: say so above the phone step, without a banner. */
 const sessionEnded = computed(() => route.query.session === 'ended')
-const privacyOpen = ref(false)
+// Old links to the policy pointed here (#privacy); it is a page now.
 onMounted(() => {
-  if (route.hash === '#privacy') privacyOpen.value = true
+  if (route.hash === '#privacy') void navigateTo('/privacy', { replace: true })
 })
-
-function closePrivacy() {
-  privacyOpen.value = false
-  if (route.hash) void navigateTo({ hash: '' }, { replace: true })
-}
 
 useSeoMeta({ title: () => t('login.seoTitle'), description: () => t('seo.description'), robots: 'noindex' })
 
@@ -141,154 +133,124 @@ function changeNumber() {
 </script>
 
 <template>
-  <UiPageContainer class="login-shell">
-    <section class="login-panel">
-      <div class="login-card">
-        <div class="login-progress" aria-hidden="true">
-          <span v-for="index in 3" :key="index" :class="{ active: stepIndex >= index - 1 }" />
-        </div>
-
-        <div class="login-copy">
-          <p v-if="sessionEnded && step === 'phone'" class="note" role="status">
-            <Info aria-hidden="true" />
-            {{ t('login.sessionEnded') }}
-          </p>
-          <h1 class="t-h2">
-            <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
-            <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
-            <template v-else>{{ t('login.passwordTitle') }}</template>
-          </h1>
-          <p class="login-copy__text">
-            <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
-            <template v-else-if="step === 'code'">{{ codeDescription }}</template>
-            <template v-else>{{ t('login.passwordDescription') }}</template>
-          </p>
-        </div>
-
-        <Transition name="auth-step" mode="out-in">
-          <PhoneStep
-            v-if="step === 'phone'"
-            key="phone"
-            v-model:phone="phone"
-            :loading="loading"
-            @submit="requestCode"
-          />
-          <CodeStep
-            v-else-if="step === 'code'"
-            key="code"
-            v-model:code="code"
-            :loading="loading"
-            :resend-seconds="deliveryBlocked ? 0 : resendSeconds"
-            :resend-label="resendLabel"
-            :length="delivery?.length ?? 5"
-            @submit="submitCode"
-            @resend="requestResend"
-            @change-number="changeNumber"
-          />
-          <PasswordStep
-            v-else
-            key="password"
-            v-model:password="password"
-            :hint="passwordHint"
-            :loading="loading"
-            @submit="submitPassword"
-          />
-        </Transition>
-
-        <p v-if="error" class="note note--danger" role="alert">
-          <AlertCircle aria-hidden="true" />
-          {{ error }}
+  <div class="login">
+    <section class="login__card">
+      <header class="login__head">
+        <p v-if="sessionEnded && step === 'phone'" class="login__notice" role="status">{{ t('login.sessionEnded') }}</p>
+        <h1 class="login__title">
+          <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
+          <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
+          <template v-else>{{ t('login.passwordTitle') }}</template>
+        </h1>
+        <p class="login__lede">
+          <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
+          <template v-else-if="step === 'code'">
+            {{ codeDescription }}
+            <button type="button" class="link" :disabled="loading" @click="changeNumber">{{ t('login.changeNumber') }}</button>
+          </template>
+          <template v-else>{{ t('login.passwordDescription') }}</template>
         </p>
-      </div>
-    </section>
+      </header>
 
-    <PrivacyDialog :open="privacyOpen" @close="closePrivacy" />
-  </UiPageContainer>
+      <Transition name="auth-step" mode="out-in">
+        <PhoneStep v-if="step === 'phone'" key="phone" v-model:phone="phone" :loading="loading" :error="error" @submit="requestCode" />
+        <CodeStep
+          v-else-if="step === 'code'"
+          key="code"
+          v-model:code="code"
+          :loading="loading"
+          :error="error"
+          :resend-seconds="deliveryBlocked ? 0 : resendSeconds"
+          :resend-label="resendLabel"
+          :length="delivery?.length ?? 5"
+          @submit="submitCode"
+          @resend="requestResend"
+        />
+        <PasswordStep
+          v-else
+          key="password"
+          v-model:password="password"
+          :hint="passwordHint"
+          :loading="loading"
+          :error="error"
+          @submit="submitPassword"
+        />
+      </Transition>
+    </section>
+  </div>
 </template>
 
 <style scoped>
-/* A focused task: one card in the middle of the column; on phones it fills the width. */
-.login-shell {
-  display: grid;
+/* Phones: a plain page under the bar. Desktop: one 440 card in the middle of the screen. */
+.login {
+  display: flex;
   flex: 1;
-  place-items: start center;
-  padding-top: clamp(0px, 6vh, 72px);
+  flex-direction: column;
+  padding: var(--space-6) var(--page-gutter) var(--space-12);
 }
 
-.login-panel {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-6);
-  width: 100%;
-  max-width: var(--card-focus);
-}
-
-.login-card {
+.login__card {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
   width: 100%;
-  padding: var(--space-8);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
 }
 
-.login-progress {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-1);
-}
-
-.login-progress span {
-  height: var(--bar-height);
-  border-radius: var(--radius-full);
-  background: var(--surface-2);
-  transition: background-color var(--transition-normal);
-}
-
-.login-progress span.active {
-  background: var(--accent);
-}
-
-.login-copy {
-  display: grid;
+.login__head {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
 }
 
-.login-copy__text {
+.login__title {
+  font: var(--text-h1);
+  letter-spacing: var(--tracking-h1);
+}
+
+.login__lede,
+.login__notice {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-body);
+}
+
+.login__lede .link {
+  font: inherit;
+}
+
+@media (min-width: 901px) {
+  .login {
+    align-items: center;
+    justify-content: center;
+    padding-block: var(--space-10);
+  }
+
+  .login__card {
+    max-width: var(--card-focus);
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+  }
+
+  .login__title {
+    font: var(--text-h2);
+    letter-spacing: var(--tracking-h2);
+  }
 }
 
 .auth-step-enter-active,
 .auth-step-leave-active {
   transition:
-    opacity var(--transition-normal),
-    transform var(--transition-normal);
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
 }
 
 .auth-step-enter-from {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateX(var(--space-4));
 }
 
 .auth-step-leave-to {
   opacity: 0;
-  transform: translateY(-6px);
-}
-
-@media (max-width: 640px) {
-  .login-shell {
-    padding-top: 0;
-  }
-
-  /* Without the card the fields stand on the page itself: they take the card colour, like the
-   * search on «Новый анализ», so the phone field, code cells and steps stay visible. */
-  .login-card {
-    --surface-2: var(--surface);
-    padding: var(--space-4) 0;
-    border-radius: 0;
-    background: transparent;
-  }
+  transform: translateX(calc(-1 * var(--space-4)));
 }
 </style>

@@ -54,7 +54,7 @@ const isDanger = computed(() => props.variant === 'danger')
       <slot />
     </template>
     <template #actions>
-      <Button variant="secondary" :disabled="loading" @click="emit('close')">
+      <Button variant="tinted" :disabled="loading" @click="emit('close')">
         {{ cancelLabel || t('common.cancel') }}
       </Button>
       <Button

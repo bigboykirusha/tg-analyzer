@@ -11,7 +11,6 @@ function retry() {
 
 <template>
   <StatusPage
-    :code="t('offline.code')"
     :title="t('offline.title')"
     :text="t('offline.text')"
     :action="t('offline.retry')"

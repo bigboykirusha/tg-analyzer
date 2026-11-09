@@ -1,459 +1,150 @@
 <script setup lang="ts">
-import { Globe, LogOut, Moon, Settings, Sun } from '../lib/icons'
-
+/**
+ * The app bar of signed-in screens.
+ *
+ * Phones and tablets: 56 tall. A screen puts its bar here (UiPageBar: back, title, actions); without
+ * one (home) the bar is the bare mark on the left and your avatar on the right — the way to the account.
+ * Clear at the top, the material once the page scrolls under it. Over a report's poster the bar takes
+ * the poster's colour and its circles turn into poster chips; past the poster it melts into the material.
+ *
+ * Desktop: only a report keeps a bar (its name after the poster); other screens title themselves.
+ */
 const auth = useAuthStore()
 const route = useRoute()
-const { logout } = useAuth()
-const { t, locale, setLocale } = useI18n()
-const { resolved, setPreference } = useTheme()
-
-const accountOpen = ref(false)
-
-watch(
-  () => route.path,
-  () => {
-    accountOpen.value = false
-  },
-)
-
-const navigation = useNavigation()
-
-/** The bar sits flush with the page until the page scrolls under it, then shows a hairline. */
-const analysis = useAnalysis()
-/** The running analysis, shown in the header on every page. */
-const activity = computed(() => {
-  if (!analysis.isActive.value) return null
-  const { scannedMessages, totalMessages, phase, chatTitle } = analysis.progress.value
-  const percent =
-    phase === 'saving'
-      ? 100
-      : totalMessages && phase === 'scanning'
-        ? Math.min(99, Math.round((scannedMessages / totalMessages) * 100))
-        : null
-  return { chat: chatTitle || t('analysis.untitledChat'), percent, queued: analysis.queued.value.length }
-})
+const { t } = useI18n()
 const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
-const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : ''))
-const isDark = computed(() => resolved.value === 'dark')
-
-/** Clear at the top, glass once the page scrolls under it, the poster's colour over a report's poster. */
-const { scrolled, overPoster, progress, titleProgress, hasPoster } = usePosterHeader()
-
-function openAccount() {
-  accountOpen.value = false
-  void navigateTo('/account')
-}
-
-function signOut() {
-  accountOpen.value = false
-  void logout()
-}
+const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
 </script>
 
 <template>
   <header
-    class="app-navigation"
+    class="app-bar"
     data-toolbar
-    :class="{
-      'is-scrolled': scrolled && !overPoster,
-      'is-over-poster': overPoster,
-      'has-poster': hasPoster,
-      'is-title-hidden': hasPoster && titleProgress === 0,
-    }"
-    :style="hasPoster ? { '--poster-progress': progress, '--title-progress': titleProgress } : undefined"
+    :class="{ 'is-scrolled': scrolled && !overPoster, 'is-over-poster': overPoster, 'has-poster': hasPoster }"
+    :style="hasPoster ? { '--poster-progress': progress } : undefined"
   >
-    <UiPageContainer class="topbar">
-      <BrandLink to="/dashboard" class="topbar__brand" />
-      <!-- Each screen puts its title and actions here (`UiPageBar`). -->
-      <div id="header-page" class="topbar__page" />
-      <nav v-if="navigation.items.value.length > 1" class="main-nav" :aria-label="t('nav.main')">
-        <NuxtLink
-          v-for="item in navigation.items.value"
-          :key="item.to"
-          :to="item.to"
-          class="nav-link"
-          :aria-current="navigation.current.value?.to === item.to ? 'page' : undefined"
-        >
-          {{ item.label }}
+    <div class="app-bar__inner">
+      <div id="header-page" class="app-bar__page" />
+      <div class="app-bar__home">
+        <BrandLink to="/dashboard" bare :current="route.path === '/dashboard'" />
+        <NuxtLink to="/account" class="app-bar__account" :aria-label="t('account.settings')">
+          <ProfileAvatar :title="displayName" size="sm" />
         </NuxtLink>
-      </nav>
-      <div class="topbar-actions">
-        <NuxtLink
-          v-if="activity"
-          to="/dashboard"
-          class="activity"
-          :aria-label="t('header.activityLabel', { chat: activity.chat })"
-          aria-live="polite"
-        >
-          <span class="spinner" aria-hidden="true" />
-          <span class="activity__chat">{{ activity.chat }}</span>
-          <span v-if="activity.percent !== null" class="activity__percent">{{ activity.percent }}%</span>
-          <span v-if="activity.queued" class="activity__queued">+{{ activity.queued }}</span>
-        </NuxtLink>
-        <!-- On the account page itself the profile heads the page: no second avatar in the bar. -->
-        <UiPopoverMenu
-          v-if="route.path !== '/account'"
-          v-model:open="accountOpen"
-          class="topbar__account"
-          align="end"
-          :aria-label="displayName"
-          title=""
-        >
-          <template #trigger>
-            <button
-              type="button"
-              class="account-trigger hit-area"
-              aria-haspopup="menu"
-              :aria-expanded="accountOpen"
-              :aria-label="displayName"
-              @click="accountOpen = !accountOpen"
-            >
-              <ProfileAvatar :title="displayName" size="sm" />
-            </button>
-          </template>
-          <div class="menu-identity">
-            <ProfileAvatar :title="displayName" size="sm" />
-            <span class="menu-identity__copy">
-              <strong class="menu-identity__name">{{ displayName }}</strong>
-              <small v-if="handle" class="menu-identity__sub">{{ handle }}</small>
-            </span>
-          </div>
-          <div class="menu-divider" role="separator" />
-          <div class="mobile-preferences">
-            <UiMenuItem
-              role="menuitem"
-              :icon="Globe"
-              :meta="locale.toUpperCase()"
-              @click="setLocale(locale === 'ru' ? 'en' : 'ru')"
-            >
-              {{ t('nav.language') }}
-            </UiMenuItem>
-            <UiMenuItem role="menuitem" :icon="isDark ? Sun : Moon" @click="setPreference(isDark ? 'light' : 'dark')">
-              {{ isDark ? t('theme.light') : t('theme.dark') }}
-            </UiMenuItem>
-          </div>
-          <UiMenuItem role="menuitem" :icon="Settings" @click="openAccount">{{ t('account.settings') }}</UiMenuItem>
-          <div class="menu-divider" role="separator" />
-          <UiMenuItem role="menuitem" :icon="LogOut" @click="signOut">{{ t('account.logout') }}</UiMenuItem>
-        </UiPopoverMenu>
       </div>
-    </UiPageContainer>
-    <!-- A screen with parts (the report) puts its navigation here: one bar, one material, one blur. -->
-    <UiPageContainer id="header-sub" class="header-sub" />
+    </div>
   </header>
 </template>
 
 <style scoped>
-.app-navigation {
+.app-bar {
   position: sticky;
   top: 0;
   z-index: var(--z-header);
   padding-top: env(safe-area-inset-top, 0px);
-  background: transparent;
   transition:
-    background-color var(--transition-normal),
-    box-shadow var(--transition-normal);
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
-/*
- * Over a report's poster the bar is the poster: its colour, light controls, no title (the poster
- * carries the name). Every control reads the remapped tokens, so nothing is restyled one by one.
- */
-.app-navigation.is-over-poster {
-  --text: var(--on-poster);
-  /* Light type stays full strength on the poster's wells (segments), so it keeps 4.5:1. */
-  --text-muted: var(--on-poster);
-  --border: var(--on-poster-line);
-  --hover: var(--on-poster-well);
-  --pressed: var(--on-poster-line);
-  --accent: var(--on-poster);
-  --accent-hover: var(--on-poster-muted);
-  --on-accent: var(--poster);
-  --segment-track: var(--on-poster-well);
-  --thumb: var(--on-poster);
-  --focus-ring: 0 0 0 2px var(--poster), 0 0 0 4px var(--on-poster);
-  --header-chip: var(--on-poster-chip);
-  --header-chip-ring: none;
+.app-bar__inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: calc(var(--page-max) + var(--page-gutter) * 2);
+  min-height: var(--topbar-height);
+  margin: 0 auto;
+  padding: 0 var(--page-gutter);
+}
+
+.app-bar__page {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Home and any screen without its own bar: the mark and your avatar. */
+.app-bar__home {
+  display: none;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-bar:not(:has(.page-bar)) .app-bar__home {
+  display: flex;
+}
+
+.app-bar:not(:has(.page-bar)) .app-bar__page {
+  display: none;
+}
+
+/* Your avatar is a floating control: a 44 circle, raised, ringed, a soft shadow. */
+.app-bar__account {
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-md);
+  height: var(--control-md);
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-chrome);
+  transition: transform var(--duration-press) var(--ease-standard);
+}
+
+.app-bar__account:active {
+  transform: scale(var(--press-scale));
+}
+
+/* Scrolled: the material, one hairline. */
+.app-bar.is-scrolled {
+  background: var(--room-glass);
+  box-shadow: var(--divider-bottom);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+
+/* Over the poster the bar is the poster; its floating circles become chips on it. */
+.app-bar.is-over-poster {
   background: var(--poster);
   color: var(--on-poster);
 }
 
-/*
- * Phones and tablets, a report with a capsule (ReportHeader): the capsule carries the name, so the
- * bar's own title is for screen readers only, and there is no second bar of chapter tabs (frame 2a).
- * Before the name has gone under the bar, the capsule cannot be tapped.
- */
-@media (max-width: 900px) {
-  .app-navigation:has(.capsule) :deep(.page-bar__copy) {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .app-navigation:has(.capsule) .header-sub {
-    display: none;
-  }
-
-  .app-navigation.is-title-hidden :deep(.capsule) {
-    visibility: hidden;
-  }
-
-  /* Back is the same 36 px circle as «Поделиться»: a well on the poster, a chip on glass. */
-  .app-navigation:has(.capsule) :deep(.page-bar__back) {
-    width: var(--control-sm);
-    height: var(--control-sm);
-    margin-left: 0;
-    background: var(--header-chip);
-    box-shadow: var(--header-chip-ring);
-  }
-}
-
-.app-navigation.is-over-poster :deep(.segment-active) {
-  color: var(--poster);
-}
-
-/*
- * On a report the bar is one material driven by the scroll (usePosterHeader): the poster colour is a
- * layer whose opacity follows --poster-progress, the glass shows through as it fades, and the title
- * and avatar rise into the bar over the same stretch. Hidden title stays the page's h1 for readers.
- */
-.app-navigation.has-poster {
-  isolation: isolate;
-  background: var(--toolbar-glass);
-  box-shadow: var(--divider-bottom);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
-}
-
-.app-navigation.has-poster::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background: var(--poster);
-  opacity: calc(1 - var(--poster-progress, 1));
-  pointer-events: none;
-}
-
-.app-navigation.is-over-poster {
-  /* Over the poster the bar is the poster; its own background shows nothing else. */
+.app-bar.is-over-poster :deep(.icon-btn--chrome) {
+  background: var(--on-poster-chip);
   box-shadow: none;
+  color: var(--on-poster);
 }
 
-.app-navigation.has-poster :deep(.page-bar__copy),
-.app-navigation.has-poster :deep(.report-header__avatar) {
-  opacity: var(--poster-progress, 1);
-  transform: translateY(calc((1 - var(--poster-progress, 1)) * var(--space-1)));
+.app-bar.is-over-poster :deep(.page-bar__copy) {
+  opacity: 0;
 }
 
-.app-navigation.is-scrolled {
-  background: var(--toolbar-glass);
-  box-shadow: var(--divider-bottom);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
+.app-bar :deep(.page-bar__copy) {
+  transition: opacity var(--transition-fast);
 }
 
-/* The same column as the page below, so the logo lines up with the content. */
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-6);
-  height: var(--topbar-height);
-}
-
-/* Wide screens: the logo lives in the floating sidebar; the profile stays at the end of the bar. */
+/* Desktop: no bar unless a screen keeps its title in it (the report). */
 @media (min-width: 901px) {
-  .topbar__brand {
-    display: none;
-  }
-}
-
-/* The screen's title and actions fill the bar between the logo and the profile. */
-.topbar__page {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  align-items: center;
-}
-
-/*
- * Phones: the screen's title takes the logo's place. The home screen has no
- * title on screen, so the logo stays. A report shows the chat's own avatar,
- * so the profile steps aside there.
- */
-@media (max-width: 900px) {
-  .topbar:has(.page-bar:not([data-untitled])) .topbar__brand {
-    display: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .topbar:has(.page-bar[data-leading]) .topbar__account,
-  .topbar:has(.page-bar[data-leading]) .topbar-actions:not(:has(.activity)) {
-    display: none;
-  }
-}
-
-.main-nav {
-  display: flex;
-  gap: var(--space-1);
-}
-
-.nav-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--control-sm);
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-full);
-  color: var(--text-muted);
-  font: var(--text-ui);
-  transition:
-    background-color var(--transition-fast),
-    color var(--transition-fast);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .nav-link:hover {
-    background: var(--hover);
-    color: var(--text);
-  }
-}
-
-.nav-link[aria-current='page'] {
-  background: var(--surface-2);
-  color: var(--text);
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin-left: auto;
-}
-
-/* Background work: a quiet pill while an analysis runs. */
-.activity {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  max-width: calc(var(--sidebar-width) - var(--space-4));
-  min-height: var(--control-sm);
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-full);
-  background: var(--accent-subtle);
-  color: var(--accent);
-  font: var(--text-small);
-  font-weight: 500;
-  transition: background-color var(--transition-fast);
-  isolation: isolate;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .activity:hover {
-    background-image: linear-gradient(var(--hover), var(--hover));
-  }
-}
-
-.activity__chat {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.activity__percent,
-.activity__queued {
-  flex: 0 0 auto;
-  font-variant-numeric: tabular-nums;
-}
-
-.activity__queued {
-  opacity: 0.75;
-}
-
-.account-trigger {
-  display: grid;
-  width: var(--control-sm);
-  height: var(--control-sm);
-  place-items: center;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-full);
-  background: none;
-  cursor: pointer;
-}
-
-.account-trigger:focus-visible,
-.account-trigger[aria-expanded='true'] {
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
-
-.mobile-preferences {
-  display: none;
-}
-
-@media (max-width: 640px) {
-  .topbar {
-    gap: var(--space-3);
-  }
-
-  .activity__chat {
+  .app-bar {
     display: none;
   }
 
-  .nav-link {
-    padding: 0 var(--space-3);
+  .app-bar:has(.page-bar--wide) {
+    display: block;
   }
 
-  .mobile-preferences {
-    display: grid;
-    gap: var(--space-1);
+  .app-bar__home {
+    display: none !important;
+  }
+
+  .app-bar__inner {
+    max-width: none;
+    min-height: var(--topbar-height);
   }
 }
 
-/* The home action and profile need their full touch targets on narrow phones. */
-@media (max-width: 640px) {
-  .topbar:has(.page-bar[data-untitled]) .topbar__brand :deep(.brand-link__name) {
+@media print {
+  .app-bar {
     display: none;
-  }
-}
-
-/*
- * The screen's navigation (`ReportNav`) sits in the header itself. Phones and
- * tablets give it a second row; wide screens centre it in the first.
- */
-.header-sub:empty {
-  display: none;
-}
-
-.header-sub {
-  padding-bottom: var(--space-2);
-}
-
-@media (min-width: 1200px) {
-  /* The centred section control reserves its own space, even for long chat names. */
-  .app-navigation:has(.report-nav) .topbar__page :deep(.page-bar__copy) {
-    max-width: max(0px, calc((100% - var(--report-nav-width)) / 2 - var(--space-10)));
-  }
-
-  .header-sub {
-    position: absolute;
-    inset: env(safe-area-inset-top, 0px) 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: var(--topbar-height);
-    padding-bottom: 0;
-    pointer-events: none;
-  }
-
-  .header-sub > :deep(*) {
-    pointer-events: auto;
   }
 }
 </style>

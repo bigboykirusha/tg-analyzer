@@ -1,134 +1,21 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { BarChart2, Sparkles, Trash2 } from '../lib/icons'
 
-/** Deleting a report: names the chat and lists exactly what goes away. */
-const props = defineProps<{
-  open: boolean
-  report: ReportSummaryDto | null
-  loading?: boolean
-}>()
-
+/** Deleting a report: the title names the chat, the line says what goes and what stays. */
+defineProps<{ open: boolean; report: ReportSummaryDto | null; loading?: boolean }>()
 const emit = defineEmits<{ close: []; confirm: [] }>()
-const { t, tc } = useI18n()
-
-const DAY_MS = 86_400_000
-
-const losses = computed(() => {
-  const report = props.report
-  if (!report) return []
-  const first = report.firstMessageAt ? Date.parse(report.firstMessageAt) : NaN
-  const last = report.lastMessageAt ? Date.parse(report.lastMessageAt) : NaN
-  const days =
-    Number.isFinite(first) && Number.isFinite(last) ? Math.max(1, Math.round((last - first) / DAY_MS) + 1) : null
-  return [
-    {
-      icon: BarChart2,
-      label: t('report.lose.stats'),
-      value: days ? tc('report.lose.days', days) : tc('common.messagesCount', report.totalMessages),
-    },
-    { icon: Sparkles, label: t('report.lose.story'), value: t('report.lose.storyValue') },
-  ]
-})
+const { t } = useI18n()
 </script>
 
 <template>
   <UiConfirmDialog
     :open="open"
-    :title="t('report.deleteTitle')"
+    :title="report ? t('report.deleteTitleNamed', { chat: report.title }) : t('report.deleteTitle')"
     :description="t('report.deleteText')"
     :confirm-label="t('report.delete')"
-    :confirm-icon="Trash2"
     variant="danger"
     :loading="loading"
     @close="emit('close')"
     @confirm="emit('confirm')"
-  >
-    <template v-if="report" #subject>
-      <div class="subject">
-        <ChatAvatar :chat-id="report.chatId" :title="report.title" size="sm" />
-        <div class="subject__text">
-          <b class="subject__name">{{ report.title }}</b>
-          <small class="subject__meta">
-            {{ t(`chatType.${report.type}`) }}, {{ tc('common.messagesCount', report.totalMessages) }}
-          </small>
-        </div>
-      </div>
-    </template>
-    <ul v-if="losses.length" class="lose" :aria-label="t('report.lose.label')">
-      <li v-for="loss in losses" :key="loss.label" class="lose__row">
-        <component :is="loss.icon" class="lose__icon" aria-hidden="true" />
-        <span class="lose__label">{{ loss.label }}</span>
-        <span class="lose__value">{{ loss.value }}</span>
-      </li>
-    </ul>
-  </UiConfirmDialog>
+  />
 </template>
-
-<style scoped>
-.subject {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.subject__text {
-  display: grid;
-  min-width: 0;
-}
-
-.subject__name {
-  overflow: hidden;
-  font: var(--text-title);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.subject__meta {
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-
-.lose {
-  margin: 0;
-  padding: var(--space-1) var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--fill-raised);
-  list-style: none;
-}
-
-.lose__row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-0-5) var(--space-3);
-  min-height: var(--control-md);
-  padding-block: var(--space-2);
-  font: var(--text-ui);
-}
-
-.lose__row + .lose__row {
-  border-top: 1px solid var(--border);
-}
-
-.lose__icon {
-  flex: none;
-  width: var(--icon-sm);
-  height: var(--icon-sm);
-  color: var(--text-muted);
-}
-
-.lose__label {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-/* On narrow phones the note drops under the label instead of squeezing it. */
-.lose__value {
-  margin-left: auto;
-  color: var(--text-muted);
-  font: var(--text-small);
-  white-space: nowrap;
-}
-</style>

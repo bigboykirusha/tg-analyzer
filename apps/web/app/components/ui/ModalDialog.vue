@@ -66,11 +66,13 @@ watch(open, (value) => value && drag.reset())
             <span class="modal-grabber" />
           </div>
           <IconButton
+            v-if="role !== 'alertdialog'"
             class="modal-close"
             :label="closeLabel || t('common.close')"
             :icon="X"
-            variant="ghost"
-            size="xs"
+            tone="chrome"
+            size="md"
+            no-tooltip
             :disabled="busy"
             @click="close"
           />
@@ -100,6 +102,11 @@ watch(open, (value) => value && drag.reset())
 </template>
 
 <style scoped>
+/*
+ * Desktop: a dialog in the middle — 32 corners, 24 padding, the title in h3, actions at the end.
+ * Phones (≤ 640): the same content as a sheet — edge to edge, attached to the bottom, a grabber,
+ * actions stacked full width, the main one on top. A confirmation (alertdialog) has no close button.
+ */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -111,15 +118,23 @@ watch(open, (value) => value && drag.reset())
 }
 
 .modal-panel {
+  --field-bg: var(--fill-raised);
+  --btn-tinted-bg: var(--fill-raised);
+  --icon-btn-fill: var(--fill-raised);
+  --btn-secondary-bg: transparent;
+  /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
+  --group-bg: transparent;
+  --group-padding: 0;
   position: relative;
   display: flex;
   flex-direction: column;
+  gap: var(--space-4);
   isolation: isolate;
   width: 100%;
   max-width: var(--dialog-sm);
   max-height: 84dvh;
   overflow: hidden;
-  border: 0;
+  padding: var(--space-6);
   border-radius: var(--radius-xl);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
@@ -139,93 +154,64 @@ watch(open, (value) => value && drag.reset())
 
 .modal-close {
   position: absolute;
-  z-index: 1;
   top: var(--space-4);
   right: var(--space-4);
-}
-
-/* Optional subject row (the chat being acted on); the close button sits at its end. */
-.modal-top {
-  display: flex;
-  align-items: center;
-  min-height: var(--control-md);
-  padding: var(--space-6) var(--space-12) 0 var(--space-6);
+  z-index: 1;
 }
 
 .modal-header {
-  display: grid;
-  flex: 0 0 auto;
-  justify-items: start;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-6) var(--space-12) var(--space-4) var(--space-6);
-}
-
-.modal-top + .modal-header {
-  padding-top: var(--space-6);
-  padding-right: var(--space-6);
+  padding-right: calc(var(--control-sm) + var(--space-2));
 }
 
 .modal-title {
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
   text-wrap: balance;
 }
 
 .modal-description {
   color: var(--text-muted);
-  font: var(--text-body);
-  text-wrap: pretty;
+  font: var(--text-small);
 }
 
 .modal-body {
-  display: grid;
-  /* One column that never grows past the panel, whatever a long line inside wants. */
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: var(--space-4);
-  min-height: 0;
   min-width: 0;
+  min-height: 0;
+  margin: 0 calc(-1 * var(--space-6));
+  padding: 0 var(--space-6);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 var(--space-6) var(--space-1);
 }
 
-/* Without a button row the body is the last thing in the panel: it keeps the panel's own margin. */
-.modal-body:last-child {
-  padding-bottom: var(--space-6);
-}
-
-/* Two equal buttons side by side: cancel on the left, the action on the right. */
 .modal-actions {
-  display: grid;
-  flex: 0 0 auto;
-  grid-auto-columns: 1fr;
-  grid-auto-flow: column;
+  display: flex;
+  flex-wrap: wrap-reverse;
+  justify-content: flex-end;
   gap: var(--space-2);
-  padding: var(--space-4) var(--space-6) var(--space-6);
+  padding-top: var(--space-2);
 }
 
-.modal-actions :deep(.btn) {
-  width: 100%;
-  min-height: var(--control-lg);
+.modal-backdrop.modal-enter-active,
+.modal-backdrop.modal-leave-active {
+  transition: background-color var(--duration-fast) var(--ease-standard);
 }
 
-.modal-enter-active,
-.modal-leave-active {
-  /* The scrim fades; the panel itself stays solid while it moves. */
-  transition: background-color var(--transition-normal);
+.modal-enter-active .modal-panel {
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-sheet) var(--spring-snappy);
 }
 
-.modal-enter-active .modal-panel,
 .modal-leave-active .modal-panel {
   transition:
-    transform var(--transition-normal),
-    opacity var(--transition-normal);
-}
-
-.modal-leave-active,
-.modal-leave-active .modal-panel {
-  transition-duration: var(--duration-fast);
-  transition-timing-function: var(--ease-exit);
+    opacity var(--transition-exit),
+    transform var(--transition-exit);
 }
 
 .modal-enter-from,
@@ -236,37 +222,24 @@ watch(open, (value) => value && drag.reset())
 .modal-enter-from .modal-panel,
 .modal-leave-to .modal-panel {
   opacity: 0;
-  transform: translateY(var(--space-2)) scale(0.98);
+  transform: scale(0.96);
 }
 
-/* The dialog takes focus on open without drawing a ring around itself. */
 .modal-panel:focus {
   outline: none;
-  box-shadow: var(--shadow-overlay);
 }
 
 @media (max-width: 640px) {
-  /* Phones: the dialog becomes a sheet edge to edge, attached to the bottom; its last row clears the home indicator. */
   .modal-backdrop {
     align-items: end;
     padding: var(--space-12) 0 0;
   }
 
-  .modal-panel,
-  .modal-panel--md,
-  .modal-panel--lg {
+  .modal-panel {
     max-width: none;
     max-height: 100%;
-    border-width: 0;
+    padding: 0 var(--page-gutter) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  }
-
-  .modal-body:last-child,
-  .modal-actions {
-    padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
-  }
-
-  .modal-panel {
     transform: translateY(var(--sheet-drag, 0));
     transition: transform var(--duration-sheet) var(--ease-drawer);
   }
@@ -275,40 +248,43 @@ watch(open, (value) => value && drag.reset())
     transition: none;
   }
 
-  /* The grabber strip: the part of the sheet the finger can pull. */
   .modal-grab {
-    position: absolute;
-    z-index: 1;
-    inset: 0 var(--space-12) auto;
     display: flex;
     justify-content: center;
-    height: var(--space-6);
+    padding: var(--space-2) 0 var(--space-1);
     touch-action: none;
   }
 
   .modal-grabber {
     width: var(--control-sm);
     height: var(--space-1);
-    margin-top: var(--space-2);
     border-radius: var(--radius-full);
     background: var(--border-strong);
   }
 
-  .modal-enter-active,
-  .modal-leave-active {
-    transition-duration: var(--duration-sheet);
+  .modal-close {
+    top: var(--space-6);
+    right: var(--page-gutter);
   }
 
-  .modal-leave-active {
-    transition-duration: var(--duration-slow);
+  .modal-body {
+    margin: 0 calc(-1 * var(--page-gutter));
+    padding: 0 var(--page-gutter);
   }
 
-  .modal-enter-active .modal-panel {
-    transition: transform var(--duration-sheet) var(--ease-drawer);
+  /* The main action on top, «Отменить» under it. */
+  .modal-actions {
+    flex-direction: column-reverse;
+    flex-wrap: nowrap;
   }
 
+  .modal-actions :deep(.btn) {
+    width: 100%;
+  }
+
+  .modal-enter-active .modal-panel,
   .modal-leave-active .modal-panel {
-    transition: transform var(--duration-slow) var(--ease-drawer);
+    opacity: 1;
   }
 
   .modal-enter-from .modal-panel,
@@ -322,7 +298,7 @@ watch(open, (value) => value && drag.reset())
   .modal-enter-from .modal-panel,
   .modal-leave-to .modal-panel {
     opacity: 0;
-    transform: translateY(var(--sheet-drag, 0));
+    transform: none;
   }
 }
 </style>

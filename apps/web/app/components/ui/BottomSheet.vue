@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { ArrowLeft, X } from '../../lib/icons'
+
 /**
- * Bottom sheet for phones (≤ 640px): Select and PopoverMenu open this way
- * (ModalDialog shares its drag through `useSheetDrag`). Grabber, title, 48px items,
- * full-width actions; closes on a flick or a drag past 30% of its height, scrim tap or Esc.
+ * The phone sheet (Select, PopoverMenu, «Новый анализ», «Поделиться»; ModalDialog shares its drag through
+ * useSheetDrag): edge to edge, attached to the bottom, a grabber, then a 44 bar — close (or back) on the
+ * left, the title in the middle, an optional action on the right. Closes on a flick, the scrim or Esc.
  */
 const props = withDefaults(
   defineProps<{
@@ -11,11 +13,14 @@ const props = withDefaults(
     /** Role of the panel; menus and listboxes put their own role on the body. */
     role?: 'dialog' | 'alertdialog'
     busy?: boolean
+    /** A second step: the left button goes back instead of closing. */
+    back?: boolean
   }>(),
-  { title: '', role: 'dialog', busy: false },
+  { title: '', role: 'dialog', busy: false, back: false },
 )
 
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: []; back: [] }>()
+const { t } = useI18n()
 const panelRef = ref<HTMLElement | null>(null)
 const titleId = useId()
 const open = toRef(props, 'open')
@@ -49,9 +54,28 @@ watch(open, (value) => value && drag.reset())
           <div class="sheet__drag" v-on="drag.handlers">
             <span class="sheet__grabber" aria-hidden="true" />
             <header v-if="title || $slots.header" class="sheet__head">
+              <UiIconButton
+                v-if="back"
+                :label="t('common.back')"
+                :icon="ArrowLeft"
+                tone="chrome"
+                size="lg"
+                no-tooltip
+                @click="emit('back')"
+              />
+              <UiIconButton
+                v-else
+                :label="t('common.close')"
+                :icon="X"
+                tone="chrome"
+                size="lg"
+                no-tooltip
+                @click="close"
+              />
               <slot name="header">
-                <h2 :id="titleId" class="t-title">{{ title }}</h2>
+                <h2 :id="titleId" class="sheet__title">{{ title }}</h2>
               </slot>
+              <span class="sheet__end"><slot name="end" /></span>
             </header>
           </div>
           <div v-if="$slots.search" class="sheet__search">
@@ -82,6 +106,13 @@ watch(open, (value) => value && drag.reset())
 }
 
 .sheet {
+  --field-bg: var(--fill-raised);
+  --btn-tinted-bg: var(--fill-raised);
+  --icon-btn-fill: var(--fill-raised);
+  --btn-secondary-bg: transparent;
+  /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
+  --group-bg: transparent;
+  --group-padding: 0;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -110,28 +141,47 @@ watch(open, (value) => value && drag.reset())
   align-self: center;
   width: var(--control-sm);
   height: var(--space-1);
-  margin: var(--space-2) 0 var(--space-1);
+  margin: var(--space-2) 0;
   border-radius: var(--radius-full);
   background: var(--border-strong);
 }
 
 .sheet__head {
-  padding: var(--space-3) var(--space-6) var(--space-2);
-  overflow-wrap: anywhere;
+  display: grid;
+  grid-template-columns: var(--control-md) minmax(0, 1fr) var(--control-md);
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-md);
+  padding: 0 var(--page-gutter) var(--space-3);
+}
+
+.sheet__title {
+  overflow: hidden;
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sheet__end {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .sheet__search {
   flex: 0 0 auto;
-  padding: var(--space-1) var(--space-3) var(--space-2);
+  padding: 0 var(--page-gutter) var(--space-3);
 }
 
 .sheet__body {
-  display: grid;
-  gap: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 var(--space-3) var(--space-3);
+  padding: 0 var(--page-gutter) var(--space-4);
 }
 
 .sheet__foot {
@@ -139,24 +189,17 @@ watch(open, (value) => value && drag.reset())
   flex: 0 0 auto;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-6) var(--space-6);
+  padding: var(--space-2) var(--page-gutter) var(--space-4);
 }
 
 .sheet__foot :deep(.btn) {
   width: 100%;
-  min-height: var(--control-lg);
 }
 
 /* The last block keeps the sheet's own margin and clears the home indicator. */
 .sheet__body:last-child,
 .sheet__foot {
-  padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
-}
-
-/* Options and menu items (UiListRow) are 48 px tall inside a sheet: a thumb, not a pointer. */
-.sheet__body :deep(.menu-item),
-.sheet__body :deep(.option) {
-  --row-height: var(--control-lg);
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
 }
 
 .sheet-enter-active,
@@ -166,7 +209,7 @@ watch(open, (value) => value && drag.reset())
 }
 
 .sheet-leave-active {
-  transition-duration: var(--duration-slow);
+  transition-duration: var(--duration-fast);
 }
 
 .sheet-enter-active .sheet {
@@ -174,7 +217,7 @@ watch(open, (value) => value && drag.reset())
 }
 
 .sheet-leave-active .sheet {
-  transition: transform var(--duration-slow) var(--ease-drawer);
+  transition: transform var(--transition-exit);
 }
 
 .sheet-enter-from,

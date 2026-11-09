@@ -169,7 +169,22 @@ onBeforeUnmount(() => {
 }
 
 .popover-sheet {
-  display: grid;
-  gap: var(--space-0-5);
+  display: flex;
+  flex-direction: column;
+}
+
+/* In a phone sheet a menu item is a list row: 56 tall, no inline padding, a hairline from the text. */
+.popover-sheet :deep(.menu-item) {
+  min-height: var(--row-height);
+  padding: 0;
+  border-radius: 0;
+}
+
+.popover-sheet :deep(.menu-item__body) {
+  box-shadow: var(--divider-bottom);
+}
+
+.popover-sheet :deep(.menu-item:last-child .menu-item__body) {
+  box-shadow: none;
 }
 </style>

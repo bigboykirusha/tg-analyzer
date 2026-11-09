@@ -1,33 +1,23 @@
 <script setup lang="ts">
-import { AlertCircle, Info, MessageSquare, Search, WifiOff, X } from '../lib/icons'
+import { AlertCircle, MessageSquare, Search, WifiOff, X } from '../lib/icons'
 
 /**
- * The user's Telegram chats with search, a private/group filter and the
- * «Анализ» button on every row; the chats pinned in Telegram first, as «С кого начать». Runs and cancels analyses and deletes reports.
- * `sticky` pins the search bar under the header (the «New analysis» page).
+ * Every Telegram chat, to analyse one: a search well, «Все / Личные / Группы», then rows (ChatRow) —
+ * the same list as a page on desktop (`/new`) and as a sheet on a phone (`?pick`).
  */
 withDefaults(defineProps<{ sticky?: boolean }>(), { sticky: false })
 
 const PAGE_SIZE = 30
-
 const { t, tc } = useI18n()
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
-const analysis = useAnalysis()
-const toast = useToast()
 const errorMessage = useErrorMessage()
 const { relogin } = useAuth()
 
 const search = ref('')
 const filter = ref<'all' | 'private' | 'groups'>('all')
 const visibleCount = ref(PAGE_SIZE)
-const startingChatId = ref<string | null>(null)
-const cancelling = ref(false)
-const confirmCancelOpen = ref(false)
-const deleteChatId = ref<string | null>(null)
-const deleting = ref(false)
 const sentinel = ref<HTMLElement | null>(null)
-
 const filterOptions = computed(() => [
   { value: 'all' as const, label: t('dashboard.filter.all') },
   { value: 'private' as const, label: t('dashboard.filter.private') },
@@ -43,78 +33,17 @@ const filteredChats = computed(() => {
   })
 })
 const visibleChats = computed(() => filteredChats.value.slice(0, visibleCount.value))
-const pinnedChats = computed(() => workspace.chats.filter((chat) => chat.pinned))
-
 const firstLoad = computed(
   () => !workspace.chats.length && (workspace.dialogsState === 'loading' || workspace.dialogsState === 'idle'),
 )
-const dialogsFailed = computed(() => workspace.dialogsState === 'error' && !workspace.dialogs.length)
-// Analyses queue up, so another running one does not block starting more.
-const analysisBlocked = computed(() => !auth.telegramSessionActive || startingChatId.value !== null)
-const queuedJobs = computed(() => new Map(analysis.queued.value.map((item) => [item.chatId, item.jobId])))
+const failed = computed(() => workspace.dialogsState === 'error' && !workspace.dialogs.length)
 
 watch([search, filter], () => {
   visibleCount.value = PAGE_SIZE
 })
-
 useIntersection(sentinel, () => {
   if (visibleCount.value < filteredChats.value.length) visibleCount.value += PAGE_SIZE
 })
-
-async function analyse(chatId: string, title: string) {
-  startingChatId.value = chatId
-  try {
-    await analysis.startAnalysis(chatId, title)
-  } catch (error) {
-    toast.error(t('analysis.startError'), errorMessage(error))
-  } finally {
-    startingChatId.value = null
-  }
-}
-
-/** 0–1 when Telegram reported the chat size. */
-const progressFraction = computed(() => {
-  const { scannedMessages, totalMessages, phase } = analysis.progress.value
-  if (phase === 'saving') return 1
-  if (!totalMessages || phase !== 'scanning') return null
-  return Math.min(1, scannedMessages / totalMessages)
-})
-
-// Cancelling asks for confirmation only once more than 30 s of reading would be lost.
-const CONFIRM_CANCEL_AFTER_MS = 30_000
-function requestCancel() {
-  const { startedAt } = analysis.progress.value
-  if (startedAt && Date.now() - startedAt > CONFIRM_CANCEL_AFTER_MS) confirmCancelOpen.value = true
-  else void cancel()
-}
-
-async function deleteReport() {
-  const chatId = deleteChatId.value
-  if (!chatId) return
-  deleting.value = true
-  try {
-    await workspace.deleteReport(chatId)
-    toast.success(t('report.deleted'))
-  } catch (error) {
-    toast.error(t('report.deleteError'), errorMessage(error))
-  } finally {
-    deleting.value = false
-    deleteChatId.value = null
-  }
-}
-
-async function cancel() {
-  confirmCancelOpen.value = false
-  cancelling.value = true
-  try {
-    await analysis.cancel()
-  } catch (error) {
-    toast.error(t('analysis.cancelError'), errorMessage(error))
-  } finally {
-    cancelling.value = false
-  }
-}
-
 onMounted(() => {
   void workspace.loadDialogs()
 })
@@ -122,146 +51,98 @@ onMounted(() => {
 
 <template>
   <div class="picker" :class="{ 'picker--sticky': sticky }">
-    <!-- Newcomers get a head start from the chats pinned in Telegram; later the home page shows them. -->
-    <PinnedChats
-      v-if="!firstLoad && !workspace.reports.length"
-      :chats="pinnedChats"
-      :analysing-id="analysis.isActive.value ? analysis.progress.value.chatId : null"
-      :queued="new Set(queuedJobs.keys())"
-      :starting-id="startingChatId"
-      :disabled="analysisBlocked"
-      @analyse="(chat) => analyse(chat.id, chat.title)"
-    />
-    <div class="picker-tools">
-      <label class="input input--raised">
-        <Search aria-hidden="true" />
+    <div class="picker__tools">
+      <label class="picker__search">
+        <Search class="icon-sm" aria-hidden="true" />
         <input
           v-model="search"
           type="search"
           name="chat-search"
           autocomplete="off"
           spellcheck="false"
-          class="input__control"
-          :placeholder="t('dashboard.searchPlaceholder')"
+          :placeholder="t('newAnalysis.searchPlaceholder')"
           :aria-label="t('dashboard.search')"
         />
-        <button v-if="search" type="button" class="input__clear" :aria-label="t('common.clear')" @click="search = ''">
-          <X aria-hidden="true" />
+        <button v-if="search" type="button" class="picker__clear" :aria-label="t('common.clear')" @click="search = ''">
+          <X class="icon-sm" aria-hidden="true" />
         </button>
       </label>
-      <UiSegmentedControl
-        v-model="filter"
-        inline
-        class="picker-filter"
-        :options="filterOptions"
-        :aria-label="t('dashboard.filter.label')"
-      />
+      <UiFilters v-model="filter" :options="filterOptions" :label="t('dashboard.filter.label')" />
     </div>
 
-    <p v-if="!auth.telegramSessionActive" class="note picker-note" role="status">
-      <Info aria-hidden="true" />
+    <p v-if="!auth.telegramSessionActive" class="picker__note" role="status">
       {{ t('dashboard.sessionInactive') }}
-      <button type="button" class="note__action" @click="relogin">{{ t('common.relogin') }}</button>
+      <button type="button" class="link" @click="relogin">{{ t('common.relogin') }}</button>
     </p>
-    <p v-else-if="workspace.dialogsStale" class="note picker-note" role="status">
-      <Info aria-hidden="true" />
+    <p v-else-if="workspace.dialogsStale" class="picker__note" role="status">
       {{ t('dashboard.staleDialogs') }}
-      <button type="button" class="note__action" @click="workspace.loadDialogs()">{{ t('common.refresh') }}</button>
+      <button type="button" class="link" @click="workspace.loadDialogs()">{{ t('common.refresh') }}</button>
     </p>
 
-    <UiListSkeleton v-if="firstLoad" :rows="6" />
+    <!-- The list on its way: rows of the real height, so nothing jumps. -->
+    <UiGroup v-if="firstLoad" aria-hidden="true">
+      <div v-for="row in 7" :key="row" class="picker__skeleton">
+        <UiSkeleton width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-full)" />
+        <span class="picker__skeleton-copy">
+          <UiSkeleton :width="`${64 - (row % 3) * 12}%`" height="var(--space-3)" />
+          <UiSkeleton width="36%" height="var(--space-2)" />
+        </span>
+      </div>
+    </UiGroup>
 
     <UiEmptyState
-      v-else-if="dialogsFailed"
-      class="tile"
+      v-else-if="failed"
+      compact
       tone="danger"
       :icon="workspace.dialogsError?.code === 'TELEGRAM_BUSY' ? WifiOff : AlertCircle"
       :title="t('dashboard.dialogsError')"
       :description="errorMessage(workspace.dialogsError)"
     >
       <template #action>
-        <UiButton variant="secondary" @click="workspace.loadDialogs()">{{ t('common.retry') }}</UiButton>
+        <UiButton @click="workspace.loadDialogs()">{{ t('common.retry') }}</UiButton>
       </template>
     </UiEmptyState>
 
     <template v-else>
-      <div v-if="visibleChats.length" class="chat-list">
-        <ChatRow
-          v-for="chat in visibleChats"
-          :key="chat.id"
-          :chat="chat"
-          :analysing="analysis.isActive.value && analysis.progress.value.chatId === chat.id"
-          :progress="progressFraction"
-          :paused="analysis.progress.value.phase === 'waiting'"
-          :queued="queuedJobs.has(chat.id)"
-          :starting="startingChatId === chat.id"
-          :cancelling="cancelling"
-          :disabled="analysisBlocked"
-          @analyse="analyse(chat.id, chat.title)"
-          @cancel="queuedJobs.has(chat.id) ? analysis.cancel(queuedJobs.get(chat.id)) : requestCancel()"
-          @delete="deleteChatId = chat.id"
-        />
-      </div>
+      <UiGroup v-if="visibleChats.length">
+        <ChatRow v-for="chat in visibleChats" :key="chat.id" :chat="chat" />
+      </UiGroup>
       <UiEmptyState
         v-else
-        class="tile"
-        :icon="MessageSquare"
+        compact
+        :icon="search || filter !== 'all' ? Search : MessageSquare"
         :title="search || filter !== 'all' ? t('dashboard.noMatchesTitle') : t('dashboard.emptyTitle')"
         :description="search || filter !== 'all' ? t('dashboard.noMatchesText') : t('dashboard.emptyText')"
-      />
-
-      <p
-        v-if="visibleChats.length < filteredChats.length"
-        :key="visibleCount"
-        ref="sentinel"
-        class="list-footer t-small"
       >
+        <template v-if="search" #action>
+          <UiButton variant="tinted" @click="search = ''">{{ t('dashboard.clearSearch') }}</UiButton>
+        </template>
+      </UiEmptyState>
+      <p v-if="visibleChats.length < filteredChats.length" :key="visibleCount" ref="sentinel" class="picker__foot">
         {{ t('dashboard.shown', { shown: visibleChats.length, total: filteredChats.length }) }}
       </p>
-      <p v-else-if="workspace.dialogsTruncated" class="list-footer t-small">{{ t('dashboard.truncated') }}</p>
-      <p v-else-if="filteredChats.length" class="list-footer t-small">
-        {{ tc('dashboard.chatCount', filteredChats.length) }}
-      </p>
+      <p v-else-if="workspace.dialogsTruncated" class="picker__foot">{{ t('dashboard.truncated') }}</p>
+      <p v-else-if="filteredChats.length > 8" class="picker__foot">{{ tc('dashboard.chatCount', filteredChats.length) }}</p>
     </template>
   </div>
-
-  <UiConfirmDialog
-    :open="confirmCancelOpen"
-    :title="t('analysis.cancelTitle')"
-    :description="t('analysis.cancelText')"
-    :confirm-label="t('analysis.cancel')"
-    :cancel-label="t('analysis.keepGoing')"
-    variant="danger"
-    :loading="cancelling"
-    @close="confirmCancelOpen = false"
-    @confirm="cancel"
-  />
-  <DeleteReportDialog
-    :open="deleteChatId !== null"
-    :report="workspace.reports.find((report) => report.chatId === deleteChatId) ?? null"
-    :loading="deleting"
-    @close="deleteChatId = null"
-    @confirm="deleteReport"
-  />
 </template>
 
 <style scoped>
 .picker {
   display: flex;
-  min-width: 0;
   flex-direction: column;
   gap: var(--space-4);
+  min-width: 0;
 }
 
-.picker-tools {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+.picker__tools {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
 }
 
 /* On its own page the search stays in reach while the list scrolls. */
-.picker--sticky .picker-tools {
+.picker--sticky .picker__tools {
   position: sticky;
   top: var(--topbar-height);
   z-index: calc(var(--z-header) - 1);
@@ -270,30 +151,86 @@ onMounted(() => {
   background: var(--bg);
 }
 
-/* No overflow clipping: row menus float outside the list. */
-.chat-list {
-  padding: var(--space-1) 0;
-  border-radius: var(--radius-lg);
+@media (min-width: 901px) {
+  .picker--sticky .picker__tools {
+    top: 0;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .picker--sticky .picker__search {
+    flex: 1;
+  }
+}
+
+/* The search well: 36, grey, no ring — as in iOS. */
+.picker__search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--control-sm);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--field-bg, var(--surface-2));
+  color: var(--text-muted);
+  font: var(--text-body);
+}
+
+.picker--sticky .picker__search {
   background: var(--surface);
 }
 
-.list-footer {
-  color: var(--text-muted);
-  text-align: center;
+.picker__search:focus-within {
+  box-shadow: var(--ring-field-focus);
 }
 
-@media (max-width: 640px) {
-  .picker-tools {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-2);
-  }
+.picker__search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  color: var(--text);
+  outline: none;
+}
 
-  .picker-tools .picker-filter {
-    width: 100%;
-  }
+.picker__search input::placeholder {
+  color: var(--text-muted);
+}
 
-  .picker-tools .picker-filter :deep(.segment) {
-    flex: 1 1 0;
-  }
+.picker__search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.picker__clear {
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  margin-right: calc(-1 * var(--space-3));
+  color: var(--text-muted);
+}
+
+.picker__note {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.picker__skeleton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--row-height);
+}
+
+.picker__skeleton-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.picker__foot {
+  color: var(--text-muted);
+  font: var(--text-small);
+  text-align: center;
 }
 </style>

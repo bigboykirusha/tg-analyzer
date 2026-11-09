@@ -1,48 +1,37 @@
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    width?: string
-    height?: string
-    radius?: string
-  }>(),
-  {
-    width: '100%',
-    height: 'var(--space-4)',
-    radius: 'var(--radius-xs)',
-  },
-)
+/**
+ * A placeholder block. Skeleton screens are built from the real layout (the same tiles, rows and line
+ * heights), so nothing moves when the content arrives. The block breathes in place — no travelling
+ * shine, which smears over rounded corners and dark surfaces.
+ */
+withDefaults(defineProps<{ width?: string; height?: string; radius?: string }>(), {
+  width: '100%',
+  height: 'var(--space-4)',
+  radius: 'var(--radius-xs)',
+})
 </script>
 
 <template>
-  <div class="skeleton" aria-hidden="true" :style="{ width, height, borderRadius: radius }" />
+  <span class="skeleton" aria-hidden="true" :style="{ width, height, borderRadius: radius }" />
 </template>
 
 <style scoped>
 .skeleton {
-  position: relative;
-  flex-shrink: 0;
+  display: block;
+  flex: none;
   max-width: 100%;
-  overflow: hidden;
   background: var(--skeleton);
+  animation: skeleton-breathe var(--duration-shimmer) var(--ease-loop) infinite alternate;
 }
 
-.skeleton::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, var(--hover), transparent);
-  transform: translateX(-100%);
-  animation: skeleton-shimmer var(--duration-shimmer) var(--ease-loop) infinite;
-}
-
-@keyframes skeleton-shimmer {
+@keyframes skeleton-breathe {
   to {
-    transform: translateX(100%);
+    opacity: 0.55;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton::after {
+  .skeleton {
     animation: none;
   }
 }

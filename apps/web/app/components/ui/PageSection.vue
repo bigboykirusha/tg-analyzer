@@ -9,7 +9,7 @@ const headingId = computed(() => `${props.id ?? fallbackId}-title`)
   <section :id="id" class="page-section" :aria-labelledby="headingId">
     <div class="page-section__head">
       <div class="page-section__copy">
-        <h2 :id="headingId" class="t-h3">{{ title }}</h2>
+        <h2 :id="headingId" class="t-h2">{{ title }}</h2>
         <p v-if="hint" class="page-section__hint">{{ hint }}</p>
       </div>
       <div v-if="$slots.actions" class="page-section__actions"><slot name="actions" /></div>
@@ -22,8 +22,14 @@ const headingId = computed(() => `${props.id ?? fallbackId}-title`)
 .page-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   min-width: 0;
+}
+
+@media (min-width: 901px) {
+  .page-section {
+    gap: var(--space-4);
+  }
 }
 
 .page-section__head {

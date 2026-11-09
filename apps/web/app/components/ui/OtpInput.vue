@@ -151,21 +151,17 @@ defineExpose({ focus: focusFirstEmpty })
   gap: var(--space-2);
 }
 
-/*
- * A cell is a 56 px well with one digit in the interface face, sized from the cell: 24 px.
- * A token for it would be --text-otp.
- */
+/* A cell is a 56 well with one digit in h2's size; 2 px ink on focus, 2 px red when the code is wrong. */
 .otp-input {
   width: 100%;
   min-width: 0;
-  height: calc(var(--control-lg) + var(--space-2));
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-md);
+  height: var(--row-height);
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
+  box-shadow: var(--ring-hairline);
   color: var(--text);
-  --otp-digit: 500 calc(var(--control-lg) / 2) / 1 var(--font-sans);
-  font: var(--otp-digit);
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
   caret-color: var(--text);
   text-align: center;
   outline: none;
@@ -174,25 +170,13 @@ defineExpose({ focus: focusFirstEmpty })
     box-shadow var(--transition-fast);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .otp-input:hover {
-    background: var(--fill-hover);
-  }
-}
-
 .otp-input:focus {
   background: var(--surface);
-  box-shadow: var(--focus-ring-field);
+  box-shadow: var(--ring-field-focus);
 }
 
 .otp--invalid .otp-input {
-  background: var(--danger-subtle);
-  box-shadow: none;
-}
-
-.otp--invalid .otp-input:focus {
-  background: var(--surface);
-  box-shadow: var(--focus-ring-field-danger);
+  box-shadow: var(--ring-field-error);
 }
 
 .otp-input:disabled {

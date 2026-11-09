@@ -59,11 +59,6 @@ export function useAuth() {
     }
   }
 
-  async function deleteAccount() {
-    await api('DELETE /api/v1/auth/account')
-    await finishSession()
-  }
-
   async function updateSettings(body: UpdateProfileBody) {
     const { user } = await api('PATCH /api/v1/auth/profile', { body })
     auth.updateUser(user)
@@ -98,7 +93,6 @@ export function useAuth() {
     verifyPassword,
     logout,
     relogin,
-    deleteAccount,
     syncTimeZone,
     updateSettings,
     refreshUser,

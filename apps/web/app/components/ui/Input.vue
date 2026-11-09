@@ -19,8 +19,6 @@ defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
-    /** md 44 · lg 48. */
-    size?: 'md' | 'lg'
     icon?: Component | null
     /** A leading add-on in the `leading` slot (a UiSelect with variant="addon"); drops the left padding. */
     addon?: boolean
@@ -35,7 +33,6 @@ const props = withDefaults(
     id?: string
   }>(),
   {
-    size: 'md',
     icon: null,
     addon: false,
     clearable: false,
@@ -86,7 +83,6 @@ defineExpose({ focus: () => inputRef.value?.focus(), el: inputRef })
     :class="[
       attrs.class,
       {
-        'input--lg': size === 'lg',
         'input--addon': addon,
         'input--raised': raised,
         'ui-input--invalid': isInvalid,
@@ -136,25 +132,82 @@ defineExpose({ focus: () => inputRef.value?.focus(), el: inputRef })
 </template>
 
 <style scoped>
+/* 44 tall, grey at rest with a hairline; white with a 2 px ink ring on focus; a red ring when invalid. */
+.input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--control-md);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--field-bg, var(--surface-2));
+  box-shadow: var(--ring-hairline);
+  font: var(--text-body);
+  transition:
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.input--raised {
+  --field-bg: var(--surface);
+}
+
+/* A leading add-on (the country code) is a pill inset 4 on every side, corners concentric with the field. */
+.input--addon {
+  padding-left: var(--space-1);
+}
+
+.input:focus-within {
+  background: var(--surface);
+  box-shadow: var(--ring-field-focus);
+}
+
+.ui-input--invalid,
+.ui-input--invalid:focus-within {
+  box-shadow: var(--ring-field-error);
+}
+
+.input__control {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  outline: none;
+}
+
+.input__control::placeholder {
+  color: var(--text-muted);
+}
+
+.input__control::-webkit-search-cancel-button {
+  display: none;
+}
+
 .ui-input__icon {
   color: var(--text-muted);
 }
 
-.ui-input--invalid {
-  background: var(--danger-subtle);
+.input__clear {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  margin-right: calc(-1 * var(--space-2));
+  width: var(--control-sm);
+  height: var(--control-sm);
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
 }
 
-.ui-input--invalid:focus-within {
-  background: var(--surface);
-  box-shadow: var(--focus-ring-field-danger);
+@media (hover: hover) and (pointer: fine) {
+  .input__clear:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .ui-input--disabled {
   opacity: var(--opacity-disabled);
-  cursor: not-allowed;
-}
-
-.ui-input--disabled .input__control {
   cursor: not-allowed;
 }
 </style>

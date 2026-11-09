@@ -2,15 +2,17 @@
 import type { Component } from 'vue'
 import { MessageSquare } from '../../lib/icons'
 
+/**
+ * Nothing here yet, or something failed: a bare 32 px symbol (no grey disc), the title, one line on
+ * what to do next, the action. Left-aligned, like the rest of the page.
+ */
 withDefaults(
   defineProps<{
-    /** What is empty. */
     title: string
-    /** How to fix it. */
     description?: string | null
     icon?: Component | null
-    /** `danger` for a failed load. */
     tone?: 'neutral' | 'danger'
+    /** Inside a card or a sheet: a smaller title. */
     compact?: boolean
   }>(),
   { description: null, icon: null, tone: 'neutral', compact: false },
@@ -18,55 +20,59 @@ withDefaults(
 </script>
 
 <template>
-  <div class="empty-state" :class="{ 'empty-state--compact': compact }">
-    <span class="icon-tile icon-tile--lg" :class="{ 'icon-tile--danger': tone === 'danger' }" aria-hidden="true">
-      <slot name="icon">
-        <component :is="icon ?? MessageSquare" />
-      </slot>
+  <div class="empty" :class="{ 'empty--compact': compact, 'empty--danger': tone === 'danger' }">
+    <span class="empty__icon" aria-hidden="true">
+      <slot name="icon"><component :is="icon ?? MessageSquare" /></slot>
     </span>
-    <div class="empty-copy">
-      <h3 class="empty-title t-title">{{ title }}</h3>
-      <p v-if="description" class="empty-text">{{ description }}</p>
-    </div>
-    <div v-if="$slots.action" class="empty-action">
-      <slot name="action" />
-    </div>
+    <h2 class="empty__title">{{ title }}</h2>
+    <p v-if="description" class="empty__text">{{ description }}</p>
+    <div v-if="$slots.action" class="empty__action"><slot name="action" /></div>
   </div>
 </template>
 
 <style scoped>
-.empty-state {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-4);
-  padding: var(--space-10) var(--space-6);
-  text-align: center;
-}
-
-.empty-state--compact {
-  padding-block: var(--space-6);
-}
-
-.empty-copy {
-  display: grid;
-  gap: var(--space-1);
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
   max-width: var(--measure);
 }
 
-.empty-title {
-  color: var(--text);
+.empty__icon {
+  display: flex;
+  color: var(--text-muted);
 }
 
-.empty-text {
+.empty__icon :deep(svg) {
+  --icon-size: var(--icon-xl);
+  stroke-width: 1.5;
+}
+
+.empty--danger .empty__icon {
+  color: var(--danger);
+}
+
+.empty__title {
+  font: var(--text-h1);
+  letter-spacing: var(--tracking-h1);
+}
+
+.empty--compact .empty__title {
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
+}
+
+.empty__text {
   color: var(--text-muted);
+  font: var(--text-body);
+}
+
+.empty--compact .empty__text {
   font: var(--text-small);
 }
 
-.empty-action {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-2);
+.empty__action {
   margin-top: var(--space-2);
 }
 </style>

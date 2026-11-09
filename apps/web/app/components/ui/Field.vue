@@ -32,8 +32,10 @@ const props = withDefaults(
     /** Id of the control; generated when omitted. */
     id?: string
     group?: boolean
+    /** The label is read aloud but not shown (the code cells: the title above says it). */
+    hideLabel?: boolean
   }>(),
-  { label: '', hint: '', error: null, id: undefined, group: false },
+  { label: '', hint: '', error: null, id: undefined, group: false, hideLabel: false },
 )
 
 const slots = useSlots()
@@ -50,8 +52,8 @@ provide(fieldKey, { id: controlId, labelId, describedby, invalid })
 
 <template>
   <div class="field ui-field" :class="{ 'ui-field--invalid': invalid }">
-    <span v-if="label && group" :id="labelId" class="field__label">{{ label }}</span>
-    <label v-else-if="label" :id="labelId" class="field__label" :for="controlId">{{ label }}</label>
+    <span v-if="label && group" :id="labelId" class="field__label" :class="{ 'sr-only': hideLabel }">{{ label }}</span>
+    <label v-else-if="label" :id="labelId" class="field__label" :class="{ 'sr-only': hideLabel }" :for="controlId">{{ label }}</label>
     <slot :id="controlId" :label-id="labelId" :describedby="describedby" :invalid="invalid" />
     <p v-if="error" :id="messageId" class="field__hint ui-field__error" role="alert">
       <AlertCircle class="ui-field__icon" aria-hidden="true" />
@@ -64,12 +66,32 @@ provide(fieldKey, { id: controlId, labelId, describedby, invalid })
 </template>
 
 <style scoped>
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.field__label {
+  font: var(--text-small-strong);
+}
+
+.field__hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
 .ui-field__error {
   color: var(--danger);
 }
 
 /* The 16 px icon sits on the first line of 20 px text. */
 .ui-field__icon {
+  --icon-size: var(--icon-sm);
   margin-top: var(--space-0-5);
 }
 </style>

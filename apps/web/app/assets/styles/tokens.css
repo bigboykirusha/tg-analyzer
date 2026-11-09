@@ -1,154 +1,125 @@
 /*
- * Design tokens — «Портрет». A calm, neutral interface; the person you are looking at brings
- * their own colour. Inside a report the page takes that person's hue (data-hue on <html>): a poster
- * at the top, a pale room behind white tiles, and their marks in every chart. «You» are always ink.
+ * Design tokens — «Портрет» v3 (docs/design/portrait-v3). A calm, neutral interface; the person you are
+ * looking at brings their own colour. A report takes that person's hue (data-hue on <html>): a light poster at
+ * the top with ink type, a pale room behind white tiles, their marks in every chart. «You» are always ink.
  *
  * Three layers (docs/design-system.md §2):
- *   1. Primitives  — --gray-*, --gray-a*, --hue-<name>-*, --red-*, --amber-*, --lime-brand. Values live
- *                    here and nowhere else; components never read them.
- *   2. Semantic    — --bg, --surface, --text, --you, --them, --poster, --room… Re-pointed once for dark
- *                    and once per hue.
- *   3. Component   — --sidebar-*, --story-*, --avatar-*… only where a component needs its own knob.
+ *   1. Primitives  — --gray-*, --night-*, --hue-<name>-*, --red-*. Values live here and nowhere else.
+ *   2. Semantic    — --bg, --surface, --text, --you, --them, --poster, --room… Re-pointed once for dark and
+ *                    once per person.
+ *   3. Component   — --sidebar-*, --story-*, --brand-* … only where a component needs its own knob.
  *
- * Colour means a person and nothing else: actions are monochrome, intensity is neutral, the logo keeps
- * its own lime. A new shade is a new token with a value per theme (stylelint enforces it).
+ * Colour means a person and nothing else: actions are monochrome, intensity is neutral.
  */
 
 /* ─── 1. Primitives ─────────────────────────────────────────────────────── */
 
 :root {
-  /* Neutral grays, light: Apple's grouped backgrounds and labels, a hair cooler than paper. */
+  /* Neutrals, light: Apple's grouped background, labels and separators. */
   --gray-0: #ffffff;
   --gray-1: #f7f7f9;
-  --gray-2: #f2f2f5;
-  --gray-3: #e9e9ed;
-  --gray-4: #e1e1e6;
+  --gray-2: #f2f2f7;
+  --gray-3: #eeeef2;
+  --gray-4: #e5e5ea;
   --gray-5: #d1d1d6;
-  --gray-6: #b8b8be;
+  --gray-6: #c7c7cc;
+  --gray-7: #aeaeb2;
   --gray-8: #8e8e93;
   --gray-9: #6c6c72;
   --gray-11: #3a3a3c;
   --gray-12: #1d1d1f;
   --gray-a1: rgba(29, 29, 31, 0.04);
   --gray-a2: rgba(29, 29, 31, 0.07);
-  --gray-a3: rgba(29, 29, 31, 0.1);
+  --gray-a3: rgba(29, 29, 31, 0.08);
   --gray-a4: rgba(29, 29, 31, 0.16);
-  --gray-a5: rgba(29, 29, 31, 0.24);
-  --gray-a8: rgba(29, 29, 31, 0.62);
-  --white-a2: rgba(255, 255, 255, 0.1);
-  --white-a3: rgba(255, 255, 255, 0.16);
-  --white-a4: rgba(255, 255, 255, 0.24);
-  --white-a6: rgba(255, 255, 255, 0.4);
-  --white-a8: rgba(255, 255, 255, 0.8);
-  --white-a9: rgba(255, 255, 255, 0.86);
+  --gray-a6: rgba(29, 29, 31, 0.3);
+  --gray-a8: rgba(29, 29, 31, 0.72);
+  --gray-a9: rgba(29, 29, 31, 0.82);
 
-  /* Neutral grays, dark: true black ground, raised grays above it (dimmer ground, brighter type). */
+  /* Neutrals, dark: true black ground, raised greys above it. */
   --night-0: #000000;
   --night-1: #1c1c1e;
-  --night-2: #242426;
   --night-3: #2c2c2e;
   --night-4: #38383a;
   --night-5: #48484a;
-  --night-8: #a1a1a6;
+  --night-6: #3a3a3c;
+  --night-7: #6e6e73;
   --night-9: #98989d;
+  --night-11: #d1d1d6;
   --night-12: #f5f5f7;
-  --night-a1: rgba(245, 245, 247, 0.06);
-  --night-a2: rgba(245, 245, 247, 0.1);
-  --night-a3: rgba(245, 245, 247, 0.14);
-  --night-a5: rgba(245, 245, 247, 0.28);
+  --night-a1: rgba(235, 235, 245, 0.06);
+  --night-a2: rgba(235, 235, 245, 0.12);
 
   /*
-   * People: seven hues, the same families Telegram gives the person's avatar (abs(peer id) % 7 —
-   * red, orange, violet, green, teal, blue, pink; lib/hue.ts), tuned to one lightness here. Each hue has a poster (deep
-   * enough for white type at 6:1 and its 80% muted line at 4.6:1), a mark (their side in charts and
-   * text, ≥4.6:1 on white), a room (the page
-   * behind a report) and a tint (wells on the room); and the same three for dark mode. Built in OKLCH
-   * so every hue has the same lightness. Every point of an avatar's gradient (mark → glow) keeps white
-   * initials at 4.5:1, and every mark keeps 4.6:1 on its own room as well as on white.
+   * People: seven families, the ones Telegram gives a person's avatar (abs(peer id) % 7 — its red slot is
+   * our yellow, then orange, violet, green, teal, blue, pink; lib/hue.ts). One OKLCH ladder for all seven:
+   *   poster .82–.85 (yellow .88: lower it reads as mustard) — the report's top, ink type on it ≥ 9:1
+   *   tint .92 — chips and avatar tops · them .62 — their bar on white ≥ 3:1 · ink .52 — their name ≥ 5:1
+   *   deep .41 — the person on their own poster ≥ 5:1 · room .977 — the page behind the tiles
+   *   poster-d — the dark theme poster, dimmed · room-d — the hue as a tinted black (L .18).
    */
-  --hue-red-poster: #a8353a;
-  --hue-red-glow: #cd4b38;
-  --hue-red-glow-d: #ffb1a2;
-  --hue-red-mark: #bc484b;
-  --hue-red-room: #fff4f3;
-  --hue-red-tint: #ffe4e2;
-  --hue-red-mark-d: #f79a97;
-  --hue-red-poster-d: #6a2023;
-  --hue-red-room-d: #130b0b;
-  --hue-red-tint-d: #2f1c1b;
-  --hue-violet-poster: #6250b2;
-  --hue-violet-glow: #8462d2;
-  --hue-violet-glow-d: #d0bdff;
-  --hue-violet-mark: #7161c6;
-  --hue-violet-room: #f6f6ff;
-  --hue-violet-tint: #eae9ff;
-  --hue-violet-mark-d: #b4acfb;
-  --hue-violet-poster-d: #3c3170;
-  --hue-violet-room-d: #0d0c13;
-  --hue-violet-tint-d: #211f2f;
-  --hue-orange-poster: #9c470d;
-  --hue-orange-glow: #aa6631;
-  --hue-orange-glow-d: #f9bc91;
-  --hue-orange-mark: #ae5825;
-  --hue-orange-room: #fef5f0;
-  --hue-orange-tint: #fde6da;
-  --hue-orange-mark-d: #eba480;
-  --hue-orange-poster-d: #622b08;
-  --hue-orange-room-d: #120b08;
-  --hue-orange-tint-d: #2e1d15;
-  --hue-green-poster: #1d6d3c;
-  --hue-green-glow: #3c8461;
-  --hue-green-glow-d: #9fdbb9;
-  --hue-green-mark: #347e4d;
-  --hue-green-room: #f1f9f3;
-  --hue-green-tint: #ddf1e1;
-  --hue-green-mark-d: #90c79e;
-  --hue-green-poster-d: #174828;
-  --hue-green-room-d: #090f0a;
-  --hue-green-tint-d: #16261a;
-  --hue-blue-poster: #1b62a7;
-  --hue-blue-glow: #3f75cf;
-  --hue-blue-glow-d: #a8ccff;
-  --hue-blue-mark: #3172b7;
-  --hue-blue-room: #f1f8ff;
-  --hue-blue-tint: #ddedff;
-  --hue-blue-mark-d: #89bcf4;
-  --hue-blue-poster-d: #123e6b;
-  --hue-blue-room-d: #090e13;
-  --hue-blue-tint-d: #172330;
-  --hue-pink-poster: #9f3960;
-  --hue-pink-glow: #c64d68;
-  --hue-pink-glow-d: #ffb0be;
-  --hue-pink-mark: #b34b71;
-  --hue-pink-room: #fef4f6;
-  --hue-pink-tint: #fee3ea;
-  --hue-pink-mark-d: #ef9bb5;
-  --hue-pink-poster-d: #64223b;
-  --hue-pink-room-d: #120b0d;
-  --hue-pink-tint-d: #2e1c21;
-  --hue-teal-poster: #006a7b;
-  --hue-teal-glow: #268289;
-  --hue-teal-glow-d: #93d9de;
-  --hue-teal-mark: #007b8b;
-  --hue-teal-room: #eef9fb;
-  --hue-teal-tint: #d5f1f6;
-  --hue-teal-mark-d: #7cc5d2;
-  --hue-teal-poster-d: #004751;
-  --hue-teal-room-d: #060f11;
-  --hue-teal-tint-d: #0e262a;
+  --hue-yellow-poster: #fbd530;
+  --hue-yellow-tint: #fcebae;
+  --hue-yellow-them: #a68003;
+  --hue-yellow-ink: #826401;
+  --hue-yellow-deep: #5d4703;
+  --hue-yellow-room: #fef8e1;
+  --hue-yellow-poster-d: #e9b60b;
+  --hue-yellow-room-d: #14110c;
+  --hue-orange-poster: #ffbb69;
+  --hue-orange-tint: #fedfb8;
+  --hue-orange-them: #c66b01;
+  --hue-orange-ink: #9f5104;
+  --hue-orange-deep: #6f3c02;
+  --hue-orange-room: #fef6eb;
+  --hue-orange-poster-d: #d69546;
+  --hue-orange-room-d: #171008;
+  --hue-violet-poster: #c6b9fe;
+  --hue-violet-tint: #e7dfff;
+  --hue-violet-them: #846cef;
+  --hue-violet-ink: #634ad6;
+  --hue-violet-deep: #45339e;
+  --hue-violet-room: #f8f6ff;
+  --hue-violet-poster-d: #a191df;
+  --hue-violet-room-d: #121019;
+  --hue-green-poster: #b8df5e;
+  --hue-green-tint: #ddeeac;
+  --hue-green-them: #649820;
+  --hue-green-ink: #4a7812;
+  --hue-green-deep: #365502;
+  --hue-green-room: #f4fbe7;
+  --hue-green-poster-d: #93b745;
+  --hue-green-room-d: #101309;
+  --hue-teal-poster: #6ce6d2;
+  --hue-teal-tint: #bef1e8;
+  --hue-teal-them: #149b8c;
+  --hue-teal-ink: #147a6a;
+  --hue-teal-deep: #0a574c;
+  --hue-teal-room: #eefbf8;
+  --hue-teal-poster-d: #50bdab;
+  --hue-teal-room-d: #071512;
+  --hue-blue-poster: #92cafe;
+  --hue-blue-tint: #d1e7ff;
+  --hue-blue-them: #2a89e1;
+  --hue-blue-ink: #1869bd;
+  --hue-blue-deep: #104a88;
+  --hue-blue-room: #f2f8fe;
+  --hue-blue-poster-d: #6ea4d4;
+  --hue-blue-room-d: #0a121a;
+  --hue-pink-poster: #ffa4da;
+  --hue-pink-tint: #ffd7ef;
+  --hue-pink-them: #d544a4;
+  --hue-pink-ink: #ae297f;
+  --hue-pink-deep: #7c1f5a;
+  --hue-pink-room: #fff4fa;
+  --hue-pink-poster-d: #d580b3;
+  --hue-pink-room-d: #180e14;
 
-  /* Signals. */
-  --red-1: #fdeeed;
-  --red-2: #fadcda;
-  --red-6: #d1352b;
-  --red-d1: #3a1513;
-  --red-d2: #4d1b18;
+  /* Signals: only for what destroys or fails. */
+  --red-1: #fdecea;
+  --red-6: #d1241b;
+  --red-d1: #3a1a18;
   --red-d6: #ff6961;
-  --amber-6: #c26b00;
-  --amber-d6: #ffb340;
-
-  /* The logo's own colour: it belongs to the mark, never to data or controls. */
-  --lime-brand: #c6f06a;
 }
 
 /* ─── 2. Semantic, light ────────────────────────────────────────────────── */
@@ -157,135 +128,103 @@
   color-scheme: light;
   --bg: var(--gray-2);
   --surface: var(--gray-0);
-  /* A fill inside a card: wells, fields, chips. */
-  --surface-2: var(--gray-2);
+  /* A fill inside a card: wells, fields, chips, the country code. */
+  --surface-2: var(--gray-3);
   --skeleton: var(--gray-3);
-  --fill-hover: var(--gray-3);
-  /* Overlays (menus, dialogs, sheets) and the grey fill of rows inside them. */
+  /* Overlays (menus, dialogs, sheets) and the grey fill of controls inside them. */
   --surface-raised: var(--gray-0);
-  --fill-raised: var(--gray-2);
-  /* The chrome: an opaque source list beside the page, its selected row a soft fill. */
-  --sidebar-glass: var(--gray-1);
+  --fill-raised: var(--gray-3);
+  /* The desktop sidebar: one opaque column, its selected row a soft fill. */
+  --sidebar-glass: var(--gray-0);
   --sidebar-selection: var(--gray-a2);
-  --toolbar-glass: rgba(242, 242, 245, 0.8);
+  /* Bars that content scrolls under: a material, never a flat colour. */
+  --toolbar-glass: rgba(242, 242, 247, 0.8);
+  --room-glass: var(--toolbar-glass);
   --glass-filter: saturate(180%) blur(20px);
-  --thumb: var(--gray-0);
   --border: var(--gray-4);
   --border-strong: var(--gray-5);
   --hover: var(--gray-a1);
-  --pressed: var(--gray-a2);
+  --pressed: var(--gray-a3);
   --text: var(--gray-12);
   --text-muted: var(--gray-9);
+  --text-faint: var(--gray-8);
   /* Actions are ink: monochrome, so colour can mean a person. */
   --accent: var(--gray-12);
   --accent-hover: var(--gray-11);
-  --accent-subtle: var(--gray-a1);
-  --accent-border: var(--gray-a5);
   --on-accent: var(--gray-0);
-  /* The two voices: you are ink everywhere; they are the person's hue (neutral outside a report). */
+  --switch-off: var(--gray-5);
+  --switch-knob: var(--gray-0);
+  /* The two voices: you are ink everywhere; they are the person's colour (neutral outside a report). */
   --you: var(--gray-12);
-  --you-subtle: var(--gray-a2);
-  /* Type inside a side's own fill (plaque «Б», ReportLine). */
   --on-you: var(--gray-0);
-  --on-them: var(--gray-0);
   --them: var(--gray-8);
   --them-ink: var(--gray-9);
-  /* The person's poster, their room behind the tiles and the wells on it; neutral by default. */
-  --poster: var(--gray-12);
-  --on-poster: var(--gray-0);
-  --on-poster-muted: var(--white-a8);
-  --on-poster-line: var(--white-a4);
-  --on-poster-well: var(--white-a2);
-  /* The report bar's circles and capsule: a well over the poster, a raised chip on glass (AppHeader). */
-  --on-poster-chip: var(--white-a3);
-  --header-chip: var(--surface-raised);
-  --header-chip-ring: var(--ring-hairline);
-  --room: var(--gray-2);
+  /* The person on their own poster: the lower pulse, their bar, their name. */
+  --on-them: var(--gray-11);
+  /* The person's poster (ink type on it), their room behind the tiles and the tint of chips on it. */
+  --poster: var(--gray-4);
+  --on-poster: var(--gray-12);
+  --on-poster-muted: var(--gray-a8);
+  --on-poster-line: var(--gray-a4);
+  --on-poster-chip: var(--gray-a3);
+  --on-poster-faint: var(--gray-a6);
+  --room: var(--bg);
   --room-tint: var(--gray-3);
-  /* Tiles: one poster-coloured tile may carry a part's headline; every other tile is plain white. */
-  --tile-ink: var(--poster);
-  --tile-grey: var(--surface);
-  --on-tile-ink: var(--on-poster);
-  --on-tile-ink-muted: var(--on-poster-muted);
-  --on-tile-ink-well: var(--on-poster-well);
-  --on-tile-ink-line: var(--on-poster-line);
-  --them-on-ink: var(--white-a6);
-  /* Legacy tile names kept for components: a «lime» tile is now a plain tile. */
-  --lime: var(--surface);
-  --on-lime: var(--text);
-  --on-lime-muted: var(--text-muted);
-  --on-lime-line: var(--border);
-  --on-lime-well: var(--surface-2);
-  /* The logo keeps its own colours whoever's report is open. */
-  --brand: var(--lime-brand);
-  --brand-square: var(--gray-12);
-  --brand-bar: var(--gray-0);
-  --warning: var(--amber-6);
   --danger: var(--red-6);
   --danger-subtle: var(--red-1);
-  --danger-subtle-hover: var(--red-2);
+  /* Toasts and tooltips: ink in light, light in dark. */
   --inverse-surface: var(--gray-12);
   --on-inverse: var(--gray-0);
-  --on-inverse-line: var(--white-a6);
-  --segment-track: var(--gray-a2);
+  --on-inverse-muted: rgba(255, 255, 255, 0.72);
+  --on-inverse-hover: rgba(255, 255, 255, 0.12);
+  --danger-on-inverse: var(--red-d6);
   --scrim: rgba(0, 0, 0, 0.32);
   /* Intensity: a neutral ramp (both of you together), stopping short of ink, which means «you». */
   --heat-0: var(--gray-3);
-  --heat-1: #c4c4cc;
-  --heat-2: #9a9aa2;
-  --heat-3: #6e6e76;
-  --heat-4: #48484e;
-  /* The whole chat (both sides together): gray, with a strong step for the peak. */
+  --heat-1: var(--gray-6);
+  --heat-2: #9c9ca3;
+  --heat-3: var(--gray-9);
+  --heat-4: var(--gray-11);
+  /* The whole chat (both sides together): grey, with a strong step for the peak. */
   --chart-neutral: var(--gray-6);
-  --chart-neutral-strong: var(--gray-9);
-  /* Avatars outside a report: the person's hue, white initials. */
-  --avatar-1-bg: var(--hue-red-mark);
-  --avatar-1-glow: var(--hue-red-glow);
-  --avatar-2-bg: var(--hue-orange-mark);
-  --avatar-2-glow: var(--hue-orange-glow);
-  --avatar-3-bg: var(--hue-violet-mark);
-  --avatar-3-glow: var(--hue-violet-glow);
-  --avatar-4-bg: var(--hue-green-mark);
-  --avatar-4-glow: var(--hue-green-glow);
-  --avatar-5-bg: var(--hue-teal-mark);
-  --avatar-5-glow: var(--hue-teal-glow);
-  --avatar-6-bg: var(--hue-blue-mark);
-  --avatar-6-glow: var(--hue-blue-glow);
-  --avatar-7-bg: var(--hue-pink-mark);
-  --avatar-7-glow: var(--hue-pink-glow);
-  /* Initials on every hue. */
-  --avatar-ink: var(--gray-0);
+  --chart-neutral-strong: var(--gray-11);
 
-  /* Elevation: flat content; only floating layers cast a shadow. */
-  --shadow-segment: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
-  --shadow-overlay: 0 12px 40px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 0.5px var(--gray-a3);
-  --shadow-float: 0 8px 28px rgba(0, 0, 0, 0.12), 0 0 0 0.5px var(--gray-a3);
-  --shadow-sidebar: none;
-  --shadow-window: 0 0 0 1px var(--gray-4), 0 32px 80px rgba(0, 0, 0, 0.14), 0 8px 24px rgba(0, 0, 0, 0.06);
-  /* Rings: a hairline outline, a selected option, focus. */
-  --ring-hairline: 0 0 0 1px var(--border);
-  /* «Вы» on a poster: a light ring keeps the ink circle from sinking into a dark colour. */
-  --ring-on-poster: 0 0 0 2px var(--on-poster);
+  /* Elevation: flat content; only floating layers cast a shadow — two levels. */
+  --shadow-float: 0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  /* Lines are 1 px; selection and focus rings are 2 px. */
+  --ring-hairline: inset 0 0 0 1px var(--border);
+  --ring-strong: inset 0 0 0 1px var(--border-strong);
   --ring-selected: inset 0 0 0 2px var(--accent);
+  --ring-field-focus: inset 0 0 0 2px var(--accent);
+  --ring-field-error: inset 0 0 0 2px var(--danger);
   --divider-top: inset 0 1px 0 var(--border);
   --divider-bottom: inset 0 -1px 0 var(--border);
   --divider-left: inset 1px 0 0 var(--border);
-  --ring-strong: inset 0 0 0 1px var(--border-strong);
-  --ring-them: inset 0 0 0 2px var(--them);
-  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
-  --focus-halo: 0 0 0 4px var(--gray-a3);
-  --focus-halo-danger: 0 0 0 4px rgba(209, 53, 43, 0.14);
-  --focus-ring-field: inset 0 0 0 1.5px var(--text), var(--focus-halo);
-  --focus-ring-field-danger: inset 0 0 0 1.5px var(--danger), var(--focus-halo-danger);
+  --divider-right: inset -1px 0 0 var(--border);
+  --poster-divider-top: inset 0 1px 0 var(--on-poster-line);
+  --poster-divider-bottom: inset 0 -1px 0 var(--on-poster-line);
+  /* Floating controls (header circles, capsule, «Новый анализ»): a hairline ring and one soft shadow. */
+  --shadow-chrome: inset 0 0 0 1px var(--border), var(--shadow-float);
+  --focus-ring-color: var(--accent);
 
-  /* Landing illustrations only (§9). */
-  --device-frame: linear-gradient(140deg, #e3e3e8 0%, #b9b9c0 22%, #f2f2f5 48%, #a7a7ae 76%, #d6d6dc 100%);
-  --device-button: #a7a7ae;
-  --device-black: #000000;
-  --device-status-font: 600 14px/1 -apple-system, BlinkMacSystemFont, var(--font-sans);
-  --shadow-device:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.6), inset 0 0 0 2.5px rgba(0, 0, 0, 0.12), 0 40px 80px rgba(0, 0, 0, 0.18),
-    0 10px 24px rgba(0, 0, 0, 0.08);
+  /* The mark: ink on top, the seven families below (the only place colour means people in general). */
+  --brand-ink: var(--gray-12);
+  --brand-1: var(--hue-yellow-them);
+  --brand-2: var(--hue-orange-them);
+  --brand-3: var(--hue-green-them);
+  --brand-4: var(--hue-teal-them);
+  --brand-5: var(--hue-blue-them);
+  --brand-6: var(--hue-violet-them);
+  --brand-7: var(--hue-pink-them);
+  --brand-tile: var(--gray-12);
+
+  /* A person's circle on their own poster: a light well. */
+  --avatar-on-poster: rgba(255, 255, 255, 0.6);
+
+  /* «Итоги»: frames are pictures on the person's poster; the desktop viewer sits on a dark backdrop. */
+  --story-backdrop: #0b0b0c;
+  --story-hint: var(--gray-7);
 }
 
 /* ─── 2. Semantic, dark (the only dark block; the head script sets the theme before paint) ─ */
@@ -296,286 +235,197 @@
   --surface: var(--night-1);
   --surface-2: var(--night-3);
   --skeleton: var(--night-3);
-  --fill-hover: var(--night-3);
-  --surface-raised: var(--night-2);
-  --fill-raised: var(--night-3);
-  --sidebar-glass: var(--night-0);
-  --sidebar-selection: var(--night-a2);
+  --surface-raised: var(--night-3);
+  --fill-raised: var(--night-6);
+  --sidebar-glass: var(--night-1);
+  --sidebar-selection: var(--night-3);
   --toolbar-glass: rgba(0, 0, 0, 0.72);
-  --thumb: var(--night-4);
   --border: var(--night-4);
   --border-strong: var(--night-5);
   --hover: var(--night-a1);
   --pressed: var(--night-a2);
   --text: var(--night-12);
   --text-muted: var(--night-9);
+  --text-faint: var(--night-7);
   --accent: var(--night-12);
   --accent-hover: var(--gray-0);
-  --accent-subtle: var(--night-a1);
-  --accent-border: var(--night-a5);
-  --on-accent: var(--night-0);
+  --on-accent: var(--gray-12);
+  --switch-off: var(--night-7);
   --you: var(--night-12);
-  --you-subtle: var(--night-a3);
-  --on-you: var(--night-0);
-  --on-them: var(--night-0);
-  --them: var(--night-8);
-  --them-ink: var(--night-8);
-  --poster: var(--night-2);
-  --brand-square: var(--night-3);
-  --brand-bar: var(--night-12);
-  --on-poster: var(--night-12);
-  --on-poster-muted: var(--white-a8);
-  --on-poster-line: var(--white-a3);
-  --on-poster-well: var(--white-a2);
-  --on-poster-chip: var(--white-a3);
-  --room: var(--night-0);
-  --room-tint: var(--night-2);
-  --warning: var(--amber-d6);
+  --on-you: var(--gray-12);
+  /* Posters stay light enough for ink: the muted line is a little denser to keep 4.5:1. */
+  --on-poster-muted: var(--gray-a9);
   --danger: var(--red-d6);
   --danger-subtle: var(--red-d1);
-  --danger-subtle-hover: var(--red-d2);
   --inverse-surface: var(--night-12);
-  --on-inverse: var(--night-0);
-  --on-inverse-line: rgba(0, 0, 0, 0.24);
-  --segment-track: var(--night-a2);
+  --on-inverse: var(--gray-12);
+  --on-inverse-muted: var(--gray-a8);
+  --on-inverse-hover: var(--gray-a3);
+  --danger-on-inverse: var(--red-6);
   --scrim: rgba(0, 0, 0, 0.6);
   --heat-0: var(--night-3);
-  --heat-1: #4a4a4f;
-  --heat-2: #6c6c72;
+  --heat-1: #48484c;
+  --heat-2: var(--gray-9);
   --heat-3: #94949b;
   --heat-4: #c4c4ca;
-  --chart-neutral: var(--night-5);
-  --chart-neutral-strong: var(--night-8);
-  --avatar-1-bg: var(--hue-red-mark-d);
-  --avatar-1-glow: var(--hue-red-glow-d);
-  --avatar-2-bg: var(--hue-orange-mark-d);
-  --avatar-2-glow: var(--hue-orange-glow-d);
-  --avatar-3-bg: var(--hue-violet-mark-d);
-  --avatar-3-glow: var(--hue-violet-glow-d);
-  --avatar-4-bg: var(--hue-green-mark-d);
-  --avatar-4-glow: var(--hue-green-glow-d);
-  --avatar-5-bg: var(--hue-teal-mark-d);
-  --avatar-5-glow: var(--hue-teal-glow-d);
-  --avatar-6-bg: var(--hue-blue-mark-d);
-  --avatar-6-glow: var(--hue-blue-glow-d);
-  --avatar-7-bg: var(--hue-pink-mark-d);
-  --avatar-7-glow: var(--hue-pink-glow-d);
-  --avatar-ink: var(--night-0);
-  --shadow-segment: 0 1px 3px rgba(0, 0, 0, 0.5);
-  --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 0 0.5px var(--night-a3);
-  --shadow-float: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 0 0.5px var(--night-a3);
-  --shadow-window: 0 0 0 1px var(--night-4), 0 30px 100px rgba(0, 0, 0, 0.7);
-  --device-frame: linear-gradient(140deg, #48484c 0%, #222224 26%, #5a5a5e 50%, #1c1c1e 78%, #3a3a3e 100%);
-  --device-button: #2c2c2e;
-  --shadow-device: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 40px 100px rgba(0, 0, 0, 0.7);
-  --focus-halo: 0 0 0 4px var(--night-a3);
-  --focus-halo-danger: 0 0 0 4px rgba(255, 105, 97, 0.2);
-}
-
-/* A report page lives in the person's room; the toolbar's glass is a neutral veil over any room. */
-:root[data-hue] {
-  --bg: var(--room);
-  --toolbar-glass: rgba(255, 255, 255, 0.72);
-}
-
-:root[data-theme='dark'][data-hue] {
-  --toolbar-glass: rgba(0, 0, 0, 0.6);
+  --chart-neutral: #48484c;
+  --chart-neutral-strong: var(--night-11);
+  --shadow-float: 0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --brand-ink: var(--night-12);
 }
 
 /*
  * ─── 2. Semantic, per person ──────────────────────────────────────────────
- * data-hue on <html> (a report page) or on any element (a report card on home) re-points the person's
- * tokens for that subtree. Light first, then dark.
+ * data-hue on <html> (a report, the example, a public link) or on any element (an avatar, a home tile)
+ * re-points the person's tokens for that subtree. Light, then dark.
  */
-:root[data-hue='red'],
-[data-hue='red'] {
-  /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-red-poster);
-  --story-gradient-3: var(--hue-red-room);
-  --story-accent: var(--hue-red-mark);
-  --them: var(--hue-red-mark);
-  --them-ink: var(--hue-red-mark);
-  --poster: var(--hue-red-poster);
-  --room: var(--hue-red-room);
-  --room-tint: var(--hue-red-tint);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
+[data-hue='yellow'] {
+  --poster: var(--hue-yellow-poster);
+  --room-tint: var(--hue-yellow-tint);
+  --them: var(--hue-yellow-them);
+  --them-ink: var(--hue-yellow-ink);
+  --on-them: var(--hue-yellow-deep);
+  --room: var(--hue-yellow-room);
+  --room-glass: rgba(254, 248, 225, 0.8);
 }
 
-:root[data-hue='violet'],
-[data-hue='violet'] {
-  /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-violet-poster);
-  --story-gradient-3: var(--hue-violet-room);
-  --story-accent: var(--hue-violet-mark);
-  --them: var(--hue-violet-mark);
-  --them-ink: var(--hue-violet-mark);
-  --poster: var(--hue-violet-poster);
-  --room: var(--hue-violet-room);
-  --room-tint: var(--hue-violet-tint);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
-}
-
-:root[data-hue='orange'],
 [data-hue='orange'] {
-  /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-orange-poster);
-  --story-gradient-3: var(--hue-orange-room);
-  --story-accent: var(--hue-orange-mark);
-  --them: var(--hue-orange-mark);
-  --them-ink: var(--hue-orange-mark);
   --poster: var(--hue-orange-poster);
-  --room: var(--hue-orange-room);
   --room-tint: var(--hue-orange-tint);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
+  --them: var(--hue-orange-them);
+  --them-ink: var(--hue-orange-ink);
+  --on-them: var(--hue-orange-deep);
+  --room: var(--hue-orange-room);
+  --room-glass: rgba(254, 246, 235, 0.8);
 }
 
-:root[data-hue='green'],
+[data-hue='violet'] {
+  --poster: var(--hue-violet-poster);
+  --room-tint: var(--hue-violet-tint);
+  --them: var(--hue-violet-them);
+  --them-ink: var(--hue-violet-ink);
+  --on-them: var(--hue-violet-deep);
+  --room: var(--hue-violet-room);
+  --room-glass: rgba(248, 246, 255, 0.8);
+}
+
 [data-hue='green'] {
-  /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-green-poster);
-  --story-gradient-3: var(--hue-green-room);
-  --story-accent: var(--hue-green-mark);
-  --them: var(--hue-green-mark);
-  --them-ink: var(--hue-green-mark);
   --poster: var(--hue-green-poster);
-  --room: var(--hue-green-room);
   --room-tint: var(--hue-green-tint);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
+  --them: var(--hue-green-them);
+  --them-ink: var(--hue-green-ink);
+  --on-them: var(--hue-green-deep);
+  --room: var(--hue-green-room);
+  --room-glass: rgba(244, 251, 231, 0.8);
 }
 
-:root[data-hue='blue'],
-[data-hue='blue'] {
-  /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-blue-poster);
-  --story-gradient-3: var(--hue-blue-room);
-  --story-accent: var(--hue-blue-mark);
-  --them: var(--hue-blue-mark);
-  --them-ink: var(--hue-blue-mark);
-  --poster: var(--hue-blue-poster);
-  --room: var(--hue-blue-room);
-  --room-tint: var(--hue-blue-tint);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
-}
-
-:root[data-hue='pink'],
-[data-hue='pink'] {
-  /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-pink-poster);
-  --story-gradient-3: var(--hue-pink-room);
-  --story-accent: var(--hue-pink-mark);
-  --them: var(--hue-pink-mark);
-  --them-ink: var(--hue-pink-mark);
-  --poster: var(--hue-pink-poster);
-  --room: var(--hue-pink-room);
-  --room-tint: var(--hue-pink-tint);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
-}
-
-:root[data-hue='teal'],
 [data-hue='teal'] {
-  /* «Итоги» are pictures: the person's light colours in both themes. */
-  --story-gradient-2: var(--hue-teal-poster);
-  --story-gradient-3: var(--hue-teal-room);
-  --story-accent: var(--hue-teal-mark);
-  --them: var(--hue-teal-mark);
-  --them-ink: var(--hue-teal-mark);
   --poster: var(--hue-teal-poster);
-  --room: var(--hue-teal-room);
   --room-tint: var(--hue-teal-tint);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
+  --them: var(--hue-teal-them);
+  --them-ink: var(--hue-teal-ink);
+  --on-them: var(--hue-teal-deep);
+  --room: var(--hue-teal-room);
+  --room-glass: rgba(238, 251, 248, 0.8);
 }
 
-:root[data-theme='dark'][data-hue='red'],
-:root[data-theme='dark'] [data-hue='red'] {
-  --them: var(--hue-red-mark-d);
-  --them-ink: var(--hue-red-mark-d);
-  --poster: var(--hue-red-poster-d);
-  --room: var(--hue-red-room-d);
-  --room-tint: var(--hue-red-tint-d);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
+[data-hue='blue'] {
+  --poster: var(--hue-blue-poster);
+  --room-tint: var(--hue-blue-tint);
+  --them: var(--hue-blue-them);
+  --them-ink: var(--hue-blue-ink);
+  --on-them: var(--hue-blue-deep);
+  --room: var(--hue-blue-room);
+  --room-glass: rgba(242, 248, 254, 0.8);
 }
 
-:root[data-theme='dark'][data-hue='violet'],
-:root[data-theme='dark'] [data-hue='violet'] {
-  --them: var(--hue-violet-mark-d);
-  --them-ink: var(--hue-violet-mark-d);
-  --poster: var(--hue-violet-poster-d);
-  --room: var(--hue-violet-room-d);
-  --room-tint: var(--hue-violet-tint-d);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
+[data-hue='pink'] {
+  --poster: var(--hue-pink-poster);
+  --room-tint: var(--hue-pink-tint);
+  --them: var(--hue-pink-them);
+  --them-ink: var(--hue-pink-ink);
+  --on-them: var(--hue-pink-deep);
+  --room: var(--hue-pink-room);
+  --room-glass: rgba(255, 244, 250, 0.8);
+}
+
+/* Dark: a dimmer poster that does not glare, the room a tinted black, the person's light poster as their mark. */
+:root[data-theme='dark'][data-hue='yellow'],
+:root[data-theme='dark'] [data-hue='yellow'] {
+  --poster: var(--hue-yellow-poster-d);
+  --room: var(--hue-yellow-room-d);
+  --them: var(--hue-yellow-poster);
+  --them-ink: var(--hue-yellow-poster);
 }
 
 :root[data-theme='dark'][data-hue='orange'],
 :root[data-theme='dark'] [data-hue='orange'] {
-  --them: var(--hue-orange-mark-d);
-  --them-ink: var(--hue-orange-mark-d);
   --poster: var(--hue-orange-poster-d);
   --room: var(--hue-orange-room-d);
-  --room-tint: var(--hue-orange-tint-d);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
+  --them: var(--hue-orange-poster);
+  --them-ink: var(--hue-orange-poster);
+}
+
+:root[data-theme='dark'][data-hue='violet'],
+:root[data-theme='dark'] [data-hue='violet'] {
+  --poster: var(--hue-violet-poster-d);
+  --room: var(--hue-violet-room-d);
+  --them: var(--hue-violet-poster);
+  --them-ink: var(--hue-violet-poster);
 }
 
 :root[data-theme='dark'][data-hue='green'],
 :root[data-theme='dark'] [data-hue='green'] {
-  --them: var(--hue-green-mark-d);
-  --them-ink: var(--hue-green-mark-d);
   --poster: var(--hue-green-poster-d);
   --room: var(--hue-green-room-d);
-  --room-tint: var(--hue-green-tint-d);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
-}
-
-:root[data-theme='dark'][data-hue='blue'],
-:root[data-theme='dark'] [data-hue='blue'] {
-  --them: var(--hue-blue-mark-d);
-  --them-ink: var(--hue-blue-mark-d);
-  --poster: var(--hue-blue-poster-d);
-  --room: var(--hue-blue-room-d);
-  --room-tint: var(--hue-blue-tint-d);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
-}
-
-:root[data-theme='dark'][data-hue='pink'],
-:root[data-theme='dark'] [data-hue='pink'] {
-  --them: var(--hue-pink-mark-d);
-  --them-ink: var(--hue-pink-mark-d);
-  --poster: var(--hue-pink-poster-d);
-  --room: var(--hue-pink-room-d);
-  --room-tint: var(--hue-pink-tint-d);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
+  --them: var(--hue-green-poster);
+  --them-ink: var(--hue-green-poster);
 }
 
 :root[data-theme='dark'][data-hue='teal'],
 :root[data-theme='dark'] [data-hue='teal'] {
-  --them: var(--hue-teal-mark-d);
-  --them-ink: var(--hue-teal-mark-d);
   --poster: var(--hue-teal-poster-d);
   --room: var(--hue-teal-room-d);
-  --room-tint: var(--hue-teal-tint-d);
-  --tile-ink: var(--poster);
-  --ring-them: inset 0 0 0 2px var(--them);
+  --them: var(--hue-teal-poster);
+  --them-ink: var(--hue-teal-poster);
+}
+
+:root[data-theme='dark'][data-hue='blue'],
+:root[data-theme='dark'] [data-hue='blue'] {
+  --poster: var(--hue-blue-poster-d);
+  --room: var(--hue-blue-room-d);
+  --them: var(--hue-blue-poster);
+  --them-ink: var(--hue-blue-poster);
+}
+
+:root[data-theme='dark'][data-hue='pink'],
+:root[data-theme='dark'] [data-hue='pink'] {
+  --poster: var(--hue-pink-poster-d);
+  --room: var(--hue-pink-room-d);
+  --them: var(--hue-pink-poster);
+  --them-ink: var(--hue-pink-poster);
+}
+
+/* In the dark theme every room's tint is the raised grey, and the bar over a room is the plain material. */
+:root[data-theme='dark'][data-hue],
+:root[data-theme='dark'] [data-hue] {
+  --room-tint: var(--surface-2);
+  --room-glass: var(--toolbar-glass);
+}
+
+/* A report page lives in the person's room. */
+:root[data-hue] {
+  --bg: var(--room);
 }
 
 /* ─── Theme-independent scales ──────────────────────────────────────────── */
 
 :root {
   /*
-   * Space: an 8 px grid. Layout tokens (page, card, section) are multiples of 8; inside a control or
-   * a row the half steps 4 and 12 are allowed, and 2 is the hairline gap between a title and its
-   * subtitle or between list rows.
+   * Space: each step has one role. 2 hairline gap · 4 inside a control · 8 related things · 12 between
+   * cards on a phone · 16 phone gutter, card padding, cards on desktop · 24 card padding on desktop ·
+   * 32 sections, tablet gutter · 40 desktop gutter and sections · 48/64 the air of sign-in and landing.
    */
   --space-0-5: 2px;
   --space-1: 4px;
@@ -587,155 +437,115 @@
   --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
-  --space-20: 80px;
-  /*
-   * Corners on the 4 grid: mark 4 chart bars and cells · xs 8 badges, flags, small wells · sm 12 small
-   * tiles, tooltips, icon tiles · md 16 fields, options, wells inside cards, toasts · lg 24 cards and
-   * menus · xl 32 dialogs and sheets · full pills (buttons, chips, tabs, avatars, bars).
-   * Nested corners are concentric: inner = outer − padding (see --radius-inner).
-   */
+  /* Corners: 4 marks · 8 chips and small wells · 12 fields and lists inside sheets · 16 groups · 20/24 tiles · 32 sheets and dialogs. Nested corners are concentric. */
   --radius-mark: 4px;
   --radius-xs: 8px;
   --radius-sm: 12px;
   --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-lg: 20px;
   --radius-xl: 32px;
   --radius-full: 999px;
-  /* A well inside a card follows the card's corner. */
-  --radius-inner: max(var(--radius-sm), calc(var(--radius-lg) - var(--card-padding)));
-  /* Every proportion bar (compare, meters, day parts, progress) is this thick. */
+  /* Every proportion bar (compare, meters, day parts, progress) is this thick; the hero's is thicker. */
   --bar-height: 8px;
-  --control-xs: 32px;
+  --bar-height-lg: 12px;
+  /*
+   * Controls: on a phone everything you tap or that floats is 44; 36 is the compact size (rows, filters,
+   * all of desktop); 56 is never a button — bars, rows and code cells.
+   */
   --control-sm: 36px;
   --control-md: 44px;
-  --control-lg: 48px;
-  /* The smallest touch target: a 36px control on a phone still answers a 44px tap (.hit-area). */
+  --row-height: 56px;
   --hit-min: 44px;
   --icon-sm: 16px;
   --icon-md: 20px;
   --icon-lg: 24px;
-  /* Country flags are round, like the avatars next to them. */
+  /* Empty and error states: one bare symbol. */
+  --icon-xl: 32px;
   --flag-size: 20px;
-  /* Avatars by role, not by control size. */
   --avatar-xs: 24px;
   --avatar-sm: 32px;
   --avatar-md: 40px;
   --avatar-lg: 64px;
-  --avatar-xl: 72px;
-  --topbar-height: 64px;
-  --sidebar-width: 256px;
-  --report-nav-width: 400px;
+  --switch-width: 40px;
+  --switch-height: 24px;
+  --topbar-height: 56px;
+  --sidebar-width: 280px;
+  /* The group member inspector beside the report (≥ 1200 px). */
+  --inspector-width: 400px;
   /* One content column for every page; the gutter follows the screen. */
   --page-max: 1200px;
   --page-max-narrow: 720px;
-  --page-max-wide: 1280px;
   --page-gutter: var(--space-10);
-  /* Widths of focused things. */
-  --dialog-sm: 420px;
+  --dialog-sm: 440px;
   --dialog-md: 520px;
   --dialog-lg: 680px;
   --card-focus: 440px;
-  /* The report's table of contents beside its chapters (ReportToc, ≥ 1200 px). */
   --toc-width: 264px;
   --measure: 60ch;
   --menu-min: 240px;
   --menu-max-height: 360px;
   --tooltip-max: 260px;
-  --chart-h-sm: 220px;
-  --chart-h-md: 300px;
-  --chart-h-lg: 340px;
-  /* Shared geometry for cards, including the measured report columns. */
+  /* Space kept free under the content for the floating «Новый анализ» on phones. */
+  --fab-clearance: 128px;
   --card-padding: var(--space-6);
   --card-gap: var(--space-4);
   --opacity-disabled: 0.38;
-  /*
-   * Layers, from Primer's semantic z-index scale (sticky 100 · overlay 300 · modal 400 · popover 500 ·
-   * skip link 600) with Atlassian's rule that a flag (toast) sits above a modal. Menus and tooltips
-   * are above modals, so one opened from a dialog or a sheet is never hidden under it.
-   */
+  /* Layers: Primer's scale (sticky 100 · modal 400 · popover 500 · skip link 600); a toast sits above a modal. */
   --z-header: 100;
+  --z-dock: 150;
   --z-modal: 400;
   --z-toast: 450;
   --z-popover: 500;
   --z-skip-link: 600;
-  /* A press lands in 90 ms and releases on --duration-fast. */
+  /* Motion: a press in 90 ms, a change of state in 150, a sheet in 400 on a spring; leaving is shorter. */
   --duration-press: 90ms;
   --duration-fast: 150ms;
-  --duration-normal: 200ms;
-  --duration-slow: 300ms;
   --duration-sheet: 400ms;
   --duration-chart: 800ms;
-  --duration-intro: 900ms;
   --duration-spin: 700ms;
-  /* The spinner under reduced motion: still turning, slower. */
   --duration-spin-calm: 1200ms;
-  /* Something moving on screen (a segmented thumb, a switch knob): a critically damped spring. */
-  --duration-move: 500ms;
-  /* Endless loops: an indeterminate bar and the skeleton shimmer. */
-  --duration-loop: 1400ms;
   --duration-shimmer: 1600ms;
 
-  /*
-   * One family, Onest (Cyrillic-first, variable): hierarchy from size, weight and colour together, as
-   * in Apple's text styles. Three weights: 400 reading, 500 interface, 600 titles and figures.
-   */
+  /* One family, Onest: hierarchy from size, weight and colour. 400 reading, 500 interface, 600 titles and numbers. */
   --font-sans: 'Onest Variable', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
-  --font-display: var(--font-sans);
   /*
-   * One type ramp, ten roles. Line heights sit on the 4 grid. Phones shrink the big roles below.
-   *   display — the landing headline and the name on a report's poster
-   *   figure  — the one big number of a card («51 / 49», the word of the chat)
-   *   h1      — the page title (large title) and a part of the report
-   *   h2      — the answer of a report card; a dialog or status title
-   *   h3      — a section of a page (UiPageSection), the toolbar title
-   *   title   — a row, a name, a tile heading
-   *   body    — reading text and ledes
-   *   ui      — buttons, fields, chips, tabs, menu rows
-   *   small   — the card's question, descriptions, hints, values at the ends of a bar
-   *   caption — axes, legends, badges, meta
-   * Use the classes (.t-figure, .t-h1 … .t-caption): they carry the tracking too.
+   * Nine roles; line heights on the 4 grid. Phones and tablets first, desktop (≥ 901) below.
+   *   display — the name on a poster, the landing · figure — one big number · h1 — a screen or a chapter
+   *   h2 — a chapter's first finding, a dialog · h3 — a section, a card's answer · title — a row, a name
+   *   body — reading · ui — buttons, fields, menus (HIG subheadline) · small — questions, meta · caption — axes
    */
-  --text-display: 600 clamp(56px, 7vw, 104px) / 0.96 var(--font-sans);
-  /* The landing headline when the page must fit one screen: it also follows the height. */
-  --display-fit-size: clamp(44px, min(5.6vw, 9vh), 80px);
-  --text-figure: 600 64px/64px var(--font-sans);
-  --text-h1: 600 34px/40px var(--font-sans);
-  --text-h2: 600 22px/28px var(--font-sans);
+  --text-display: 600 56px/56px var(--font-sans);
+  --display-max: 56px;
+  --text-figure: 600 44px/48px var(--font-sans);
+  --text-h1: 600 30px/36px var(--font-sans);
+  --text-h2: 600 24px/32px var(--font-sans);
   --text-h3: 600 20px/28px var(--font-sans);
+  /* The two numbers of a comparison: h2's size, the interface weight. */
+  --text-num: 500 24px/32px var(--font-sans);
   --text-title: 500 16px/24px var(--font-sans);
   --text-body: 400 16px/24px var(--font-sans);
   --text-ui: 500 15px/20px var(--font-sans);
   --text-small: 400 14px/20px var(--font-sans);
+  --text-small-strong: 500 14px/20px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
-  /* One size for every emoji in the report (reactions, stickers, emoji rows). */
   --emoji-size: 28px;
-  --emoji-size-lg: 36px;
-  /* Tracking follows the size: the bigger the type, the tighter. 16 px and below keep their own. */
   --tracking-display: -0.045em;
-  --tracking-figure: -0.04em;
+  --tracking-figure: -0.035em;
   --tracking-h1: -0.025em;
-  --tracking-h2: -0.018em;
-  --tracking-h3: -0.012em;
-  /* The page frame: space under the header, between sections, and at the bottom. */
-  --page-top: var(--space-8);
-  --page-gap: var(--space-12);
-  --page-bottom: var(--space-20);
+  --tracking-h2: -0.02em;
+  --tracking-h3: -0.015em;
+  --tracking-num: -0.02em;
+  /* The page frame: space under the header, between sections, at the bottom. */
+  --page-top: var(--space-2);
+  --page-gap: var(--space-8);
+  --page-bottom: var(--space-12);
 
-  /* Strong ease-out for everything the user triggers; nothing linear, nothing bouncy. */
   --ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
-  /*
-   * Leaving, from Material 3 (emphasized accelerate): what goes away speeds up and is shorter than its
-   * entrance (--transition-exit), so closing never feels sluggish. Not for sheets a finger throws away:
-   * they keep --ease-drawer and the speed of the gesture.
-   */
+  /* Leaving, from Material 3 (emphasized accelerate): what goes away speeds up and is shorter. */
   --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
-  /* Endless loops breathe in and out. */
   --ease-loop: cubic-bezier(0.45, 0, 0.55, 1);
-  /*
-   * Apple's critically damped spring (damping 1, response 0.35 s) sampled into linear(); browsers
-   * without linear() fall back to the strong ease-out below.
-   */
+  /* Apple's critically damped spring (damping 1, response 0.35 s) sampled into linear(). */
   --spring-snappy: linear(
     0,
     0.075,
@@ -760,96 +570,62 @@
     1
   );
   --press-scale: 0.97;
-  /* Large surfaces (cards) press less, so their edges do not jump. */
   --press-scale-lg: 0.985;
   --transition-fast: var(--duration-fast) var(--ease-standard);
-  --transition-normal: var(--duration-normal) var(--ease-standard);
-  --transition-slow: var(--duration-slow) var(--ease-standard);
   --transition-exit: var(--duration-fast) var(--ease-exit);
-
-  /*
-   * «Итоги» posters: the same in both themes, like exported images. A slide has a field (ink, lime or
-   * paper) and every field has the same roles: ink, ink-muted, track, chip, card.
-   */
-  --story-backdrop: #050505;
-  --story-gradient-1: var(--gray-12);
-  --story-gradient-2: var(--hue-violet-poster);
-  --story-gradient-3: var(--hue-violet-room);
-  --story-gradient-4: var(--gray-2);
-  --story-gradient-5: var(--hue-orange-room);
-  --story-gradient-6: var(--hue-blue-room);
-  /* On the ink field. */
-  --story-ink: var(--gray-0);
-  --story-ink-muted: var(--white-a9);
-  --story-track: var(--white-a4);
-  --story-chip: rgba(255, 255, 255, 0.16);
-  --story-card: var(--night-1);
-  --story-accent: var(--hue-violet-mark);
-  /* On the paper fields. */
-  --story-paper-ink: var(--gray-12);
-  --story-paper-ink-muted: var(--gray-a8);
-  --story-paper-track: var(--gray-a4);
-  --story-paper-chip: var(--gray-a2);
-  --story-paper-card: var(--gray-0);
-  /* On the lime field. */
-  --story-accent-ink: var(--gray-0);
-  --story-accent-ink-muted: var(--white-a8);
-  --story-accent-track: var(--white-a4);
 }
 
-/* Narrower screens: tighter gutters; phones also shrink the header, the cards and the big type. */
-/* Landscape iPhones: the gutter also clears the sensor housing (viewport-fit=cover makes the sides ours). */
-@media (max-width: 1024px) {
-  :root {
-    --page-gutter: max(var(--space-6), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
-  }
-}
-
-@media (max-width: 640px) {
+/* Phones and tablets: the 16 px gutter clears the sensor housing in landscape (viewport-fit=cover). */
+@media (max-width: 900px) {
   :root {
     --page-gutter: max(var(--space-4), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
-    --topbar-height: 56px;
-    --page-top: var(--space-6);
-    --page-gap: var(--space-8);
-    --page-bottom: var(--space-16);
     --card-padding: var(--space-4);
-    --text-display: 600 56px/56px var(--font-sans);
-    --text-figure: 600 52px/56px var(--font-sans);
-    --text-h1: 600 30px/36px var(--font-sans);
-    --text-h2: 600 20px/28px var(--font-sans);
-    --text-h3: 600 18px/24px var(--font-sans);
-    --radius-lg: 20px;
+    --card-gap: var(--space-3);
   }
 }
 
-/*
- * Increase Contrast (iOS, macOS, Windows): secondary text darkens, hairlines become visible lines and
- * the intensity ramp steepens. Only token overrides — every component follows.
- */
+/* Tablets: the phone shell, a wider gutter. */
+@media (min-width: 641px) and (max-width: 900px) {
+  :root {
+    --page-gutter: max(var(--space-8), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+}
+
+/* Desktop: bigger type for the big roles, larger tiles, the 40 gutter and sections. */
+@media (min-width: 901px) {
+  :root {
+    --text-display: 600 88px/88px var(--font-sans);
+    --display-max: 88px;
+    --text-figure: 600 56px/60px var(--font-sans);
+    --text-h1: 600 34px/40px var(--font-sans);
+    --text-h2: 600 28px/36px var(--font-sans);
+    --text-h3: 600 22px/28px var(--font-sans);
+    --radius-lg: 24px;
+    --page-top: var(--space-12);
+    --page-gap: var(--space-10);
+    --page-bottom: var(--space-16);
+    --topbar-height: 64px;
+  }
+}
+
+/* Increase Contrast: secondary text darkens and hairlines become visible lines. */
 @media (prefers-contrast: more) {
   :root:not([data-theme='dark']) {
     --text-muted: var(--gray-11);
     --border: var(--gray-6);
-    --heat-1: #a8a8b0;
-    --heat-2: #7c7c84;
-    --heat-3: #55555c;
-    --heat-4: #2e2e33;
   }
 
   :root[data-theme='dark'] {
-    --text-muted: var(--night-8);
+    --text-muted: var(--night-11);
     --border: var(--night-5);
-    --heat-1: #5e5e64;
-    --heat-2: #85858c;
-    --heat-3: #adadb4;
-    --heat-4: #dcdce0;
   }
 }
 
-/* Reduce Transparency: the glass bars turn solid and lose their blur. */
+/* Reduce Transparency: the glass bars turn solid. */
 @media (prefers-reduced-transparency: reduce) {
   :root {
     --toolbar-glass: var(--bg);
+    --room-glass: var(--room);
     --glass-filter: none;
   }
 }

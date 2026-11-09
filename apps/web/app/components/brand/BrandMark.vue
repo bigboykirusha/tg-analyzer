@@ -1,46 +1,54 @@
 <script setup lang="ts">
 /**
- * The mark: a conversation as a mirrored pulse on an ink tile, the picture every report opens with.
- * The lime is the brand's own colour — the only place it appears; in reports colour means a person.
+ * The mark: the product's mirrored pulse — «you» on top in ink, below the seven colours of the people you
+ * write to. The only place where colour means people in general. `tile` is the app icon only.
  */
-withDefaults(defineProps<{ size?: number }>(), { size: 28 })
+withDefaults(defineProps<{ size?: number; tile?: boolean }>(), { size: 28, tile: false })
+
+const UP = [5, 9, 13, 8, 11, 6, 4]
+const DOWN = [4, 7, 10, 6, 8, 5, 3]
+const W = 2.6
+const GAP = 1.1
+const X0 = (28 - (7 * W + 6 * GAP)) / 2
+const bars = UP.map((up, i) => ({
+  x: +(X0 + i * (W + GAP)).toFixed(2),
+  up: +(up * 0.9).toFixed(2),
+  down: +(DOWN[i]! * 0.9).toFixed(2),
+  tone: `var(--brand-${i + 1})`,
+}))
 </script>
 
 <template>
-  <svg class="brand-mark" :width="size" :height="size" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
-    <rect width="28" height="28" rx="8" class="brand-mark__field" />
-    <rect x="4.3" y="10.4" width="1.8" height="3" rx="0.9" class="brand-mark__you" />
-    <rect x="7.3" y="7.4" width="1.8" height="6" rx="0.9" class="brand-mark__you" />
-    <rect x="10.3" y="9.4" width="1.8" height="4" rx="0.9" class="brand-mark__you" />
-    <rect x="13.3" y="4.4" width="1.8" height="9" rx="0.9" class="brand-mark__you" />
-    <rect x="16.3" y="8.4" width="1.8" height="5" rx="0.9" class="brand-mark__you" />
-    <rect x="19.3" y="6.4" width="1.8" height="7" rx="0.9" class="brand-mark__you" />
-    <rect x="22.3" y="10.4" width="1.8" height="3" rx="0.9" class="brand-mark__you" />
-    <rect x="4.3" y="14.6" width="1.8" height="2" rx="0.9" class="brand-mark__them" />
-    <rect x="7.3" y="14.6" width="1.8" height="4" rx="0.9" class="brand-mark__them" />
-    <rect x="10.3" y="14.6" width="1.8" height="6" rx="0.9" class="brand-mark__them" />
-    <rect x="13.3" y="14.6" width="1.8" height="5" rx="0.9" class="brand-mark__them" />
-    <rect x="16.3" y="14.6" width="1.8" height="8" rx="0.9" class="brand-mark__them" />
-    <rect x="19.3" y="14.6" width="1.8" height="3" rx="0.9" class="brand-mark__them" />
-    <rect x="22.3" y="14.6" width="1.8" height="2" rx="0.9" class="brand-mark__them" />
+  <svg
+    class="brand-mark"
+    :class="{ 'brand-mark--tile': tile }"
+    :width="size"
+    :height="size"
+    viewBox="0 0 28 28"
+    aria-hidden="true"
+  >
+    <rect v-if="tile" class="brand-mark__tile" width="28" height="28" rx="8" />
+    <template v-for="bar in bars" :key="bar.x">
+      <rect class="brand-mark__up" :x="bar.x" :y="14 - bar.up" :width="W" :height="bar.up" :rx="W / 2" />
+      <rect :x="bar.x" y="15" :width="W" :height="bar.down" :rx="W / 2" :style="{ fill: bar.tone }" />
+    </template>
   </svg>
 </template>
 
 <style scoped>
 .brand-mark {
-  flex: 0 0 auto;
-  display: block;
+  flex: none;
 }
 
-.brand-mark__field {
-  fill: var(--brand-square);
+.brand-mark__up {
+  fill: var(--brand-ink);
 }
 
-.brand-mark__you {
-  fill: var(--brand-bar);
+.brand-mark__tile {
+  fill: var(--brand-tile);
 }
 
-.brand-mark__them {
-  fill: var(--brand);
+.brand-mark--tile .brand-mark__up {
+  fill: var(--on-accent);
 }
 </style>

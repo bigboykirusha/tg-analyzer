@@ -1,9 +1,8 @@
 <script setup lang="ts" generic="T extends string">
 import type { Component } from 'vue'
-import { Check, ChevronDown, Search } from '../../lib/icons'
+import { ChevronDown, Search } from '../../lib/icons'
 import BottomSheet from './BottomSheet.vue'
 import CountryFlag from './CountryFlag.vue'
-import ListRow from './ListRow.vue'
 import MenuPanel from './MenuPanel.vue'
 
 export interface SelectOption<TValue extends string = string> {
@@ -29,7 +28,6 @@ const props = withDefaults(
     /** Accessible name when there is no visible label. */
     ariaLabel?: string
     placeholder?: string
-    size?: 'md' | 'lg'
     /** Search field on top; by default when there are more than 8 options. */
     searchable?: boolean
     searchPlaceholder?: string
@@ -43,7 +41,6 @@ const props = withDefaults(
     label: '',
     ariaLabel: '',
     placeholder: '',
-    size: 'md',
     searchable: undefined,
     searchPlaceholder: '',
     invalid: false,
@@ -242,7 +239,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
     <button
       ref="triggerRef"
       type="button"
-      :class="[variant === 'addon' ? 'select__addon' : ['select__trigger', `select__trigger--${size}`], triggerClass]"
+      :class="[variant === 'addon' ? 'select__addon' : 'select__trigger', triggerClass]"
       :disabled="disabled"
       aria-haspopup="listbox"
       :aria-expanded="open"
@@ -295,27 +292,21 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
         >
           <template v-for="row in rows" :key="row.option.value">
             <div v-if="row.header" class="select__group" role="presentation">{{ row.header }}</div>
-            <ListRow
+            <div
               :id="optionId(row.index)"
               class="option"
-              :class="{ 'is-active': row.index === activeIndex, 'option--icon': !!row.option.icon }"
-              interactive
-              :disabled="row.option.disabled"
+              :class="{ 'is-active': row.index === activeIndex, 'is-disabled': row.option.disabled }"
               role="option"
               :aria-selected="row.option.value === modelValue"
+              :aria-disabled="row.option.disabled || undefined"
               @pointermove="activeIndex = row.index"
-              @click="choose(row.option)"
+              @click="!row.option.disabled && choose(row.option)"
             >
-              <template v-if="row.option.flag || row.option.icon" #leading>
-                <CountryFlag v-if="row.option.flag" class="select__flag" :code="row.option.flag" />
-                <component :is="row.option.icon" v-else class="option__icon row-icon" aria-hidden="true" />
-              </template>
-              {{ row.option.label }}
-              <template #trailing>
-                <span v-if="row.option.meta" class="option__meta">{{ row.option.meta }}</span>
-                <Check class="option__check row-check" aria-hidden="true" />
-              </template>
-            </ListRow>
+              <CountryFlag v-if="row.option.flag" class="select__flag" :code="row.option.flag" />
+              <component :is="row.option.icon" v-else-if="row.option.icon" class="option__icon" aria-hidden="true" />
+              <span class="option__label">{{ row.option.label }}</span>
+              <span v-if="row.option.meta" class="option__meta">{{ row.option.meta }}</span>
+            </div>
           </template>
           <p v-if="!rows.length" class="select__empty">{{ t('common.noResults') }}</p>
         </div>
@@ -349,26 +340,20 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
       >
         <template v-for="row in rows" :key="row.option.value">
           <div v-if="row.header" class="select__group" role="presentation">{{ row.header }}</div>
-          <ListRow
+          <div
             :id="optionId(row.index)"
             class="option"
-            :class="{ 'is-active': row.index === activeIndex, 'option--icon': !!row.option.icon }"
-            interactive
-            :disabled="row.option.disabled"
+            :class="{ 'is-active': row.index === activeIndex, 'is-disabled': row.option.disabled }"
             role="option"
             :aria-selected="row.option.value === modelValue"
-            @click="choose(row.option)"
+            :aria-disabled="row.option.disabled || undefined"
+            @click="!row.option.disabled && choose(row.option)"
           >
-            <template v-if="row.option.flag || row.option.icon" #leading>
-              <CountryFlag v-if="row.option.flag" class="select__flag" :code="row.option.flag" />
-              <component :is="row.option.icon" v-else class="option__icon row-icon" aria-hidden="true" />
-            </template>
-            {{ row.option.label }}
-            <template #trailing>
-              <span v-if="row.option.meta" class="option__meta">{{ row.option.meta }}</span>
-              <Check class="option__check row-check" aria-hidden="true" />
-            </template>
-          </ListRow>
+            <CountryFlag v-if="row.option.flag" class="select__flag" :code="row.option.flag" />
+            <component :is="row.option.icon" v-else-if="row.option.icon" class="option__icon" aria-hidden="true" />
+            <span class="option__label">{{ row.option.label }}</span>
+            <span v-if="row.option.meta" class="option__meta">{{ row.option.meta }}</span>
+          </div>
         </template>
         <p v-if="!rows.length" class="select__empty">{{ t('common.noResults') }}</p>
       </div>
@@ -379,72 +364,54 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 <style scoped>
 .select {
   position: relative;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
 }
 
-/* Inside an `.input` the panel anchors to the whole field. */
 .select--addon {
-  position: static;
-  display: flex;
-  align-self: stretch;
+  flex: none;
 }
 
-/* ─── Field trigger: same box and states as Input ──────────────────────── */
+.select__label {
+  font: var(--text-small-strong);
+}
+
+/* A field-shaped trigger: 44, grey well, hairline; ink ring while open or focused. */
 .select__trigger {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  min-height: var(--control-md);
+  height: var(--control-md);
   padding: 0 var(--space-3) 0 var(--space-4);
-  border: 0;
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
-  color: var(--text);
-  cursor: pointer;
+  border-radius: var(--radius-sm);
+  background: var(--field-bg, var(--surface-2));
+  box-shadow: var(--ring-hairline);
   font: var(--text-body);
   text-align: left;
-  transition:
-    background-color var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.select__trigger--lg {
-  min-height: var(--control-lg);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .select__trigger:hover {
-    background: var(--fill-hover);
-  }
+  transition: box-shadow var(--transition-fast);
 }
 
 .select__trigger:focus-visible,
 .select__trigger[aria-expanded='true'] {
   outline: none;
   background: var(--surface);
-  box-shadow: var(--focus-ring-field);
+  box-shadow: var(--ring-field-focus);
 }
 
 .select--invalid .select__trigger {
-  background: var(--danger-subtle);
-}
-
-.select--invalid .select__trigger:focus-visible {
-  background: var(--surface);
-  box-shadow: var(--focus-ring-field-danger);
+  box-shadow: var(--ring-field-error);
 }
 
 .select__trigger:disabled {
-  background: var(--surface-2);
   opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
 .select__value {
-  flex: 1 1 auto;
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -458,87 +425,71 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 }
 
 .select__chevron {
+  flex: none;
   color: var(--text-muted);
+  --icon-size: var(--icon-sm);
   transition: transform var(--transition-fast);
 }
 
-[aria-expanded='true'] > .select__chevron {
+.is-open .select__chevron {
   transform: rotate(180deg);
 }
 
-/* ─── Add-on trigger (country code inside the phone field) ─────────────── */
+/* The country code inside a phone field: a pill inset 4 on every side, corners concentric (12 − 4). */
 .select__addon {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 0 var(--space-3) 0 var(--space-4);
-  border: 0;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
+  height: calc(var(--control-md) - var(--space-1) * 2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
+  background: var(--surface-2);
   font: var(--text-body);
-  white-space: nowrap;
 }
 
 .select__addon .select__value {
-  flex: 0 0 auto;
+  flex: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .select__addon:hover {
-    background: var(--hover);
+    background-image: linear-gradient(var(--hover), var(--hover));
   }
 }
 
-.select__addon:focus-visible {
-  outline: none;
-  box-shadow: var(--ring-selected);
-}
-
 .select__flag {
-  flex: 0 0 auto;
+  flex: none;
 }
 
-/* ─── Listbox panel (UiMenuPanel) and options (UiListRow) ──────────────── */
 .select__list {
-  display: grid;
-  gap: var(--space-0-5);
-  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: var(--menu-max-height);
   overflow-y: auto;
   overscroll-behavior: contain;
   outline: none;
-  scrollbar-width: thin;
 }
 
 .select__search {
   display: flex;
-  flex: 0 0 auto;
   align-items: center;
   gap: var(--space-2);
-  min-height: var(--control-sm);
+  height: var(--control-sm);
   margin-bottom: var(--space-1);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--fill-raised);
   color: var(--text-muted);
-  transition:
-    background-color var(--transition-fast),
-    box-shadow var(--transition-fast);
+  font: var(--text-body);
+  --icon-size: var(--icon-sm);
 }
 
 .select__search input {
   flex: 1;
   min-width: 0;
-  border: 0;
-  background: transparent;
+  height: 100%;
   color: var(--text);
-  font: var(--text-body);
   outline: none;
-}
-
-.select__search input:focus-visible {
-  box-shadow: none;
 }
 
 .select__search input::placeholder {
@@ -546,8 +497,11 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 }
 
 .select__search:focus-within {
-  background: var(--surface);
-  box-shadow: var(--focus-ring-field);
+  box-shadow: var(--ring-field-focus);
+}
+
+.select__search--sheet {
+  margin: 0;
 }
 
 .select__group {
@@ -557,40 +511,51 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 }
 
 .select__empty {
-  padding: var(--space-4) var(--space-3);
+  padding: var(--space-3);
   color: var(--text-muted);
   font: var(--text-small);
-  text-align: center;
 }
 
-.option--icon {
-  --row-px: var(--space-2);
+/* An option is a menu row: 44, 12 corners; the chosen one sits on the selection fill. */
+.option {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-md);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font: var(--text-ui);
+  cursor: pointer;
 }
 
-/* The option under the pointer or the arrow keys; listbox focus stays on the list. */
 .option.is-active {
   background: var(--hover);
 }
 
-.option__meta {
-  font-variant-numeric: tabular-nums;
-}
-
-.option__check {
-  visibility: hidden;
-}
-
 .option[aria-selected='true'] {
-  font-weight: 500;
+  background: var(--sidebar-selection);
 }
 
-.option[aria-selected='true'] .option__check {
-  visibility: visible;
+.option.is-disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
 }
 
-/* In a sheet the search is pinned above the list and 44px tall. */
-.select__search--sheet {
-  min-height: var(--control-md);
-  margin-bottom: 0;
+.option__icon {
+  color: var(--text-muted);
+}
+
+.option__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.option__meta {
+  color: var(--text-muted);
+  font: var(--text-small);
 }
 </style>

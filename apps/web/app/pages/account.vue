@@ -1,14 +1,32 @@
 <script setup lang="ts">
+import type { ShareLinkKind, UserShareLinkDto } from '@tg-analyzer/shared'
 import type { Locale } from '../composables/useI18n'
 import type { ThemePreference } from '../composables/useTheme'
-import { ChevronRight, LogOut } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
-const { t, locale, intlLocale, setLocale } = useI18n()
+/**
+ * The account as grouped settings: who you are, how the app looks, whether Telegram messages you, the
+ * links you shared (each with a switch), and signing out — the reports stay.
+ */
+const { t, locale, intlLocale, setLocale, formatDate } = useI18n()
 useSeoMeta({ title: () => t('accountPage.title') })
 
 const auth = useAuthStore()
+const { logout, updateSettings, refreshUser } = useAuth()
+const { preference, setPreference } = useTheme()
+const toast = useToast()
+const errorMessage = useErrorMessage()
+
+const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
+const handle = computed(() => [auth.user?.username ? `@${auth.user.username}` : '', maskPhone(auth.user?.phone)].filter(Boolean).join(', '))
+/** «+7 912 •••-••-89»: enough to recognise the number, not enough to read it off a shoulder. */
+function maskPhone(phone: string | undefined) {
+  if (!phone) return ''
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length < 7) return ''
+  return `+${digits.slice(0, digits.length - 10 || 1)} ${digits.slice(-10, -7)} •••-••-${digits.slice(-2)}`
+}
 
 /** «Москва, UTC+3» from the browser zone; the raw IANA name if Intl cannot name it. */
 const timezoneLabel = computed(() => {
@@ -23,300 +41,228 @@ const timezoneLabel = computed(() => {
       return undefined
     }
   }
-  // «Москва, стандартное время» → «Москва»; Chromium has no short Russian names.
   const name = part('longGeneric')?.split(',')[0]?.trim()
   const raw = part('shortOffset')?.replace(/^GMT/, 'UTC')
   const offset = raw === 'UTC' ? 'UTC+0' : raw
-  // A zone without a place name comes back as an offset («GMT+00:00»): the offset alone says it once.
-  const placeless = !name || /^(GMT|UTC)/u.test(name)
   if (!offset) return zone
-  return placeless ? offset : `${name}, ${offset}`
+  return !name || /^(GMT|UTC)/u.test(name) ? offset : `${name}, ${offset}`
 })
 
-const workspace = useWorkspaceStore()
-const { deleteAccount, logout } = useAuth()
-const { preference, setPreference } = useTheme()
-const toast = useToast()
-const errorMessage = useErrorMessage()
+const languages: { value: Locale; label: string }[] = [
+  { value: 'ru', label: 'Русский' },
+  { value: 'en', label: 'English' },
+]
+const themes = computed<{ value: ThemePreference; label: string }[]>(() => [
+  { value: 'system', label: t('accountPage.themeSystem') },
+  { value: 'light', label: t('accountPage.themeLight') },
+  { value: 'dark', label: t('accountPage.themeDark') },
+])
+const languageOpen = ref(false)
+const themeOpen = ref(false)
 
-const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
-const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : ''))
-const reportCount = computed(() => workspace.reports.length)
+/** Telegram messages: turned on in the bot (a link), turned off here. */
+const notify = computed({
+  get: () => Boolean(auth.user?.botNotify),
+  set: (value: boolean) => {
+    if (value && auth.user?.botUrl) {
+      window.open(auth.user.botUrl, '_blank', 'noopener')
+      // Back from the bot: read the account again to see «Start» pressed.
+      window.addEventListener('focus', () => void refreshUser().catch(() => undefined), { once: true })
+    } else if (!value) void updateSettings({ botNotify: false }).catch((error) => toast.error(t('accountPage.linkError'), errorMessage(error)))
+  },
+})
 
-/** «Sign out» asks first; the same dialog is where everything gets deleted, so the promise holds. */
-const signOutOpen = ref(false)
-const deleteOpen = ref(false)
-const busy = ref<'logout' | 'delete' | null>(null)
-
-async function signOut(alsoDelete: boolean) {
-  busy.value = alsoDelete ? 'delete' : 'logout'
+/** Shared links: on while they exist; off deletes, on again makes a new one. */
+const links = ref<(UserShareLinkDto & { on: boolean })[]>([])
+async function loadLinks() {
   try {
-    if (alsoDelete) await deleteAccount()
-    else await logout()
+    links.value = (await api('GET /api/v1/links')).links.map((link) => ({ ...link, on: true }))
+  } catch {
+    links.value = []
+  }
+}
+async function toggleLink(link: UserShareLinkDto & { on: boolean }, on: boolean) {
+  const previous = link.on
+  link.on = on
+  try {
+    const params = { chatId: link.chatId, kind: link.kind as ShareLinkKind }
+    if (on) await api('POST /api/v1/reports/:chatId/links', { params: { chatId: link.chatId }, body: { kind: link.kind, days: 30 } })
+    else await api('DELETE /api/v1/reports/:chatId/links/:kind', { params })
   } catch (error) {
-    toast.error(alsoDelete ? t('account.deleteError') : t('account.logoutError'), errorMessage(error))
-    busy.value = null
+    link.on = previous
+    toast.error(t('accountPage.linkError'), errorMessage(error))
+  }
+}
+function linkHint(link: UserShareLinkDto & { on: boolean }) {
+  if (!link.on) return t('accountPage.linkOff')
+  if (link.result?.score !== null && link.result)
+    return t('accountPage.linkAnswered', { name: link.title, score: link.result.score, total: link.result.total })
+  return link.expiresAt
+    ? t('accountPage.linkOn', { date: formatDate(link.expiresAt, { day: 'numeric', month: 'long' }) })
+    : t('accountPage.linkForever')
+}
+
+const signOutOpen = ref(false)
+const signingOut = ref(false)
+async function signOut() {
+  signingOut.value = true
+  try {
+    await logout()
+  } catch (error) {
+    toast.error(t('account.logoutError'), errorMessage(error))
+    signingOut.value = false
   }
 }
 
-const languageOptions = computed(() => [
-  { value: 'ru' as Locale, label: 'Русский' },
-  { value: 'en' as Locale, label: 'English' },
-])
-const themeOptions = computed(() => [
-  { value: 'system' as ThemePreference, label: t('accountPage.themeSystem') },
-  { value: 'light' as ThemePreference, label: t('accountPage.themeLight') },
-  { value: 'dark' as ThemePreference, label: t('accountPage.themeDark') },
-])
-
-onMounted(() => {
-  if (workspace.reportsState === 'idle') void workspace.loadReports().catch(() => undefined)
-})
+onMounted(loadLinks)
 </script>
 
 <template>
   <UiPageContainer>
-    <div class="page account">
-      <UiPageBar
-        :title="t('accountPage.title')"
-        :lede="[displayName, handle].filter(Boolean).join(' ')"
-        back="/dashboard"
-      >
-        <template #leading><ProfileAvatar :title="displayName" size="sm" /></template>
-      </UiPageBar>
+    <div class="account">
+      <UiPageBar :title="t('accountPage.title')" back="/dashboard" />
+      <header class="account__me">
+        <ProfileAvatar :title="displayName" size="lg" />
+        <div class="account__who">
+          <p class="t-h1">{{ displayName }}</p>
+          <p v-if="handle" class="account__handle">{{ handle }}</p>
+        </div>
+      </header>
 
-      <!-- Grouped settings: a quiet caption over a card of rows, as in system settings. -->
-      <div class="account__groups">
-        <section class="group" aria-labelledby="look-title">
-          <h2 id="look-title" class="group__title">{{ t('accountPage.lookTitle') }}</h2>
-          <div class="tile group__card">
-            <div class="row">
-              <span class="row__label">{{ t('nav.language') }}</span>
-              <UiSegmentedControl
-                :model-value="locale"
-                :options="languageOptions"
-                :aria-label="t('nav.language')"
-                inline
-                @update:model-value="setLocale"
-              />
-            </div>
-            <div class="row">
-              <span class="row__label">{{ t('accountPage.theme') }}</span>
-              <UiSegmentedControl
-                :model-value="preference"
-                :options="themeOptions"
-                :aria-label="t('accountPage.theme')"
-                inline
-                @update:model-value="setPreference"
-              />
-            </div>
-            <div class="row">
-              <span class="row__label">
-                {{ t('accountPage.timezone') }}
-                <small>{{ t('accountPage.timezoneHint') }}</small>
-              </span>
-              <span class="row__value">{{ timezoneLabel }}</span>
-            </div>
-          </div>
-        </section>
+      <div class="account__grid">
+        <div class="account__col">
+          <UiGroup :header="t('accountPage.lookTitle')">
+            <UiPopoverMenu v-model:open="languageOpen" align="end" :aria-label="t('accountPage.language')" :title="t('accountPage.language')">
+              <template #trigger>
+                <UiListRow as="button" :title="t('accountPage.language')" chevron aria-haspopup="menu" @click="languageOpen = !languageOpen">
+                  <template #trailing>{{ languages.find((item) => item.value === locale)?.label }}</template>
+                </UiListRow>
+              </template>
+              <UiMenuItem
+                v-for="item in languages"
+                :key="item.value"
+                role="menuitemradio"
+                :aria-checked="item.value === locale"
+                :selected="item.value === locale"
+                @click="setLocale(item.value), (languageOpen = false)"
+              >
+                {{ item.label }}
+              </UiMenuItem>
+            </UiPopoverMenu>
+            <UiPopoverMenu v-model:open="themeOpen" align="end" :aria-label="t('accountPage.theme')" :title="t('accountPage.theme')">
+              <template #trigger>
+                <UiListRow as="button" :title="t('accountPage.theme')" chevron aria-haspopup="menu" @click="themeOpen = !themeOpen">
+                  <template #trailing>{{ themes.find((item) => item.value === preference)?.label }}</template>
+                </UiListRow>
+              </template>
+              <UiMenuItem
+                v-for="item in themes"
+                :key="item.value"
+                role="menuitemradio"
+                :aria-checked="item.value === preference"
+                :selected="item.value === preference"
+                @click="setPreference(item.value), (themeOpen = false)"
+              >
+                {{ item.label }}
+              </UiMenuItem>
+            </UiPopoverMenu>
+            <UiListRow v-if="timezoneLabel" :title="t('accountPage.timezone')" :subtitle="t('accountPage.timezoneHint')">
+              <template #trailing>{{ timezoneLabel }}</template>
+            </UiListRow>
+          </UiGroup>
 
-        <section class="group" aria-labelledby="data-title">
-          <h2 id="data-title" class="group__title">{{ t('accountPage.dataTitle') }}</h2>
-          <div class="tile group__card">
-            <div class="row">
-              <span class="row__label">{{ t('accountPage.reports') }}</span>
-              <span class="row__value t-num">{{ reportCount }}</span>
-            </div>
-            <div class="row">
-              <span class="row__label">{{ t('accountPage.messagesKept') }}</span>
-              <span class="row__value">{{ t('accountPage.messagesKeptValue') }}</span>
-            </div>
-            <NuxtLink to="/faq" class="row row--link">
-              <span class="row__label">{{ t('accountPage.privacy') }}</span>
-              <ChevronRight aria-hidden="true" />
-            </NuxtLink>
-            <!-- The promise «удалить всё в один клик» lives where the data is, not inside «Sign out». -->
-            <button type="button" class="row row--link row--danger" @click="deleteOpen = true">
-              <span class="row__label">{{ t('accountPage.deleteAll') }}</span>
-            </button>
-          </div>
-        </section>
+          <UiGroup v-if="auth.user?.botUrl || auth.user?.botNotify" :header="t('accountPage.notifyTitle')">
+            <UiSwitch v-model="notify" :label="t('accountPage.notify')" :hint="t('accountPage.notifyHint')" />
+          </UiGroup>
+
+          <UiGroup :footer="t('accountPage.logoutFoot')">
+            <UiListRow as="button" :title="t('accountPage.logout')" danger @click="signOutOpen = true" />
+          </UiGroup>
+        </div>
+
+        <div v-if="links.length" class="account__col">
+          <UiGroup :header="t('accountPage.linksTitle')" :footer="t('accountPage.linksFoot')">
+            <UiSwitch
+              v-for="link in links"
+              :key="`${link.chatId}-${link.kind}`"
+              :model-value="link.on"
+              :label="t(link.kind === 'quiz' ? 'accountPage.linkQuiz' : 'accountPage.linkReport', { chat: link.title })"
+              :hint="linkHint(link)"
+              @update:model-value="toggleLink(link, $event)"
+            >
+              <template #leading><ChatAvatar :chat-id="link.chatId" :title="link.title" size="sm" /></template>
+            </UiSwitch>
+          </UiGroup>
+        </div>
       </div>
-
-      <section class="sign-out">
-        <UiButton variant="secondary" :icon="LogOut" @click="signOutOpen = true">{{ t('account.logout') }}</UiButton>
-        <p class="sign-out__hint">{{ t('accountPage.logoutHint') }}</p>
-      </section>
     </div>
 
-    <UiModalDialog
+    <UiConfirmDialog
       :open="signOutOpen"
       :title="t('accountPage.logoutTitle')"
       :description="t('accountPage.logoutText')"
-      :close-label="t('common.close')"
-      :busy="busy !== null"
-      role="alertdialog"
-      @close="signOutOpen = false"
-    >
-      <div class="sign-out__choices">
-        <UiButton block :loading="busy === 'logout'" :disabled="busy === 'delete'" @click="signOut(false)">
-          {{ t('account.logout') }}
-        </UiButton>
-        <UiButton
-          block
-          variant="danger"
-          :loading="busy === 'delete'"
-          :disabled="busy === 'logout'"
-          @click="signOut(true)"
-        >
-          {{ t('accountPage.logoutAndDelete') }}
-        </UiButton>
-        <UiButton block variant="ghost" :disabled="busy !== null" @click="signOutOpen = false">
-          {{ t('common.cancel') }}
-        </UiButton>
-      </div>
-    </UiModalDialog>
-    <UiConfirmDialog
-      :open="deleteOpen"
-      :title="t('accountPage.deleteAllTitle')"
-      :description="t('accountPage.deleteAllText')"
-      :confirm-label="t('accountPage.deleteAllConfirm')"
-      :cancel-label="t('common.cancel')"
+      :confirm-label="t('accountPage.logout')"
       variant="danger"
-      :loading="busy === 'delete'"
-      @close="deleteOpen = false"
-      @confirm="signOut(true)"
+      :loading="signingOut"
+      @close="signOutOpen = false"
+      @confirm="signOut"
     />
   </UiPageContainer>
 </template>
 
 <style scoped>
-/* The same column as every other page: the two groups of settings sit side by side. */
-.account__groups {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.account {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-6);
-  align-items: start;
+  padding-bottom: var(--page-bottom);
 }
 
-.group {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.group__title {
-  padding-inline: var(--space-1);
-  color: var(--text-muted);
-  font: var(--text-caption);
-}
-
-.group__card {
-  gap: 0;
-  padding-block: 0;
-}
-
-/* One setting per row: the name on the left, the control on the right, hairlines between. */
-.row {
+.account__me {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-4);
-  min-height: calc(var(--control-md) + var(--space-4));
-  padding-block: var(--space-2);
-  font: var(--text-body);
-}
-
-.row + .row {
-  border-top: 1px solid var(--border);
-}
-
-.row__label {
-  display: grid;
-  gap: var(--space-0-5);
   min-width: 0;
 }
 
-.row__label small {
-  color: var(--text-muted);
-  font: var(--text-caption);
+.account__who {
+  min-width: 0;
 }
 
-.row__value {
-  flex: none;
-  color: var(--text-muted);
+.account__who .t-h1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.row--link {
-  color: var(--text);
-}
-
-.row--danger {
-  width: 100%;
-  border: 0;
-  background: none;
-  color: var(--danger);
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-}
-
-.row--link svg {
-  color: var(--text-muted);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .row--link:hover .row__label {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-}
-
-.sign-out {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-2);
-}
-
-.sign-out__hint {
-  padding-inline: var(--space-1);
+.account__handle {
   color: var(--text-muted);
   font: var(--text-small);
 }
 
-.sign-out__choices {
-  display: grid;
-  gap: var(--space-2);
+.account__grid,
+.account__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
 }
 
-@media (max-width: 900px) {
-  .account__groups {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* Phones: a control under its name, and a full-width «Sign out». */
-@media (max-width: 640px) {
-  .row:has(.segmented) {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-2);
-    padding-block: var(--space-3);
+/* Desktop: settings on the left, the shared links beside them — no half-empty column under one card. */
+@media (min-width: 901px) {
+  .account {
+    gap: var(--page-gap);
   }
 
-  .row :deep(.segmented) {
-    width: 100%;
+  .account__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--page-gap);
   }
 
-  .row :deep(.segment) {
-    flex: 1 1 0;
-  }
-
-  .sign-out {
-    justify-items: stretch;
-  }
-
-  .sign-out__hint {
-    text-align: center;
+  .account :deep(.page-title) {
+    display: none;
   }
 }
 </style>

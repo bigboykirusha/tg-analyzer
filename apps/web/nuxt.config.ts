@@ -102,8 +102,6 @@ export default defineNuxtConfig({
     '/chat/**': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
     // Shared reports and quizzes: private by nature, fetched in the browser, never indexed.
     '/s/**': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
-    // Privacy and questions share one page.
-    '/privacy': { redirect: '/faq' },
   },
   // Bundle the icons with the app: left external on the server, @lucide/vue reached a
   // second copy of Vue, lost its injection context and the first render after a cold

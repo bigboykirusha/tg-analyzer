@@ -1,55 +1,56 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'link'
-export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg'
+/**
+ * One button family (docs/design/portrait-v3). Monochrome: colour means a person, never an action.
+ *   primary   ink — one per screen
+ *   secondary a hairline ring — the default
+ *   tinted    a grey fill — quiet actions in tiles («Все чаты», «Сбросить поиск»)
+ *   plain     text only — «Отменить», «Открыть»
+ *   danger    red on a soft red fill — only what destroys
+ *   poster / poster-soft  on a person's poster: ink, or a translucent chip
+ *   link      inline, underlined, takes the surrounding type
+ */
+export type ButtonVariant = 'primary' | 'secondary' | 'tinted' | 'plain' | 'danger' | 'poster' | 'poster-soft' | 'link'
+/** sm 36 everywhere (rows, filters) · md 44 on a phone, 36 on desktop · lg 44 everywhere (the one action of a card). */
+export type ButtonSize = 'sm' | 'md' | 'lg'
 
 defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
-    /** `link` is an inline text button: ink, no padding, underlined on hover and focus; it takes the surrounding type. */
     variant?: ButtonVariant
-    /** sm 36 · md 44 · lg 48; xs 32 is for close icons only. Ignored by `link`. */
     size?: ButtonSize
     icon?: Component | null
     loading?: boolean
     disabled?: boolean
     block?: boolean
-    iconOnly?: boolean
-    to?: string
+    to?: RouteLocationRaw
   }>(),
-  {
-    variant: 'secondary',
-    size: 'md',
-    icon: null,
-    loading: false,
-    disabled: false,
-    block: false,
-    iconOnly: false,
-    to: '',
-  },
+  { variant: 'secondary', size: 'md', icon: null, loading: false, disabled: false, block: false, to: '' },
 )
 
 const attrs = useAttrs()
-
-const classes = computed(() => [
-  'btn',
-  `btn--${props.variant}`,
-  `btn--${props.size}`,
-  { 'btn--block': props.block, 'btn--icon-only': props.iconOnly },
-])
+const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.size}`, { 'btn--block': props.block }])
 </script>
 
 <template>
   <NuxtLink v-if="to" v-bind="attrs" :to="to" :class="classes" :aria-busy="loading || undefined">
-    <span v-if="loading" class="spinner btn__spinner" aria-hidden="true" />
+    <span v-if="loading" class="spinner" aria-hidden="true" />
     <component :is="icon" v-else-if="icon" aria-hidden="true" />
     <slot v-else name="icon" />
     <slot />
   </NuxtLink>
-  <button v-else v-bind="attrs" :class="classes" :disabled="disabled || loading" :aria-busy="loading || undefined">
-    <span v-if="loading" class="spinner btn__spinner" aria-hidden="true" />
+  <button
+    v-else
+    type="button"
+    v-bind="attrs"
+    :class="classes"
+    :disabled="disabled || loading"
+    :aria-busy="loading || undefined"
+  >
+    <span v-if="loading" class="spinner" aria-hidden="true" />
     <component :is="icon" v-else-if="icon" aria-hidden="true" />
     <slot v-else name="icon" />
     <slot />
@@ -60,105 +61,97 @@ const classes = computed(() => [
 .btn {
   position: relative;
   display: inline-flex;
-  flex: 0 0 auto;
+  flex: none;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   min-width: 0;
   max-width: 100%;
-  min-height: var(--control-md);
-  padding: 0 var(--space-6);
-  border: 1px solid transparent;
+  height: var(--control-md);
+  padding: 0 var(--space-4);
   border-radius: var(--radius-full);
-  background: transparent;
   color: var(--text);
-  cursor: pointer;
   font: var(--text-ui);
   text-align: center;
-  text-decoration: none;
   white-space: nowrap;
-  user-select: none;
   -webkit-tap-highlight-color: transparent;
-  --icon-size: var(--icon-sm);
   transition:
     background-color var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
     box-shadow var(--transition-fast),
-    transform var(--transition-fast);
+    transform var(--duration-press) var(--ease-standard);
 }
 
-/* ─── Sizes ────────────────────────────────────────────────────────────────── */
 .btn--sm {
-  min-height: var(--control-sm);
-  padding: 0 var(--space-4);
+  gap: var(--space-1);
+  height: var(--control-sm);
+  padding: 0 var(--space-3);
+  font: var(--text-small-strong);
+  --icon-size: var(--icon-sm);
 }
 
 .btn--lg {
-  min-height: var(--control-lg);
   padding: 0 var(--space-6);
-  --icon-size: var(--icon-md);
+}
+
+/* Compact controls still answer a 44 px tap. */
+.btn--sm::after {
+  content: '';
+  position: absolute;
+  inset: calc((var(--control-sm) - var(--hit-min)) / 2) 0;
+}
+
+@media (min-width: 901px) {
+  .btn--md {
+    height: var(--control-sm);
+  }
 }
 
 .btn--block {
   width: 100%;
 }
 
-/* Icon-only: a circle, width equals height. */
-.btn--icon-only {
-  width: var(--control-md);
-  padding: 0;
-  border-radius: var(--radius-full);
-  --icon-size: var(--icon-md);
-}
-
-.btn--icon-only.btn--sm {
-  width: var(--control-sm);
-  --icon-size: var(--icon-sm);
-}
-
-.btn--icon-only.btn--lg {
-  width: var(--control-lg);
-}
-
-.btn--xs {
-  min-height: var(--control-xs);
-  padding: 0 var(--space-3);
-  --icon-size: var(--icon-sm);
-}
-
-.btn--icon-only.btn--xs {
-  width: var(--control-xs);
-  padding: 0;
-}
-
-/* The close button stays 32px but its hit area is 44px. */
-.btn--xs::before {
-  content: '';
-  position: absolute;
-  inset: calc((var(--control-md) - var(--control-xs)) / -2);
-}
-
-/* ─── Variants ─────────────────────────────────────────────────────────────── */
 .btn--primary {
   background: var(--accent);
   color: var(--on-accent);
 }
 
 .btn--secondary {
-  border-color: var(--border-strong);
-  background: transparent;
-  color: var(--text);
+  background: var(--btn-secondary-bg, var(--surface));
+  box-shadow: var(--ring-strong);
 }
 
-.btn--ghost {
-  color: var(--text-muted);
+.btn--tinted {
+  background: var(--btn-tinted-bg, var(--surface-2));
 }
 
-/* Destructive actions stay soft: a pink fill with red text, never a solid red slab. */
+.btn--plain {
+  padding: 0 var(--space-2);
+}
+
 .btn--danger {
   background: var(--danger-subtle);
   color: var(--danger);
+}
+
+.btn--poster {
+  background: var(--on-poster);
+  color: var(--poster);
+}
+
+.btn--poster-soft {
+  background: var(--on-poster-chip);
+  color: var(--on-poster);
+}
+
+.btn.btn--link {
+  height: auto;
+  padding: 0;
+  border-radius: var(--radius-mark);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -166,124 +159,28 @@ const classes = computed(() => [
     background: var(--accent-hover);
   }
 
-  .btn--secondary:hover {
+  .btn--secondary:hover,
+  .btn--plain:hover,
+  .btn--tinted:hover {
     background-image: linear-gradient(var(--hover), var(--hover));
   }
 
-  .btn--ghost:hover {
-    background: var(--hover);
-    color: var(--text);
-  }
-
-  .btn--danger:hover {
-    background: var(--danger-subtle-hover);
-  }
-}
-
-.btn:active:not(:disabled) {
-  transform: scale(var(--press-scale));
-  /* The press lands at once; the release eases back on the slower default. */
-  transition-duration: var(--duration-press);
-}
-
-.btn--ghost:active {
-  background: var(--pressed);
-}
-
-.btn--secondary:active,
-.btn--danger:active {
-  background-image: linear-gradient(var(--pressed), var(--pressed));
-}
-
-.btn:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
-
-.btn:disabled,
-.btn[aria-disabled='true'] {
-  opacity: var(--opacity-disabled);
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-/* A primary action that is not ready yet turns into a quiet grey pill instead of faded ink. */
-.btn--primary:disabled:not([aria-busy]) {
-  background: var(--surface-2);
-  color: var(--text-muted);
-  opacity: 1;
-}
-
-.btn[aria-busy='true'] {
-  cursor: progress;
-  pointer-events: none;
-}
-
-/* ─── Link: a button that reads as a word in a sentence ─────────────────── */
-.btn.btn--link {
-  gap: var(--space-1);
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-xs);
-  color: var(--text);
-  font: inherit;
-  font-weight: 500;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-  white-space: normal;
-  transition:
-    color var(--transition-fast),
-    text-decoration-color var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-@media (hover: hover) and (pointer: fine) {
   .btn--link:hover {
     text-decoration-color: currentColor;
   }
 }
 
-.btn--link:focus-visible {
-  text-decoration-color: currentColor;
+.btn:active:not(:disabled, .btn--link) {
+  transform: scale(var(--press-scale));
 }
 
-.btn--link:active {
-  transform: none;
-  color: var(--text-muted);
+.btn:disabled {
+  opacity: var(--opacity-disabled);
 }
 
-/* A link that is not available yet (a countdown) stays legible, just quiet. */
-.btn--link:disabled,
-.btn--link[aria-disabled='true'] {
-  color: var(--text-muted);
+/* A loading button keeps its colour: it is busy, not unavailable. */
+.btn[aria-busy='true'] {
   opacity: 1;
-}
-
-/* ─── Spinner ──────────────────────────────────────────────────────────────── */
-.btn__spinner {
-  --spinner-size: var(--icon-size);
-}
-
-/* Touch targets stay ≥ 44px on phones. */
-/* Touch: a compact button keeps its size but catches a tap of at least --hit-min around it. */
-@media (pointer: coarse) {
-  .btn::after {
-    content: '';
-    position: absolute;
-    inset: min(0px, calc((100% - var(--hit-min)) / 2));
-  }
-}
-
-@media (max-width: 640px) and (pointer: coarse) {
-  .btn--sm {
-    min-height: var(--control-md);
-  }
-
-  .btn--icon-only.btn--sm {
-    width: var(--control-md);
-  }
+  cursor: progress;
 }
 </style>

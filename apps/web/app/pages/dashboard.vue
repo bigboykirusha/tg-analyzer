@@ -1,19 +1,22 @@
 <script setup lang="ts">
 import { deriveHomeEvents, type UserShareLinkDto } from '@tg-analyzer/shared'
-import { AlertCircle, Plus } from '../lib/icons'
+import { AlertCircle } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
-
+/**
+ * Home answers two questions: what you have already learned (the reports) and what is new (the news
+ * about your people). A greeting, «Сейчас главное», the reports as small posters, the busiest chats
+ * still without one. A newcomer gets «С кого начнём?» instead.
+ */
 const { t } = useI18n()
 useSeoMeta({ title: () => t('dashboard.title') })
 
 const workspace = useWorkspaceStore()
-const analysis = useAnalysis()
 const auth = useAuthStore()
 const now = useNow(60_000)
+const errorMessage = useErrorMessage()
 
-/** «Добрый вечер, Дима»: the home page speaks first, then shows what is new. */
 const greeting = computed(() => {
   const hour = new Date(now.value).getHours()
   const part = hour < 5 ? 'night' : hour < 12 ? 'morning' : hour < 18 ? 'day' : hour < 23 ? 'evening' : 'night'
@@ -21,15 +24,8 @@ const greeting = computed(() => {
   const hello = t(`home.greeting.${part}`)
   return name ? `${hello}, ${name}` : hello
 })
-const errorMessage = useErrorMessage()
 
-
-/** Finished reports, newest first: what the user has already learned. */
-/** Phones open the chat list as a sheet over the home screen (`?pick`); wide screens go to `/new`. */
-const isPhone = useMediaQuery('(max-width: 640px)')
-const newAnalysisLink = computed(() => (isPhone.value ? '/dashboard?pick' : '/new'))
-
-/** The reports, the chats pinned in Telegram first (they have no block of their own), then the freshest. */
+/** The reports, chats pinned in Telegram first, then the freshest. */
 const reports = computed(() =>
   workspace.chats
     .filter((chat) => chat.report)
@@ -39,7 +35,6 @@ const reports = computed(() =>
         Date.parse(right.report!.analyzedAt) - Date.parse(left.report!.analyzedAt),
     ),
 )
-/** The user's quiz answers for «Главное»; the summary works without them. */
 const links = ref<UserShareLinkDto[]>([])
 async function loadLinks() {
   try {
@@ -48,9 +43,7 @@ async function loadLinks() {
     links.value = []
   }
 }
-/** «Главное»: the month, new messages, a quiz answer, the next round number, a chat without a report. */
 const events = computed(() =>
-  // A chat without a report has a row of its own, «Ещё не разобраны» (HomeUnanalysed).
   deriveHomeEvents(
     reports.value.map((chat) => chat.report!),
     workspace.recent,
@@ -58,205 +51,172 @@ const events = computed(() =>
   ).filter((event) => event.kind !== 'unanalysed'),
 )
 
-/** Returning users wait for their reports instead of seeing the newcomer screen flash by. */
-const loadingReports = computed(
+const loading = computed(
   () => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
 )
-/** A failed load is not an empty account: say so and offer a retry instead of the newcomer screen. */
-const reportsFailed = computed(() => !reports.value.length && workspace.reportsState === 'error')
-/** Newcomers pick their first chat right here; everyone else gets the summary. */
-const newcomer = computed(() => !reports.value.length && !loadingReports.value && !reportsFailed.value)
-
+const failed = computed(() => !reports.value.length && workspace.reportsState === 'error')
+const newcomer = computed(() => !reports.value.length && !loading.value && !failed.value)
 const reportsError = ref<unknown>(null)
 function loadReports() {
   reportsError.value = null
   void workspace.loadReports().catch((error) => (reportsError.value = error))
 }
 
-
-const queuedJobs = computed(() => new Set(analysis.queued.value.map((item) => item.chatId)))
-function isUpdating(chatId: string) {
-  return (analysis.isActive.value && analysis.progress.value.chatId === chatId) || queuedJobs.value.has(chatId)
-}
-
 onMounted(() => {
   void workspace.loadDialogs()
   void workspace.loadRecent()
   void loadLinks()
-  // The failure is shown in place (see `reportsFailed`); a toast would say it twice.
   loadReports()
 })
 </script>
 
 <template>
-  <UiPageContainer>
-    <div class="page">
-      <!-- Loading: the shape of the summary and the report cards, so nothing jumps when they arrive. -->
-      <template v-if="loadingReports">
-        <MonthSkeleton />
-        <div class="stack" aria-hidden="true">
-          <UiSkeleton width="120px" height="24px" />
-          <div class="report-cards">
-            <div v-for="card in 4" :key="card" class="tile home__skeleton-card">
-              <div class="home__skeleton-head">
-              <UiSkeleton width="var(--avatar-md)" height="var(--avatar-md)" radius="50%" />
-                <div class="home__skeleton-copy">
-                  <UiSkeleton width="70%" height="20px" />
-                  <UiSkeleton width="50%" />
-                </div>
-              </div>
-              <UiSkeleton class="home__skeleton-foot" height="40px" />
-            </div>
+  <UiPageContainer class="home">
+    <!-- Loading: the same greeting, tile and cards, so nothing moves when the content arrives. -->
+    <div v-if="loading" class="page" aria-busy="true">
+      <div class="home__hello" aria-hidden="true">
+        <UiSkeleton width="min(70%, 360px)" height="var(--space-8)" />
+        <UiSkeleton width="min(50%, 260px)" height="var(--space-4)" />
+      </div>
+      <section class="home__section" aria-hidden="true">
+        <UiSkeleton width="160px" height="var(--space-6)" />
+        <div class="home__skeleton-tile">
+          <UiSkeleton width="40%" height="var(--space-3)" />
+          <UiSkeleton width="80%" height="var(--space-6)" />
+          <UiSkeleton width="60%" height="var(--space-3)" />
+          <UiSkeleton class="home__skeleton-foot" width="100%" height="var(--control-md)" radius="var(--radius-full)" />
+        </div>
+      </section>
+      <section class="home__section" aria-hidden="true">
+        <UiSkeleton width="96px" height="var(--space-6)" />
+        <div class="home__reports">
+          <div v-for="card in 4" :key="card" class="home__skeleton-card">
+            <UiSkeleton width="var(--avatar-sm)" height="var(--avatar-sm)" radius="var(--radius-full)" />
+            <UiSkeleton width="70%" height="var(--space-4)" />
+            <UiSkeleton width="50%" height="var(--space-3)" />
+            <UiSkeleton class="home__skeleton-foot" height="var(--space-6)" />
           </div>
         </div>
-      </template>
+      </section>
+    </div>
 
-      <template v-else-if="newcomer">
-        <UiPageBar :title="t('home.firstTitle')" untitled />
+    <div v-else-if="newcomer" class="page"><HomeFirstRun /></div>
 
-        <AnalysisBanner />
+    <div v-else class="page">
+      <header class="home__hello">
+        <h1 class="t-h1">{{ greeting }}</h1>
+        <p class="home__lede">{{ t('home.greeting.lede') }}</p>
+      </header>
 
-        <!-- First run: one question, the busiest chats under it, and the promise where trust is decided. -->
-        <header class="home__hello">
-          <p class="t-h1">{{ t('home.firstTitle') }}</p>
-          <p class="t-lede">{{ t('home.firstLede') }}</p>
-        </header>
+      <UiPageSection v-if="events.length" :title="t('home.highlights')">
+        <HomeEvents :events="events" />
+      </UiPageSection>
 
-        <UiPageSection id="chats" :title="t('dashboard.chatsTitle')">
-          <ChatPicker />
-          <p class="home__privacy t-small t-muted">{{ t('home.firstPrivacy') }}</p>
-        </UiPageSection>
-      </template>
-
-      <template v-else>
-        <UiPageBar :title="t('home.title')" untitled>
-          <template #actions>
-            <UiButton class="home__new" variant="primary" :to="newAnalysisLink" size="sm" :icon="Plus">{{
-              t('nav.newAnalysis')
-            }}</UiButton>
+      <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
+        <UiEmptyState
+          v-if="failed"
+          tone="danger"
+          compact
+          :icon="AlertCircle"
+          :title="t('dashboard.reportsError')"
+          :description="errorMessage(reportsError)"
+        >
+          <template #action>
+            <UiButton @click="loadReports">{{ t('common.retry') }}</UiButton>
           </template>
-        </UiPageBar>
-        <header class="home__hello">
-          <p class="t-h1">{{ greeting }}</p>
-          <p class="t-lede">{{ t('home.greeting.lede') }}</p>
-        </header>
-        <AnalysisBanner />
-        <UiPageSection :title="t('home.highlights')">
-          <HomeEvents v-if="events.length" :events="events" />
-          <MonthSkeleton v-else-if="!workspace.recent && workspace.recentState !== 'error'" />
-          <p v-else class="tile__note">{{ t('month.empty') }}</p>
-        </UiPageSection>
+        </UiEmptyState>
+        <div v-else class="home__reports">
+          <ReportCard v-for="chat in reports" :key="chat.id" :report="chat.report!" :has-avatar="chat.hasAvatar" />
+        </div>
+      </UiPageSection>
 
-        <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
-          <!-- A failed list fails here alone: the greeting, highlights and «Новый анализ» stay. -->
-          <UiEmptyState
-            v-if="reportsFailed"
-            tone="danger"
-            :icon="AlertCircle"
-            :title="t('dashboard.reportsError')"
-            :description="errorMessage(reportsError)"
-          >
-            <template #action>
-              <UiButton variant="secondary" @click="loadReports">{{ t('common.retry') }}</UiButton>
-            </template>
-          </UiEmptyState>
-          <div v-else class="report-cards" :style="{ '--report-cols': Math.min(4, Math.max(3, reports.length)) }">
-            <ReportCard
-              v-for="chat in reports"
-              :key="chat.id"
-              :report="chat.report!"
-              :has-avatar="chat.hasAvatar"
-              :updating="isUpdating(chat.id)"
-            />
-          </div>
-        </UiPageSection>
-        <HomeUnanalysed />
-      </template>
+      <HomeUnanalysed />
     </div>
   </UiPageContainer>
 </template>
 
 <style scoped>
-.home__hello {
-  display: grid;
-  gap: var(--space-2);
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--page-gap);
 }
 
-/* Wide screens start a new analysis from the sidebar. */
-@media (min-width: 901px) {
-  .home__new {
-    display: none;
+/* Phones keep the floating «Новый анализ» clear of the last row. */
+@media (max-width: 900px) {
+  .home .page {
+    padding-bottom: var(--fab-clearance);
   }
 }
 
-.home__skeleton-card {
-  min-height: var(--chart-h-sm);
+.home__hello {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
-.home__skeleton-head {
+.home__lede {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+@media (min-width: 901px) {
+  .home__lede {
+    font: var(--text-body);
+  }
+}
+
+.home__section {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--space-3);
 }
 
-.home__skeleton-copy {
+/* Reports: two on a phone, four on a tablet and wide screens, three beside the sidebar on a laptop. */
+.home__reports {
   display: grid;
-  flex: 1;
-  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--card-gap);
+}
+
+@media (min-width: 641px) {
+  .home__reports {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1199px) {
+  .home__reports {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.home__skeleton-tile,
+.home__skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--card-padding);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.home__skeleton-tile {
+  min-height: 176px;
+}
+
+.home__skeleton-card {
   gap: var(--space-2);
+  min-height: 148px;
+}
+
+@media (min-width: 901px) {
+  .home__skeleton-card {
+    min-height: 188px;
+  }
 }
 
 .home__skeleton-foot {
   margin-top: auto;
-}
-
-@media (max-width: 640px) {
-  .home__skeleton-card {
-    min-height: var(--avatar-xl);
-    justify-content: center;
-    padding: var(--space-3) 0;
-    border-radius: 0;
-    background: transparent;
-  }
-
-  .home__skeleton-card + .home__skeleton-card {
-    border-top: 1px solid var(--border);
-  }
-
-  .home__skeleton-foot {
-    display: none;
-  }
-}
-
-/* ─── Newcomer: three steps in one lime tile ─── */
-
-
-
-
-
-/* ─── Reports ─── */
-/* As many cards per row as fit, so a few reports never leave one orphan below. */
-.report-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--card-gap);
-}
-
-/* Wide screens: three reports fill the row instead of leaving a fourth of it empty; four and more in fours. */
-@media (min-width: 1200px) {
-  .report-cards {
-    grid-template-columns: repeat(var(--report-cols, 4), minmax(0, 1fr));
-  }
-}
-
-/* Phones: the reports as small posters, two to a row. */
-@media (max-width: 640px) {
-  .report-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-2);
-  }
-}
-.home__privacy {
-  margin-top: var(--space-4);
 }
 </style>

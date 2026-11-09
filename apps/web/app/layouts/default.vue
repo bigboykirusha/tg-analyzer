@@ -46,11 +46,9 @@ const fit = computed(() => route.meta.fit === true)
     overflow: clip;
   }
 
-  /* The footer is its own opaque strip, whatever the landing's phone does above it. */
+  /* The landing on a phone is one screen: the documents live in the header and on the next pages. */
   .site--fit :deep(.site-footer) {
-    position: relative;
-    z-index: 1;
-    background: var(--bg);
+    display: none;
   }
 
   .site--fit .site-main {

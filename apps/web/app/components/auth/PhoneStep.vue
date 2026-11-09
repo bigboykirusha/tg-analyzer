@@ -5,7 +5,7 @@ import Input from '../ui/Input.vue'
 import Select, { type SelectOption } from '../ui/Select.vue'
 
 const phone = defineModel<string>('phone', { required: true })
-defineProps<{ loading: boolean }>()
+defineProps<{ loading: boolean; error?: string }>()
 const emit = defineEmits<{ submit: [] }>()
 
 const { t, locale } = useI18n()
@@ -75,10 +75,9 @@ function submit() {
 
 <template>
   <form class="auth-form" @submit.prevent="submit">
-    <Field :label="t('login.phoneLabel')">
+    <Field :label="t('login.phoneLabel')" :error="error || null">
       <Input
         :model-value="phoneDisplay"
-        size="lg"
         addon
         class="phone-field"
         input-class="phone-input"
@@ -103,14 +102,7 @@ function submit() {
       </Input>
     </Field>
 
-    <Button
-      type="submit"
-      variant="primary"
-      size="lg"
-      :loading="loading"
-      :disabled="loading || !phoneInput.isValid.value"
-      block
-    >
+    <Button type="submit" variant="primary" size="lg" :loading="loading" :disabled="!phoneInput.isValid.value" block>
       {{ loading ? t('login.sendingCode') : t('login.getCode') }}
     </Button>
   </form>

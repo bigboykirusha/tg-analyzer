@@ -39,13 +39,12 @@ defineExpose({ el })
   z-index: var(--z-popover);
   display: flex;
   flex-direction: column;
-  gap: var(--space-0-5);
   min-width: var(--menu-min);
   max-width: calc(100vw - var(--page-gutter) * 2);
   max-height: var(--menu-max-height);
   overflow: hidden;
-  padding: var(--space-2);
-  border-radius: var(--radius-lg);
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
 }

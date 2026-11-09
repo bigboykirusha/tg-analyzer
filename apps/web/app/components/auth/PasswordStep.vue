@@ -4,17 +4,20 @@ import Field from '../ui/Field.vue'
 import Input from '../ui/Input.vue'
 
 const password = defineModel<string>('password', { required: true })
-defineProps<{ loading: boolean; hint?: string | null }>()
+defineProps<{ loading: boolean; hint?: string | null; error?: string }>()
 const emit = defineEmits<{ submit: [] }>()
 const { t } = useI18n()
 </script>
 
 <template>
   <form class="auth-form" @submit.prevent="emit('submit')">
-    <Field :label="t('login.passwordLabel')" :hint="hint ? t('login.passwordHint', { hint }) : t('login.passwordHelp')">
+    <Field
+      :label="t('login.passwordLabel')"
+      :error="error ? (hint ? `${error} ${t('login.passwordHint', { hint })}` : error) : null"
+      :hint="hint ? t('login.passwordHint', { hint }) : ''"
+    >
       <Input
         v-model="password"
-        size="lg"
         revealable
         :placeholder="t('login.passwordPlaceholder')"
         name="current-password"
@@ -24,9 +27,10 @@ const { t } = useI18n()
         spellcheck="false"
       />
     </Field>
-    <Button type="submit" variant="primary" size="lg" :loading="loading" block>
-      {{ loading ? t('login.signingIn') : t('login.signIn') }}
+    <Button type="submit" variant="primary" size="lg" :loading="loading" :disabled="!password" block>
+      {{ t('login.signIn') }}
     </Button>
+    <p class="auth-note">{{ t('login.passwordForgot') }}</p>
   </form>
 </template>
 
@@ -35,5 +39,11 @@ const { t } = useI18n()
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+}
+
+.auth-note {
+  color: var(--text-muted);
+  font: var(--text-small);
+  text-align: center;
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Picking a chat to analyse: the whole Telegram list with search on its own page. */
+/** «Новый анализ»: the whole Telegram list with search on its own page (desktop and direct links). */
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 const { t } = useI18n()
@@ -8,17 +8,18 @@ useSeoMeta({ title: () => t('newAnalysis.seoTitle') })
 
 <template>
   <UiPageContainer>
-    <div class="page new-analysis">
+    <div class="new">
       <UiPageBar :title="t('newAnalysis.title')" :lede="t('newAnalysis.lede')" back="/dashboard" />
-      <AnalysisBanner />
       <ChatPicker sticky />
     </div>
   </UiPageContainer>
 </template>
 
 <style scoped>
-/* The list belongs to the title: a tighter step than between sections. */
-.new-analysis {
+.new {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-6);
+  padding-bottom: var(--page-bottom);
 }
 </style>

@@ -5,29 +5,33 @@ const { t } = useI18n()
 
 <template>
   <footer class="site-footer">
-    <UiPageContainer class="site-footer__in">
+    <div class="site-footer__in">
       <span>{{ t('site.unofficial') }}</span>
       <div class="site-footer__end">
         <nav class="site-footer__nav" :aria-label="t('site.footerNav')">
-          <NuxtLink to="/faq">{{ t('site.privacy') }}</NuxtLink>
+          <NuxtLink to="/privacy">{{ t('site.privacy') }}</NuxtLink>
+          <NuxtLink to="/faq">{{ t('site.faq') }}</NuxtLink>
         </nav>
         <div class="site-footer__prefs">
           <UiLocaleSwitch />
           <UiThemeToggle />
         </div>
       </div>
-    </UiPageContainer>
+    </div>
   </footer>
 </template>
 
 <style scoped>
 .site-footer__in {
+  width: 100%;
+  max-width: calc(var(--page-max) + var(--page-gutter) * 2);
+  margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2) var(--space-4);
-  padding-block: var(--space-3) max(var(--space-3), env(safe-area-inset-bottom, 0px));
+  padding: var(--space-6) var(--page-gutter) max(var(--space-6), env(safe-area-inset-bottom, 0px));
   color: var(--text-muted);
   font: var(--text-small);
 }

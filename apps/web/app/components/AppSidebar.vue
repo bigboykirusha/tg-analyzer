@@ -1,27 +1,27 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { LayoutGrid, Plus } from '../lib/icons'
+import { Plus } from '../lib/icons'
 
 /**
- * The app's left column on wide screens, on the window's grey ground beside the light panel: the
- * logo, home, a new analysis and every analysed chat, personal chats first, so switching between
- * reports is one click. The profile lives at the end of the header.
+ * The desktop sidebar (280): the mark row is «Главная»; then the one primary action, every report
+ * (avatar, name, one quiet line), and at the foot the running analysis and your account.
  */
 const workspace = useWorkspaceStore()
+const auth = useAuthStore()
 const route = useRoute()
-const { t } = useI18n()
+const { t, tc, formatNumber } = useI18n()
 const analysis = useAnalysis()
 
-const personal = computed(() => workspace.reports.filter((report) => report.type !== 'group'))
-const groups = computed(() => workspace.reports.filter((report) => report.type === 'group'))
-const sections = computed(() =>
-  [
-    { key: 'personal', title: t('sidebar.personal'), items: personal.value },
-    { key: 'groups', title: t('sidebar.groups'), items: groups.value },
-  ].filter((section) => section.items.length),
-)
 const activeId = computed(() => (route.path.startsWith('/chat/') ? String(route.params.id) : null))
-/** Names only: shares beside a name read like unread counters. A report being refreshed shows a spinner. */
+const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
+const loading = computed(
+  () => !workspace.reports.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
+)
+
+function meta(report: ReportSummaryDto) {
+  const count = tc('common.messagesCount', report.totalMessages, { count: formatNumber(report.totalMessages) })
+  return report.type === 'group' ? t('sidebar.groupMeta', { count }) : count
+}
 function updating(report: ReportSummaryDto) {
   return (
     (analysis.isActive.value && analysis.progress.value.chatId === report.chatId) ||
@@ -32,89 +32,111 @@ function updating(report: ReportSummaryDto) {
 
 <template>
   <aside class="sidebar" :aria-label="t('sidebar.label')">
-    <div class="sidebar__brand"><BrandLink to="/dashboard" /></div>
-    <!-- The one thing to do next: start a new analysis. -->
-    <UiButton
-      to="/new"
-      variant="primary"
-      size="sm"
-      block
-      class="sidebar__new"
-      :icon="Plus"
-      :aria-current="route.path === '/new' ? 'page' : undefined"
+    <NuxtLink
+      to="/dashboard"
+      class="sidebar__row sidebar__home"
+      :aria-current="route.path === '/dashboard' ? 'page' : undefined"
     >
+      <BrandMark :size="28" />
+      <span class="sidebar__wordmark">TG Analyzer</span>
+      <span class="sr-only">{{ t('nav.home') }}</span>
+    </NuxtLink>
+    <UiButton to="/new" variant="primary" block :icon="Plus" :aria-current="route.path === '/new' ? 'page' : undefined">
       {{ t('sidebar.newAnalysis') }}
     </UiButton>
-    <nav class="sidebar__list" :aria-label="t('sidebar.reports')">
-      <NuxtLink to="/dashboard" class="sidebar__item" :aria-current="route.path === '/dashboard' ? 'page' : undefined">
-        <span class="sidebar__icon"><LayoutGrid aria-hidden="true" /></span>
-        <span class="sidebar__name">{{ t('nav.home') }}</span>
-      </NuxtLink>
 
-      <template v-for="section in sections" :key="section.key">
-        <p class="sidebar__heading">{{ section.title }}</p>
-        <NuxtLink
-          v-for="report in section.items"
-          :key="report.chatId"
-          :to="`/chat/${report.chatId}`"
-          class="sidebar__item"
-          :aria-current="activeId === report.chatId ? 'page' : undefined"
-        >
-          <ChatAvatar :chat-id="report.chatId" :title="report.title" size="xs" />
-          <span class="sidebar__name">{{ report.title }}</span>
-          <span
-            v-if="updating(report)"
-            class="spinner sidebar__spinner"
-            :aria-label="t('sidebar.updating')"
-            role="img"
-          />
-        </NuxtLink>
-      </template>
-      <!-- The report list on its way: rows of the same height, so the list does not jump in. -->
-      <div
-        v-if="!workspace.reports.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error'"
-        aria-hidden="true"
+    <nav class="sidebar__list" :aria-label="t('sidebar.reports')">
+      <p class="sidebar__heading">{{ t('sidebar.reports') }}</p>
+      <NuxtLink
+        v-for="report in workspace.reports"
+        :key="report.chatId"
+        :to="`/chat/${report.chatId}`"
+        class="sidebar__row sidebar__person"
+        :aria-current="activeId === report.chatId ? 'page' : undefined"
       >
-        <div class="sidebar__heading"><UiSkeleton width="64px" height="10px" /></div>
-        <div v-for="row in 4" :key="row" class="sidebar__item">
-          <UiSkeleton width="var(--avatar-xs)" height="var(--avatar-xs)" radius="50%" />
-          <UiSkeleton :width="`${80 - row * 9}%`" />
+        <ChatAvatar :chat-id="report.chatId" :title="report.title" size="sm" />
+        <span class="sidebar__copy">
+          <span class="sidebar__name">{{ report.title }}</span>
+          <span class="sidebar__meta">{{ meta(report) }}</span>
+        </span>
+        <span v-if="updating(report)" class="spinner" role="img" :aria-label="t('sidebar.updating')" />
+      </NuxtLink>
+      <!-- The list on its way: rows of the same height, so nothing jumps when it arrives. -->
+      <template v-if="loading">
+        <div v-for="row in 4" :key="row" class="sidebar__row sidebar__person" aria-hidden="true">
+          <UiSkeleton width="var(--avatar-sm)" height="var(--avatar-sm)" radius="var(--radius-full)" />
+          <span class="sidebar__copy">
+            <UiSkeleton :width="`${76 - row * 8}%`" height="var(--space-3)" />
+            <UiSkeleton width="40%" height="var(--space-2)" />
+          </span>
         </div>
-      </div>
-      <p v-else-if="!workspace.reports.length && workspace.reportsState === 'ready'" class="sidebar__empty">
-        {{ t('sidebar.empty') }}
-      </p>
+      </template>
+      <p v-else-if="!workspace.reports.length" class="sidebar__empty">{{ t('sidebar.empty') }}</p>
     </nav>
+
+    <div class="sidebar__foot">
+      <AnalysisLive variant="card" />
+      <NuxtLink
+        to="/account"
+        class="sidebar__row sidebar__person"
+        :aria-current="route.path === '/account' ? 'page' : undefined"
+      >
+        <ProfileAvatar :title="displayName" size="sm" />
+        <span class="sidebar__copy">
+          <span class="sidebar__name">{{ displayName }}</span>
+          <span class="sidebar__meta">{{ t('account.settings') }}</span>
+        </span>
+      </NuxtLink>
+    </div>
   </aside>
 </template>
 
 <style scoped>
-/* A quiet column on the page colour: the logo, the one primary action, then every report. */
 .sidebar {
-  --skeleton: var(--border-strong);
   position: sticky;
   top: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-0-5);
+  gap: var(--space-2);
   height: 100dvh;
-  padding: 0 var(--space-3) var(--space-4);
-  background: var(--sidebar-glass);
+  padding: var(--space-4) var(--space-3);
   overflow-y: auto;
+  background: var(--sidebar-glass);
+  box-shadow: var(--divider-right);
   scrollbar-width: thin;
 }
 
-.sidebar__brand {
+.sidebar__row {
   display: flex;
-  flex: none;
   align-items: center;
-  height: var(--topbar-height);
-  padding: 0 var(--space-2);
+  gap: var(--space-3);
+  min-height: var(--control-sm);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  font: var(--text-ui);
+  transition: background-color var(--transition-fast);
 }
 
-.sidebar__new {
-  flex: none;
-  margin: 0 0 var(--space-4);
+.sidebar__row[aria-current='page'] {
+  background: var(--sidebar-selection);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sidebar__row:not([aria-current='page']):hover {
+    background: var(--hover);
+  }
+}
+
+/* The mark row is home: 48 tall, the wordmark beside the mark. */
+.sidebar__home {
+  min-height: var(--space-12);
+  padding-left: var(--space-1);
+}
+
+.sidebar__wordmark {
+  font: var(--text-title);
+  font-weight: 600;
 }
 
 .sidebar__list {
@@ -122,65 +144,48 @@ function updating(report: ReportSummaryDto) {
   flex: 1;
   flex-direction: column;
   gap: var(--space-0-5);
+  margin-top: var(--space-4);
 }
 
 .sidebar__heading {
-  padding: var(--space-6) var(--space-2) var(--space-2);
+  padding: 0 var(--space-2) var(--space-1);
   color: var(--text-muted);
   font: var(--text-caption);
 }
 
-.sidebar__item {
+.sidebar__person {
+  min-height: var(--space-12);
+}
+
+.sidebar__copy {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: var(--control-sm);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font: var(--text-ui);
-  font-weight: 400;
-  transition:
-    background-color var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-/* The open screen: a white plate lifted off the paper. */
-.sidebar__item[aria-current='page'] {
-  background: var(--surface);
-  box-shadow: var(--shadow-segment);
-  font-weight: 500;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .sidebar__item:not([aria-current='page']):hover {
-    background: var(--hover);
-  }
-}
-
-.sidebar__icon {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: var(--avatar-xs);
-  height: var(--avatar-xs);
-  color: var(--text-muted);
-}
-
-.sidebar__name {
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-0-5);
   min-width: 0;
+}
+
+.sidebar__name,
+.sidebar__meta {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sidebar__spinner {
-  margin-left: auto;
+.sidebar__meta {
+  color: var(--text-muted);
+  font: var(--text-small);
 }
 
 .sidebar__empty {
-  padding: var(--space-2);
+  padding: var(--space-1) var(--space-2);
   color: var(--text-muted);
   font: var(--text-small);
+}
+
+.sidebar__foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 </style>

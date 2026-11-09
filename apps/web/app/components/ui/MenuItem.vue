@@ -1,52 +1,122 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
-import Badge from './Badge.vue'
-import ListRow from './ListRow.vue'
 
+/**
+ * One action in a menu: an optional 20 px icon, the label, an optional hint under it or a value at the
+ * end. 44 tall in a popover; in a phone sheet it becomes a list row with a hairline from the text.
+ * A destructive item comes last, after a divider.
+ */
 defineOptions({ inheritAttrs: false })
 
 withDefaults(
   defineProps<{
     icon?: Component | null
-    /** Current value, shown as a badge on the right. */
+    hint?: string | null
+    /** The current value, quiet at the end («Русский»). */
     meta?: string | null
-    /** Destructive item: last, after a divider; end the label with «…» if a confirmation follows. */
     danger?: boolean
     disabled?: boolean
+    selected?: boolean
   }>(),
-  {
-    icon: null,
-    meta: null,
-    danger: false,
-    disabled: false,
-  },
+  { icon: null, hint: null, meta: null, danger: false, disabled: false, selected: false },
 )
 </script>
 
 <template>
-  <ListRow
+  <button
+    type="button"
     v-bind="$attrs"
-    as="button"
-    size="sm"
     class="menu-item"
-    :class="{ 'menu-item--icon': icon }"
-    :danger="danger"
+    :class="{ 'menu-item--danger': danger, 'menu-item--selected': selected }"
     :disabled="disabled"
     :aria-disabled="disabled || undefined"
   >
-    <template v-if="icon" #leading>
-      <component :is="icon" class="menu-item__icon row-icon" aria-hidden="true" />
-    </template>
-    <slot />
-    <template v-if="meta" #trailing>
-      <Badge class="menu-item__meta">{{ meta }}</Badge>
-    </template>
-  </ListRow>
+    <component :is="icon" v-if="icon" class="menu-item__icon" aria-hidden="true" />
+    <span class="menu-item__body">
+      <span class="menu-item__copy">
+        <span class="menu-item__label"><slot /></span>
+        <span v-if="hint" class="menu-item__hint">{{ hint }}</span>
+      </span>
+      <span v-if="meta" class="menu-item__meta">{{ meta }}</span>
+      <slot name="trailing" />
+    </span>
+  </button>
 </template>
 
 <style scoped>
-/* A row with an icon tile sits closer to the panel edge, so the tile and the text both line up. */
-.menu-item--icon {
-  --row-px: var(--space-2);
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--control-md);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: var(--text-ui);
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--transition-fast);
+}
+
+.menu-item__icon {
+  color: var(--text-muted);
+}
+
+.menu-item__body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: inherit;
+}
+
+.menu-item__copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.menu-item__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-item__hint,
+.menu-item__meta {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.menu-item--danger,
+.menu-item--danger .menu-item__icon {
+  color: var(--danger);
+}
+
+.menu-item--selected {
+  background: var(--sidebar-selection);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .menu-item:hover:not(:disabled) {
+    background: var(--hover);
+  }
+}
+
+.menu-item:active:not(:disabled) {
+  background: var(--pressed);
+}
+
+.menu-item:focus-visible {
+  outline: none;
+  background: var(--hover);
+  box-shadow: var(--ring-selected);
+}
+
+.menu-item:disabled {
+  opacity: var(--opacity-disabled);
 }
 </style>

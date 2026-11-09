@@ -1,9 +1,20 @@
 <script setup lang="ts">
-import { Lock, Send } from '../lib/icons'
-
 definePageMeta({ middleware: ['guest'], fit: true })
 
 const { t } = useI18n()
+
+/** Three people as small posters, the way reports look; the pulses are a drawn example, not anyone's data. */
+const wave = (seed: number, length: number) =>
+  Array.from({ length }, (_, index) => ({
+    sent: 4 + Math.round(6 * Math.abs(Math.sin(index * 0.42 + seed)) + 3 * Math.abs(Math.sin(index * 1.7 + seed * 2))),
+    received: 4 + Math.round(6 * Math.abs(Math.sin(index * 0.37 + seed + 1)) + 3 * Math.abs(Math.cos(index * 1.3 + seed))),
+  }))
+const wide = useMediaQuery('(min-width: 901px)')
+const examples = [
+  { key: 'ex1', hue: 'green', pulse: wave(1, 72) },
+  { key: 'ex2', hue: 'violet', pulse: wave(2, 36) },
+  { key: 'ex3', hue: 'orange', pulse: wave(3, 36) },
+]
 const runtimeConfig = useRuntimeConfig()
 useSeoMeta({ title: () => t('landing.seoTitle'), description: () => t('seo.description') })
 // Lets search engines show the app as free software rather than a plain page.
@@ -29,232 +40,161 @@ useHead({
 </script>
 
 <template>
-  <UiPageContainer class="landing">
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero__copy">
-        <!-- «Ваши переписки. / В цифрах.»: one voice, the second sentence on its own line. -->
-        <h1 id="hero-title" class="hero__title">
-          {{ t('landing.title') }} <span>{{ t('landing.titleSoft') }}</span>
-        </h1>
-        <p class="hero__lede">{{ t('landing.lede') }}</p>
-        <div class="hero__actions">
-          <UiButton variant="primary" size="lg" :icon="Send" to="/login">{{ t('landing.cta') }}</UiButton>
-          <!-- The example is a quiet link beside the one action (under it on phones), not a second button. -->
-          <NuxtLink to="/example" class="hero__example">{{ t('landing.nav.example') }}</NuxtLink>
-        </div>
-        <p class="hero__trust"><Lock aria-hidden="true" />{{ t('landing.trust') }}</p>
-      </div>
-      <div class="hero__visual">
-        <ProductWindow class="hero__window" />
-        <div class="hero__phone"><PhoneMockup /></div>
+  <div class="landing">
+    <section class="landing__copy" aria-labelledby="hero-title">
+      <h1 id="hero-title" class="landing__title">{{ t('landing.title') }} {{ t('landing.titleSoft') }}</h1>
+      <p class="landing__lede">{{ t('landing.lede') }}</p>
+      <div class="landing__actions landing__actions--wide">
+        <UiButton variant="primary" size="lg" to="/login">{{ t('landing.cta') }}</UiButton>
+        <UiButton size="lg" to="/example">{{ t('landing.nav.example') }}</UiButton>
       </div>
     </section>
-  </UiPageContainer>
+    <ul class="landing__examples" :aria-label="t('landing.examplesLabel')">
+      <li v-for="(example, index) in examples" :key="example.key" class="example" :data-hue="example.hue">
+        <span class="example__title">{{ t(`landing.${example.key}.title`) }}</span>
+        <span class="example__text">{{ t(`landing.${example.key}.text`) }}</span>
+        <Pulse class="example__pulse" :data="example.pulse" :height="index === 0 && wide ? 34 : 16" :bars="index === 0 && wide ? 72 : 36" />
+      </li>
+    </ul>
+    <div class="landing__actions landing__actions--narrow">
+      <UiButton variant="primary" size="lg" block to="/login">{{ t('landing.cta') }}</UiButton>
+      <UiButton variant="plain" size="lg" block to="/example">{{ t('landing.exampleLink') }}</UiButton>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-/* ─── Hero: a title, one action and the product ─── */
+/* Phones: the title, two example posters, the one action at the bottom. Desktop: copy left, posters right. */
 .landing {
   display: flex;
   flex: 1;
   flex-direction: column;
-  min-height: 0;
-}
-
-.hero {
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  align-items: center;
   gap: var(--space-6);
+  width: 100%;
+  max-width: calc(var(--page-max) + var(--page-gutter) * 2);
+  margin: 0 auto;
+  padding: var(--space-4) var(--page-gutter) var(--space-6);
 }
 
-.hero__copy {
+.landing__copy {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: var(--space-4);
 }
 
-/* The one display size on the site: only the landing gets it. */
-.hero__title {
+.landing__title {
   font: var(--text-display);
   letter-spacing: var(--tracking-display);
+  text-wrap: balance;
 }
 
-.hero__title span {
-  display: block;
-}
-
-/* The promise sits right under the one action: trust is decided here. */
-.hero__trust {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  max-width: 40ch;
-  margin-top: var(--space-6);
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-
-.hero__lede {
-  max-width: 34ch;
-  margin-top: var(--space-6);
+.landing__lede {
+  max-width: var(--measure);
   color: var(--text-muted);
   font: var(--text-body);
 }
 
-.hero__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3) var(--space-6);
-  margin-top: var(--space-8);
+.landing__examples {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--card-gap);
 }
 
-.hero__example {
-  display: inline-flex;
-  align-items: center;
-  color: var(--text);
-  font: var(--text-ui);
-  transition: color var(--transition-fast);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .hero__example:hover {
-    color: var(--text-muted);
-  }
-}
-
-@media (pointer: coarse) {
-  .hero__example {
-    min-height: var(--control-md);
-  }
-}
-
-.hero__phone {
+/* Phones show two examples, as on the mockup; the third waits for the wider screen. */
+.example:nth-child(3) {
   display: none;
 }
 
-@media (max-width: 1100px) {
-  .hero {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
+.example {
+  --pulse-you: var(--on-poster);
+  --pulse-them: var(--on-them);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--card-padding);
+  border-radius: var(--radius-lg);
+  background: var(--poster);
+  color: var(--on-poster);
 }
 
-/* Desktop: the whole landing fits one screen; the window scales to the free height. */
-@media (min-width: 901px) and (min-height: 620px) {
-  .hero {
-    flex: 1;
-    grid-template-rows: minmax(0, 1fr);
-    min-height: 0;
-    padding-block: clamp(var(--space-4), 4vh, var(--space-12));
-  }
-
-  .hero__title {
-    font-size: var(--display-fit-size);
-  }
-
-  .hero__visual {
-    align-self: stretch;
-    min-height: 0;
-  }
-
-  .hero__window {
-    height: 100%;
-  }
+.example__title {
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
 }
 
-/* Tablets and phones: no tilted window, the phone shows the product instead. */
-@media (max-width: 900px) {
-  .hero {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-10);
-  }
-
-  .hero__copy {
-    max-width: var(--measure);
-  }
-
-  .hero__window {
-    display: none;
-  }
-
-  .hero__phone {
-    display: block;
-  }
+.example__text {
+  color: var(--on-poster-muted);
+  font: var(--text-small);
 }
 
-@media (max-width: 640px) {
-  .hero {
+.example__pulse {
+  margin-top: var(--space-4);
+}
+
+.landing__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.landing__actions--wide {
+  display: none;
+}
+
+.landing__actions--narrow {
+  margin-top: auto;
+}
+
+@media (min-width: 901px) {
+  .landing {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    align-items: center;
+    gap: var(--space-16);
+    padding-block: var(--space-6) var(--space-10);
+  }
+
+  .landing__copy {
     gap: var(--space-6);
   }
 
-  .hero__lede {
-    margin-top: var(--space-4);
+  .landing__actions--wide {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-3);
   }
 
-  .hero__actions {
-    align-self: stretch;
+  .landing__actions--narrow {
+    display: none;
+  }
+
+  .landing__examples {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .example:first-child {
+    grid-column: 1 / -1;
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+  }
+
+  .example:first-child .example__title {
+    font: var(--text-h1);
+    letter-spacing: var(--tracking-h1);
+  }
+
+  .example:first-child .example__text {
+    font: var(--text-body);
+  }
+
+  .example:first-child .example__pulse {
     margin-top: var(--space-6);
   }
 
-  /* The button takes the width, the example link sits centred under it. */
-  .hero__actions {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-1);
-  }
-
-  .hero__example {
-    justify-content: center;
-  }
-}
-
-/* One screen, no scroll: the phone takes what the text leaves, and fades out at the bottom. */
-@media (max-width: 900px) and (min-height: 560px) {
-  .hero {
-    flex: 1;
-    grid-template-rows: auto minmax(0, 1fr);
-    align-items: start;
-    gap: var(--space-4);
-    min-height: 0;
-  }
-
-  .hero__visual {
-    position: relative;
-    align-self: stretch;
-    min-height: 0;
-  }
-
-  /* The phone fills whatever height the text leaves. */
-  .hero__phone {
-    position: absolute;
-    inset: 0;
-    min-height: 0;
-    /* Cut at the bottom only, so the phone's shadow is not boxed in on the sides. */
-    overflow-x: visible;
-    overflow-y: clip;
-  }
-
-  .hero__phone::after {
-    content: '';
-    position: absolute;
-    right: -80px;
-    bottom: 0;
-    left: -80px;
-    z-index: 1;
-    height: calc(var(--space-12) * 2);
-    background: linear-gradient(transparent, var(--bg) 85%);
-    pointer-events: none;
-  }
-
-  /* Keep everything inside the phone under the fade. */
-  .hero__phone > :deep(*) {
-    position: relative;
-    z-index: 0;
-  }
-
-  .hero__phone :deep(.iphone) {
-    width: min(290px, 76vw);
+  .example:nth-child(3) {
+    display: flex;
   }
 }
 </style>

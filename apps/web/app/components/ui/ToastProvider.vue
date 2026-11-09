@@ -2,7 +2,6 @@
 import { useI18n } from '../../composables/useI18n'
 import { useToast, type ToastMessage, type ToastVariant } from '../../composables/useToast'
 import { AlertTriangle, CircleCheck, CircleX, Info, X } from '../../lib/icons'
-import IconButton from './IconButton.vue'
 
 const { toasts, remove, pause, resume } = useToast()
 const { t } = useI18n()
@@ -48,14 +47,9 @@ function runAction(toast: ToastMessage) {
           <button v-if="toast.action" type="button" class="toast__action" @click="runAction(toast)">
             {{ toast.action.label }}
           </button>
-          <IconButton
-            class="toast__close"
-            :label="t('common.close')"
-            :icon="X"
-            variant="ghost"
-            size="xs"
-            @click="remove(toast.id)"
-          />
+          <button type="button" class="toast__close" :aria-label="t('common.close')" @click="remove(toast.id)">
+            <X class="icon-sm" aria-hidden="true" />
+          </button>
         </article>
       </TransitionGroup>
     </div>
@@ -63,136 +57,122 @@ function runAction(toast: ToastMessage) {
 </template>
 
 <style scoped>
-/* Top centre, just under the header: where the eye already is, clear of the thumb. */
+/* Phones: above the floating «Новый анализ», under the thumb. Desktop: top right, out of the way. */
 .toast-region {
   position: fixed;
-  top: calc(var(--topbar-height) + var(--space-2));
-  left: 50%;
+  right: var(--page-gutter);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--control-md) + var(--space-6));
+  left: var(--page-gutter);
   z-index: var(--z-toast);
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   align-items: center;
   gap: var(--space-2);
-  width: min(400px, calc(100vw - var(--space-6)));
   pointer-events: none;
-  translate: -50% 0;
 }
 
+@media (min-width: 901px) {
+  .toast-region {
+    top: var(--space-4);
+    right: var(--space-6);
+    bottom: auto;
+    left: auto;
+    flex-direction: column;
+    align-items: flex-end;
+    width: var(--dialog-sm);
+  }
+}
+
+/* Ink, 16 corners, one line of title and an optional line under it; the action is an outlined pill. */
 .toast {
-  display: grid;
-  /* Icon, words, the action and the close button in one row: a short strip, not a card. */
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  display: flex;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  min-width: 0;
-  padding: var(--space-4);
+  max-width: var(--dialog-sm);
+  min-height: var(--control-md);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--inverse-surface);
-  box-shadow: var(--shadow-overlay);
   color: var(--on-inverse);
+  box-shadow: var(--shadow-overlay);
   pointer-events: auto;
 }
 
 .toast__icon {
-  color: var(--on-inverse);
-}
-
-.toast--success .toast__icon {
-  color: var(--brand);
+  flex: none;
 }
 
 .toast--error .toast__icon {
-  color: var(--danger);
-}
-
-.toast--warning .toast__icon {
-  color: var(--warning);
+  color: var(--danger-on-inverse);
 }
 
 .toast__copy {
-  display: grid;
-  gap: var(--space-0-5);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   min-width: 0;
 }
 
 .toast__title {
-  color: var(--on-inverse);
   font: var(--text-ui);
 }
 
 .toast__text {
-  color: var(--on-inverse);
-  opacity: 0.72;
+  color: var(--on-inverse-muted);
   font: var(--text-small);
-  overflow-wrap: anywhere;
 }
 
 .toast__action {
-  min-height: var(--control-xs);
+  flex: none;
+  height: var(--control-sm);
   padding: 0 var(--space-3);
-  border: 1px solid var(--on-inverse-line);
   border-radius: var(--radius-full);
-  background: none;
-  color: var(--on-inverse);
-  cursor: pointer;
-  font: var(--text-small);
-  font-weight: 500;
+  box-shadow: inset 0 0 0 1px currentColor;
+  font: var(--text-small-strong);
   white-space: nowrap;
 }
 
+.toast__close {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  border-radius: var(--radius-full);
+  color: var(--on-inverse-muted);
+}
+
+.toast__close::after {
+  content: '';
+  position: absolute;
+  inset: calc((var(--control-sm) - var(--hit-min)) / 2);
+}
+
 @media (hover: hover) and (pointer: fine) {
-  .toast__action:hover {
-    border-color: var(--on-inverse);
+  .toast__action:hover,
+  .toast__close:hover {
+    background: var(--on-inverse-hover);
   }
 }
 
-/* The 32px close button sits in the corner without growing the toast. */
-.toast .toast__close {
-  margin: calc(var(--space-1) * -1.5) calc(var(--space-1) * -1.5) calc(var(--space-1) * -1.5) 0;
-  color: var(--on-inverse);
-}
-
-.toast-enter-active,
-.toast-leave-active {
+.toast-enter-active {
   transition:
-    opacity var(--transition-normal),
-    transform var(--transition-normal);
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-sheet) var(--spring-snappy);
 }
 
 .toast-leave-active {
-  /* A leaving toast stops holding its slot, so the rest glide up instead of jumping. */
-  position: absolute;
-  width: 100%;
   transition:
     opacity var(--transition-exit),
     transform var(--transition-exit);
 }
 
-.toast-move {
-  transition: transform var(--transition-normal);
-}
-
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateY(calc(var(--space-2) * -1)) scale(var(--press-scale));
-}
-
-@media (max-width: 640px) {
-  .toast-region {
-    top: calc(env(safe-area-inset-top, 0px) + var(--space-2));
-  }
-
-  /* On a phone the toast covers the header: keep it to two short lines. */
-  .toast {
-    padding: var(--space-3);
-  }
-
-  .toast__text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  transform: translateY(var(--space-4)) scale(0.98);
 }
 </style>
