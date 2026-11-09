@@ -1,6 +1,7 @@
 import {
   ANALYZABLE_CHAT_TYPES,
   ChatReportBuilder,
+  MIN_REPORT_MESSAGES,
   type ParseErrorCode,
   type ParseProgressDto,
 } from '@tg-analyzer/shared'
@@ -222,6 +223,9 @@ async function scanChat(
       continue
     }
 
+    // Telegram reports the size with the first page: a chat too small for a report is not read further.
+    if (offsetId === 0 && page.total !== null && page.total < MIN_REPORT_MESSAGES)
+      throw new AnalysisFailedError('chat_too_small')
     for (const message of page.messages) builder.add(message)
     progress.scannedMessages = builder.messageCount
     const oldest = page.messages[page.messages.length - 1]
@@ -232,6 +236,7 @@ async function scanChat(
   }
 
   await ensureActive(true)
+  if (builder.messageCount < MIN_REPORT_MESSAGES) throw new AnalysisFailedError('chat_too_small')
   return { dialog, builder }
 }
 

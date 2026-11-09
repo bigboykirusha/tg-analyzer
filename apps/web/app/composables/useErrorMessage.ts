@@ -1,3 +1,4 @@
+import { MIN_REPORT_MESSAGES } from '@tg-analyzer/shared'
 import type { MessageKey } from './useI18n'
 import { ApiClientError } from './useApi'
 
@@ -15,6 +16,7 @@ const MESSAGES: Partial<Record<ApiClientError['code'], MessageKey>> = {
   TELEGRAM_BUSY: 'errors.telegramBusy',
   TELEGRAM_UNAVAILABLE: 'errors.telegramUnavailable',
   CHAT_NOT_FOUND: 'errors.chatNotFound',
+  CHAT_TOO_SMALL: 'errors.chatTooSmall',
   LINK_NOT_FOUND: 'errors.linkNotFound',
   PARSE_ALREADY_RUNNING: 'errors.parseRunning',
   PARSE_ALREADY_QUEUED: 'errors.parseQueued',
@@ -32,6 +34,6 @@ export function useErrorMessage() {
     if (!(error instanceof ApiClientError)) return t(fallback)
     const key = MESSAGES[error.code]
     if (!key) return t(fallback)
-    return t(key, { wait: formatDuration(error.retryAfter ?? 60) })
+    return t(key, { wait: formatDuration(error.retryAfter ?? 60), min: MIN_REPORT_MESSAGES })
   }
 }

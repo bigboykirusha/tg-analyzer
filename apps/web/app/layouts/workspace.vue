@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { MIN_REPORT_MESSAGES } from '@tg-analyzer/shared'
+
 // Signed-in screens are personal: keep them out of search.
 useSeoMeta({ robots: 'noindex, nofollow' })
 const analysis = useAnalysis()
@@ -34,7 +36,10 @@ watch(analysis.finished, (job) => {
         : undefined,
     )
   else if (job.status === 'failed')
-    toast.error(t('analysis.failed.title'), t(`analysis.error.${job.error ?? 'internal'}`))
+    toast.error(
+      t('analysis.failed.title'),
+      t(`analysis.error.${job.error ?? 'internal'}`, { min: MIN_REPORT_MESSAGES }),
+    )
   else if (job.status === 'cancelled') toast.info(t('analysis.cancelled'))
   void workspace.loadReports().catch(() => undefined)
 })

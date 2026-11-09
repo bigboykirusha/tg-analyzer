@@ -614,6 +614,8 @@
   --icon-sm: 16px;
   --icon-md: 20px;
   --icon-lg: 24px;
+  /* Country flags are round, like the avatars next to them. */
+  --flag-size: 20px;
   /* Avatars by role, not by control size. */
   --avatar-xs: 24px;
   --avatar-sm: 32px;

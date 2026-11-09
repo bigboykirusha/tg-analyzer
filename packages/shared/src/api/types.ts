@@ -32,6 +32,7 @@ export type ApiErrorCode =
   | 'TELEGRAM_UNAVAILABLE'
   // analysis
   | 'CHAT_NOT_FOUND'
+  | 'CHAT_TOO_SMALL'
   | 'LINK_NOT_FOUND'
   | 'QUIZ_UNAVAILABLE'
   | 'QUIZ_ANSWERED'
@@ -221,7 +222,13 @@ export type ParsePhase = 'queued' | 'connecting' | 'scanning' | 'waiting' | 'sav
 
 /** Machine-readable failure reason; the UI localises it. */
 export type ParseErrorCode =
-  'telegram_session_expired' | 'telegram_busy' | 'chat_unavailable' | 'interrupted' | 'internal'
+  'telegram_session_expired' | 'telegram_busy' | 'chat_unavailable' | 'chat_too_small' | 'interrupted' | 'internal'
+
+/**
+ * A chat needs this many messages for a report. Below it most cards stay empty: reply speed needs five
+ * replies a side, the quiz and the findings need a hundred messages, and the shares swing on a few messages.
+ */
+export const MIN_REPORT_MESSAGES = 100
 
 /** An analysis waiting for its turn; one chat is analysed at a time. */
 export interface QueuedAnalysisDto {

@@ -1,9 +1,15 @@
-import type { ChatReport, QuizQuestionDto, QuizQuestionId, QuizUnit } from '../api/types'
+import {
+  MIN_REPORT_MESSAGES,
+  type ChatReport,
+  type QuizQuestionDto,
+  type QuizQuestionId,
+  type QuizUnit,
+} from '../api/types'
 
 /** The game asks this many questions at most. */
 export const QUIZ_LENGTH = 5
 /** Fewer messages make every answer a coin flip. */
-const MIN_MESSAGES = 100
+const MIN_MESSAGES = MIN_REPORT_MESSAGES
 const MIN_REPLIES = 10
 /** Two sides this close are a tie, and a tie has no right answer. */
 const MIN_LEAD = 0.15

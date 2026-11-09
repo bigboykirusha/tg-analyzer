@@ -14,6 +14,7 @@ export default tseslint.config(
       '**/playwright-report/**',
       '**/node_modules/**',
       '.data/**',
+      '.claude/**',
       'apps/api/src/db/migrations/meta/**',
     ],
   },

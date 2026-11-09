@@ -1,9 +1,9 @@
-import type { ChatReport, InsightDto } from '../api/types'
+import { MIN_REPORT_MESSAGES, type ChatReport, type InsightDto } from '../api/types'
 import { clampNumber, roundTo } from './primitives'
 
 const DAY_SEC = 86_400
 /** Below these sample sizes a pattern is noise, not a habit. */
-const MIN_MESSAGES = 100
+const MIN_MESSAGES = MIN_REPORT_MESSAGES
 const MIN_BUSIEST_DAY = 20
 const MAX_INSIGHTS = 4
 

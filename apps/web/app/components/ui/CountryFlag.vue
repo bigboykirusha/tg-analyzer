@@ -1,9 +1,11 @@
 <script setup lang="ts">
-defineProps<{ code: string }>()
+/** Round, like the people's avatars. Flags whose emblem sits at the hoist keep that edge in view. */
+const props = defineProps<{ code: string }>()
+const viewBox = computed(() => (['BY', 'US'].includes(props.code) ? '0 0 18 18' : '3 0 18 18'))
 </script>
 
 <template>
-  <svg class="country-flag-svg" viewBox="0 0 24 18" role="img" :aria-label="code">
+  <svg class="country-flag-svg" :viewBox="viewBox" preserveAspectRatio="xMidYMid slice" role="img" :aria-label="code">
     <template v-if="code === 'RU'">
       <path fill="#fff" d="M0 0h24v6H0z" />
       <path fill="#2451a4" d="M0 6h24v6H0z" />
@@ -94,10 +96,10 @@ defineProps<{ code: string }>()
 .country-flag-svg {
   display: block;
   flex: 0 0 auto;
-  width: 22px;
-  height: 16px;
+  width: var(--flag-size);
+  height: var(--flag-size);
   overflow: hidden;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-full);
   outline: 1px solid var(--hover);
   outline-offset: -1px;
 }

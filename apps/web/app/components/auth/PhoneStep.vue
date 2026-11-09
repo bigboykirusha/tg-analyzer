@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Lock } from '../../lib/icons'
 import Button from '../ui/Button.vue'
 import Field from '../ui/Field.vue'
 import Input from '../ui/Input.vue'
@@ -12,6 +11,12 @@ const emit = defineEmits<{ submit: [] }>()
 const { t, locale } = useI18n()
 const phoneInput = usePhoneInput()
 if (phone.value) phoneInput.setFromNormalized(phone.value)
+
+// The browser knows where the person is; the server render starts with Russia.
+onMounted(() => {
+  if (phone.value && phoneInput.normalizedPhone.value.length > phoneInput.country.value.dialCode.length) return
+  phoneInput.setCountry(detectPhoneCountry(navigator.languages ?? [], Intl.DateTimeFormat().resolvedOptions().timeZone))
+})
 const phoneDisplay = phoneInput.displayValue
 
 const countryNames = computed(() => new Intl.DisplayNames([locale.value], { type: 'region' }))
@@ -108,8 +113,6 @@ function submit() {
     >
       {{ loading ? t('login.sendingCode') : t('login.getCode') }}
     </Button>
-    <!-- The promise where the number is given, not after it. -->
-    <p class="note"><Lock aria-hidden="true" />{{ t('landing.trust') }}</p>
   </form>
 </template>
 

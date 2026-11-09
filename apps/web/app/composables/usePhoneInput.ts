@@ -7,13 +7,14 @@ export interface PhoneCountry {
   maxDigits: number
 }
 
+/** Most of our people sign in from these four, so they lead the list. */
 export const PHONE_COUNTRIES: PhoneCountry[] = [
   { code: 'RU', flag: '🇷🇺', dialCode: '+7', pattern: [3, 3, 2, 2], minDigits: 10, maxDigits: 10 },
+  { code: 'UA', flag: '🇺🇦', dialCode: '+380', pattern: [2, 3, 2, 2], minDigits: 9, maxDigits: 9 },
+  { code: 'BY', flag: '🇧🇾', dialCode: '+375', pattern: [2, 3, 2, 2], minDigits: 9, maxDigits: 9 },
   { code: 'KZ', flag: '🇰🇿', dialCode: '+7', pattern: [3, 3, 2, 2], minDigits: 10, maxDigits: 10 },
   { code: 'AM', flag: '🇦🇲', dialCode: '+374', pattern: [2, 3, 3], minDigits: 8, maxDigits: 8 },
   { code: 'GE', flag: '🇬🇪', dialCode: '+995', pattern: [3, 2, 2, 2], minDigits: 9, maxDigits: 9 },
-  { code: 'BY', flag: '🇧🇾', dialCode: '+375', pattern: [2, 3, 2, 2], minDigits: 9, maxDigits: 9 },
-  { code: 'UA', flag: '🇺🇦', dialCode: '+380', pattern: [2, 3, 2, 2], minDigits: 9, maxDigits: 9 },
   { code: 'US', flag: '🇺🇸', dialCode: '+1', pattern: [3, 3, 4], minDigits: 10, maxDigits: 10 },
   { code: 'GB', flag: '🇬🇧', dialCode: '+44', pattern: [4, 3, 4], minDigits: 10, maxDigits: 11 },
   { code: 'DE', flag: '🇩🇪', dialCode: '+49', pattern: [3, 3, 4], minDigits: 10, maxDigits: 11 },
@@ -25,6 +26,39 @@ export const PHONE_COUNTRIES: PhoneCountry[] = [
 ]
 
 const DEFAULT_COUNTRY = PHONE_COUNTRIES[0]!
+
+const ZONE_COUNTRY: Record<string, string> = {
+  'Europe/Kyiv': 'UA',
+  'Europe/Kiev': 'UA',
+  'Europe/Uzhgorod': 'UA',
+  'Europe/Zaporozhye': 'UA',
+  'Europe/Minsk': 'BY',
+  'Asia/Almaty': 'KZ',
+  'Asia/Qostanay': 'KZ',
+  'Asia/Aqtobe': 'KZ',
+  'Asia/Aqtau': 'KZ',
+  'Asia/Atyrau': 'KZ',
+  'Asia/Oral': 'KZ',
+  'Asia/Qyzylorda': 'KZ',
+}
+const LANGUAGE_COUNTRY: Record<string, string> = { uk: 'UA', be: 'BY', kk: 'KZ', ru: 'RU' }
+
+/**
+ * The country whose code the phone field starts with: the time zone says where the person is,
+ * the browser language helps when the zone is shared. Anything else starts with Russia.
+ */
+export function detectPhoneCountry(languages: readonly string[], timeZone: string | undefined) {
+  const byZone = timeZone ? ZONE_COUNTRY[timeZone] : undefined
+  if (byZone) return byZone
+  for (const language of languages) {
+    const [base = '', region = ''] = language.toLowerCase().split('-')
+    const byRegion = PHONE_COUNTRIES.find((country) => country.code === region.toUpperCase())
+    if (base === 'ru' && byRegion && ['UA', 'BY', 'KZ'].includes(byRegion.code)) return byRegion.code
+    const byLanguage = LANGUAGE_COUNTRY[base]
+    if (byLanguage) return byLanguage
+  }
+  return DEFAULT_COUNTRY.code
+}
 
 function onlyDigits(value: string) {
   return value.replace(/\D/g, '')
@@ -109,9 +143,11 @@ export function usePhoneInput(initialCountry = 'RU') {
 
   function setFromNormalized(value: string) {
     const digits = onlyDigits(value)
-    const match = [...PHONE_COUNTRIES]
-      .sort((left, right) => right.dialCode.length - left.dialCode.length)
-      .find((item) => digits.startsWith(onlyDigits(item.dialCode)))
+    const sorted = [...PHONE_COUNTRIES].sort((left, right) => right.dialCode.length - left.dialCode.length)
+    let match = sorted.find((item) => digits.startsWith(onlyDigits(item.dialCode)))
+    // +7 is shared: Kazakhstan numbers start with 6 or 7 after the code, Russian ones never do.
+    if (match?.dialCode === '+7')
+      match = /^7[67]/.test(digits) ? PHONE_COUNTRIES.find((item) => item.code === 'KZ') : match
 
     if (!match) {
       countryCode.value = DEFAULT_COUNTRY.code

@@ -2,6 +2,7 @@ import {
   ANALYZABLE_CHAT_TYPES,
   avatarsBodySchema,
   cancelParseBodySchema,
+  MIN_REPORT_MESSAGES,
   type AvatarsResponse,
   jobIdParamsSchema,
   paginationQuerySchema,
@@ -59,6 +60,16 @@ const RECENT_FRESH_MS = 60 * 60 * 1000
 
 /** A user may queue this many chats at once, the running one included. */
 const MAX_QUEUED_ANALYSES = 10
+
+/** All messages in the chat, counted by Telegram in one request; null when Telegram cannot answer now. */
+async function countChatMessages(userId: string, chatId: string) {
+  try {
+    const counts = await withUserTelegram(userId, (api) => api.countRecent(chatId, new Date()), { waitMs: 1_000 })
+    return counts.total
+  } catch {
+    return null
+  }
+}
 
 export const parseRoutes: FastifyPluginAsync = async (app) => {
   app.addHook('preHandler', requireAuth)
@@ -222,6 +233,11 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
     if (dialog && !(ANALYZABLE_CHAT_TYPES as readonly string[]).includes(dialog.type)) {
       throw new ApiError(400, 'CHAT_NOT_FOUND', 'Only private chats and groups can be analysed')
     }
+
+    // Checked before the quota is spent; the worker checks again in case Telegram was busy here.
+    const total = await countChatMessages(userId, chatId)
+    if (total !== null && total < MIN_REPORT_MESSAGES)
+      throw new ApiError(422, 'CHAT_TOO_SMALL', `The chat has ${total} messages; a report needs ${MIN_REPORT_MESSAGES}`)
 
     const { job, first } = await admitAnalysis(
       { userId, chatId, chatTitle: dialog?.title ?? null },

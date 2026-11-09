@@ -312,7 +312,7 @@ test('concurrent analysis starts cannot exceed the daily limit', async () => {
   try {
     const session = await login()
     const responses = await Promise.all(
-      [PRIVATE_CHAT, GROUP_CHAT, '1007', '1008'].map((chatId) => post(session, '/api/v1/parse/start', { chatId })),
+      [PRIVATE_CHAT, GROUP_CHAT, '1005', '1008'].map((chatId) => post(session, '/api/v1/parse/start', { chatId })),
     )
     assert.equal(responses.filter((response) => response.statusCode === 200).length, 1)
     for (const response of responses.filter((response) => response.statusCode !== 200)) {
@@ -322,6 +322,15 @@ test('concurrent analysis starts cannot exceed the daily limit', async () => {
   } finally {
     config.FREE_ANALYSES_PER_DAY = previous
   }
+})
+
+test('a chat too small for a report is refused before it spends the quota', async () => {
+  const session = await login()
+  const response = await post(session, '/api/v1/parse/start', { chatId: '1007' }) // "Олег Смирнов": 60 messages
+  assert.equal(response.statusCode, 422, response.body)
+  assert.equal(response.json().code, 'CHAT_TOO_SMALL')
+  const usage = await pool.query('SELECT count(*) FROM analysis_usage WHERE user_id = $1', [session.userId])
+  assert.equal(Number(usage.rows[0].count), 0)
 })
 
 test('concurrent analysis starts cannot exceed the queue capacity', async () => {

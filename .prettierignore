@@ -8,3 +8,4 @@ apps/api/src/db/migrations/meta
 apps/web/app/pages/chat/\[id\].vue
 apps/web/app/pages/dashboard.vue
 apps/web/app/pages/history.vue
+.claude
