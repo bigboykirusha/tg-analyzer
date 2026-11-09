@@ -48,15 +48,22 @@ def ic(name, cls=''):
             f'stroke-linejoin="round" aria-hidden="true">{_I[name]}</svg>')
 
 
-def logo(size=32, word=False):
-    """The mark is a tiny poster in the brand lime: the same mirrored pulse as every report."""
+def logo(size=32, word=False, tile=False, bare=False):
+    """The mark is the product's own mirrored pulse: you on top in ink, the other side below in their colour —
+    neutral grey outside a report, the person's colour inside one. A tile only for the app icon."""
     up, dn = [4, 8, 11, 7, 5], [3, 5, 8, 4, 3]
-    bars_ = ''.join(f'<rect class="logo-up" x="{4.4 + i * 4.1:.1f}" y="{14 - u}" width="2.8" height="{u}" rx="1.4"/>'
-                    f'<rect class="logo-dn" x="{4.4 + i * 4.1:.1f}" y="15" width="2.8" height="{d}" rx="1.4"/>' for i, (u, d) in enumerate(zip(up, dn)))
-    mark = f'<svg style="width:{size}px;height:{size}px" viewBox="0 0 28 28" aria-hidden="true"><rect class="logo-rect" width="28" height="28" rx="8"/>{bars_}</svg>'
+    x0 = 4.4 if tile else 2.2
+    step = 4.1 if tile else 5.0
+    w = 2.8 if tile else 3.4
+    bars_ = ''.join(f'<rect class="logo-up" x="{x0 + i * step:.1f}" y="{14 - u * (1 if tile else 1.15):.1f}" width="{w}" height="{u * (1 if tile else 1.15):.1f}" rx="{w / 2}"/>'
+                    f'<rect class="logo-dn" x="{x0 + i * step:.1f}" y="15" width="{w}" height="{d * (1 if tile else 1.15):.1f}" rx="{w / 2}"/>' for i, (u, d) in enumerate(zip(up, dn)))
+    rect = '<rect class="logo-rect" width="28" height="28" rx="8"/>' if tile else ''
+    mark = f'<svg class="{"logo-tile" if tile else "logo"}" style="width:{size}px;height:{size}px" viewBox="0 0 28 28" aria-hidden="true">{rect}{bars_}</svg>'
+    if bare:
+        return mark
     if not word:
         return f'<a href="#" class="hit" aria-label="TG Analyzer, главная" style="display:inline-flex;position:relative">{mark}</a>'
-    return f'<a href="#" class="row-f gap-3 wordmark" aria-label="TG Analyzer, главная">{mark}TG Analyzer</a>'
+    return f'<a href="#" class="row-f gap-2 wordmark" aria-label="TG Analyzer, главная">{mark}TG Analyzer</a>'
 
 
 _FLAGS = {
@@ -321,10 +328,10 @@ def sidebar(on='home', progress=None, empty=False):
     acc = ' on' if on == 'account' else ''
     home_on = on == 'home'
     return f'''<nav class="sidebar" aria-label="Разделы">
-  <div class="row-f between" style="padding:0 var(--space-2) var(--space-4)">{logo(28, word=True)}</div>
+  <a href="#" class="sb-row home {'on' if home_on else ''}" aria-label="TG Analyzer, главная"{' aria-current="page"' if home_on else ''}>{logo(28, bare=True)}<span class="wordmark">TG Analyzer</span></a>
+  <div style="height:var(--space-3)"></div>
   {btn('Новый анализ', 'primary', 'md block', 'plus', tag='a')}
   <div style="height:var(--space-3)"></div>
-  <a href="#" class="sb-row person {'on' if home_on else ''}"{' aria-current="page"' if home_on else ''}><span class="lead">{ic('home')}</span><span class="grow">Главная</span></a>
   <h2 class="sb-h">Отчёты</h2>
   {rows}
   <div class="mt-auto">{live}</div>

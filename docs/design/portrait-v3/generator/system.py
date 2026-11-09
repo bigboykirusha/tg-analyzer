@@ -60,7 +60,7 @@ CSS = r"""
   --opacity-disabled: 0.38; --press-scale: 0.97;
   --heat-0: #EEEEF2; --heat-1: #C7C7CC; --heat-2: #9C9CA3; --heat-3: #6C6C72; --heat-4: #3A3A3C;
   --chart-neutral: #C7C7CC; --chart-neutral-strong: #3A3A3C;
-  --avatar-on-poster: rgba(255,255,255,0.6); --story-hint: #98989D; --lime-brand: #C3EC6C; --lime-brand-deep: #3A5A06; --story-backdrop: #0B0B0C;
+  --avatar-on-poster: rgba(255,255,255,0.6); --story-hint: #98989D; --story-backdrop: #0B0B0C;
   --poster: #E5E5EA; --room-tint: #EEEEF2; --them: #8E8E93; --them-ink: #6C6C72; --on-them: #3A3A3C; --room: var(--bg);
   --on-poster: #1D1D1F; --on-poster-muted: rgba(29,29,31,0.72); --on-poster-line: rgba(29,29,31,0.16);
   --on-poster-chip: rgba(29,29,31,0.08); --on-poster-faint: rgba(29,29,31,0.3);
@@ -301,7 +301,10 @@ CSS = r"""
 .sb-row .lead svg { width: 20px; height: 20px; }
 .sb-row .m.new { color: var(--text); font-weight: 500; }
 .sb-h { font: var(--text-caption); color: var(--text-muted); padding: var(--space-4) var(--space-2) var(--space-1); }
-.logo-rect { fill: var(--lime-brand); } .logo-up { fill: #1D1D1F; } .logo-dn { fill: var(--lime-brand-deep); }
+.logo .logo-up { fill: var(--you); } .logo .logo-dn { fill: var(--them); }
+.poster .logo .logo-up { fill: var(--on-poster); } .poster .logo .logo-dn { fill: var(--on-them); }
+.logo-rect { fill: #1D1D1F; } .logo-tile .logo-up { fill: #FFFFFF; } .logo-tile .logo-dn { fill: #8E8E93; }
+.sb-row.home { min-height: 44px; gap: var(--space-2); }
 .wordmark { font: 600 16px/24px var(--font-sans); letter-spacing: -0.01em; }
 /* overlays */
 .scrim { position: absolute; inset: 0; background: var(--scrim); }

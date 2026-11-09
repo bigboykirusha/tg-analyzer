@@ -81,7 +81,7 @@ def S_tokens():
   <div class="grid-2" style="gap:var(--space-6)">{blk('Линии и тени', lines_, 'Одна толщина линии — 1 px. Кольцо выбора и фокуса — 2 px. Тени — два уровня и только у плавающего; плитки плоские.')}
   {blk('Движение', motion, 'Анимируются только transform и opacity. При reduced motion — короче и без сдвига, но не ноль.')}</div>
   <div class="grid-2" style="gap:var(--space-6)">{blk('Ширины экрана', bps)}
-  {blk('Знак', f'<div class="row-f gap-8" style="align-items:center">{logo(64)}{logo(32, word=True)}<span class="tile" data-hue="red" style="flex-direction:row;padding:var(--space-3);background:var(--poster)">{logo(28, word=True)}</span></div>', 'Маленький постер в фирменном лайме: тот же зеркальный пульс, что у каждого отчёта, сверху чернила, снизу глубокий тон. Надпись — Onest 600. Лайм — только в знаке.')}</div>
+  {blk('Знак', f'<div class="row-f gap-8" style="align-items:center">{logo(32, word=True)}<span data-hue="red" class="row-f">{logo(32, word=True)}</span><span class="tile poster" data-hue="teal" style="flex-direction:row;padding:var(--space-3)">{logo(28, word=True)}</span>{logo(48, tile=True)}</div>', 'Знак — зеркальный пульс продукта, без плитки: сверху «вы» чернилами, снизу собеседник — серый вне отчёта, цвет человека внутри него. Надпись — Onest 600. Плитка — только у иконки приложения (вкладка, ярлык). На ПК строка знака — это «Главная».')}</div>
 </main>'''
     return page('Система — токены', body, pc=True, h=4110)
 
@@ -105,7 +105,7 @@ def S_components():
                   row('', 'Тема', '', '<span class="v">Как в системе</span>', '', True, True), row('', 'Писать в Telegram', 'Когда отчёт готов', switch(True, 'Писать в Telegram')),
                   row(lead_ic('trash', 'danger'), 'Удалить отчёт', '', '', 'danger', False, True)], 'Заголовок группы', 'Подпись группы объясняет последствия.')
     side = f'''<div class="stack gap-0-5" style="width:280px;background:var(--surface);border-radius:var(--radius-md);padding:var(--space-3);box-shadow:inset 0 0 0 0.5px var(--border)">
-  <a class="sb-row person on"><span class="lead">{ic('home')}</span>Главная</a>
+  <a class="sb-row home on">{logo(28, bare=True)}<span class="wordmark">TG Analyzer</span></a>
   <a class="sb-row person">{av('mila', 32)}<span class="grow stack"><span>Мила</span><span class="m new">640 новых сообщений</span></span></a>
   <a class="sb-row person">{av('katya', 32)}<span class="grow stack"><span>Катя</span><span class="m">130 сообщений</span></span></a>
   {live_card('dima', 63)}</div>'''
@@ -145,7 +145,7 @@ def S_components():
   {blk('Поля и код', fields)}
   {blk('Поиск, фильтры, переключатели, чипы', controls, 'Сегментов нет: фильтр — маленькие кнопки, выбранная — чернила. Настройка с вариантами — строка со значением и меню. Переключатель 40 × 24, включённый — чернила.')}
   {blk('Строки и группы', rows, 'Строка — одно действие, нажимается целиком. Мета — small серым. Опасное — красным, отдельной группой.')}
-  {blk('Панель людей (ПК)', side, 'Ширина 280. У всех строк круг 32 слева. Выбранное — серая плашка. Новое — мета чернилами вместо точки. Идущий разбор — карточка внизу, открывает подробности.')}
+  {blk('Панель людей (ПК)', side, 'Ширина 280. Строка знака — «Главная»; у людей аватар 32 слева. Выбранное — серая плашка. Новое — мета чернилами вместо точки. Идущий разбор — карточка внизу, открывает подробности.')}
   </div>
   {blk('Карточка отчёта', anatomy)}
   {blk('Поверх экрана', overlays, 'Тост — над плавающей кнопкой на телефоне, сверху справа на ПК. Подложка 32% чёрного, тень мягкая.')}
