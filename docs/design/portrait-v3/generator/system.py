@@ -447,7 +447,8 @@ CSS = r"""
 .cover-thumb { width: 72px; height: 128px; flex: none; border-radius: var(--radius-sm); background: var(--poster); box-shadow: inset 0 0 0 1px var(--on-poster-line);
   padding: var(--space-2); display: flex; flex-direction: column; justify-content: space-between; }
 /* Итоги: one picture per frame, centred between the controls; the saved picture keeps the stories safe zone (250 / 340 of 1920) */
-.story-body { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--space-4); }
+/* one top line for the whole series: «who» sits at the same height on every frame */
+.story-body { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: var(--space-4); padding-top: var(--space-16); }
 .story .t-display { line-height: 1; }
 .st-art { display: flex; flex-direction: column; justify-content: flex-end; }
 .st-lede { font: var(--text-h3); letter-spacing: var(--tracking-h3); text-wrap: balance; }
@@ -469,10 +470,7 @@ CSS = r"""
 .st-dial text.big { fill: var(--on-poster); font: 600 48px/1 var(--font-sans); letter-spacing: var(--tracking-h1); }
 .st-dial text.cap { font-size: 20px; }
 /* «О чём»: a numbered top five and the favourite emoji as a sticker */
-.st-top1 { display: grid; grid-template-columns: var(--space-6) 1fr auto; align-items: baseline; }
-.st-top1 b { font: var(--text-display); letter-spacing: var(--tracking-display); }
-.st-top1 .n, .st-top .n { font: var(--text-ui); color: var(--on-poster-muted); }
-.st-top1 .c { font: var(--text-small); color: var(--on-poster-muted); }
+.st-top .n { font: var(--text-ui); color: var(--on-poster-muted); }
 .st-top { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-1); }
 .st-top li { display: grid; grid-template-columns: var(--space-6) 1fr auto; align-items: baseline; }
 .st-top b { font: var(--text-h3); letter-spacing: var(--tracking-h3); }
@@ -495,7 +493,7 @@ CSS = r"""
 .st-lines { display: flex; flex-direction: column; gap: var(--space-1); font: var(--text-body); color: var(--on-poster-muted); white-space: nowrap; }
 .st-lines b { color: var(--on-poster); font-weight: 600; }
 .story.still { flex: none; padding: 23.1% var(--page-gutter) 31.5%; border-radius: var(--radius-sm); overflow: hidden; }
-.story.still .story-body { gap: var(--space-3); }
+.story.still .story-body { gap: var(--space-3); padding-top: 0; }
 .story.still .st-lines { gap: 0; }
 .story-mark { display: flex; align-items: center; justify-content: center; gap: var(--space-2); font: var(--text-small-strong); padding-top: var(--space-4); }
 .safe-zone { position: absolute; left: 0; right: 0; border: 1px dashed var(--on-poster-faint); background: var(--on-poster-chip); display: flex; align-items: center; justify-content: center; font: var(--text-caption); color: var(--on-poster-muted); }

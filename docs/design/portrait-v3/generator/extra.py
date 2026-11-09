@@ -113,7 +113,7 @@ def S_404():
 
 # a class photo: the four who carry the chat, each with a share and a role; two facts under it
 GROUP_CAST = [('sergey', 'ядро чата', 22), ('alexey', 'всем отвечает', 19), ('natasha', 'пара с Марией', 17), ('maria', 'пишет последней', 15)]
-FRAME_GROUP = (who('team') + '<div class="stack gap-1"><h1 class="t-display">В ролях</h1><p class="st-lede">8 человек, ядро — четверо</p></div><div class="st-cast">'
+FRAME_GROUP = (who('team') + '<div class="stack gap-2"><h1 class="t-display">В ролях</h1><p class="st-lede">8 человек, ядро — четверо</p></div><div class="st-cast">'
                + ''.join(f'<div>{av(k, 64)}<span class="row-f gap-2"><b class="t-title">{P[k][0]}</b><i class="pct">{v}%</i></span><span class="t-small muted">{r}</span></div>' for k, r, v in GROUP_CAST)
                + '</div><div class="st-lines"><p><b>Юля</b> заводит разговоры чаще всех</p></div>')
 

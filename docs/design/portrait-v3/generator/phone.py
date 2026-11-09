@@ -313,8 +313,8 @@ def who(key='mila'):
 
 FRAME_COVER = f'''{who()}
   <div class="st-art">{pulse(40, 64, 1.0)}</div>
-  <div class="stack gap-2 poster-name"><h1 class="t-display">Мила</h1><p class="st-lede">4 800 сообщений за 208 дней</p>
-  <p class="t-small muted">С 9 апреля по 2 ноября 2026</p></div>
+  <div class="stack gap-2 poster-name"><h1 class="t-display">Мила</h1><p class="st-lede">4 800 сообщений за 208 дней</p></div>
+  <p class="t-small muted">С 9 апреля по 2 ноября 2026</p>
   <div class="st-lines"><p>Самый громкий день — <b>23 апреля</b></p><p>Голосовых вместе — <b>2 ч 57 мин</b></p></div>'''
 
 # a conversation of short bubbles: hers on the left in her deep tone, yours on the right in ink
@@ -347,15 +347,15 @@ def _dial(size=300):  # drawn at 300, shown at 180
 
 
 # a clock face: the day as a dial, the peak in ink, the parts of the day under it
-FRAME_TIME = f'''{who()}<div class="stack gap-1"><h1 class="t-display">Днём</h1><p class="st-lede">Больше всего пишете с 11 до 14</p></div>
+FRAME_TIME = f'''{who()}<div class="stack gap-2"><h1 class="t-display">Днём</h1><p class="st-lede">Больше всего пишете с 11 до 14</p></div>
   <div class="st-dial-wrap">{_dial()}</div>
   <div class="st-parts"><span><b>27%</b> утро</span><span class="on"><b>38%</b> день</span><span><b>34%</b> вечер</span></div>
   <div class="st-lines"><p>На связи <b>196 дней</b> из 208</p><p>Самый долгий разговор — <b>14 ч 39 мин</b></p></div>'''
 
 # a top five, numbered like a chart; emoji and the words only one of you uses under it
 _TOP = [('good', 214), ('дела', 152), ('great', 142), ('job', 142), ('кофе', 96)]
-FRAME_WORDS = (f'''{who()}<h1 class="t-display">О чём</h1>
-  <div class="st-top1"><span class="n">1</span><b>{_TOP[0][0]}</b><span class="c">{_TOP[0][1]} раз</span></div><ol class="st-top" start="2">'''
+FRAME_WORDS = (f'''{who()}<div class="stack gap-2"><h1 class="t-display">good</h1><p class="st-lede">Слово переписки — 214 раз</p></div>
+  <ol class="st-top" start="2">'''
                + ''.join(f'<li><span class="n">{i}</span><b>{w}</b><span class="c">{n}</span></li>' for i, (w, n) in enumerate(_TOP[1:], 2))
                + '</ol><div class="st-parts emo">' + ''.join(f'<span><i>{e}</i><b>{n}</b></span>' for e, n in [('☀️', 161), ('🎉', 142), ('👍', 125)]) + '</div>'
                + '<div class="st-lines"><p>У вас — <b>«кофе»</b>, у Милы — <b>«дедлайн»</b></p></div>')
