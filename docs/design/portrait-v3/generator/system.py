@@ -14,7 +14,7 @@ targets, sheets, bar material), Radix Themes (space 4…80), Primer (layers), Ma
 # Yellow sits one step higher (poster .88): at .85 the eye reads yellow as mustard. —
 # every person is equally loud; each keeps its own hue angle and as much chroma as sRGB allows.
 HUES = {
-    'yellow': dict(poster='#FBD530', tint='#FCEBAE', them='#9E8406', them_ink='#7C6702', on_them='#594900', room='#FEF8E1', poster_d='#CFAF1D'),
+    'yellow': dict(poster='#FBD530', tint='#FCEBAE', them='#A68003', them_ink='#826401', on_them='#5D4703', room='#FEF8E1', poster_d='#E9B60B', room_d='#14110C'),
     'orange': dict(poster='#FFBB69', tint='#FEDFB8', them='#C66B01', them_ink='#9F5104', on_them='#6F3C02', room='#FEF6EB', poster_d='#D69546'),
     'violet': dict(poster='#C6B9FE', tint='#E7DFFF', them='#846CEF', them_ink='#634AD6', on_them='#45339E', room='#F8F6FF', poster_d='#A191DF'),
     'green':  dict(poster='#B8DF5E', tint='#DDEEAC', them='#649820', them_ink='#4A7812', on_them='#365502', room='#F4FBE7', poster_d='#93B745'),
@@ -103,7 +103,7 @@ CSS = r"""
 }
 """ + ''.join(
     "[data-hue={n}]{{--poster:{poster};--room-tint:{tint};--them:{them};--them-ink:{them_ink};--on-them:{on_them};--room:{room};--room-glass:{glass};}}\n"
-    "[data-theme=dark] [data-hue={n}],[data-theme=dark][data-hue={n}]{{--poster:{poster_d};--room:{room_d};--room-glass:var(--bar-glass);--room-tint:var(--surface-2);--them:{poster};--them-ink:{poster};}}\n".format(n=n, room_d=_dark_room(h['room']), glass='rgba({},{},{},0.8)'.format(*[int(h['room'][i:i + 2], 16) for i in (1, 3, 5)]), **h)
+    "[data-theme=dark] [data-hue={n}],[data-theme=dark][data-hue={n}]{{--poster:{poster_d};--room:{room_d};--room-glass:var(--bar-glass);--room-tint:var(--surface-2);--them:{poster};--them-ink:{poster};}}\n".format(n=n, room_d=h.get('room_d') or _dark_room(h['room']), glass='rgba({},{},{},0.8)'.format(*[int(h['room'][i:i + 2], 16) for i in (1, 3, 5)]), **{k: v for k, v in h.items() if k != 'room_d'})
     for n, h in HUES.items()) + r"""
 * { box-sizing: border-box; }
 .app { font-family: var(--font-sans); color: var(--text); background: var(--bg); position: relative; overflow: hidden;
@@ -331,7 +331,7 @@ CSS = r"""
 .menu hr { border: 0; height: 1px; background: var(--border); margin: var(--space-1) var(--space-2); }
 .toast { position: absolute; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); border-radius: var(--radius-md);
   background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-overlay); font: var(--text-small); min-height: 48px; }
-.toast .btn { height: var(--control-sm); padding: 0 var(--space-3); background: transparent; color: var(--on-accent); font: var(--text-small-strong); text-decoration: underline; text-underline-offset: 3px; }
+.toast .btn { height: var(--control-sm); padding: 0 var(--space-3); background: transparent; color: var(--on-accent); font: var(--text-small-strong); border-radius: var(--radius-full); box-shadow: inset 0 0 0 1px currentColor; }
 /* fields */
 .label { font: var(--text-small-strong); }
 .hint { font: var(--text-small); color: var(--text-muted); }
@@ -362,10 +362,8 @@ CSS = r"""
 [data-theme=dark] .switch.on::after { background: #1D1D1F; }
 .switch.on::after { left: 18px; }
 .skel { background: var(--surface-2); border-radius: var(--radius-xs); }
-.empty-ic { width: 48px; height: 48px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; color: var(--text-muted); flex: none; }
-.sheet .empty-ic { background: var(--fill-raised); }
-.empty-ic svg { width: 24px; height: 24px; }
-.empty-ic.sm { width: 40px; height: 40px; }
+.empty-ic { display: flex; color: var(--text-muted); flex: none; }  /* bare symbol like iOS unavailable views — no grey disc */
+.empty-ic svg { width: 32px; height: 32px; stroke-width: 1.5; }
 .story-seg { display: grid; gap: var(--space-1); }
 .story-seg i { height: 4px; border-radius: var(--radius-full); background: var(--on-poster-faint); }
 .story-seg i.on { background: var(--on-poster); }
@@ -393,8 +391,6 @@ CSS = r"""
 .account-btn { width: var(--control-lg); height: var(--control-lg); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--surface-raised); box-shadow: inset 0 0 0 1px var(--border), var(--shadow-float); position: relative; }
 .live { min-width: 0; display: flex; align-items: center; gap: var(--space-2); height: var(--control-lg); padding: 0 var(--space-3) 0 var(--space-1); border-radius: var(--radius-full); color: var(--text); }
 .live .chev { width: 16px; height: 16px; color: var(--text-faint); }
-.fab-round { width: var(--control-lg); height: var(--control-lg); border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-float); display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.fab-round svg { width: 20px; height: 20px; }
 .sb-live { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--surface-2); margin: var(--space-2) 0; }
 .sb-live .ring .track { stroke: var(--surface); }
 /* flags: drawn, because Windows shows letters instead of flag emoji */
@@ -440,7 +436,6 @@ CSS = r"""
 .chev-space { width: 16px; flex: none; }
 .row .btn.sm { min-width: 96px; }
 .ev-label { min-height: 24px; display: flex; align-items: center; gap: var(--space-2); }
-.pc .hero { max-width: var(--page-max-narrow); }
 /* a phone-size frame on desktop (stories) keeps the phone type */
 .pc .phone-scale { --text-display: 600 56px/56px var(--font-sans); --text-figure: 600 44px/48px var(--font-sans); --text-h1: 600 30px/36px var(--font-sans);
   --text-h2: 600 24px/32px var(--font-sans); --text-h3: 600 20px/28px var(--font-sans); }
@@ -454,7 +449,7 @@ CSS = r"""
 .nav-ph .icon-btn:not(.on-poster), .icon-btn.lg, .live { background: var(--surface-raised); box-shadow: inset 0 0 0 1px var(--border), var(--shadow-float); }
 .sheet-h .icon-btn, .dialog .icon-btn { background: var(--surface-raised); box-shadow: inset 0 0 0 1px var(--border); }
 .icon-btn.on-poster { box-shadow: inset 0 0 0 1px var(--on-poster-line); }
-.fab, .fab-round { box-shadow: var(--shadow-float); }
+.fab { box-shadow: var(--shadow-float); }
 .pc { --control-xl: 44px; }
 .tab { --page-gutter: 32px; }
 .tab .column { width: 100%; max-width: 720px; margin: 0 auto; }

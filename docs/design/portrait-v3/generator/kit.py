@@ -3,12 +3,12 @@ import re
 from system import CSS, bars
 
 P = {  # people of the demo account: name, initials, colour family
-    'mila': ('Мила', 'М', 'yellow'), 'mama': ('Мама', 'М', 'orange'), 'team': ('Продуктовая команда', 'ПК', 'pink'),
-    'katya': ('Катя', 'К', 'blue'), 'dima': ('Дима (работа)', 'ДР', 'teal'), 'anna': ('Анна Петрова', 'АП', 'green'),
+    'mila': ('Мила', 'М', 'green'), 'mama': ('Мама', 'М', 'orange'), 'team': ('Продуктовая команда', 'ПК', 'pink'),
+    'katya': ('Катя', 'К', 'blue'), 'dima': ('Дима (работа)', 'ДР', 'teal'), 'anna': ('Анна Петрова', 'АП', 'blue'),
     'artyom': ('Артём Ковалёв', 'АК', 'violet'), 'sofia': ('Sofia Martins', 'SM', 'green'), 'oleg': ('Олег Смирнов', 'ОС', 'pink'),
-    'family': ('Семья', 'С', 'yellow'), 'run': ('Бег по утрам', 'БП', 'orange'),
+    'family': ('Семья', 'С', 'blue'), 'run': ('Бег по утрам', 'БП', 'orange'),
     'sergey': ('Сергей', 'С', 'teal'), 'alexey': ('Алексей', 'А', 'orange'), 'natasha': ('Наташа', 'Н', 'blue'),
-    'maria': ('Мария', 'М', 'yellow'), 'yulia': ('Юля', 'Ю', 'green'),
+    'maria': ('Мария', 'М', 'violet'), 'yulia': ('Юля', 'Ю', 'green'),
 }
 
 _I = {
@@ -226,13 +226,13 @@ def mini_poster(key, meta, seed, h=148, period='', more=True, menu=''):
     z = ';z-index:5' if menu else ''
     return (f'<article class="tile poster mini" data-hue="{hue}" style="min-height:{h}px{z}">{menu}'
             f'<div class="top">{av(key, 32)}{m}</div>'
-            f'<a href="#" class="name clamp2">{name}</a>{per}<span class="t-small muted">{meta}</span>'
+            f'<a href="#" class="name trunc" title="{name}">{name}</a>{per}<span class="t-small muted trunc">{meta}</span>'
             f'<span class="mt-auto" style="padding-top:var(--space-3)">{pulse(28, 12, seed)}</span></article>')
 
 
 def thumb(kind, title, n=4, i=0):
     seg_ = '<span class="story-seg" style="grid-template-columns:repeat(4,1fr)">' + ''.join(f'<i class="{"on" if k <= i else ""}"></i>' for k in range(n)) + '</span>'
-    return f'<div class="thumb916" data-hue="yellow">{seg_}<span class="stack gap-1"><small>{kind}</small><b>{title}</b>{pulse(14, 7, 1.0 + i)}</span></div>'
+    return f'<div class="thumb916" data-hue="green">{seg_}<span class="stack gap-1"><small>{kind}</small><b>{title}</b>{pulse(14, 7, 1.0 + i)}</span></div>'
 
 
 def thumbs():

@@ -90,9 +90,9 @@ FAQ = [('Что увидит человек по ссылке?', 'Только �
        ('Почему чат не разбирается?', 'Нужно хотя бы 100 сообщений: меньше — и большинство карточек будут пустыми.')]
 
 
-def faq_group():
+def faq_group(head=''):
     """One list on every platform: question as the row title, answer as its wrapped second line."""
-    return group([row('', q, a, '', 'wrap') for q, a in FAQ])
+    return group([row('', q, a, '', 'wrap') for q, a in FAQ], head)
 
 
 def S_faq():
@@ -135,9 +135,13 @@ def D_loading():
 
 
 def D_faq():
+    priv = [('eye', 'Читаем переписку один раз', 'Когда вы нажимаете «Разобрать» или «Обновить»'),
+            ('check', 'Храним только итог', 'Подсчёты, часы, частые слова и эмодзи'),
+            ('lock', 'Тексты сообщений не храним', 'Ни у себя, ни в ссылках')]
+    side = group([row(lead_ic(i), t, m, '', 'wrap') for i, t, m in priv] + [row('', 'Как мы обращаемся с данными', '', '', '', True, True)], 'Коротко о данных')
     main = f'''<main class="page" style="width:100%;max-width:var(--page-max);margin:0 auto;padding:var(--space-6) var(--page-gutter) var(--space-16)">
-  <div class="stack gap-6" style="max-width:var(--page-max-narrow)"><div class="stack gap-2"><h1 class="t-h1">Вопросы и ответы</h1>
-  <p class="t-body muted">Коротко о том, как работает TG Analyzer.</p></div>{faq_group()}</div></main>'''
+  <div class="stack gap-2"><h1 class="t-h1">Вопросы и ответы</h1><p class="t-body muted">Коротко о том, как работает TG Analyzer.</p></div>
+  <div style="display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:var(--space-10);align-items:start">{faq_group('Частые вопросы')}{side}</div></main>'''
     return page('Вопросы и ответы', pub_header() + main, pc=True)
 
 
