@@ -438,7 +438,7 @@ PRIVACY_NOTE = 'В отчёте только подсчёты и частые с
 
 def S_guest():
     poster = f'''<section class="poster stack gap-3" style="padding:var(--space-2) var(--page-gutter) var(--space-6)">
-  <div class="row-f between" style="min-height:var(--control-lg)">{logo(28, word=True)}<a href="#" class="t-small muted">Приватность</a></div>
+  <div class="row-f between" style="min-height:var(--control-lg)">{logo(28, word=True)}<a href="#" class="nav-link">Приватность</a></div>
   <div class="stack gap-2 poster-name" style="margin-top:var(--space-6)"><h1 class="t-display">Дима и Мила</h1><p class="t-small muted">Дима поделился с вами отчётом о переписке: 4 800 сообщений с 9 апреля.</p></div>
   {pulse(56, 24, 1.0)}
 </section>'''
@@ -457,7 +457,7 @@ def quiz_shell(content, step=None):
 
 
 def S_quiz_start():
-    c = f'''<div class="row-f between">{logo(28, word=True)}<a href="#" class="t-small muted">Приватность</a></div>
+    c = f'''<div class="row-f between">{logo(28, word=True)}<a href="#" class="nav-link">Приватность</a></div>
   <div class="stack gap-4 grow" style="justify-content:center">{pulse(40, 40, 1.0)}
   <h1 class="t-figure">Дима позвал вас в угадайку</h1>
   <p class="t-body muted">Пять вопросов о вашей переписке: кто дольше записывает голосовые, кто желает спокойной ночи, чьё это слово.</p></div>
@@ -488,7 +488,7 @@ def S_quiz_end():
 
 
 def S_link_off():
-    body = f'''<header class="nav-ph between">{logo(28, word=True)}<a href="#" class="t-small muted">Приватность</a></header>
+    body = f'''<header class="nav-ph between">{logo(28, word=True)}<a href="#" class="nav-link">Приватность</a></header>
   <main class="stack gap-3" style="padding:0 var(--page-gutter) var(--space-16);flex:1;justify-content:center">
   <h1 class="t-h1">Ссылка больше не работает</h1>
   <p class="t-body muted">Автор выключил её или удалил отчёт. Попросите прислать новую.</p>
@@ -548,7 +548,7 @@ def letters():
 
 
 def login(content):
-    nav = f'<header class="nav-ph">{ibtn("back", "Назад")}<div class="grow"></div><a href="#" class="t-ui muted" style="padding:var(--space-2)">Приватность</a></header>'
+    nav = f'<header class="nav-ph">{ibtn("back", "Назад")}<div class="grow"></div><a href="#" class="nav-link">Приватность</a></header>'
     return f'<div class="stack" style="height:100%;background:var(--surface)">{nav}<main class="stack" style="padding:var(--space-6) var(--page-gutter)">{content}</main></div>'
 
 
@@ -602,7 +602,7 @@ def S_landing():
   <p class="t-body muted">Кто пишет первым, кто отвечает быстрее, о чём вы говорите и когда. Отчёт по любому чату Telegram за пару минут — без хранения текстов.</p>
   <div class="cards" aria-label="Примеры" style="margin-top:var(--space-3)">{person('mila', 'Пишете на равных', 'Мила, 51 на 49', 1)}{person('artyom', 'Отвечает быстрее вас', 'Артём, в 3 раза', 2)}</div>
 </main>'''
-    nav = f'<header class="nav-ph between">{logo(28, word=True)}<a href="#" class="t-ui">Войти</a></header>'
+    nav = f'<header class="nav-ph between">{logo(28, word=True)}<a href="#" class="nav-link" style="color:var(--text)">Войти</a></header>'
     bar = f'<div class="stack gap-2" style="position:absolute;left:0;right:0;bottom:0;padding:var(--space-3) var(--page-gutter) var(--safe-bottom);background:var(--bg)">{btn("Войти через Telegram", "primary", "xl block", tag="a")}{btn("Посмотреть пример отчёта", "plain", "block", tag="a")}</div>'
     return page('Лендинг', nav + hero_ + bar)
 

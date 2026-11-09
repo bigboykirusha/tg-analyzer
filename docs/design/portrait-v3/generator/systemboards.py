@@ -2,7 +2,7 @@
 import re
 from kit import *
 from system import HUES, CSS
-from phone import phone_field
+from phone import phone_field, who, msg
 
 HUE_NAMES = {'yellow': 'Солнечный', 'orange': 'Апельсиновый', 'violet': 'Лавандовый', 'green': 'Лайм', 'teal': 'Мятный', 'blue': 'Голубой', 'pink': 'Розовый'}
 
@@ -137,6 +137,14 @@ def S_components():
         'Чат меньше 100 сообщений не разбираем: строка говорит, сколько нужно, кнопки нет.',
         'Пустые и ошибочные состояния говорят, что делать дальше. Обещание приватности — правдиво: «подсчёты и частые слова, без текстов».',
         'Цель касания ≥ 44, фокус — контур 2 px со смещением 2, без анимации. Длинные имена — до трёх строк, кегль от ширины.'])
+    stories_parts = (f'<div class="grid-3" style="gap:var(--space-4);align-items:start">'
+                     f'<div class="tile poster story stack gap-3" data-hue="green">{who()}<p class="t-figure">На равных</p><div class="st-chat">'
+                     + msg('<b>2 366</b> сообщений — <b>49%</b>', 'them') + msg('<b>2 434</b> сообщения — <b>51%</b>', 'you') + '</div></div>'
+                     f'<div class="tile poster story stack gap-3" data-hue="green"><div class="st-parts"><span><b>27%</b> утро</span><span class="on"><b>38%</b> день</span><span><b>34%</b> вечер</span></div>'
+                     f'<div class="st-parts emo"><span><i>☀️</i><b>161</b></span><span><i>🎉</i><b>142</b></span></div>'
+                     f'<div class="st-lines"><p>Отвечаете оба <b>за 3 минуты</b></p><p>Разговор начинаете <b>по очереди</b></p></div></div>'
+                     f'<div class="tile poster story stack gap-3" data-hue="green"><ol class="st-top" start="2"><li><span class="n">2</span><b>дела</b><span class="c">152</span></li><li><span class="n">3</span><b>great</b><span class="c">142</span></li></ol>'
+                     f'<div class="story-mark" style="justify-content:flex-start">{logo(20, bare=True)}<span>TG Analyzer</span></div></div></div>')
     body = f'''<main class="page" style="padding:var(--space-12)">
   {head('«Портрет»: компоненты и состояния', 'Каждый экран собран только из этих частей. Если элемента нет здесь — его нет в продукте.')}
   <div class="grid-2" style="gap:var(--space-6)">
@@ -150,9 +158,10 @@ def S_components():
   {blk('Карточка отчёта', anatomy)}
   {blk('Поверх экрана', overlays, 'Тост — над плавающей кнопкой на телефоне, сверху справа на ПК. Подложка 32% чёрного, тень мягкая.')}
   {blk('Пусто, ошибка, загрузка', empt)}
+  {blk('Итоги: детали кадров', stories_parts, 'Кадр 9:16 на цвете человека. Вверху всегда «кто с кем», заголовок — ответ, под ним одна картинка и факты строками. Пузыри — её глубоким тоном слева, ваши чернилами справа. Плашки — доли и эмодзи, выбранная — чернила. Всё стоит в потоке, ничего не лежит поверх; картинка 1080 × 1920 держит 250 px сверху и 340 снизу пустыми.')}
   {blk('Правила целостности', f'<ol style="margin:0;padding-left:var(--space-6)">{rules}</ol>')}
 </main>'''
-    return page('Система — компоненты', body, pc=True, h=3110)
+    return page('Система — компоненты', body, pc=True, h=3420)
 
 
 SCREENS = [('sys-tokens', 'Система — токены', S_tokens), ('sys-components', 'Система — компоненты и состояния', S_components)]

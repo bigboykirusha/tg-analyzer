@@ -213,7 +213,7 @@ def D_account():
 
 def pub_header(nav=True):
     """Header of every public desktop page: logo on the column edge, site links on the right."""
-    links = (f'<nav class="row-f gap-8 t-ui" aria-label="Сайт"><a href="#" class="muted">Пример отчёта</a><a href="#" class="muted">Приватность</a>'
+    links = (f'<nav class="row-f gap-8 t-ui" aria-label="Сайт"><a href="#" class="nav-link">Пример отчёта</a><a href="#" class="nav-link">Приватность</a>'
              f'{btn("Войти", "secondary", "md", tag="a")}</nav>') if nav else ''
     return f'<header class="row-f between" style="padding:var(--space-6) var(--page-gutter);width:100%;max-width:var(--page-max);margin:0 auto">{logo(32, word=True)}{links}</header>'
 
@@ -221,7 +221,7 @@ def pub_header(nav=True):
 def pub_footer():
     return (f'<footer class="row-f between t-small muted" style="padding:var(--space-6) var(--page-gutter);width:100%;max-width:var(--page-max);margin:0 auto">'
             f'<span>Неофициальный сервис, работает через Telegram API</span>'
-            f'<span class="row-f gap-4"><a href="#">Приватность</a><a href="#" class="row-f gap-2" aria-label="Язык: русский">{ic("globe")}RU</a>'
+            f'<span class="row-f gap-4"><a href="#" class="nav-link">Приватность</a><a href="#" class="nav-link gap-2" aria-label="Язык: русский">{ic("globe")}RU</a>'
             f'<button class="icon-btn sm" style="background:none;color:var(--text-muted)" aria-label="Тема: как в системе">{ic("moon")}</button></span></footer>')
 
 
@@ -255,7 +255,7 @@ def D_landing():
 
 def D_guest():
     poster = f'''<section class="poster stack gap-3" style="padding:var(--space-6) max(var(--page-gutter), calc((100% - var(--page-max)) / 2 + var(--page-gutter))) var(--space-8)">
-  <div class="row-f between">{logo(32, word=True)}<a href="#" class="t-ui">Приватность</a></div>
+  <div class="row-f between">{logo(32, word=True)}<a href="#" class="nav-link">Приватность</a></div>
   <div class="poster-name" style="margin-top:var(--space-10)"><h1 class="t-display">Дима и Мила</h1></div>
   <p class="t-body muted">Дима поделился с вами отчётом о переписке: 4 800 сообщений с 9 апреля 2026.</p>
   <div style="margin-top:var(--space-4)">{pulse(150, 32, 1.0)}</div><div class="axis"><span>апрель 2026</span><span>ноябрь 2026</span></div></section>'''

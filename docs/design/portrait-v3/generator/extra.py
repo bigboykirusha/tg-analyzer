@@ -103,7 +103,7 @@ def S_faq():
 
 
 def S_404():
-    body = f'''<header class="nav-ph between">{logo(28, word=True)}<a href="#" class="t-small muted">Приватность</a></header>
+    body = f'''<header class="nav-ph between">{logo(28, word=True)}<a href="#" class="nav-link">Приватность</a></header>
   <main class="stack gap-3" style="padding:0 var(--page-gutter) var(--space-16);flex:1;justify-content:center">
   <h1 class="t-h1">Такой страницы нет</h1>
   <p class="t-body muted">Возможно, ссылка устарела или в ней опечатка.</p>

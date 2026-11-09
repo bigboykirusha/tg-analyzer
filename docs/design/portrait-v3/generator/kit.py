@@ -67,7 +67,7 @@ def logo(size=32, word=False, tile=False, bare=False):
         return mark
     if not word:
         return f'<a href="#" class="hit" aria-label="TG Analyzer, главная" style="display:inline-flex;position:relative">{mark}</a>'
-    return f'<a href="#" class="row-f gap-2 wordmark" aria-label="TG Analyzer, главная">{mark}TG Analyzer</a>'
+    return f'<a href="#" class="row-f gap-2 wordmark brand-link" aria-label="TG Analyzer, главная">{mark}TG Analyzer</a>'
 
 
 _FLAGS = {

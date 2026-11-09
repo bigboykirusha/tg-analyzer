@@ -61,7 +61,7 @@ CSS = r"""
   --opacity-disabled: 0.38; --press-scale: 0.97;
   --heat-0: #EEEEF2; --heat-1: #C7C7CC; --heat-2: #9C9CA3; --heat-3: #6C6C72; --heat-4: #3A3A3C;
   --chart-neutral: #C7C7CC; --chart-neutral-strong: #3A3A3C;
-  --avatar-on-poster: rgba(255,255,255,0.6); --story-hint: #98989D; --story-backdrop: #0B0B0C;
+  --avatar-on-poster: rgba(255,255,255,0.6); --story-hint: #AEAEB2; --story-backdrop: #0B0B0C;
   --poster: #E5E5EA; --room-tint: #EEEEF2; --them: #8E8E93; --them-ink: #6C6C72; --on-them: #3A3A3C; --room: var(--bg);
   --on-poster: #1D1D1F; --on-poster-muted: rgba(29,29,31,0.72); --on-poster-line: rgba(29,29,31,0.16);
   --on-poster-chip: rgba(29,29,31,0.08); --on-poster-faint: rgba(29,29,31,0.3);
@@ -90,6 +90,7 @@ CSS = r"""
   --radius-lg: 24px; --card-padding: 24px; --card-gap: 16px; --page-gutter: 40px; --page-gap: 40px;
 }
 [data-theme=dark] {
+  --on-poster-muted: rgba(29,29,31,0.82);
   --bg: #000000; --surface: #1C1C1E; --surface-2: #2C2C2E; --surface-raised: #2C2C2E; --fill-raised: #3A3A3C;
   --hover: rgba(235,235,245,0.06); --pressed: rgba(235,235,245,0.12); --sidebar-selection: #2C2C2E;
   --border: #38383A; --border-strong: #48484A;
@@ -292,6 +293,11 @@ CSS = r"""
 .podium i.first { background: var(--chart-neutral-strong); }
 .podium b { display: block; font: var(--text-small); color: var(--text-muted); margin-top: var(--space-1); font-weight: 400; }
 /* bars: the one place for material — only over scrolling content */
+.nav-link { display: inline-flex; align-items: center; min-height: var(--control-lg); font: var(--text-ui); color: var(--text-muted); }  /* text links in headers and footers: one look, a full hit area */
+.pc .nav-link { min-height: var(--control-md); }
+.brand-link { min-height: var(--control-lg); }
+.pc .brand-link { min-height: var(--control-md); }
+.poster .nav-link { color: var(--on-poster-muted); }
 .nav-ph { position: relative; display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--page-gutter); min-height: var(--row); }
 .material { background: var(--bar-glass); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); box-shadow: inset 0 -1px 0 var(--border); }
 .room .material { background: var(--room-glass); }
@@ -387,6 +393,9 @@ CSS = r"""
 .mini { position: relative; gap: var(--space-1); }
 .mini .top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-2); }
 .mini .name { font: 600 16px/24px var(--font-sans); }
+.mini .name::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }  /* the whole card opens the report */
+.mini .icon-btn { position: relative; z-index: 1; }
+.hit::after { content: ''; position: absolute; inset: -2px; }  /* the bare mark keeps a 44 hit area */
 .icon-btn.sm.on-poster { width: var(--control-sm); height: var(--control-sm); }
 /* live progress: minimised to a capsule (phone dock) or a card (sidebar); opens the details */
 .ring { position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center; }
@@ -496,7 +505,7 @@ CSS = r"""
 .story.still .story-body { gap: var(--space-3); padding-top: 0; }
 .story.still .st-lines { gap: 0; }
 .story-mark { display: flex; align-items: center; justify-content: center; gap: var(--space-2); font: var(--text-small-strong); padding-top: var(--space-4); }
-.safe-zone { position: absolute; left: 0; right: 0; border: 1px dashed var(--on-poster-faint); background: var(--on-poster-chip); display: flex; align-items: center; justify-content: center; font: var(--text-caption); color: var(--on-poster-muted); }
+.safe-zone { position: absolute; left: 0; right: 0; border: 1px dashed var(--on-poster-faint); background: var(--on-poster-chip); display: flex; align-items: center; justify-content: center; font: var(--text-caption); color: var(--on-poster); }
 /* Controls that float over content — header circles, sheet close, the bottom pill, the progress capsule, «+» — are one family:
    44 on the phone, pill or circle, raised surface, hairline ring, one soft shadow. On a poster the same shape, translucent. */
 .ph .icon-btn { width: var(--control-lg); height: var(--control-lg); }
