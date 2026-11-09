@@ -447,43 +447,58 @@ CSS = r"""
 .cover-thumb { width: 72px; height: 128px; flex: none; border-radius: var(--radius-sm); background: var(--poster); box-shadow: inset 0 0 0 1px var(--on-poster-line);
   padding: var(--space-2); display: flex; flex-direction: column; justify-content: space-between; }
 /* Итоги: one picture per frame, centred between the controls; the saved picture keeps the stories safe zone (250 / 340 of 1920) */
-.story-body { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--space-6); }
+.story-body { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--space-4); }
 .story .t-display { line-height: 1; }
 .st-art { display: flex; flex-direction: column; justify-content: flex-end; }
 .st-lede { font: var(--text-h3); letter-spacing: var(--tracking-h3); text-wrap: balance; }
 /* «Вы двое»: a conversation — her bubble left in her deep tone, yours right in ink, Telegram service pills between */
-.st-chat { display: flex; flex-direction: column; gap: var(--space-2); }
+.st-chat { display: flex; flex-direction: column; gap: var(--space-1); }
 .bubble { display: flex; flex-direction: column; gap: var(--space-0-5); max-width: 72%; padding: var(--space-3) var(--space-4); border-radius: var(--radius-xl); color: var(--poster); font: var(--text-small); }
-.bubble b { font: var(--text-display); font-size: 72px; line-height: 72px; letter-spacing: var(--tracking-display); }
+.bubble b { font: var(--text-display); letter-spacing: var(--tracking-display); }
+.bubble.sm { padding: var(--space-2) var(--space-3); font: var(--text-ui); }
 .bubble.them { align-self: flex-start; background: var(--on-them); border-bottom-left-radius: var(--radius-mark); }
 .bubble.you { align-self: flex-end; background: var(--on-poster); border-bottom-right-radius: var(--radius-mark); text-align: right; }
-.service { align-self: center; padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); background: var(--on-poster-chip); font: var(--text-small-strong); }
+.service { align-self: center; margin: var(--space-1) 0; padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); background: var(--on-poster-chip); font: var(--text-small-strong); }
 /* «Время»: the day as a clock face */
 .st-dial-wrap { display: flex; justify-content: center; }
-.st-dial { width: 280px; height: 280px; overflow: visible; }
-.story.still .st-dial { width: 240px; height: 240px; }
+.st-dial { width: 220px; height: 220px; overflow: visible; }
+.story.still .st-dial { width: 200px; height: 200px; }
 .st-dial line { stroke: var(--on-poster-faint); stroke-width: 8; stroke-linecap: round; }
 .st-dial line.hot { stroke: var(--on-poster); }
 .st-dial text { fill: var(--on-poster-muted); font: var(--text-caption); text-anchor: middle; }
 .st-dial text.big { fill: var(--on-poster); font: var(--text-h1); letter-spacing: var(--tracking-h1); }
 /* «О чём»: a numbered top five and the favourite emoji as a sticker */
-.st-top-wrap { position: relative; }
 .st-top { list-style: none; margin: 0; padding: 0; }
-.st-top li { display: grid; grid-template-columns: var(--space-8) 1fr auto; align-items: baseline; padding: var(--space-1) 0; box-shadow: inset 0 -1px 0 var(--on-poster-line); }
+.st-top li { display: grid; grid-template-columns: var(--space-6) 1fr auto; align-items: baseline; padding: var(--space-0-5) 0; box-shadow: inset 0 -1px 0 var(--on-poster-line); }
 .st-top li:last-child { box-shadow: none; }
 .st-top .n { font: var(--text-h3); color: var(--on-poster-muted); }
-.st-top b { font: var(--text-h1); letter-spacing: var(--tracking-h1); }
-.st-top li:first-child b { font: var(--text-display); font-size: 72px; line-height: 80px; letter-spacing: var(--tracking-display); }
+.st-top b { font: var(--text-h2); letter-spacing: var(--tracking-h2); }
+.st-top li:first-child b { font: var(--text-display); letter-spacing: var(--tracking-display); }
 .st-top .c { font: var(--text-small); color: var(--on-poster-muted); }
-.st-sticker { position: absolute; right: var(--space-2); top: calc(-1 * var(--space-6)); transform: rotate(8deg); padding: var(--space-2) var(--space-4); border-radius: var(--radius-full); background: var(--surface); color: var(--text); font: var(--text-h2); letter-spacing: var(--tracking-h2); box-shadow: var(--shadow-float); }
 /* group: a class photo, the share pinned on each portrait */
-.st-cast { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6) var(--space-3); }
+.st-cast { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4) var(--space-3); }
 .st-cast > div { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--space-1); }
-.st-cast .pic { position: relative; margin-bottom: var(--space-1); }
-.poster .st-cast .av { background: linear-gradient(var(--room-tint), var(--poster)); color: var(--on-them); box-shadow: 0 0 0 2px var(--on-poster-chip); }
-.st-cast .pct { position: absolute; left: 44px; top: calc(-1 * var(--space-1)); transform: rotate(8deg); padding: var(--space-0-5) var(--space-2); border-radius: var(--radius-full); background: var(--on-poster); color: var(--poster); font: var(--text-small-strong); font-style: normal; white-space: nowrap; }
+.poster .st-cast .av { background: linear-gradient(var(--room-tint), var(--poster)); color: var(--on-them); box-shadow: 0 0 0 2px var(--on-poster-chip); margin-bottom: var(--space-1); }
+.st-cast .pct { padding: 0 var(--space-2); border-radius: var(--radius-full); background: var(--on-poster); color: var(--poster); font: var(--text-small-strong); font-style: normal; }
+/* shared pieces of the frames: who it is about, three facts, parts of the day, plain lines */
+.st-who { display: flex; align-items: center; gap: var(--space-2); font: var(--text-ui); }
+.st-pair { display: flex; }
+.st-pair .av + .av { margin-left: calc(-1 * var(--space-2)); box-shadow: 0 0 0 2px var(--poster); }
+.poster .st-who .av:not(.you) { background: linear-gradient(var(--room-tint), var(--poster)); color: var(--on-them); }
+.st-three { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.st-three > div { display: flex; flex-direction: column; gap: var(--space-0-5); }
+.st-three b { font: var(--text-h3); letter-spacing: var(--tracking-h3); }
+.st-three span { font: var(--text-small); color: var(--on-poster-muted); }
+.st-parts { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.st-parts span { display: inline-flex; align-items: baseline; gap: var(--space-1); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); background: var(--on-poster-chip); font: var(--text-small); }
+.st-parts span.on { background: var(--on-poster); color: var(--poster); }
+.st-parts b { font: var(--text-ui); font-weight: 600; }
+.st-parts.emo i { font-style: normal; font-size: 20px; line-height: 20px; }
+.st-lines { display: flex; flex-direction: column; gap: var(--space-1); font: var(--text-body); color: var(--on-poster-muted); }
+.st-lines b { color: var(--on-poster); font-weight: 600; }
 .story.still { flex: none; padding: 23.1% var(--page-gutter) 31.5%; border-radius: var(--radius-sm); overflow: hidden; }
-.story.still .story-body { gap: var(--space-4); }
+.story.still .story-body { gap: var(--space-3); }
+.story.still .bubble b { font: var(--text-figure); letter-spacing: var(--tracking-figure); }
 .story-mark { display: flex; align-items: center; justify-content: center; gap: var(--space-2); font: var(--text-small-strong); padding-top: var(--space-4); }
 .safe-zone { position: absolute; left: 0; right: 0; border: 1px dashed var(--on-poster-faint); background: var(--on-poster-chip); display: flex; align-items: center; justify-content: center; font: var(--text-caption); color: var(--on-poster-muted); }
 /* Controls that float over content — header circles, sheet close, the bottom pill, the progress capsule, «+» — are one family:

@@ -304,17 +304,27 @@ def story_still(content, w=390):
 # Shared only by the poster colour, Onest and ink for «you»; each frame has its own composition.
 import math
 
-FRAME_COVER = f'''<div class="st-art">{pulse(40, 72, 1.0)}</div>
-  <div class="stack gap-3 poster-name"><h1 class="t-display">Мила</h1><p class="st-lede">4 800 сообщений за 208 дней</p>
-  <p class="t-small muted">С 9 апреля по 2 ноября 2026</p></div>'''
+def who(key='mila'):
+    '''Every frame says who it is about — a story is often seen on its own.'''
+    if key == 'team':
+        return f'<div class="st-who">{av("team", 32)}<span>Продуктовая команда</span></div>'
+    return f'<div class="st-who"><span class="st-pair">{av(None, 32, you=True)}{av(key, 32)}</span><span>Вы и {P[key][0]}</span></div>'
 
-# a conversation: her bubble on the left in her deep tone, yours on the right in ink, a Telegram service pill between
-FRAME_TOGETHER = '''<h1 class="t-display">На равных</h1>
+
+FRAME_COVER = f'''{who()}
+  <div class="st-art">{pulse(40, 64, 1.0)}</div>
+  <div class="stack gap-2 poster-name"><h1 class="t-display">Мила</h1><p class="st-lede">4 800 сообщений за 208 дней</p>
+  <p class="t-small muted">С 9 апреля по 2 ноября 2026</p></div>
+  <div class="st-three"><div><b>196</b><span>дней на связи</span></div><div><b>23 апреля</b><span>самый громкий день</span></div><div><b>11–14</b><span>ваши часы</span></div></div>'''
+
+# a conversation: her bubbles left in her deep tone, yours right in ink, Telegram service pills between
+FRAME_TOGETHER = f'''{who()}<h1 class="t-display">На равных</h1>
   <div class="st-chat" role="img" aria-label="Мила — 49%, вы — 51%">
   <div class="bubble them"><span>Мила</span><b>49%</b><span>2 366 сообщений</span></div>
-  <p class="service">Отвечаете оба за 3 минуты</p>
   <div class="bubble you"><span>Вы</span><b>51%</b><span>2 434 сообщения</span></div>
-  <p class="service">Разговор начинаете по очереди</p></div>'''
+  <p class="service">Отвечаете оба за 3 минуты</p>
+  <div class="bubble them sm">«Спокойной ночи» — 81 раз</div>
+  <div class="bubble you sm">«Доброе утро» — 74 раза</div></div>'''
 
 _HOURS = [2, 1, 1, 0, 0, 1, 4, 9, 14, 15, 17, 19, 21, 20, 16, 18, 13, 12, 14, 16, 17, 15, 18, 20]
 
@@ -332,17 +342,18 @@ def _dial(size=300):
             f'<text x="{c}" y="{c + 2}" class="big">11–14</text><text x="{c}" y="{c + 24}" class="cap">ваши часы</text></svg>')
 
 
-# a clock face: the day as a dial, the peak in ink
-FRAME_TIME = f'''<div class="st-dial-wrap">{_dial()}</div>
-  <div class="stack gap-2"><h1 class="t-display">Днём</h1>
-  <p class="st-lede">На связи 196 дней из 208. Самый долгий разговор — 14 ч 39 мин</p></div>'''
+# a clock face: the day as a dial, the peak in ink, the parts of the day under it
+FRAME_TIME = f'''{who()}<div class="stack gap-1"><h1 class="t-display">Днём</h1><p class="st-lede">Больше всего пишете с 11 до 14</p></div>
+  <div class="st-dial-wrap">{_dial()}</div>
+  <div class="st-parts"><span><b>27%</b> утро</span><span class="on"><b>38%</b> день</span><span><b>34%</b> вечер</span></div>
+  <div class="st-lines"><p>На связи <b>196 дней</b> из 208</p><p>Самый долгий разговор — <b>14 ч 39 мин</b>, 23 апреля</p></div>'''
 
-# a top five, numbered like a chart, with the favourite emoji as a sticker
+# a top five, numbered like a chart; emoji and the words only one of you uses under it
 _TOP = [('good', 214), ('дела', 152), ('great', 142), ('job', 142), ('кофе', 96)]
-FRAME_WORDS = ('''<div class="stack gap-2"><h1 class="t-display">О чём</h1><p class="st-lede">Ваши слова за 208 дней</p></div>
-  <div class="st-top-wrap"><ol class="st-top">'''
+FRAME_WORDS = (f'''{who()}<h1 class="t-display">О чём</h1><ol class="st-top">'''
                + ''.join(f'<li><span class="n">{i}</span><b>{w}</b><span class="c">{n}</span></li>' for i, (w, n) in enumerate(_TOP, 1))
-               + '''</ol><span class="st-sticker" aria-label="Любимый эмодзи — солнце, 161 раз">☀️ 161</span></div>''')
+               + '</ol><div class="st-parts emo">' + ''.join(f'<span><i>{e}</i><b>{n}</b></span>' for e, n in [('☀️', 161), ('🎉', 142), ('👍', 125)]) + '</div>'
+               + '<div class="st-lines"><p>Только у вас — <b>«кофе»</b>, только у Милы — <b>«дедлайн»</b></p></div>')
 
 STORY_TOGETHER = FRAME_TOGETHER  # used by the desktop stories board
 N = 4

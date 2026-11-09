@@ -1,7 +1,7 @@
 """States and screens that complete the set: loading, errors, limits, empty, narrow, English, FAQ, 404, group stories.
 Built only from kit/phone/desktop parts — if a screen needs something new, the system is incomplete."""
 from kit import *
-from phone import (FRAME_COVER, FRAME_TOGETHER, FRAME_TIME, FRAME_WORDS, story_still, home, lead_mila, FAB, sec, REPORT_TILES, waiting_rows, poster_ph, chapter_head, story, STORY_ACTIONS, dim_home,
+from phone import (who, FRAME_COVER, FRAME_TOGETHER, FRAME_TIME, FRAME_WORDS, story_still, home, lead_mila, FAB, sec, REPORT_TILES, waiting_rows, poster_ph, chapter_head, story, STORY_ACTIONS, dim_home,
                    sheet_head, new_rows, NEW_DATA, S_share, SHARE_ROWS, stories_feature, ph_plain_nav, S_report, S_together)
 from desktop import shell, home_main, sec as dsec, pub_header, pub_footer
 
@@ -111,11 +111,11 @@ def S_404():
     return page('404', body)
 
 
-# a class photo: the four who carry the chat, their share pinned on as stickers
+# a class photo: the four who carry the chat, each with a share and a role; two facts under it
 GROUP_CAST = [('sergey', 'ядро чата', 22), ('alexey', 'всем отвечает', 19), ('natasha', 'пара с Марией', 17), ('maria', 'пишет последней', 15)]
-FRAME_GROUP = ('<div class="stack gap-2"><h1 class="t-display">В ролях</h1><p class="st-lede">8 человек, ядро — четверо</p></div><div class="st-cast">'
-               + ''.join(f'<div><span class="pic">{av(k, 64)}<i class="pct">{v}%</i></span><b class="t-title">{P[k][0]}</b><span class="t-small muted">{r}</span></div>' for k, r, v in GROUP_CAST)
-               + '</div>')
+FRAME_GROUP = (who('team') + '<div class="stack gap-1"><h1 class="t-display">В ролях</h1><p class="st-lede">8 человек, ядро — четверо</p></div><div class="st-cast">'
+               + ''.join(f'<div>{av(k, 64)}<span class="row-f gap-2"><b class="t-title">{P[k][0]}</b><i class="pct">{v}%</i></span><span class="t-small muted">{r}</span></div>' for k, r, v in GROUP_CAST)
+               + '</div><div class="st-lines"><p><b>Юля</b> заводит разговоры чаще всех</p></div>')
 
 
 def S_group_story():
