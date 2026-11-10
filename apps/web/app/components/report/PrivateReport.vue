@@ -63,5 +63,13 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
   .report-flow > .report-note {
     grid-column: 1 / -1;
   }
+
+  /* A card left alone in its row (a card before it or after it is missing) takes the whole row, no hole. */
+  .report-flow > :first-child:not(.report-section--wide):has(+ .report-section--wide),
+  .report-flow > .report-section--wide + :not(.report-section--wide):has(+ .report-section--wide),
+  .report-flow > .report-section--wide + :not(.report-section--wide):last-child,
+  .report-flow > :first-child:not(.report-section--wide):last-child {
+    grid-column: 1 / -1;
+  }
 }
 </style>
