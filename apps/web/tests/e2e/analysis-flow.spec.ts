@@ -5,7 +5,7 @@ import {
   backendAvailable,
   gotoHydrated,
   noHorizontalScroll,
-  openChapter,
+  openCard,
   signIn,
   usePreferences,
 } from './helpers'
@@ -37,16 +37,11 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   await page.waitForURL('**/chat/1006')
   await expect(page.getByRole('heading', { name: 'Катя', exact: true })).toBeVisible()
 
-  // One long page: the nav jumps to each part and marks it.
-  for (const [tab, part] of [
-    ['Время', 'time'],
-    ['О чём', 'words'],
-    ['Вы двое', 'together'],
-  ]) {
-    await openChapter(page, tab)
-    await expect(page.locator(`#part-${part}`)).toBeInViewport()
-    await expect(page.locator('.page-bar__lede')).toContainText(tab)
-  }
+  // One short page of cards: the balance is always there; a card the chat is too small for is not drawn.
+  await expect(page.locator('.report-section')).not.toHaveCount(0)
+  await openCard(page, 'balance')
+  await expect(page.locator('#part-balance')).toBeInViewport()
+  await expect(page.locator('.page-bar__lede')).toHaveCount(0)
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.goto('/new')
   await expect(page.locator('a.chat-row[href="/chat/1006"]')).toBeVisible()
@@ -58,12 +53,8 @@ test('group chats get the group report', async ({ page }, testInfo) => {
   await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 60_000 })
 
   await page.goto('/chat/-1002004')
-  for (const [tab, part] of [
-    ['Общение', 'talk'],
-    ['Время', 'time'],
-    ['Люди', 'people'],
-  ]) {
-    await openChapter(page, tab)
+  for (const part of ['people', 'roles', 'pairs', 'time', 'words']) {
+    await openCard(page, part)
     await expect(page.locator(`#part-${part}`)).toBeInViewport()
   }
   const member = page.locator('#part-people button.list-row').first()
@@ -80,8 +71,8 @@ test('group chats get the group report', async ({ page }, testInfo) => {
     await expect(page.locator('.people__panel').getByRole('heading', { name: memberName, exact: true })).toBeVisible()
     await expect(page.getByRole('dialog')).toHaveCount(0)
   }
-  // The pair statistics stay in the report.
-  await expect(page.locator('#part-talk').getByText('Самые плотные пары', { exact: true })).toBeVisible()
+  // The pairs stay in the report, three rows at most.
+  expect(await page.locator('#part-pairs .list-row').count()).toBeLessThanOrEqual(3)
 })
 
 test('a completed analysis is recovered when websocket progress is unavailable', async ({ page }) => {

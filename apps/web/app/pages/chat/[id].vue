@@ -8,7 +8,7 @@ import { hueOf } from '../../lib/hue'
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 const route = useRoute()
-const { t, tc } = useI18n()
+const { t } = useI18n()
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
 const errorMessage = useErrorMessage()
@@ -31,10 +31,17 @@ useSeoMeta({ title: () => data.value?.summary.title ?? t('report.title') })
 // The page takes the person's colour: poster, room, their marks in charts and the toolbar over the poster.
 useHead({ htmlAttrs: { 'data-hue': () => hueOf(chatId.value) } })
 
+/** The owner's own switch for obscene words: the report is asked again, with or without them. */
+const profanityShown = ref(false)
+function setProfanity(show: boolean) {
+  profanityShown.value = show
+  void load()
+}
+
 async function load() {
   loadError.value = null
   try {
-    data.value = await workspace.loadReport(chatId.value)
+    data.value = await workspace.loadReport(chatId.value, profanityShown.value ? { profanity: 'show' } : {})
     notFound.value = false
   } catch (error) {
     if (error instanceof ApiClientError && error.status === 404) {
@@ -51,12 +58,10 @@ watch(analysis.finished, (job) => {
 })
 
 watch(chatId, () => {
+  profanityShown.value = false
   data.value = workspace.openedReports[chatId.value] ?? null
   void load()
 })
-
-/** The chapters and their answers for the header's capsule; the report itself reads the same composable. */
-const headlines = useChapterHeadlines(() => data.value!)
 
 /** A known chat without a report is not a dead end: it can be analysed right here. */
 const knownChat = computed(() => workspace.chats.find((chat) => chat.id === chatId.value) ?? null)
@@ -104,21 +109,17 @@ onMounted(load)
       actions
       @story="openStory('view')"
       @share="openShare"
-    />
+    >
+      <template v-if="data && data.summary.type !== 'group'" #badge><ReportChange :data="data" /></template>
+    </ReportPoster>
     <UiPageContainer>
       <div v-if="data" class="page report-page">
-        <ReportHeader
-          :summary="data.summary"
-          :headlines="headlines"
-          :meta="tc('common.messagesCount', data.report.totals.messages)"
-          @share="openShare"
-        />
+        <ReportHeader :summary="data.summary" @share="openShare" />
 
         <!-- Charts (ECharts) belong to groups only, and the share sheet and stories load on first use:
              a private report on a phone downloads neither. -->
-        <ReportSince :data="data" />
-        <LazyGroupReport v-if="data.summary.type === 'group'" :data="data" />
-        <PrivateReport v-else :data="data" />
+        <LazyGroupReport v-if="data.summary.type === 'group'" :data="data" @profanity="setProfanity" />
+        <PrivateReport v-else :data="data" @profanity="setProfanity" />
 
         <LazyShareDialog
           v-if="shareUsed"
@@ -171,27 +172,15 @@ onMounted(load)
 
       <ReportSkeleton v-if="!data && !notFound && !loadError" :title="knownTitle" />
     </UiPageContainer>
-    <!-- The report ends as it began: on the person's poster, with «Итоги» and sharing. -->
-    <ReportEnding
-      v-if="data"
-      :data="data"
-      @story="openStory('view')"
-      @share="openShare"
-    />
   </div>
 </template>
 
 <style scoped>
-/* Under the poster: the news strip, then the first chapter, each a step below the last. */
+/* Under the poster: the cards, one step below it. */
 .report-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
   padding-top: var(--space-4);
-}
-
-.report-page :deep(.report-part:first-child) {
-  padding-top: 0;
 }
 
 @media (min-width: 901px) {

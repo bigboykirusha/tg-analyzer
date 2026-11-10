@@ -23,7 +23,7 @@ async function inspectPage(
     // A flex column must stretch every report card, even cards with short copy.
     // Root overflow checks alone miss this because shrunken cards still fit.
     if (width <= 900) {
-      const widths = await page.locator('.report-columns').evaluateAll((columns) =>
+      const widths = await page.locator('.report-flow').evaluateAll((columns) =>
         columns.flatMap((column) =>
           Array.from(column.children).map((card) => ({
             card: card.getBoundingClientRect().width,

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { gotoHydrated, noHorizontalScroll, openChapter, usePreferences } from './helpers'
+import { gotoHydrated, noHorizontalScroll, openCard, usePreferences } from './helpers'
 
 test('system dark theme hydrates without replacing the theme icon', async ({ page }) => {
   const errors: string[] = []
@@ -85,13 +85,10 @@ test('the example report opens without signing in', async ({ page }, testInfo) =
       .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
       .toBe(true)
   }
-  await expect(page.getByRole('heading', { name: 'Вы двое', exact: true })).toBeVisible()
-  // The example has voice messages without duration metadata: who sends more of them is a row of
-  // «Ваши привычки» rather than a card of its own.
-  const habits = page
-    .getByRole('article')
-    .filter({ has: page.getByRole('heading', { name: 'Ваши привычки', exact: true }) })
-  await expect(habits.getByText('Больше голосовых', { exact: true })).toBeVisible()
+  // The example is the same report as an owner's: balance first, then habits, time, words, emoji.
+  for (const id of ['balance', 'habits', 'time', 'words', 'favourites'])
+    await expect(page.locator(`#part-${id}`)).toBeVisible()
+  await expect(page.locator('.report-section')).toHaveCount(5)
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
 })
@@ -108,41 +105,11 @@ test('report navigation survives resizing between phone, tablet and desktop', as
       await expect
         .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
         .toBe(true)
-    await openChapter(page, 'Время')
+    await openCard(page, 'time')
     await expect(page.locator('#part-time')).toBeInViewport()
-    await openChapter(page, 'Вы двое')
-    await expect(page.locator('#part-together')).toBeInViewport()
+    await openCard(page, 'balance')
+    await expect(page.locator('#part-balance')).toBeInViewport()
   }
-})
-
-test('the activity calendar names each day in its tooltip and scrolls without a page overflow', async ({
-  page,
-  context,
-}, testInfo) => {
-  await usePreferences(context, 'dark')
-  await page.emulateMedia({ reducedMotion: 'reduce' })
-  await gotoHydrated(page, '/example')
-  const calendar = page.locator('.calendar')
-  const cells = calendar.locator('.calendar__months .calendar__cell[title]')
-  const count = await cells.count()
-  expect(count).toBeGreaterThan(7)
-  expect(await cells.nth(count - 2).getAttribute('title')).toBeTruthy()
-  await page
-    .getByRole('article')
-    .filter({ has: calendar })
-    .screenshot({
-      path: testInfo.outputPath('calendar.png'),
-      animations: 'disabled',
-    })
-
-  const scroller = calendar.getByRole('region', { name: 'Активность по дням', exact: true })
-  const earlier = calendar.getByRole('button', { name: 'Более ранние недели', exact: true })
-  if (await earlier.isVisible()) {
-    const before = await scroller.evaluate((element) => element.scrollLeft)
-    await earlier.click()
-    await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBeLessThan(before)
-  }
-  await expect.poll(() => noHorizontalScroll(page)).toBe(true)
 })
 
 test('client-rendered pages give feedback before the app JavaScript loads', async ({ browser, baseURL }) => {

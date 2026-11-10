@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import type { GroupParticipantDto, GroupReportDto } from '@tg-analyzer/shared'
+import { formatVoiceDuration, type GroupParticipantDto, type GroupReportDto } from '@tg-analyzer/shared'
 
 /**
- * «Номинации»: who leads the group in each habit, one row per award — the winner's avatar, the award,
- * then «Юля, 15% разговоров».
+ * «Роли»: who plays which part in the chat, at most five — who starts conversations, the star of the
+ * reactions, who wakes the chat and who puts it to bed, the voice. One row per role: the winner's avatar,
+ * the role, «Юля, 15% разговоров». The answer names whoever holds the most roles.
  */
 const props = defineProps<{ group: GroupReportDto }>()
-const { t, tc, formatDecimal, formatDuration, formatPercent } = useI18n()
+const { t, tc, locale, formatPercent } = useI18n()
 const nameOf = useParticipantName()
 
-/** Reply magnets need a real sample: one message with two replies is not a magnet. */
-const MIN_MAGNET_MESSAGES = 10
-
-interface Award {
+interface Role {
   key: string
   title: string
   winner: GroupParticipantDto
@@ -25,12 +23,6 @@ const specs = computed(() => [
     title: t('group.awards.starter'),
     amount: (p: GroupParticipantDto) => p.starterShare,
     describe: (value: number) => t('group.awards.starterValue', { share: formatPercent(value) }),
-  },
-  {
-    key: 'magnet',
-    title: t('group.awards.magnet'),
-    amount: (p: GroupParticipantDto) => (p.messageCount >= MIN_MAGNET_MESSAGES ? (p.magnetScore ?? 0) : 0),
-    describe: (value: number) => t('group.awards.magnetValue', { value: formatDecimal(value) }),
   },
   {
     key: 'reactions',
@@ -54,34 +46,41 @@ const specs = computed(() => [
     key: 'voice',
     title: t('group.awards.voice'),
     amount: (p: GroupParticipantDto) => (p.voiceSeconds ?? 0) + (p.roundSeconds ?? 0),
-    describe: (value: number) => formatDuration(value),
+    describe: (value: number) => formatVoiceDuration(value, locale.value),
   },
 ])
 
-const awards = computed(() =>
+const roles = computed(() =>
   specs.value
-    .map((spec): Award | null => {
-      const ranked = props.group.participants
+    .map((spec): Role | null => {
+      const [first] = props.group.participants
         .filter((participant) => spec.amount(participant) > 0)
         .sort((left, right) => spec.amount(right) - spec.amount(left))
-      const [first] = ranked
-      if (!first) return null
-      return {
-        key: spec.key,
-        title: spec.title,
-        winner: first,
-        value: spec.describe(spec.amount(first)),
-      }
+      return first
+        ? { key: spec.key, title: spec.title, winner: first, value: spec.describe(spec.amount(first)) }
+        : null
     })
-    .filter((item): item is Award => item !== null),
+    .filter((item): item is Role => item !== null),
 )
+
+/** «Больше всех ролей у Юли», or that the roles are shared out. */
+const answer = computed(() => {
+  const counts = new Map<string, { winner: GroupParticipantDto; n: number }>()
+  for (const role of roles.value) {
+    const entry = counts.get(role.winner.id) ?? { winner: role.winner, n: 0 }
+    entry.n += 1
+    counts.set(role.winner.id, entry)
+  }
+  const top = [...counts.values()].sort((a, b) => b.n - a.n)[0]
+  return top && top.n > 1 ? t('group.roles.most', { name: nameOf(top.winner) }) : t('group.roles.shared')
+})
 </script>
 
 <template>
-  <ReportSection v-if="awards.length" :title="t('group.awards.title')">
-    <div class="awards">
+  <ReportSection v-if="roles.length > 1" id="part-roles" :title="t('group.awards.title')" :answer="answer">
+    <div class="roles">
       <UiListRow
-        v-for="item in awards"
+        v-for="item in roles"
         :key="item.key"
         :title="item.title"
         :subtitle="t('group.awards.line', { name: nameOf(item.winner), value: item.value })"
@@ -100,7 +99,7 @@ const awards = computed(() =>
 </template>
 
 <style scoped>
-.awards > :deep(:last-child .list-row__body) {
+.roles > :deep(:last-child .list-row__body) {
   box-shadow: none;
 }
 </style>

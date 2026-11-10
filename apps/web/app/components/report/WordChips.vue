@@ -37,7 +37,7 @@ const { formatNumber } = useI18n()
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   background: var(--surface-2);
-  font: var(--text-small);
+  font: var(--text-label);
   overflow-wrap: anywhere;
 }
 
@@ -61,6 +61,6 @@ const { formatNumber } = useI18n()
 
 .chips-empty {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 </style>

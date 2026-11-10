@@ -61,7 +61,7 @@ const sides = computed(() => {
 
 .word__count {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 /* Places two to four under a hairline, three columns: the word and how often under it. */
@@ -78,12 +78,11 @@ const sides = computed(() => {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .runners__word {
   overflow: hidden;
-  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

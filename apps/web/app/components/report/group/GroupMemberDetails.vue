@@ -123,7 +123,7 @@ const connections = computed(() =>
 .member__role,
 .member__label {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .member__block {
@@ -142,6 +142,6 @@ const connections = computed(() =>
 
 .member__score {
   color: var(--text);
-  font: var(--text-small-strong);
+  font: var(--text-label);
 }
 </style>

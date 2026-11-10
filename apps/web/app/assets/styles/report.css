@@ -1,9 +1,9 @@
 /*
- * The report's shared pieces (docs/design/portrait-v3): the tile, the one poster-coloured tile of a part,
- * the two-column masonry and the rows of comparisons. Every report card is built from these.
+ * The report's shared pieces: the tile and the one poster-coloured tile. Every report card (ReportSection)
+ * is built from these — one anatomy: label, answer, one picture, a footnote.
  */
 
-/* A tile: white on the person's room — the question, the answer, the picture, a note. */
+/* A tile: a white card on the page — the question, the answer, the picture, a note. */
 .tile {
   --btn-secondary-bg: transparent;
   display: flex;
@@ -11,14 +11,14 @@
   gap: var(--space-3);
   min-width: 0;
   padding: var(--card-padding);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface);
   color: var(--text);
 }
 
 /*
- * The part's headline tile in the person's poster colour (at most one per part, «Слово переписки»). Every
- * role re-points to the poster: ink type, the muted line, the person's deep tone for their side.
+ * A tile in the person's poster colour (the guest page's word of the chat). Every role re-points to the
+ * poster: ink type, the muted line, the person's deep tone for their side.
  */
 .tile--ink {
   --text: var(--on-poster);
@@ -34,78 +34,4 @@
   --pulse-them: var(--on-them);
   background: var(--poster);
   color: var(--on-poster);
-}
-
-/* Masonry: two columns of 1 px rows; each card spans its own height (useMasonry). Phones: a plain column. */
-.report-columns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: 1px;
-  column-gap: var(--card-gap);
-  min-width: 0;
-  /* Hidden for the one frame before the cards are measured, so they never overlap. */
-  visibility: hidden;
-}
-
-.report-columns.is-ready {
-  visibility: visible;
-}
-
-.report-columns > * {
-  align-self: start;
-  min-width: 0;
-}
-
-.report-columns > .report-section--wide,
-.report-columns > .report-section--hero,
-.report-columns > [data-masonry-wide] {
-  grid-column: 1 / -1;
-}
-
-@media (max-width: 900px) {
-  .report-columns {
-    display: flex;
-    flex-direction: column;
-    gap: var(--card-gap);
-    visibility: visible;
-  }
-
-  .report-columns > * {
-    align-self: stretch;
-  }
-}
-
-/* Rows of comparisons inside a card: a label, its line under it; hairlines between rows. */
-.report-rows {
-  display: flex;
-  flex-direction: column;
-}
-
-.report-rows__row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3) 0;
-  box-shadow: var(--divider-bottom);
-}
-
-.report-rows__row:first-child {
-  padding-top: 0;
-}
-
-.report-rows__row:last-child {
-  padding-bottom: 0;
-  box-shadow: none;
-}
-
-.report-rows__label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font: var(--text-small);
-}
-
-.report-rows__label svg {
-  --icon-size: var(--icon-sm);
-  color: var(--text-muted);
 }

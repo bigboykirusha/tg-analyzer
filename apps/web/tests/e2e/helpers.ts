@@ -43,13 +43,10 @@ export async function backendAvailable(baseURL: string) {
   }
 }
 
-/**
- * Opens a chapter of a report: the report is one long page, so the reader scrolls there; the bar then
- * says which chapter they are in («Время, 2 из 3»).
- */
-export async function openChapter(page: Page, name: string) {
+/** Scrolls to a card of the report (`#part-<id>`: balance, habits, time, words, favourites; groups: people, roles, pairs, time, words). */
+export async function openCard(page: Page, id: string) {
   await page
-    .locator(`.report-part:has(h2:text-is("${name}"))`)
+    .locator(`#part-${id}`)
     .evaluate((element) => element.scrollIntoView({ behavior: 'instant', block: 'start' }))
 }
 

@@ -50,7 +50,7 @@ const groups = computed(() =>
 
 .side-groups__label {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .side-groups__label--theirs {

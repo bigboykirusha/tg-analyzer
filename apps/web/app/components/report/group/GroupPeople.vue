@@ -3,8 +3,7 @@ import type { GroupReportDto } from '@tg-analyzer/shared'
 
 /**
  * «Люди»: who takes part and how — you first, then the others by their share of the messages; a tap
- * opens the member (a sheet on a phone, the panel beside the list on desktop). Under the list, the
- * nominations.
+ * opens the member (a sheet on a phone, the panel beside the list on desktop).
  */
 const props = defineProps<{ group: GroupReportDto }>()
 const { t, tc, formatPercent } = useI18n()
@@ -45,7 +44,7 @@ const answer = computed(() => {
 <template>
   <div class="people" :class="{ 'people--solo': !selected }">
     <div class="people__main">
-      <ReportSection :title="t('group.membersTitle')" :answer="answer">
+      <ReportSection id="part-people" :title="t('group.tabs.people')" :answer="answer">
         <div class="people__list">
           <template v-for="person in visible" :key="person.id">
             <UiListRow v-if="person.isSelf" :title="nameOf(person)" :subtitle="t(`group.roles.${person.role}`)">
@@ -81,7 +80,6 @@ const answer = computed(() => {
           />
         </div>
       </ReportSection>
-      <GroupAwards :group="group" />
     </div>
 
     <aside v-if="selected && wide" class="tile people__panel">
@@ -109,7 +107,7 @@ const answer = computed(() => {
 
 .people__share {
   color: var(--text);
-  font: var(--text-small-strong);
+  font: var(--text-label);
 }
 
 /* Your own row has no chevron: the number stands where the others' numbers stand. */
