@@ -113,7 +113,7 @@ async function loadDevices() {
   }
 }
 function deviceTitle(device: TelegramSessionDto) {
-  return [device.device, device.app].filter(Boolean).join(' · ')
+  return device.device
 }
 function deviceWhen(device: TelegramSessionDto) {
   if (device.current) return t('accountPage.deviceThis')
@@ -126,8 +126,8 @@ function deviceWhen(device: TelegramSessionDto) {
   return formatDate(date, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
 }
 function deviceSubtitle(device: TelegramSessionDto) {
-  const parts = [device.country, deviceWhen(device)]
-  if (!device.official) parts.push(t('accountPage.deviceUnofficial'))
+  const parts = [device.app, device.country, deviceWhen(device)]
+  if (!device.official && !device.current) parts.push(t('accountPage.deviceUnofficial'))
   return parts.filter(Boolean).join(', ')
 }
 const endingDevice = ref<TelegramSessionDto | null>(null)
@@ -263,6 +263,7 @@ onMounted(() => void Promise.all([loadLinks(), loadDevices()]))
             <UiListRow
               v-for="device in devices"
               :key="device.hash"
+              wrap
               :title="deviceTitle(device)"
               :subtitle="deviceSubtitle(device)"
             >
