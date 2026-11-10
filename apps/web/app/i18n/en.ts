@@ -187,7 +187,7 @@ export const en = {
   'faq.read.text': 'Messages of the chat you pick, only while it is analysed and only in server memory.',
   'faq.read.title': 'We read',
   'faq.seoDescription':
-    'What TG Analyzer reads, what it keeps and what it never does. How to switch it off in 10 seconds and delete everything with one button.',
+    'What TG Analyzer reads, what it keeps and what it never does. How to switch it off in 10 seconds and delete a report.',
   'faq.seoTitle': 'Questions',
   'faq.title': 'Questions',
   'faq.dataTitle': 'Your data in short',
@@ -324,10 +324,10 @@ export const en = {
   'offline.title': 'You are offline',
   'privacy.delete.telegram': 'You can also end the session yourself in Telegram: Settings → Devices.',
   'privacy.delete.text':
-    'Open «Account», press «Sign out» and choose «Sign out and delete reports». We delete your reports and every other record, and sign the app out of Telegram.',
-  'privacy.delete.title': 'How to delete everything',
+    'Delete a report from its menu on home or in «New analysis»: its stories and share links go with it. «Sign out» in the account ends the TG Analyzer session in Telegram and erases the stored session; reports stay until you sign in again or delete them.',
+  'privacy.delete.title': 'How to delete your data',
   'privacy.keep.text':
-    'Reports stay until you delete them or your account. Records of finished analyses are removed after a year.',
+    'Reports stay until you delete them. The Telegram session stays until you sign out. Records of finished analyses are removed after a year.',
   'privacy.keep.title': 'How long we keep it',
   'privacy.receive.chats': 'The list of your chats: names, types and photos.',
   'privacy.receive.messages':
@@ -342,7 +342,8 @@ export const en = {
   'privacy.share.title': 'Who we share it with',
   'privacy.store.reports':
     'Reports: message counts, times of activity, reply times, the most frequent words and emoji, and in groups the names of participants.',
-  'privacy.store.session': 'Your Telegram session, encrypted with AES-256-GCM.',
+  'privacy.store.session':
+    'Your Telegram session, encrypted with AES-256-GCM: it lets you refresh reports. Signing out erases it.',
   'privacy.store.technical': 'Sign-in records and the history of analyses, to keep the service secure and working.',
   'privacy.store.title': 'What we store',
   'privacy.use.text':
