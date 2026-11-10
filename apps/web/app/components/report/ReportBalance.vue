@@ -19,7 +19,7 @@ const { name, me, answer, figure, rows } = useBalance(
 <template>
   <ReportSection v-if="answer" id="part-balance" :title="t('report.balance.title')" :figure="figure" :answer="answer">
     <div class="balance">
-      <p class="balance__sides t-label" aria-hidden="true">
+      <p v-if="!author" class="balance__sides t-label" aria-hidden="true">
         <span>{{ me }}</span>
         <span class="balance__them">{{ name }}</span>
       </p>
