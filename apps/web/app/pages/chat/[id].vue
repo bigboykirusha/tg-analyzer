@@ -86,15 +86,6 @@ onMounted(() => {
   openShare()
 })
 
-/** «Вся глава» from a story slide: the story closes and the report opens at that chapter. */
-function openChapter(id: string) {
-  storyOpen.value = false
-  setTimeout(() => {
-    history.replaceState(history.state, '', `#part-${id}`)
-    document.getElementById(`part-${id}`)?.scrollIntoView({ block: 'start' })
-  }, 0)
-}
-
 function openStory(intent: StoryIntent) {
   storyIntent.value = intent
   storyUsed.value = true
@@ -142,7 +133,6 @@ onMounted(load)
           :data="data"
           :intent="storyIntent"
           @close="storyOpen = false"
-          @chapter="openChapter"
         />
       </div>
 

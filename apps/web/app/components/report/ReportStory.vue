@@ -1,774 +1,105 @@
 <script setup lang="ts">
-import {
-  computeChapters,
-  fillDailyGaps,
-  forecastMilestone,
-  replyComparisonRatio,
-  REPLY_COMPARISON_EVEN_RATIO,
-  MIN_REPLY_COMPARISON_SAMPLES as MIN_REPLY_SAMPLES,
-  type ReportDto,
-} from '@tg-analyzer/shared'
-import { loadChatAvatar, loadProfileAvatar } from '../../lib/avatar-loader'
-import { maskSwear } from '../../lib/profanity'
-import { ChevronLeft, ChevronRight, ChevronUp, Download, Pause, Play, Share, X } from '../../lib/icons'
-import { personaOf } from '../../lib/persona'
-import { isEven } from '../../composables/useVersus'
-import type { StoryBlock, StoryPerson, StorySlideModel } from './StorySlide.vue'
+import type { ReportDto } from '@tg-analyzer/shared'
+import { ChevronLeft, ChevronRight, Download, Pause, Play, Share, X } from '../../lib/icons'
 
 /**
- * «Итоги» as Wrapped-style stories: up to five dense slides (the chat at a glance,
- * who leads, when, habits, which words), each a headline over a small bento of tiles,
- * made to be shared one by one. Full screen on phones, a 9:16 frame on wider screens; progress
- * bars on top, auto-advance, hold to pause, tap the sides or swipe to move,
- * swipe down to close. Slides save as 1080×1920 PNGs or go to the share sheet.
+ * «Итоги»: the report as a few full-screen frames on the person's poster colour, like stories —
+ * marks of progress on top, the frame's name, pause and close; the frames turn by themselves, a tap
+ * pages, a hold pauses, a swipe down closes (useStoryGestures). Under the frame: «Сохранить» the
+ * picture and «Поделиться» it — a 1080 × 1920 PNG rendered from an exact copy off screen.
+ * A phone fills the screen; wider screens show a 9:16 frame with arrows beside it.
  */
 const props = defineProps<{
   open: boolean
   data: ReportDto
-  /** The public example: no account, so no photos to fetch. */
-  offline?: boolean
-  /** What «Поделиться» asked for: just watch, save every slide, or send them all to the share sheet. */
+  /** What «Поделиться» asked for: just watch, save every frame, or send them all to the share sheet. */
   intent?: 'view' | 'save' | 'share'
 }>()
-/** `chapter`: «Вся глава» — close the story and open that chapter of the report. */
-const emit = defineEmits<{ close: []; chapter: [id: string] }>()
+const emit = defineEmits<{ close: [] }>()
 
-const { t, tc, formatNumber, formatPercent, formatDuration, formatDay, formatDecimal, formatMonth, formatPeriod } =
-  useI18n()
-const site = useSiteHost()
+const { t } = useI18n()
 const toast = useToast()
 const image = useCardImage()
-const auth = useAuthStore()
-const nameOf = useParticipantName()
+const { frames, who } = useStoryFrames(() => props.data)
 
-/** A move longer than this is a swipe, shorter is a tap. */
-const SWIPE_PX = 40
-/** The intro seismograph stays legible at story size with this many ticks at most. */
-const PULSE_TICKS = 90
-
-type ShareTarget = 'instagram' | 'telegram' | 'chat'
+/** How long a frame stays before the next one comes. */
+const FRAME_MS = 7000
 
 const index = ref(0)
-const paused = ref(false)
 /** Paused with the button (WCAG 2.2.2): a hold or a tap never undoes it. */
 const userPaused = ref(false)
-const shareOpen = ref(false)
+/** Paging with the arrow keys is reading, not watching: the timer waits. */
+const byKeys = ref(false)
 const canShare = ref(false)
-const myAvatar = ref<string | null>(null)
-const theirAvatar = ref<string | null>(null)
-/** Slide rendered off screen for the image; null when not exporting. */
+/** The frame rendered off screen for a picture; null when not exporting. */
 const exportIndex = ref<number | null>(null)
-const panelRef = ref<HTMLElement | null>(null)
-// The arrows sit beside the frame, so the focus trap covers the whole overlay.
 const overlayRef = ref<HTMLElement | null>(null)
+const panelRef = ref<HTMLElement | null>(null)
 const exportRef = ref<HTMLElement | null>(null)
 const open = toRef(props, 'open')
 
 useBodyScrollLock(open)
-// Focus starts on the frame itself, so no button opens with a focus ring.
-useFocusTrap(overlayRef, open, {
-  initial: () => panelRef.value,
-  onEscape: () => {
-    if (shareOpen.value) shareOpen.value = false
-    else emit('close')
-  },
-})
+// The arrows sit beside the frame, so the focus trap covers the whole overlay; focus starts on the frame.
+useFocusTrap(overlayRef, open, { initial: () => panelRef.value, onEscape: () => emit('close') })
 
-const DAY_MONTH: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' }
-const isGroup = computed(() => props.data.summary.type === 'group')
-const group = computed(() => props.data.report.group ?? null)
-
-const me = computed<StoryPerson>(() => ({
-  name: auth.user?.firstName?.trim() || auth.user?.username || t('story.you'),
-  avatar: myAvatar.value,
-}))
-const them = computed<StoryPerson>(() => ({ name: props.data.summary.title, avatar: theirAvatar.value }))
-/** The other side in labels: the person, or «Остальные» in a group. */
-const theirName = computed(() => (isGroup.value ? t('story.others') : them.value.name))
-
-/** Who the story is about: the two of you, or the group itself. */
-const people = computed(() => (isGroup.value ? [them.value] : [me.value, them.value]))
-const heading = computed(() => (isGroup.value ? them.value.name : `${me.value.name} & ${them.value.name}`))
-const period = computed(() => {
-  const { firstMessageAt, lastMessageAt } = props.data.report.period
-  if (!firstMessageAt || !lastMessageAt) return null
-  return formatPeriod(firstMessageAt, lastMessageAt, true)
-})
-const headingSub = computed(() =>
-  isGroup.value && group.value ? tc('story.members', group.value.participants.length) : period.value,
+const current = computed(() => frames.value[Math.min(index.value, frames.value.length - 1)]!)
+const label = computed(() =>
+  t('story.frameOf', { label: current.value.label, n: index.value + 1, total: frames.value.length }),
 )
-
-const top = (items: { value: string }[], count = 5) => items.slice(0, count).map((item) => item.value)
-/** Words go on a picture people post, so swearing is masked: «б**». */
-const topWords = (items: { value: string }[], count: number) => top(items, count).map(maskSwear)
-const hour = (value: number) => String(value).padStart(2, '0')
-
-/** The usual window, the same one the report shows in Activity. */
-const usual = computed(() => {
-  const span = props.data.derived.availabilityProfile.peakWindow
-  if (!span) return null
-  const [from = 0, to = 0] = span.split('-').map((time) => Number.parseInt(time, 10))
-  const weekday = props.data.report.activity.weekday
-  const busiest = weekday.reduce((best, value, day) => (value.total > (weekday[best]?.total ?? 0) ? day : best), 0)
-  return {
-    from,
-    to,
-    persona: personaOf(span)!,
-    day: weekday[busiest]?.total ? (t('chart.weekdaysLong').split(',')[busiest] ?? '') : '',
-  }
-})
-
-/**
- * The caption that goes with shared pictures: real numbers and the address,
- * so whoever sees it can make their own.
- */
-const shareText = computed(() => {
-  const { totals, responses } = props.data.report
-  const values = { count: formatNumber(totals.messages), site: site.value }
-  if (isGroup.value) return tc('story.shareText.group', totals.messages, { ...values, name: them.value.name })
-  const mine = responses.iWriteFirstPct
-  if (mine === null || Math.abs(mine - 50) <= 10) return tc('story.shareText.even', totals.messages, values)
-  return tc(mine > 50 ? 'story.shareText.me' : 'story.shareText.them', totals.messages, values)
-})
-
-/** «Who does it more» as a tile: the name, and both counts underneath. */
-function whoMore(label: string, pair: { mine: number; theirs: number }, accent = false): StoryBlock | null {
-  if (pair.mine + pair.theirs < MIN_REPLY_SAMPLES) return null
-  // Inside the slides you are «Вы», as in the report; your name only heads the cover.
-  const myName = t('story.you')
-  const otherName = theirName.value
-  const even = isEven(pair.mine, pair.theirs)
-  return {
-    kind: 'stat',
-    label,
-    value: even ? t('story.even') : pair.mine > pair.theirs ? myName : otherName,
-    note: `${myName} ${formatNumber(pair.mine)}, ${otherName} ${formatNumber(pair.theirs)}`,
-    accent,
-  }
-}
-
-/** «Почти поровну», «Вы пишете больше»: the same words as the report tile. */
-function shareVerdict(share: number) {
-  if (share >= 65) return t('report.kpi.youWriteMuchMore')
-  if (share > 55) return t('report.kpi.youWriteMore')
-  if (share <= 35) return t('report.kpi.theyWriteMuchMore', { name: theirName.value })
-  if (share < 45) return t('report.kpi.theyWriteMore', { name: theirName.value })
-  return t('report.kpi.even')
-}
-
-/** Stat tiles sit in pairs; an odd one out takes the full row. */
-function paired(blocks: StoryBlock[]) {
-  const stats = blocks.filter((block) => block.kind === 'stat' && !block.wide)
-  if (stats.length % 2) stats[stats.length - 1]!.wide = true
-  return blocks
-}
-
-const slides = computed<StorySlideModel[]>(() => {
-  const { report } = props.data
-  const { totals, facts, responses, vocabulary, activity, sessions, habits } = report
-  const list: StorySlideModel[] = []
-  /** «Вы двое» took voice and reactions in: no separate slide for them. */
-  let together = false
-  // Inside the slides you are «Вы», as in the report; your name only heads the cover.
-  const myName = t('story.you')
-  const otherName = theirName.value
-
-  // The whole chat as the signature seismograph, bucketed to stay legible.
-  const daily = fillDailyGaps(activity.daily)
-  const size = Math.max(1, Math.ceil(daily.length / PULSE_TICKS))
-  const pulse: { sent: number; received: number }[] = []
-  daily.forEach((day, index) => {
-    if (index % size === 0) pulse.push({ sent: 0, received: 0 })
-    pulse[pulse.length - 1]!.sent += day.sent
-    pulse[pulse.length - 1]!.received += day.received
-  })
-
-  const mineShare = totals.messages ? (totals.sent / totals.messages) * 100 : 50
-  // Per day with messages, rounded: «≈ 221» reads better on a poster than «220,6».
-  const perDay = formatNumber(Math.round(totals.messages / Math.max(facts.activeDays, 1)))
-  const streak = facts.maxStreak.days
-  const busiest = facts.mostActiveDate
-  // 1. The chat at a glance: how much, how evenly and for how long.
-  const overview: StoryBlock[] = []
-  // The pulse with the chapters of the chat under it, as at the top of the report.
-  // As on the poster: chapters only when the history has at least three, never a lone «Ровно».
-  const allChapters = isGroup.value ? [] : computeChapters(activity.daily)
-  const chapterList = allChapters.length > 2 ? allChapters : []
-  const chapterDays = chapterList.reduce((sum, chapter) => sum + chapter.days, 0)
-  if (pulse.length > 1)
-    overview.push({
-      kind: 'pulse',
-      label: t('story.pulseLabel'),
-      days: pulse,
-      chapters: chapterList.map((chapter) => ({
-        name: t(`report.chapters.kind.${chapter.kind}`),
-        share: chapter.days / Math.max(1, chapterDays),
-        peak: chapter.kind === 'peak',
-      })),
-    })
-  // Who writes more, as in the report tile: the answer in words over the split line.
-  if (totals.messages && !isGroup.value) {
-    const mine = Math.round(mineShare)
-    overview.push({
-      kind: 'split',
-      // The answer is the label: «Мама пишет больше» over «42% ━━ ━━━ 58%».
-      label: shareVerdict(mineShare).replace(/^./u, (letter) => letter.toLocaleUpperCase()),
-      left: { label: `${myName}, ${formatNumber(totals.sent)}`, value: formatPercent(mine) },
-      right: { label: `${otherName}, ${formatNumber(totals.received)}`, value: formatPercent(100 - mine) },
-      mine: totals.sent,
-      theirs: totals.received,
-    })
-  }
-  overview.push({ kind: 'stat', label: t('story.perDay'), value: perDay, accent: true })
-  overview.push(
-    streak >= 3
-      ? { kind: 'stat', label: t('story.posterStreak'), value: tc('report.highlights.days', streak) }
-      : { kind: 'stat', label: t('story.activeDays'), value: formatNumber(facts.activeDays) },
-  )
-  list.push({
-    key: 'overview',
-    // The cover is the report's poster: the person's colour and their name, large.
-    theme: 2,
-    durationMs: 9000,
-    display: props.data.summary.title,
-    kicker: t(isGroup.value ? 'story.volumeKickerGroup' : 'story.volumeKicker'),
-    title: formatNumber(totals.messages),
-    sub: [tc('story.messagesWord', totals.messages), tc('story.activeDaysCount', facts.activeDays)].join(', '),
-    blocks: overview,
-  })
-
-  // 2. The dynamic: who starts and who replies faster — or, in a group, whose voice carries.
-  if (isGroup.value && group.value?.participants.length) {
-    const voices = group.value.participants.slice(0, 5)
-    const leader = voices[0]!
-    const most = Math.max(...voices.map((person) => person.messageShare), 1)
-    list.push({
-      key: 'voices',
-      theme: 2,
-      durationMs: 9000,
-      kicker: t('story.voicesKicker'),
-      title: nameOf(leader),
-      sub: t('story.voicesSub', { share: formatPercent(leader.messageShare) }),
-      blocks: [
-        {
-          kind: 'ranking',
-          label: t('story.topVoices'),
-          items: voices.map((person) => ({
-            name: nameOf(person),
-            value: formatPercent(person.messageShare),
-            share: (person.messageShare / most) * 100,
-          })),
-        },
-        { kind: 'stat', label: t('story.yourShare'), value: formatPercent(mineShare), accent: true },
-        { kind: 'stat', label: t('story.membersLabel'), value: formatNumber(group.value.participants.length) },
-      ],
-    })
-  } else if (!isGroup.value && responses.iWriteFirstPct !== null) {
-    const mine = responses.iWriteFirstPct
-    const even = isEven(mine, 100 - mine)
-    const starter = mine >= 50 ? myName : otherName
-    const { medianMineSec, medianTheirsSec } = responses
-    const blocks: StoryBlock[] = [
-      {
-        kind: 'split',
-        label: t('story.startsLabel'),
-        left: { label: myName, value: formatPercent(mine) },
-        right: { label: otherName, value: formatPercent(100 - mine) },
-        mine,
-        theirs: 100 - mine,
-      },
-    ]
-    if (medianMineSec !== null && medianTheirsSec !== null) {
-      let note: string | undefined
-      const ratio = replyComparisonRatio(responses)
-      if (ratio !== null) {
-        note =
-          ratio < REPLY_COMPARISON_EVEN_RATIO
-            ? t('story.speedEven')
-            : medianMineSec < medianTheirsSec
-              ? t('story.speedFasterYou', { ratio: formatDecimal(ratio) })
-              : t('story.speedFaster', { name: otherName, ratio: formatDecimal(ratio) })
-      }
-      // The answer is the label («Мама отвечает в 2 раза быстрее»), both times at the ends, no bar:
-      // a longer bar for a slower reply would read as «more».
-      blocks.push({
-        kind: 'split',
-        label: note?.replace(/\.$/u, '') ?? t('story.replySpeed'),
-        left: { label: myName, value: formatDuration(medianMineSec) },
-        right: { label: otherName, value: formatDuration(medianTheirsSec) },
-        mine: 0,
-        theirs: 0,
-      })
-    }
-    // Voice and laughs join this slide as a pair of tiles: one dense «Вы двое» instead of two thin
-    // slides, and three rows fit a 9:16 picture between the safe zones.
-    const voice = report.voice
-    if (voice) {
-      const seconds = {
-        mine: voice.voice.seconds.mine + voice.round.seconds.mine,
-        theirs: voice.voice.seconds.theirs + voice.round.seconds.theirs,
-      }
-      if (seconds.mine + seconds.theirs >= 60) {
-        const even = isEven(seconds.mine, seconds.theirs)
-        blocks.push({
-          kind: 'stat',
-          label: t('story.voice'),
-          value: even ? t('story.even') : seconds.mine > seconds.theirs ? myName : otherName,
-          // «23 мин» never breaks between the number and its unit.
-          note: `${myName} ${formatDuration(seconds.mine).replaceAll(' ', ' ')}, ${otherName} ${formatDuration(seconds.theirs).replaceAll(' ', ' ')}`,
-        })
-      }
-    }
-    const laughs = habits ? whoMore(t('story.laughs'), habits.laughs, true) : null
-    if (laughs) blocks.push(laughs)
-    together = true
-    list.push({
-      key: 'starts',
-      theme: 2,
-      durationMs: 9000,
-      kicker: t('story.startsKicker'),
-      title: even ? t('story.startsEvenTitle') : starter,
-      sub: even
-        ? t('story.startsEvenSub')
-        : t(mine >= 50 ? 'story.startsSubYou' : 'story.startsSub', {
-            share: formatPercent(mine >= 50 ? mine : 100 - mine),
-          }),
-      blocks: paired(blocks.slice(0, 5)),
-    })
-  }
-
-  // 3. When: the usual window as a persona, the hours and the records.
-  const time = usual.value
-  if (time) {
-    const blocks: StoryBlock[] = [
-      {
-        kind: 'bars',
-        label: t('story.hoursLabel'),
-        values: activity.hourly.map((value) => value.total),
-        from: time.from,
-        to: (time.to + 23) % 24,
-        note:
-          sessions.nightSessionsPct !== null
-            ? t('story.nightNote', { share: formatPercent(sessions.nightSessionsPct) })
-            : undefined,
-      },
-    ]
-    // The busiest month, not the «longest conversation»: a session's length read strangely.
-    if (facts.mostActiveMonth)
-      blocks.push({
-        kind: 'stat',
-        label: t('story.busiestMonth'),
-        value: formatMonth(facts.mostActiveMonth, { month: 'long' }),
-        note: facts.mostActiveMonth.slice(0, 4),
-      })
-    if (busiest)
-      blocks.push({
-        kind: 'stat',
-        label: t('story.busiestDay'),
-        // The number alone is the value: «127 сообщений» would not fit half a poster in the serif.
-        value: formatNumber(busiest.total),
-        note: `${tc('story.messagesWord', busiest.total)}, ${formatDay(busiest.date, DAY_MONTH).replaceAll(' ', '\u00a0')}`,
-        accent: true,
-      })
-    // The next round-number message, as in «Круглые сообщения»: a reason to come back.
-    const next = isGroup.value ? null : forecastMilestone(totals.messages, activity.daily)
-    if (next)
-      blocks.push({
-        kind: 'stat',
-        label: t('story.nextMilestone', { n: formatNumber(next.index) }),
-        value: tc('story.inDays', next.days),
-        wide: true,
-      })
-    list.push({
-      key: 'time',
-      theme: 2,
-      durationMs: 9000,
-      kicker: t('story.timeKicker'),
-      title: t(`story.persona.${time.persona}`),
-      sub: time.day
-        ? t('story.timeSubDay', { from: hour(time.from), to: hour(time.to), day: time.day })
-        : t('story.timeSub', { from: hour(time.from), to: hour(time.to) }),
-      blocks: paired(blocks),
-    })
-  }
-
-  // 4. Habits: voice minutes, reactions and who opens and closes the day.
-  if (!together) {
-    const talk = talkSlide()
-    if (talk) list.push(talk)
-  }
-
-  // 5. Words: the word of the chat, each side's favourites, emoji and habits.
-  const myWords = topWords(vocabulary.topWordsBySender.mine, 3)
-  const theirWords = topWords(vocabulary.topWordsBySender.theirs, 3)
-  const chatWord = topWords(vocabulary.topWords, 1)[0] ?? myWords[0]
-  if (chatWord) {
-    const blocks: StoryBlock[] = []
-    if (myWords.length && theirWords.length)
-      blocks.push({
-        kind: 'columns',
-        left: { title: myName, items: myWords },
-        right: { title: otherName, items: theirWords },
-      })
-    const myEmoji = top(vocabulary.topEmojiBySender.mine, 3)
-    const theirEmoji = top(vocabulary.topEmojiBySender.theirs, 3)
-    if (myEmoji.length && theirEmoji.length)
-      blocks.push({
-        kind: 'duel',
-        label: t('story.emoji'),
-        left: { label: myName, value: myEmoji.join(' ') },
-        right: { label: otherName, value: theirEmoji.join(' ') },
-      })
-    const questions = habits ? whoMore(t('story.questions'), habits.questionTurns ?? habits.questions) : null
-    if (questions) blocks.push(questions)
-    // Who writes longer: words in a text message, side by side with who asks more.
-    const { mine: wordsMine, theirs: wordsTheirs } = vocabulary.wordsPerMessage
-    if (!isGroup.value && wordsMine && wordsTheirs) {
-      const even = isEven(wordsMine, wordsTheirs)
-      blocks.push({
-        kind: 'stat',
-        label: t('story.longer'),
-        value: even ? t('story.even') : wordsMine > wordsTheirs ? myName : otherName,
-        note: `${myName} ${formatDecimal(wordsMine)}, ${otherName} ${formatDecimal(wordsTheirs)}`,
-      })
-    }
-    list.push({
-      key: 'words',
-      theme: 2,
-      durationMs: 9000,
-      kicker: t('story.wordsKicker'),
-      title: `«${chatWord}»`,
-      blocks: paired(blocks.slice(0, 5)),
-    })
-  }
-
-  return list
-})
-
-/** Voice, reactions and daily rituals; null when the report has none of them. */
-function talkSlide(): StorySlideModel | null {
-  const { voice, reactions } = props.data.report
-  // Inside the slides you are «Вы», as in the report; your name only heads the cover.
-  const myName = t('story.you')
-  const otherName = theirName.value
-  const blocks: StoryBlock[] = []
-  const seconds = voice
-    ? {
-        mine: voice.voice.seconds.mine + voice.round.seconds.mine,
-        theirs: voice.voice.seconds.theirs + voice.round.seconds.theirs,
-      }
-    : { mine: 0, theirs: 0 }
-  const voiceTotal = seconds.mine + seconds.theirs
-  const plain = (items: { value: string }[]) =>
-    top(
-      items.filter((item) => item.value !== 'custom' && item.value !== 'paid'),
-      3,
-    )
-
-  const chat = group.value
-  if (isGroup.value && chat) {
-    type Count = 'morningFirst' | 'reactionsReceived' | 'nightLast'
-    const ranked = (count: Count) =>
-      [...chat.participants]
-        .filter((person) => (person[count] ?? 0) > 0)
-        .sort((a, b) => (b[count] ?? 0) - (a[count] ?? 0))
-    const wakers = ranked('morningFirst').slice(0, 4)
-    const most = Math.max(...wakers.map((person) => person.morningFirst ?? 0), 1)
-    if (wakers.length)
-      blocks.push({
-        kind: 'ranking',
-        label: t('story.wakesChat'),
-        items: wakers.map((person) => ({
-          name: nameOf(person),
-          value: tc('report.talk.mornings', person.morningFirst ?? 0),
-          share: ((person.morningFirst ?? 0) / most) * 100,
-        })),
-      })
-    const star = ranked('reactionsReceived')[0]
-    if (star)
-      blocks.push({
-        kind: 'stat',
-        label: t('story.reactionStar'),
-        value: nameOf(star),
-        note: tc('report.talk.reactionCount', star.reactionsReceived ?? 0),
-        accent: true,
-      })
-    const closer = ranked('nightLast')[0]
-    if (closer)
-      blocks.push({
-        kind: 'stat',
-        label: t('story.nightLast'),
-        value: nameOf(closer),
-        note: tc('report.talk.evenings', closer.nightLast ?? 0),
-      })
-  } else {
-    if (voiceTotal)
-      blocks.push({
-        kind: 'split',
-        label: t('story.voice'),
-        left: { label: myName, value: formatDuration(seconds.mine) },
-        right: { label: otherName, value: formatDuration(seconds.theirs) },
-        mine: seconds.mine,
-        theirs: seconds.theirs,
-      })
-    // Mornings and evenings live on «Кто ведёт»; this slide is voice and reactions only.
-    if (reactions) {
-      const mine = plain(reactions.topBySender.mine)
-      const theirs = plain(reactions.topBySender.theirs)
-      if (mine.length && theirs.length)
-        blocks.push({
-          kind: 'duel',
-          label: t('story.reactions'),
-          left: { label: myName, value: mine.join(' ') },
-          right: { label: otherName, value: theirs.join(' ') },
-        })
-    }
-  }
-  if (!blocks.length) return null
-
-  const reactionTotal = reactions ? reactions.given.mine + reactions.given.theirs : 0
-  return {
-    key: 'talk',
-    theme: 2,
-    durationMs: 9000,
-    kicker: t(isGroup.value ? 'story.talkKickerGroup' : 'story.talkKicker'),
-    title:
-      voiceTotal >= 60
-        ? formatDuration(voiceTotal)
-        : reactionTotal
-          ? formatNumber(reactionTotal)
-          : t('story.talkTitle'),
-    sub:
-      voiceTotal >= 60 ? t('story.talkSubVoice') : reactionTotal ? tc('story.reactionsWord', reactionTotal) : undefined,
-    blocks: paired(blocks.slice(0, 5)),
-  }
-}
-
-/** Each slide is a chapter of the report seen from afar: «Вся глава» opens it in full. */
-function chapterOf(key: string) {
-  const map: Record<string, [string, string]> = {
-    starts: ['together', 'report.tabs.together'],
-    time: ['time', 'report.tabs.time'],
-    words: ['words', 'report.tabs.words'],
-    voices: ['people', 'group.tabs.people'],
-    talk: ['talk', 'group.tabs.talk'],
-  }
-  const entry = map[key]
-  return entry ? { id: entry[0], label: t(entry[1] as never) } : null
-}
-
-const current = computed(() => slides.value[Math.min(index.value, slides.value.length - 1)]!)
-const exportSlide = computed(() => (exportIndex.value === null ? null : slides.value[exportIndex.value]))
 
 function go(step: 1 | -1) {
   const next = index.value + step
-  if (next < 0) return
-  if (next >= slides.value.length) {
-    paused.value = true
-    return
-  }
+  if (next < 0 || next >= frames.value.length) return
   index.value = next
 }
-
-/** The active progress bar finished filling: move on, like stories. */
-function onSegmentDone() {
-  byKeys.value = false
-  if (index.value < slides.value.length - 1) index.value += 1
-  else paused.value = true
-}
-
-// ─── Gestures: touch on phones, mouse elsewhere ──────────────────────────────
-// A tap pages, a hold pauses to read (the chrome steps aside), a horizontal swipe pages and a drag
-// down follows the finger and closes the story — by distance or by a flick.
-let start: { x: number; y: number; at: number } | null = null
-let trail: { y: number; t: number }[] = []
-/** Held longer than this, a press was reading, not tapping: release resumes and never pages. */
-const HOLD_MS = 250
-/** A downward flick faster than this closes however short it was (px per ms). */
-const FLICK_VELOCITY = 0.4
-const holding = ref(false)
-let holdTimer: ReturnType<typeof setTimeout> | undefined
-/** How far the frame follows the finger down; null when nothing is dragging it. */
-const dragY = ref<number | null>(null)
-const frameStyle = computed(() =>
-  dragY.value === null
-    ? undefined
-    : {
-        transform: `translateY(${dragY.value}px) scale(${1 - Math.min(dragY.value, 400) / 2400})`,
-        transition: 'none',
-      },
+const gestures = useStoryGestures({
+  go: (step) => {
+    byKeys.value = false
+    go(step)
+  },
+  close: () => emit('close'),
+})
+const waiting = computed(
+  () =>
+    userPaused.value ||
+    byKeys.value ||
+    gestures.pressed.value ||
+    image.busy.value ||
+    index.value >= frames.value.length,
 )
 
-function begin(x: number, y: number, at: number) {
-  byKeys.value = false
-  start = { x, y, at }
-  trail = [{ y, t: at }]
-  paused.value = true
-  clearTimeout(holdTimer)
-  holdTimer = setTimeout(() => (holding.value = true), HOLD_MS)
+/** The active mark finished filling: the next frame, like stories; the last one simply stays. */
+function onSegmentDone() {
+  if (index.value < frames.value.length - 1) index.value += 1
 }
-
-function move(x: number, y: number, at: number) {
-  if (!start) return
-  const dx = x - start.x
-  const dy = y - start.y
-  trail = [...trail.filter((point) => at - point.t < 100), { y, t: at }]
-  if (dragY.value !== null || (dy > 10 && dy > Math.abs(dx))) {
-    clearTimeout(holdTimer)
-    holding.value = false
-    // Down follows the finger; up resists, since there is nowhere to go.
-    dragY.value = dy >= 0 ? dy : -Math.sqrt(-dy) * 2
-  }
-}
-
-function settle() {
-  clearTimeout(holdTimer)
-  holding.value = false
-  paused.value = false
-  dragY.value = null
-}
-
-function end(x: number, y: number, at: number, stage: HTMLElement) {
-  if (!start) return settle()
-  const dx = x - start.x
-  const dy = y - start.y
-  const held = at - start.at > HOLD_MS
-  const first = trail[0]
-  const velocity = first && at > first.t ? (y - first.y) / (at - first.t) : 0
-  const dragged = dragY.value !== null
-  start = null
-  settle()
-  if (dragged) {
-    const height = stage.offsetHeight || 1
-    if (dy > 0 && (dy > height * 0.2 || velocity > FLICK_VELOCITY)) emit('close')
-    return
-  }
-  if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
-    go(dx < 0 ? 1 : -1)
-    return
-  }
-  if (Math.abs(dx) > SWIPE_PX || Math.abs(dy) > SWIPE_PX) return
-  // A hold was reading the slide: let go and the story simply carries on.
-  if (held) return
-  const box = stage.getBoundingClientRect()
-  go(x - box.left < box.width / 3 ? -1 : 1)
-}
-
-function onTouchStart(event: TouchEvent) {
-  const touch = event.touches[0]
-  if (touch) begin(touch.clientX, touch.clientY, event.timeStamp)
-}
-
-function onTouchMove(event: TouchEvent) {
-  const touch = event.touches[0]
-  if (touch) move(touch.clientX, touch.clientY, event.timeStamp)
-}
-
-function onTouchEnd(event: TouchEvent) {
-  const touch = event.changedTouches[0]
-  if (!touch) return
-  // The touch already moved the story; stop the synthetic click that follows.
-  event.preventDefault()
-  end(touch.clientX, touch.clientY, event.timeStamp, event.currentTarget as HTMLElement)
-}
-
-function onPointerDown(event: PointerEvent) {
-  if (event.pointerType === 'touch') return
-  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
-  begin(event.clientX, event.clientY, event.timeStamp)
-}
-
-function onPointerMove(event: PointerEvent) {
-  if (event.pointerType === 'touch') return
-  move(event.clientX, event.clientY, event.timeStamp)
-}
-
-function onPointerUp(event: PointerEvent) {
-  if (event.pointerType === 'touch') return
-  end(event.clientX, event.clientY, event.timeStamp, event.currentTarget as HTMLElement)
-}
-
-function onCancel() {
-  start = null
-  settle()
-}
-
-onBeforeUnmount(() => clearTimeout(holdTimer))
-
-/** Paging with the arrow keys is reading, not watching: the next slide is just there. */
-const byKeys = ref(false)
 
 function onKeydown(event: KeyboardEvent) {
-  if (shareOpen.value) return
   if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
   byKeys.value = true
   go(event.key === 'ArrowRight' ? 1 : -1)
 }
 
-// ─── Images: rendered from an exact 9:16 copy off screen ─────────────────────
-async function render(position: number) {
-  exportIndex.value = position
-  await nextTick()
-  if (!exportRef.value) throw new Error('No slide to render')
-  return image.render(exportRef.value)
-}
-
+// ─── Pictures: rendered from an exact 9:16 copy off screen ───────────────────
 async function renderFiles(positions: number[]) {
   const files: File[] = []
   for (const position of positions) {
-    const blob = await render(position)
-    files.push(new File([blob], `tg-analyzer-${slides.value[position]!.key}.png`, { type: 'image/png' }))
+    exportIndex.value = position
+    await nextTick()
+    if (!exportRef.value) throw new Error('No frame to render')
+    const blob = await image.render(exportRef.value)
+    files.push(new File([blob], `tg-analyzer-${frames.value[position]!.key}.png`, { type: 'image/png' }))
   }
-  exportIndex.value = null
   return files
 }
 
-async function saveCurrent() {
-  paused.value = true
+/** Saves or sends the given frames; without a share sheet (desktop) sending saves them. */
+async function deliver(positions: number[], send: boolean) {
   try {
     await image.run(async () => {
-      const [file] = await renderFiles([index.value])
-      image.download(file!, file!.name)
-    })
-  } catch {
-    toast.error(t('story.saveError'))
-  } finally {
-    exportIndex.value = null
-  }
-}
-
-function openShare() {
-  paused.value = true
-  shareOpen.value = true
-}
-
-function closeShare() {
-  shareOpen.value = false
-  paused.value = false
-}
-
-/**
- * A story takes one 9:16 picture, so Instagram and Telegram get the current
- * slide; a chat gets all of them. The phone's share sheet lists the apps;
- * without one (desktop) the images are saved with a hint where to add them.
- */
-async function shareTo(target: ShareTarget) {
-  shareOpen.value = false
-  paused.value = true
-  try {
-    await image.run(async () => {
-      const positions = target === 'chat' ? slides.value.map((_, position) => position) : [index.value]
       const files = await renderFiles(positions)
-      if (canShare.value) {
-        await image.share(files, shareText.value)
-        return
-      }
+      if (send && canShare.value) return void (await image.share(files))
       files.forEach((file) => image.download(file, file.name))
-      toast.success(
-        target === 'chat'
-          ? t('story.savedForChat')
-          : t('story.savedForApp', { app: target === 'instagram' ? 'Instagram' : 'Telegram' }),
-      )
+      toast.success(t(files.length > 1 ? 'story.savedAll' : 'story.savedOne'))
     })
   } catch {
     toast.error(t('story.saveError'))
@@ -776,45 +107,24 @@ async function shareTo(target: ShareTarget) {
     exportIndex.value = null
   }
 }
+const all = () => frames.value.map((_, position) => position)
 
-async function loadAvatars() {
-  if (props.offline) return
-  const [mine, theirs] = await Promise.all([
-    auth.telegramSessionActive ? loadProfileAvatar() : Promise.resolve(null),
-    loadChatAvatar(props.data.summary.chatId).catch(() => null),
-  ])
-  myAvatar.value = mine
-  theirAvatar.value = theirs
-}
-
-/** Every slide as a picture: to the phone's share sheet when it can take files, downloaded otherwise. */
-async function exportAll(send: boolean) {
-  paused.value = true
-  try {
-    await image.run(async () => {
-      const files = await renderFiles(slides.value.map((_, position) => position))
-      if (send && canShare.value) await image.share(files, shareText.value)
-      else files.forEach((file) => image.download(file, file.name))
-    })
-  } catch {
-    toast.error(t('story.saveError'))
-  } finally {
-    exportIndex.value = null
-  }
-}
-
-watch(open, async (value) => {
-  if (!value) return
-  index.value = 0
-  paused.value = false
-  shareOpen.value = false
-  canShare.value = image.canShareFiles()
-  void loadAvatars()
-  if (props.intent === 'save' || props.intent === 'share') {
-    await nextTick()
-    await exportAll(props.intent === 'share')
-  }
-})
+watch(
+  open,
+  async (value) => {
+    if (!value) return
+    index.value = 0
+    userPaused.value = false
+    byKeys.value = false
+    canShare.value = image.canShareFiles()
+    if (props.intent === 'save' || props.intent === 'share') {
+      await nextTick()
+      await deliver(all(), props.intent === 'share')
+    }
+  },
+  // Loaded lazily, the story mounts already open.
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -825,146 +135,95 @@ watch(open, async (value) => {
           ref="panelRef"
           tabindex="-1"
           class="stories__frame"
-          :class="{ 'is-paper': current.theme !== 1, 'is-holding': holding, 'is-dragging': dragY !== null }"
-          :style="frameStyle"
+          :class="{ 'is-holding': gestures.holding.value, 'is-dragging': gestures.dragY.value !== null }"
+          :style="gestures.frameStyle.value"
           role="dialog"
           aria-modal="true"
           :aria-label="t('story.title')"
           @keydown="onKeydown"
         >
-          <div
-            class="stories__stage"
-            role="img"
-            :aria-label="`${current.kicker}. ${current.title}. ${current.sub ?? ''}`"
-            @touchstart.passive="onTouchStart"
-            @touchmove.passive="onTouchMove"
-            @touchend="onTouchEnd"
-            @touchcancel="onCancel"
-            @pointerdown="onPointerDown"
-            @pointermove="onPointerMove"
-            @pointerup="onPointerUp"
-            @pointercancel="onCancel"
-          >
-            <StorySlide
-              :key="current.key"
-              :slide="current"
-              :people="people"
-              :heading="heading"
-              :heading-sub="headingSub"
-              :still="byKeys"
-              chrome
-            />
+          <div class="stories__stage" v-on="gestures.handlers">
+            <StoryFrame :key="current.key" :frame="current" :who="who" />
           </div>
 
-          <!-- Overlays on top of the slide, like stories. -->
           <div class="stories__top">
-            <div class="stories__progress" aria-hidden="true">
-              <span v-for="(item, position) in slides" :key="item.key" class="stories__segment">
+            <div
+              class="stories__progress"
+              role="progressbar"
+              aria-valuemin="1"
+              :aria-valuemax="frames.length"
+              :aria-valuenow="index + 1"
+              :aria-label="label"
+            >
+              <span v-for="(item, position) in frames" :key="item.key" class="stories__segment">
                 <span
                   v-if="position === index"
                   :key="`fill-${index}`"
                   class="stories__fill is-active"
-                  :style="{
-                    animationDuration: `${current.durationMs}ms`,
-                    animationPlayState: paused || userPaused || image.busy.value ? 'paused' : 'running',
-                  }"
+                  :style="{ animationDuration: `${FRAME_MS}ms`, animationPlayState: waiting ? 'paused' : 'running' }"
                   @animationend="onSegmentDone"
                 />
                 <span v-else class="stories__fill" :class="{ 'is-done': position < index }" />
               </span>
             </div>
             <div class="stories__bar">
-              <button
-                type="button"
-                class="stories__icon"
-                :aria-label="userPaused ? t('story.play') : t('story.pause')"
+              <p class="stories__label" aria-hidden="true">{{ label }}</p>
+              <UiIconButton
+                tone="poster"
+                :icon="userPaused ? Play : Pause"
+                :label="userPaused ? t('story.play') : t('story.pause')"
                 :aria-pressed="userPaused"
+                no-tooltip
                 @click="userPaused = !userPaused"
-              >
-                <Play v-if="userPaused" aria-hidden="true" />
-                <Pause v-else aria-hidden="true" />
-              </button>
-              <button type="button" class="stories__icon" :aria-label="t('common.close')" @click="emit('close')">
-                <X aria-hidden="true" />
-              </button>
+              />
+              <UiIconButton tone="poster" :icon="X" :label="t('common.close')" no-tooltip @click="emit('close')" />
             </div>
           </div>
 
           <div class="stories__actions">
-            <button
-              v-if="chapterOf(current.key)"
-              type="button"
-              class="stories__action stories__action--chapter"
-              @click="emit('chapter', chapterOf(current.key)!.id)"
-            >
-              <ChevronUp aria-hidden="true" />
-              {{ t('story.chapter', { name: chapterOf(current.key)!.label }) }}
-            </button>
-            <button type="button" class="stories__action" :disabled="image.busy.value" @click="saveCurrent">
-              <Download aria-hidden="true" />
-              {{ t('story.saveSlide') }}
-            </button>
-            <button
-              type="button"
-              class="stories__action stories__action--primary"
+            <UiButton
+              variant="poster-soft"
+              size="lg"
+              :icon="Download"
               :disabled="image.busy.value"
-              :aria-expanded="shareOpen"
-              @click="openShare"
+              @click="deliver([index], false)"
             >
-              <span v-if="image.busy.value" class="spinner stories__spinner" aria-hidden="true" />
-              <Share v-else aria-hidden="true" />
+              {{ t('story.saveSlide') }}
+            </UiButton>
+            <UiButton
+              variant="poster-soft"
+              size="lg"
+              :icon="Share"
+              :loading="image.busy.value"
+              @click="deliver([index], true)"
+            >
               {{ t('story.share') }}
-            </button>
+            </UiButton>
           </div>
-
-          <!-- Where to share: a story takes the current slide, a chat gets all. -->
-          <Transition name="stories-sheet">
-            <div v-if="shareOpen" class="stories__share" @click.self="closeShare">
-              <div class="stories__sheet" role="menu" :aria-label="t('story.shareTitle')">
-                <strong class="stories__sheet-title">{{ t('story.shareTitle') }}</strong>
-                <button
-                  v-for="target in ['instagram', 'telegram', 'chat'] as const"
-                  :key="target"
-                  type="button"
-                  role="menuitem"
-                  class="stories__option"
-                  @click="shareTo(target)"
-                >
-                  <span>{{ t(`story.share.${target}`) }}</span>
-                  <small>{{
-                    target === 'chat' ? t('story.shareAllSlides', { count: slides.length }) : t('story.shareThisSlide')
-                  }}</small>
-                </button>
-                <button type="button" class="stories__option stories__option--cancel" @click="closeShare">
-                  {{ t('common.cancel') }}
-                </button>
-              </div>
-            </div>
-          </Transition>
         </section>
 
-        <button
-          type="button"
+        <UiIconButton
           class="stories__arrow stories__arrow--prev"
-          :aria-label="t('story.previous')"
+          tone="chrome"
+          :icon="ChevronLeft"
+          :label="t('story.previous')"
           :disabled="index === 0"
+          no-tooltip
           @click="go(-1)"
-        >
-          <ChevronLeft aria-hidden="true" />
-        </button>
-        <button
-          type="button"
+        />
+        <UiIconButton
           class="stories__arrow stories__arrow--next"
-          :aria-label="t('story.next')"
-          :disabled="index === slides.length - 1"
+          tone="chrome"
+          :icon="ChevronRight"
+          :label="t('story.next')"
+          :disabled="index === frames.length - 1"
+          no-tooltip
           @click="go(1)"
-        >
-          <ChevronRight aria-hidden="true" />
-        </button>
+        />
 
-        <!-- Exact 9:16 copy for the exported image, off screen. -->
-        <div v-if="exportSlide" ref="exportRef" class="stories__export" aria-hidden="true">
-          <StorySlide :slide="exportSlide" :people="people" :heading="heading" :heading-sub="headingSub" still />
+        <!-- The exact 9:16 copy a picture is made from, off screen. -->
+        <div v-if="exportIndex !== null" ref="exportRef" class="stories__export" aria-hidden="true">
+          <StoryFrame :frame="frames[exportIndex]!" :who="who" still />
         </div>
       </div>
     </Transition>
@@ -972,26 +231,7 @@ watch(open, async (value) => {
 </template>
 
 <style scoped>
-/*
- * Controls over the slide take the slide's colours: light on the ink field, ink on paper and lime.
- * Local names, so the slide inside keeps reading the --story-* tokens as they are.
- */
 .stories {
-  --chrome-ink: var(--story-ink);
-  --chrome-on-ink: var(--story-gradient-1);
-  --chrome-track: var(--story-track);
-  --chrome-chip: var(--story-chip);
-}
-
-.stories__frame.is-paper {
-  --chrome-ink: var(--story-paper-ink);
-  --chrome-on-ink: var(--story-paper-card);
-  --chrome-track: var(--story-paper-track);
-  --chrome-chip: var(--story-paper-chip);
-}
-
-.stories {
-  --frame-height: min(92dvh, 860px);
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
@@ -1000,41 +240,43 @@ watch(open, async (value) => {
   background: var(--story-backdrop);
 }
 
+/* A phone: the frame is the screen. */
 .stories__frame {
   position: relative;
-  height: var(--frame-height);
-  aspect-ratio: 9 / 16;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-overlay);
-  /* Let go short of closing: the frame springs back from wherever the finger left it. */
-  transition: transform var(--duration-slow) var(--spring-snappy);
+  background: var(--poster);
+  color: var(--on-poster);
+  transition: transform var(--duration-sheet) var(--ease-drawer);
 }
 
-/* Holding to read: the chrome steps aside so the slide is all there is. */
-.stories__frame.is-holding .stories__top,
-.stories__frame.is-dragging .stories__top {
-  opacity: 0;
+.stories__frame:focus {
+  outline: none;
+}
+
+.stories__frame.is-dragging {
+  border-radius: var(--radius-xl);
 }
 
 .stories__stage {
   position: absolute;
   inset: 0;
-  cursor: pointer;
-  user-select: none;
-  /* The story owns every gesture on the slide: taps, holds, swipes and the drag down to close. */
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
-/* ─── Top overlay: progress and controls ─────────────────────────────────── */
 .stories__top {
   position: absolute;
   inset: 0 0 auto;
-  display: grid;
-  gap: var(--space-2);
-  padding: max(var(--space-3), env(safe-area-inset-top)) var(--space-3) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: calc(var(--space-3) + env(safe-area-inset-top, 0px)) var(--page-gutter) 0;
   pointer-events: none;
-  transition: opacity var(--duration-normal) var(--ease-standard);
+  transition: opacity var(--transition-fast);
 }
 
 .stories__progress {
@@ -1043,24 +285,23 @@ watch(open, async (value) => {
 }
 
 .stories__segment {
-  position: relative;
   flex: 1;
-  height: 3px;
+  height: var(--space-1);
   overflow: hidden;
   border-radius: var(--radius-full);
-  background: var(--chrome-track);
+  background: var(--on-poster-faint);
 }
 
 .stories__fill {
-  position: absolute;
-  inset: 0;
-  transform: scaleX(0);
-  transform-origin: left;
-  background: var(--chrome-ink);
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--on-poster);
 }
 
 .stories__fill.is-done {
-  transform: scaleX(1);
+  width: 100%;
 }
 
 .stories__fill.is-active {
@@ -1069,206 +310,47 @@ watch(open, async (value) => {
 
 @keyframes story-fill {
   to {
-    transform: scaleX(1);
-  }
-}
-
-/* With reduced motion the global rule would end every bar in 1 ms and race to the last slide: no auto-advance, people tap through. */
-@media (prefers-reduced-motion: reduce) {
-  .stories__fill.is-active {
-    animation: none;
-    transform: scaleX(0.5);
+    width: 100%;
   }
 }
 
 .stories__bar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-1);
-  color: var(--chrome-ink);
+  gap: var(--space-2);
 }
 
-.stories__icon {
-  display: inline-grid;
-  place-items: center;
-  width: var(--control-sm);
-  height: var(--control-sm);
-  border: 0;
-  border-radius: var(--radius-full);
-  background: var(--chrome-chip);
-  color: var(--chrome-ink);
-  cursor: pointer;
+.stories__bar > :deep(*) {
   pointer-events: auto;
-  --icon-size: var(--icon-md);
 }
 
-.stories__frame:focus {
-  outline: none;
+.stories__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font: var(--text-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.stories__icon:focus-visible,
-.stories__action:focus-visible,
-.stories__arrow:focus-visible {
-  outline: 2px solid var(--chrome-ink);
-  outline-offset: 2px;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .stories__icon:hover {
-    background: var(--chrome-chip);
-  }
-}
-
-/* ─── Bottom overlay: save and share ─────────────────────────────────────── */
 .stories__actions {
   position: absolute;
   inset: auto 0 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-3) max(var(--space-3), env(safe-area-inset-bottom));
-}
-
-.stories__action {
-  display: inline-flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: var(--control-md);
-  border: 0;
-  border-radius: var(--radius-full);
-  background: var(--chrome-chip);
-  color: var(--chrome-ink);
-  cursor: pointer;
-  font: var(--text-ui);
-}
-
-/* «Вся глава» has a row of its own above saving and sharing. */
-.stories__action.stories__action--chapter {
-  flex: 1 0 100%;
-}
-
-.stories__action--primary {
-  background: var(--chrome-ink);
-  color: var(--chrome-on-ink);
-}
-
-.stories__action:disabled {
-  opacity: var(--opacity-disabled);
-  cursor: progress;
-}
-
-/* ─── Share sheet over the slide ─────────────────────────────────────────── */
-.stories__share {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-end;
-  padding: var(--space-3) var(--space-3) max(var(--space-3), env(safe-area-inset-bottom));
-  background: var(--scrim);
-}
-
-.stories__sheet {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--surface-raised);
-  color: var(--text);
-  box-shadow: var(--shadow-overlay);
-}
-
-.stories__sheet-title {
-  padding: 0 var(--space-1) var(--space-1);
-  font: var(--text-title);
-}
-
-.stories__option {
-  display: grid;
-  gap: var(--space-0-5);
-  min-height: var(--control-lg);
-  padding: var(--space-2) var(--space-4);
-  border: 0;
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
-  color: var(--text);
-  cursor: pointer;
-  font: var(--text-ui);
-  text-align: left;
-}
-
-.stories__option small {
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-
-.stories__option--cancel {
-  place-items: center;
-  background: transparent;
-  color: var(--text-muted);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .stories__option:hover {
-    background: var(--surface);
-  }
-}
-
-.stories-sheet-enter-active,
-.stories-sheet-leave-active {
+  padding: 0 var(--page-gutter) calc(var(--space-8) + env(safe-area-inset-bottom, 0px));
   transition: opacity var(--transition-fast);
 }
 
-.stories-sheet-enter-active .stories__sheet,
-.stories-sheet-leave-active .stories__sheet {
-  transition: transform var(--transition-fast);
-}
-
-.stories-sheet-enter-from,
-.stories-sheet-leave-to {
+/* Reading with a finger held down: the controls step aside. */
+.stories__frame.is-holding .stories__top,
+.stories__frame.is-holding .stories__actions {
   opacity: 0;
 }
 
-.stories-sheet-enter-from .stories__sheet,
-.stories-sheet-leave-to .stories__sheet {
-  transform: translateY(var(--space-4));
-}
-
-.stories__spinner {
-  --spinner-size: var(--icon-sm);
-}
-
-/* ─── Arrows beside the frame on wide screens ────────────────────────────── */
 .stories__arrow {
-  position: fixed;
-  top: 50%;
-  display: inline-grid;
-  place-items: center;
-  width: var(--control-md);
-  height: var(--control-md);
-  border: 0;
-  border-radius: var(--radius-full);
-  background: var(--story-chip);
-  color: var(--story-ink);
-  cursor: pointer;
-  transform: translateY(-50%);
-  --icon-size: var(--icon-md);
-}
-
-.stories__arrow--prev {
-  left: calc(50% - var(--frame-height) * 9 / 32 - var(--control-md) - var(--space-4));
-}
-
-.stories__arrow--next {
-  right: calc(50% - var(--frame-height) * 9 / 32 - var(--control-md) - var(--space-4));
-}
-
-.stories__arrow:disabled {
-  opacity: var(--opacity-disabled);
-  cursor: default;
+  display: none;
 }
 
 .stories__export {
@@ -1281,7 +363,7 @@ watch(open, async (value) => {
 
 .stories-enter-active,
 .stories-leave-active {
-  transition: opacity var(--transition-normal);
+  transition: opacity var(--transition-fast);
 }
 
 .stories-enter-from,
@@ -1289,17 +371,36 @@ watch(open, async (value) => {
   opacity: 0;
 }
 
-/* Phones: the story is the whole screen. */
-@media (max-width: 640px) {
+/* Wider screens: a 9:16 frame in the middle of a dark room, arrows beside it. */
+@media (min-width: 641px) {
+  .stories {
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-6);
+    padding: var(--space-6);
+  }
+
   .stories__frame {
-    width: 100%;
-    height: 100%;
-    aspect-ratio: auto;
-    border-radius: 0;
+    grid-column: 2;
+    width: auto;
+    height: min(100%, 844px);
+    aspect-ratio: 9 / 16;
+    border-radius: var(--radius-xl);
   }
 
   .stories__arrow {
-    display: none;
+    display: inline-flex;
+  }
+
+  .stories__arrow--prev {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .stories__arrow--next {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: start;
   }
 }
 </style>

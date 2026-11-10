@@ -260,25 +260,8 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
   const stories = page.getByRole('dialog', { name: 'Итоги переписки' })
   // Up to four dense slides: the overview with the total first, then what the data allows.
   await expect.poll(() => stories.locator('.stories__segment').count()).toBeGreaterThanOrEqual(2)
-  await expect(stories.locator('.stories__stage .story-slide__heading strong')).toHaveText(/Demo\s*&\s*Катя/)
-  await expect(stories.locator('.stories__stage .story-slide__title')).toHaveText(/^\d[\d\s]*$/)
-  await page.keyboard.press('ArrowRight')
-  await expect
-    .poll(() =>
-      stories.locator('.stories__stage .story-slide').evaluate((slide) => {
-        const grid = slide.querySelector('.story-slide__grid')!
-        const brand = slide.querySelector('.story-slide__brand')!
-        return brand.getBoundingClientRect().top - grid.getBoundingClientRect().bottom
-      }),
-    )
-    .toBeGreaterThanOrEqual(8)
-  await expect(stories.locator('.stories__stage .story-slide__heading strong')).toHaveText(/Demo\s*&\s*Катя/)
-
-  await stories.getByRole('button', { name: 'Поделиться' }).click()
-  for (const option of ['Сторис в Instagram', 'Сторис в Telegram', 'Отправить в чат']) {
-    await expect(stories.getByRole('menuitem', { name: new RegExp(option) })).toBeVisible()
-  }
-  await stories.getByRole('button', { name: 'Отмена' }).click()
+  await expect(stories.locator('.stories__stage .frame__title')).toHaveText('Катя')
+  await expect(stories.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1')
 
   const download = page.waitForEvent('download')
   await stories.getByRole('button', { name: 'Сохранить' }).click()

@@ -8,7 +8,7 @@
 const props = withDefaults(
   defineProps<{
     data: readonly { sent: number; received: number }[]
-    /** Height of each half in px. */
+    /** Height of each half in px; 0 leaves it to the caller's `--pulse-half` (a story frame sizes in cqw). */
     height?: number
     bars?: number
     label?: string
@@ -50,7 +50,7 @@ const columns = computed(() => {
     :role="label ? 'img' : undefined"
     :aria-label="label || undefined"
     :aria-hidden="label ? undefined : 'true'"
-    :style="{ '--pulse-half': `${height}px` }"
+    :style="height ? { '--pulse-half': `${height}px` } : undefined"
   >
     <div class="pulse__half pulse__half--up">
       <i v-for="(column, index) in columns" :key="index" :style="{ height: column.up }" />

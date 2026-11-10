@@ -19,3 +19,4 @@ dump.rdb
 
 # Impeccable live-server runtime state
 **/.impeccable/live/
+__pycache__/
