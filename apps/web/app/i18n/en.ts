@@ -503,6 +503,8 @@ export const en = {
   'share.link.wordsHint': 'Without them the report has numbers only',
   'share.link.copy': 'Copy the link',
   'share.link.copied': 'Link copied',
+  'share.link.manual': 'Can't copy here. Select the link and copy it by hand',
+  'share.link.system': 'Share with…',
   'share.link.views.one': 'Opened {count} time',
   'share.link.views.few': 'Opened {count} times',
   'share.link.views.many': 'Opened {count} times',

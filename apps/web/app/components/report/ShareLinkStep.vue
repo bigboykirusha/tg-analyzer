@@ -13,6 +13,7 @@ const emit = defineEmits<{ update: [link: ShareLinkDto | null] }>()
 const { t, tc, formatDate } = useI18n()
 const auth = useAuthStore()
 const toast = useToast()
+const copyLink = useCopyLink()
 const errorMessage = useErrorMessage()
 
 const settings = reactive({
@@ -71,8 +72,7 @@ async function copy() {
       })
       emit('update', link)
     }
-    await navigator.clipboard.writeText(`${location.origin}/s/${link.token}`)
-    toast.success(t('share.link.copied'))
+    await copyLink.copy(`${location.origin}/s/${link.token}`)
   } catch (error) {
     toast.error(errorMessage(error))
   } finally {
@@ -99,7 +99,13 @@ async function copy() {
       <UiButton variant="primary" block :icon="Copy" :loading="busy" @click="copy">
         {{ t('share.link.copy') }}
       </UiButton>
-      <p class="link-step__note" role="status">{{ status }}</p>
+      <ShareFallback
+        v-if="copyLink.fallback.value"
+        :url="copyLink.fallback.value"
+        :can-share="copyLink.canShare.value"
+        @share="copyLink.share"
+      />
+      <p v-else class="link-step__note" role="status">{{ status }}</p>
     </div>
   </div>
 </template>

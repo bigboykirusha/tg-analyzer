@@ -503,6 +503,8 @@ export const ru: Record<MessageKey, string> = {
   'share.link.wordsHint': 'Без них в отчёте только числа',
   'share.link.copy': 'Скопировать ссылку',
   'share.link.copied': 'Ссылка скопирована',
+  'share.link.manual': 'Здесь не получилось скопировать. Выделите ссылку и скопируйте вручную',
+  'share.link.system': 'Поделиться через…',
   'share.link.views.one': 'Открыли {count} раз',
   'share.link.views.few': 'Открыли {count} раза',
   'share.link.views.many': 'Открыли {count} раз',

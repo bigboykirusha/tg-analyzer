@@ -18,6 +18,7 @@ const emit = defineEmits<{ update: [link: ShareLinkDto | null] }>()
 const { t, tc, formatDate } = useI18n()
 const { question } = useQuizText()
 const toast = useToast()
+const copyLink = useCopyLink()
 const errorMessage = useErrorMessage()
 
 const busy = ref(false)
@@ -61,8 +62,7 @@ async function send() {
 async function copy() {
   const link = props.link ?? (await create())
   if (!link) return
-  await navigator.clipboard.writeText(urlOf(link))
-  toast.success(t('share.link.copied'))
+  await copyLink.copy(urlOf(link))
 }
 </script>
 
@@ -115,6 +115,12 @@ async function copy() {
           {{ t('share.quiz.copy') }}
         </UiButton>
       </template>
+      <ShareFallback
+        v-if="copyLink.fallback.value"
+        :url="copyLink.fallback.value"
+        :can-share="copyLink.canShare.value"
+        @share="copyLink.share"
+      />
       <p class="quiz-step__note">{{ t('share.quiz.privacy') }}</p>
     </div>
   </div>
