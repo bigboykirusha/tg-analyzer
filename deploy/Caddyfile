@@ -1,0 +1,22 @@
+# One address for everything: Caddy gets the HTTPS certificate itself (Let's Encrypt).
+# SITE_HOST comes from deploy/.env: a domain (example.com) or, before one is bought,
+# the server's free sslip.io name (203-0-113-7.sslip.io for IP 203.0.113.7).
+{$SITE_HOST} {
+	encode zstd gzip
+
+	# Analysis progress: a WebSocket straight to the API.
+	handle /ws/* {
+		reverse_proxy api:3001
+	}
+
+	# Everything else, /api included, goes through the site: it proxies /api to the API itself,
+	# so the sign-in cookie stays first-party.
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+# A second name (www) leads to the main one.
+www.{$SITE_HOST} {
+	redir https://{$SITE_HOST}{uri} permanent
+}
