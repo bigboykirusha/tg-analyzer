@@ -34,7 +34,10 @@ const collect = () => {
   for (const el of all) {
     const cs = getComputedStyle(el)
     const r = el.getBoundingClientRect()
-    const isBtn = el.matches('button, a.btn, [role=button], a[class*="btn"], .chip, [role=tab], [role=switch]')
+    // A control drawn as part of a text field (the country code before a phone number) is the field, not a button look.
+    const isBtn =
+      el.matches('button, a.btn, [role=button], a[class*="btn"], .chip, [role=tab], [role=switch]') &&
+      !el.matches('.select__addon')
     const bg = cs.backgroundColor
     const hasBg = bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent'
     const rad = px(cs.borderRadius)
@@ -108,7 +111,9 @@ await p.locator('.phone-input').fill(phone)
 await p.getByRole('button', { name: 'Получить код' }).click()
 await p.locator('.otp-input').first().click()
 await p.keyboard.type('12345')
-await p.getByRole('button', { name: 'Войти', exact: true }).click()
+// The code sends itself after the last digit; the button is only a fallback.
+const enter = p.getByRole('button', { name: 'Войти', exact: true })
+if (await enter.isEnabled().catch(() => false)) await enter.click().catch(() => {})
 await p.waitForURL('**/dashboard')
 await ready()
 await grab('home-first')

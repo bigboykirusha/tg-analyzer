@@ -435,16 +435,18 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   transform: rotate(180deg);
 }
 
-/* The country code inside a phone field: a pill like every other control, inset 4 on every side. */
+/* The country code inside a phone field: part of the field, not a button in it — flag, code and chevron
+   as plain text, set off from the number by a hairline. A pill inside the 8 px well looked crooked. */
 .select__addon {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   height: calc(var(--control-md) - var(--space-1) * 2);
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-pill);
-  background: var(--btn-fill, var(--fill-control));
-  color: var(--btn-fill-text, var(--text));
+  padding: 0 var(--space-3) 0 var(--space-2);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: var(--divider-right);
+  color: var(--text);
   font: var(--text-body);
 }
 
