@@ -286,9 +286,5 @@ onMounted(loadLinks)
     align-items: start;
     gap: var(--page-gap);
   }
-
-  .account :deep(.page-title) {
-    display: none;
-  }
 }
 </style>

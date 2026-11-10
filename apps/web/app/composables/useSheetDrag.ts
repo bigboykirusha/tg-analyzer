@@ -21,6 +21,8 @@ export function useSheetDrag(panel: Ref<HTMLElement | null>, close: () => boolea
 
   function onPointerDown(event: PointerEvent) {
     if (event.pointerType === 'mouse' && event.button !== 0) return
+    // Buttons in the sheet's header (close, back) keep their own press: a drag starts elsewhere.
+    if ((event.target as Element | null)?.closest('button, a, input, [role="button"]')) return
     start = event.clientY
     trail = [{ y: event.clientY, t: event.timeStamp }]
     dragging.value = true

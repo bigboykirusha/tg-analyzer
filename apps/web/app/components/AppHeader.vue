@@ -154,9 +154,13 @@ const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
     pointer-events: none;
   }
 
+  /* The name stays in the tree for screen readers (the page's h1); the actions leave it. */
   .app-bar.is-over-poster :deep(.page-bar) {
-    visibility: hidden;
     opacity: 0;
+  }
+
+  .app-bar.is-over-poster :deep(.page-bar__end) {
+    visibility: hidden;
   }
 
   .app-bar :deep(.page-bar--wide) {

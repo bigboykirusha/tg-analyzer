@@ -52,3 +52,13 @@ export async function openChapter(page: Page, name: string) {
     .locator(`.report-part:has(h2:text-is("${name}"))`)
     .evaluate((element) => element.scrollIntoView({ behavior: 'instant', block: 'start' }))
 }
+
+/** Starts the analysis of a chat from «Новый анализ» (the home page of a newcomer shows only a few chats). */
+export async function analyseChat(page: Page, name: string) {
+  await gotoHydrated(page, '/new')
+  await page
+    .locator('.chat-row')
+    .filter({ hasText: name })
+    .getByRole('button', { name: `Разобрать чат «${name}»` })
+    .click()
+}

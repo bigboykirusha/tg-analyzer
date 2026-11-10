@@ -26,7 +26,8 @@ watch(analysis.finished, (job) => {
   const chat = job.chatTitle || t('analysis.untitledChat')
   const chatId = job.chatId
   // The very first report opens by itself: that is what the newcomer was waiting for.
-  const opened = job.status === 'completed' && chatId && !workspace.reports.length && route.path === '/dashboard'
+  const opened =
+    job.status === 'completed' && chatId && !workspace.reports.length && ['/dashboard', '/new'].includes(route.path)
   if (opened) void navigateTo(`/chat/${chatId}`)
   if (job.status === 'completed')
     toast.success(

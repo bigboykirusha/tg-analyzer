@@ -62,20 +62,12 @@ test('phone autofill keeps the country code and all eleven German digits', async
   await expect(page.getByRole('button', { name: 'Получить код' })).toBeEnabled()
 })
 
-test('the privacy policy opens full screen over the login page', async ({ page, context }) => {
+test('the privacy policy is a page of its own, also from old #privacy links', async ({ page, context }) => {
   await usePreferences(context, 'light')
-  // The login card has no privacy line any more: the policy opens from the #privacy link.
   await gotoHydrated(page, '/login#privacy')
-  const policy = page.getByRole('dialog', { name: 'Политика конфиденциальности' })
-  await expect(policy).toBeVisible()
-  await expect(policy.getByText('Коротко')).toHaveCount(0)
-  await policy.getByRole('button', { name: 'Закрыть' }).click()
-  await expect(policy).toBeHidden()
-
-  // Old /privacy links land on «Privacy and questions».
-  await page.goto('/privacy')
-  await page.waitForURL('**/faq')
+  await page.waitForURL('**/privacy')
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await expect.poll(() => noHorizontalScroll(page)).toBe(true)
 })
 
 test('protected pages redirect to login', async ({ page }) => {
@@ -85,7 +77,8 @@ test('protected pages redirect to login', async ({ page }) => {
 
 test('the example report opens without signing in', async ({ page }, testInfo) => {
   await gotoHydrated(page, '/example')
-  await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeVisible()
+  // The name is the h1 of the bar; over the poster the bar shows it only as the poster's big name.
+  await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeAttached()
   await expect(page.locator('#header-page').getByRole('link', { name: 'Войти' })).toBeVisible()
   if (page.viewportSize()!.width <= 640 && (await page.locator('.page-bar__lede').count())) {
     await expect
@@ -93,14 +86,12 @@ test('the example report opens without signing in', async ({ page }, testInfo) =
       .toBe(true)
   }
   await expect(page.getByRole('heading', { name: 'Вы двое', exact: true })).toBeVisible()
-  // The example has voice messages without duration metadata. Their count stays visible as a row of
-  // «Ваши привычки» (who sends more voice messages, both counts on one line) rather than being described
-  // as absent.
+  // The example has voice messages without duration metadata: who sends more of them is a row of
+  // «Ваши привычки» rather than a card of its own.
   const habits = page
     .getByRole('article')
     .filter({ has: page.getByRole('heading', { name: 'Ваши привычки', exact: true }) })
-  await expect(habits.getByText('Голосовые', { exact: true })).toBeVisible()
-  await expect(habits.locator('.plaque').last()).toContainText(/\d/)
+  await expect(habits.getByText('Больше голосовых', { exact: true })).toBeVisible()
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
 })

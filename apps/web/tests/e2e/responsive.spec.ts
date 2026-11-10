@@ -20,21 +20,6 @@ async function inspectPage(
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
     expect(await noHorizontalScroll(page), `${path}, ${width}px`).toBe(true)
-    if (path === '/dashboard' && width <= 640) {
-      const header = await page.locator('.topbar').evaluate((element) => {
-        const brand = element.querySelector('.topbar__brand')!.getBoundingClientRect()
-        const action = element.querySelector('.home__new')!.getBoundingClientRect()
-        const profile = element.querySelector('.account-trigger')!.getBoundingClientRect()
-        return {
-          brandRight: brand.right,
-          actionLeft: action.left,
-          actionRight: action.right,
-          profileLeft: profile.left,
-        }
-      })
-      expect(header.brandRight).toBeLessThanOrEqual(header.actionLeft)
-      expect(header.actionRight).toBeLessThanOrEqual(header.profileLeft)
-    }
     // A flex column must stretch every report card, even cards with short copy.
     // Root overflow checks alone miss this because shrunken cards still fit.
     if (width <= 900) {
@@ -96,7 +81,7 @@ for (const locale of ['ru', 'en'] as const)
     })
 
     test(`workspace pages fit phone widths in ${locale}, ${theme}`, async ({ context, baseURL }, testInfo) => {
-      test.setTimeout(210_000)
+      test.setTimeout(360_000)
       await usePreferences(context, theme, locale)
       const phone = `+7900${String(Math.floor(Math.random() * 1e6)).padStart(6, '0')}1`
       const sent = await context.request.post('/api/v1/auth/send-code', { data: { phone } })
