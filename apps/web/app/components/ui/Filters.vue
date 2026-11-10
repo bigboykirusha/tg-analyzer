@@ -27,7 +27,8 @@ const model = defineModel<T>({ required: true })
 
 <style scoped>
 .segmented {
-  display: inline-flex;
+  display: flex;
+  width: fit-content;
   max-width: 100%;
   padding: var(--space-0-5);
   border-radius: var(--radius-pill);
