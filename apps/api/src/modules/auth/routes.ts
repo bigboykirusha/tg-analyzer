@@ -23,7 +23,7 @@ import type { TelegramLoginErrorReason } from '../../telegram/errors'
 import { deleteAccount, disconnectTelegram } from '../account/account.service'
 import { withUserTelegram } from '../account/telegram-access'
 import {
-  deactivateTelegramSession,
+  deleteTelegramSession,
   getTelegramSession,
   logOutTelegramSession,
   saveTelegramSession,
@@ -219,7 +219,8 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     if (!(await hasOtherActiveFamily(claims.sub, claims.familyId))) {
       const session = await getTelegramSession(claims.sub)
       if (session) {
-        await deactivateTelegramSession(claims.sub)
+        // Forget the ciphertext too: the authorization is dead on Telegram's side anyway.
+        await deleteTelegramSession(claims.sub)
         void logOutTelegramSession(claims.sub, session)
       }
     }
