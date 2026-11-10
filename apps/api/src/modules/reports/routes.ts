@@ -1,10 +1,4 @@
-import {
-  chatIdParamsSchema,
-  reportQuerySchema,
-  type ReportDto,
-  type ReportsResponse,
-  type SuccessResponse,
-} from '@tg-analyzer/shared'
+import { chatIdParamsSchema, type ReportDto, type ReportsResponse, type SuccessResponse } from '@tg-analyzer/shared'
 import type { FastifyPluginAsync } from 'fastify'
 import { parse } from '../../http/validation'
 import { notFound } from '../../lib/errors'
@@ -20,8 +14,7 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
 
   app.get('/:chatId', async (request): Promise<ReportDto> => {
     const { chatId } = parse(chatIdParamsSchema, request.params)
-    const { profanity } = parse(reportQuerySchema, request.query)
-    const report = await getReport(userIdOf(request), chatId, { profanity: profanity === 'show' ? 'shown' : 'hidden' })
+    const report = await getReport(userIdOf(request), chatId)
     if (!report) throw notFound('CHAT_NOT_FOUND', 'Report not found')
     return report
   })

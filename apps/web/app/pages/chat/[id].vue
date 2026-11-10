@@ -31,17 +31,10 @@ useSeoMeta({ title: () => data.value?.summary.title ?? t('report.title') })
 // The page takes the person's colour: poster, room, their marks in charts and the toolbar over the poster.
 useHead({ htmlAttrs: { 'data-hue': () => hueOf(chatId.value) } })
 
-/** The owner's own switch for obscene words: the report is asked again, with or without them. */
-const profanityShown = ref(false)
-function setProfanity(show: boolean) {
-  profanityShown.value = show
-  void load()
-}
-
 async function load() {
   loadError.value = null
   try {
-    data.value = await workspace.loadReport(chatId.value, profanityShown.value ? { profanity: 'show' } : {})
+    data.value = await workspace.loadReport(chatId.value)
     notFound.value = false
   } catch (error) {
     if (error instanceof ApiClientError && error.status === 404) {
@@ -58,7 +51,6 @@ watch(analysis.finished, (job) => {
 })
 
 watch(chatId, () => {
-  profanityShown.value = false
   data.value = workspace.openedReports[chatId.value] ?? null
   void load()
 })
@@ -118,8 +110,8 @@ onMounted(load)
 
         <!-- Charts (ECharts) belong to groups only, and the share sheet and stories load on first use:
              a private report on a phone downloads neither. -->
-        <LazyGroupReport v-if="data.summary.type === 'group'" :data="data" @profanity="setProfanity" />
-        <PrivateReport v-else :data="data" @profanity="setProfanity" />
+        <LazyGroupReport v-if="data.summary.type === 'group'" :data="data" />
+        <PrivateReport v-else :data="data" />
 
         <LazyShareDialog
           v-if="shareUsed"

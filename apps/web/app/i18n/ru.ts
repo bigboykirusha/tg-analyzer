@@ -636,8 +636,6 @@ export const ru: Record<MessageKey, string> = {
   'report.words.word.other': 'Слово переписки, {count} раза',
   'report.words.differ': 'Свои слова у каждого',
   'report.words.mine': 'Ваши',
-  'report.words.show': 'Показать без фильтра',
-  'report.words.hide': 'Вернуть фильтр',
   'report.favourites.title': 'Эмодзи и реакции',
   'report.favourites.same': 'Оба любите {emoji}',
   'report.favourites.both': '{me} — {mine}, {name} — {theirs}',

@@ -7,7 +7,6 @@ import { LayoutGrid } from '../../lib/icons'
  * эмодзи» — five cards, one anatomy each, in reading order.
  */
 defineProps<{ data: ReportDto }>()
-defineEmits<{ profanity: [show: boolean] }>()
 const { t } = useI18n()
 </script>
 
@@ -24,7 +23,7 @@ const { t } = useI18n()
     <GroupRoles :group="data.report.group" />
     <GroupPairs :group="data.report.group" />
     <GroupTime :data="data" />
-    <GroupWords :data="data" :group="data.report.group" @profanity="$emit('profanity', $event)" />
+    <GroupWords :data="data" :group="data.report.group" />
   </div>
 </template>
 

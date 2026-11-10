@@ -9,7 +9,6 @@ import { Info } from '../../lib/icons'
  * `noWords`: a shared link without words — the words and emoji go away instead of standing empty.
  */
 const props = defineProps<{ data: ReportDto; noWords?: boolean }>()
-defineEmits<{ profanity: [show: boolean] }>()
 const { t } = useI18n()
 /** Reports made before voice and rituals were counted: say so instead of leaving cards out silently. */
 const outdated = computed(() => !props.data.report.voice || !props.data.report.rituals)
@@ -25,7 +24,7 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
     <ReportHabits :data="data" />
     <ReportTime :data="data" />
     <template v-if="!noWords">
-      <ReportWords :data="data" @profanity="$emit('profanity', $event)" />
+      <ReportWords :data="data" />
       <ReportFavourites :data="data" />
     </template>
     <p v-if="outdated" class="report-note t-label" role="status">

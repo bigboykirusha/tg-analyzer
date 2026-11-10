@@ -7,168 +7,16 @@ import {
   deriveReportMetrics,
   deriveWords,
   formatVoiceDuration,
-  hideProfanity,
   inMonth,
   isEven,
-  isProfane,
   isSignificantWordOfChat,
-  maskProfanity,
   monthPrepositional,
-  reportHasProfanity,
   sessionSplit,
   shouldShowYear,
-  withoutProfanity,
   wordOfChatThreshold,
   type ChatReport,
   type MessageInput,
 } from '../src'
-
-// ---------------------------------------------------------------------------
-// D1. Profanity
-// ---------------------------------------------------------------------------
-
-test('obscene Russian and English words are found, spelling variants included', () => {
-  for (const word of [
-    'хуй',
-    'нахуй',
-    'похуй',
-    'хуйня',
-    'хуёвый',
-    'охуеть',
-    'ахуенно',
-    'нихуя',
-    'дохуя',
-    'хуярить',
-    'пизда',
-    'пиздец',
-    'распиздяй',
-    'пздц',
-    'пзд',
-    'ебать',
-    'ебал',
-    'ёбаный',
-    'заебал',
-    'заебись',
-    'наебал',
-    'уебок',
-    'выебал',
-    'ебнутый',
-    'еблан',
-    'подъебка',
-    'бля',
-    'блять',
-    'блядь',
-    'блядский',
-    'бляяяя',
-    'хуууй',
-    'сука',
-    'суки',
-    'сучара',
-    'мудак',
-    'мудила',
-    'мудозвон',
-    'пидор',
-    'пидорас',
-    'пидр',
-    'залупа',
-    'шлюха',
-    'гандон',
-    'гондон',
-    'дрочить',
-    'задрочил',
-    'манда',
-    'херня',
-    'нахер',
-    'fuck',
-    'fucking',
-    'fuuuck',
-    'motherfucker',
-    'shit',
-    'bullshit',
-    'bitch',
-    'asshole',
-    'dumbass',
-    'cunt',
-    'wtf',
-  ])
-    assert.ok(isProfane(word), word)
-  assert.ok(isProfane('Хуй'))
-  assert.ok(isProfane('какая-то-хуйня'))
-})
-
-test('ordinary words that hide the same letters are not obscene', () => {
-  for (const word of [
-    'команда',
-    'оскорбление',
-    'употреблять',
-    'рубля',
-    'сукно',
-    'хлеба',
-    'ребята',
-    'небо',
-    'страхуй',
-    'страховка',
-    'себя',
-    'вебинар',
-    'веб',
-    'худой',
-    'художник',
-    'хулиган',
-    'хутор',
-    'хуже',
-    'мудрый',
-    'мудрость',
-    'мандарин',
-    'мандат',
-    'педикюр',
-    'бляха',
-    'блин',
-    'облако',
-    'облик',
-    'сучок',
-    'суккулент',
-    'херес',
-    'херувим',
-    'ребенок',
-    'ребро',
-    'требовать',
-    'любовь',
-    'ебенок',
-    'работа',
-    'потребление',
-    'дроби',
-    'шлюз',
-    'гондола',
-    'пиво',
-    'assess',
-    'class',
-    'pass',
-    'cocktail',
-    'shiitake',
-    'fact',
-    'buck',
-    'bass',
-    'hello',
-    'scunthorpe',
-    'document',
-  ])
-    assert.ok(!isProfane(word), word)
-})
-
-test('lists lose obscene words and keep the rest in order; masking keeps the first letter', () => {
-  const items = [
-    { value: 'блять', count: 90 },
-    { value: 'работа', count: 50 },
-    { value: 'пиздец', count: 40 },
-    { value: 'кофе', count: 30 },
-  ]
-  assert.deepEqual(withoutProfanity(items), [
-    { value: 'работа', count: 50 },
-    { value: 'кофе', count: 30 },
-  ])
-  assert.equal(maskProfanity('блять'), 'б**')
-  assert.equal(maskProfanity('работа'), 'работа')
-})
 
 const MIN = 60_000
 const HOUR = 60 * MIN
@@ -199,44 +47,14 @@ function sweary(): ChatReport {
   return builder.finish('private', new Date('2026-04-15T00:00:00Z'))
 }
 
-test('the word of the chat is the next clean word, and obscene words leave every list', () => {
+test('words are kept as they are: the most written word is the word of the chat', () => {
   const report = sweary()
-  assert.ok(reportHasProfanity(report))
   assert.equal(report.vocabulary.topWords[0]?.value, 'блять')
-
-  const hidden = deriveWords(report, 'hidden')
-  assert.equal(hidden.wordOfChat?.value, 'кофе')
-  assert.ok(hidden.topWords.every((item) => !isProfane(item.value)))
-
-  const shown = deriveWords(report, 'shown')
-  assert.equal(shown.wordOfChat?.value, 'блять')
-
-  const cleaned = hideProfanity(report)
-  assert.ok(!reportHasProfanity(cleaned))
-  assert.equal(cleaned.totals.messages, report.totals.messages)
-  assert.equal(cleaned.vocabulary.topWords[0]?.value, 'кофе')
+  assert.equal(deriveWords(report).wordOfChat?.value, 'блять')
+  assert.equal(deriveReportMetrics(report).words.wordOfChat?.value, 'блять')
 })
 
-test('derived metrics: clean words are always clean, the flag only changes the view', () => {
-  const report = sweary()
-  const byDefault = deriveReportMetrics(report)
-  assert.equal(byDefault.words.profanity, 'hidden')
-  assert.ok(byDefault.words.hasProfanity)
-  assert.equal(byDefault.words.view.wordOfChat?.value, 'кофе')
-  assert.deepEqual(byDefault.words.view, byDefault.words.clean)
-
-  const full = deriveReportMetrics(report, { profanity: 'shown' })
-  assert.equal(full.words.view.wordOfChat?.value, 'блять')
-  assert.equal(full.words.clean.wordOfChat?.value, 'кофе')
-  const allClean = [
-    ...full.words.clean.topWords,
-    ...full.words.clean.vocabulary.mine,
-    ...full.words.clean.vocabulary.theirs,
-  ]
-  assert.ok(allClean.every((item) => !isProfane(item.value)))
-})
-
-test('group word lists are cleaned too', () => {
+test('group word lists are kept as they are', () => {
   const group = {
     sharedVocabulary: [
       { value: 'блять', count: 40 },
@@ -255,12 +73,10 @@ test('group word lists are cleaned too', () => {
     ],
   }
   const report = { vocabulary: sweary().vocabulary, totals: { textMessages: 500 }, group } as unknown as ChatReport
-  const view = deriveWords(report, 'hidden').group!
-  assert.deepEqual(view.shared, [{ value: 'кофе', count: 30 }])
-  assert.deepEqual(view.unique, [])
-  assert.deepEqual(view.members.a!.topWords, [{ value: 'бег', count: 8 }])
-  assert.equal(hideProfanity(report).group!.participants[0]!.topWords.length, 1)
-  assert.equal(deriveWords(report, 'shown').group!.members.a!.topWords.length, 2)
+  const view = deriveWords(report).group!
+  assert.equal(view.shared.length, 2)
+  assert.equal(view.unique.length, 1)
+  assert.equal(view.members.a!.topWords.length, 2)
 })
 
 // ---------------------------------------------------------------------------
@@ -284,7 +100,7 @@ test('a small chat yields no word of the chat and no thin signature words', () =
     builder.add(message(start + index * HOUR + MIN, false, `ответ${index}`))
   }
   const report = builder.finish('private', new Date('2026-04-15T00:00:00Z'))
-  const words = deriveWords(report, 'hidden')
+  const words = deriveWords(report)
   assert.equal(report.vocabulary.topWords[0]?.value, 'обсудить')
   assert.equal(report.vocabulary.topWords[0]?.count, 7)
   assert.equal(words.wordOfChat, null)

@@ -632,8 +632,6 @@ export const en = {
   'report.words.word.other': 'Word of the chat, {count} times',
   'report.words.differ': 'Each has their own words',
   'report.words.mine': 'Yours',
-  'report.words.show': 'Show without the filter',
-  'report.words.hide': 'Bring the filter back',
   'report.favourites.title': 'Emoji and reactions',
   'report.favourites.same': 'You both love {emoji}',
   'report.favourites.both': '{me} — {mine}, {name} — {theirs}',

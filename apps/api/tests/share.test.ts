@@ -42,8 +42,8 @@ test('a report link shows only what the owner allowed, to anyone, until it is tu
   assert.ok(page.data.report.milestones?.every((milestone) => !milestone.messageId && !milestone.senderId))
   assert.deepEqual(page.data.report.vocabulary.topWords, [])
   // Switched off means switched off in the derived words and favourites too.
-  assert.equal(page.data.derived.words.view.wordOfChat, null)
-  assert.deepEqual(page.data.derived.words.view.topWords, [])
+  assert.equal(page.data.derived.words.wordOfChat, null)
+  assert.deepEqual(page.data.derived.words.topWords, [])
   assert.deepEqual(page.data.derived.favourites.topEmoji, [])
   // The id is hidden, the colour is not: the guest sees the person in the colour the owner does.
   assert.equal(page.hue, telegramHueIndex(CHAT))

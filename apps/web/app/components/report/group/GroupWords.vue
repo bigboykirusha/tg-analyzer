@@ -3,19 +3,17 @@ import type { GroupReportDto, ReportDto } from '@tg-analyzer/shared'
 
 /**
  * «Слова и эмодзи» of a group: the word most members share as the answer, the shared words as chips and
- * the chat's favourite emoji with how often. Obscene words stay hidden unless the owner asks.
+ * the chat's favourite emoji with how often.
  */
 const props = defineProps<{ data: ReportDto; group: GroupReportDto }>()
-const emit = defineEmits<{ profanity: [show: boolean] }>()
 const { t, formatNumber } = useI18n()
 
 const words = computed(() => props.data.derived.words)
-const shared = computed(() => words.value.view.group?.shared ?? props.group.sharedVocabulary)
+const shared = computed(() => words.value.group?.shared ?? props.group.sharedVocabulary)
 const top = computed(() => shared.value[0] ?? null)
 /** The first word answers the card; the chips go on from the second, so no word is said twice. */
 const chips = computed(() => shared.value.slice(1, 9))
 const emoji = computed(() => props.data.derived.favourites.topEmoji.slice(0, 8))
-const shown = computed(() => words.value.profanity === 'shown')
 </script>
 
 <template>
@@ -36,11 +34,6 @@ const shown = computed(() => words.value.profanity === 'shown')
         {{ formatNumber(item.count) }}
       </li>
     </ul>
-    <template v-if="words.hasProfanity" #note>
-      <button type="button" class="link" @click="emit('profanity', !shown)">
-        {{ shown ? t('report.words.hide') : t('report.words.show') }}
-      </button>
-    </template>
   </ReportSection>
 </template>
 

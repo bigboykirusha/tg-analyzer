@@ -705,17 +705,11 @@ export interface DerivedReportMetrics {
   quiz: QuizQuestionDto[]
   /** «Who does it more» lines of a private chat, with the «поровну» list; empty for groups. */
   habitRows: HabitsSummary
-  /** The words as the report shows them, and the version that may leave the owner's screen. */
-  words: DerivedWords
+  /** The words as the report shows them, with the thin findings left out. */
+  words: DerivedWordsView
   /** Favourite emoji, reaction and sticker of each side. */
   favourites: DerivedFavourites
 }
-
-/**
- * Whether obscene words are in the word lists. `hidden` is the default everywhere; `shown` is the
- * owner's own full report only.
- */
-export type ProfanityMode = 'hidden' | 'shown'
 
 export interface DerivedGroupWords {
   shared: TopItemDto[]
@@ -732,16 +726,6 @@ export interface DerivedWordsView {
   /** What you share, and what only you / only the other side say (at most 5 per side). */
   vocabulary: VocabularySplit
   group: DerivedGroupWords | null
-}
-
-export interface DerivedWords {
-  profanity: ProfanityMode
-  /** The report holds obscene words, so a «show everything» switch has something to show. */
-  hasProfanity: boolean
-  /** What the report shows now: obscene words hidden unless the owner asked for them. */
-  view: DerivedWordsView
-  /** Always without obscene words: «Итоги», the link and previews read this one, never `view`. */
-  clean: DerivedWordsView
 }
 
 export interface FavouriteStickerDto {

@@ -3,18 +3,15 @@ import type { ReportDto } from '@tg-analyzer/shared'
 
 /**
  * «Слова»: the word of your chat as the answer, then what each of you says that the other does not —
- * up to five chips a side, no shared words and no counts. Obscene words are hidden (`derived.words`);
- * when the chat has some, a quiet link shows them to the owner. No word of the chat (too few repeats)
+ * up to five chips a side, no shared words and no counts. The words are as they are (`derived.words`). No word of the chat (too few repeats)
  * leaves the chips alone; no chips and no word, no card. With an `author` it names the author's side
  * and keeps the link away: the reader of a shared report does not choose what the owner sees.
  */
 const props = defineProps<{ data: ReportDto; author?: string | null }>()
-const emit = defineEmits<{ profanity: [show: boolean] }>()
 const { t } = useI18n()
 
-const { words, mine, theirs, figure, answer, any } = useWordsFacts(() => props.data)
+const { mine, theirs, figure, answer, any } = useWordsFacts(() => props.data)
 const name = computed(() => props.data.summary.title)
-const shown = computed(() => words.value.profanity === 'shown')
 </script>
 
 <template>
@@ -29,11 +26,6 @@ const shown = computed(() => words.value.profanity === 'shown')
         <WordChips :items="theirs" :counts="false" tone="theirs" />
       </div>
     </div>
-    <template v-if="!author && words.hasProfanity" #note>
-      <button type="button" class="link" @click="emit('profanity', !shown)">
-        {{ shown ? t('report.words.hide') : t('report.words.show') }}
-      </button>
-    </template>
   </ReportSection>
 </template>
 
