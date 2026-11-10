@@ -8,7 +8,7 @@ useSeoMeta({
 })
 
 const questions = computed(() =>
-  (['safe', 'notice', 'store', 'price', 'groups', 'phone', 'official'] as const).map((key) => ({
+  (['safe', 'notice', 'price', 'groups', 'phone', 'official'] as const).map((key) => ({
     key,
     question: t(`faq.q.${key}`),
     answer: t(`faq.a.${key}`),

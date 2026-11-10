@@ -165,8 +165,6 @@ export const en = {
   'faq.a.price': "It's free.",
   'faq.a.safe':
     'You sign in through the official Telegram API, like other clients. Message texts are processed in memory and never stored. You can end the session in Telegram Settings → Devices.',
-  'faq.a.store':
-    'Only statistics: message counts, reply times, activity by hour, top words and emoji. A report is deleted from its menu, with its stories and links.',
   'faq.delete.text': "From the report's menu on home or in «New analysis». Its stories and links go with it.",
   'faq.delete.title': 'Delete a report',
   'faq.keep.text':
@@ -187,7 +185,6 @@ export const en = {
   'faq.q.phone': 'Why sign in with a phone number?',
   'faq.q.price': 'How much does it cost?',
   'faq.q.safe': 'Is it safe?',
-  'faq.q.store': 'What do you keep?',
   'faq.questions': 'Frequent questions',
   'faq.read.text': 'Messages of the chat you pick, only while it is analysed and only in server memory.',
   'faq.read.title': 'We read',
@@ -246,6 +243,20 @@ export const en = {
   'landing.title': 'A mirror',
   'landing.titleSoft': 'of your chats',
   'landing.examplesLabel': 'Examples',
+  'landing.howTitle': 'How it works',
+  'landing.step1.title': 'Sign in with Telegram',
+  'landing.step1.text': 'With your phone number and the code from Telegram, the way you sign in on a new device.',
+  'landing.step2.title': 'Pick a chat',
+  'landing.step2.text': 'A personal chat or a group. Only the chat you pick is read.',
+  'landing.step3.title': 'Get the report',
+  'landing.step3.text': 'Balance, reply speed, rhythm, words and emoji, and a recap you can share as a story.',
+  'landing.privacyTitle': 'What we see, what we keep',
+  'landing.privacyLede': 'We read the messages of the chat you pick while it is analysed. Only the statistics stay.',
+  'landing.privacyMore': 'How we handle your data',
+  'landing.recapTitle': 'A recap like a story',
+  'landing.recapLede':
+    'The main findings of a chat on a few screens. Save them as a picture or send them to the person.',
+  'landing.recapCard': 'You two write almost equally',
   'login.changeNumber': 'Change number',
   'login.codeDescription': 'Telegram sent a code to your app. Enter it here so we can read the chat you pick.',
   'login.codeLabel': 'Telegram code',

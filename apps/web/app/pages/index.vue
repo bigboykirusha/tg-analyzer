@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import type { MessageKey } from '../composables/useI18n'
 import { wave } from '../lib/wave'
-definePageMeta({ middleware: ['guest'], fit: true })
+definePageMeta({ middleware: ['guest'] })
 
 const { t } = useI18n()
 
-/** Three people as small posters, the way reports look; the pulses are a drawn example, not anyone's data. */
-const wide = useMediaQuery('(min-width: 901px)')
+/** Three people as the cards of home, the way reports look; the pulses are a drawn example, not anyone's data. */
 const examples = [
-  { key: 'ex1', hue: 'green', pulse: wave(1, 72) },
-  { key: 'ex2', hue: 'violet', pulse: wave(2, 36) },
-  { key: 'ex3', hue: 'orange', pulse: wave(3, 36) },
+  { key: 'ex1', chatId: '1011', pulse: wave(1, 36) },
+  { key: 'ex2', chatId: '1002', pulse: wave(2, 36) },
+  { key: 'ex3', chatId: '1003', pulse: wave(3, 36) },
 ]
+const steps = ['step1', 'step2', 'step3'] as const
+const facts = usePrivacyFacts()
+const promise = computed(() => facts.value.slice(0, 3))
+const recapPulse = wave(5, 36)
 const runtimeConfig = useRuntimeConfig()
 useSeoMeta({ title: () => t('landing.seoTitle'), description: () => t('seo.description') })
 // Lets search engines show the app as free software rather than a plain page.
@@ -38,44 +41,87 @@ useHead({
 
 <template>
   <div class="landing">
-    <section class="landing__copy" aria-labelledby="hero-title">
-      <h1 id="hero-title" class="landing__title">{{ t('landing.title') }} {{ t('landing.titleSoft') }}</h1>
-      <p class="landing__lede">{{ t('landing.lede') }}</p>
-      <div class="landing__actions landing__actions--wide">
-        <UiButton variant="primary" size="lg" to="/login">{{ t('landing.cta') }}</UiButton>
-        <UiButton size="lg" to="/example">{{ t('landing.nav.example') }}</UiButton>
+    <div class="landing__first">
+      <section class="landing__copy" aria-labelledby="hero-title">
+        <h1 id="hero-title" class="landing__title">{{ t('landing.title') }} {{ t('landing.titleSoft') }}</h1>
+        <p class="landing__lede">{{ t('landing.lede') }}</p>
+        <div class="landing__actions">
+          <UiButton variant="primary" to="/login">{{ t('landing.cta') }}</UiButton>
+          <UiButton to="/example">{{ t('landing.nav.example') }}</UiButton>
+        </div>
+      </section>
+      <ul class="landing__examples" :aria-label="t('landing.examplesLabel')">
+        <li v-for="example in examples" :key="example.key">
+          <HomeCard
+            :chat-id="example.chatId"
+            :title="t(`landing.${example.key}.title` as MessageKey)"
+            :meta="t(`landing.${example.key}.text` as MessageKey)"
+            :has-avatar="false"
+          >
+            <Pulse :data="example.pulse" :height="12" :bars="28" />
+          </HomeCard>
+        </li>
+      </ul>
+    </div>
+
+    <section class="landing__section" aria-labelledby="how-title">
+      <h2 id="how-title" class="t-h2">{{ t('landing.howTitle') }}</h2>
+      <ol class="steps">
+        <li v-for="(step, index) in steps" :key="step" class="step">
+          <span class="step__num t-label" aria-hidden="true">{{ index + 1 }}</span>
+          <h3 class="t-label">{{ t(`landing.${step}.title` as MessageKey) }}</h3>
+          <p class="step__text t-label">{{ t(`landing.${step}.text` as MessageKey) }}</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="landing__section landing__split" aria-labelledby="privacy-title">
+      <div class="landing__side">
+        <h2 id="privacy-title" class="t-h2">{{ t('landing.privacyTitle') }}</h2>
+        <p class="landing__lede">{{ t('landing.privacyLede') }}</p>
+        <UiButton to="/privacy">{{ t('landing.privacyMore') }}</UiButton>
+      </div>
+      <UiGroup>
+        <UiListRow v-for="fact in promise" :key="fact.key" :title="fact.title" :subtitle="fact.text" wrap>
+          <template #leading><component :is="fact.icon" aria-hidden="true" /></template>
+        </UiListRow>
+      </UiGroup>
+    </section>
+
+    <section class="landing__section landing__split" aria-labelledby="recap-title">
+      <div class="landing__side">
+        <h2 id="recap-title" class="t-h2">{{ t('landing.recapTitle') }}</h2>
+        <p class="landing__lede">{{ t('landing.recapLede') }}</p>
+        <UiButton to="/example">{{ t('landing.exampleLink') }}</UiButton>
+      </div>
+      <div class="recap" data-hue="green" aria-hidden="true">
+        <p class="recap__who t-label">{{ t('landing.ex1.title') }}</p>
+        <p class="recap__title t-h1">{{ t('landing.recapCard') }}</p>
+        <Pulse :data="recapPulse" :height="20" :bars="36" />
       </div>
     </section>
-    <ul class="landing__examples" :aria-label="t('landing.examplesLabel')">
-      <li v-for="(example, index) in examples" :key="example.key" class="example" :data-hue="example.hue">
-        <span class="example__title">{{ t(`landing.${example.key}.title` as MessageKey) }}</span>
-        <span class="example__text">{{ t(`landing.${example.key}.text` as MessageKey) }}</span>
-        <Pulse
-          class="example__pulse"
-          :data="example.pulse"
-          :height="index === 0 && wide ? 34 : 16"
-          :bars="index === 0 && wide ? 72 : 36"
-        />
-      </li>
-    </ul>
-    <div class="landing__actions landing__actions--narrow">
-      <UiButton variant="primary" size="lg" block to="/login">{{ t('landing.cta') }}</UiButton>
-      <UiButton variant="plain" size="lg" block to="/example">{{ t('landing.exampleLink') }}</UiButton>
+
+    <div class="landing__end">
+      <UiButton variant="primary" to="/login">{{ t('landing.cta') }}</UiButton>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Phones: the title, two example posters, the one action at the bottom. Desktop: copy left, posters right. */
 .landing {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-10);
   width: 100%;
   max-width: calc(var(--page-max) + var(--page-gutter) * 2);
   margin: 0 auto;
   padding: var(--space-4) var(--page-gutter) var(--space-6);
+}
+
+.landing__first {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
 }
 
 .landing__copy {
@@ -97,106 +143,116 @@ useHead({
   font: var(--text-body);
 }
 
+.landing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .landing__examples {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--card-gap);
 }
 
-/* Phones show two examples, as on the mockup; the third waits for the wider screen. */
-.example:nth-child(3) {
+/* Phones show two examples; the third waits for the wider screen. */
+.landing__examples > li:nth-child(3) {
   display: none;
 }
 
-.example {
+.landing__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.landing__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--card-gap);
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--card-padding);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.step__num,
+.step__text {
+  color: var(--text-muted);
+}
+
+/* The sample of «Итоги»: a story frame in miniature, on a person's poster colour. */
+.recap {
   --pulse-you: var(--on-poster);
   --pulse-them: var(--on-them);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
-  padding: var(--card-padding);
-  border-radius: var(--radius-lg);
+  justify-content: space-between;
+  gap: var(--space-8);
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
   background: var(--poster);
   color: var(--on-poster);
 }
 
-.example__title {
-  font: var(--text-h3);
-  letter-spacing: var(--tracking-h3);
-}
-
-.example__text {
+.recap__who {
   color: var(--on-poster-muted);
-  font: var(--text-small);
 }
 
-.example__pulse {
-  margin-top: var(--space-4);
-}
-
-.landing__actions {
+.landing__end {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.landing__actions--wide {
-  display: none;
-}
-
-.landing__actions--narrow {
-  margin-top: auto;
 }
 
 @media (min-width: 901px) {
   .landing {
+    gap: var(--space-16);
+    padding-block: var(--space-6) var(--space-10);
+  }
+
+  .landing__first {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
     align-items: center;
     gap: var(--space-16);
-    padding-block: var(--space-6) var(--space-10);
   }
 
   .landing__copy {
     gap: var(--space-6);
   }
 
-  .landing__actions--wide {
-    display: flex;
-    flex-direction: row;
-    gap: var(--space-3);
-  }
-
-  .landing__actions--narrow {
-    display: none;
-  }
-
   .landing__examples {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .example:first-child {
-    grid-column: 1 / -1;
-    padding: var(--space-8);
-    border-radius: var(--radius-xl);
+  .landing__examples > li:nth-child(3) {
+    display: block;
   }
 
-  .example:first-child .example__title {
-    font: var(--text-h1);
-    letter-spacing: var(--tracking-h1);
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .example:first-child .example__text {
-    font: var(--text-body);
+  .landing__split {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    align-items: center;
+    gap: var(--space-16);
   }
 
-  .example:first-child .example__pulse {
-    margin-top: var(--space-6);
-  }
-
-  .example:nth-child(3) {
-    display: flex;
+  .landing__end {
+    display: none;
   }
 }
 </style>
