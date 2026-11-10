@@ -207,8 +207,16 @@ test('a late dialog response cannot populate the next account', async ({ page })
   })
   try {
     await signIn(page)
+    // The home page does not load the chat list; open it inside the app so the held request stays alive.
+    await page
+      .getByRole('link', { name: 'Новый анализ' })
+      .or(page.getByRole('button', { name: 'Новый анализ' }))
+      .first()
+      .click()
     await expect.poll(() => held).toBeGreaterThan(0)
-    await page.goto('/account')
+    await page.goBack() // back to the home page inside the app, where the avatar leads to the account
+    await page.locator('a[href="/account"]:visible').first().click()
+    await page.waitForURL('**/account')
     await page.getByRole('button', { name: 'Выйти', exact: true }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Выйти', exact: true }).click()
     await page.waitForURL('**/login')
