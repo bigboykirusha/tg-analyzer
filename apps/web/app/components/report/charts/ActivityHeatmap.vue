@@ -74,7 +74,7 @@ function describe(cell: Cell) {
       </div>
     </div>
   </div>
-  <div v-else class="calendar-empty t-small">{{ t('chart.noActivity') }}</div>
+  <div v-else class="calendar-empty t-label">{{ t('chart.noActivity') }}</div>
 </template>
 
 <style scoped>
@@ -97,7 +97,7 @@ function describe(cell: Cell) {
 
 .month__name {
   color: var(--text-muted);
-  font: var(--text-caption);
+  font: var(--text-label);
 }
 
 .month__days {

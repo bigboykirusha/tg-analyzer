@@ -153,7 +153,7 @@ export interface ApiEndpointMap {
   'DELETE /api/v1/parse/history/:jobId': Endpoint<undefined, SuccessResponse>
 
   'GET /api/v1/reports': Endpoint<undefined, ReportsResponse>
-  'GET /api/v1/reports/:chatId': Endpoint<undefined, ReportDto>
+  'GET /api/v1/reports/:chatId': Endpoint<undefined, ReportDto, { profanity?: 'show' | 'hide' }>
   'DELETE /api/v1/reports/:chatId': Endpoint<undefined, SuccessResponse>
   'GET /api/v1/reports/:chatId/links': Endpoint<undefined, ShareLinksResponse>
   'POST /api/v1/reports/:chatId/links': Endpoint<CreateShareLinkBody, ShareLinkDto>

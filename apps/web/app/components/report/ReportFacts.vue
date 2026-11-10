@@ -55,7 +55,7 @@ defineProps<{ facts: Fact[]; columns?: boolean }>()
 
 .fact__label {
   min-width: 0;
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .fact__value {
@@ -64,7 +64,7 @@ defineProps<{ facts: Fact[]; columns?: boolean }>()
   flex-direction: column;
   align-items: flex-end;
   max-width: 60%;
-  font: var(--text-small-strong);
+  font: var(--text-label);
   text-align: right;
 }
 
@@ -74,8 +74,7 @@ defineProps<{ facts: Fact[]; columns?: boolean }>()
 
 .fact__sub {
   color: var(--text-muted);
-  font: var(--text-caption);
-  font-weight: 400;
+  font: var(--text-label);
 }
 
 /* Desktop ledger: label, value, the quiet line, in equal columns. */
@@ -102,13 +101,12 @@ defineProps<{ facts: Fact[]; columns?: boolean }>()
     align-items: flex-start;
     max-width: none;
     gap: var(--space-1);
-    font: var(--text-title);
-    font-weight: 600;
+    font: var(--text-body);
     text-align: left;
   }
 
   .facts--columns .fact__sub {
-    font: var(--text-small);
+    font: var(--text-label);
   }
 }
 </style>

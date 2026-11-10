@@ -2,10 +2,9 @@
 import { Share } from '../../lib/icons'
 
 /**
- * The shape of a report while it loads, under the poster's own loading shape: the first chapter's
- * title, its first finding on the room and two tiles — each line at the exact height of the text it
- * stands for (`1lh` in that text's font), so nothing moves when the report arrives. The bar is the
- * report's bar from the first frame.
+ * The shape of a report while it loads, under the poster's own loading shape: two cards with the lines of
+ * the one anatomy — a label, an answer, a picture — each at the exact height of the text it stands for
+ * (`1lh` in that text's font), so nothing moves when the report arrives.
  */
 defineProps<{ title?: string | null }>()
 const { t } = useI18n()
@@ -25,91 +24,45 @@ const { t } = useI18n()
         />
       </template>
     </UiPageBar>
-    <div class="skeleton-report__head">
-      <UiSkeleton class="line line--h1" width="40%" />
-      <UiSkeleton class="line line--small" width="70%" />
-    </div>
-    <div class="skeleton-report__hero">
-      <UiSkeleton class="line line--small" width="30%" />
-      <UiSkeleton class="line line--h2" width="55%" />
-      <UiSkeleton class="line line--figure" width="100%" />
-      <UiSkeleton height="var(--bar-height-lg)" radius="var(--radius-full)" />
-    </div>
-    <div class="skeleton-report__tiles">
-      <div v-for="tile in 2" :key="tile" class="tile">
-        <UiSkeleton class="line line--small" width="45%" />
-        <UiSkeleton class="line line--h3" width="75%" />
-        <UiSkeleton class="line line--num" width="100%" />
-        <UiSkeleton class="line line--small" width="60%" />
+    <div class="skeleton-report__cards">
+      <div v-for="card in 2" :key="card" class="tile">
+        <UiSkeleton class="line line--label" width="30%" />
+        <UiSkeleton class="line line--h2" width="60%" />
+        <UiSkeleton height="var(--chart-h)" radius="var(--radius-well)" />
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.skeleton-report {
+.skeleton-report__cards {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--card-gap);
   padding-top: var(--space-4);
 }
 
-.skeleton-report__head,
-.skeleton-report__hero {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.skeleton-report__head {
-  gap: var(--space-1);
-}
-
-.skeleton-report__tiles {
-  display: grid;
-  gap: var(--card-gap);
-}
-
-/* A line of text is as tall as its line: the font of the role, one `lh`. */
 .skeleton-report .line {
   height: 1lh;
 }
 
-.line--h1 {
-  font: var(--text-h1);
+.line--label {
+  font: var(--text-label);
 }
 
 .line--h2 {
   font: var(--text-h2);
 }
 
-.line--h3 {
-  font: var(--text-h3);
-}
-
-.line--figure {
-  font: var(--text-figure);
-}
-
-.line--num {
-  font: var(--text-num);
-}
-
-.line--small {
-  font: var(--text-small);
+.skeleton-report__share {
+  visibility: hidden;
 }
 
 @media (min-width: 901px) {
-  .skeleton-report__share {
-    display: none;
-  }
-
-  .skeleton-report {
-    padding-top: var(--space-6);
-  }
-
-  .skeleton-report__tiles {
+  .skeleton-report__cards {
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: var(--space-6);
   }
 }
 </style>

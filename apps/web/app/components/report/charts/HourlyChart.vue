@@ -3,7 +3,7 @@ import type { DirectionalCountDto } from '@tg-analyzer/shared'
 
 /**
  * The day in 24 bars, one per hour of the whole chat: neutral, the peak hours in ink, the hours marked
- * under the axis (0:00, 6:00, 12:00, 18:00, 23:00). `peak` lists the hours to light — the usual window
+ * under the axis (0:00, 6:00, 12:00, 18:00). `peak` lists the hours to light — the usual window
  * of a private chat; without it the busiest hour is lit.
  */
 const props = defineProps<{ hourly: DirectionalCountDto[]; peak?: readonly number[]; label?: string }>()
@@ -26,7 +26,7 @@ const summary = computed(() => {
   const sum = (key: 'sent' | 'received') => props.hourly.reduce((total, hour) => total + (hour?.[key] ?? 0), 0)
   return t('chart.hourlySummary', { sent: formatNumber(sum('sent')), received: formatNumber(sum('received')) })
 })
-const MARKS = [0, 6, 12, 18, 23]
+const MARKS = [0, 6, 12, 18]
 </script>
 
 <template>
@@ -70,22 +70,16 @@ const MARKS = [0, 6, 12, 18, 23]
   background: var(--chart-neutral-strong);
 }
 
-/* Each mark under its own hour; the last one ends at the right edge. */
+/* Each mark under its own hour. */
 .hours__axis {
   display: grid;
   grid-template-columns: repeat(24, minmax(0, 1fr));
   color: var(--text-muted);
-  font: var(--text-caption);
-  font-weight: 400;
+  font: var(--text-label);
 }
 
 .hours__axis li {
   grid-row: 1;
   white-space: nowrap;
-}
-
-.hours__axis li:last-child {
-  grid-column-end: 25;
-  justify-self: end;
 }
 </style>

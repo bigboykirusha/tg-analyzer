@@ -24,17 +24,27 @@ useHead({ htmlAttrs: { 'data-hue': () => hueOf('example') } })
         <ReportHeader :summary="data.summary" demo />
 
         <PrivateReport :data="data" />
+
+        <section class="tile example-invite">
+          <h2 class="t-h2">{{ t('example.endTitle') }}</h2>
+          <p class="t-body example-invite__text">{{ t('example.endText') }}</p>
+          <UiButton variant="primary" to="/login">{{ t('example.cta') }}</UiButton>
+        </section>
       </div>
     </UiPageContainer>
-    <ReportEnding
-      :data="data"
-      :invite="{ title: t('example.endTitle'), text: t('example.endText'), cta: t('example.cta') }"
-    />
   </div>
 </template>
 
 <style scoped>
 .example-page {
-  padding-top: var(--page-top);
+  padding-top: var(--space-4);
+}
+
+.example-invite {
+  align-items: flex-start;
+}
+
+.example-invite__text {
+  color: var(--text-muted);
 }
 </style>
