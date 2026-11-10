@@ -41,6 +41,11 @@ const open = toRef(props, 'open')
 useBodyScrollLock(open)
 // The arrows sit beside the frame, so the focus trap covers the whole overlay; focus starts on the frame.
 useFocusTrap(overlayRef, open, { initial: () => panelRef.value, onEscape: () => emit('close') })
+// The frame can appear after the trap's first tick (the player and its transition mount late):
+// focus it once it exists, or the arrow keys stay with the button that opened the Stories.
+watch(panelRef, (panel) => {
+  if (panel && open.value && !panel.contains(document.activeElement)) panel.focus({ preventScroll: true })
+})
 
 const current = computed(() => frames.value[Math.min(index.value, frames.value.length - 1)]!)
 const label = computed(() =>

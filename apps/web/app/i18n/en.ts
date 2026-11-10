@@ -188,7 +188,7 @@ export const en = {
   'faq.read.text': 'Messages of the chat you pick, only while it is analysed and only in server memory.',
   'faq.read.title': 'We read',
   'faq.seoDescription':
-    'What TG Analyzer reads, what it keeps and what it never does. How to switch it off and delete a report.',
+    'What TG Analyzer reads, what it keeps and what it never does. How to delete a report and sign out.',
   'faq.seoTitle': 'Questions',
   'faq.title': 'Questions',
   'faq.dataTitle': 'Your data in short',
@@ -255,7 +255,7 @@ export const en = {
   'landing.recapTitle': 'A recap like a story',
   'landing.recapLede':
     'The main findings of a chat on a few screens. Save them as a picture or send them to the person.',
-  'landing.recapCard': 'You two write almost equally',
+  'landing.recapCard': 'You write evenly',
   'login.changeNumber': 'Change number',
   'login.codeDescription': 'Telegram sent a code to your app. Enter it here so we can read the chat you pick.',
   'login.codeLabel': 'Telegram code',
@@ -536,7 +536,7 @@ export const en = {
   'home.allChats': 'All Telegram chats',
   'home.loadingChats': 'Loading your chats from Telegram…',
   'home.loadingChatsError': 'Could not load your chats',
-  'landing.ex1.title': 'Mila, 51 to 49',
+  'landing.ex1.title': 'Mila, 52 to 48',
   'landing.ex1.text': 'You write equally and reply just as fast',
   'landing.ex2.title': 'Artyom, 3 times',
   'landing.ex2.text': 'Replies faster than you',
