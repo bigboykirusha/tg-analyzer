@@ -54,7 +54,7 @@ export type StoryFrameModel =
  * «Итоги» as data: the frames are the conclusions of the report's cards, with their words and numbers.
  * A private chat has four (the cover, «Баланс», «Время», «Слова»), a group four of its own (the cover,
  * «Люди», «Время», «Слова»). Each number comes from the same derived fields the card reads, the words
- * from `derived.words.clean` (never the obscene ones), so a frame never says what the report does not.
+ * from `derived.words`, so a frame never says what the report does not.
  */
 export function useStoryFrames(data: () => ReportDto) {
   const { t, tc, formatNumber, formatPercent, formatDay } = useI18n()
@@ -66,7 +66,7 @@ export function useStoryFrames(data: () => ReportDto) {
   const name = computed(() => data().summary.title)
   const days = computed(() => fillDailyGaps(report.value.activity.daily))
   const balanceFacts = useBalance(data)
-  const wordFacts = useWordsFacts(data, { source: 'clean', limit: 4 })
+  const wordFacts = useWordsFacts(data, { limit: 4 })
   const plain = (text: string) => text.replace(/\s?г\.$/u, '')
 
   const who = computed<StoryWho>(() => {
@@ -145,9 +145,9 @@ export function useStoryFrames(data: () => ReportDto) {
     }
   }
 
-  /** «Слова»: the word of the chat, then the words of each side; never an obscene one. */
+  /** «Слова»: the word of the chat, then the words of each side. */
   function words(): StoryFrameModel | null {
-    const clean = data().derived.words.clean
+    const clean = data().derived.words
     const emoji = data()
       .derived.favourites.topEmoji.slice(0, 5)
       .map((item) => ({ value: item.value, count: formatNumber(item.count) }))

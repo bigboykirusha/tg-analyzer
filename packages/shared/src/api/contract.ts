@@ -93,8 +93,6 @@ export const avatarsBodySchema = z.object({
 }) satisfies z.ZodType<AvatarsBody, unknown>
 
 export const chatIdParamsSchema = z.object({ chatId: telegramIdSchema })
-/** `?profanity=show` asks the owner's own report for the full words; without it obscene words are hidden. */
-export const reportQuerySchema = z.object({ profanity: z.enum(['show', 'hide']).optional() })
 export const shareLinkKindSchema = z.enum(['report', 'quiz'])
 export const shareLinkParamsSchema = z.object({ chatId: telegramIdSchema, kind: shareLinkKindSchema })
 export const telegramSessionParamsSchema = z.object({ hash: z.string().regex(/^-?\d{1,20}$/) })
@@ -155,7 +153,7 @@ export interface ApiEndpointMap {
   'DELETE /api/v1/parse/history/:jobId': Endpoint<undefined, SuccessResponse>
 
   'GET /api/v1/reports': Endpoint<undefined, ReportsResponse>
-  'GET /api/v1/reports/:chatId': Endpoint<undefined, ReportDto, { profanity?: 'show' | 'hide' }>
+  'GET /api/v1/reports/:chatId': Endpoint<undefined, ReportDto>
   'DELETE /api/v1/reports/:chatId': Endpoint<undefined, SuccessResponse>
   'GET /api/v1/reports/:chatId/links': Endpoint<undefined, ShareLinksResponse>
   'POST /api/v1/reports/:chatId/links': Endpoint<CreateShareLinkBody, ShareLinkDto>

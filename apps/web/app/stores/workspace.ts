@@ -150,16 +150,12 @@ export const useWorkspaceStore = defineStore('workspace', {
       }
     },
 
-    /** `profanity: 'show'` asks for the owner's own full report; it is shown, never cached over the filtered one. */
-    async loadReport(chatId: string, options: { profanity?: 'show' } = {}) {
+    async loadReport(chatId: string) {
       const auth = useAuthStore()
       const version = auth.sessionVersion
-      const report = await api('GET /api/v1/reports/:chatId', {
-        params: { chatId },
-        query: options.profanity ? { profanity: options.profanity } : undefined,
-      })
+      const report = await api('GET /api/v1/reports/:chatId', { params: { chatId } })
       if (auth.sessionVersion !== version) return null
-      if (!options.profanity) this.openedReports[chatId] = report
+      this.openedReports[chatId] = report
       return report
     },
 

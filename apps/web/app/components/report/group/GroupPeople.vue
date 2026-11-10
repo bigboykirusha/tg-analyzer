@@ -45,7 +45,7 @@ const answer = computed(() => {
 </script>
 
 <template>
-  <div class="people" :class="{ 'people--solo': !selected }">
+  <div class="people report-section--wide" :class="{ 'people--solo': !selected }">
     <div class="people__main">
       <ReportSection id="part-people" :title="t('group.tabs.people')" :answer="answer">
         <div class="people__list">

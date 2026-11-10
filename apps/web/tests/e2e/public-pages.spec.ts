@@ -85,10 +85,9 @@ test('the example report opens without signing in', async ({ page }, testInfo) =
       .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
       .toBe(true)
   }
-  // The example is the same report as an owner's: balance first, then habits, time, words, emoji.
-  for (const id of ['balance', 'habits', 'time', 'words', 'favourites'])
-    await expect(page.locator(`#part-${id}`)).toBeVisible()
-  await expect(page.locator('.report-section')).toHaveCount(5)
+  // The example is the same report as an owner's: three parts, «Вы двое», «Время» and «О чём».
+  for (const id of ['together', 'time', 'words']) await expect(page.locator(`#chapter-${id}`)).toBeVisible()
+  await expect(page.locator('.report-section')).not.toHaveCount(0)
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
 })

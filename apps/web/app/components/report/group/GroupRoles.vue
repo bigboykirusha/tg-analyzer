@@ -2,12 +2,15 @@
 import { formatVoiceDuration, type GroupParticipantDto, type GroupReportDto } from '@tg-analyzer/shared'
 
 /**
- * «Роли»: who plays which part in the chat, at most five — who starts conversations, the star of the
+ * «Роли»: who plays which part in the chat, at most six — who starts conversations, the star of the
  * reactions, who wakes the chat and who puts it to bed, the voice. One row per role: the winner's avatar,
  * the role, «Юля, 15% разговоров». The answer names whoever holds the most roles.
  */
 const props = defineProps<{ group: GroupReportDto }>()
-const { t, tc, locale, formatPercent } = useI18n()
+const { t, tc, locale, formatDecimal, formatPercent } = useI18n()
+
+/** Reply magnets need a real sample: one message with two replies is not a magnet. */
+const MIN_MAGNET_MESSAGES = 10
 const nameOf = useParticipantName()
 
 interface Role {
@@ -23,6 +26,12 @@ const specs = computed(() => [
     title: t('group.awards.starter'),
     amount: (p: GroupParticipantDto) => p.starterShare,
     describe: (value: number) => t('group.awards.starterValue', { share: formatPercent(value) }),
+  },
+  {
+    key: 'magnet',
+    title: t('group.awards.magnet'),
+    amount: (p: GroupParticipantDto) => (p.messageCount >= MIN_MAGNET_MESSAGES ? (p.magnetScore ?? 0) : 0),
+    describe: (value: number) => t('group.awards.magnetValue', { value: formatDecimal(value) }),
   },
   {
     key: 'reactions',
