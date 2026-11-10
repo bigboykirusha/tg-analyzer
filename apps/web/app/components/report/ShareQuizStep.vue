@@ -130,7 +130,7 @@ async function remove() {
       </UiButton>
       <p class="quiz-step__note"><Lock aria-hidden="true" />{{ t('share.quiz.privacy') }}</p>
     </template>
-    <UiButton v-if="link" variant="ghost" size="sm" class="quiz-step__delete" :disabled="busy" @click="remove">
+    <UiButton v-if="link" variant="plain" size="sm" class="quiz-step__delete" :disabled="busy" @click="remove">
       {{ t('share.quiz.delete') }}
     </UiButton>
   </div>

@@ -3,72 +3,112 @@ export interface Fact {
   key: string
   label: string
   value: string
+  /** A quiet line under the value: «23 апреля», «81 раз против 66». */
   sub?: string | null
+  /** The value names the other side: their ink. */
+  theirs?: boolean
 }
 
-const props = withDefaults(defineProps<{ facts: Fact[]; columns?: 1 | 2 | 3 }>(), { columns: 2 })
-
-/** A lone fact spans the whole row, so its hairline is not half a line. */
-const cols = computed(() => Math.max(1, Math.min(props.columns, props.facts.length)))
+/**
+ * Facts as rows of a card: the label on the left, the value on the right, a quiet line under it; a
+ * hairline between rows. `columns`: on desktop the facts stand side by side as a ledger instead
+ * («Ваши рекорды»).
+ */
+defineProps<{ facts: Fact[]; columns?: boolean }>()
 </script>
 
 <template>
-  <div class="facts" :class="`facts--${cols}`">
+  <dl class="facts" :class="{ 'facts--columns': columns }">
     <div v-for="fact in facts" :key="fact.key" class="fact">
-      <span class="t-label">{{ fact.label }}</span>
-      <strong class="fact__value">{{ fact.value }}</strong>
-      <span v-if="fact.sub" class="t-small t-muted">{{ fact.sub }}</span>
+      <dt class="fact__label">{{ fact.label }}</dt>
+      <dd class="fact__value" :class="{ 'fact__value--theirs': fact.theirs }">
+        {{ fact.value }}
+        <span v-if="fact.sub" class="fact__sub">{{ fact.sub }}</span>
+      </dd>
     </div>
-  </div>
+  </dl>
 </template>
 
 <style scoped>
 .facts {
-  display: grid;
-  gap: var(--space-4) var(--space-6);
+  display: flex;
+  flex-direction: column;
 }
 
-.facts--1 {
-  grid-template-columns: 1fr;
-}
-
-.facts--2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.facts--3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.facts--2 > .fact:last-child:nth-child(odd) {
-  grid-column: 1 / -1;
-}
-
-/* Ruled like a ledger: a hairline above each fact instead of a grey box. */
 .fact {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  box-shadow: var(--divider-bottom);
+}
+
+.fact:first-child {
+  padding-top: var(--space-1);
+}
+
+.fact:last-child {
+  padding-bottom: 0;
+  box-shadow: none;
+}
+
+.fact__label {
   min-width: 0;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border);
+  font: var(--text-small);
 }
 
-/* A label may take two lines; the values of one row still sit on one baseline. */
 .fact__value {
-  margin-top: auto;
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
-  overflow-wrap: anywhere;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 60%;
+  font: var(--text-small-strong);
+  text-align: right;
 }
 
-@media (max-width: 640px) {
-  .facts--3 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+.fact__value--theirs {
+  color: var(--them-ink);
+}
+
+.fact__sub {
+  color: var(--text-muted);
+  font: var(--text-caption);
+  font-weight: 400;
+}
+
+/* Desktop ledger: label, value, the quiet line, in equal columns. */
+@media (min-width: 901px) {
+  .facts--columns {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: var(--space-6);
   }
 
-  .facts--3 > .fact:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
+  .facts--columns .fact {
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .facts--columns .fact__label {
+    color: var(--text-muted);
+  }
+
+  .facts--columns .fact__value {
+    align-items: flex-start;
+    max-width: none;
+    gap: var(--space-1);
+    font: var(--text-title);
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .facts--columns .fact__sub {
+    font: var(--text-small);
   }
 }
 </style>

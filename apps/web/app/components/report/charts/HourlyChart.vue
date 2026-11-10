@@ -2,51 +2,55 @@
 import type { DirectionalCountDto } from '@tg-analyzer/shared'
 
 /**
- * 24 bars, one per hour of the whole chat, like «Ваше время» in a personal report: neutral, the
- * busiest hour in the group's colour, the hours marked every six under the axis.
+ * The day in 24 bars, one per hour of the whole chat: neutral, the peak hours in ink, the hours marked
+ * under the axis (0:00, 6:00, 12:00, 18:00, 23:00). `peak` lists the hours to light — the usual window
+ * of a private chat; without it the busiest hour is lit.
  */
-const props = defineProps<{ hourly: DirectionalCountDto[] }>()
+const props = defineProps<{ hourly: DirectionalCountDto[]; peak?: readonly number[]; label?: string }>()
 const { t, formatNumber } = useI18n()
 
 const hours = computed(() => {
-  // `total`, as the answer above counts it («Самый оживлённый час»), so the lit bar is that hour.
-  const totals = Array.from({ length: 24 }, (_, hour) => props.hourly[hour]?.total ?? 0)
-  const peak = Math.max(1, ...totals)
+  const totals = Array.from({ length: 24 }, (_, hour) => {
+    const item = props.hourly[hour]
+    return item ? item.sent + item.received : 0
+  })
+  const top = Math.max(1, ...totals)
   return totals.map((total, hour) => ({
     hour,
-    height: (total / peak) * 100,
-    peak: total === peak && total > 0,
-    title: `${hour}:00 · ${formatNumber(total)}`,
+    height: Math.max(3, (total / top) * 100),
+    peak: props.peak ? props.peak.includes(hour) : total === top && total > 0,
   }))
 })
-const label = computed(() => {
+const summary = computed(() => {
+  if (props.label) return props.label
   const sum = (key: 'sent' | 'received') => props.hourly.reduce((total, hour) => total + (hour?.[key] ?? 0), 0)
   return t('chart.hourlySummary', { sent: formatNumber(sum('sent')), received: formatNumber(sum('received')) })
 })
+const MARKS = [0, 6, 12, 18, 23]
 </script>
 
 <template>
   <figure class="hours">
-    <div class="hours__bars" role="img" :aria-label="label">
+    <div class="hours__bars" role="img" :aria-label="summary">
       <i
         v-for="hour in hours"
         :key="hour.hour"
-        :class="{ 'hours__bar--peak': hour.peak }"
-        :style="{ height: `${Math.max(hour.height, 2)}%` }"
-        :title="hour.title"
+        :class="{ 'is-peak': hour.peak }"
+        :style="{ height: `${hour.height}%` }"
       />
     </div>
-    <ol class="hours__axis t-num" aria-hidden="true">
-      <li v-for="mark in [0, 6, 12, 18]" :key="mark">{{ mark }}:00</li>
+    <ol class="hours__axis" aria-hidden="true">
+      <li v-for="mark in MARKS" :key="mark" :style="{ gridColumnStart: mark + 1 }">{{ mark }}:00</li>
     </ol>
   </figure>
 </template>
 
 <style scoped>
 .hours {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
-  margin: 0;
+  min-width: 0;
 }
 
 .hours__bars {
@@ -54,27 +58,34 @@ const label = computed(() => {
   grid-template-columns: repeat(24, minmax(0, 1fr));
   align-items: end;
   gap: var(--space-0-5);
-  height: calc(var(--chart-h-sm) - var(--space-20));
+  height: var(--chart-h);
 }
 
 .hours__bars i {
-  display: block;
   border-radius: var(--radius-mark) var(--radius-mark) 0 0;
   background: var(--chart-neutral);
 }
 
-.hours__bars .hours__bar--peak {
-  background: var(--them);
+.hours__bars i.is-peak {
+  background: var(--chart-neutral-strong);
 }
 
-/* Four marks, each under the first of its six hours. */
+/* Each mark under its own hour; the last one ends at the right edge. */
 .hours__axis {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 0;
-  padding: 0;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
   color: var(--text-muted);
   font: var(--text-caption);
-  list-style: none;
+  font-weight: 400;
+}
+
+.hours__axis li {
+  grid-row: 1;
+  white-space: nowrap;
+}
+
+.hours__axis li:last-child {
+  grid-column-end: 25;
+  justify-self: end;
 }
 </style>

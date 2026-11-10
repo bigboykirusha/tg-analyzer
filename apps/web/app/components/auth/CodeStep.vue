@@ -40,7 +40,11 @@ function submit() {
       <OtpInput ref="otpRef" v-model="code" :length="size" />
     </Field>
     <Button variant="link" class="resend" :disabled="resendSeconds > 0 || loading" @click="emit('resend')">
-      {{ resendSeconds > 0 ? t('login.resendIn', { time: formatCountdown(resendSeconds) }) : resendLabel || t('login.resend') }}
+      {{
+        resendSeconds > 0
+          ? t('login.resendIn', { time: formatCountdown(resendSeconds) })
+          : resendLabel || t('login.resend')
+      }}
     </Button>
     <Button type="submit" variant="primary" size="lg" :loading="loading" :disabled="code.length !== size" block>
       {{ t('login.signIn') }}

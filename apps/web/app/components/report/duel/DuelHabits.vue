@@ -1,100 +1,94 @@
 <script setup lang="ts">
+import type { ReportDto } from '@tg-analyzer/shared'
 import type { Versus } from '../../../composables/useVersus'
+import type { Fact } from '../ReportFacts.vue'
+import type { MessageKey } from '../../../composables/useI18n'
 
 /**
- * «Ваши привычки»: the small two-sided habits as rows of one quiet card, each a label with its
- * verdict and one line. Who starts a conversation (shares), who laughs (counts) and, when the
- * report has no voice lengths for a card of its own, who sends more voice messages (counts).
+ * «Ваши привычки»: the small two-sided habits as rows of one card — who starts a conversation, who
+ * writes first in the morning, who laughs, who wishes good night and, when the report has no voice
+ * lengths for a card of its own, who sends more voice messages. Each row names the side that does it
+ * more (or «по очереди», «поровну») with the two counts under it. The answer is who starts.
+ * Parity is the same 1.25 lead as every two-sided card (`isEven`).
  */
 const props = defineProps<{
+  data: ReportDto
   starts: Versus | null
   laughs: Versus | null
   voice: { mine: number; theirs: number } | null
-  theirName: string
 }>()
-const { t, formatNumber } = useI18n()
+const { t, tc, formatNumber, formatPercent } = useI18n()
 
-/** The same 1.25 lead as the other two-sided cards. */
-const LEAD = 1.25
-const voiceVerdict = (mine: number, theirs: number) =>
-  Math.max(mine, theirs) < LEAD * Math.min(mine, theirs)
-    ? t('report.habits.even')
-    : mine > theirs
-      ? t('report.habits.mine')
-      : t('report.habits.theirs', { name: props.theirName })
+/** Fewer than this many mornings or wishes is noise. */
+const MIN = 5
+type Side = 'mine' | 'theirs' | 'even'
+const sideOf = (mine: number, theirs: number): Side =>
+  isEven(mine, theirs) ? 'even' : mine > theirs ? 'mine' : 'theirs'
 
-const verdict = (item: Versus, even: string) =>
-  item.lead === 'mine'
-    ? t('report.habits.mine')
-    : item.lead === 'theirs'
-      ? t('report.habits.theirs', { name: props.theirName })
-      : even
+const name = computed(() => props.data.summary.title)
 
-const rows = computed(() =>
-  [
-    props.starts && {
+function fact(key: string, label: string, mine: number, theirs: number, evenWord: string, unit?: string): Fact {
+  const side = sideOf(mine, theirs)
+  const [high, low] = side === 'theirs' ? [theirs, mine] : [mine, theirs]
+  const first = unit ? tc(unit, high) : formatNumber(high)
+  return {
+    key,
+    label,
+    value: side === 'even' ? evenWord : side === 'mine' ? t('report.habits.you') : name.value,
+    sub: t('report.habits.versus', { first, second: formatNumber(low) }),
+    theirs: side === 'theirs',
+  }
+}
+
+const facts = computed<Fact[]>(() => {
+  const out: Fact[] = []
+  const turns = t('report.habits.startsEven')
+  const even = t('report.habits.even')
+  if (props.starts) {
+    const [mine, theirs] = [props.starts.pairs[0]!.mine.value, props.starts.pairs[0]!.theirs.value]
+    const side = sideOf(mine, theirs)
+    const [high, low] = side === 'theirs' ? [theirs, mine] : [mine, theirs]
+    out.push({
       key: 'starts',
       label: t('report.habits.starts'),
-      verdict: verdict(props.starts, t('report.habits.startsEven')),
-      theirs: props.starts.lead === 'theirs',
-      pair: props.starts.pairs[0]!,
-      percent: true,
-    },
-    props.laughs && {
-      key: 'laughs',
-      label: t('report.habits.laughs'),
-      verdict: verdict(props.laughs, t('report.habits.even')),
-      theirs: props.laughs.lead === 'theirs',
-      pair: props.laughs.pairs[0]!,
-      percent: false,
-    },
-    props.voice && {
-      key: 'voice',
-      label: t('report.habits.voice'),
-      verdict: voiceVerdict(props.voice.mine, props.voice.theirs),
-      theirs: props.voice.theirs >= LEAD * props.voice.mine && props.voice.theirs > 0,
-      pair: {
-        mine: { value: props.voice.mine, text: formatNumber(props.voice.mine) },
-        theirs: { value: props.voice.theirs, text: formatNumber(props.voice.theirs) },
-      },
-      percent: false,
-    },
-  ].filter((row): row is NonNullable<typeof row> => Boolean(row)),
-)
+      value: side === 'even' ? turns : side === 'mine' ? t('report.habits.you') : name.value,
+      sub: t('report.habits.versus', { first: formatPercent(high), second: formatPercent(low) }),
+      theirs: side === 'theirs',
+    })
+  }
+  const rituals = props.data.report.rituals
+  const morning = rituals?.morningFirst
+  if (morning && morning.mine + morning.theirs >= MIN)
+    out.push(fact('morning', t('report.habits.morning'), morning.mine, morning.theirs, turns, 'report.habits.days'))
+  if (props.laughs)
+    out.push(
+      fact(
+        'laughs',
+        t('report.habits.laughs'),
+        props.laughs.pairs[0]!.mine.value,
+        props.laughs.pairs[0]!.theirs.value,
+        even,
+        'report.habits.times',
+      ),
+    )
+  const night = rituals?.goodNight
+  if (night && night.mine + night.theirs >= MIN)
+    out.push(fact('night', t('report.habits.night'), night.mine, night.theirs, even, 'report.habits.times'))
+  if (props.voice) out.push(fact('voice', t('report.habits.voice'), props.voice.mine, props.voice.theirs, even))
+  return out
+})
+
+/** «Разговор начинаете по очереди», or the first habit there is. */
+const answer = computed(() => {
+  const first = facts.value[0]
+  if (!first) return null
+  const side = first.theirs ? 'theirs' : first.value === t('report.habits.you') ? 'mine' : 'even'
+  return t(`report.habits.answer.${first.key}.${side}` as MessageKey, { name: name.value })
+})
 </script>
 
 <template>
-  <ReportSection v-if="rows.length" :title="t('report.habits.title')">
-    <div class="report-rows">
-      <div v-for="row in rows" :key="row.key" class="report-rows__row">
-        <span class="report-rows__label habit__label">
-          <span>{{ row.label }}</span
-          ><strong class="habit__verdict" :class="{ 'habit__verdict--theirs': row.theirs }">{{ row.verdict }}</strong>
-        </span>
-        <ReportLine
-          :mine="row.pair.mine.value"
-          :theirs="row.pair.theirs.value"
-          :left="row.percent ? undefined : row.pair.mine.text"
-          :right="row.percent ? undefined : row.pair.theirs.text"
-        />
-      </div>
-    </div>
+  <ReportSection v-if="facts.length" :title="t('report.habits.title')" :answer="answer">
+    <ReportFacts :facts="facts" />
   </ReportSection>
 </template>
-
-<style scoped>
-/* The habit on the left, quiet; the verdict on the right, in the leading side's ink. */
-.habit__label {
-  justify-content: space-between;
-  color: var(--text-muted);
-}
-
-.habit__verdict {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.habit__verdict--theirs {
-  color: var(--them-ink);
-}
-</style>

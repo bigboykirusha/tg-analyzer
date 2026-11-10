@@ -1,15 +1,30 @@
 <script setup lang="ts">
-import type { ReportDto } from '@tg-analyzer/shared'
+import { HOME_MIN_NEW_MESSAGES, type ReportDto } from '@tg-analyzer/shared'
+import { RotateCw } from '../../lib/icons'
 
 /**
- * «С прошлого анализа» (card 18): only after a chat was analysed again and something new was written.
- * The answer is how many messages came since; under it, rows «было → стало» for your reply time and
- * who starts the conversations — the same snapshot (`previous`) the report keeps.
+ * One white strip under the poster, only when there is news about the report itself:
+ *   - Telegram has many messages the report has not read yet — «640 новых сообщений», «Обновить»;
+ *   - otherwise, right after a fresh analysis, what changed since the previous one — how many messages
+ *     came and, «было → стало», your reply time and who starts.
+ * Nothing new — no strip.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, formatNumber, formatDuration, formatDate } = useI18n()
+const { t, tc, formatNumber, formatDuration, formatDate } = useI18n()
+const workspace = useWorkspaceStore()
+const actions = useReportActions()
 
-const previous = computed(() => (props.data.report.group ? null : props.data.previous))
+onMounted(() => {
+  if (workspace.recentState === 'idle') void workspace.loadRecent()
+})
+
+/** Messages in Telegram that the report has not read: the chat's size now minus the report's. */
+const unread = computed(() => {
+  const chat = workspace.recent?.chats.find((item) => item.id === props.data.summary.chatId)
+  if (chat?.total === undefined) return 0
+  const added = chat.total - props.data.summary.totalMessages
+  return added >= HOME_MIN_NEW_MESSAGES ? added : 0
+})
 
 /** «вы», «Мила» or «поровну»: who starts more, from the share of conversations you start. */
 function starter(pct: number) {
@@ -18,75 +33,79 @@ function starter(pct: number) {
   return t('report.since.starterEven')
 }
 
-const view = computed(() => {
-  const before = previous.value
+const since = computed(() => {
+  const before = props.data.report.group ? null : props.data.previous
   if (!before) return null
   const { totals, responses } = props.data.report
   const added = totals.messages - before.messages
-  // Nothing new since then: every number is as before, and the card would say nothing.
   if (added <= 0) return null
-  const rows: { key: string; label: string; from: string; to: string }[] = []
-  const now = responses.medianMineSec
-  const then = before.medianMineSec
-  if (now !== null && then !== null)
-    rows.push({ key: 'reply', label: t('report.since.reply'), from: formatDuration(then), to: formatDuration(now) })
-  const starts = responses.iWriteFirstPct
-  const startsBefore = before.iWriteFirstPct
-  if (starts !== null && startsBefore !== null)
-    rows.push({ key: 'starts', label: t('report.since.starts'), from: starter(startsBefore), to: starter(starts) })
+  const changes: string[] = []
+  if (responses.medianMineSec !== null && before.medianMineSec !== null)
+    changes.push(
+      t('report.since.reply', {
+        from: formatDuration(before.medianMineSec),
+        to: formatDuration(responses.medianMineSec),
+      }),
+    )
+  if (responses.iWriteFirstPct !== null && before.iWriteFirstPct !== null)
+    changes.push(
+      t('report.since.starts', { from: starter(before.iWriteFirstPct), to: starter(responses.iWriteFirstPct) }),
+    )
   return {
-    title: t('report.since.titleDate', { date: formatDate(before.analyzedAt, { day: 'numeric', month: 'long' }) }),
-    answer: t('report.since.added', { count: formatNumber(added) }),
-    rows,
+    title: tc('report.since.added', added, {
+      count: formatNumber(added),
+      date: formatDate(before.analyzedAt, { day: 'numeric', month: 'long' }),
+    }),
+    text: changes.join(', ').replace(/^./u, (letter) => letter.toLocaleUpperCase()),
   }
 })
 </script>
 
 <template>
-  <ReportSection v-if="view" :title="view.title" :answer="view.answer" class="since">
-    <dl v-if="view.rows.length" class="since__rows">
-      <div v-for="row in view.rows" :key="row.key" class="since__row">
-        <dt>{{ row.label }}</dt>
-        <dd class="t-num">
-          {{ row.from }}<span class="since__arrow" aria-hidden="true">→</span
-          ><span class="sr-only">{{ t('report.since.became') }}</span
-          >{{ row.to }}
-        </dd>
-      </div>
-    </dl>
-  </ReportSection>
+  <div v-if="unread" class="tile since" role="status">
+    <span class="since__copy">
+      <b class="since__title">{{ tc('report.stale.title', unread, { count: formatNumber(unread) }) }}</b>
+      <span class="since__text">{{ t('report.stale.text') }}</span>
+    </span>
+    <UiButton
+      variant="secondary"
+      size="sm"
+      :icon="RotateCw"
+      :loading="actions.busy(data.summary.chatId)"
+      @click="actions.analyse(data.summary.chatId, data.summary.title)"
+    >
+      {{ t('report.stale.refresh') }}
+    </UiButton>
+  </div>
+  <div v-else-if="since" class="tile since">
+    <span class="since__copy">
+      <b class="since__title">{{ since.title }}</b>
+      <span v-if="since.text" class="since__text">{{ since.text }}</span>
+    </span>
+  </div>
 </template>
 
 <style scoped>
-.since__rows {
-  display: grid;
-  margin: 0;
+.since {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.since__row {
+.since__copy {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-3) 0;
-  box-shadow: var(--divider-top);
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 0;
 }
 
-.since__row dt {
+.since__title {
+  font: var(--text-small-strong);
+}
+
+.since__text {
   color: var(--text-muted);
-  font: var(--text-ui);
-  font-weight: 400;
-}
-
-.since__row dd {
-  margin: 0;
-  font: var(--text-title);
-  font-weight: 600;
-}
-
-.since__arrow {
-  margin: 0 var(--space-1);
-  color: var(--text-muted);
-  font-weight: 400;
+  font: var(--text-small);
 }
 </style>

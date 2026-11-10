@@ -312,7 +312,7 @@ test('concurrent analysis starts cannot exceed the daily limit', async () => {
   try {
     const session = await login()
     const responses = await Promise.all(
-      [PRIVATE_CHAT, GROUP_CHAT, '1005', '1008'].map((chatId) => post(session, '/api/v1/parse/start', { chatId })),
+      [PRIVATE_CHAT, GROUP_CHAT, '1005', '1013'].map((chatId) => post(session, '/api/v1/parse/start', { chatId })),
     )
     assert.equal(responses.filter((response) => response.statusCode === 200).length, 1)
     for (const response of responses.filter((response) => response.statusCode !== 200)) {

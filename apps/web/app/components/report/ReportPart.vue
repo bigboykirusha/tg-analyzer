@@ -22,30 +22,36 @@ const { ready } = useMasonry(columnsRef)
 </template>
 
 <style scoped>
-/* A part of the report: a large title and its cards, separated from the previous part by space alone. */
+/* A part: its title, the answer in one sentence, then its cards. Parts are separated by space alone. */
 .report-part {
-  display: grid;
-  gap: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   padding-top: var(--space-8);
-  /* Below the scroll padding of the page (base.css), a little air above the chapter's title. */
-  scroll-margin-top: var(--space-6);
+  scroll-margin-top: var(--space-4);
 }
 
 .report-part__head {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-1);
+  padding-bottom: var(--space-1);
 }
 
 .report-part__answer {
   max-width: var(--measure);
   color: var(--text-muted);
-  font: var(--text-body);
-  text-wrap: pretty;
+  font: var(--text-small);
 }
 
-@media (max-width: 640px) {
+@media (min-width: 901px) {
   .report-part {
-    padding-top: var(--space-4);
+    gap: var(--space-4);
+    padding-top: var(--space-10);
+  }
+
+  .report-part__answer {
+    font: var(--text-body);
   }
 }
 </style>

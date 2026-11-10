@@ -94,7 +94,7 @@ async function remove() {
       </div>
       <div class="link-step__foot">
         <span class="t-small t-muted">{{ tc('share.link.views', link.views) }}</span>
-        <UiButton variant="ghost" size="sm" class="link-step__off" :disabled="busy" @click="remove">
+        <UiButton variant="plain" size="sm" class="link-step__off" :disabled="busy" @click="remove">
           {{ t('share.link.delete') }}
         </UiButton>
       </div>

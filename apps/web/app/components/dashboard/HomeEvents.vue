@@ -60,7 +60,11 @@ const share = (messages: number, total: number) => `${Math.max(2, Math.round((me
         </NuxtLink>
         <template v-if="event.kind === 'quiz'">
           <h3 class="event__answer">{{ t('home.quizTitle', { score: event.score, total: event.total }) }}</h3>
-          <span class="event__dots" role="img" :aria-label="t('home.quizTitle', { score: event.score, total: event.total })">
+          <span
+            class="event__dots"
+            role="img"
+            :aria-label="t('home.quizTitle', { score: event.score, total: event.total })"
+          >
             <i v-for="dot in event.total" :key="dot" :class="{ 'is-on': dot <= event.score }" />
           </span>
         </template>

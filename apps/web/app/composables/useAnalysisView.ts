@@ -19,10 +19,12 @@ export function useAnalysisView() {
     let eta: string | null = null
     if (share && startedAt && share >= MIN_ETA_SHARE && share < 1) {
       const elapsed = now.value - startedAt
-      if (elapsed >= MIN_ETA_MS) eta = tc('analysis.banner.eta', Math.max(1, Math.round((elapsed / share - elapsed) / 60_000)))
+      if (elapsed >= MIN_ETA_MS)
+        eta = tc('analysis.banner.eta', Math.max(1, Math.round((elapsed / share - elapsed) / 60_000)))
     }
     let status: string
-    if (phase === 'waiting' && waitSeconds) status = t('analysis.banner.waiting', { time: formatCountdown(waitSeconds) })
+    if (phase === 'waiting' && waitSeconds)
+      status = t('analysis.banner.waiting', { time: formatCountdown(waitSeconds) })
     else if (phase === 'saving') status = t('analysis.banner.saving')
     else if (share === null) status = t('analysis.banner.connecting')
     else status = eta ? `${Math.round(share * 100)}%, ${eta}` : `${Math.round(share * 100)}%`
@@ -31,7 +33,9 @@ export function useAnalysisView() {
       : null
     const reached =
       reachedAt && phase === 'scanning'
-        ? t('analysis.banner.reached', { date: formatDate(reachedAt, { day: 'numeric', month: 'long', year: 'numeric' }) })
+        ? t('analysis.banner.reached', {
+            date: formatDate(reachedAt, { day: 'numeric', month: 'long', year: 'numeric' }),
+          })
         : null
     return {
       chat,

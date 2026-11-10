@@ -3,14 +3,12 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { personaOf } from '../../lib/persona'
 
 /**
- * «Ваше время», the one dashboard of the day's rhythm, each fact once: the part of the day around
- * the usual window as the answer (lib/persona, as in «Итоги»), the peak window (`availabilityProfile.peakWindow`, as
- * in «Итоги») lit in the person's colour on the 24 hours, and the four parts of the day as a band
- * under the same hours. The weekdays have the heatmap below.
+ * «Время» opens with «Ваше время» on the room itself: the usual window as the answer
+ * (`availabilityProfile.peakWindow`, as in «Итоги»), lit in ink on the 24 hours, and the four parts
+ * of the day under them.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, formatNumber } = useI18n()
-const name = computed(() => props.data.summary.title)
+const { t, formatPercent } = useI18n()
 
 const window = computed(() => {
   const peak = props.data.derived.availabilityProfile.peakWindow
@@ -29,6 +27,8 @@ const inPeak = (hour: number) => {
   return (hour - peak.start + 24) % 24 < length
 }
 
+const peakHours = computed(() => Array.from({ length: 24 }, (_, hour) => hour).filter(inPeak))
+
 type Role = 'night' | 'morning' | 'day' | 'evening'
 const PARTS = [
   { key: 'night', role: 'night', label: 'chat.bucketNight' },
@@ -45,112 +45,45 @@ const parts = computed(() => {
 /** The answer is the part of the day around the usual window — the same one «Итоги» name (lib/persona). */
 const role = computed<Role | null>(() => personaOf(props.data.derived.availabilityProfile.peakWindow))
 
-/** 24 columns of the whole chat, one per hour: the usual window in the person's colour, the rest neutral. */
-const hours = computed(() => {
-  const hourly = props.data.report.activity.hourly
-  const max = Math.max(1, ...hourly.map((hour) => hour.sent + hour.received))
-  return Array.from({ length: 24 }, (_, hour) => {
-    const sent = hourly[hour]?.sent ?? 0
-    const received = hourly[hour]?.received ?? 0
-    return {
-      hour,
-      peak: inPeak(hour),
-      height: ((sent + received) / max) * 100,
-      title: `${hour}:00 · ${t('report.you')} ${formatNumber(sent)} · ${name.value} ${formatNumber(received)}`,
-    }
-  })
-})
-const summary = computed(() => {
-  const hourly = props.data.report.activity.hourly
-  const sum = (key: 'sent' | 'received') => hourly.reduce((total, hour) => total + hour[key], 0)
-  return t('chart.hourlySummary', { sent: formatNumber(sum('sent')), received: formatNumber(sum('received')) })
-})
-
-/** «Ночные совы: чаще всего с 22:00 до 01:00» — the group's «Время» opens with the same sentence. */
-const timeAnswer = useTimeAnswer(() => props.data)
-const answer = computed(() => timeAnswer.value ?? t(`story.persona.${role.value!}`))
+/** «Пик — с 11:00 до 14:00»: the usual window, the same one «Итоги» and the chapter's line use. */
+const answer = computed(() =>
+  window.value ? t('report.time.peak', { from: window.value.from, to: window.value.to }).replace(/–/gu, '⁠–⁠') : null,
+)
 </script>
 
 <template>
-  <ReportSection v-if="window && role" :title="t('report.fmt.clockTitle')" :answer="answer" wide>
-    <figure class="day">
-      <div class="day__hours" role="img" :aria-label="summary">
-        <i
-          v-for="hour in hours"
-          :key="hour.hour"
-          class="day__hour"
-          :class="{ 'day__hour--peak': hour.peak }"
-          :style="{ height: `${Math.max(hour.height, 2)}%` }"
-          :title="hour.title"
-        />
-      </div>
-      <!-- The four parts of the day under their own six hours each: the share said once, here. -->
-      <ol class="day__parts">
-        <li v-for="part in parts" :key="part.key" :class="{ 'is-peak': part.role === role }">
-          <b class="t-num">{{ Math.round(part.share) }}%</b>
-          <span>{{ t(part.label) }}</span>
-        </li>
-      </ol>
-    </figure>
+  <ReportSection v-if="window && role" hero :title="t('report.fmt.clockTitle')" :answer="answer">
+    <HourlyChart :hourly="data.report.activity.hourly" :peak="peakHours" />
+    <!-- The four parts of the day: the share said once, here. -->
+    <ol class="parts">
+      <li v-for="part in parts" :key="part.key">
+        <b>{{ formatPercent(part.share) }}</b>
+        <span>{{ t(part.label) }}</span>
+      </li>
+    </ol>
   </ReportSection>
 </template>
 
 <style scoped>
-.day {
-  display: grid;
-  gap: var(--space-2);
-  min-width: 0;
-  margin: 0;
-}
-
-/* 24 columns, one per hour; the usual window lit in the person's colour. */
-.day__hours {
-  display: grid;
-  grid-template-columns: repeat(24, minmax(0, 1fr));
-  align-items: end;
-  gap: var(--space-0-5);
-  height: calc(var(--chart-h-sm) - var(--space-20));
-}
-
-.day__hour {
-  display: block;
-  border-radius: var(--radius-mark) var(--radius-mark) 0 0;
-  background: var(--chart-neutral);
-}
-
-.day__hour--peak {
-  background: var(--them);
-}
-
-/* The parts of the day: each under its six hours, the leading one lit. */
-.day__parts {
+.parts {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.day__parts li {
-  display: grid;
-  justify-items: center;
-  min-width: 0;
   padding-top: var(--space-2);
-  box-shadow: var(--divider-top);
-  color: var(--text-muted);
-  font: var(--text-caption);
   text-align: center;
 }
 
-/* The share of each part of the day, said right under its six hours. */
-.day__parts b {
-  color: var(--text);
-  font: var(--text-small);
-  font-weight: 600;
+.parts li {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--text-muted);
+  font: var(--text-caption);
+  font-weight: 400;
 }
 
-.day__parts .is-peak b {
-  color: var(--them-ink);
+.parts b {
+  color: var(--text);
+  font: var(--text-small-strong);
 }
 </style>

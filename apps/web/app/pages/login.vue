@@ -146,14 +146,23 @@ function changeNumber() {
           <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
           <template v-else-if="step === 'code'">
             {{ codeDescription }}
-            <button type="button" class="link" :disabled="loading" @click="changeNumber">{{ t('login.changeNumber') }}</button>
+            <button type="button" class="link" :disabled="loading" @click="changeNumber">
+              {{ t('login.changeNumber') }}
+            </button>
           </template>
           <template v-else>{{ t('login.passwordDescription') }}</template>
         </p>
       </header>
 
       <Transition name="auth-step" mode="out-in">
-        <PhoneStep v-if="step === 'phone'" key="phone" v-model:phone="phone" :loading="loading" :error="error" @submit="requestCode" />
+        <PhoneStep
+          v-if="step === 'phone'"
+          key="phone"
+          v-model:phone="phone"
+          :loading="loading"
+          :error="error"
+          @submit="requestCode"
+        />
         <CodeStep
           v-else-if="step === 'code'"
           key="code"

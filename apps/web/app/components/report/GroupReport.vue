@@ -7,15 +7,7 @@ const props = defineProps<{ data: ReportDto }>()
 const { t, formatPercent } = useI18n()
 const nameOf = useParticipantName()
 
-/** Three parts of one long page: the people and who talks to whom, how the chat talks, and when. */
-type Part = 'people' | 'talk' | 'time'
-const part = ref<Part>('people')
-const tabs = computed(() => [
-  { value: 'people' as const, label: t('group.tabs.people') },
-  { value: 'talk' as const, label: t('group.tabs.talk') },
-  { value: 'time' as const, label: t('report.tabs.time') },
-])
-
+/** Three parts of one long page: the people, how the chat talks, and when. */
 const group = computed(() => props.data.report.group)
 const headlines = useChapterHeadlines(() => props.data)
 const answerOf = (id: string) => headlines.value.find((headline) => headline.id === id)?.text ?? null
@@ -36,33 +28,29 @@ const clearLeader = computed(() => {
     :description="t('group.noGroupDataText')"
   />
 
-  <div v-else class="report-layout">
-    <ReportToc :headlines="headlines" group />
-    <div class="stack stack--lg">
-      <ReportNav v-model="part" :options="tabs" :label="t('report.tabs.label')" />
-      <ReportPart id="people" :title="t('group.tabs.people')" :answer="answerOf('people')">
-        <ReportSection
-          :title="t('group.mostActive')"
-          :answer="clearLeader ? nameOf(clearLeader) : t('group.leader.even')"
-          :data-hue="clearLeader && !clearLeader.isSelf ? hueOf(clearLeader.id) : undefined"
-        >
-          <p v-if="clearLeader" class="leader__share" :class="{ 'leader__share--you': clearLeader.isSelf }">
-            <span class="t-figure">{{ formatPercent(clearLeader.messageShare) }}</span>
-            <span class="t-small">{{ t('group.ofMessages') }}</span>
-          </p>
-        </ReportSection>
-        <GroupOverviewTab :group="group" />
-        <GroupMembersTab :group="group" />
-        <GroupNetworkTab :group="group" />
-      </ReportPart>
-      <ReportPart id="talk" :title="t('group.tabs.talk')" :answer="answerOf('talk')" columns>
-        <GroupTalkTab :data="data" :group="group" />
-        <GroupContentTab :data="data" :group="group" />
-      </ReportPart>
-      <ReportPart id="time" :title="t('report.tabs.time')" :answer="answerOf('time')">
-        <GroupDynamicsTab :data="data" />
-      </ReportPart>
-    </div>
+  <div v-else class="report-flow">
+    <ReportPart id="people" :title="t('group.tabs.people')" :answer="answerOf('people')">
+      <ReportSection
+        :title="t('group.mostActive')"
+        :answer="clearLeader ? nameOf(clearLeader) : t('group.leader.even')"
+        :data-hue="clearLeader && !clearLeader.isSelf ? hueOf(clearLeader.id) : undefined"
+      >
+        <p v-if="clearLeader" class="leader__share" :class="{ 'leader__share--you': clearLeader.isSelf }">
+          <span class="t-figure">{{ formatPercent(clearLeader.messageShare) }}</span>
+          <span class="t-small">{{ t('group.ofMessages') }}</span>
+        </p>
+      </ReportSection>
+      <GroupOverviewTab :group="group" />
+      <GroupMembersTab :group="group" />
+      <GroupNetworkTab :group="group" />
+    </ReportPart>
+    <ReportPart id="talk" :title="t('group.tabs.talk')" :answer="answerOf('talk')" columns>
+      <GroupTalkTab :data="data" :group="group" />
+      <GroupContentTab :data="data" :group="group" />
+    </ReportPart>
+    <ReportPart id="time" :title="t('report.tabs.time')" :answer="answerOf('time')">
+      <GroupDynamicsTab :data="data" />
+    </ReportPart>
   </div>
 </template>
 

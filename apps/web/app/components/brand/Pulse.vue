@@ -45,7 +45,13 @@ const columns = computed(() => {
 </script>
 
 <template>
-  <div class="pulse" :role="label ? 'img' : undefined" :aria-label="label || undefined" :aria-hidden="label ? undefined : 'true'" :style="{ '--pulse-half': `${height}px` }">
+  <div
+    class="pulse"
+    :role="label ? 'img' : undefined"
+    :aria-label="label || undefined"
+    :aria-hidden="label ? undefined : 'true'"
+    :style="{ '--pulse-half': `${height}px` }"
+  >
     <div class="pulse__half pulse__half--up">
       <i v-for="(column, index) in columns" :key="index" :style="{ height: column.up }" />
     </div>

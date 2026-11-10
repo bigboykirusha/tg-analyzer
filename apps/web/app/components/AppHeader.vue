@@ -140,6 +140,30 @@ const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
     max-width: none;
     min-height: var(--topbar-height);
   }
+
+  /*
+   * Over a report's poster the bar takes no room and shows nothing: the poster carries the name and its
+   * actions. It arrives as the poster leaves, the name and chapter in the material.
+   */
+  .app-bar.has-poster {
+    margin-bottom: calc(-1 * var(--topbar-height));
+  }
+
+  .app-bar.is-over-poster {
+    background: transparent;
+    pointer-events: none;
+  }
+
+  .app-bar.is-over-poster :deep(.page-bar) {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  .app-bar :deep(.page-bar--wide) {
+    transition:
+      opacity var(--transition-fast),
+      visibility var(--transition-fast);
+  }
 }
 
 @media print {

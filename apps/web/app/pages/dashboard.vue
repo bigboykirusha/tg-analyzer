@@ -185,9 +185,15 @@ onMounted(() => {
   }
 }
 
-@media (min-width: 901px) and (max-width: 1199px) {
+@media (min-width: 901px) {
   .home__reports {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .home__reports {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 

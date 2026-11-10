@@ -45,7 +45,9 @@ const loading = computed(() => !workspace.recent && workspace.recentState !== 'e
           <p class="first__meta">
             {{
               index === 0
-                ? t('home.firstMost', { count: tc('home.monthMessages', chat.messages, { count: formatNumber(chat.messages) }) })
+                ? t('home.firstMost', {
+                    count: tc('home.monthMessages', chat.messages, { count: formatNumber(chat.messages) }),
+                  })
                 : tc('home.unanalysedCount', chat.messages, { count: formatNumber(chat.messages) })
             }}
           </p>

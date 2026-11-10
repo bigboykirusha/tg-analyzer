@@ -128,7 +128,7 @@ function runAction(toast: ToastMessage) {
   height: var(--control-sm);
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
-  box-shadow: inset 0 0 0 1px currentColor;
+  box-shadow: var(--ring-current);
   font: var(--text-small-strong);
   white-space: nowrap;
 }

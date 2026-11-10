@@ -1,74 +1,79 @@
 <script setup lang="ts">
 /**
- * A report card, one anatomy for every card (docs/design-system.md, «Карточка отчёта»): the
- * question in a quiet line, the answer in one sentence in the editorial face, an optional footnote,
- * then the card's own picture (the slot). The two sides are named inside the picture, never in a footer.
- * `tone="ink"` paints it in the person's poster colour: at most one such tile per part of the report.
+ * A report card — one anatomy for every card: the question in a quiet line, the answer in one sentence,
+ * an optional note, then the card's own picture (the slot). `hero` is a part's first finding: no tile,
+ * a bigger answer. `tone="ink"` paints it in the person's poster colour (at most one per part).
  */
 defineProps<{
   title?: string
   text?: string
   answer?: string | null
   wide?: boolean
+  hero?: boolean
   tone?: 'ink'
 }>()
 </script>
 
 <template>
-  <article class="tile report-section" :class="[{ 'report-section--wide': wide }, tone && `tile--${tone}`]">
-    <header v-if="title || answer || text || $slots.actions || $slots.aside" class="report-section__head">
+  <article
+    class="report-section"
+    :class="[hero ? 'report-section--hero' : 'tile', { 'report-section--wide': wide, 'tile--ink': tone === 'ink' }]"
+  >
+    <header v-if="title || answer || text || $slots.actions" class="report-section__head">
       <div class="report-section__copy">
         <h3 v-if="title" class="report-section__title">{{ title }}</h3>
         <p v-if="answer" class="report-section__answer">{{ answer }}</p>
         <p v-if="text" class="report-section__text">{{ text }}</p>
       </div>
-      <div v-if="$slots.actions" class="report-section__actions no-print">
-        <slot name="actions" />
-      </div>
-      <div v-if="$slots.aside" class="report-section__aside">
-        <slot name="aside" />
-      </div>
+      <div v-if="$slots.actions" class="report-section__actions no-print"><slot name="actions" /></div>
     </header>
     <slot />
+    <p v-if="$slots.note" class="report-section__text"><slot name="note" /></p>
   </article>
 </template>
 
 <style scoped>
 .report-section {
-  gap: var(--space-6);
-  overflow: hidden;
+  min-width: 0;
 }
 
-.report-section--wide {
-  grid-column: 1 / -1;
+/* A part's first finding stands on the room itself: no card, a bigger answer. */
+.report-section--hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-2) 0 var(--space-3);
 }
 
 .report-section__head {
   display: flex;
-  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
 }
 
 .report-section__copy {
-  display: grid;
-  gap: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   min-width: 0;
-  max-width: var(--measure);
 }
 
-/* The question is quiet; the answer under it carries the card. */
 .report-section__title {
   color: var(--text-muted);
-  font: var(--text-ui);
-  text-wrap: balance;
+  font: var(--text-small);
 }
 
 .report-section__answer {
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
+  text-wrap: balance;
+}
+
+.report-section--hero .report-section__answer {
   font: var(--text-h2);
   letter-spacing: var(--tracking-h2);
-  text-wrap: balance;
 }
 
 .report-section__answer::first-letter {
@@ -79,6 +84,9 @@ defineProps<{
   color: var(--text-muted);
   font: var(--text-small);
   overflow-wrap: anywhere;
-  text-wrap: pretty;
+}
+
+.report-section__actions {
+  flex: none;
 }
 </style>

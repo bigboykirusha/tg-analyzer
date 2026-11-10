@@ -6,7 +6,14 @@ import type { RouteLocationRaw } from 'vue-router'
  * what happened, the way on. Phones: the page itself, left-aligned, the action full width. Desktop: one
  * 440 card in the middle — the same anatomy as sign-in.
  */
-defineProps<{ title: string; text: string; action: string; to?: RouteLocationRaw; secondary?: string; secondaryTo?: RouteLocationRaw }>()
+defineProps<{
+  title: string
+  text: string
+  action: string
+  to?: RouteLocationRaw
+  secondary?: string
+  secondaryTo?: RouteLocationRaw
+}>()
 defineEmits<{ action: [] }>()
 </script>
 

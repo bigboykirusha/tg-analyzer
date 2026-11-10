@@ -37,8 +37,11 @@ async function load() {
     data.value = await workspace.loadReport(chatId.value)
     notFound.value = false
   } catch (error) {
-    if (error instanceof ApiClientError && error.status === 404) notFound.value = true
-    else loadError.value = error
+    if (error instanceof ApiClientError && error.status === 404) {
+      notFound.value = true
+      // A chat without a report can be analysed right here, once the list says it exists.
+      if (workspace.dialogsState === 'idle') void workspace.loadDialogs()
+    } else loadError.value = error
   }
 }
 
@@ -76,6 +79,12 @@ function openShare() {
   shareOpen.value = true
 }
 
+/** «Поделиться» on a report card of the home page opens this page with the sheet already up. */
+onMounted(() => {
+  if (route.query.share === undefined) return
+  void navigateTo({ query: { ...route.query, share: undefined } }, { replace: true })
+  openShare()
+})
 
 /** «Вся глава» from a story slide: the story closes and the report opens at that chapter. */
 function openChapter(id: string) {
@@ -101,8 +110,9 @@ onMounted(load)
       v-if="data || (!notFound && !loadError)"
       :data="data"
       :title="knownTitle"
-      story
+      actions
       @story="openStory('view')"
+      @share="openShare"
     />
     <UiPageContainer>
       <div v-if="data" class="page report-page">
@@ -115,6 +125,7 @@ onMounted(load)
 
         <!-- Charts (ECharts) belong to groups only, and the share sheet and stories load on first use:
              a private report on a phone downloads neither. -->
+        <ReportSince :data="data" />
         <LazyGroupReport v-if="data.summary.type === 'group'" :data="data" />
         <PrivateReport v-else :data="data" />
 
@@ -181,8 +192,21 @@ onMounted(load)
 </template>
 
 <style scoped>
-/* Under the poster the report starts at the page's own rhythm. */
+/* Under the poster: the news strip, then the first chapter, each a step below the last. */
 .report-page {
-  padding-top: var(--page-top);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding-top: var(--space-4);
+}
+
+.report-page :deep(.report-part:first-child) {
+  padding-top: 0;
+}
+
+@media (min-width: 901px) {
+  .report-page {
+    padding-top: var(--space-6);
+  }
 }
 </style>

@@ -65,7 +65,9 @@ const tagAttrs = computed(() => {
     <span v-if="$slots.leading" class="list-row__leading"><slot name="leading" /></span>
     <span class="list-row__body">
       <span class="list-row__copy">
-        <span class="list-row__title"><slot>{{ title }}</slot></span>
+        <span class="list-row__title"
+          ><slot>{{ title }}</slot></span
+        >
         <span v-if="subtitle || $slots.subtitle" class="list-row__subtitle">
           <slot name="subtitle">{{ subtitle }}</slot>
         </span>

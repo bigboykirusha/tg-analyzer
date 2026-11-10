@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { MessageKey } from '../composables/useI18n'
 definePageMeta({ middleware: ['guest'], fit: true })
 
 const { t } = useI18n()
@@ -7,7 +8,8 @@ const { t } = useI18n()
 const wave = (seed: number, length: number) =>
   Array.from({ length }, (_, index) => ({
     sent: 4 + Math.round(6 * Math.abs(Math.sin(index * 0.42 + seed)) + 3 * Math.abs(Math.sin(index * 1.7 + seed * 2))),
-    received: 4 + Math.round(6 * Math.abs(Math.sin(index * 0.37 + seed + 1)) + 3 * Math.abs(Math.cos(index * 1.3 + seed))),
+    received:
+      4 + Math.round(6 * Math.abs(Math.sin(index * 0.37 + seed + 1)) + 3 * Math.abs(Math.cos(index * 1.3 + seed))),
   }))
 const wide = useMediaQuery('(min-width: 901px)')
 const examples = [
@@ -51,9 +53,14 @@ useHead({
     </section>
     <ul class="landing__examples" :aria-label="t('landing.examplesLabel')">
       <li v-for="(example, index) in examples" :key="example.key" class="example" :data-hue="example.hue">
-        <span class="example__title">{{ t(`landing.${example.key}.title`) }}</span>
-        <span class="example__text">{{ t(`landing.${example.key}.text`) }}</span>
-        <Pulse class="example__pulse" :data="example.pulse" :height="index === 0 && wide ? 34 : 16" :bars="index === 0 && wide ? 72 : 36" />
+        <span class="example__title">{{ t(`landing.${example.key}.title` as MessageKey) }}</span>
+        <span class="example__text">{{ t(`landing.${example.key}.text` as MessageKey) }}</span>
+        <Pulse
+          class="example__pulse"
+          :data="example.pulse"
+          :height="index === 0 && wide ? 34 : 16"
+          :bars="index === 0 && wide ? 72 : 36"
+        />
       </li>
     </ul>
     <div class="landing__actions landing__actions--narrow">

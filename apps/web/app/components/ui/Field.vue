@@ -53,7 +53,9 @@ provide(fieldKey, { id: controlId, labelId, describedby, invalid })
 <template>
   <div class="field ui-field" :class="{ 'ui-field--invalid': invalid }">
     <span v-if="label && group" :id="labelId" class="field__label" :class="{ 'sr-only': hideLabel }">{{ label }}</span>
-    <label v-else-if="label" :id="labelId" class="field__label" :class="{ 'sr-only': hideLabel }" :for="controlId">{{ label }}</label>
+    <label v-else-if="label" :id="labelId" class="field__label" :class="{ 'sr-only': hideLabel }" :for="controlId">{{
+      label
+    }}</label>
     <slot :id="controlId" :label-id="labelId" :describedby="describedby" :invalid="invalid" />
     <p v-if="error" :id="messageId" class="field__hint ui-field__error" role="alert">
       <AlertCircle class="ui-field__icon" aria-hidden="true" />

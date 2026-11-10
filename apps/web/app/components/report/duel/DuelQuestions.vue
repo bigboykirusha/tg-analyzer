@@ -35,15 +35,9 @@ const rows = computed(() => [
 
 <template>
   <ReportSection :title="item.title" :answer="answer">
-    <template #aside>
-      <span class="units__legend t-num">
-        <i aria-hidden="true" /><span aria-hidden="true">= {{ formatNumber(step) }}</span
-        ><span class="sr-only">{{ tc('report.fmt.questionsStep', step) }}</span>
-      </span>
-    </template>
     <div class="units">
       <template v-for="row in rows" :key="row.key">
-        <span class="units__who"
+        <span class="units__who" :class="`units__who--${row.key}`"
           >{{ row.who }}<span class="sr-only">: {{ row.side.text }}</span></span
         >
         <span class="units__grid" aria-hidden="true">
@@ -51,41 +45,20 @@ const rows = computed(() => [
         </span>
       </template>
     </div>
+    <template #note>{{ tc('report.fmt.questionsStep', step, { count: formatNumber(step) }) }}</template>
   </ReportSection>
 </template>
 
 <style scoped>
-/* «▪ = 10» beside the question: what one square counts, so no line of text is needed. */
-.units__legend {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--text-muted);
-  font: var(--text-small);
-  white-space: nowrap;
-}
-
-.units__legend i,
-.units__grid i {
-  width: var(--space-3);
-  height: var(--space-3);
-  border-radius: var(--radius-mark);
-}
-
-.units__legend i {
-  background: var(--chart-neutral);
-}
-
-/* Each side a row: its name in a narrow column, then its squares. */
+/* Each side a row: its name in a narrow column, then its squares, wrapping. */
 .units {
   display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: var(--space-3);
+  grid-template-columns: var(--space-12) minmax(0, 1fr);
+  gap: var(--space-2) var(--space-3);
   align-items: start;
 }
 
 .units__who {
-  max-width: var(--space-20);
   overflow: hidden;
   color: var(--text-muted);
   font: var(--text-small);
@@ -93,11 +66,21 @@ const rows = computed(() => [
   white-space: nowrap;
 }
 
+.units__who--theirs {
+  color: var(--them-ink);
+}
+
 .units__grid {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
-  padding-top: var(--space-0-5);
+  padding-top: var(--space-1);
+}
+
+.units__grid i {
+  width: var(--space-3);
+  height: var(--space-3);
+  border-radius: var(--radius-mark);
 }
 
 .units__cell--mine {

@@ -122,7 +122,9 @@ onMounted(() => {
         {{ t('dashboard.shown', { shown: visibleChats.length, total: filteredChats.length }) }}
       </p>
       <p v-else-if="workspace.dialogsTruncated" class="picker__foot">{{ t('dashboard.truncated') }}</p>
-      <p v-else-if="filteredChats.length > 8" class="picker__foot">{{ tc('dashboard.chatCount', filteredChats.length) }}</p>
+      <p v-else-if="filteredChats.length > 8" class="picker__foot">
+        {{ tc('dashboard.chatCount', filteredChats.length) }}
+      </p>
     </template>
   </div>
 </template>

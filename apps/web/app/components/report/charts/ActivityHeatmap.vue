@@ -85,7 +85,7 @@ function describe(cell: Cell) {
 
 .calendar__months {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   gap: var(--space-4) var(--space-6);
 }
 

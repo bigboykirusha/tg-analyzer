@@ -14,10 +14,14 @@ const menuOpen = ref(false)
 const hue = computed(() => hueOf(props.report.chatId))
 const updating = computed(() => actions.busy(props.report.chatId))
 const meta = computed(() => {
-  const count = tc('common.messagesCount', props.report.totalMessages, { count: formatNumber(props.report.totalMessages) })
+  const count = tc('common.messagesCount', props.report.totalMessages, {
+    count: formatNumber(props.report.totalMessages),
+  })
   return props.report.type === 'group' ? t('sidebar.groupMeta', { count }) : count
 })
-const pulse = computed(() => (props.report.pulse?.some((week) => week.sent || week.received) ? props.report.pulse : null))
+const pulse = computed(() =>
+  props.report.pulse?.some((week) => week.sent || week.received) ? props.report.pulse : null,
+)
 
 function run(action: 'refresh' | 'share' | 'delete') {
   menuOpen.value = false

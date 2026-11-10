@@ -55,15 +55,15 @@ async function cancel() {
         >
           <i :style="{ transform: `scaleX(${view.percent / 100})` }" />
         </div>
-        <p class="details-card__note">
-          {{ view.read ? `${view.read}. ` : '' }}{{ t('analysis.banner.closeTab') }}
-        </p>
+        <p class="details-card__note">{{ view.read ? `${view.read}. ` : '' }}{{ t('analysis.banner.closeTab') }}</p>
       </section>
       <UiGroup v-if="botUrl">
         <UiListRow :title="t('analysis.details.notify')" :subtitle="t('analysis.details.notifyHint')">
           <template #leading><Send aria-hidden="true" /></template>
           <template #trailing>
-            <UiButton :to="botUrl" size="sm" target="_blank" rel="noopener">{{ t('analysis.details.notifyOn') }}</UiButton>
+            <UiButton :to="botUrl" size="sm" target="_blank" rel="noopener">{{
+              t('analysis.details.notifyOn')
+            }}</UiButton>
           </template>
         </UiListRow>
       </UiGroup>

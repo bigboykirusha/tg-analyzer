@@ -195,6 +195,8 @@
   /* Lines are 1 px; selection and focus rings are 2 px. */
   --ring-hairline: inset 0 0 0 1px var(--border);
   --ring-strong: inset 0 0 0 1px var(--border-strong);
+  /* An outline in the text's own colour: a button on the inverse toast. */
+  --ring-current: inset 0 0 0 1px currentColor;
   --ring-selected: inset 0 0 0 2px var(--accent);
   --ring-field-focus: inset 0 0 0 2px var(--accent);
   --ring-field-error: inset 0 0 0 2px var(--danger);
@@ -448,6 +450,8 @@
   /* Every proportion bar (compare, meters, day parts, progress) is this thick; the hero's is thicker. */
   --bar-height: 8px;
   --bar-height-lg: 12px;
+  /* Charts: the hours of the day, the bars of a week. */
+  --chart-h: 96px;
   /*
    * Controls: on a phone everything you tap or that floats is 44; 36 is the compact size (rows, filters,
    * all of desktop); 56 is never a button — bars, rows and code cells.
@@ -498,6 +502,8 @@
   --z-popover: 500;
   --z-skip-link: 600;
   /* Motion: a press in 90 ms, a change of state in 150, a sheet in 400 on a spring; leaving is shorter. */
+  /* Reduced motion: transitions end at once but still fire their events. */
+  --duration-none: 0.01ms;
   --duration-press: 90ms;
   --duration-fast: 150ms;
   --duration-sheet: 400ms;

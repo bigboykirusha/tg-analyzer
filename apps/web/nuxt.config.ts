@@ -62,6 +62,7 @@ export default defineNuxtConfig({
     '@fontsource-variable/onest/index.css',
     '~/assets/styles/tokens.css',
     '~/assets/styles/base.css',
+    '~/assets/styles/report.css',
   ],
   app: {
     head: {

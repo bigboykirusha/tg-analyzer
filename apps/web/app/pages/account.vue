@@ -19,14 +19,7 @@ const toast = useToast()
 const errorMessage = useErrorMessage()
 
 const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
-const handle = computed(() => [auth.user?.username ? `@${auth.user.username}` : '', maskPhone(auth.user?.phone)].filter(Boolean).join(', '))
-/** «+7 912 •••-••-89»: enough to recognise the number, not enough to read it off a shoulder. */
-function maskPhone(phone: string | undefined) {
-  if (!phone) return ''
-  const digits = phone.replace(/\D/g, '')
-  if (digits.length < 7) return ''
-  return `+${digits.slice(0, digits.length - 10 || 1)} ${digits.slice(-10, -7)} •••-••-${digits.slice(-2)}`
-}
+const handle = computed(() => (auth.user?.username ? `@${auth.user.username}` : ''))
 
 /** «Москва, UTC+3» from the browser zone; the raw IANA name if Intl cannot name it. */
 const timezoneLabel = computed(() => {
@@ -68,7 +61,10 @@ const notify = computed({
       window.open(auth.user.botUrl, '_blank', 'noopener')
       // Back from the bot: read the account again to see «Start» pressed.
       window.addEventListener('focus', () => void refreshUser().catch(() => undefined), { once: true })
-    } else if (!value) void updateSettings({ botNotify: false }).catch((error) => toast.error(t('accountPage.linkError'), errorMessage(error)))
+    } else if (!value)
+      void updateSettings({ botNotify: false }).catch((error) =>
+        toast.error(t('accountPage.linkError'), errorMessage(error)),
+      )
   },
 })
 
@@ -86,7 +82,11 @@ async function toggleLink(link: UserShareLinkDto & { on: boolean }, on: boolean)
   link.on = on
   try {
     const params = { chatId: link.chatId, kind: link.kind as ShareLinkKind }
-    if (on) await api('POST /api/v1/reports/:chatId/links', { params: { chatId: link.chatId }, body: { kind: link.kind, days: 30 } })
+    if (on)
+      await api('POST /api/v1/reports/:chatId/links', {
+        params: { chatId: link.chatId },
+        body: { kind: link.kind, days: 30 },
+      })
     else await api('DELETE /api/v1/reports/:chatId/links/:kind', { params })
   } catch (error) {
     link.on = previous
@@ -132,9 +132,20 @@ onMounted(loadLinks)
       <div class="account__grid">
         <div class="account__col">
           <UiGroup :header="t('accountPage.lookTitle')">
-            <UiPopoverMenu v-model:open="languageOpen" align="end" :aria-label="t('accountPage.language')" :title="t('accountPage.language')">
+            <UiPopoverMenu
+              v-model:open="languageOpen"
+              align="end"
+              :aria-label="t('accountPage.language')"
+              :title="t('accountPage.language')"
+            >
               <template #trigger>
-                <UiListRow as="button" :title="t('accountPage.language')" chevron aria-haspopup="menu" @click="languageOpen = !languageOpen">
+                <UiListRow
+                  as="button"
+                  :title="t('accountPage.language')"
+                  chevron
+                  aria-haspopup="menu"
+                  @click="languageOpen = !languageOpen"
+                >
                   <template #trailing>{{ languages.find((item) => item.value === locale)?.label }}</template>
                 </UiListRow>
               </template>
@@ -144,14 +155,25 @@ onMounted(loadLinks)
                 role="menuitemradio"
                 :aria-checked="item.value === locale"
                 :selected="item.value === locale"
-                @click="setLocale(item.value), (languageOpen = false)"
+                @click="(setLocale(item.value), (languageOpen = false))"
               >
                 {{ item.label }}
               </UiMenuItem>
             </UiPopoverMenu>
-            <UiPopoverMenu v-model:open="themeOpen" align="end" :aria-label="t('accountPage.theme')" :title="t('accountPage.theme')">
+            <UiPopoverMenu
+              v-model:open="themeOpen"
+              align="end"
+              :aria-label="t('accountPage.theme')"
+              :title="t('accountPage.theme')"
+            >
               <template #trigger>
-                <UiListRow as="button" :title="t('accountPage.theme')" chevron aria-haspopup="menu" @click="themeOpen = !themeOpen">
+                <UiListRow
+                  as="button"
+                  :title="t('accountPage.theme')"
+                  chevron
+                  aria-haspopup="menu"
+                  @click="themeOpen = !themeOpen"
+                >
                   <template #trailing>{{ themes.find((item) => item.value === preference)?.label }}</template>
                 </UiListRow>
               </template>
@@ -161,12 +183,16 @@ onMounted(loadLinks)
                 role="menuitemradio"
                 :aria-checked="item.value === preference"
                 :selected="item.value === preference"
-                @click="setPreference(item.value), (themeOpen = false)"
+                @click="(setPreference(item.value), (themeOpen = false))"
               >
                 {{ item.label }}
               </UiMenuItem>
             </UiPopoverMenu>
-            <UiListRow v-if="timezoneLabel" :title="t('accountPage.timezone')" :subtitle="t('accountPage.timezoneHint')">
+            <UiListRow
+              v-if="timezoneLabel"
+              :title="t('accountPage.timezone')"
+              :subtitle="t('accountPage.timezoneHint')"
+            >
               <template #trailing>{{ timezoneLabel }}</template>
             </UiListRow>
           </UiGroup>

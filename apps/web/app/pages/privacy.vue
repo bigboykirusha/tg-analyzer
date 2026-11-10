@@ -12,13 +12,26 @@ const policy = computed(() => [
   {
     key: 'receive',
     title: t('privacy.receive.title'),
-    items: [t('privacy.receive.phone'), t('privacy.receive.profile'), t('privacy.receive.chats'), t('privacy.receive.messages')],
+    items: [
+      t('privacy.receive.phone'),
+      t('privacy.receive.profile'),
+      t('privacy.receive.chats'),
+      t('privacy.receive.messages'),
+    ],
   },
-  { key: 'store', title: t('privacy.store.title'), items: [t('privacy.store.reports'), t('privacy.store.session'), t('privacy.store.technical')] },
+  {
+    key: 'store',
+    title: t('privacy.store.title'),
+    items: [t('privacy.store.reports'), t('privacy.store.session'), t('privacy.store.technical')],
+  },
   { key: 'use', title: t('privacy.use.title'), paragraphs: [t('privacy.use.text')] },
   { key: 'share', title: t('privacy.share.title'), paragraphs: [t('privacy.share.text'), t('privacy.share.hosting')] },
   { key: 'keep', title: t('privacy.keep.title'), paragraphs: [t('privacy.keep.text')] },
-  { key: 'delete', title: t('privacy.delete.title'), paragraphs: [t('privacy.delete.text'), t('privacy.delete.telegram')] },
+  {
+    key: 'delete',
+    title: t('privacy.delete.title'),
+    paragraphs: [t('privacy.delete.text'), t('privacy.delete.telegram')],
+  },
 ])
 </script>
 

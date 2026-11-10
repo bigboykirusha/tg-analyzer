@@ -2,10 +2,9 @@
 import type { ReportDto } from '@tg-analyzer/shared'
 
 /**
- * «Вы двое»: every two-sided habit in a picture of its own — a line for reply time, the small
- * habits as rows, squares for questions, stickers by side, podiums for reactions, one voice card,
- * morning and night in one card. The
- * numbers all come from `useVersus`, so one value never gets two answers.
+ * «Вы двое» after «Кто пишет больше»: reply time, the small habits as rows, squares for questions,
+ * stickers by side, podiums for reactions, one voice card. The numbers all come from `useVersus`,
+ * so one value never gets two answers.
  */
 const props = defineProps<{ data: ReportDto }>()
 const cards = useVersus(() => props.data)
@@ -24,14 +23,13 @@ const voiceCounts = computed(() => {
   <!-- Cards in reading order straight into the part's masonry; between coloured tiles stand white ones. -->
   <DuelSpeed v-if="cards.speed" :item="cards.speed" :their-name="name" />
   <DuelHabits
+    :data="data"
     :starts="cards.starts ?? null"
     :laughs="cards.laughs ?? null"
     :voice="cards.voice ? null : voiceCounts"
-    :their-name="name"
   />
   <DuelQuestions v-if="cards.questions" :item="cards.questions" :their-name="name" />
   <DuelStickers :data="data" />
   <DuelReactions :data="data" :item="cards.reactions ?? null" />
   <DuelVoice v-if="cards.voice" :item="cards.voice" :data="data" />
-  <DuelMornings :data="data" />
 </template>

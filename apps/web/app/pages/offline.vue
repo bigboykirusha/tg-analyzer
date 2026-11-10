@@ -10,10 +10,5 @@ function retry() {
 </script>
 
 <template>
-  <StatusPage
-    :title="t('offline.title')"
-    :text="t('offline.text')"
-    :action="t('offline.retry')"
-    @action="retry"
-  />
+  <StatusPage :title="t('offline.title')" :text="t('offline.text')" :action="t('offline.retry')" @action="retry" />
 </template>

@@ -4,9 +4,10 @@
  * heights), so nothing moves when the content arrives. The block breathes in place — no travelling
  * shine, which smears over rounded corners and dark surfaces.
  */
+/** Without `height` a block is one line of small text tall, or what the caller's class says (`1lh`). */
 withDefaults(defineProps<{ width?: string; height?: string; radius?: string }>(), {
   width: '100%',
-  height: 'var(--space-4)',
+  height: undefined,
   radius: 'var(--radius-xs)',
 })
 </script>
@@ -18,6 +19,7 @@ withDefaults(defineProps<{ width?: string; height?: string; radius?: string }>()
 <style scoped>
 .skeleton {
   display: block;
+  height: var(--space-4);
   flex: none;
   max-width: 100%;
   background: var(--skeleton);
