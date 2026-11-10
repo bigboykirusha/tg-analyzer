@@ -87,6 +87,8 @@ export const avatarsBodySchema = z.object({
 }) satisfies z.ZodType<AvatarsBody, unknown>
 
 export const chatIdParamsSchema = z.object({ chatId: telegramIdSchema })
+/** `?profanity=show` asks the owner's own report for the full words; without it obscene words are hidden. */
+export const reportQuerySchema = z.object({ profanity: z.enum(['show', 'hide']).optional() })
 export const shareLinkKindSchema = z.enum(['report', 'quiz'])
 export const shareLinkParamsSchema = z.object({ chatId: telegramIdSchema, kind: shareLinkKindSchema })
 export const shareTokenParamsSchema = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{8,32}$/) })

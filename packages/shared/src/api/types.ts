@@ -1,3 +1,5 @@
+import type { HabitsSummary } from '../analytics/habits'
+import type { VocabularySplit } from '../analytics/vocabulary'
 /**
  * Data transfer objects shared by the API and the web client.
  * Everything here is serialisable JSON: dates are ISO strings, ids are strings.
@@ -699,6 +701,59 @@ export interface DerivedReportMetrics {
   insights: InsightDto[]
   /** Questions for the guessing game; empty for groups and for chats with too little to ask about. */
   quiz: QuizQuestionDto[]
+  /** «Who does it more» lines of a private chat, with the «поровну» list; empty for groups. */
+  habitRows: HabitsSummary
+  /** The words as the report shows them, and the version that may leave the owner's screen. */
+  words: DerivedWords
+  /** Favourite emoji, reaction and sticker of each side. */
+  favourites: DerivedFavourites
+}
+
+/**
+ * Whether obscene words are in the word lists. `hidden` is the default everywhere; `shown` is the
+ * owner's own full report only.
+ */
+export type ProfanityMode = 'hidden' | 'shown'
+
+export interface DerivedGroupWords {
+  shared: TopItemDto[]
+  unique: TopItemDto[]
+  /** By participant id. */
+  members: Record<string, { topWords: TopItemDto[]; topicSignature: TopItemDto[] }>
+}
+
+/** The words of a report with the thin findings left out; see `deriveWords`. */
+export interface DerivedWordsView {
+  /** The most written word, when it has the weight to be a finding; null otherwise (no card). */
+  wordOfChat: TopItemDto | null
+  topWords: TopItemDto[]
+  /** What you share, and what only you / only the other side say (at most 5 per side). */
+  vocabulary: VocabularySplit
+  group: DerivedGroupWords | null
+}
+
+export interface DerivedWords {
+  profanity: ProfanityMode
+  /** The report holds obscene words, so a «show everything» switch has something to show. */
+  hasProfanity: boolean
+  /** What the report shows now: obscene words hidden unless the owner asked for them. */
+  view: DerivedWordsView
+  /** Always without obscene words: «Итоги», the link and previews read this one, never `view`. */
+  clean: DerivedWordsView
+}
+
+export interface FavouriteStickerDto {
+  id: string
+  emoji: string | null
+  count: number
+}
+
+export interface DerivedFavourites {
+  /** The chat's emoji, only the ones used often enough. */
+  topEmoji: TopItemDto[]
+  emoji: { mine: TopItemDto | null; theirs: TopItemDto | null }
+  reaction: { mine: TopItemDto | null; theirs: TopItemDto | null }
+  sticker: { mine: FavouriteStickerDto | null; theirs: FavouriteStickerDto | null }
 }
 
 export type QuizQuestionId =

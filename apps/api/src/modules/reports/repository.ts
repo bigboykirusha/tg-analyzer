@@ -2,11 +2,13 @@ import {
   CHAT_REPORT_VERSION,
   deriveReportMetrics,
   emptySessionStats,
+  hideProfanity,
   resolveGroupRole,
   type ChatReport,
   type ChatType,
   type DatedActivityDto,
   type GroupReportDto,
+  type ProfanityMode,
   type ReportDto,
   type ReportSummaryDto,
   type ResponseStatsDto,
@@ -83,17 +85,27 @@ export async function listReportSummaries(userId: string): Promise<ReportSummary
   return rows.map((row) => toSummary(row, row))
 }
 
-export async function getReport(userId: string, chatId: string): Promise<ReportDto | null> {
+/**
+ * The report the owner reads. Obscene words are hidden from its word lists unless the owner asked
+ * for them (`profanity: 'shown'`); `derived.words.clean` is always free of them.
+ */
+export async function getReport(
+  userId: string,
+  chatId: string,
+  options: { profanity?: ProfanityMode } = {},
+): Promise<ReportDto | null> {
   const row = await db.query.chatReports.findFirst({
     where: and(eq(schema.chatReports.userId, userId), eq(schema.chatReports.tgChatId, Number(chatId))),
   })
   if (!row) return null
 
-  const report = normalizeReport(row.report, row)
+  const full = normalizeReport(row.report, row)
+  const profanity = options.profanity ?? 'hidden'
+  const report = profanity === 'shown' ? full : hideProfanity(full)
   return {
-    summary: toSummary(row, { daily: report.activity.daily, totals: report.totals, responses: report.responses }),
+    summary: toSummary(row, { daily: full.activity.daily, totals: full.totals, responses: full.responses }),
     report,
-    derived: deriveReportMetrics(report),
+    derived: deriveReportMetrics(full, { profanity }),
     previous: row.previousSnapshot ?? null,
   }
 }
