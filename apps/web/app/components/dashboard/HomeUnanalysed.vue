@@ -9,10 +9,13 @@ const workspace = useWorkspaceStore()
 const actions = useReportActions()
 const errorMessage = useErrorMessage()
 
-const MAX = 5
+const MAX = 4
 const chats = computed(() => workspace.suggestions.slice(0, MAX))
 const loading = computed(() => !workspace.recent && workspace.recentState !== 'error')
 const failed = computed(() => !workspace.recent && workspace.recentState === 'error')
+// A phone leads to the chat sheet, desktop to the page.
+const isPhone = useMediaQuery('(max-width: 900px)')
+const allChats = computed(() => (isPhone.value ? { query: { pick: null } } : '/new'))
 </script>
 
 <template>
@@ -55,11 +58,19 @@ const failed = computed(() => !workspace.recent && workspace.recentState === 'er
           </UiButton>
         </template>
       </UiListRow>
+      <UiListRow :to="allChats" :title="t('home.allChatsLink')" chevron />
     </UiGroup>
   </UiPageSection>
 </template>
 
 <style scoped>
+/* A phone shows three rows: home stays one screen. */
+@media (max-width: 640px) {
+  .home-row:nth-child(n + 4) {
+    display: none;
+  }
+}
+
 .unanalysed__status {
   display: flex;
   flex-wrap: wrap;

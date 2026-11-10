@@ -121,13 +121,14 @@ onMounted(loadLinks)
   <UiPageContainer>
     <div class="account">
       <UiPageBar :title="t('accountPage.title')" back="/dashboard" />
-      <header class="account__me">
+      <!-- Who you are: one calm card, as at the top of iOS settings. -->
+      <section class="account__me" :aria-label="displayName">
         <ProfileAvatar :title="displayName" size="lg" />
         <div class="account__who">
-          <p class="t-h1">{{ displayName }}</p>
+          <p class="account__name t-h3">{{ displayName }}</p>
           <p v-if="handle" class="account__handle">{{ handle }}</p>
         </div>
-      </header>
+      </section>
 
       <div class="account__grid">
         <div class="account__col">
@@ -188,12 +189,7 @@ onMounted(loadLinks)
                 {{ item.label }}
               </UiMenuItem>
             </UiPopoverMenu>
-            <UiListRow
-              v-if="timezoneLabel"
-              :title="t('accountPage.timezone')"
-              :subtitle="t('accountPage.timezoneHint')"
-              wrap
-            >
+            <UiListRow v-if="timezoneLabel" :title="t('accountPage.timezone')">
               <template #trailing>{{ timezoneLabel }}</template>
             </UiListRow>
           </UiGroup>
@@ -201,14 +197,10 @@ onMounted(loadLinks)
           <UiGroup v-if="auth.user?.botUrl || auth.user?.botNotify" :header="t('accountPage.notifyTitle')">
             <UiSwitch v-model="notify" :label="t('accountPage.notify')" :hint="t('accountPage.notifyHint')" />
           </UiGroup>
-
-          <UiGroup :footer="t('accountPage.logoutFoot')">
-            <UiListRow as="button" :title="t('accountPage.logout')" danger @click="signOutOpen = true" />
-          </UiGroup>
         </div>
 
-        <div v-if="links.length" class="account__col">
-          <UiGroup :header="t('accountPage.linksTitle')" :footer="t('accountPage.linksFoot')">
+        <div class="account__col">
+          <UiGroup v-if="links.length" :header="t('accountPage.linksTitle')" :footer="t('accountPage.linksFoot')">
             <UiSwitch
               v-for="link in links"
               :key="`${link.chatId}-${link.kind}`"
@@ -219,6 +211,10 @@ onMounted(loadLinks)
             >
               <template #leading><ChatAvatar :chat-id="link.chatId" :title="link.title" size="sm" /></template>
             </UiSwitch>
+          </UiGroup>
+
+          <UiGroup :footer="t('accountPage.logoutFoot')">
+            <UiListRow as="button" :title="t('accountPage.logout')" danger @click="signOutOpen = true" />
           </UiGroup>
         </div>
       </div>
@@ -250,13 +246,16 @@ onMounted(loadLinks)
   align-items: center;
   gap: var(--space-4);
   min-width: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--surface);
 }
 
 .account__who {
   min-width: 0;
 }
 
-.account__who .t-h1 {
+.account__name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

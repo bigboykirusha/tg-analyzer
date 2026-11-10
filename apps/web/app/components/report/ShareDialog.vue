@@ -116,8 +116,26 @@ const title = computed(() =>
     </template>
 
     <div v-if="step === 'main'" class="share">
+      <!-- A phone: «Итоги» as one coloured tile; desktop has the cover on the left and a row instead. -->
+      <div class="feature" data-on-poster>
+        <span class="feature__thumb" aria-hidden="true">
+          <span class="cover__segments">
+            <i v-for="index in frames" :key="index" :class="{ 'is-on': index === 1 }" />
+          </span>
+          <b class="feature__thumb-name">{{ name }}</b>
+          <Pulse :data="days" :bars="12" :height="8" />
+        </span>
+        <span class="feature__copy">
+          <b class="feature__title">{{ t('share.title', { name }) }}</b>
+          <span class="feature__text">{{ t(isGroup ? 'share.ledeGroup' : 'share.lede') }}</span>
+          <UiButton class="feature__watch" size="sm" :icon="Play" :aria-label="t('share.watch')" @click="pick('view')">
+            {{ t('share.watchShort') }}
+          </UiButton>
+        </span>
+      </div>
+
       <UiGroup>
-        <UiListRow as="button" :title="t('share.watch')" @click="pick('view')">
+        <UiListRow class="share__watch-row" as="button" :title="t('share.watch')" @click="pick('view')">
           <template #leading><Play aria-hidden="true" /></template>
         </UiListRow>
         <UiListRow as="button" :title="t('share.save')" :subtitle="tc('share.saveNote', frames)" @click="pick('save')">
@@ -220,5 +238,71 @@ const title = computed(() =>
 .cover__meta {
   color: var(--on-poster-muted);
   font: var(--text-small);
+}
+
+.feature {
+  display: none;
+}
+
+/* A phone: «Итоги» is a coloured tile at the top of the sheet — a small cover, what it is, «Смотреть». */
+@media (max-width: 640px) {
+  .feature {
+    --pulse-you: var(--on-poster);
+    --pulse-them: var(--on-them);
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--poster);
+    color: var(--on-poster);
+  }
+
+  .share__watch-row {
+    display: none;
+  }
+
+  .feature__thumb {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: var(--space-1);
+    width: calc(var(--space-16) + var(--space-2));
+    min-height: calc(var(--space-16) * 2);
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--ring-on-poster);
+  }
+
+  .feature__thumb-name {
+    overflow: hidden;
+    margin-top: auto;
+    font: var(--text-caption);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .feature__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+
+  .feature__title {
+    font: var(--text-h3);
+    letter-spacing: var(--tracking-h3);
+  }
+
+  .feature__text {
+    color: var(--on-poster-muted);
+    font: var(--text-small);
+  }
+
+  .feature__watch {
+    margin-top: var(--space-3);
+  }
 }
 </style>

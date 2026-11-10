@@ -28,7 +28,7 @@ const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
       <div class="app-bar__home">
         <BrandLink to="/dashboard" bare :current="route.path === '/dashboard'" />
         <NuxtLink to="/account" class="app-bar__account" :aria-label="t('account.settings')">
-          <ProfileAvatar :title="displayName" size="sm" />
+          <ProfileAvatar :title="displayName" size="md" />
         </NuxtLink>
       </div>
     </div>
@@ -76,15 +76,13 @@ const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
   display: none;
 }
 
-/* Your avatar is a floating control: a 44 circle, raised, ringed, a soft shadow. */
+/* Your avatar stands alone, 44 to tap: no ring, no plate around it. */
 .app-bar__account {
   display: inline-grid;
   place-items: center;
   width: var(--control-md);
   height: var(--control-md);
   border-radius: var(--radius-full);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-chrome);
   transition: transform var(--duration-press) var(--ease-standard);
 }
 

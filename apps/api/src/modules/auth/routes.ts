@@ -273,7 +273,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   })
 
   app.get('/avatar', { preHandler: requireAuth }, async (request, reply) => {
-    const avatar = await withUserTelegram(userIdOf(request), (api) => api.downloadAvatar(null), { waitMs: 3_000 })
+    const avatar = await withUserTelegram(userIdOf(request), (api) => api.downloadAvatar(null), { waitMs: 10_000 })
     if (!avatar) throw notFound()
     return reply.header('Content-Type', 'image/jpeg').header('Cache-Control', 'private, max-age=3600').send(avatar)
   })

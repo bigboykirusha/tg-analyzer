@@ -71,16 +71,29 @@ export function clearAvatarCache() {
 
 let profileRequest: Promise<string | null> | null = null
 
-/** The signed-in user's own photo as a blob URL; one request per page load. */
-export function loadProfileAvatar() {
-  const currentGeneration = generation
-  profileRequest ??= api('GET /api/v1/auth/avatar')
-    .then((blob) => (generation === currentGeneration ? URL.createObjectURL(blob) : null))
-    .catch((error: unknown) => {
+const PROFILE_RETRY_MS = [1500, 4000, 9000]
+
+async function fetchProfileAvatar(currentGeneration: number): Promise<string | null> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const blob = await api('GET /api/v1/auth/avatar')
+      return generation === currentGeneration ? URL.createObjectURL(blob) : null
+    } catch (error: unknown) {
       // No photo (404) is an answer, not a failure: keep it, so every page does not ask again.
-      const noPhoto = error instanceof ApiClientError && error.status === 404
-      if (generation === currentGeneration && !noPhoto) profileRequest = null
-      return null
-    })
+      if (error instanceof ApiClientError && error.status === 404) return null
+      // Telegram is busy with the chat list at the same moment (409) or slowed us down (429): ask again shortly.
+      const delay = PROFILE_RETRY_MS[attempt]
+      if (delay === undefined || generation !== currentGeneration) {
+        if (generation === currentGeneration) profileRequest = null
+        return null
+      }
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+  }
+}
+
+/** The signed-in user's own photo as a blob URL; one request per page load, retried while Telegram is busy. */
+export function loadProfileAvatar() {
+  profileRequest ??= fetchProfileAvatar(generation)
   return profileRequest
 }
