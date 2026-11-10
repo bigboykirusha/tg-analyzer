@@ -1,8 +1,7 @@
 <script setup lang="ts" generic="T extends string">
 /**
- * The one segmented control: a filter or a choice of a few values. A neutral pill track (the secondary
- * button's fill), the chosen segment lifted onto the card surface. Filters, view switches and short choices
- * all use it.
+ * The one segmented control: a filter or a choice of a few values. Quiet pills in the secondary button's
+ * fill, the chosen one in the primary's ink. Filters, view switches and short choices all use it.
  */
 defineProps<{ options: { value: T; label: string }[]; label: string }>()
 const model = defineModel<T>({ required: true })
@@ -30,10 +29,7 @@ const model = defineModel<T>({ required: true })
   display: flex;
   width: fit-content;
   max-width: 100%;
-  padding: var(--space-0-5);
-  border-radius: var(--radius-pill);
-  background: var(--btn-fill, var(--surface-2));
-  color: var(--btn-fill-text, var(--text));
+  gap: var(--space-1);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -48,7 +44,8 @@ const model = defineModel<T>({ required: true })
   height: var(--control-sm);
   padding: 0 var(--space-3);
   border-radius: var(--radius-pill);
-  color: var(--text-muted);
+  background: var(--btn-fill, var(--fill-control));
+  color: var(--btn-fill-text, var(--text));
   font: var(--text-label);
   white-space: nowrap;
   transition:
@@ -63,13 +60,7 @@ const model = defineModel<T>({ required: true })
 }
 
 .segmented__item.is-on {
-  background: var(--btn-segment-on, var(--surface));
-  color: var(--btn-fill-text, var(--text));
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .segmented__item:not(.is-on):hover {
-    color: var(--btn-fill-text, var(--text));
-  }
+  background: var(--accent);
+  color: var(--on-accent);
 }
 </style>

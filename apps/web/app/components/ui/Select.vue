@@ -443,7 +443,8 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   height: calc(var(--control-md) - var(--space-1) * 2);
   padding: 0 var(--space-3);
   border-radius: var(--radius-pill);
-  background: var(--btn-segment-on, var(--surface));
+  background: var(--btn-fill, var(--fill-control));
+  color: var(--btn-fill-text, var(--text));
   font: var(--text-body);
 }
 

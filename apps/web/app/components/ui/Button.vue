@@ -144,8 +144,7 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
 }
 
 .btn:disabled:not([aria-busy='true']) {
-  background: var(--btn-fill, var(--fill-control));
-  color: var(--btn-disabled-text, var(--text-muted));
+  opacity: var(--opacity-disabled);
 }
 
 /* A loading button keeps its colour: it is busy, not unavailable. */

@@ -142,8 +142,6 @@ watch(open, (value) => value && drag.reset())
 
 .modal-panel {
   --field-bg: var(--fill-raised);
-  --btn-fill: var(--fill-raised);
-  --btn-segment-on: var(--surface-raised);
   /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
   --group-bg: transparent;
   --group-padding: 0;

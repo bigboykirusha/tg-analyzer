@@ -229,7 +229,7 @@ onMounted(loadLinks)
       :title="t('accountPage.logoutTitle')"
       :description="t('accountPage.logoutText')"
       :confirm-label="t('accountPage.logout')"
-      variant="primary"
+      variant="danger"
       :loading="signingOut"
       @close="signOutOpen = false"
       @confirm="signOut"
