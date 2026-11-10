@@ -22,16 +22,16 @@ const total = computed(() => props.weekday.reduce((sum, day) => sum + (day?.tota
 </script>
 
 <template>
-  <ol class="week" role="img" :aria-label="t('chart.weekdaySummary', { messages: formatNumber(total) })">
-    <li v-for="day in days" :key="day.key" class="week__day">
+  <div class="week" role="img" :aria-label="t('chart.weekdaySummary', { messages: formatNumber(total) })">
+    <div v-for="day in days" :key="day.key" class="week__day">
       <i
         class="week__bar"
         :class="{ 'week__bar--peak': day.peak }"
         :style="{ height: `${Math.max(day.height, 2)}%` }"
       />
       <span>{{ day.name }}</span>
-    </li>
-  </ol>
+    </div>
+  </div>
 </template>
 
 <style scoped>

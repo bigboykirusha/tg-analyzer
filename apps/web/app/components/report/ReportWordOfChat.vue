@@ -29,6 +29,7 @@ const sides = computed(() => {
     </div>
     <ReportLine
       v-if="sides"
+      class="word__line"
       size="lg"
       :mine="sides.mine"
       :theirs="sides.theirs"
@@ -46,6 +47,11 @@ const sides = computed(() => {
 </template>
 
 <style scoped>
+/* The other side's name on the poster colour reads in the poster's ink: their own tone is too close to it in the dark theme. */
+.word__line :deep(.cmp__name--them) {
+  color: var(--on-poster);
+}
+
 .word {
   display: flex;
   flex-direction: column;
