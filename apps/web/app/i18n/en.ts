@@ -4,7 +4,8 @@ export const en = {
   'account.logoutError': 'Could not sign out',
   'account.settings': 'Account',
   'accountPage.lookTitle': 'Appearance',
-  'accountPage.logoutText': 'Sign out on your last device and we erase the stored Telegram session. Your reports stay; sign in again and you will see them.',
+  'accountPage.logoutText':
+    'Sign out on your last device and we erase the stored Telegram session. Your reports stay; sign in again and you will see them.',
   'accountPage.logoutTitle': 'Sign out of TG Analyzer?',
   'accountPage.theme': 'Theme',
   'accountPage.themeDark': 'Dark',
@@ -174,7 +175,8 @@ export const en = {
   'faq.notKeep.text':
     'Message texts, photos, voice messages or files. Your two-step verification password, if you have one, goes straight to Telegram and never stays with us.',
   'faq.notKeep.title': "We don't keep",
-  'faq.off.text': 'Telegram → Settings → Devices → TG Analyzer → Terminate session. Or “Sign out” in the account on your last device.',
+  'faq.off.text':
+    'Telegram → Settings → Devices → TG Analyzer → Terminate session. Or “Sign out” in the account on your last device.',
   'faq.off.title': 'Switch us off',
   'faq.q.groups': 'Does it work with groups?',
   'faq.q.notice': 'Will the other person find out?',

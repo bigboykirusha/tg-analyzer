@@ -16,6 +16,24 @@ const clientErrorBodySchema = z.object({
   ua: z.string().max(200).default(''),
 })
 
+/**
+ * The browser strips addresses itself, but the server never trusts that: URLs are cut to their path,
+ * query strings and fragments, e-mail addresses and phone numbers are removed before anything is logged.
+ */
+export function scrubClientText(text: string) {
+  return text
+    .replace(/[a-z][a-z0-9+.-]*:\/\/[^\s)'"<>]+/gi, (url) => {
+      try {
+        return new URL(url).pathname
+      } catch {
+        return '[url]'
+      }
+    })
+    .replace(/[?#][^\s)'"<>]*[=&][^\s)'"<>]*/g, '')
+    .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[email]')
+    .replace(/(?<![\w.])\+?\d[\d\s().-]{8,}\d(?![\w])/g, '[number]')
+}
+
 export const clientErrorRoutes: FastifyPluginAsync = async (app) => {
   /**
    * An uncaught error in a browser: logged at `error` as `client_error`, nothing is stored.
@@ -34,7 +52,8 @@ export const clientErrorRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request, reply) => {
-      const report = parse(clientErrorBodySchema, request.body)
+      const parsed = parse(clientErrorBodySchema, request.body)
+      const report = { ...parsed, message: scrubClientText(parsed.message), stack: scrubClientText(parsed.stack) }
       request.log.error({ event: 'client_error', requestId: request.id, clientError: report }, 'client_error')
       recordError('client')
       return reply.status(204).send()

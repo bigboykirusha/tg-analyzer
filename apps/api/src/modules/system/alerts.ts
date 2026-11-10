@@ -51,12 +51,27 @@ async function deliver(text: string) {
   }
 }
 
+/** Throttle used only while Redis is down: an alert about Redis cannot wait for Redis. */
+const localSent = new Map<string, number>()
+
+async function firstInWindow(key: string) {
+  const windowMs = config.ALERT_THROTTLE_MINUTES * 60_000
+  try {
+    const first = await redis.set(`alert:sent:${key}`, '1', 'EX', config.ALERT_THROTTLE_MINUTES * 60, 'NX')
+    return first === 'OK'
+  } catch {
+    const now = Date.now()
+    if ((localSent.get(key) ?? 0) + windowMs > now) return false
+    localSent.set(key, now)
+    return true
+  }
+}
+
 /** Sends `text` unless the same `key` was sent within the throttle window. Never throws. */
 export async function sendAlert(key: string, text: string) {
   if (!alertsEnabled()) return false
   try {
-    const first = await redis.set(`alert:sent:${key}`, '1', 'EX', config.ALERT_THROTTLE_MINUTES * 60, 'NX')
-    if (first !== 'OK') return false
+    if (!(await firstInWindow(key))) return false
     logger.error({ event: 'alert', alertKey: key }, text)
     await deliver(`TG Analyzer: ${text}`)
     return true
@@ -98,7 +113,12 @@ export function startWorkerWatch(check: () => Promise<boolean> = isWorkerAlive, 
   let alerted = false
   const timer = setInterval(() => {
     void (async () => {
-      const alive = await check().catch(() => true)
+      // A check that cannot run (Redis down) is a reason to alert too, not a sign of health.
+      let broken = false
+      const alive = await check().catch(() => {
+        broken = true
+        return false
+      })
       if (alive) {
         if (alerted) await sendAlert('worker-recovered', 'worker is processing jobs again.')
         misses = 0
@@ -107,10 +127,15 @@ export function startWorkerWatch(check: () => Promise<boolean> = isWorkerAlive, 
       }
       misses += 1
       if (misses >= MISSES_BEFORE_ALERT && !alerted) {
-        alerted = await sendAlert(
-          'worker-down',
-          'worker has stopped answering (no heartbeat). Analyses are not running; see docs/RUNBOOK.md.',
-        )
+        alerted = broken
+          ? await sendAlert(
+              'worker-unchecked',
+              'cannot read the worker heartbeat (Redis unreachable?). Analyses may not be running; see docs/RUNBOOK.md.',
+            )
+          : await sendAlert(
+              'worker-down',
+              'worker has stopped answering (no heartbeat). Analyses are not running; see docs/RUNBOOK.md.',
+            )
       }
     })().catch(() => undefined)
   }, intervalMs)

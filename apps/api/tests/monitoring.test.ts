@@ -8,7 +8,7 @@ useTestServer()
 
 const { config } = await import('../src/config')
 const { recordError, sendAlert, startWorkerWatch } = await import('../src/modules/system/alerts')
-const { CLIENT_ERROR_RATE_LIMIT_MAX } = await import('../src/modules/system/client-errors')
+const { CLIENT_ERROR_RATE_LIMIT_MAX, scrubClientText } = await import('../src/modules/system/client-errors')
 
 const report = {
   kind: 'vue',
@@ -132,4 +132,29 @@ test('a silent worker is reported once, and its return is announced', async () =
       stop()
     }
   })
+})
+
+test('a heartbeat check that cannot run (Redis down) raises an alert instead of passing as healthy', async () => {
+  await withWebhook(async (received) => {
+    const stop = startWorkerWatch(async () => {
+      throw new Error('redis is down')
+    }, 20)
+    try {
+      await until(() => received.length > 0)
+      await new Promise((resolve) => setTimeout(resolve, 200))
+      assert.equal(received.length, 1)
+      assert.match(received[0]!.text, /cannot read the worker heartbeat/)
+    } finally {
+      stop()
+    }
+  })
+})
+
+test('the server cuts addresses, query strings, e-mails and phone numbers out of a client error', () => {
+  const text = scrubClientText(
+    'Failed at https://tg.example/chat/12?token=abc#x, mail me a.b@mail.com or +7 (916) 123-45-67, see http://[bad',
+  )
+  assert.doesNotMatch(text, /token|abc|mail\.com|916|123-45/)
+  assert.match(text, /\/chat\/12/)
+  assert.equal(scrubClientText('plain message'), 'plain message')
 })
