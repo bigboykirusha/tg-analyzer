@@ -46,6 +46,21 @@ const envSchema = z.object({
     .optional(),
   /** The web app's public address, for links in bot messages; defaults to the first CORS origin. */
   APP_URL: z.url().optional(),
+  /** Alerts (worker silent, burst of 5xx or browser errors): a JSON webhook, or Telegram. Off when unset. */
+  ALERT_WEBHOOK_URL: z.url().optional(),
+  ALERT_TELEGRAM_BOT_TOKEN: z
+    .string()
+    .regex(/^\d+:[\w-]{30,}$/, 'Expected a bot token from @BotFather')
+    .optional(),
+  ALERT_TELEGRAM_CHAT_ID: z
+    .string()
+    .regex(/^-?\d+$/, 'Expected a numeric chat id')
+    .optional(),
+  /** Errors of one kind within one window that raise an alert. */
+  ALERT_ERROR_THRESHOLD: z.coerce.number().int().positive().default(20),
+  ALERT_WINDOW_MINUTES: z.coerce.number().int().positive().default(5),
+  /** The same alert is sent at most once per this many minutes. */
+  ALERT_THROTTLE_MINUTES: z.coerce.number().int().positive().default(30),
 })
 
 export type AppConfig = ReturnType<typeof parseConfig>

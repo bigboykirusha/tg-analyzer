@@ -1,0 +1,43 @@
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify'
+import { z } from 'zod'
+import { parse } from '../../http/validation'
+import { recordError } from './alerts'
+
+/** Browser error reports are tiny; anything bigger is not ours. */
+export const CLIENT_ERROR_BODY_LIMIT = 6 * 1024
+export const CLIENT_ERROR_RATE_LIMIT_MAX = 30
+
+const clientErrorBodySchema = z.object({
+  kind: z.enum(['vue', 'app', 'window', 'promise']),
+  route: z.string().max(120),
+  message: z.string().min(1).max(300),
+  stack: z.string().max(2000).default(''),
+  build: z.string().max(64).default(''),
+  ua: z.string().max(200).default(''),
+})
+
+export const clientErrorRoutes: FastifyPluginAsync = async (app) => {
+  /**
+   * An uncaught error in a browser: logged at `error` as `client_error`, nothing is stored.
+   * Sent without cookies by the web plugin, so it needs no session and carries no personal data.
+   */
+  app.post(
+    '/client-errors',
+    {
+      bodyLimit: CLIENT_ERROR_BODY_LIMIT,
+      config: {
+        rateLimit: {
+          max: CLIENT_ERROR_RATE_LIMIT_MAX,
+          timeWindow: '1 minute',
+          keyGenerator: (request: FastifyRequest) => `client-errors:${request.ip}`,
+        },
+      },
+    },
+    async (request, reply) => {
+      const report = parse(clientErrorBodySchema, request.body)
+      request.log.error({ event: 'client_error', requestId: request.id, clientError: report }, 'client_error')
+      recordError('client')
+      return reply.status(204).send()
+    },
+  )
+}
