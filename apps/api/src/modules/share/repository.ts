@@ -1,6 +1,8 @@
 import { randomBytes } from 'node:crypto'
 import {
   deriveQuiz,
+  deriveReportMetrics,
+  hideProfanity,
   telegramHueIndex,
   type CreateShareLinkBody,
   type PublicShareDto,
@@ -42,7 +44,8 @@ async function reportRow(userId: string, chatId: string) {
  * when the owner allowed it, and words, stickers and reactions only when switched on.
  */
 export function publicReport(dto: ReportDto, settings: ShareReportSettings, token: string): ReportDto {
-  const report = structuredClone(dto.report)
+  // Whatever the owner reads, a stranger never gets obscene words.
+  const report = structuredClone(hideProfanity(dto.report))
   if (!settings.words) {
     const empty = { mine: [], theirs: [] }
     report.vocabulary = {
@@ -68,7 +71,8 @@ export function publicReport(dto: ReportDto, settings: ShareReportSettings, toke
   return {
     summary: { ...dto.summary, chatId: token, title: settings.showName ? dto.summary.title : '' },
     report,
-    derived: { ...dto.derived, quiz: [] },
+    // Derived from what the stranger gets, so words, stickers and reactions switched off are not in it either.
+    derived: { ...deriveReportMetrics(report), quiz: [] },
     previous: null,
   }
 }
