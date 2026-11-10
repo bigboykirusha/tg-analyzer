@@ -108,7 +108,6 @@ onMounted(() => {
 
 <style scoped>
 .page {
-  --page-gap: var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--page-gap);
@@ -117,7 +116,7 @@ onMounted(() => {
 /* Phones keep the floating «Новый анализ» clear of the last row and card. */
 @media (max-width: 900px) {
   .home .page {
-    padding-bottom: calc(var(--control-md) + var(--space-4));
+    padding-bottom: var(--fab-clearance);
   }
 }
 
@@ -133,29 +132,28 @@ onMounted(() => {
   gap: var(--space-3);
 }
 
-/*
- * Reports: one row — cards share the width when they fit and slide sideways when there are more, so home
- * stays one screen however many reports there are. The row bleeds to the screen edge on a phone.
- */
+/* Reports: two on a phone, four on a tablet and wide screens, three beside the sidebar on a laptop. */
 .home__reports {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(calc(var(--space-16) * 3), 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--card-gap);
-  margin: 0 calc(-1 * var(--page-gutter));
-  padding: 0 var(--page-gutter);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-padding: 0 var(--page-gutter);
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
 }
 
-.home__reports::-webkit-scrollbar {
-  display: none;
+@media (min-width: 641px) {
+  .home__reports {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
-.home__reports > * {
-  scroll-snap-align: start;
+@media (min-width: 901px) {
+  .home__reports {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .home__reports {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 </style>
