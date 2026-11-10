@@ -32,6 +32,8 @@ export type ApiErrorCode =
   | 'TELEGRAM_REAUTH_REQUIRED'
   | 'TELEGRAM_BUSY'
   | 'TELEGRAM_UNAVAILABLE'
+  | 'TELEGRAM_SESSION_TOO_FRESH'
+  | 'TELEGRAM_SESSION_CURRENT'
   // analysis
   | 'CHAT_NOT_FOUND'
   | 'CHAT_TOO_SMALL'
@@ -931,4 +933,25 @@ export interface UserShareLinkDto {
 
 export interface UserShareLinksResponse {
   links: UserShareLinkDto[]
+}
+
+/** One authorization of the account, as the Telegram app lists it under Devices. No IP address is kept or sent. */
+export interface TelegramSessionDto {
+  /** Telegram's own handle for the authorization; changes after a re-login. */
+  hash: string
+  device: string
+  platform: string
+  /** Application name and version, e.g. «Telegram iOS 11.2». */
+  app: string
+  country: string
+  /** ISO time of the last activity. */
+  activeAt: string
+  /** This service's own authorization: it cannot be ended here, «Sign out» does it. */
+  current: boolean
+  /** An official Telegram application. */
+  official: boolean
+}
+
+export interface TelegramSessionsResponse {
+  sessions: TelegramSessionDto[]
 }

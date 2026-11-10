@@ -23,6 +23,14 @@ export class TelegramBusyError extends Error {
   }
 }
 
+/** Telegram lets a login end the other sessions only a day after it was made. */
+export class TelegramSessionTooFreshError extends Error {
+  constructor() {
+    super('Telegram forbids ending other sessions within 24 hours of login')
+    this.name = 'TelegramSessionTooFreshError'
+  }
+}
+
 export type TelegramLoginErrorReason =
   'phone_invalid' | 'phone_banned' | 'code_invalid' | 'code_expired' | 'password_invalid' | 'session_expired'
 
@@ -54,6 +62,7 @@ export function normalizeTelegramError(error: unknown): unknown {
     error instanceof TelegramFloodWaitError ||
     error instanceof TelegramSessionRevokedError ||
     error instanceof TelegramBusyError ||
+    error instanceof TelegramSessionTooFreshError ||
     error instanceof TelegramLoginError
   ) {
     return error
@@ -64,6 +73,7 @@ export function normalizeTelegramError(error: unknown): unknown {
   if (typeof seconds === 'number' && /FLOOD/.test(message)) return new TelegramFloodWaitError(seconds)
   const floodMatch = message.match(/FLOOD_(?:PREMIUM_)?WAIT_?(\d+)/)
   if (floodMatch) return new TelegramFloodWaitError(Number(floodMatch[1]))
+  if (/FRESH_RESET_AUTHORISATION_FORBIDDEN/.test(message)) return new TelegramSessionTooFreshError()
   if (REVOKED.test(message)) return new TelegramSessionRevokedError(error)
   if (DUPLICATED.test(message)) return new TelegramBusyError('Telegram rejected a concurrent connection')
   for (const [pattern, reason] of LOGIN_ERRORS) {

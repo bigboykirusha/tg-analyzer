@@ -7,6 +7,7 @@ import { config, REFRESH_COOKIE_NAME } from '../config'
 import { ApiError, toErrorResponse } from '../lib/errors'
 import { logger } from '../lib/logger'
 import { redis } from '../lib/redis'
+import { telegramSessionRoutes } from '../modules/account/telegram-session-routes'
 import { authRoutes } from '../modules/auth/routes'
 import { parseRoutes } from '../modules/parse/routes'
 import { progressSocketRoutes } from '../modules/parse/progress-socket'
@@ -85,6 +86,7 @@ export async function buildServer() {
   await app.register(systemRoutes)
   await app.register(clientErrorRoutes, { prefix: '/api/v1' })
   await app.register(authRoutes, { prefix: '/api/v1/auth' })
+  await app.register(telegramSessionRoutes, { prefix: '/api/v1/telegram' })
   await app.register(parseRoutes, { prefix: '/api/v1/parse' })
   await app.register(reportRoutes, { prefix: '/api/v1/reports' })
   await app.register(shareLinkRoutes, { prefix: '/api/v1/reports' })
