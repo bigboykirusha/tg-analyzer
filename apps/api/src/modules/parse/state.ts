@@ -128,3 +128,23 @@ export async function readCachedRecentActivity(userId: string): Promise<CachedRe
     return null
   }
 }
+
+const sizesKey = (userId: string) => `telegram:sizes:${userId}`
+const SIZES_TTL_SECONDS = 7 * 24 * 60 * 60
+
+/**
+ * Chats Telegram has told us are too small for a report. Asking Telegram about every dialog would cost a
+ * request each, so a size is remembered from the answers that were needed anyway: the home summary, the
+ * check before an analysis, a failed one. A chat that has grown past the minimum is forgotten.
+ */
+export async function rememberChatSize(userId: string, chatId: string, total: number, minimum: number) {
+  if (total < minimum) {
+    await redis.hset(sizesKey(userId), chatId, String(total))
+    await redis.expire(sizesKey(userId), SIZES_TTL_SECONDS)
+  } else await redis.hdel(sizesKey(userId), chatId)
+}
+
+/** Ids of the user's chats known to be too small; empty when nothing is remembered. */
+export async function readSmallChats(userId: string): Promise<Set<string>> {
+  return new Set(Object.keys(await redis.hgetall(sizesKey(userId))))
+}

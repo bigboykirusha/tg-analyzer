@@ -28,7 +28,7 @@ import { notifyReportReady } from '../notify/bot'
 import { saveReportAndCompleteJob } from '../reports/repository'
 import { failJob, hasActiveJobs, isJobActive, markJobRunning, setJobChatTitle } from './jobs'
 import type { AnalysisJobData } from './queue'
-import { idleProgress, publishProgress, startCooldown } from './state'
+import { idleProgress, publishProgress, rememberChatSize, startCooldown } from './state'
 
 const PROGRESS_INTERVAL_MS = 1_000
 const CANCELLATION_CHECK_INTERVAL_MS = 2_000
@@ -108,7 +108,7 @@ export async function runAnalysis(job: Job<AnalysisJobData>, token?: string) {
       userId,
       session,
       async (api) => {
-        const scanned = await scanChat(api, chatId, user.timezone, progress, publish, ensureActive)
+        const scanned = await scanChat(api, userId, chatId, user.timezone, progress, publish, ensureActive)
         const previews = await api
           .stickerPreviews(
             chatId,
@@ -195,6 +195,7 @@ async function withRetries<T>(work: () => Promise<T>): Promise<T> {
 
 async function scanChat(
   api: TelegramAccountApi,
+  userId: string,
   chatId: string,
   timeZone: string,
   progress: ParseProgressDto,
@@ -224,8 +225,10 @@ async function scanChat(
     }
 
     // Telegram reports the size with the first page: a chat too small for a report is not read further.
-    if (offsetId === 0 && page.total !== null && page.total < MIN_REPORT_MESSAGES)
+    if (offsetId === 0 && page.total !== null && page.total < MIN_REPORT_MESSAGES) {
+      await rememberChatSize(userId, chatId, page.total, MIN_REPORT_MESSAGES).catch(() => undefined)
       throw new AnalysisFailedError('chat_too_small')
+    }
     for (const message of page.messages) builder.add(message)
     progress.scannedMessages = builder.messageCount
     const oldest = page.messages[page.messages.length - 1]
