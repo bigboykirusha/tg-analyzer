@@ -464,6 +464,8 @@
   --switch-width: 40px;
   --switch-height: 24px;
   --topbar-height: 56px;
+  /* The mark in headers: as tall as the circular buttons beside it. */
+  --brand-mark-size: 40px;
   --sidebar-width: 280px;
   /* The group member inspector beside the report (≥ 1200 px). */
   --inspector-width: 400px;
