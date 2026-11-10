@@ -4,7 +4,7 @@ import { Copy } from '../../lib/icons'
 
 /**
  * «Ссылка на отчёт», the second step of «Поделиться»: how the other side will see the page, two
- * choices — names, and words with emoji (both off until you say so) — and one button that copies the
+ * choices — names, and words with emoji (names are on, words are off until you say so) — and one row that copies the
  * address. Changing a choice makes a new address: whoever had the old one sees «Ссылка больше не
  * работает». A link lives 30 days and is turned off in the account.
  */
@@ -17,7 +17,7 @@ const copyLink = useCopyLink()
 const errorMessage = useErrorMessage()
 
 const settings = reactive({
-  showName: props.link?.settings?.showName ?? false,
+  showName: props.link?.settings?.showName ?? true,
   words: props.link?.settings?.words ?? false,
 })
 const busy = ref(false)
@@ -96,9 +96,11 @@ async function copy() {
       <UiSwitch v-model="settings.words" :label="t('share.link.words')" :hint="t('share.link.wordsHint')" />
     </UiGroup>
     <div class="link-step__actions">
-      <UiButton variant="primary" block :icon="Copy" :loading="busy" @click="copy">
-        {{ t('share.link.copy') }}
-      </UiButton>
+      <UiGroup>
+        <UiListRow as="button" :title="t('share.link.copy')" :disabled="busy" @click="copy">
+          <template #leading><Copy aria-hidden="true" /></template>
+        </UiListRow>
+      </UiGroup>
       <ShareFallback
         v-if="copyLink.fallback.value"
         :url="copyLink.fallback.value"

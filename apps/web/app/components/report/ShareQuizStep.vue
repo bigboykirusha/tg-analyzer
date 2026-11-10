@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { QuizQuestionDto, ShareLinkDto } from '@tg-analyzer/shared'
-import { Check, Copy, Send, X } from '../../lib/icons'
+import { Check, Copy, RotateCw, Send, X } from '../../lib/icons'
 
 /**
  * «Угадайка», the second step of «Поделиться»: the questions are ready by themselves — send them in
@@ -104,17 +104,19 @@ async function copy() {
     </ol>
 
     <div class="quiz-step__actions">
-      <UiButton v-if="result" variant="primary" block :loading="busy" @click="create">
-        {{ t('share.quiz.again') }}
-      </UiButton>
-      <template v-else>
-        <UiButton variant="primary" block :icon="Send" :loading="busy" @click="send">
-          {{ t('share.quiz.send') }}
-        </UiButton>
-        <UiButton variant="secondary" block :icon="Copy" :disabled="busy" @click="copy">
-          {{ t('share.quiz.copy') }}
-        </UiButton>
-      </template>
+      <UiGroup>
+        <UiListRow v-if="result" as="button" :title="t('share.quiz.again')" :disabled="busy" @click="create">
+          <template #leading><RotateCw aria-hidden="true" /></template>
+        </UiListRow>
+        <template v-else>
+          <UiListRow as="button" :title="t('share.quiz.send')" :disabled="busy" @click="send">
+            <template #leading><Send aria-hidden="true" /></template>
+          </UiListRow>
+          <UiListRow as="button" :title="t('share.quiz.copy')" :disabled="busy" @click="copy">
+            <template #leading><Copy aria-hidden="true" /></template>
+          </UiListRow>
+        </template>
+      </UiGroup>
       <ShareFallback
         v-if="copyLink.fallback.value"
         :url="copyLink.fallback.value"
