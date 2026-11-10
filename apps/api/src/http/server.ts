@@ -12,6 +12,8 @@ import { parseRoutes } from '../modules/parse/routes'
 import { progressSocketRoutes } from '../modules/parse/progress-socket'
 import { reportRoutes } from '../modules/reports/routes'
 import { publicShareRoutes, shareLinkRoutes, userLinkRoutes } from '../modules/share/routes'
+import { recordError, startWorkerWatch } from '../modules/system/alerts'
+import { clientErrorRoutes } from '../modules/system/client-errors'
 import { systemRoutes } from '../modules/system/routes'
 import { isOriginAllowed } from './origin'
 
@@ -62,8 +64,10 @@ export async function buildServer() {
 
   app.setErrorHandler((error, request, reply) => {
     const { statusCode, body } = toErrorResponse(error, request.id)
-    if (statusCode >= 500) request.log.error({ err: error }, 'request failed')
-    else request.log.info({ code: body.code, statusCode }, 'request rejected')
+    if (statusCode >= 500) {
+      request.log.error({ err: error, event: 'request_failed', requestId: request.id, statusCode }, 'request failed')
+      recordError('server')
+    } else request.log.info({ code: body.code, statusCode }, 'request rejected')
     if (body.retryAfter !== undefined) reply.header('retry-after', String(body.retryAfter))
     return reply.status(statusCode).send(body)
   })
@@ -71,7 +75,15 @@ export async function buildServer() {
     reply.status(404).send({ code: 'NOT_FOUND', message: 'Route not found', requestId: request.id }),
   )
 
+  // The worker cannot report its own death, so the API watches its heartbeat (when alerts are on).
+  let stopWorkerWatch = () => {}
+  app.addHook('onReady', async () => {
+    stopWorkerWatch = startWorkerWatch()
+  })
+  app.addHook('onClose', async () => stopWorkerWatch())
+
   await app.register(systemRoutes)
+  await app.register(clientErrorRoutes, { prefix: '/api/v1' })
   await app.register(authRoutes, { prefix: '/api/v1/auth' })
   await app.register(parseRoutes, { prefix: '/api/v1/parse' })
   await app.register(reportRoutes, { prefix: '/api/v1/reports' })

@@ -35,7 +35,7 @@ docker compose up --build        # postgres, redis, migrate, api, worker, web
 1. переменная `START_SERVICE=api|worker|web` (надёжнее всего — задайте её в каждом сервисе);
 2. иначе по имени сервиса Railway: `worker` в имени → worker, `web`/`front`/`app` → web, `api`/`back`/`server` → api.
 
-Миграции (pre-deploy) выполняются только у api. Healthcheck `/health` включайте в настройках сервиса api — у worker нет HTTP.
+Миграции (pre-deploy) выполняются только у api. Healthcheck `/health` включайте в настройках сервиса api — у worker нет HTTP. Падение worker замечает сам API (heartbeat) и шлёт алерт, если задан `ALERT_WEBHOOK_URL` или Telegram-пара; переменные нужны сервису api (счётчики ошибок worker — и сервису worker), см. [ENVIRONMENT.md](ENVIRONMENT.md).
 
 ## Чек-лист релиза
 

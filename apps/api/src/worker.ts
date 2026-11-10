@@ -7,6 +7,7 @@ import { createRedisConnection, redis } from './lib/redis'
 import { runAnalysis } from './modules/parse/analysis'
 import { ANALYSIS_QUEUE, closeAnalysisQueue, type AnalysisJobData } from './modules/parse/queue'
 import { reconcileActiveJobs } from './modules/parse/reconcile'
+import { recordError } from './modules/system/alerts'
 import { beatWorkerHeartbeat, clearWorkerHeartbeat } from './modules/system/heartbeat'
 import { startBotPolling } from './modules/notify/bot'
 import { startMaintenance } from './modules/system/maintenance'
@@ -27,7 +28,10 @@ async function main() {
     // Long chats take minutes; the lock is renewed automatically while the job runs.
     lockDuration: 2 * 60 * 1000,
   })
-  analysisWorker.on('error', (error) => logger.error({ err: error }, 'analysis worker error'))
+  analysisWorker.on('error', (error) => {
+    logger.error({ err: error }, 'analysis worker error')
+    recordError('worker')
+  })
   const maintenanceWorker = await startMaintenance()
   const stopBot = startBotPolling()
 
@@ -62,6 +66,7 @@ async function main() {
 // kill the worker: an exit mid-analysis makes BullMQ restart the job from scratch.
 process.on('unhandledRejection', (reason) => {
   logger.error({ err: reason }, 'unhandled rejection')
+  recordError('worker')
 })
 
 main().catch((error) => {
