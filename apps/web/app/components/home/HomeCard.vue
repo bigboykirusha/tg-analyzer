@@ -52,9 +52,9 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
   min-width: 0;
-  padding: var(--card-padding);
+  padding: var(--space-4);
   border-radius: var(--radius-card);
   background: var(--surface);
   color: var(--text);

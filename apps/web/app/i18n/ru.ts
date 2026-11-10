@@ -538,6 +538,7 @@ export const ru: Record<MessageKey, string> = {
   'home.firstMost': 'Чаще всех — {count} за месяц',
   'home.firstOthers': 'Или кто-то ещё',
   'home.allChats': 'Все чаты Telegram',
+  'home.allChatsLink': 'Все чаты',
   'home.loadingChats': 'Загружаем чаты из Telegram…',
   'home.loadingChatsError': 'Не удалось загрузить чаты',
   'landing.ex1.title': 'Мила, 52 на 48',

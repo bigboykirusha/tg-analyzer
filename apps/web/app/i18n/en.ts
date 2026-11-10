@@ -538,6 +538,7 @@ export const en = {
   'home.firstMost': 'Most of all — {count} this month',
   'home.firstOthers': 'Or someone else',
   'home.allChats': 'All Telegram chats',
+  'home.allChatsLink': 'All chats',
   'home.loadingChats': 'Loading your chats from Telegram…',
   'home.loadingChatsError': 'Could not load your chats',
   'landing.ex1.title': 'Mila, 52 to 48',
