@@ -6,7 +6,7 @@
 const { t } = useI18n()
 useSeoMeta({ title: () => t('privacy.pageTitle'), description: () => t('faq.seoDescription') })
 const facts = usePrivacyFacts()
-const questions = computed(() => (['notice', 'store', 'phone'] as const).map((key) => t(`faq.q.${key}`)))
+const questions = computed(() => (['notice', 'phone'] as const).map((key) => t(`faq.q.${key}`)))
 
 const policy = computed(() => [
   {

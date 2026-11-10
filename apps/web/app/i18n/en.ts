@@ -165,8 +165,6 @@ export const en = {
   'faq.a.price': "It's free.",
   'faq.a.safe':
     'You sign in through the official Telegram API, like other clients. Message texts are processed in memory and never stored. You can end the session in Telegram Settings → Devices.',
-  'faq.a.store':
-    'Only statistics: message counts, reply times, activity by hour, top words and emoji. A report is deleted from its menu, with its stories and links.',
   'faq.delete.text': "From the report's menu on home or in «New analysis». Its stories and links go with it.",
   'faq.delete.title': 'Delete a report',
   'faq.keep.text':
@@ -187,7 +185,6 @@ export const en = {
   'faq.q.phone': 'Why sign in with a phone number?',
   'faq.q.price': 'How much does it cost?',
   'faq.q.safe': 'Is it safe?',
-  'faq.q.store': 'What do you keep?',
   'faq.questions': 'Frequent questions',
   'faq.read.text': 'Messages of the chat you pick, only while it is analysed and only in server memory.',
   'faq.read.title': 'We read',
