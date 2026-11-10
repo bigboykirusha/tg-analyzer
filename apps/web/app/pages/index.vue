@@ -202,7 +202,7 @@ useHead({
   justify-content: space-between;
   gap: var(--space-8);
   padding: var(--space-6);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-card);
   background: var(--poster);
   color: var(--on-poster);
 }

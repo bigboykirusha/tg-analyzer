@@ -102,7 +102,7 @@ function submit() {
       </Input>
     </Field>
 
-    <Button type="submit" variant="primary" size="lg" :loading="loading" :disabled="!phoneInput.isValid.value" block>
+    <Button type="submit" variant="primary" :loading="loading" :disabled="!phoneInput.isValid.value" block>
       {{ loading ? t('login.sendingCode') : t('login.getCode') }}
     </Button>
     <p class="auth-trust">

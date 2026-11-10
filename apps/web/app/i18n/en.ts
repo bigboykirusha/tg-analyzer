@@ -174,7 +174,7 @@ export const en = {
   'faq.never.text': 'Write on your behalf, read other chats or share data with third parties.',
   'faq.never.title': 'We never',
   'faq.notKeep.text':
-    'Message texts, photos, voice messages or files. Your two-step verification password, if you have one, goes straight to Telegram and never stays with us.',
+    'Message texts, photos, voice messages or files. Your cloud password, if you have one, goes straight to Telegram and never stays with us.',
   'faq.notKeep.title': "We don't keep",
   'faq.off.text':
     'Telegram → Settings → Devices → TG Analyzer → Terminate session. Or “Sign out” in the account on your last device.',

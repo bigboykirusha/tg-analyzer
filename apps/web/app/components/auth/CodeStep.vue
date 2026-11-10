@@ -64,7 +64,7 @@ function submit() {
           : resendLabel || t('login.resend')
       }}
     </Button>
-    <Button type="submit" variant="primary" size="lg" :loading="loading" :disabled="code.length !== size" block>
+    <Button type="submit" variant="primary" :loading="loading" :disabled="code.length !== size" block>
       {{ t('login.signIn') }}
     </Button>
   </form>

@@ -86,7 +86,7 @@ const invitation = wave(4, 40)
         </div>
         <div class="quiz__foot">
           <p class="quiz__note">{{ t('publicQuiz.note', { name: quiz.author }) }}</p>
-          <UiButton variant="poster" size="lg" block @click="stage = 'question'">{{ t('publicQuiz.start') }}</UiButton>
+          <UiButton variant="primary" block @click="stage = 'question'">{{ t('publicQuiz.start') }}</UiButton>
         </div>
       </template>
 
@@ -135,7 +135,7 @@ const invitation = wave(4, 40)
           <p class="quiz__reveal" role="status">{{ picked ? reveal : '' }}</p>
         </div>
         <div class="quiz__foot">
-          <UiButton variant="poster" size="lg" block :disabled="!picked" :loading="sending" @click="next">
+          <UiButton variant="primary" block :disabled="!picked" :loading="sending" @click="next">
             {{ index + 1 < total ? t('publicQuiz.next') : t('publicQuiz.finish') }}
           </UiButton>
         </div>
@@ -155,8 +155,8 @@ const invitation = wave(4, 40)
           </p>
         </div>
         <div class="quiz__foot">
-          <UiButton variant="poster" size="lg" block to="/login">{{ t('publicReport.cta') }}</UiButton>
-          <UiButton variant="poster-soft" size="lg" block to="/">{{ t('publicShare.about') }}</UiButton>
+          <UiButton variant="primary" block to="/login">{{ t('publicReport.cta') }}</UiButton>
+          <UiButton variant="secondary" block to="/">{{ t('publicShare.about') }}</UiButton>
         </div>
       </template>
     </div>

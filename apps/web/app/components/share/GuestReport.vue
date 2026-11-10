@@ -110,7 +110,7 @@ const words = computed(() => props.share.settings.words && report.value.vocabula
     <UiPageContainer>
       <div class="guest__grid">
         <h2 class="sr-only">{{ t('publicReport.mainTitle') }}</h2>
-        <ReportSection :title="t('report.kpi.whoWritesMore')" :answer="shareAnswer">
+        <ReportSection hero :title="t('report.kpi.whoWritesMore')" :answer="shareAnswer">
           <ReportLine
             v-if="mineShare !== null"
             size="lg"
@@ -161,9 +161,7 @@ const words = computed(() => props.share.settings.words && report.value.vocabula
         </section>
       </div>
     </UiPageContainer>
-    <UiButton v-if="!wide" class="guest__fab" variant="primary" size="lg" to="/login">{{
-      t('publicReport.cta')
-    }}</UiButton>
+    <UiButton v-if="!wide" class="guest__fab" variant="primary" to="/login">{{ t('publicReport.cta') }}</UiButton>
   </div>
 </template>
 

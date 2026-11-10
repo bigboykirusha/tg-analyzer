@@ -104,14 +104,14 @@ const title = computed(() =>
   >
     <!-- Desktop: the cover of «Итоги» as it opens, and the way in. -->
     <template #aside>
-      <div class="cover">
+      <div class="cover" data-on-poster>
         <span class="cover__segments" aria-hidden="true">
           <i v-for="index in frames" :key="index" :class="{ 'is-on': index === 1 }" />
         </span>
         <Pulse class="cover__pulse" :data="days" :bars="28" :height="28" />
         <p class="cover__name">{{ name }}</p>
         <p class="cover__meta">{{ coverMeta }}</p>
-        <UiButton class="cover__watch" variant="poster" :icon="Play" block @click="pick('view')">
+        <UiButton class="cover__watch" variant="primary" :icon="Play" block @click="pick('view')">
           {{ t('share.watch') }}
         </UiButton>
       </div>
@@ -130,7 +130,7 @@ const title = computed(() =>
         <span class="feature__copy">
           <b class="feature__title">{{ t('share.title', { name }) }}</b>
           <span class="feature__text">{{ t(isGroup ? 'share.ledeGroup' : 'share.lede') }}</span>
-          <UiButton class="feature__watch" variant="poster" size="sm" :icon="Play" @click="pick('view')">
+          <UiButton class="feature__watch" variant="primary" size="sm" :icon="Play" @click="pick('view')">
             {{ t('share.watchShort') }}
           </UiButton>
         </span>

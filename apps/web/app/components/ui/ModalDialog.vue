@@ -81,7 +81,6 @@ watch(open, (value) => value && drag.reset())
             class="modal-close"
             :label="closeLabel || t('common.close')"
             :icon="X"
-            tone="chrome"
             size="md"
             no-tooltip
             :disabled="busy"
@@ -96,7 +95,6 @@ watch(open, (value) => value && drag.reset())
               class="modal-back"
               :label="t('common.back')"
               :icon="ArrowLeft"
-              tone="chrome"
               size="md"
               no-tooltip
               @click="emit('back')"
@@ -144,8 +142,6 @@ watch(open, (value) => value && drag.reset())
 
 .modal-panel {
   --field-bg: var(--fill-raised);
-  --btn-fill: var(--fill-raised);
-  --btn-segment-on: var(--surface-raised);
   /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
   --group-bg: transparent;
   --group-padding: 0;

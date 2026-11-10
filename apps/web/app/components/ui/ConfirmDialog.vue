@@ -4,7 +4,7 @@ import Button from './Button.vue'
 
 /**
  * Confirmation: a question as the title, consequences as the description and
- * a concrete verb on the main button. `danger` makes that button soft red and
+ * a concrete verb on the main button. `danger` keeps the ink button and sets
  * the role `alertdialog`; focus starts on the dialog itself. The default slot
  * lists what is lost.
  */
@@ -51,15 +51,10 @@ const isDanger = computed(() => props.variant === 'danger')
       <slot />
     </template>
     <template #actions>
-      <Button variant="tinted" :disabled="loading" @click="emit('close')">
+      <Button variant="secondary" :disabled="loading" @click="emit('close')">
         {{ cancelLabel || t('common.cancel') }}
       </Button>
-      <Button
-        :variant="isDanger ? 'danger' : 'primary'"
-        :icon="confirmIcon"
-        :loading="loading"
-        @click="emit('confirm')"
-      >
+      <Button variant="primary" :icon="confirmIcon" :loading="loading" @click="emit('confirm')">
         {{ confirmLabel }}
       </Button>
     </template>

@@ -54,24 +54,8 @@ watch(open, (value) => value && drag.reset())
           <div class="sheet__drag" v-on="drag.handlers">
             <span class="sheet__grabber" aria-hidden="true" />
             <header v-if="title || $slots.header" class="sheet__head">
-              <UiIconButton
-                v-if="back"
-                :label="t('common.back')"
-                :icon="ArrowLeft"
-                tone="chrome"
-                size="lg"
-                no-tooltip
-                @click="emit('back')"
-              />
-              <UiIconButton
-                v-else
-                :label="t('common.close')"
-                :icon="X"
-                tone="chrome"
-                size="lg"
-                no-tooltip
-                @click="close"
-              />
+              <UiIconButton v-if="back" :label="t('common.back')" :icon="ArrowLeft" no-tooltip @click="emit('back')" />
+              <UiIconButton v-else :label="t('common.close')" :icon="X" no-tooltip @click="close" />
               <slot name="header">
                 <h2 :id="titleId" class="sheet__title">{{ title }}</h2>
               </slot>
@@ -107,8 +91,6 @@ watch(open, (value) => value && drag.reset())
 
 .sheet {
   --field-bg: var(--fill-raised);
-  --btn-fill: var(--fill-raised);
-  --btn-segment-on: var(--surface-raised);
   /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
   --group-bg: transparent;
   --group-padding: 0;

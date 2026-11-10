@@ -23,7 +23,6 @@ function toggle() {
     :icon="isDark ? Sun : Moon"
     :label="isDark ? t('theme.light') : t('theme.dark')"
     :aria-pressed="isDark"
-    tone="plain"
     size="sm"
     @click="toggle"
   />

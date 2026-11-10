@@ -119,6 +119,8 @@
   /* Overlays (menus, dialogs, sheets) and the grey fill of controls inside them. */
   --surface-raised: var(--gray-0);
   --fill-raised: var(--gray-3);
+  /* The fill of a secondary button or a round icon on the page: one step darker than the page, so it reads on grey. */
+  --fill-control: var(--gray-4);
   /* The desktop sidebar: one opaque column, its selected row a soft fill. */
   --sidebar-glass: var(--gray-0);
   --sidebar-selection: var(--gray-a2);
@@ -153,6 +155,8 @@
   --on-poster-muted: var(--gray-a8);
   --on-poster-line: var(--gray-a4);
   --on-poster-chip: var(--gray-a3);
+  /* A secondary button or a round icon on a poster: a solid light fill, the only third look beside ink and grey. */
+  --poster-button: var(--gray-0);
   --on-poster-faint: var(--gray-a6);
   --room-tint: var(--gray-3);
   /* Deprecated aliases of the old tinted «room»: the page is one neutral colour now. */
@@ -231,6 +235,7 @@
   --skeleton: var(--night-3);
   --surface-raised: var(--night-3);
   --fill-raised: var(--night-6);
+  --fill-control: var(--night-4);
   --sidebar-glass: var(--night-1);
   --sidebar-selection: var(--night-3);
   --toolbar-glass: rgba(0, 0, 0, 0.72);
@@ -250,6 +255,7 @@
   --on-you: var(--gray-12);
   /* Posters stay light enough for ink: the muted line is a little denser to keep 4.5:1. */
   --on-poster-muted: var(--gray-a9);
+  --poster-button: var(--on-poster-chip);
   --danger: var(--red-d6);
   --danger-subtle: var(--red-d1);
   --inverse-surface: var(--night-12);
@@ -390,18 +396,14 @@
 /*
  * ─── 3. Component: buttons ────────────────────────────────────────────────
  * Three looks (primary — ink fill, secondary — neutral fill, icon — a round neutral fill), two sizes.
- * ui/Button and ui/IconButton read these with the neutral values as fallbacks; a context re-points them
- * and the same three looks come out inverted. Never a new variant for a new background.
+ * The ink fill stays ink on a poster (never the poster's own colour as text); the neutral fill becomes a
+ * solid light one. Never a new variant for a new background.
  */
 [data-poster],
 [data-on-poster],
 .is-over-poster {
-  --btn-ink: var(--on-poster);
-  --btn-ink-text: var(--poster);
-  --btn-ink-hover: var(--on-poster-muted);
-  --btn-fill: var(--on-poster-chip);
+  --btn-fill: var(--poster-button);
   --btn-fill-text: var(--on-poster);
-  --btn-segment-on: var(--poster);
 }
 
 /* ─── Theme-independent scales ──────────────────────────────────────────── */
@@ -482,7 +484,7 @@
   --fab-clearance: 128px;
   --card-padding: var(--space-6);
   --card-gap: var(--space-4);
-  --opacity-disabled: 0.38;
+  --opacity-disabled: 0.5;
   /* Layers: Primer's scale (sticky 100 · modal 400 · popover 500 · skip link 600); a toast sits above a modal. */
   --z-header: 100;
   --z-dock: 150;
@@ -504,16 +506,17 @@
   /* One family, Onest: hierarchy from size, weight and colour. 400 reading, 500 interface, 600 titles and numbers. */
   --font-sans: 'Onest Variable', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
   /*
-   * Seven roles, nothing else; line heights on the 4 grid. Phones and tablets first, desktop (≥ 901) below.
-   *   display — the name on a poster · figure — one big number · h1 — a screen · h2 — a card's answer, a
-   *   section, a dialog · body — reading, rows, names · label — a card's question, buttons, fields, meta
-   *   caption — axes and counts
+   * Eight roles, nothing else; line heights on the 4 grid. Phones and tablets first, desktop (≥ 901) below.
+   *   display — the name on a poster · figure — one big number · h1 — a screen · h2 — the answer of a part's
+   *   first finding · h3 — a card's answer, a dialog · body — reading, rows, names · label — a card's
+   *   question, buttons, fields, meta · caption — axes and counts
    */
   --text-display: 600 56px/56px var(--font-sans);
   --display-max: 56px;
   --text-figure: 600 44px/48px var(--font-sans);
   --text-h1: 600 30px/36px var(--font-sans);
   --text-h2: 600 24px/32px var(--font-sans);
+  --text-h3: 600 20px/28px var(--font-sans);
   --text-body: 400 16px/24px var(--font-sans);
   --text-label: 500 14px/20px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
@@ -530,15 +533,14 @@
   --tracking-figure: -0.035em;
   --tracking-h1: -0.025em;
   --tracking-h2: -0.02em;
-  /* Deprecated names of the old nine-role scale. Each is an alias of one of the seven; pages not yet
+  /* Deprecated names of the old nine-role scale. Each is an alias of one of the eight; pages not yet
    * rewritten keep rendering, and new code does not use them (docs/design-system.md §3). */
-  --text-h3: var(--text-h2);
   --text-num: var(--text-h2);
   --text-title: var(--text-body);
   --text-ui: var(--text-label);
   --text-small: var(--text-label);
   --text-small-strong: var(--text-label);
-  --tracking-h3: var(--tracking-h2);
+  --tracking-h3: -0.015em;
   --tracking-num: var(--tracking-h2);
   /* The page frame: space under the header, between sections, at the bottom. */
   --page-top: var(--space-2);
@@ -604,6 +606,7 @@
     --text-figure: 600 56px/60px var(--font-sans);
     --text-h1: 600 34px/40px var(--font-sans);
     --text-h2: 600 28px/36px var(--font-sans);
+    --text-h3: 600 22px/28px var(--font-sans);
     --size-h1: 34px;
     --size-h2: 28px;
     --page-top: var(--space-12);

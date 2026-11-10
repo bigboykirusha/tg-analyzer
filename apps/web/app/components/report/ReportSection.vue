@@ -11,6 +11,8 @@ defineProps<{
   /** One big number («×3,2»): the answer then says in a few words what it is the number of. */
   figure?: string | null
   wide?: boolean
+  /** The first finding of a part: its answer in the larger h2; every other card answers in h3. */
+  hero?: boolean
   tone?: 'ink'
 }>()
 </script>
@@ -20,7 +22,9 @@ defineProps<{
     <header v-if="title || answer || figure" class="report-section__head">
       <h3 v-if="title" class="t-label report-section__title">{{ title }}</h3>
       <p v-if="figure" class="t-figure report-section__figure">{{ figure }}</p>
-      <p v-if="answer" class="report-section__answer" :class="figure ? 't-body' : 't-h2'">{{ answer }}</p>
+      <p v-if="answer" class="report-section__answer" :class="figure ? 't-body' : hero ? 't-h2' : 't-h3'">
+        {{ answer }}
+      </p>
     </header>
     <slot />
     <p v-if="$slots.note" class="t-label report-section__note"><slot name="note" /></p>

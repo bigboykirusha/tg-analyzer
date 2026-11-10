@@ -104,14 +104,14 @@ async function copy() {
     </ol>
 
     <div class="quiz-step__actions">
-      <UiButton v-if="result" variant="primary" size="lg" block :loading="busy" @click="create">
+      <UiButton v-if="result" variant="primary" block :loading="busy" @click="create">
         {{ t('share.quiz.again') }}
       </UiButton>
       <template v-else>
-        <UiButton variant="primary" size="lg" block :icon="Send" :loading="busy" @click="send">
+        <UiButton variant="primary" block :icon="Send" :loading="busy" @click="send">
           {{ t('share.quiz.send') }}
         </UiButton>
-        <UiButton variant="tinted" size="lg" block :icon="Copy" :disabled="busy" @click="copy">
+        <UiButton variant="secondary" block :icon="Copy" :disabled="busy" @click="copy">
           {{ t('share.quiz.copy') }}
         </UiButton>
       </template>

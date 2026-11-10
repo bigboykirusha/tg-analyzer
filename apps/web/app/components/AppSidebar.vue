@@ -135,8 +135,7 @@ function updating(report: ReportSummaryDto) {
 }
 
 .sidebar__wordmark {
-  font: var(--text-title);
-  font-weight: 600;
+  font: var(--text-label);
 }
 
 .sidebar__list {

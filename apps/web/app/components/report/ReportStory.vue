@@ -130,7 +130,7 @@ watch(
 <template>
   <Teleport to="#teleports">
     <Transition name="stories" appear>
-      <div v-if="open" ref="overlayRef" class="stories" @click.self="emit('close')">
+      <div v-if="open" ref="overlayRef" class="stories" data-on-poster @click.self="emit('close')">
         <section
           ref="panelRef"
           tabindex="-1"
@@ -169,34 +169,26 @@ watch(
             <div class="stories__bar">
               <p class="stories__label" aria-hidden="true">{{ label }}</p>
               <UiIconButton
-                tone="poster"
                 :icon="userPaused ? Play : Pause"
                 :label="userPaused ? t('story.play') : t('story.pause')"
                 :aria-pressed="userPaused"
                 no-tooltip
                 @click="userPaused = !userPaused"
               />
-              <UiIconButton tone="poster" :icon="X" :label="t('common.close')" no-tooltip @click="emit('close')" />
+              <UiIconButton :icon="X" :label="t('common.close')" no-tooltip @click="emit('close')" />
             </div>
           </div>
 
           <div class="stories__actions">
             <UiButton
-              variant="poster-soft"
-              size="lg"
+              variant="secondary"
               :icon="Download"
               :disabled="image.busy.value"
               @click="deliver([index], false)"
             >
               {{ t('story.saveSlide') }}
             </UiButton>
-            <UiButton
-              variant="poster-soft"
-              size="lg"
-              :icon="Share"
-              :loading="image.busy.value"
-              @click="deliver([index], true)"
-            >
+            <UiButton variant="secondary" :icon="Share" :loading="image.busy.value" @click="deliver([index], true)">
               {{ t('story.share') }}
             </UiButton>
           </div>
@@ -204,7 +196,6 @@ watch(
 
         <UiIconButton
           class="stories__arrow stories__arrow--prev"
-          tone="chrome"
           :icon="ChevronLeft"
           :label="t('story.previous')"
           :disabled="index === 0"
@@ -213,7 +204,6 @@ watch(
         />
         <UiIconButton
           class="stories__arrow stories__arrow--next"
-          tone="chrome"
           :icon="ChevronRight"
           :label="t('story.next')"
           :disabled="index === frames.length - 1"

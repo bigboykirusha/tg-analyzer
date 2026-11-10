@@ -6,9 +6,6 @@ import Tooltip from './Tooltip.vue'
  * The round icon button: the third of the three button looks (docs/design-system.md §7), a neutral fill. A
  * coloured context (a poster) re-points the fill through tokens; the look does not change.
  * Sizes follow the buttons: sm 36 · md 44 on a phone, 36 on desktop.
- *
- * Deprecated `tone` aliases, all the same look: `chrome` (header circles; the class stays so the headers can
- * restyle it over a poster), `poster` (inverted for the poster), `plain`, `fill`. Size `lg` = md.
  */
 defineOptions({ inheritAttrs: false })
 
@@ -17,14 +14,13 @@ const props = withDefaults(
     /** Required: the accessible name and the desktop tooltip. */
     label: string
     icon: Component
-    tone?: 'fill' | 'chrome' | 'poster' | 'plain'
-    size?: 'sm' | 'md' | 'lg'
+    size?: 'sm' | 'md'
     to?: string
     loading?: boolean
     disabled?: boolean
     noTooltip?: boolean
   }>(),
-  { tone: 'fill', size: 'md', to: '', loading: false, disabled: false, noTooltip: false },
+  { size: 'md', to: '', loading: false, disabled: false, noTooltip: false },
 )
 
 const attrs = useAttrs()
@@ -32,24 +28,12 @@ const attrs = useAttrs()
 function buttonAttrs() {
   return Object.fromEntries(Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'))
 }
-const classes = computed(() => [
-  'icon-btn',
-  `icon-btn--${props.tone}`,
-  `icon-btn--${props.size === 'sm' ? 'sm' : 'md'}`,
-])
-const onPoster = computed(() => props.tone === 'poster')
+const classes = computed(() => ['icon-btn', `icon-btn--${props.size}`])
 </script>
 
 <template>
   <Tooltip :class="attrs.class" :style="attrs.style" :text="label" :describe="false" :disabled="noTooltip">
-    <NuxtLink
-      v-if="to"
-      v-bind="buttonAttrs()"
-      :to="to"
-      :class="classes"
-      :data-on-poster="onPoster || undefined"
-      :aria-label="label"
-    >
+    <NuxtLink v-if="to" v-bind="buttonAttrs()" :to="to" :class="classes" :aria-label="label">
       <component :is="icon" aria-hidden="true" />
     </NuxtLink>
     <button
@@ -57,7 +41,6 @@ const onPoster = computed(() => props.tone === 'poster')
       type="button"
       v-bind="buttonAttrs()"
       :class="classes"
-      :data-on-poster="onPoster || undefined"
       :aria-label="label"
       :disabled="disabled || loading"
       :aria-busy="loading || undefined"
@@ -78,7 +61,7 @@ const onPoster = computed(() => props.tone === 'poster')
   width: var(--control-md);
   height: var(--control-md);
   border-radius: var(--radius-pill);
-  background: var(--btn-fill, var(--surface-2));
+  background: var(--btn-fill, var(--fill-control));
   color: var(--btn-fill-text, var(--text));
   -webkit-tap-highlight-color: transparent;
   transition:
