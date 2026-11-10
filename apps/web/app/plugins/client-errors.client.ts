@@ -19,7 +19,16 @@ type Kind = 'vue' | 'app' | 'window' | 'promise'
 
 const clip = (value: string, max: number) => (value.length > max ? value.slice(0, max) : value)
 /** Addresses may carry tokens or ids in the path or query: keep only the path of a file. */
-const stripUrls = (text: string) => text.replace(/https?:\/\/[^\s)'"]+/g, (url) => new URL(url).pathname)
+function stripUrls(text: string) {
+  return text.replace(/https?:\/\/[^\s)'"]+/g, (url) => {
+    try {
+      return new URL(url).pathname
+    } catch {
+      // A malformed address may still hold a token: cut it whole.
+      return '[url]'
+    }
+  })
+}
 
 function describe(error: unknown) {
   if (error instanceof Error) return { message: error.message, stack: error.stack ?? '' }

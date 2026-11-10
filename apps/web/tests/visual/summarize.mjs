@@ -7,7 +7,7 @@ const dirArg = process.argv[2] || '.'
 const check = process.argv.includes('--check')
 
 // Thresholds (docs/design-system.md §1, POLISH.md §6).
-const LIMITS = { buttonLooks: 3, buttonSizes: 2, textStylesPerScreen: 8, radii: 4 }
+const LIMITS = { buttonLooks: 3, buttonSizes: 2, textStylesPerScreen: 8, textStylesTotal: 8, radii: 4 }
 
 // Rows (list rows, sidebar links) and data chips are tappable but are not buttons.
 const NOT_BUTTONS = /(^|\.)(list-row|router-link-(exact-)?active|menu-item|chip)(\.|$)/
@@ -79,7 +79,7 @@ for (const mode of ['desktop', 'mobile']) {
     `button looks, visual (fill | outline | text | shape; poster and sheet inversions count): ${looks.length}; heights: ${sizes.join(', ')}`,
   )
   const kinds = uniq(buttons.map(kindOf))
-  console.log(`button kinds by class family: ${kinds.length} (${kinds.join(', ')})`)
+  console.log(`button kinds by class family (information only, not checked): ${kinds.length} (${kinds.join(', ')})`)
   const byClass = {}
   for (const b of buttons) (byClass[b.cls.split('.').slice(0, 2).join('.')] ||= new Set()).add(`h${heightOf(b.sig)}`)
   console.log(
@@ -117,9 +117,18 @@ for (const mode of ['desktop', 'mobile']) {
     console.log(`  ${name}: ${lk} / ${hs} / ${sf} / ${ts}`)
     if (ts > LIMITS.textStylesPerScreen) fail(`${name}: ${ts} text styles (limit ${LIMITS.textStylesPerScreen})`)
   }
-  const base = kinds.filter((k) => k !== 'segmented')
-  if (base.length > LIMITS.buttonLooks)
-    fail(`${base.length} button kinds: ${base.join(', ')} (limit ${LIMITS.buttonLooks})`)
+  // The limit is on what the eye tells apart (fill, outline, text colour, shape), not on class names.
+  if (looks.length > LIMITS.buttonLooks) {
+    fail(`${looks.length} visual button looks (limit ${LIMITS.buttonLooks})`)
+    for (const look of looks) console.log(`      ${look}`)
+  }
+  // Text styles over the whole system, not per screen: one scale for every page.
+  const textStyles = uniq(text.map((t) => t.sig))
+  if (textStyles.length > LIMITS.textStylesTotal) {
+    fail(
+      `${textStyles.length} text styles across the system (limit ${LIMITS.textStylesTotal}): ${textStyles.join(', ')}`,
+    )
+  }
   if (sizes.length > LIMITS.buttonSizes) fail(`${sizes.length} button heights (limit ${LIMITS.buttonSizes})`)
   if (Object.keys(radii).length > LIMITS.radii) fail(`${Object.keys(radii).length} radii (limit ${LIMITS.radii})`)
   if (mode === 'mobile')
