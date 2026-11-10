@@ -18,7 +18,7 @@ const props = withDefaults(
     href?: string
     /** A chevron at the end: the row opens something. */
     chevron?: boolean
-    /** The second line wraps instead of being cut (privacy, FAQ). */
+    /** The second line wraps instead of being cut (privacy). */
     wrap?: boolean
     interactive?: boolean
     danger?: boolean
@@ -152,7 +152,7 @@ const tagAttrs = computed(() => {
   white-space: nowrap;
 }
 
-/* Long second lines (privacy, FAQ): wrap, 12 above and below, the icon at the first line. */
+/* Long second lines (privacy): wrap, 12 above and below, the icon at the first line. */
 .list-row--wrap {
   align-items: flex-start;
 }

@@ -4,7 +4,7 @@ import { ArrowLeft } from '../lib/icons'
 /**
  * The header of every public page.
  * Phones: the mark with its word and one quiet link (on the landing «Войти», elsewhere «Приватность»);
- * a step inside a flow (sign-in, FAQ, privacy) has a back circle instead of the mark.
+ * a step inside a flow (sign-in, privacy) has a back circle instead of the mark.
  * Desktop: the mark on the column's edge; «Пример отчёта», «Приватность» and «Войти» on the right —
  * except on sign-in, where the footer carries the documents.
  * The example report puts its own bar here (UiPageBar), like a report in the app.
@@ -12,7 +12,7 @@ import { ArrowLeft } from '../lib/icons'
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const step = computed(() => ['/login', '/faq', '/privacy'].includes(route.path))
+const step = computed(() => ['/login', '/privacy'].includes(route.path))
 const showNav = computed(() => route.path !== '/login')
 const { overPoster } = usePosterHeader()
 

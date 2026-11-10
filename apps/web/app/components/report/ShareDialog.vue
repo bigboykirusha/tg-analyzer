@@ -128,7 +128,14 @@ const title = computed(() =>
         <span class="feature__copy">
           <b class="feature__title">{{ t('share.title', { name }) }}</b>
           <span class="feature__text">{{ t(isGroup ? 'share.ledeGroup' : 'share.lede') }}</span>
-          <UiButton class="feature__watch" variant="primary" size="sm" :icon="Play" :aria-label="t('share.watch')" @click="pick('view')">
+          <UiButton
+            class="feature__watch"
+            variant="primary"
+            size="sm"
+            :icon="Play"
+            :aria-label="t('share.watch')"
+            @click="pick('view')"
+          >
             {{ t('share.watchShort') }}
           </UiButton>
         </span>
