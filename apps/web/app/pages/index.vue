@@ -55,6 +55,7 @@ useHead({
           <HomeCard
             :chat-id="example.chatId"
             :title="t(`landing.${example.key}.title` as MessageKey)"
+            :avatar-title="t(`landing.${example.key}.title` as MessageKey).split(',')[0]"
             :meta="t(`landing.${example.key}.text` as MessageKey)"
             :has-avatar="false"
           >
@@ -124,6 +125,11 @@ useHead({
   gap: var(--card-gap);
 }
 
+/* Cards in one row share its height. */
+.landing__examples > li {
+  display: grid;
+}
+
 /* Phones show two examples; the third waits for the wider screen. */
 .landing__examples > li:nth-child(3) {
   display: none;
@@ -146,11 +152,11 @@ useHead({
   }
 
   .landing__examples {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .landing__examples > li:nth-child(3) {
-    display: block;
+    display: grid;
   }
 }
 </style>

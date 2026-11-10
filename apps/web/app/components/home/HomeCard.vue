@@ -10,6 +10,8 @@ import { hueOf } from '../../lib/hue'
 const props = defineProps<{
   chatId?: string
   title?: string
+  /** The name the avatar's initials come from when the title says more than the name. */
+  avatarTitle?: string
   hasAvatar?: boolean
   /** The quiet line under the name; wraps to two lines, never cut mid-word. */
   meta?: string
@@ -24,7 +26,7 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   <article class="home-card" :data-hue="hue" :aria-busy="skeleton || undefined">
     <div class="home-card__top">
       <UiSkeleton v-if="skeleton" width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-full)" />
-      <ChatAvatar v-else :chat-id="chatId!" :title="title" :has-avatar="hasAvatar" />
+      <ChatAvatar v-else :chat-id="chatId!" :title="avatarTitle ?? title" :has-avatar="hasAvatar" />
       <div v-if="!skeleton" class="home-card__end"><slot name="end" /></div>
     </div>
     <div class="home-card__text">
