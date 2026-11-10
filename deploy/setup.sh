@@ -64,9 +64,14 @@ fi
 
 echo "== Nightly backup at 04:00"
 chmod +x backup.sh update.sh
+if ! command -v crontab >/dev/null 2>&1; then
+  apt-get install -y cron >/dev/null
+  systemctl enable --now cron >/dev/null
+fi
 cron_line="0 4 * * * ${DEPLOY_DIR}/backup.sh >> ${DEPLOY_DIR}/backups/backup.log 2>&1"
 mkdir -p backups
-( crontab -l 2>/dev/null | grep -v "${DEPLOY_DIR}/backup.sh" ; echo "$cron_line" ) | crontab -
+# A fresh server has no crontab yet: `crontab -l` fails and grep finds nothing — neither is an error here.
+{ crontab -l 2>/dev/null | grep -v "${DEPLOY_DIR}/backup.sh" || true; echo "$cron_line"; } | crontab -
 
 echo "== Build and start (the first build takes 5–10 minutes)"
 docker compose up -d --build
