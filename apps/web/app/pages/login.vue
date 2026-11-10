@@ -93,7 +93,10 @@ const RESEND_LABEL: Partial<Record<CodeDeliveryType, string>> = {
 const codeDescription = computed(() => {
   const value = delivery.value
   if (!value) return t('login.codeDescription')
-  return t(DESCRIPTION[value.type] as 'login.delivery.app', { phone: phone.value, email: value.emailPattern ?? '' })
+  return t(DESCRIPTION[value.type] as 'login.delivery.app', {
+    phone: formatPhoneNumber(phone.value),
+    email: value.emailPattern ?? '',
+  })
 })
 /** Telegram did not send a code this app can receive; the user has to act. */
 const deliveryBlocked = computed(

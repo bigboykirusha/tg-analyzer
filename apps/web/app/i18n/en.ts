@@ -291,7 +291,7 @@ export const en = {
   'login.passwordDescription':
     'Your Telegram has two-step verification. Telegram checks the password; we do not store it.',
   'login.passwordHint': 'Hint: {hint}',
-  'login.passwordLabel': '2FA password',
+  'login.passwordLabel': 'Cloud password',
   'login.passwordPlaceholder': 'Your Telegram password',
   'login.passwordTitle': 'Cloud password',
   'login.phoneDescription': 'We send a code to the Telegram app.',
@@ -302,6 +302,8 @@ export const en = {
   'login.resendCall': 'Call me instead',
   'login.resendIn': 'Send again in {time}',
   'login.resendSms': 'Send by SMS',
+  'login.trust': 'We read only the chat you pick and keep only statistics, never the texts of your messages.',
+  'login.trustLink': 'Privacy',
   'login.seoTitle': 'Sign in',
   'login.signIn': 'Sign in',
   'login.passwordForgot': 'Forgot the password? It can only be reset in Telegram.',

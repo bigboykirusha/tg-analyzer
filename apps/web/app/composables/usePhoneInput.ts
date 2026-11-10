@@ -102,6 +102,27 @@ function formatGroups(digits: string, pattern: number[]) {
   return groups.join(' ')
 }
 
+/** «+995599914935» as «+995 599 91 49 35»; anything unrecognised is returned as it came. */
+export function formatPhoneNumber(normalized: string) {
+  const digits = onlyDigits(normalized)
+  const sorted = [...PHONE_COUNTRIES].sort((left, right) => right.dialCode.length - left.dialCode.length)
+  let match = sorted.find((item) => digits.startsWith(onlyDigits(item.dialCode)))
+  if (match?.dialCode === '+7' && /^7[67]/.test(digits)) match = PHONE_COUNTRIES.find((item) => item.code === 'KZ')
+  if (!match) return normalized
+  const start = onlyDigits(match.dialCode).length
+  const national = digits.slice(start, start + match.maxDigits)
+  const groups: string[] = []
+  let cursor = 0
+  for (const size of match.pattern) {
+    const part = national.slice(cursor, cursor + size)
+    if (!part) break
+    groups.push(part)
+    cursor += size
+  }
+  if (cursor < national.length) groups.push(national.slice(cursor))
+  return [match.dialCode, ...groups].join(' ')
+}
+
 export function usePhoneInput(initialCountry = 'RU') {
   const countryCode = ref(initialCountry)
   const nationalDigits = ref('')
