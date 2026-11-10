@@ -37,9 +37,19 @@ const sides = computed(() => {
       key: side,
       name: side === 'mine' ? you.value : name.value,
       lines: [
-        reaction[side] && { key: 'reaction', emoji: reaction[side]!.value, label: t('report.favourites.reaction') },
-        sticker[side]?.emoji && { key: 'sticker', emoji: sticker[side]!.emoji!, label: t('report.favourites.sticker') },
-      ].filter((line): line is { key: string; emoji: string; label: string } => Boolean(line)),
+        reaction[side] && {
+          key: 'reaction',
+          emoji: reaction[side]!.value,
+          label: t('report.favourites.reaction'),
+          count: reaction[side]!.count,
+        },
+        sticker[side]?.emoji && {
+          key: 'sticker',
+          emoji: sticker[side]!.emoji!,
+          label: t('report.favourites.sticker'),
+          count: sticker[side]!.count,
+        },
+      ].filter((line): line is { key: string; emoji: string; label: string; count: number } => Boolean(line)),
     }))
     .filter((side) => side.lines.length)
 })
@@ -59,6 +69,7 @@ const sides = computed(() => {
         <p v-for="line in side.lines" :key="line.key" class="sides__line">
           <span class="t-h2">{{ line.emoji }}</span>
           <span class="t-label sides__label">{{ line.label }}</span>
+          <span class="t-label">{{ formatNumber(line.count) }}</span>
         </p>
       </div>
     </div>

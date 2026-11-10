@@ -120,3 +120,10 @@ test('a bare «утро» greets, while «до утра» does not', () => {
   assert.equal(analyzeMessageText('сидели до утра').greeting, null)
   assert.equal(analyzeMessageText('утро было тяжёлое').greeting, null)
 })
+
+test('days and weekdays in any case never become top words', () => {
+  const { keywords } = analyzeMessageText(
+    'в пятницу через три дня, потом в субботу, дней, на выходных, в воскресенье кино',
+  )
+  assert.deepEqual(keywords, ['кино'])
+})

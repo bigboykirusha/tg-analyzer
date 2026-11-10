@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { GroupReportDto } from '@tg-analyzer/shared'
+import type { GroupParticipantDto, GroupReportDto } from '@tg-analyzer/shared'
 
 /**
  * «Люди»: who takes part and how — you first, then the others by their share of the messages; a tap
@@ -34,6 +34,9 @@ watch(wide, () => {
   sheetOpen.value = false
 })
 
+/** The heading already says «Ядро — N»; a role is spelled out only where it adds something. */
+const roleLabel = (role: GroupParticipantDto['role']) => (role === 'anchor' ? undefined : t(`group.roles.${role}`))
+
 /** «Ядро — четыре человека», or that nobody leads. */
 const answer = computed(() => {
   const core = props.group.participants.filter((person) => person.role === 'anchor').length
@@ -47,7 +50,7 @@ const answer = computed(() => {
       <ReportSection id="part-people" :title="t('group.tabs.people')" :answer="answer">
         <div class="people__list">
           <template v-for="person in visible" :key="person.id">
-            <UiListRow v-if="person.isSelf" :title="nameOf(person)" :subtitle="t(`group.roles.${person.role}`)">
+            <UiListRow v-if="person.isSelf" :title="nameOf(person)" :subtitle="roleLabel(person.role)">
               <template #leading><UiAvatar :title="nameOf(person)" side="mine" size="md" /></template>
               <template #trailing>
                 <span class="people__share people__share--self">{{ formatPercent(person.messageShare) }}</span>
@@ -58,7 +61,7 @@ const answer = computed(() => {
               as="button"
               chevron
               :title="nameOf(person)"
-              :subtitle="t(`group.roles.${person.role}`)"
+              :subtitle="roleLabel(person.role)"
               :selected="wide && person.id === selected?.id"
               :aria-pressed="wide ? person.id === selected?.id : undefined"
               :aria-haspopup="wide ? undefined : 'dialog'"

@@ -53,13 +53,9 @@ const pairs = computed(() =>
   box-shadow: none;
 }
 
-/* Two small avatars, the second overlapping the first. */
+/* Two small avatars side by side, nothing cut off. */
 .duo {
   display: inline-flex;
-}
-
-.duo > :last-child {
-  margin-left: calc(-1 * var(--space-2));
-  box-shadow: var(--ring-cutout);
+  gap: var(--space-1);
 }
 </style>

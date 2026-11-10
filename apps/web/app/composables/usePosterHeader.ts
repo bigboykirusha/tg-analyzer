@@ -25,8 +25,11 @@ function syncBrowserChrome() {
     const tint = poster || THEME_COLOR_NEUTRAL[dark ? 'dark' : 'light']
     if (tint === last) return
     last = tint
-    // The canvas behind the page: what a bounce at the top shows, and the page colour Safari 26 samples.
-    root.style.backgroundColor = poster
+    // The canvas behind the page at the very top only (what a bounce shows, what Safari 26 samples): a strip of
+    // the poster colour, never the whole canvas, so the scrollbar gutter and the page's bottom stay neutral.
+    root.style.backgroundImage = poster ? `linear-gradient(${poster}, ${poster})` : ''
+    root.style.backgroundSize = poster ? '100% 240px' : ''
+    root.style.backgroundRepeat = 'no-repeat'
     const tag = meta()
     if (tag) tag.content = tint
   }
