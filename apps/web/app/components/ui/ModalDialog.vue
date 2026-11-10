@@ -144,9 +144,8 @@ watch(open, (value) => value && drag.reset())
 
 .modal-panel {
   --field-bg: var(--fill-raised);
-  --btn-tinted-bg: var(--fill-raised);
-  --icon-btn-fill: var(--fill-raised);
-  --btn-secondary-bg: transparent;
+  --btn-fill: var(--fill-raised);
+  --btn-segment-on: var(--surface-raised);
   /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
   --group-bg: transparent;
   --group-padding: 0;
@@ -160,7 +159,7 @@ watch(open, (value) => value && drag.reset())
   max-height: 84dvh;
   overflow: hidden;
   padding: var(--space-6);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-sheet);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
 }
@@ -223,14 +222,14 @@ watch(open, (value) => value && drag.reset())
 }
 
 .modal-title {
-  font: var(--text-h3);
-  letter-spacing: var(--tracking-h3);
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
   text-wrap: balance;
 }
 
 .modal-description {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .modal-body {
@@ -295,7 +294,7 @@ watch(open, (value) => value && drag.reset())
     max-width: none;
     max-height: 100%;
     padding: 0 var(--page-gutter) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
     transform: translateY(var(--sheet-drag, 0));
     transition: transform var(--duration-sheet) var(--ease-drawer);
   }
@@ -314,7 +313,7 @@ watch(open, (value) => value && drag.reset())
   .modal-grabber {
     width: var(--control-sm);
     height: var(--space-1);
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-pill);
     background: var(--border-strong);
   }
 

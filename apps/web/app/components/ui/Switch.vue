@@ -59,12 +59,12 @@ const model = defineModel<boolean>({ required: true })
 }
 
 .switch-row__label {
-  font: var(--text-title);
+  font: var(--text-body);
 }
 
 .switch-row__hint {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .switch {
@@ -73,7 +73,7 @@ const model = defineModel<boolean>({ required: true })
   flex: none;
   width: var(--switch-width);
   height: var(--switch-height);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--switch-off);
   appearance: none;
   cursor: inherit;
@@ -87,7 +87,7 @@ const model = defineModel<boolean>({ required: true })
   left: var(--switch-inset);
   width: calc(var(--switch-height) - var(--switch-inset) * 2);
   height: calc(var(--switch-height) - var(--switch-inset) * 2);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--switch-knob);
   box-shadow: var(--shadow-float);
   transition: transform var(--duration-fast) var(--spring-snappy);

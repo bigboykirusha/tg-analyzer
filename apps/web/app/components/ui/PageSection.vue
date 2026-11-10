@@ -47,7 +47,7 @@ const headingId = computed(() => `${props.id ?? fallbackId}-title`)
 
 .page-section__hint {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .page-section__actions {

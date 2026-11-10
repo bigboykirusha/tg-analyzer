@@ -4,8 +4,7 @@
  * under (or over) its trigger. It only draws the panel; the owner decides when it shows, wraps it in
  * `<Transition name="menu-panel">` and handles keys. Rows inside are UiListRow / UiMenuItem.
  *
- * Geometry is concentric: the panel corner (--radius-lg 24) minus its padding (8) is the row corner
- * (--radius-md 16).
+ * The panel is a card (--radius-card), its rows are wells (--radius-well).
  */
 withDefaults(
   defineProps<{
@@ -44,7 +43,7 @@ defineExpose({ el })
   max-height: var(--menu-max-height);
   overflow: hidden;
   padding: var(--space-1);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
 }

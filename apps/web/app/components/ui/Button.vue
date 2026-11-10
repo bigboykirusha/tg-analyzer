@@ -3,17 +3,19 @@ import type { Component } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 
 /**
- * One button family (docs/design/portrait-v3). Monochrome: colour means a person, never an action.
- *   primary   ink — one per screen
- *   secondary a hairline ring — the default
- *   tinted    a grey fill — quiet actions in tiles («Все чаты», «Сбросить поиск»)
- *   plain     text only — «Отменить», «Открыть»
- *   danger    red on a soft red fill — only what destroys
- *   poster / poster-soft  on a person's poster: ink, or a translucent chip
- *   link      inline, underlined, takes the surrounding type
+ * One button family: three looks, two sizes (docs/design-system.md §7). Monochrome — colour means a person,
+ * never an action; a coloured context (a poster) re-points the fills through tokens and the same looks come out
+ * inverted.
+ *   primary    ink fill — the one main action of a screen or card
+ *   secondary  neutral fill — everything else (the default)
+ *   (icon      a round neutral fill — UiIconButton)
+ *   link       inline text inside copy, not a button
+ * sm 36 · md 44 on a phone, 36 on desktop.
+ *
+ * Deprecated aliases, kept so screens not yet rewritten render: `poster` = primary and `poster-soft` = secondary
+ * (both inverted for the poster), `tinted` and `plain` = secondary, `danger` = secondary with red text; size `lg` = md.
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'tinted' | 'plain' | 'danger' | 'poster' | 'poster-soft' | 'link'
-/** sm 36 everywhere (rows, filters) · md 44 on a phone, 36 on desktop · lg 44 everywhere (the one action of a card). */
+export type ButtonVariant = 'primary' | 'secondary' | 'link' | 'tinted' | 'plain' | 'danger' | 'poster' | 'poster-soft'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
 defineOptions({ inheritAttrs: false })
@@ -32,11 +34,29 @@ const props = withDefaults(
 )
 
 const attrs = useAttrs()
-const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.size}`, { 'btn--block': props.block }])
+const kind = computed(() => {
+  if (props.variant === 'primary' || props.variant === 'poster') return 'primary'
+  if (props.variant === 'link') return 'link'
+  return 'secondary'
+})
+const onPoster = computed(() => props.variant === 'poster' || props.variant === 'poster-soft')
+const classes = computed(() => [
+  'btn',
+  `btn--${kind.value}`,
+  `btn--${props.size === 'sm' ? 'sm' : 'md'}`,
+  { 'btn--danger': props.variant === 'danger', 'btn--block': props.block },
+])
 </script>
 
 <template>
-  <NuxtLink v-if="to" v-bind="attrs" :to="to" :class="classes" :aria-busy="loading || undefined">
+  <NuxtLink
+    v-if="to"
+    v-bind="attrs"
+    :to="to"
+    :class="classes"
+    :data-on-poster="onPoster || undefined"
+    :aria-busy="loading || undefined"
+  >
     <span v-if="loading" class="spinner" aria-hidden="true" />
     <component :is="icon" v-else-if="icon" aria-hidden="true" />
     <slot v-else name="icon" />
@@ -47,6 +67,7 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
     type="button"
     v-bind="attrs"
     :class="classes"
+    :data-on-poster="onPoster || undefined"
     :disabled="disabled || loading"
     :aria-busy="loading || undefined"
   >
@@ -69,9 +90,8 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   max-width: 100%;
   height: var(--control-md);
   padding: 0 var(--space-4);
-  border-radius: var(--radius-full);
-  color: var(--text);
-  font: var(--text-ui);
+  border-radius: var(--radius-pill);
+  font: var(--text-label);
   text-align: center;
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
@@ -85,12 +105,7 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   gap: var(--space-1);
   height: var(--control-sm);
   padding: 0 var(--space-3);
-  font: var(--text-small-strong);
   --icon-size: var(--icon-sm);
-}
-
-.btn--lg {
-  padding: 0 var(--space-6);
 }
 
 /* Compact controls still answer a 44 px tap. */
@@ -111,44 +126,24 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
 }
 
 .btn--primary {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--btn-ink, var(--accent));
+  color: var(--btn-ink-text, var(--on-accent));
 }
 
 .btn--secondary {
-  background: var(--btn-secondary-bg, var(--surface));
-  box-shadow: var(--ring-strong);
-}
-
-.btn--tinted {
-  background: var(--btn-tinted-bg, var(--surface-2));
-}
-
-.btn--plain {
-  padding: 0 var(--space-2);
+  background: var(--btn-fill, var(--surface-2));
+  color: var(--btn-fill-text, var(--text));
 }
 
 .btn--danger {
-  background: var(--danger-subtle);
   color: var(--danger);
-}
-
-.btn--poster {
-  background: var(--on-poster);
-  color: var(--poster);
-}
-
-.btn--poster-soft {
-  background: var(--on-poster-chip);
-  color: var(--on-poster);
 }
 
 .btn.btn--link {
   height: auto;
   padding: 0;
-  border-radius: var(--radius-mark);
+  border-radius: var(--radius-well);
   font: inherit;
-  font-weight: 500;
   text-decoration: underline;
   text-decoration-color: var(--border-strong);
   text-underline-offset: 3px;
@@ -156,12 +151,10 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
 
 @media (hover: hover) and (pointer: fine) {
   .btn--primary:hover {
-    background: var(--accent-hover);
+    background: var(--btn-ink-hover, var(--accent-hover));
   }
 
-  .btn--secondary:hover,
-  .btn--plain:hover,
-  .btn--tinted:hover {
+  .btn--secondary:hover {
     background-image: linear-gradient(var(--hover), var(--hover));
   }
 

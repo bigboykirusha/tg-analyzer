@@ -139,7 +139,7 @@ defineExpose({ focus: () => inputRef.value?.focus(), el: inputRef })
   gap: var(--space-3);
   height: var(--control-md);
   padding: 0 var(--space-4);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-well);
   background: var(--field-bg, var(--surface-2));
   box-shadow: var(--ring-hairline);
   font: var(--text-body);
@@ -195,7 +195,7 @@ defineExpose({ focus: () => inputRef.value?.focus(), el: inputRef })
   margin-right: calc(-1 * var(--space-2));
   width: var(--control-sm);
   height: var(--control-sm);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   color: var(--text-muted);
 }
 

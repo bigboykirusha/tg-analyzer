@@ -139,7 +139,7 @@ const tagAttrs = computed(() => {
 
 .list-row__title {
   overflow: hidden;
-  font: var(--text-title);
+  font: var(--text-body);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -147,7 +147,7 @@ const tagAttrs = computed(() => {
 .list-row__subtitle {
   overflow: hidden;
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -205,7 +205,7 @@ const tagAttrs = computed(() => {
   content: '';
   position: absolute;
   inset: var(--space-0-5) calc(-1 * var(--space-3));
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-well);
   background: transparent;
   pointer-events: none;
   transition: background-color var(--transition-fast);

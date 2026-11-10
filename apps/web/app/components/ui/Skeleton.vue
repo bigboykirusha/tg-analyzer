@@ -8,7 +8,7 @@
 withDefaults(defineProps<{ width?: string; height?: string; radius?: string }>(), {
   width: '100%',
   height: undefined,
-  radius: 'var(--radius-xs)',
+  radius: 'var(--radius-well)',
 })
 </script>
 

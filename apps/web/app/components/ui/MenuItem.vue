@@ -51,9 +51,9 @@ withDefaults(
   width: 100%;
   min-height: var(--control-md);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-well);
   color: var(--text);
-  font: var(--text-ui);
+  font: var(--text-label);
   text-align: left;
   -webkit-tap-highlight-color: transparent;
   transition: background-color var(--transition-fast);
@@ -88,7 +88,7 @@ withDefaults(
 .menu-item__hint,
 .menu-item__meta {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .menu-item--danger,

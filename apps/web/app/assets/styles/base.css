@@ -132,7 +132,11 @@ svg.lucide {
   --icon-size: var(--icon-lg);
 }
 
-/* ─── Type: nine roles (tokens.css). The classes carry the tracking. ───────── */
+/*
+ * ─── Type: seven roles (tokens.css): .t-display .t-figure .t-h1 .t-h2 .t-body .t-label .t-caption ──────
+ * The classes carry the tracking. .t-h3 .t-num .t-title .t-ui .t-small .t-small-strong are deprecated
+ * aliases (the token of the same name points at one of the seven); new code uses the seven.
+ */
 
 b,
 strong {
@@ -189,6 +193,10 @@ strong {
   font: var(--text-body);
 }
 
+.t-label {
+  font: var(--text-label);
+}
+
 .t-ui {
   font: var(--text-ui);
 }
@@ -219,7 +227,6 @@ strong {
 .link {
   border-radius: var(--radius-mark);
   color: var(--text);
-  font-weight: 500;
   text-decoration: underline;
   text-decoration-color: var(--border-strong);
   text-underline-offset: 3px;

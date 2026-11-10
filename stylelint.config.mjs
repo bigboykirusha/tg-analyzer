@@ -119,7 +119,12 @@ export default {
   rules: {
     'scale-unlimited/declaration-strict-value': strictValue(),
     'declaration-property-value-allowed-list': { 'font-weight': FONT_WEIGHTS },
-    'declaration-property-value-disallowed-list': { '/^(transition|animation)$/': [RAW_TIME] },
+    'declaration-property-value-disallowed-list': {
+      '/^(transition|animation)$/': [RAW_TIME],
+      // Text sizes are the seven roles (--text-*) or a bare --size-*: no computed fractions of anything
+      // (that is how avatars once got 9.6, 12.8 and 25.6 px).
+      '/^font(-size)?$/': [String.raw`/calc\(/`, String.raw`/\d(em|rem)\b/`],
+    },
     'function-disallowed-list': COLOR_FUNCTIONS,
     'color-no-hex': true,
     'color-named': 'never',
