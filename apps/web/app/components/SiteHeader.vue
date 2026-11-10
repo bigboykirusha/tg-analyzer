@@ -69,17 +69,10 @@ function back(event: MouseEvent) {
   z-index: var(--z-header);
   padding-top: env(safe-area-inset-top, 0px);
   background: var(--bg);
-  transition: background-color var(--transition-fast);
 }
 
 .site-header.is-over-poster {
   background: var(--poster);
-  color: var(--on-poster);
-}
-
-.site-header.is-over-poster :deep(.icon-btn--chrome) {
-  background: var(--on-poster-chip);
-  box-shadow: none;
   color: var(--on-poster);
 }
 

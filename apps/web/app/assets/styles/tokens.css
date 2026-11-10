@@ -124,6 +124,8 @@
   --sidebar-selection: var(--gray-a2);
   /* Bars that content scrolls under: a material, never a flat colour. */
   --toolbar-glass: rgba(242, 242, 247, 0.8);
+  /* The app bar over a page of coloured cards: dense enough that no card's colour shows through. */
+  --header-glass: rgba(242, 242, 247, 0.94);
   --glass-filter: saturate(180%) blur(20px);
   --border: var(--gray-4);
   --border-strong: var(--gray-5);
@@ -232,6 +234,7 @@
   --sidebar-glass: var(--night-1);
   --sidebar-selection: var(--night-3);
   --toolbar-glass: rgba(0, 0, 0, 0.72);
+  --header-glass: rgba(0, 0, 0, 0.92);
   --border: var(--night-4);
   --border-strong: var(--night-5);
   --hover: var(--night-a1);
@@ -627,6 +630,7 @@
 @media (prefers-reduced-transparency: reduce) {
   :root {
     --toolbar-glass: var(--bg);
+    --header-glass: var(--bg);
     --room-glass: var(--room);
     --glass-filter: none;
   }

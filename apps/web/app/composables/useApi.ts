@@ -57,8 +57,23 @@ function guardSession(auth: ReturnType<typeof useAuthStore>) {
   }
 }
 
+/** The refresh the page asked for before the app started (spa-loading-template.html); answers once. */
+async function takeEarlyRefresh(): Promise<AuthSuccessResponse | null | undefined> {
+  if (!import.meta.client) return undefined
+  const holder = window as { __tgEarlyRefresh?: Promise<Response | null> }
+  const early = holder.__tgEarlyRefresh
+  delete holder.__tgEarlyRefresh
+  const response = await early
+  if (!response) return undefined
+  if (response.status === 401) return null
+  if (!response.ok) return undefined
+  return (await response.json()) as AuthSuccessResponse
+}
+
 async function requestRefresh(): Promise<AuthSuccessResponse | null> {
   try {
+    const early = await takeEarlyRefresh()
+    if (early !== undefined) return early
     return await ofetch<AuthSuccessResponse>('/api/v1/auth/refresh', {
       method: 'POST',
       credentials: 'include',
