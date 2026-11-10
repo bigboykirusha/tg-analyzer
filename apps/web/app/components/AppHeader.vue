@@ -41,9 +41,7 @@ const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
   top: 0;
   z-index: var(--z-header);
   padding-top: env(safe-area-inset-top, 0px);
-  transition:
-    background-color var(--transition-fast),
-    box-shadow var(--transition-fast);
+  /* No colour transition: browsers sample this bar's colour for their own chrome, and a half-way colour can stick. */
 }
 
 .app-bar__inner {
@@ -96,7 +94,7 @@ const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
 
 /* Scrolled: the material, one hairline. */
 .app-bar.is-scrolled {
-  background: var(--room-glass);
+  background: var(--header-glass);
   box-shadow: var(--divider-bottom);
   -webkit-backdrop-filter: var(--glass-filter);
   backdrop-filter: var(--glass-filter);
@@ -105,12 +103,6 @@ const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
 /* Over the poster the bar is the poster; its floating circles become chips on it. */
 .app-bar.is-over-poster {
   background: var(--poster);
-  color: var(--on-poster);
-}
-
-.app-bar.is-over-poster :deep(.icon-btn--chrome) {
-  background: var(--on-poster-chip);
-  box-shadow: none;
   color: var(--on-poster);
 }
 

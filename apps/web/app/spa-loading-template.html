@@ -2,9 +2,11 @@
   // A direct link into the cabinet: ask for the session now, while the app's scripts are still downloading,
   // instead of after they have started. useApi's requestRefresh takes this one request over (once).
   if (/^\/(dashboard|new|account|chat)(\/|$)/.test(location.pathname)) {
-    window.__tgEarlyRefresh = fetch('/api/v1/auth/refresh', { method: 'POST', credentials: 'include' }).catch(function () {
-      return null
-    })
+    window.__tgEarlyRefresh = fetch('/api/v1/auth/refresh', { method: 'POST', credentials: 'include' }).catch(
+      function () {
+        return null
+      },
+    )
   }
 </script>
 <div class="startup-loading" role="progressbar" aria-label="TG Analyzer">
