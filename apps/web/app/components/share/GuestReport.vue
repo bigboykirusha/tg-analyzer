@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { fillDailyGaps, type PublicReportDto } from '@tg-analyzer/shared'
-import { parseWindow } from '../../lib/persona'
+import { fillDailyGaps, isEven, type PublicReportDto } from '@tg-analyzer/shared'
+import { nbsp } from '../../lib/nbsp'
 
 /**
- * A report opened by a shared link, without signing in: the main things on one screen — who writes
- * more, who replies faster, the hours, the days — and, when the author allowed it, the words. Names
- * are the author's and the other side's («Автор» and «Собеседник» when hidden); «вы» is never said,
- * because the reader is the other side. It ends on an invitation to one's own report.
- *
- * A phone folds reply time, the peak and the days into one tile «Коротко» and floats the invitation.
+ * A report opened by a shared link, without signing in: the same composition as the owner's report —
+ * the poster, then the cards of one anatomy («Баланс», «Время», «Слова», «Эмодзи и реакции») — told in
+ * the third person: the author's name stands where the owner reads «вы» («Мила и Аня пишут на равных»),
+ * because the reader is the other side. Words and emoji come only when the author allowed them. It ends
+ * on an invitation to one's own report, a card in the flow, so it never covers the text.
  */
 const props = defineProps<{ share: PublicReportDto }>()
-const { t, tc, formatNumber, formatDuration, formatDay } = useI18n()
-const wide = useMediaQuery('(min-width: 641px)')
+const { t, tc, formatNumber, formatDuration, formatDay, formatPercent } = useI18n()
 
 const data = computed(() => {
   const value = props.share.data
@@ -37,191 +35,173 @@ const lede = computed(() => {
     : messages
 })
 
-const versus = useVersus(() => data.value)
-const mineShare = computed(() => {
-  const totals = report.value.totals
-  return totals.messages ? Math.round((totals.sent / totals.messages) * 100) : null
+const totals = computed(() => report.value.totals)
+/** «×1,8»: how many times more the leader writes, to a tenth. */
+const times = (ratio: number) => `×${formatNumber(ratio >= 10 ? Math.round(ratio) : Math.round(ratio * 10) / 10)}`
+const lead = computed(() => {
+  const { sent, received } = totals.value
+  if (!sent && !received) return null
+  if (isEven(sent, received)) return { even: true as const }
+  const ratio = Math.max(sent, received) / Math.max(1, Math.min(sent, received))
+  return { even: false as const, figure: times(ratio), name: sent > received ? author.value : partner.value }
 })
-const shareAnswer = computed(() => {
-  const share = mineShare.value
-  if (share === null) return null
-  if (share > 55) return t('publicReport.writesMore', { name: author.value })
-  if (share < 45) return t('publicReport.writesMore', { name: partner.value })
-  return t('report.kpi.even')
-})
-const speed = computed(() => versus.value.speed ?? null)
-const speedAnswer = computed(() => {
-  const item = speed.value
+const answer = computed(() => {
+  const item = lead.value
   if (!item) return null
-  if (!item.lead) return t('report.fmt.speedEven')
-  return t('publicReport.repliesFaster', { name: item.lead === 'mine' ? author.value : partner.value, note: item.note })
+  return item.even
+    ? t('publicReport.even', { me: author.value, name: partner.value })
+    : t('publicReport.writesMore', { name: item.name })
+})
+const rows = computed(() => {
+  const { sent, received, messages } = totals.value
+  const { medianMineSec: mineSec, medianTheirsSec: theirsSec, iWriteFirstPct } = report.value.responses
+  const out = [
+    {
+      key: 'messages',
+      label: t('report.balance.messages'),
+      mine: sent,
+      theirs: received,
+      left: formatPercent((sent / Math.max(1, messages)) * 100),
+      right: formatPercent((received / Math.max(1, messages)) * 100),
+    },
+  ]
+  if (mineSec && theirsSec)
+    out.push({
+      key: 'speed',
+      label: t('report.balance.speed'),
+      mine: 1 / mineSec,
+      theirs: 1 / theirsSec,
+      left: nbsp(formatDuration(mineSec)),
+      right: nbsp(formatDuration(theirsSec)),
+    })
+  if (iWriteFirstPct !== null && !data.value.derived.habitRows.skipped.includes('starts'))
+    out.push({
+      key: 'starts',
+      label: t('report.balance.starts'),
+      mine: iWriteFirstPct,
+      theirs: 100 - iWriteFirstPct,
+      left: formatPercent(iWriteFirstPct),
+      right: formatPercent(100 - iWriteFirstPct),
+    })
+  return out
 })
 
-const peak = computed(() => parseWindow(data.value.derived.availabilityProfile.peakWindow))
-const peakHours = computed(() => {
-  const window = peak.value
-  return window ? Array.from({ length: window.length }, (_, index) => (window.start + index) % 24) : undefined
-})
-const peakAnswer = computed(() =>
-  peak.value ? t('report.time.peak', { from: peak.value.from, to: peak.value.to }) : null,
+const allowed = computed(() => props.share.settings.words)
+const view = computed(() => data.value.derived.words.view)
+const word = computed(() => view.value.wordOfChat)
+const mineWords = computed(() => view.value.vocabulary.mine.slice(0, 5))
+const theirWords = computed(() => view.value.vocabulary.theirs.slice(0, 5))
+const wordsAnswer = computed(() => (word.value ? tc('report.words.word', word.value.count) : t('report.words.differ')))
+const hasWords = computed(
+  () => allowed.value && Boolean(word.value || mineWords.value.length || theirWords.value.length),
 )
-const activeDays = computed(() => {
-  const total = days.value.length
-  if (!total) return null
-  return tc('report.rhythm.activeDays', total, {
-    active: formatNumber(days.value.filter((day) => day.total > 0).length),
-  })
-})
-
-/** The phone's «Коротко»: the same three answers as rows. */
-const brief = computed(() => {
-  const rows: { key: string; label: string; value: string }[] = []
-  const { medianMineSec: mine, medianTheirsSec: theirs } = report.value.responses
-  if (mine !== null && theirs !== null)
-    rows.push({
-      key: 'reply',
-      label: t('publicReport.briefReply'),
-      value:
-        formatDuration(mine) === formatDuration(theirs)
-          ? t('publicReport.bothIn', { time: formatDuration(mine) })
-          : t('publicReport.replyPair', { mine: formatDuration(mine), theirs: formatDuration(theirs) }),
-    })
-  if (peak.value)
-    rows.push({
-      key: 'peak',
-      label: t('publicReport.briefPeak'),
-      value: t('share.window', { from: peak.value.from, to: peak.value.to }),
-    })
-  const total = days.value.length
-  if (total)
-    rows.push({
-      key: 'days',
-      label: t('publicReport.briefDays'),
-      value: tc('share.daysOf', total, { active: formatNumber(days.value.filter((day) => day.total > 0).length) }),
-    })
-  return rows
-})
-const words = computed(() => props.share.settings.words && report.value.vocabulary.topWords.length > 0)
 </script>
 
 <template>
   <div class="guest">
     <ReportPoster :data="data" :heading="heading" :lede="lede" />
     <UiPageContainer>
-      <div class="guest__grid">
+      <div class="guest__flow">
         <h2 class="sr-only">{{ t('publicReport.mainTitle') }}</h2>
-        <ReportSection hero :title="t('report.kpi.whoWritesMore')" :answer="shareAnswer">
-          <ReportLine
-            v-if="mineShare !== null"
-            size="lg"
-            :mine="report.totals.sent"
-            :theirs="report.totals.received"
-            :right-name="partner"
-            :left="`${mineShare}%`"
-            :right="`${100 - mineShare}%`"
-          />
+        <ReportSection
+          v-if="answer"
+          :title="t('report.balance.title')"
+          :figure="lead && !lead.even ? lead.figure : null"
+          :answer="answer"
+        >
+          <div class="guest__rows">
+            <div v-for="row in rows" :key="row.key" class="guest__row">
+              <p class="t-label">{{ row.label }}</p>
+              <ReportLine
+                :mine="row.mine"
+                :theirs="row.theirs"
+                :left="row.left"
+                :right="row.right"
+                :left-name="author"
+                :right-name="partner"
+              />
+            </div>
+          </div>
         </ReportSection>
 
-        <ReportSection v-if="!wide && brief.length" :title="t('publicReport.briefTitle')">
-          <ReportFacts :facts="brief" />
+        <ReportTime :data="data" />
+
+        <ReportSection
+          v-if="hasWords"
+          :title="t('report.words.card')"
+          :figure="word ? `«${word.value}»` : null"
+          :answer="wordsAnswer"
+        >
+          <div v-if="mineWords.length || theirWords.length" class="guest__words">
+            <div v-if="mineWords.length" class="guest__side">
+              <p class="t-label">{{ author }}</p>
+              <WordChips :items="mineWords" :counts="false" tone="mine" />
+            </div>
+            <div v-if="theirWords.length" class="guest__side">
+              <p class="t-label guest__them">{{ partner }}</p>
+              <WordChips :items="theirWords" :counts="false" tone="theirs" />
+            </div>
+          </div>
         </ReportSection>
+        <ReportFavourites v-if="allowed" :data="data" />
 
-        <template v-if="wide">
-          <ReportSection v-if="speed" :title="t('report.duel.speed')" :answer="speedAnswer">
-            <ReportLine
-              size="lg"
-              :bar="false"
-              :mine="speed.pairs[0]!.mine.value"
-              :theirs="speed.pairs[0]!.theirs.value"
-              :right-name="partner"
-              :left="speed.pairs[0]!.mine.text"
-              :right="speed.pairs[0]!.theirs.text"
-            />
-          </ReportSection>
-          <ReportSection v-if="peak" :title="t('report.fmt.clockTitle')" :answer="peakAnswer">
-            <HourlyChart :hourly="report.activity.hourly" :peak="peakHours" />
-          </ReportSection>
-          <ReportSection class="guest__days" :title="t('report.rhythm.heatmapTitle')" :answer="activeDays">
-            <ActivityHeatmap :points="days" />
-          </ReportSection>
-        </template>
-
-        <template v-if="words">
-          <ReportWordOfChat :data="data" />
-          <ReportVocabulary :data="data" />
-          <ReportEmoji :data="data" />
-        </template>
-
-        <section v-if="wide" class="tile guest__invite">
-          <h2 class="guest__invite-title">{{ t('publicReport.endTitle') }}</h2>
-          <p class="guest__invite-text">{{ t('publicReport.endText') }}</p>
-          <UiButton class="guest__invite-action" variant="primary" block to="/login">{{
-            t('publicReport.cta')
-          }}</UiButton>
+        <section class="tile guest__invite">
+          <h2 class="t-h3">{{ t('publicReport.endTitle') }}</h2>
+          <p class="t-label guest__invite-text">{{ t('publicReport.endText') }}</p>
+          <UiButton variant="primary" block to="/login">{{ t('publicReport.cta') }}</UiButton>
         </section>
       </div>
     </UiPageContainer>
-    <UiButton v-if="!wide" class="guest__fab" variant="primary" to="/login">{{ t('publicReport.cta') }}</UiButton>
   </div>
 </template>
 
 <style scoped>
-.guest__grid {
+.guest__flow {
   display: flex;
   flex-direction: column;
   gap: var(--card-gap);
-  padding: var(--space-4) 0 var(--fab-clearance);
+  min-width: 0;
+  padding: var(--space-4) 0 var(--space-6);
 }
 
-/* The invitation floats above the content on a phone, in reach of the thumb. */
-.guest__fab {
-  position: fixed;
-  z-index: var(--z-dock);
-  bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
-  left: 50%;
-  box-shadow: var(--shadow-float);
-  transform: translateX(-50%);
-  white-space: nowrap;
+.guest__rows,
+.guest__words {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.guest__row,
+.guest__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.guest__them {
+  color: var(--them-ink);
 }
 
 .guest__invite {
   gap: var(--space-2);
 }
 
-.guest__invite-title {
-  font: var(--text-h3);
-  letter-spacing: var(--tracking-h3);
-}
-
 .guest__invite-text {
+  margin-bottom: var(--space-2);
   color: var(--text-muted);
-  font: var(--text-small);
 }
 
-.guest__invite-action {
-  margin-top: auto;
-}
-
-@media (min-width: 641px) {
-  .guest__grid {
+@media (min-width: 901px) {
+  .guest__flow {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: var(--space-8) 0 0;
+    align-items: start;
+    padding-top: var(--space-8);
   }
 
-  .guest__grid :deep(.report-section--wide) {
+  .guest__flow > :deep(.report-section--wide),
+  .guest__invite {
     grid-column: 1 / -1;
-  }
-}
-
-/* Desktop: three tiles a row; the days take two, the invitation closes the row. */
-@media (min-width: 901px) {
-  .guest__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .guest__days {
-    grid-column: span 2;
   }
 }
 </style>
