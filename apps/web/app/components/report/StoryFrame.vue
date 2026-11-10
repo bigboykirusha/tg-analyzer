@@ -83,7 +83,7 @@ const tick = (value: number, hour: number) => ({
           </div>
         </div>
 
-        <div v-else-if="frame.kind === 'words'" class="visual visual--words">
+        <div v-else-if="frame.kind === 'words'" class="visual visual--words" :class="{ 'visual--top': !frame.figure }">
           <div v-for="side in frame.sides" :key="side.key" class="side">
             <p v-if="side.label" class="side__label">{{ side.label }}</p>
             <ul class="pills">
@@ -241,6 +241,7 @@ const tick = (value: number, hour: number) => ({
 
 /* Balance: rows of a label, a bar split between you (ink) and them, the two values. */
 .visual--rows {
+  padding-top: calc(var(--f-1) * 6);
   gap: calc(var(--f-1) * 5);
 }
 
@@ -363,6 +364,11 @@ const tick = (value: number, hour: number) => ({
 }
 
 /* Words: chips of each side, then the favourite emoji. */
+/* No word of the chat: the chips follow the title instead of floating in the middle. */
+.visual--top {
+  justify-content: flex-start;
+}
+
 .visual--words {
   gap: calc(var(--f-1) * 7);
 }

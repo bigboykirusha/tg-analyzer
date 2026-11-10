@@ -249,7 +249,7 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
   await page.getByRole('dialog').getByRole('button', { name: 'Смотреть итоги' }).click()
 
   const stories = page.getByRole('dialog', { name: 'Итоги переписки' })
-  // Up to four dense slides: the overview with the total first, then what the data allows.
+  // A private chat has up to four frames: the cover first, then what the data allows.
   await expect.poll(() => stories.locator('.stories__segment').count()).toBeGreaterThanOrEqual(2)
   await expect(stories.locator('.stories__stage .frame__title')).toHaveText('Катя')
   await expect(stories.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1')
