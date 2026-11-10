@@ -119,6 +119,8 @@
   /* Overlays (menus, dialogs, sheets) and the grey fill of controls inside them. */
   --surface-raised: var(--gray-0);
   --fill-raised: var(--gray-3);
+  /* The fill of a secondary button or a round icon on the page: one step darker than the page, so it reads on grey. */
+  --fill-control: var(--gray-4);
   /* The desktop sidebar: one opaque column, its selected row a soft fill. */
   --sidebar-glass: var(--gray-0);
   --sidebar-selection: var(--gray-a2);
@@ -231,6 +233,7 @@
   --skeleton: var(--night-3);
   --surface-raised: var(--night-3);
   --fill-raised: var(--night-6);
+  --fill-control: var(--night-4);
   --sidebar-glass: var(--night-1);
   --sidebar-selection: var(--night-3);
   --toolbar-glass: rgba(0, 0, 0, 0.72);
@@ -402,6 +405,7 @@
   --btn-fill: var(--on-poster-chip);
   --btn-fill-text: var(--on-poster);
   --btn-segment-on: var(--poster);
+  --btn-disabled-text: var(--on-poster-muted);
 }
 
 /* ─── Theme-independent scales ──────────────────────────────────────────── */

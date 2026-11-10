@@ -34,7 +34,6 @@ function back(event: MouseEvent) {
           to="/"
           :label="t('common.back')"
           :icon="ArrowLeft"
-          tone="chrome"
           no-tooltip
           @click="back"
         />

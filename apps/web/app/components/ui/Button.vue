@@ -11,12 +11,11 @@ import type { RouteLocationRaw } from 'vue-router'
  *   (icon      a round neutral fill — UiIconButton)
  *   link       inline text inside copy, not a button
  * sm 36 · md 44 on a phone, 36 on desktop.
- *
- * Deprecated aliases, kept so screens not yet rewritten render: `poster` = primary and `poster-soft` = secondary
- * (both inverted for the poster), `tinted` and `plain` = secondary, `danger` = secondary with red text; size `lg` = md.
+ * On a poster (`[data-poster]`, `[data-on-poster]`) the same looks come out inverted through the `--btn-*` tokens.
+ * There is no danger button: a destructive confirm is primary, a destructive menu row has red text.
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'link' | 'tinted' | 'plain' | 'danger' | 'poster' | 'poster-soft'
-export type ButtonSize = 'sm' | 'md' | 'lg'
+export type ButtonVariant = 'primary' | 'secondary' | 'link'
+export type ButtonSize = 'sm' | 'md'
 
 defineOptions({ inheritAttrs: false })
 
@@ -34,29 +33,11 @@ const props = withDefaults(
 )
 
 const attrs = useAttrs()
-const kind = computed(() => {
-  if (props.variant === 'primary' || props.variant === 'poster') return 'primary'
-  if (props.variant === 'link') return 'link'
-  return 'secondary'
-})
-const onPoster = computed(() => props.variant === 'poster' || props.variant === 'poster-soft')
-const classes = computed(() => [
-  'btn',
-  `btn--${kind.value}`,
-  `btn--${props.size === 'sm' ? 'sm' : 'md'}`,
-  { 'btn--danger': props.variant === 'danger', 'btn--block': props.block },
-])
+const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.size}`, { 'btn--block': props.block }])
 </script>
 
 <template>
-  <NuxtLink
-    v-if="to"
-    v-bind="attrs"
-    :to="to"
-    :class="classes"
-    :data-on-poster="onPoster || undefined"
-    :aria-busy="loading || undefined"
-  >
+  <NuxtLink v-if="to" v-bind="attrs" :to="to" :class="classes" :aria-busy="loading || undefined">
     <span v-if="loading" class="spinner" aria-hidden="true" />
     <component :is="icon" v-else-if="icon" aria-hidden="true" />
     <slot v-else name="icon" />
@@ -67,7 +48,6 @@ const classes = computed(() => [
     type="button"
     v-bind="attrs"
     :class="classes"
-    :data-on-poster="onPoster || undefined"
     :disabled="disabled || loading"
     :aria-busy="loading || undefined"
   >
@@ -131,12 +111,8 @@ const classes = computed(() => [
 }
 
 .btn--secondary {
-  background: var(--btn-fill, var(--surface-2));
+  background: var(--btn-fill, var(--fill-control));
   color: var(--btn-fill-text, var(--text));
-}
-
-.btn--danger {
-  color: var(--danger);
 }
 
 .btn.btn--link {
@@ -167,8 +143,9 @@ const classes = computed(() => [
   transform: scale(var(--press-scale));
 }
 
-.btn:disabled {
-  opacity: var(--opacity-disabled);
+.btn:disabled:not([aria-busy='true']) {
+  background: var(--btn-fill, var(--fill-control));
+  color: var(--btn-disabled-text, var(--text-muted));
 }
 
 /* A loading button keeps its colour: it is busy, not unavailable. */

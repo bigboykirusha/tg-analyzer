@@ -23,7 +23,6 @@ const { t } = useI18n()
       <template v-else>
         <UiIconButton
           class="report-bar__narrow"
-          tone="chrome"
           :icon="Share"
           :label="t('share.open')"
           aria-haspopup="dialog"

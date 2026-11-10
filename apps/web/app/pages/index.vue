@@ -42,8 +42,8 @@ useHead({
       <h1 id="hero-title" class="landing__title">{{ t('landing.title') }} {{ t('landing.titleSoft') }}</h1>
       <p class="landing__lede">{{ t('landing.lede') }}</p>
       <div class="landing__actions landing__actions--wide">
-        <UiButton variant="primary" size="lg" to="/login">{{ t('landing.cta') }}</UiButton>
-        <UiButton size="lg" to="/example">{{ t('landing.nav.example') }}</UiButton>
+        <UiButton variant="primary" to="/login">{{ t('landing.cta') }}</UiButton>
+        <UiButton to="/example">{{ t('landing.nav.example') }}</UiButton>
       </div>
     </section>
     <ul class="landing__examples" :aria-label="t('landing.examplesLabel')">
@@ -59,8 +59,8 @@ useHead({
       </li>
     </ul>
     <div class="landing__actions landing__actions--narrow">
-      <UiButton variant="primary" size="lg" block to="/login">{{ t('landing.cta') }}</UiButton>
-      <UiButton variant="plain" size="lg" block to="/example">{{ t('landing.exampleLink') }}</UiButton>
+      <UiButton variant="primary" block to="/login">{{ t('landing.cta') }}</UiButton>
+      <UiButton variant="secondary" block to="/example">{{ t('landing.exampleLink') }}</UiButton>
     </div>
   </div>
 </template>

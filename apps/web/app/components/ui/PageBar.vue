@@ -45,7 +45,6 @@ const titleId = useId()
           :to="back"
           :label="t('common.back')"
           :icon="ArrowLeft"
-          tone="chrome"
           class="page-bar__back"
           no-tooltip
           @click="goBack"

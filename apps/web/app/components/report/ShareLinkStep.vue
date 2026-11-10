@@ -96,7 +96,7 @@ async function copy() {
       <UiSwitch v-model="settings.words" :label="t('share.link.words')" :hint="t('share.link.wordsHint')" />
     </UiGroup>
     <div class="link-step__actions">
-      <UiButton variant="primary" size="lg" block :icon="Copy" :loading="busy" @click="copy">
+      <UiButton variant="primary" block :icon="Copy" :loading="busy" @click="copy">
         {{ t('share.link.copy') }}
       </UiButton>
       <p class="link-step__note" role="status">{{ status }}</p>

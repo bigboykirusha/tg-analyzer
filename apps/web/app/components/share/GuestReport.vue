@@ -161,9 +161,7 @@ const words = computed(() => props.share.settings.words && report.value.vocabula
         </section>
       </div>
     </UiPageContainer>
-    <UiButton v-if="!wide" class="guest__fab" variant="primary" size="lg" to="/login">{{
-      t('publicReport.cta')
-    }}</UiButton>
+    <UiButton v-if="!wide" class="guest__fab" variant="primary" to="/login">{{ t('publicReport.cta') }}</UiButton>
   </div>
 </template>
 

@@ -77,7 +77,7 @@ async function cancel() {
     :title="t('analysis.cancelTitle')"
     :description="t('analysis.cancelText')"
     :confirm-label="t('analysis.cancel')"
-    variant="danger"
+    variant="primary"
     :loading="cancelling"
     @close="confirming = false"
     @confirm="cancel"

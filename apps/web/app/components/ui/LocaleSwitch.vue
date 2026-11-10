@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Globe } from '../../lib/icons'
 import Button from './Button.vue'
 
 const { locale, setLocale, t } = useI18n()
@@ -11,7 +10,7 @@ function toggleLocale() {
 
 <template>
   <span class="locale-switch">
-    <Button variant="plain" size="sm" :icon="Globe" :aria-label="t('nav.language')" @click="toggleLocale">
+    <Button variant="link" :aria-label="t('nav.language')" @click="toggleLocale">
       {{ locale.toUpperCase() }}
     </Button>
   </span>
@@ -23,6 +22,7 @@ function toggleLocale() {
 }
 
 .locale-switch :deep(.btn) {
-  color: inherit;
+  color: var(--text-muted);
+  text-decoration: none;
 }
 </style>
