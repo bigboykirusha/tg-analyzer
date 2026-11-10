@@ -25,6 +25,24 @@ function formatCountdown(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 }
 
+// The cells take focus as soon as the step shows, so a typed or pasted code is never lost.
+onMounted(() => nextTick(() => otpRef.value?.focus()))
+
+// A wrong code: empty the cells and put the caret back in the first one.
+watch(
+  () => props.error,
+  (value) => {
+    if (!value) return
+    code.value = ''
+    nextTick(() => otpRef.value?.focus())
+  },
+)
+
+/** The last digit sends the code; the «Sign in» button stays for keyboards and screen readers. */
+function complete() {
+  if (!props.loading) emit('submit')
+}
+
 function submit() {
   if (code.value.length !== size.value) {
     otpRef.value?.focus()
@@ -37,7 +55,7 @@ function submit() {
 <template>
   <form class="auth-form" @submit.prevent="submit">
     <Field :label="t('login.codeLabel')" :error="error || null" group hide-label>
-      <OtpInput ref="otpRef" v-model="code" :length="size" />
+      <OtpInput ref="otpRef" v-model="code" :length="size" @complete="complete" />
     </Field>
     <Button variant="link" class="resend" :disabled="resendSeconds > 0 || loading" @click="emit('resend')">
       {{

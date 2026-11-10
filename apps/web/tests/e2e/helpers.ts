@@ -1,4 +1,4 @@
-import type { BrowserContext, Page } from '@playwright/test'
+import { expect, type BrowserContext, type Page } from '@playwright/test'
 
 export async function usePreferences(context: BrowserContext, theme: 'light' | 'dark', locale: 'ru' | 'en' = 'ru') {
   const url = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000'
@@ -28,9 +28,9 @@ export async function signIn(page: Page, options: { navigate?: boolean } = {}) {
   if (options.navigate !== false) await gotoHydrated(page, '/login')
   await page.locator('.phone-input').fill(phone)
   await page.getByRole('button', { name: 'Получить код' }).click()
-  await page.locator('.otp-input').first().click()
+  // The first cell has focus on its own and the fifth digit signs in.
+  await expect(page.locator('.otp-input').first()).toBeFocused()
   await page.keyboard.type('12345')
-  await page.getByRole('button', { name: 'Войти', exact: true }).click()
   await page.waitForURL('**/dashboard')
 }
 

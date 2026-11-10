@@ -99,7 +99,6 @@ test('code autofill and two-step verification complete sign-in', async ({ page }
   await page.locator('.phone-input').fill(phone)
   await page.getByRole('button', { name: 'Получить код' }).click()
   await page.locator('.otp-input').first().fill('12345')
-  await page.getByRole('button', { name: 'Войти', exact: true }).click()
   await page.locator('input[type="password"]').fill('secret')
   await page.getByRole('button', { name: 'Войти', exact: true }).click()
   await page.waitForURL('**/dashboard')
