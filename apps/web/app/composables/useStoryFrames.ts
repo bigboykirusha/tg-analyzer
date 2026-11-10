@@ -1,5 +1,4 @@
-import { fillDailyGaps, isEven, type ReportDto } from '@tg-analyzer/shared'
-import { nbsp } from '../lib/nbsp'
+import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 import { parseWindow } from '../lib/persona'
 import type { MessageKey } from './useI18n'
 
@@ -58,7 +57,7 @@ export type StoryFrameModel =
  * from `derived.words.clean` (never the obscene ones), so a frame never says what the report does not.
  */
 export function useStoryFrames(data: () => ReportDto) {
-  const { t, tc, formatNumber, formatPercent, formatDuration, formatDay } = useI18n()
+  const { t, tc, formatNumber, formatPercent, formatDay } = useI18n()
   const auth = useAuthStore()
   const nameOf = useParticipantName()
 
@@ -66,6 +65,8 @@ export function useStoryFrames(data: () => ReportDto) {
   const isGroup = computed(() => Boolean(report.value.group))
   const name = computed(() => data().summary.title)
   const days = computed(() => fillDailyGaps(report.value.activity.daily))
+  const balanceFacts = useBalance(data)
+  const wordFacts = useWordsFacts(data, { source: 'clean', limit: 4 })
   const plain = (text: string) => text.replace(/\s?г\.$/u, '')
 
   const who = computed<StoryWho>(() => {
@@ -101,56 +102,17 @@ export function useStoryFrames(data: () => ReportDto) {
     }
   }
 
-  /** «Баланс»: the card's answer and figure, the same three rows. */
+  /** «Баланс»: the card's answer and figure, the same three rows (`useBalance`). */
   function balance(): StoryFrameModel | null {
-    const { totals, responses } = report.value
-    const { sent, received } = totals
-    if (!sent && !received) return null
-    const even = isEven(sent, received)
-    const mine = sent > received
-    const ratio = Math.max(sent, received) / Math.max(1, Math.min(sent, received))
-    const times = `×${formatNumber(ratio >= 10 ? Math.round(ratio) : Math.round(ratio * 10) / 10)}`
-    const rows: Extract<StoryFrameModel, { kind: 'balance' }>['rows'] = [
-      {
-        key: 'messages',
-        label: t('report.balance.messages'),
-        mine: sent,
-        theirs: received,
-        left: formatPercent((sent / Math.max(1, totals.messages)) * 100),
-        right: formatPercent((received / Math.max(1, totals.messages)) * 100),
-      },
-    ]
-    const { medianMineSec: mineSec, medianTheirsSec: theirsSec, iWriteFirstPct } = responses
-    if (mineSec && theirsSec)
-      rows.push({
-        key: 'speed',
-        label: t('report.balance.speed'),
-        mine: 1 / mineSec,
-        theirs: 1 / theirsSec,
-        left: nbsp(formatDuration(mineSec)),
-        right: nbsp(formatDuration(theirsSec)),
-      })
-    if (iWriteFirstPct !== null && !data().derived.habitRows.skipped.includes('starts'))
-      rows.push({
-        key: 'starts',
-        label: t('report.balance.starts'),
-        mine: iWriteFirstPct,
-        theirs: 100 - iWriteFirstPct,
-        left: formatPercent(iWriteFirstPct),
-        right: formatPercent(100 - iWriteFirstPct),
-      })
+    if (!balanceFacts.answer.value) return null
     return {
       kind: 'balance',
       key: 'balance',
       label: t('report.balance.title'),
-      figure: even ? undefined : times,
-      title: even
-        ? t('report.balance.even')
-        : mine
-          ? t('report.balance.mine')
-          : t('report.balance.theirs', { name: name.value }),
-      share: (sent / Math.max(1, totals.messages)) * 100,
-      rows,
+      figure: balanceFacts.figure.value ?? undefined,
+      title: balanceFacts.answer.value,
+      share: balanceFacts.share.value,
+      rows: balanceFacts.rows.value,
     }
   }
 
@@ -203,19 +165,17 @@ export function useStoryFrames(data: () => ReportDto) {
         emoji,
       }
     }
-    const word = clean.wordOfChat
-    const mine = clean.vocabulary.mine.slice(0, 4).map((item) => item.value)
-    const theirs = clean.vocabulary.theirs.slice(0, 4).map((item) => item.value)
-    if (!word && !mine.length && !theirs.length) return null
+    const { mine, theirs, figure, answer, any } = wordFacts
+    if (!any.value) return null
     return {
       kind: 'words',
       key: 'words',
       label: t('report.words.card'),
-      figure: word ? `«${word.value}»` : undefined,
-      title: word ? tc('report.words.word', word.count) : t('report.words.differ'),
+      figure: figure.value ?? undefined,
+      title: answer.value,
       sides: [
-        { key: 'mine', label: t('report.words.mine'), items: mine },
-        { key: 'theirs', label: name.value, items: theirs },
+        { key: 'mine', label: t('report.words.mine'), items: mine.value.map((item) => item.value) },
+        { key: 'theirs', label: name.value, items: theirs.value.map((item) => item.value) },
       ].filter((side) => side.items.length),
       emoji: [],
     }
