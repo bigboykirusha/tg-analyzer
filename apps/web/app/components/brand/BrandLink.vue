@@ -41,10 +41,9 @@ withDefaults(defineProps<{ to?: string; bare?: boolean; current?: boolean }>(), 
   min-width: var(--hit-min);
 }
 
-/* The wordmark: the title role at the interface's heaviest weight. */
+/* The wordmark: the label role, so it adds no text style of its own. */
 .brand-link__name {
-  font: var(--text-title);
-  font-weight: 600;
+  font: var(--text-label);
 }
 
 @media (min-width: 901px) {

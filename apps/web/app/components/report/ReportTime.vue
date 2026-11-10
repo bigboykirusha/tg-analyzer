@@ -56,7 +56,7 @@ const facts = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="window && answer" id="part-time" wide :title="t('report.time.title')" :answer="answer">
+  <ReportSection v-if="window && answer" id="part-time" wide hero :title="t('report.time.title')" :answer="answer">
     <HourlyChart :hourly="report.activity.hourly" :peak="peakHours" />
     <dl v-if="facts.length" class="facts">
       <div v-for="fact in facts" :key="fact.key" class="facts__item">
