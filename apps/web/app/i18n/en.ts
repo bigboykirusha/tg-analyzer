@@ -254,7 +254,8 @@ export const en = {
   'landing.privacyLede': 'We read the messages of the chat you pick while it is analysed. Only the statistics stay.',
   'landing.privacyMore': 'How we handle your data',
   'landing.recapTitle': 'A recap like a story',
-  'landing.recapLede': 'The main findings of a chat on a few screens. Save them as a picture or send them to the person.',
+  'landing.recapLede':
+    'The main findings of a chat on a few screens. Save them as a picture or send them to the person.',
   'landing.recapCard': 'You two write almost equally',
   'login.changeNumber': 'Change number',
   'login.codeDescription': 'Telegram sent a code to your app. Enter it here so we can read the chat you pick.',
