@@ -57,15 +57,15 @@ function runAction(toast: ToastMessage) {
 </template>
 
 <style scoped>
-/* Phones: above the floating «Новый анализ», under the thumb. Desktop: top right, out of the way. */
+/* On top, out of the way: a sheet's buttons and the floating «Новый анализ» stay free. */
 .toast-region {
   position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + var(--space-4));
   right: var(--page-gutter);
-  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--control-md) + var(--space-6));
   left: var(--page-gutter);
   z-index: var(--z-toast);
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   align-items: center;
   gap: var(--space-2);
   pointer-events: none;
@@ -73,11 +73,8 @@ function runAction(toast: ToastMessage) {
 
 @media (min-width: 901px) {
   .toast-region {
-    top: var(--space-4);
     right: var(--space-6);
-    bottom: auto;
     left: auto;
-    flex-direction: column;
     align-items: flex-end;
     width: var(--dialog-sm);
   }
