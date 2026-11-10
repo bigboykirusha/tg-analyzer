@@ -32,6 +32,11 @@ import type {
   WsTicketResponse,
 } from './types'
 
+// Zod compiles object parsers with `new Function` and probes for it when a schema is created. A browser under
+// our Content-Security-Policy (no 'unsafe-eval') refuses the probe and logs a violation on every page, so
+// the compiler is off there. It must be set before the first schema below; the server keeps the fast path.
+if (typeof window !== 'undefined') z.config({ jitless: true })
+
 // ---------------------------------------------------------------------------
 // Request validation — used by the API and reusable by the client.
 // ---------------------------------------------------------------------------
