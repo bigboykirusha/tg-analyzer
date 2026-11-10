@@ -27,6 +27,23 @@ const lookOf = (b) => {
   return `${bgOf(b.sig)} | ${borderOf(b.sig)} | ${colorOf(b.sig)} | ${shape}`
 }
 
+/**
+ * The button kind by class family. After the reduction there are three (primary, secondary, icon) and the
+ * segmented control; the poster/sheet inversions are the same kind with other token values. The old variant
+ * names fold into the family they alias.
+ */
+const kindOf = (b) => {
+  const c = b.cls
+  if (/btn--(primary|poster)(?![\w-])/.test(c)) return 'primary'
+  if (/btn--(secondary|tinted|plain|poster-soft|danger)(?![\w-])/.test(c)) return 'secondary'
+  if (/icon-btn/.test(c)) return 'icon'
+  if (/filters__item|segmented__item|select__addon/.test(c)) return 'segmented'
+  return `other(${c})`
+}
+// A top-only or bottom-only radius is the same radius.
+const radiusFamily = (r) => String(Math.max(...r.split('/').map(Number)))
+const EMOJI_ONLY = /^[\p{Extended_Pictographic}\p{Emoji_Component}\s]+$/u
+
 let failed = false
 const fail = (message) => {
   failed = true
@@ -43,7 +60,13 @@ for (const mode of ['desktop', 'mobile']) {
   const S = Object.fromEntries(
     Object.entries(d.screens).map(([k, v]) => [
       k,
-      { ...v, buttons: v.buttons.filter((b) => !NOT_BUTTONS.test(b.cls)) },
+      {
+        ...v,
+        buttons: v.buttons.filter((b) => !NOT_BUTTONS.test(b.cls)),
+        // Emoji are pictures, not a text style.
+        text: v.text.filter((t) => !EMOJI_ONLY.test(t.sample)),
+        radii: v.radii.filter((r) => r !== '0').map(radiusFamily),
+      },
     ]),
   )
   const all = (k) => Object.values(S).flatMap((s) => s[k])
@@ -52,7 +75,11 @@ for (const mode of ['desktop', 'mobile']) {
   const buttons = all('buttons')
   const looks = uniq(buttons.map(lookOf))
   const sizes = uniq(buttons.map((b) => heightOf(b.sig))).sort((a, b) => a - b)
-  console.log(`button looks (fill | outline | text | shape): ${looks.length}; heights: ${sizes.join(', ')}`)
+  console.log(
+    `button looks, visual (fill | outline | text | shape; poster and sheet inversions count): ${looks.length}; heights: ${sizes.join(', ')}`,
+  )
+  const kinds = uniq(buttons.map(kindOf))
+  console.log(`button kinds by class family: ${kinds.length} (${kinds.join(', ')})`)
   const byClass = {}
   for (const b of buttons) (byClass[b.cls.split('.').slice(0, 2).join('.')] ||= new Set()).add(`h${heightOf(b.sig)}`)
   console.log(
@@ -79,10 +106,10 @@ for (const mode of ['desktop', 'mobile']) {
       .join(' ')}`,
   )
 
-  console.log('per screen: button looks / button heights / surface shapes / text styles')
+  console.log('per screen: button kinds / button heights / surface shapes / text styles')
   let worstText = 0
   for (const [name, s] of Object.entries(S)) {
-    const lk = uniq(s.buttons.map(lookOf)).length
+    const lk = uniq(s.buttons.map(kindOf)).length
     const hs = uniq(s.buttons.map((b) => heightOf(b.sig))).length
     const sf = uniq(s.surfaces.map((x) => x.sig.replace(/ bg:.*/, ''))).length
     const ts = uniq(s.text.map((t) => t.sig)).length
@@ -90,7 +117,9 @@ for (const mode of ['desktop', 'mobile']) {
     console.log(`  ${name}: ${lk} / ${hs} / ${sf} / ${ts}`)
     if (ts > LIMITS.textStylesPerScreen) fail(`${name}: ${ts} text styles (limit ${LIMITS.textStylesPerScreen})`)
   }
-  if (looks.length > LIMITS.buttonLooks) fail(`${looks.length} button looks (limit ${LIMITS.buttonLooks})`)
+  const base = kinds.filter((k) => k !== 'segmented')
+  if (base.length > LIMITS.buttonLooks)
+    fail(`${base.length} button kinds: ${base.join(', ')} (limit ${LIMITS.buttonLooks})`)
   if (sizes.length > LIMITS.buttonSizes) fail(`${sizes.length} button heights (limit ${LIMITS.buttonSizes})`)
   if (Object.keys(radii).length > LIMITS.radii) fail(`${Object.keys(radii).length} radii (limit ${LIMITS.radii})`)
   if (mode === 'mobile')

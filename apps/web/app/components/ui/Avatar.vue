@@ -83,30 +83,28 @@ const tooltip = computed(() => {
   background: linear-gradient(var(--room-tint), var(--poster));
   color: var(--on-poster);
   /*
-   * Initials take a size of the type scale, the title weight: the three small circles one step each, a 40 circle
-   * body. Only a circle resized from outside (the «Итоги» frames, in cqw) falls back to 0.4 of its size.
+   * Initials are one of the text roles, never a fraction of the circle: 24 caption, 32 and 40 label, 64 h2. Only a
+   * circle resized from outside (the «Итоги» frames, in cqw) scales its initials with it.
    */
-  --avatar-initials: max(var(--size-body), calc(var(--avatar-size) * 0.4));
-  font-family: var(--font-sans);
+  --avatar-initials: max(var(--size-label), calc(var(--avatar-size) * 0.35));
+  font: var(--text-label);
   font-size: var(--avatar-initials);
-  font-weight: 600;
-  line-height: 1;
   user-select: none;
 }
 
 .avatar--xs {
   --avatar-size: var(--avatar-xs);
-  --avatar-initials: var(--size-caption);
+  font: var(--text-caption);
 }
 
 .avatar--sm {
   --avatar-size: var(--avatar-sm);
-  --avatar-initials: var(--size-label);
+  font: var(--text-label);
 }
 
 .avatar--lg {
   --avatar-size: var(--avatar-lg);
-  --avatar-initials: var(--size-h2);
+  font: var(--text-h2);
 }
 
 .avatar--mine {
