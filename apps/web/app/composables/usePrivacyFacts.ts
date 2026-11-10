@@ -2,7 +2,7 @@ import type { Component } from 'vue'
 import { Ban, Check, Eye, Lock, Power, Trash2 } from '../lib/icons'
 import type { MessageKey } from './useI18n'
 
-/** The privacy promise as six facts (the privacy page and the side of the FAQ share them). */
+/** The privacy promise as six facts. */
 export function usePrivacyFacts() {
   const { t } = useI18n()
   return computed(() =>

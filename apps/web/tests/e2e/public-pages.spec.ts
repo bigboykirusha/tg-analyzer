@@ -15,7 +15,7 @@ test('system dark theme hydrates without replacing the theme icon', async ({ pag
 })
 
 // Every public page shares one frame, so all of them get the same checks.
-for (const path of ['/', '/login', '/faq', '/example'])
+for (const path of ['/', '/login', '/privacy', '/example'])
   for (const theme of ['light', 'dark'] as const) {
     test(`${path} renders without accessibility violations in ${theme}`, async ({ page, context }) => {
       const renderingErrors: string[] = []

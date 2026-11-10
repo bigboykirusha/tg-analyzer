@@ -74,7 +74,7 @@ for (const locale of ['ru', 'en'] as const)
       await usePreferences(context, theme, locale)
       const widths = testInfo.project.name === 'desktop' ? [1440] : [320, 360, 390, 430, 768, 844]
       for (const width of widths) {
-        for (const path of ['/', '/login', '/faq', '/example', '/offline', '/not-found']) {
+        for (const path of ['/', '/login', '/privacy', '/example', '/offline', '/not-found']) {
           await inspectPage(context, width, path, locale, theme, testInfo)
         }
       }

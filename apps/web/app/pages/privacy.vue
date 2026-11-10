@@ -6,7 +6,9 @@
 const { t } = useI18n()
 useSeoMeta({ title: () => t('privacy.pageTitle'), description: () => t('faq.seoDescription') })
 const facts = usePrivacyFacts()
-const questions = computed(() => (['notice', 'phone'] as const).map((key) => t(`faq.q.${key}`)))
+const questions = computed(() =>
+  (['notice', 'phone'] as const).map((key) => ({ key, title: t(`faq.q.${key}`), text: t(`faq.a.${key}`) })),
+)
 
 const policy = computed(() => [
   {
@@ -48,7 +50,13 @@ const policy = computed(() => [
         </UiListRow>
       </UiGroup>
       <UiGroup :header="t('faq.questions')">
-        <UiListRow v-for="question in questions" :key="question" to="/faq" :title="question" chevron />
+        <UiListRow
+          v-for="question in questions"
+          :key="question.key"
+          :title="question.title"
+          :subtitle="question.text"
+          wrap
+        />
       </UiGroup>
     </div>
     <section class="doc__policy" aria-labelledby="policy-title">
