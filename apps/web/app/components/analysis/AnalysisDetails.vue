@@ -37,7 +37,7 @@ async function cancel() {
     <template v-if="view">
       <section class="details-card" :data-hue="view.chatId ? hueOf(view.chatId) : undefined">
         <div class="details-card__head">
-          <ChatAvatar v-if="view.chatId" :chat-id="view.chatId" :title="view.chat" size="md" on-poster />
+          <ChatAvatar v-if="view.chatId" :chat-id="view.chatId" :title="view.chat" size="md" />
           <span class="details-card__copy">
             <strong class="details-card__name">{{ view.chat }}</strong>
             <span v-if="view.reached" class="details-card__reached">{{ view.reached }}</span>
@@ -69,7 +69,7 @@ async function cancel() {
       </UiGroup>
     </template>
     <template #actions>
-      <UiButton variant="tinted" block @click="confirming = true">{{ t('analysis.cancel') }}</UiButton>
+      <UiButton variant="secondary" block @click="confirming = true">{{ t('analysis.cancel') }}</UiButton>
     </template>
   </UiModalDialog>
   <UiConfirmDialog
@@ -85,15 +85,15 @@ async function cancel() {
 </template>
 
 <style scoped>
-/* The chat's poster in miniature: its colour, ink type, the person's deep tone for the bar. */
+/* The same neutral card as everywhere; the person's colour is their avatar and the bar. */
 .details-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--card-padding);
-  border-radius: var(--radius-lg);
-  background: var(--poster);
-  color: var(--on-poster);
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 .details-card__head {
@@ -111,7 +111,7 @@ async function cancel() {
 
 .details-card__name {
   overflow: hidden;
-  font: var(--text-title);
+  font: var(--text-body);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -119,8 +119,8 @@ async function cancel() {
 
 .details-card__reached,
 .details-card__note {
-  color: var(--on-poster-muted);
-  font: var(--text-small);
+  color: var(--text-muted);
+  font: var(--text-label);
 }
 
 .details-card__percent {
@@ -132,14 +132,14 @@ async function cancel() {
   height: var(--bar-height);
   overflow: hidden;
   border-radius: var(--radius-full);
-  background: var(--on-poster-chip);
+  background: var(--border);
 }
 
 .details-card__bar i {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--on-them);
+  background: var(--them);
   transform-origin: left;
   transition: transform var(--duration-chart) var(--ease-standard);
 }

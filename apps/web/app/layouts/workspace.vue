@@ -37,12 +37,13 @@ watch(analysis.finished, (job) => {
         ? { label: t('dashboard.openReport'), onClick: () => void navigateTo(`/chat/${chatId}`) }
         : undefined,
     )
-  else if (job.status === 'failed')
+  else if (job.status === 'failed') {
+    if (job.error === 'chat_too_small' && chatId) workspace.markTooSmall(chatId)
     toast.error(
       t('analysis.failed.title'),
       t(`analysis.error.${job.error ?? 'internal'}`, { min: MIN_REPORT_MESSAGES }),
     )
-  else if (job.status === 'cancelled') toast.info(t('analysis.cancelled'))
+  } else if (job.status === 'cancelled') toast.info(t('analysis.cancelled'))
   void workspace.loadReports().catch(() => undefined)
 })
 </script>
@@ -67,7 +68,6 @@ watch(analysis.finished, (job) => {
         v-else
         :to="{ query: { ...route.query, pick: null } }"
         variant="primary"
-        size="lg"
         class="workspace-dock__new"
         :icon="Plus"
       >

@@ -76,7 +76,7 @@ const C = 2 * Math.PI * R
 .live--card {
   width: 100%;
   padding: var(--space-2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-well);
   background: var(--surface-2);
 }
 
@@ -120,7 +120,7 @@ const C = 2 * Math.PI * R
 
 .live__title {
   overflow: hidden;
-  font: var(--text-small-strong);
+  font: var(--text-label);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -134,6 +134,6 @@ const C = 2 * Math.PI * R
 .live__queued {
   flex: none;
   color: var(--text-muted);
-  font: var(--text-small-strong);
+  font: var(--text-label);
 }
 </style>

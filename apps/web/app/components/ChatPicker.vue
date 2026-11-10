@@ -115,7 +115,7 @@ onMounted(() => {
         :description="search || filter !== 'all' ? t('dashboard.noMatchesText') : t('dashboard.emptyText')"
       >
         <template v-if="search" #action>
-          <UiButton variant="tinted" @click="search = ''">{{ t('dashboard.clearSearch') }}</UiButton>
+          <UiButton variant="secondary" @click="search = ''">{{ t('dashboard.clearSearch') }}</UiButton>
         </template>
       </UiEmptyState>
       <p v-if="visibleChats.length < filteredChats.length" :key="visibleCount" ref="sentinel" class="picker__foot">
@@ -172,7 +172,7 @@ onMounted(() => {
   gap: var(--space-2);
   height: var(--control-sm);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-well);
   background: var(--field-bg, var(--surface-2));
   color: var(--text-muted);
   font: var(--text-body);
@@ -213,7 +213,7 @@ onMounted(() => {
 
 .picker__note {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .picker__skeleton {
@@ -232,7 +232,7 @@ onMounted(() => {
 
 .picker__foot {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
   text-align: center;
 }
 </style>
