@@ -4,7 +4,7 @@ import { Logger, LogLevel } from 'telegram/extensions/Logger.js'
 import { returnBigInt } from 'telegram/Helpers.js'
 import { computeCheck } from 'telegram/Password.js'
 import { StringSession } from 'telegram/sessions/index.js'
-import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
+import type { CodeDeliveryDto, CodeDeliveryType, TelegramSessionDto } from '@tg-analyzer/shared'
 import type { Redis } from 'ioredis'
 import { sleep } from '../lib/time'
 import { normalizeTelegramError, TelegramLoginError } from './errors'
@@ -34,6 +34,20 @@ interface CachedPeer {
   dialog: TelegramDialog
   input: Api.TypeInputPeer
   entity: unknown
+}
+
+/** The authorization as the Telegram app shows it. The IP address is left out on purpose. */
+function toSessionDto(auth: Api.Authorization): TelegramSessionDto {
+  return {
+    hash: String(auth.hash),
+    device: auth.deviceModel,
+    platform: auth.platform,
+    app: `${auth.appName} ${auth.appVersion}`.trim(),
+    country: auth.country,
+    activeAt: new Date(auth.dateActive * 1000).toISOString(),
+    current: auth.current === true,
+    official: auth.officialApp === true,
+  }
 }
 
 async function attempt<T>(work: () => Promise<T>): Promise<T> {
@@ -380,6 +394,17 @@ export class LiveTelegramGateway implements TelegramGateway {
           }
         }
         return previews
+      },
+
+      listSessions: async () => {
+        guard()
+        const result = await attempt(() => client.invoke(new Api.account.GetAuthorizations()))
+        return result.authorizations.map(toSessionDto)
+      },
+
+      endSession: async (hash) => {
+        guard()
+        await attempt(() => client.invoke(new Api.account.ResetAuthorization({ hash: returnBigInt(hash) })))
       },
 
       logOut: async () => {

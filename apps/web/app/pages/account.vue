@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShareLinkKind, UserShareLinkDto } from '@tg-analyzer/shared'
+import type { ShareLinkKind, TelegramSessionDto, UserShareLinkDto } from '@tg-analyzer/shared'
 import type { Locale } from '../composables/useI18n'
 import type { ThemePreference } from '../composables/useTheme'
 
@@ -102,6 +102,52 @@ function linkHint(link: UserShareLinkDto & { on: boolean }) {
     : t('accountPage.linkForever')
 }
 
+/** The account's Telegram sessions, read from Telegram on every visit and not kept anywhere. */
+const devices = ref<TelegramSessionDto[]>([])
+async function loadDevices() {
+  if (!auth.telegramSessionActive) return
+  try {
+    devices.value = (await api('GET /api/v1/telegram/sessions')).sessions
+  } catch {
+    devices.value = []
+  }
+}
+function deviceTitle(device: TelegramSessionDto) {
+  return device.device
+}
+function deviceWhen(device: TelegramSessionDto) {
+  if (device.current) return t('accountPage.deviceThis')
+  const date = new Date(device.activeAt)
+  const time = formatDate(date, { hour: '2-digit', minute: '2-digit' })
+  const dayStart = (value: Date) => new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime()
+  const days = Math.round((dayStart(new Date()) - dayStart(date)) / 86_400_000)
+  if (days <= 0) return t('accountPage.deviceToday', { time })
+  if (days === 1) return t('accountPage.deviceYesterday', { time })
+  return formatDate(date, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+}
+function deviceSubtitle(device: TelegramSessionDto) {
+  const parts = [device.app, device.country, deviceWhen(device)]
+  if (!device.official && !device.current) parts.push(t('accountPage.deviceUnofficial'))
+  return parts.filter(Boolean).join(', ')
+}
+const endingDevice = ref<TelegramSessionDto | null>(null)
+const ending = ref(false)
+async function endDevice() {
+  const device = endingDevice.value
+  if (!device) return
+  ending.value = true
+  try {
+    await api('DELETE /api/v1/telegram/sessions/:hash', { params: { hash: device.hash } })
+    devices.value = devices.value.filter((item) => item.hash !== device.hash)
+    endingDevice.value = null
+  } catch (error) {
+    endingDevice.value = null
+    toast.error(t('accountPage.deviceEndError'), errorMessage(error))
+  } finally {
+    ending.value = false
+  }
+}
+
 const signOutOpen = ref(false)
 const signingOut = ref(false)
 async function signOut() {
@@ -114,7 +160,7 @@ async function signOut() {
   }
 }
 
-onMounted(loadLinks)
+onMounted(() => void Promise.all([loadLinks(), loadDevices()]))
 </script>
 
 <template>
@@ -213,6 +259,26 @@ onMounted(loadLinks)
             </UiSwitch>
           </UiGroup>
 
+          <UiGroup v-if="devices.length" :header="t('accountPage.devicesTitle')" :footer="t('accountPage.devicesFoot')">
+            <UiListRow
+              v-for="device in devices"
+              :key="device.hash"
+              wrap
+              :title="deviceTitle(device)"
+              :subtitle="deviceSubtitle(device)"
+            >
+              <template v-if="!device.current" #trailing>
+                <UiButton
+                  size="sm"
+                  :aria-label="`${t('accountPage.deviceEnd')}: ${deviceTitle(device)}`"
+                  @click="endingDevice = device"
+                >
+                  {{ t('accountPage.deviceEnd') }}
+                </UiButton>
+              </template>
+            </UiListRow>
+          </UiGroup>
+
           <UiGroup :footer="t('accountPage.logoutFoot')">
             <UiListRow as="button" :title="t('accountPage.logout')" danger @click="signOutOpen = true" />
           </UiGroup>
@@ -220,6 +286,16 @@ onMounted(loadLinks)
       </div>
     </div>
 
+    <UiConfirmDialog
+      :open="Boolean(endingDevice)"
+      :title="t('accountPage.deviceEndTitle')"
+      :description="t('accountPage.deviceEndText', { device: endingDevice?.device ?? '' })"
+      :confirm-label="t('accountPage.deviceEnd')"
+      variant="danger"
+      :loading="ending"
+      @close="endingDevice = null"
+      @confirm="endDevice"
+    />
     <UiConfirmDialog
       :open="signOutOpen"
       :title="t('accountPage.logoutTitle')"
