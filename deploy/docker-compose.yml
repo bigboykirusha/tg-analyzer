@@ -62,6 +62,8 @@ services:
 
   migrate:
     image: tganalyzer-api
+    # Built here, never pulled: without this Compose first asks Docker Hub and prints a scary «pull access denied».
+    pull_policy: build
     build:
       context: ..
       dockerfile: apps/api/Dockerfile
