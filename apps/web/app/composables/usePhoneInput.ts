@@ -120,7 +120,7 @@ export function formatPhoneNumber(normalized: string) {
     cursor += size
   }
   if (cursor < national.length) groups.push(national.slice(cursor))
-  return [match.dialCode, ...groups].join(' ')
+  return [match.dialCode, ...groups].join(' ')
 }
 
 export function usePhoneInput(initialCountry = 'RU') {
