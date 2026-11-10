@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { QuizQuestionDto, ShareLinkDto } from '@tg-analyzer/shared'
-import { Check, Copy, Send, X } from '../../lib/icons'
+import { Check, Copy, RotateCw, Send, X } from '../../lib/icons'
 
 /**
  * «Угадайка», the second step of «Поделиться»: the questions are ready by themselves — send them in
@@ -18,6 +18,7 @@ const emit = defineEmits<{ update: [link: ShareLinkDto | null] }>()
 const { t, tc, formatDate } = useI18n()
 const { question } = useQuizText()
 const toast = useToast()
+const copyLink = useCopyLink()
 const errorMessage = useErrorMessage()
 
 const busy = ref(false)
@@ -61,8 +62,7 @@ async function send() {
 async function copy() {
   const link = props.link ?? (await create())
   if (!link) return
-  await navigator.clipboard.writeText(urlOf(link))
-  toast.success(t('share.link.copied'))
+  await copyLink.copy(urlOf(link))
 }
 </script>
 
@@ -104,17 +104,25 @@ async function copy() {
     </ol>
 
     <div class="quiz-step__actions">
-      <UiButton v-if="result" variant="primary" block :loading="busy" @click="create">
-        {{ t('share.quiz.again') }}
-      </UiButton>
-      <template v-else>
-        <UiButton variant="primary" block :icon="Send" :loading="busy" @click="send">
-          {{ t('share.quiz.send') }}
-        </UiButton>
-        <UiButton variant="secondary" block :icon="Copy" :disabled="busy" @click="copy">
-          {{ t('share.quiz.copy') }}
-        </UiButton>
-      </template>
+      <UiGroup>
+        <UiListRow v-if="result" as="button" :title="t('share.quiz.again')" :disabled="busy" @click="create">
+          <template #leading><RotateCw aria-hidden="true" /></template>
+        </UiListRow>
+        <template v-else>
+          <UiListRow as="button" :title="t('share.quiz.send')" :disabled="busy" @click="send">
+            <template #leading><Send aria-hidden="true" /></template>
+          </UiListRow>
+          <UiListRow as="button" :title="t('share.quiz.copy')" :disabled="busy" @click="copy">
+            <template #leading><Copy aria-hidden="true" /></template>
+          </UiListRow>
+        </template>
+      </UiGroup>
+      <ShareFallback
+        v-if="copyLink.fallback.value"
+        :url="copyLink.fallback.value"
+        :can-share="copyLink.canShare.value"
+        @share="copyLink.share"
+      />
       <p class="quiz-step__note">{{ t('share.quiz.privacy') }}</p>
     </div>
   </div>

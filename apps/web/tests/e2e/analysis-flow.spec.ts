@@ -245,8 +245,8 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
   await page.setViewportSize({ width: 360, height: 640 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.locator('#header-page').getByRole('button', { name: 'Поделиться' }).click()
-  // A phone's sheet offers «Итоги» as its first tile.
-  await page.getByRole('dialog').getByRole('button', { name: 'Смотреть', exact: true }).click()
+  // The sheet's first row opens «Итоги».
+  await page.getByRole('dialog').getByRole('button', { name: 'Смотреть итоги' }).click()
 
   const stories = page.getByRole('dialog', { name: 'Итоги переписки' })
   // Up to four dense slides: the overview with the total first, then what the data allows.

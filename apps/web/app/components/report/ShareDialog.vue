@@ -3,11 +3,12 @@ import { fillDailyGaps, type ReportDto, type ShareLinkDto, type ShareLinksRespon
 import { Download, Link, Play, Send, Users } from '../../lib/icons'
 
 /**
- * «Поделиться»: «Итоги» first — watch them, save every frame as a 1080 × 1920 picture, or send them
- * through the system share sheet (only where the browser can share files). Under them, «По ссылке»:
- * the report as a public page and the quiz for the other side, each a second step of the same dialog.
+ * «Поделиться»: one kind of action, rows of a list: watch «Итоги», save every frame as a 1080 × 1920 picture,
+ * send them through the system share sheet (only where the browser can share files). Under them,
+ * «По ссылке»: the report as a public page and, when it is available, the quiz for the other side,
+ * each a second step of the same dialog.
  *
- * A phone shows a sheet with «Итоги» as one tile; desktop a dialog with the cover of «Итоги» as a
+ * A phone shows a sheet of rows; desktop a dialog with the cover of «Итоги» as a
  * picture pane on the left (UiModalDialog `aside`).
  */
 export type StoryIntent = 'view' | 'save' | 'share'
@@ -102,7 +103,7 @@ const title = computed(() =>
     @back="step = 'main'"
     @close="emit('close')"
   >
-    <!-- Desktop: the cover of «Итоги» as it opens, and the way in. -->
+    <!-- Desktop: the cover of «Итоги» as it opens. -->
     <template #aside>
       <div class="cover" data-on-poster>
         <span class="cover__segments" aria-hidden="true">
@@ -111,32 +112,14 @@ const title = computed(() =>
         <Pulse class="cover__pulse" :data="days" :bars="28" :height="28" />
         <p class="cover__name">{{ name }}</p>
         <p class="cover__meta">{{ coverMeta }}</p>
-        <UiButton class="cover__watch" variant="primary" :icon="Play" block @click="pick('view')">
-          {{ t('share.watch') }}
-        </UiButton>
       </div>
     </template>
 
     <div v-if="step === 'main'" class="share">
-      <!-- A phone: «Итоги» as one tile. -->
-      <div class="feature">
-        <span class="feature__thumb" aria-hidden="true">
-          <span class="cover__segments">
-            <i v-for="index in frames" :key="index" :class="{ 'is-on': index === 1 }" />
-          </span>
-          <b class="feature__thumb-name">{{ name }}</b>
-          <Pulse :data="days" :bars="12" :height="8" />
-        </span>
-        <span class="feature__copy">
-          <b class="feature__title">{{ t('share.title', { name }) }}</b>
-          <span class="feature__text">{{ t(isGroup ? 'share.ledeGroup' : 'share.lede') }}</span>
-          <UiButton class="feature__watch" variant="primary" size="sm" :icon="Play" @click="pick('view')">
-            {{ t('share.watchShort') }}
-          </UiButton>
-        </span>
-      </div>
-
       <UiGroup>
+        <UiListRow as="button" :title="t('share.watch')" @click="pick('view')">
+          <template #leading><Play aria-hidden="true" /></template>
+        </UiListRow>
         <UiListRow as="button" :title="t('share.save')" :subtitle="tc('share.saveNote', frames)" @click="pick('save')">
           <template #leading><Download aria-hidden="true" /></template>
         </UiListRow>
@@ -156,9 +139,9 @@ const title = computed(() =>
           <template #leading><Link aria-hidden="true" /></template>
         </UiListRow>
         <UiListRow
+          v-if="quizOpen"
           as="button"
-          :chevron="quizOpen"
-          :disabled="!quizOpen"
+          chevron
           :title="t('share.quiz.short')"
           :subtitle="quizStatus"
           @click="step = 'quiz'"
@@ -237,71 +220,5 @@ const title = computed(() =>
 .cover__meta {
   color: var(--on-poster-muted);
   font: var(--text-small);
-}
-
-.cover__watch {
-  margin-top: auto;
-}
-
-.feature {
-  display: none;
-}
-
-/* A phone: «Итоги» is a tile of the sheet — a small cover, what it is, «Смотреть». */
-@media (max-width: 640px) {
-  .feature {
-    --pulse-you: var(--on-poster);
-    --pulse-them: var(--on-them);
-    display: flex;
-    align-items: stretch;
-    gap: var(--space-4);
-    padding: var(--space-4);
-    border-radius: var(--radius-lg);
-    background: var(--poster);
-    color: var(--on-poster);
-  }
-
-  .feature__thumb {
-    display: flex;
-    flex: none;
-    flex-direction: column;
-    gap: var(--space-1);
-    width: calc(var(--space-16) + var(--space-2));
-    min-height: calc(var(--space-16) * 2);
-    padding: var(--space-2);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--ring-on-poster);
-  }
-
-  .feature__thumb-name {
-    overflow: hidden;
-    margin-top: auto;
-    font: var(--text-caption);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .feature__copy {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: var(--space-1);
-    min-width: 0;
-  }
-
-  .feature__title {
-    font: var(--text-h3);
-    letter-spacing: var(--tracking-h3);
-  }
-
-  .feature__text {
-    color: var(--on-poster-muted);
-    font: var(--text-small);
-  }
-
-  .feature__watch {
-    margin-top: var(--space-3);
-  }
 }
 </style>
