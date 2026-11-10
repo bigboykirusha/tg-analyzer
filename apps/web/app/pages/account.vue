@@ -197,7 +197,6 @@ onMounted(loadLinks)
           <UiGroup v-if="auth.user?.botUrl || auth.user?.botNotify" :header="t('accountPage.notifyTitle')">
             <UiSwitch v-model="notify" :label="t('accountPage.notify')" :hint="t('accountPage.notifyHint')" />
           </UiGroup>
-
         </div>
 
         <div class="account__col">
