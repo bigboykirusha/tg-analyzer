@@ -170,6 +170,6 @@ function runAction(toast: ToastMessage) {
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateY(var(--space-4)) scale(0.98);
+  transform: translateY(calc(-1 * var(--space-4))) scale(0.98);
 }
 </style>
