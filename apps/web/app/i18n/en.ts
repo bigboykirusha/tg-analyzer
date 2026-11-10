@@ -12,7 +12,6 @@ export const en = {
   'accountPage.themeLight': 'Light',
   'accountPage.themeSystem': 'As in the system',
   'accountPage.timezone': 'Time zone',
-  'accountPage.timezoneHint': 'Days and hours in reports are counted in it',
   'accountPage.title': 'Account',
   'accountPage.language': 'Language',
   'accountPage.notifyTitle': 'Notifications',

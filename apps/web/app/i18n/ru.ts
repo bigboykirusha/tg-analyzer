@@ -14,7 +14,6 @@ export const ru: Record<MessageKey, string> = {
   'accountPage.themeLight': 'Светлая',
   'accountPage.themeSystem': 'Как в системе',
   'accountPage.timezone': 'Часовой пояс',
-  'accountPage.timezoneHint': 'По нему считаются дни и часы',
   'accountPage.title': 'Аккаунт',
   'accountPage.language': 'Язык',
   'accountPage.notifyTitle': 'Уведомления',
