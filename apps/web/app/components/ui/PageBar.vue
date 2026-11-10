@@ -108,7 +108,7 @@ const titleId = useId()
 .page-bar__title {
   max-width: 100%;
   overflow: hidden;
-  font: var(--text-ui);
+  font: var(--text-label);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -148,7 +148,7 @@ const titleId = useId()
   }
 
   .page-bar--wide .page-bar__title {
-    font: var(--text-title);
+    font: var(--text-body);
     font-weight: 600;
   }
 

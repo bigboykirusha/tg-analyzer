@@ -76,7 +76,7 @@ provide(fieldKey, { id: controlId, labelId, describedby, invalid })
 }
 
 .field__label {
-  font: var(--text-small-strong);
+  font: var(--text-label);
 }
 
 .field__hint {
@@ -84,7 +84,7 @@ provide(fieldKey, { id: controlId, labelId, describedby, invalid })
   align-items: flex-start;
   gap: var(--space-2);
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .ui-field__error {

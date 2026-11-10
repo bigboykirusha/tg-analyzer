@@ -59,8 +59,8 @@ withDefaults(
 }
 
 .empty--compact .empty__title {
-  font: var(--text-h3);
-  letter-spacing: var(--tracking-h3);
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
 }
 
 .empty__text {
@@ -69,7 +69,7 @@ withDefaults(
 }
 
 .empty--compact .empty__text {
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .empty__action {

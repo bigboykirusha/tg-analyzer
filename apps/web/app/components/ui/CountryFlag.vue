@@ -99,7 +99,7 @@ const viewBox = computed(() => (['BY', 'US'].includes(props.code) ? '0 0 18 18' 
   width: var(--flag-size);
   height: var(--flag-size);
   overflow: hidden;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   outline: 1px solid var(--hover);
   outline-offset: -1px;
 }

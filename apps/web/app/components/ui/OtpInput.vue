@@ -156,7 +156,7 @@ defineExpose({ focus: focusFirstEmpty })
   width: 100%;
   min-width: 0;
   height: var(--row-height);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-well);
   background: var(--surface-2);
   box-shadow: var(--ring-hairline);
   color: var(--text);

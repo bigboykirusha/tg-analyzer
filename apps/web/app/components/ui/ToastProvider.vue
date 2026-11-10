@@ -92,7 +92,7 @@ function runAction(toast: ToastMessage) {
   max-width: var(--dialog-sm);
   min-height: var(--control-md);
   padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background: var(--inverse-surface);
   color: var(--on-inverse);
   box-shadow: var(--shadow-overlay);
@@ -115,21 +115,21 @@ function runAction(toast: ToastMessage) {
 }
 
 .toast__title {
-  font: var(--text-ui);
+  font: var(--text-label);
 }
 
 .toast__text {
   color: var(--on-inverse-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .toast__action {
   flex: none;
   height: var(--control-sm);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   box-shadow: var(--ring-current);
-  font: var(--text-small-strong);
+  font: var(--text-label);
   white-space: nowrap;
 }
 
@@ -141,7 +141,7 @@ function runAction(toast: ToastMessage) {
   justify-content: center;
   width: var(--control-sm);
   height: var(--control-sm);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   color: var(--on-inverse-muted);
 }
 

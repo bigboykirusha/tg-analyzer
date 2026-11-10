@@ -79,25 +79,34 @@ const tooltip = computed(() => {
   width: var(--avatar-size);
   height: var(--avatar-size);
   overflow: hidden;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: linear-gradient(var(--room-tint), var(--poster));
   color: var(--on-poster);
-  /* Initials are 0.4 of the circle, the title weight. */
-  --avatar-initials: 600 calc(var(--avatar-size) * 0.4) / 1 var(--font-sans);
-  font: var(--avatar-initials);
+  /*
+   * Initials take a size of the type scale, the title weight: the three small circles one step each, a 40 circle
+   * body. Only a circle resized from outside (the «Итоги» frames, in cqw) falls back to 0.4 of its size.
+   */
+  --avatar-initials: max(var(--size-body), calc(var(--avatar-size) * 0.4));
+  font-family: var(--font-sans);
+  font-size: var(--avatar-initials);
+  font-weight: 600;
+  line-height: 1;
   user-select: none;
 }
 
 .avatar--xs {
   --avatar-size: var(--avatar-xs);
+  --avatar-initials: var(--size-caption);
 }
 
 .avatar--sm {
   --avatar-size: var(--avatar-sm);
+  --avatar-initials: var(--size-label);
 }
 
 .avatar--lg {
   --avatar-size: var(--avatar-lg);
+  --avatar-initials: var(--size-h2);
 }
 
 .avatar--mine {

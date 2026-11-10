@@ -118,7 +118,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   z-index: var(--z-popover);
   max-width: var(--tooltip-max);
   padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-well);
   background: var(--inverse-surface);
   box-shadow: var(--shadow-overlay);
   color: var(--on-inverse);
