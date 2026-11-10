@@ -164,6 +164,8 @@ onMounted(load)
 
       <ReportSkeleton v-if="!data && !notFound && !loadError" :title="knownTitle" />
     </UiPageContainer>
+    <!-- The report ends as it began: on the person's poster, with «Итоги» and sharing. -->
+    <ReportEnding v-if="data" :data="data" @story="openStory('view')" @share="openShare" />
   </div>
 </template>
 
