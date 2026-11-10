@@ -3,9 +3,12 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { Info } from '../../lib/icons'
 
 /**
- * A private chat's report under its poster: five cards in reading order, one anatomy each — «Баланс»,
- * «Привычки», «Время», «Слова», «Эмодзи и реакции». A card the chat is too small for is not drawn at all
- * (the floors live in `@tg-analyzer/shared`), so a short chat shows fewer cards, never weak ones.
+ * A private chat's report under its poster, three parts of cards of one anatomy:
+ *   «Вы двое» — balance, reply speed, habits, questions, stickers, reactions, voice;
+ *   «Время» — the usual hours and the parts of the day, the records, the calendar and the weekdays;
+ *   «О чём» — the word of the chat, each side's own words, the favourite emoji.
+ * A card the chat is too small for is not drawn at all (the floors live in `@tg-analyzer/shared`), so a
+ * short chat shows fewer cards, never weak ones.
  * `noWords`: a shared link without words — the words and emoji go away instead of standing empty.
  */
 const props = defineProps<{ data: ReportDto; noWords?: boolean }>()
@@ -20,13 +23,20 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
       <Info aria-hidden="true" />
       {{ t('report.lowData') }}
     </p>
-    <ReportBalance :data="data" />
-    <ReportHabits :data="data" />
-    <ReportTime :data="data" />
-    <template v-if="!noWords">
-      <ReportWords :data="data" />
-      <ReportFavourites :data="data" />
-    </template>
+    <ReportPart id="together" :title="t('report.tabs.together')">
+      <ReportBalance :data="data" />
+      <ReportDuel :data="data" />
+    </ReportPart>
+    <ReportPart id="time" :title="t('report.tabs.time')">
+      <ReportTime :data="data" parts />
+      <ReportRecords :data="data" />
+      <ReportDays :data="data" />
+    </ReportPart>
+    <ReportPart v-if="!noWords" id="words" :title="t('report.tabs.words')">
+      <ReportWordOfChat :data="data" />
+      <ReportVocabulary :data="data" />
+      <ReportFavourites :data="data" lean />
+    </ReportPart>
     <p v-if="outdated" class="report-note t-label" role="status">
       <Info aria-hidden="true" />
       {{ t('report.talk.outdated') }}
@@ -38,7 +48,7 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
 .report-flow {
   display: flex;
   flex-direction: column;
-  gap: var(--card-gap);
+  gap: var(--space-3);
   min-width: 0;
 }
 
@@ -48,27 +58,5 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
   gap: var(--space-2);
   color: var(--text-muted);
   --icon-size: var(--icon-sm);
-}
-
-/* Desktop: two columns in reading order — «Баланс» and «Привычки» side by side, «Время» across, then the words. */
-@media (min-width: 901px) {
-  .report-flow {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-
-  .report-flow > .report-section--wide,
-  .report-flow > .report-note {
-    grid-column: 1 / -1;
-  }
-
-  /* A card left alone in its row (a card before it or after it is missing) takes the whole row, no hole. */
-  .report-flow > :first-child:not(.report-section--wide):has(+ .report-section--wide),
-  .report-flow > .report-section--wide + :not(.report-section--wide):has(+ .report-section--wide),
-  .report-flow > .report-section--wide + :not(.report-section--wide):last-child,
-  .report-flow > :first-child:not(.report-section--wide):last-child {
-    grid-column: 1 / -1;
-  }
 }
 </style>

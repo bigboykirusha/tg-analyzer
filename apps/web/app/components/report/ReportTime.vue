@@ -9,8 +9,22 @@ import { parseWindow } from '../../lib/persona'
  * busiest day, the longest run of days, the days you were in touch. No calendar and no parts of the day:
  * the pulse on the poster already shows the rhythm in time.
  */
-const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatDay, formatNumber } = useI18n()
+const props = defineProps<{ data: ReportDto; parts?: boolean }>()
+const { t, tc, formatDay, formatNumber, formatPercent } = useI18n()
+
+/** `parts`: the owner's report says the share of the four parts of the day under the hours instead. */
+const PARTS = [
+  { key: 'night', label: 'chat.bucketNight' },
+  { key: 'morning', label: 'chat.bucketMorning' },
+  { key: 'afternoon', label: 'chat.bucketAfternoon' },
+  { key: 'evening', label: 'chat.bucketEvening' },
+] as const
+const dayParts = computed(() => {
+  const distribution = props.data.derived.activityDistribution
+  const counts = PARTS.map((part) => ({ ...part, count: distribution[part.key].total }))
+  const total = counts.reduce((sum, item) => sum + item.count, 0)
+  return total ? counts.map((item) => ({ ...item, share: (item.count / total) * 100 })) : []
+})
 
 const report = computed(() => props.data.report)
 const window = computed(() => parseWindow(props.data.derived.availabilityProfile.peakWindow))
@@ -58,7 +72,13 @@ const facts = computed(() => {
 <template>
   <ReportSection v-if="window && answer" id="part-time" wide hero :title="t('report.time.title')" :answer="answer">
     <HourlyChart :hourly="report.activity.hourly" :peak="peakHours" />
-    <dl v-if="facts.length" class="facts">
+    <ol v-if="parts && dayParts.length" class="day-parts">
+      <li v-for="part in dayParts" :key="part.key">
+        <b class="t-label">{{ formatPercent(part.share) }}</b>
+        <span class="t-caption">{{ t(part.label) }}</span>
+      </li>
+    </ol>
+    <dl v-else-if="!parts && facts.length" class="facts">
       <div v-for="fact in facts" :key="fact.key" class="facts__item">
         <dt class="t-label">{{ fact.label }}</dt>
         <dd class="t-body">{{ fact.value }}</dd>
@@ -68,6 +88,26 @@ const facts = computed(() => {
 </template>
 
 <style scoped>
+.day-parts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-1);
+  padding-top: var(--space-3);
+  box-shadow: var(--divider-top);
+  text-align: center;
+}
+
+.day-parts li {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--text-muted);
+}
+
+.day-parts b {
+  color: var(--text);
+}
+
 .facts {
   display: grid;
   grid-auto-columns: minmax(0, 1fr);

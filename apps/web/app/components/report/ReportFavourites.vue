@@ -6,7 +6,8 @@ import type { ReportDto } from '@tg-analyzer/shared'
  * often; under it each side's favourite reaction and sticker. `derived.favourites` keeps only what was
  * used often enough to be a taste, so a side without one has no line rather than a weak guess.
  */
-const props = defineProps<{ data: ReportDto }>()
+/** `lean`: the emoji alone, for a report whose reactions and stickers have cards of their own. */
+const props = defineProps<{ data: ReportDto; lean?: boolean }>()
 const { t, formatNumber } = useI18n()
 const you = useYouLabel()
 
@@ -56,14 +57,19 @@ const sides = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="answer" id="part-favourites" :title="t('report.favourites.title')" :answer="answer">
+  <ReportSection
+    v-if="answer"
+    id="part-favourites"
+    :title="t(lean ? 'report.favourites.titleLean' : 'report.favourites.title')"
+    :answer="answer"
+  >
     <ul v-if="chips.length" class="emoji">
       <li v-for="item in chips" :key="item.value" class="emoji__chip t-label">
         <span class="t-h2">{{ item.value }}</span>
         {{ formatNumber(item.count) }}
       </li>
     </ul>
-    <div v-if="sides.length" class="sides">
+    <div v-if="sides.length && !lean" class="sides">
       <div v-for="side in sides" :key="side.key" class="sides__side">
         <p class="t-label" :class="{ 'sides__name--them': side.key === 'theirs' }">{{ side.name }}</p>
         <p v-for="line in side.lines" :key="line.key" class="sides__line">
