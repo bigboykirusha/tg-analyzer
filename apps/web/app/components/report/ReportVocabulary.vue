@@ -8,6 +8,7 @@ import { splitVocabulary, type ReportDto } from '@tg-analyzer/shared'
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t } = useI18n()
+const author = useReportAuthor()
 
 const vocabulary = computed(() => props.data.report.vocabulary)
 const name = computed(() => props.data.summary.title)
@@ -21,6 +22,11 @@ const split = computed(() =>
 const answer = computed(() => {
   const mine = split.value.mine[0]?.value
   const theirs = split.value.theirs[0]?.value
+  // A guest reads the author's name where the owner reads «вы».
+  if (author.value && mine)
+    return theirs
+      ? t('report.words.answerBothNamed', { me: author.value, mine, theirs, name: name.value })
+      : t('report.words.answerTheirs', { word: mine, name: author.value })
   if (mine && theirs) return t('report.words.answerBoth', { mine, theirs, name: name.value })
   if (mine) return t('report.words.answerMine', { word: mine })
   if (theirs) return t('report.words.answerTheirs', { word: theirs, name: name.value })

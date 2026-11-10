@@ -80,12 +80,13 @@ const pulseLabel = computed(() =>
 )
 
 /** A group's most active members, then «+N ещё»; each leads to «Люди». */
-const CAST = 5
 const cast = computed(() => {
+  // A phone's row holds five circles: four people and «+N».
+  const limit = wide.value ? 5 : 4
   const people = [...(report.value?.group?.participants ?? [])]
     .filter((person) => !person.isSelf)
     .sort((a, b) => b.messageCount - a.messageCount)
-  return { shown: people.slice(0, CAST), more: Math.max(0, people.length - CAST) }
+  return { shown: people.slice(0, limit), more: Math.max(0, people.length - limit) }
 })
 </script>
 
@@ -94,10 +95,9 @@ const cast = computed(() => {
     <UiPageContainer class="poster__in">
       <div class="poster__top">
         <div class="poster__head">
-          <!-- The name is the page's h1 in the bar; here it is the picture of it. -->
-          <p v-if="heading || data || title" class="poster__name" aria-hidden="true">
-            {{ heading ?? data?.summary.title ?? title }}
-          </p>
+          <!-- A guest's heading is the page's h1; the owner's name is the h1 in the bar, here its picture. -->
+          <h1 v-if="heading" class="poster__name poster__name--pair">{{ heading }}</h1>
+          <p v-else-if="data || title" class="poster__name" aria-hidden="true">{{ data?.summary.title ?? title }}</p>
           <UiSkeleton v-else class="poster__name-skeleton" width="55%" radius="var(--radius-sm)" />
           <p v-if="meta" class="poster__meta">{{ meta }}</p>
           <UiSkeleton v-else class="poster__meta-skeleton" width="62%" />
@@ -212,6 +212,12 @@ const cast = computed(() => {
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+/* Two names read as a sentence: a step smaller on a phone, so «Дима и Мила» stays on one line. */
+.poster__name--pair {
+  font: var(--text-figure);
+  letter-spacing: var(--tracking-figure);
 }
 
 /* Skeletons stand at the exact height of the lines they replace. */
@@ -342,6 +348,11 @@ const cast = computed(() => {
 
   .poster__watch {
     display: none;
+  }
+
+  .poster__name--pair {
+    font: var(--text-display);
+    letter-spacing: var(--tracking-display);
   }
 
   .poster__year {

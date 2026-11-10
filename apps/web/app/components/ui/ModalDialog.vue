@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { X } from '../../lib/icons'
+import { ArrowLeft, X } from '../../lib/icons'
 import IconButton from './IconButton.vue'
 
 const props = withDefaults(
@@ -13,6 +13,8 @@ const props = withDefaults(
     /** Blocks closing while an action runs. */
     busy?: boolean
     role?: 'dialog' | 'alertdialog'
+    /** A second step: a back button beside the title (on a phone it takes the close button's place). */
+    back?: boolean
     /** Element to focus first; by default the dialog itself, so no button looks pre-selected. */
     initialFocus?: () => HTMLElement | null | undefined
   }>(),
@@ -23,11 +25,12 @@ const props = withDefaults(
     size: 'sm',
     busy: false,
     role: 'dialog',
+    back: false,
     initialFocus: undefined,
   },
 )
 
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: []; back: [] }>()
 const { t } = useI18n()
 const panelRef = ref<HTMLElement | null>(null)
 const titleId = useId()
@@ -55,7 +58,15 @@ watch(open, (value) => value && drag.reset())
           ref="panelRef"
           tabindex="-1"
           class="modal-panel"
-          :class="[`modal-panel--${size}`, { 'is-dragging': drag.dragging.value }]"
+          :class="[
+            `modal-panel--${size}`,
+            {
+              'is-dragging': drag.dragging.value,
+              'modal-panel--alert': role === 'alertdialog',
+              'modal-panel--aside': $slots.aside,
+              'modal-panel--back': back,
+            },
+          ]"
           :role="role"
           aria-modal="true"
           :aria-labelledby="title || $slots.header ? titleId : undefined"
@@ -76,16 +87,28 @@ watch(open, (value) => value && drag.reset())
             :disabled="busy"
             @click="close"
           />
-          <div v-if="$slots.top" class="modal-top">
-            <slot name="top" />
+          <div v-if="$slots.aside" class="modal-aside">
+            <slot name="aside" />
           </div>
           <header class="modal-header">
-            <div :id="titleId">
-              <slot name="header">
-                <h2 class="modal-title">{{ title }}</h2>
-              </slot>
+            <IconButton
+              v-if="back"
+              class="modal-back"
+              :label="t('common.back')"
+              :icon="ArrowLeft"
+              tone="chrome"
+              size="md"
+              no-tooltip
+              @click="emit('back')"
+            />
+            <div class="modal-header__copy">
+              <div :id="titleId">
+                <slot name="header">
+                  <h2 class="modal-title">{{ title }}</h2>
+                </slot>
+              </div>
+              <p v-if="description" :id="descriptionId" class="modal-description">{{ description }}</p>
             </div>
-            <p v-if="description" :id="descriptionId" class="modal-description">{{ description }}</p>
           </header>
 
           <div v-if="$slots.default" class="modal-body">
@@ -103,9 +126,11 @@ watch(open, (value) => value && drag.reset())
 
 <style scoped>
 /*
- * Desktop: a dialog in the middle — 32 corners, 24 padding, the title in h3, actions at the end.
- * Phones (≤ 640): the same content as a sheet — edge to edge, attached to the bottom, a grabber,
- * actions stacked full width, the main one on top. A confirmation (alertdialog) has no close button.
+ * Desktop: a dialog in the middle — 32 corners, 24 padding, the title in h3, actions at the end; an
+ * `aside` (a picture) stands on the left at the dialog's full height.
+ * Phones (≤ 640): the same content as a sheet — edge to edge, attached to the bottom, a grabber, the
+ * close (or back) circle on the left and the title in the middle, actions stacked full width, the
+ * main one on top. A confirmation (alertdialog) has no close button and a left-aligned title.
  */
 .modal-backdrop {
   position: fixed;
@@ -161,9 +186,40 @@ watch(open, (value) => value && drag.reset())
 
 .modal-header {
   display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-sm);
+  padding-right: calc(var(--control-sm) + var(--space-2));
+}
+
+.modal-panel--alert .modal-header {
+  padding-right: 0;
+}
+
+.modal-header__copy {
+  display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding-right: calc(var(--control-sm) + var(--space-2));
+  min-width: 0;
+}
+
+/* A picture pane on the left, the dialog's own column on the right. */
+.modal-panel--aside {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-auto-rows: min-content;
+  align-content: start;
+  column-gap: var(--space-6);
+}
+
+.modal-aside {
+  display: flex;
+  grid-row: 1 / span 3;
+  min-width: 0;
+}
+
+.modal-panel--aside > :not(.modal-aside, .modal-close, .modal-grab) {
+  grid-column: 2;
 }
 
 .modal-title {
@@ -262,9 +318,39 @@ watch(open, (value) => value && drag.reset())
     background: var(--border-strong);
   }
 
-  .modal-close {
-    top: var(--space-6);
-    right: var(--page-gutter);
+  .modal-close,
+  .modal-back {
+    position: absolute;
+    top: calc(var(--space-4) + var(--space-0-5));
+    right: auto;
+    left: var(--page-gutter);
+  }
+
+  /* A second step: back takes the place of close. */
+  .modal-panel--back .modal-close {
+    display: none;
+  }
+
+  .modal-header {
+    justify-content: center;
+    min-height: var(--control-md);
+    padding: 0 calc(var(--control-md) + var(--space-2));
+    text-align: center;
+  }
+
+  .modal-panel--alert .modal-header {
+    justify-content: flex-start;
+    padding: var(--space-2) 0 0;
+    text-align: left;
+  }
+
+  /* The picture pane belongs to wide dialogs: a sheet shows its own compact version in the body. */
+  .modal-panel--aside {
+    display: flex;
+  }
+
+  .modal-aside {
+    display: none;
   }
 
   .modal-body {

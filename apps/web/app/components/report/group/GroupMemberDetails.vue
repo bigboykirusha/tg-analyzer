@@ -2,126 +2,146 @@
 import type { GroupParticipantDto, GroupReportDto } from '@tg-analyzer/shared'
 import type { Fact } from '../ReportFacts.vue'
 
+/**
+ * One member of a group: who they are in the chat, their numbers as rows, the words they lean on and
+ * the people they answer most. The same body in the phone sheet and in the desktop panel.
+ */
 const props = defineProps<{ participant: GroupParticipantDto; group: GroupReportDto }>()
-const { t, formatNumber, formatDecimal, formatPercent, formatDate, formatRelative } = useI18n()
-const pairName = usePairNames(() => props.group)
-const period = computed(() => {
-  const { firstSeen, lastSeen } = props.participant
-  if (!firstSeen || !lastSeen) return null
-  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' }
-  return `${formatDate(firstSeen, options)} – ${formatDate(lastSeen, options)}`
-})
+const { t, formatNumber, formatPercent, formatDate } = useI18n()
+const nameOf = useParticipantName()
 
 const facts = computed<Fact[]>(() => {
-  const p = props.participant
-  return [
-    {
-      key: 'messages',
-      label: t('group.messages'),
-      value: formatNumber(p.messageCount),
-      sub: t('group.shareOfMessages', { value: formatPercent(p.messageShare) }),
-    },
-    { key: 'starters', label: t('group.starters'), value: formatPercent(p.starterShare), sub: t('group.startersHint') },
-    {
-      key: 'replies',
-      label: t('group.repliesReceived'),
-      value: formatNumber(p.repliesReceived),
-      sub: t('group.repliesReceivedHint'),
-    },
-    {
-      key: 'words',
-      label: t('group.wordsPerMessage'),
-      value: p.avgWordsPerMessage === null ? t('common.na') : formatDecimal(p.avgWordsPerMessage),
-    },
-    { key: 'media', label: t('group.media'), value: formatNumber(p.mediaCount), sub: formatPercent(p.mediaShare) },
-    { key: 'last', label: t('group.lastSeen'), value: p.lastSeen ? formatRelative(p.lastSeen) : t('common.na') },
+  const person = props.participant
+  const out: Fact[] = [
+    { key: 'messages', label: t('group.messages'), value: formatNumber(person.messageCount) },
+    { key: 'starters', label: t('group.starters'), value: formatPercent(person.starterShare) },
+    { key: 'replies', label: t('group.repliesReceived'), value: formatNumber(person.repliesReceived) },
   ]
+  if (person.lastSeen)
+    out.push({
+      key: 'last',
+      label: t('group.lastSeen'),
+      value: formatDate(person.lastSeen, { day: 'numeric', month: 'long' }),
+    })
+  return out
 })
 
+const byId = computed(() => new Map(props.group.participants.map((person) => [person.id, person])))
+/** The three people this member trades replies with most. */
 const connections = computed(() =>
   props.group.topPairs
     .filter(
       (pair) => pair.leftParticipantId === props.participant.id || pair.rightParticipantId === props.participant.id,
     )
-    .map((pair) => ({
-      name:
-        pair.leftParticipantId === props.participant.id
-          ? pairName(pair.rightParticipantId, pair.rightParticipantName)
-          : pairName(pair.leftParticipantId, pair.leftParticipantName),
-      score: pair.symmetricScore,
-    }))
+    .map((pair) => {
+      const left = pair.leftParticipantId === props.participant.id
+      const id = left ? pair.rightParticipantId : pair.leftParticipantId
+      const person = byId.value.get(id) ?? {
+        id,
+        name: left ? pair.rightParticipantName : pair.leftParticipantName,
+        isSelf: false,
+      }
+      return { person, score: pair.symmetricScore }
+    })
     .sort((a, b) => b.score - a.score)
     .slice(0, 3),
 )
 </script>
 
 <template>
-  <div class="member-detail">
-    <p v-if="period" class="t-small t-muted">{{ period }}</p>
-    <div class="role">
-      <span class="role__name">{{ t(`group.roles.${participant.role}`) }}</span>
-      <p class="t-small t-muted">
-        {{
-          t(`group.roleReasons.${participant.role}`, {
-            share: formatPercent(participant.messageShare),
-            starter: formatPercent(participant.starterShare),
-            consistency: participant.consistencyScore,
-          })
-        }}
-      </p>
-    </div>
+  <div class="member">
+    <header class="member__head">
+      <UiAvatar :title="nameOf(participant)" :seed="participant.id" size="lg" />
+      <div class="member__who">
+        <h3 class="member__name">{{ nameOf(participant) }}</h3>
+        <p class="member__role">
+          {{
+            t('group.memberLine', {
+              role: t(`group.roles.${participant.role}`),
+              share: formatPercent(participant.messageShare),
+            })
+          }}
+        </p>
+      </div>
+    </header>
+
     <ReportFacts :facts="facts" />
-    <div class="stack">
-      <span class="t-label">{{ t('group.topWords') }}</span>
-      <WordChips :items="participant.topWords" :empty="t('report.words.none')" />
-    </div>
-    <div class="stack">
-      <span class="t-label">{{ t('group.topConnections') }}</span>
-      <ul v-if="connections.length" class="connections">
-        <li v-for="item in connections" :key="item.name">
-          <span>{{ item.name }}</span
-          ><strong class="t-num">{{ formatNumber(item.score) }}</strong>
-        </li>
-      </ul>
-      <p v-else class="t-small t-muted">{{ t('group.topPairsEmpty') }}</p>
-    </div>
+
+    <section v-if="participant.topWords.length" class="member__block">
+      <h4 class="member__label">{{ t('group.topWords') }}</h4>
+      <WordChips :items="participant.topWords.slice(0, 6)" :counts="false" />
+    </section>
+
+    <section v-if="connections.length" class="member__block member__block--rows">
+      <h4 class="member__label">{{ t('group.topConnections') }}</h4>
+      <div class="member__rows">
+        <UiListRow v-for="item in connections" :key="item.person.id" :title="nameOf(item.person)">
+          <template #leading>
+            <UiAvatar
+              :title="nameOf(item.person)"
+              :seed="item.person.id"
+              :side="item.person.isSelf ? 'mine' : null"
+              size="sm"
+            />
+          </template>
+          <template #trailing
+            ><span class="member__score">{{ formatNumber(item.score) }}</span></template
+          >
+        </UiListRow>
+      </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
-.member-detail {
-  display: grid;
+.member {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
   min-width: 0;
-  gap: var(--space-4);
 }
-.role {
-  display: grid;
+
+.member__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.member__who {
+  min-width: 0;
+}
+
+.member__name {
+  overflow: hidden;
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member__role,
+.member__label {
+  color: var(--text-muted);
+  font: var(--text-small);
+}
+
+.member__block {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
 }
-.role__name {
+
+.member__block--rows {
+  gap: 0;
+}
+
+.member__rows > :deep(:last-child .list-row__body) {
+  box-shadow: none;
+}
+
+.member__score {
   color: var(--text);
-  font: var(--text-ui);
-}
-.connections {
-  display: grid;
-  list-style: none;
-}
-.connections li {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-3);
-  font: var(--text-title);
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border);
-}
-.connections li > span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.connections li > strong {
-  flex: none;
-}
-.connections li:last-child {
-  border-bottom: 0;
+  font: var(--text-small-strong);
 }
 </style>

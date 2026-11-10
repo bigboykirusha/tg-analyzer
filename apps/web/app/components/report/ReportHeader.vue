@@ -17,13 +17,11 @@ const props = withDefaults(
     summary: ReportSummaryDto
     /** The example report: back to the landing, «Войти» instead of sharing. */
     demo?: boolean
-    /** A shared link: just the name, nothing to go back to or share. */
-    guest?: boolean
     headlines?: ChapterHeadline[]
     /** «4 800 сообщений»: the second line before the first chapter is reached. */
     meta?: string
   }>(),
-  { demo: false, guest: false, headlines: () => [], meta: '' },
+  { demo: false, headlines: () => [], meta: '' },
 )
 const emit = defineEmits<{ share: [] }>()
 const { t } = useI18n()
@@ -38,12 +36,12 @@ const status = computed(() => {
     total: props.headlines.length,
   })
 })
-const dock = computed(() => !props.demo && !props.guest && props.headlines.length > 1)
+const dock = computed(() => !props.demo && props.headlines.length > 1)
 </script>
 
 <template>
-  <UiPageBar :title="summary.title" :lede="status" :back="guest ? '' : demo ? '/' : '/dashboard'" bar>
-    <template v-if="!guest" #actions>
+  <UiPageBar :title="summary.title" :lede="status" :back="demo ? '/' : '/dashboard'" bar>
+    <template #actions>
       <UiButton v-if="demo" variant="primary" size="sm" to="/login">{{ t('site.signIn') }}</UiButton>
       <template v-else>
         <UiIconButton

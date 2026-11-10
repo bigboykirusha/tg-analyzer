@@ -24,7 +24,6 @@ const answer = computed(() => {
       :bar="false"
       :mine="pair.mine.value"
       :theirs="pair.theirs.value"
-      :left-name="t('report.you')"
       :right-name="theirName"
       :left="pair.mine.text"
       :right="pair.theirs.text"

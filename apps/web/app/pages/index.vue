@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import type { MessageKey } from '../composables/useI18n'
+import { wave } from '../lib/wave'
 definePageMeta({ middleware: ['guest'], fit: true })
 
 const { t } = useI18n()
 
 /** Three people as small posters, the way reports look; the pulses are a drawn example, not anyone's data. */
-const wave = (seed: number, length: number) =>
-  Array.from({ length }, (_, index) => ({
-    sent: 4 + Math.round(6 * Math.abs(Math.sin(index * 0.42 + seed)) + 3 * Math.abs(Math.sin(index * 1.7 + seed * 2))),
-    received:
-      4 + Math.round(6 * Math.abs(Math.sin(index * 0.37 + seed + 1)) + 3 * Math.abs(Math.cos(index * 1.3 + seed))),
-  }))
 const wide = useMediaQuery('(min-width: 901px)')
 const examples = [
   { key: 'ex1', hue: 'green', pulse: wave(1, 72) },

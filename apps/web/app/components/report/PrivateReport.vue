@@ -37,7 +37,6 @@ const answerOf = (id: string) => headlines.value.find((headline) => headline.id 
             size="lg"
             :mine="totals.sent"
             :theirs="totals.received"
-            :left-name="t('report.you')"
             :right-name="data.summary.title"
             :left="`${mineShare}%`"
             :right="`${100 - mineShare}%`"

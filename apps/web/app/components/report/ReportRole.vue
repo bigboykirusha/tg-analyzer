@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import { personaOf } from '../../lib/persona'
+import { parseWindow, personaOf } from '../../lib/persona'
 
 /**
  * «Время» opens with «Ваше время» on the room itself: the usual window as the answer
@@ -10,24 +10,11 @@ import { personaOf } from '../../lib/persona'
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatPercent } = useI18n()
 
-const window = computed(() => {
-  const peak = props.data.derived.availabilityProfile.peakWindow
-  if (!peak) return null
-  const [from = '', to = ''] = peak.split('-')
-  const start = Number.parseInt(from, 10)
-  const end = Number.parseInt(to, 10)
-  if (!Number.isFinite(start) || !Number.isFinite(end)) return null
-  return { from, to, start, end }
-})
-/** Hours of the peak window, also when it runs over midnight. */
-const inPeak = (hour: number) => {
+const window = computed(() => parseWindow(props.data.derived.availabilityProfile.peakWindow))
+const peakHours = computed(() => {
   const peak = window.value
-  if (!peak) return false
-  const length = (peak.end - peak.start + 24) % 24 || 24
-  return (hour - peak.start + 24) % 24 < length
-}
-
-const peakHours = computed(() => Array.from({ length: 24 }, (_, hour) => hour).filter(inPeak))
+  return peak ? Array.from({ length: peak.length }, (_, index) => (peak.start + index) % 24) : []
+})
 
 type Role = 'night' | 'morning' | 'day' | 'evening'
 const PARTS = [

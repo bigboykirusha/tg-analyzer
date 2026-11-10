@@ -26,7 +26,7 @@ defineProps<{ header?: string; footer?: string }>()
 }
 
 .group__header {
-  padding: 0 var(--space-4) var(--space-2);
+  padding: 0 var(--group-padding, var(--space-4)) var(--space-2);
   color: var(--text-muted);
   font: var(--text-small);
 }
@@ -46,7 +46,7 @@ defineProps<{ header?: string; footer?: string }>()
 }
 
 .group__footer {
-  padding: var(--space-2) var(--space-4) 0;
+  padding: var(--space-2) var(--group-padding, var(--space-4)) 0;
   color: var(--text-muted);
   font: var(--text-small);
 }
@@ -59,7 +59,7 @@ defineProps<{ header?: string; footer?: string }>()
 
   .group__header,
   .group__footer {
-    padding-inline: var(--space-6);
+    padding-inline: var(--group-padding, var(--space-6));
   }
 }
 </style>

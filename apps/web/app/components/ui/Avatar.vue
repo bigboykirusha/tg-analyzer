@@ -18,8 +18,10 @@ const props = withDefaults(
     seed?: string | number | null
     side?: AvatarSide | null
     onPoster?: boolean
+    /** The letter to show instead of the one worked out from the title (a named «вы» in a quiz). */
+    initial?: string
   }>(),
-  { src: null, size: 'md', seed: null, side: null, onPoster: false },
+  { src: null, size: 'md', seed: null, side: null, onPoster: false, initial: '' },
 )
 
 const { t } = useI18n()
@@ -39,6 +41,7 @@ function firstLetter(word: string) {
 }
 
 const initials = computed(() => {
+  if (props.initial) return props.initial
   if (props.side === 'mine') return t('report.youInitial')
   const words = (props.title ?? '').trim().split(/\s+/u)
   if (props.side === 'theirs') return (firstLetter(words[0] ?? '') || '?').toLocaleUpperCase()

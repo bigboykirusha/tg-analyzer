@@ -39,7 +39,9 @@ const total = computed(() => props.weekday.reduce((sum, day) => sum + (day?.tota
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--space-2);
-  height: calc(var(--space-20) + var(--space-8));
+  width: 100%;
+  max-width: calc(var(--space-16) * 7);
+  height: calc(var(--chart-h) + var(--space-6));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -53,13 +55,14 @@ const total = computed(() => props.weekday.reduce((sum, day) => sum + (day?.tota
   min-width: 0;
   color: var(--text-muted);
   font: var(--text-caption);
+  font-weight: 400;
   text-align: center;
 }
 
 .week__bar {
   display: block;
   align-self: end;
-  border-radius: var(--radius-mark);
+  border-radius: var(--radius-mark) var(--radius-mark) 0 0;
   background: var(--chart-neutral);
 }
 

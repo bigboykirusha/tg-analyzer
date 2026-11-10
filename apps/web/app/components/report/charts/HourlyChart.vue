@@ -12,7 +12,7 @@ const { t, formatNumber } = useI18n()
 const hours = computed(() => {
   const totals = Array.from({ length: 24 }, (_, hour) => {
     const item = props.hourly[hour]
-    return item ? item.sent + item.received : 0
+    return item?.total ?? 0
   })
   const top = Math.max(1, ...totals)
   return totals.map((total, hour) => ({

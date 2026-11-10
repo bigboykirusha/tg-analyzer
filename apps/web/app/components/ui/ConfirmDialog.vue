@@ -5,8 +5,8 @@ import Button from './Button.vue'
 /**
  * Confirmation: a question as the title, consequences as the description and
  * a concrete verb on the main button. `danger` makes that button soft red and
- * the role `alertdialog`; focus starts on the dialog itself. The `subject`
- * slot names what is acted on (a chat), the default slot lists what is lost.
+ * the role `alertdialog`; focus starts on the dialog itself. The default slot
+ * lists what is lost.
  */
 const props = withDefaults(
   defineProps<{
@@ -47,9 +47,6 @@ const isDanger = computed(() => props.variant === 'danger')
     size="sm"
     @close="emit('close')"
   >
-    <template v-if="$slots.subject" #top>
-      <slot name="subject" />
-    </template>
     <template v-if="$slots.default" #default>
       <slot />
     </template>

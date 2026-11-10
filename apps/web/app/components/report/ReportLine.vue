@@ -31,6 +31,7 @@ const props = withDefaults(
   },
 )
 const { t, formatPercent } = useI18n()
+const you = useYouLabel()
 
 const total = computed(() => props.mine + props.theirs)
 const share = (value: number) => (total.value ? (value / total.value) * 100 : 50)
@@ -41,7 +42,7 @@ const rightText = computed(() => join(props.rightName, props.right ?? formatPerc
 const spoken = computed(
   () =>
     props.label ??
-    `${props.leftName ?? t('report.you')}: ${props.left ?? formatPercent(share(props.mine))}; ${
+    `${props.leftName ?? you.value}: ${props.left ?? formatPercent(share(props.mine))}; ${
       props.rightName ?? t('chart.them')
     }: ${props.right ?? formatPercent(share(props.theirs))}`,
 )
@@ -50,7 +51,7 @@ const spoken = computed(
 <template>
   <div class="cmp" :class="`cmp--${size}`" role="img" :aria-label="spoken">
     <template v-if="size === 'lg'">
-      <span class="cmp__name" aria-hidden="true">{{ leftName ?? t('report.you') }}</span>
+      <span class="cmp__name" aria-hidden="true">{{ leftName ?? you }}</span>
       <span class="cmp__name cmp__name--them" aria-hidden="true">{{ rightName ?? t('chart.them') }}</span>
       <span class="cmp__num" aria-hidden="true">{{ left ?? formatPercent(share(mine)) }}</span>
       <span class="cmp__num cmp__num--them" aria-hidden="true">{{ right ?? formatPercent(share(theirs)) }}</span>

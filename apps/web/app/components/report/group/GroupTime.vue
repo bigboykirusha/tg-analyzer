@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 
+/**
+ * «Время» in a group: when the chat is alive — the liveliest hour on the room itself, then every day of
+ * the period and the week. One sentence per card, the fact its picture shows best.
+ */
 const props = defineProps<{ data: ReportDto }>()
 const { t, tc, formatNumber } = useI18n()
 const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
 const activity = computed(() => props.data.report.activity)
 
-/** One sentence per card, as in a private report: the fact the chart shows best. */
 const activeDays = computed(() => {
   const total = days.value.length
   if (!total) return undefined
@@ -34,16 +37,13 @@ const peakHour = computed(() => {
 </script>
 
 <template>
-  <div class="report-grid">
-    <ReportSection wide :title="t('report.rhythm.heatmapTitle')" :answer="activeDays">
-      <ActivityHeatmap :points="days" />
-    </ReportSection>
-    <!-- Volume over time is the pulse on the poster: no line chart repeats it here. -->
-    <ReportSection wide :title="t('report.rhythm.weekdaysTitle')" :answer="busiestDay">
-      <WeekdayChart :weekday="data.report.activity.weekday" />
-    </ReportSection>
-    <ReportSection wide :title="t('group.hoursTitle')" :answer="peakHour">
-      <HourlyChart :hourly="data.report.activity.hourly" />
-    </ReportSection>
-  </div>
+  <ReportSection hero :title="t('group.hoursTitle')" :answer="peakHour">
+    <HourlyChart :hourly="activity.hourly" />
+  </ReportSection>
+  <ReportSection wide :title="t('report.rhythm.heatmapTitle')" :answer="activeDays">
+    <ActivityHeatmap :points="days" />
+  </ReportSection>
+  <ReportSection wide :title="t('report.rhythm.weekdaysTitle')" :answer="busiestDay">
+    <WeekdayChart :weekday="activity.weekday" />
+  </ReportSection>
 </template>

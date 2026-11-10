@@ -10,9 +10,14 @@ const props = withDefaults(
   { counts: true },
 )
 const { t } = useI18n()
+const author = useReportAuthor()
 const groups = computed(() =>
   [
-    { key: 'mine' as const, label: t('report.groups.mine'), items: props.mine },
+    {
+      key: 'mine' as const,
+      label: author.value ? t('report.groups.theirs', { name: author.value }) : t('report.groups.mine'),
+      items: props.mine,
+    },
     { key: 'theirs' as const, label: t('report.groups.theirs', { name: props.name }), items: props.theirs },
     { key: 'shared' as const, label: t('report.words.shared'), items: props.shared },
   ].filter((group) => group.items.length),

@@ -33,7 +33,6 @@ const sides = computed(() => {
       size="lg"
       :mine="sides.mine"
       :theirs="sides.theirs"
-      :left-name="t('report.you')"
       :right-name="data.summary.title"
       :left="formatNumber(sides.mine)"
       :right="formatNumber(sides.theirs)"

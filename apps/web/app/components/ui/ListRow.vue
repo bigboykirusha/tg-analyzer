@@ -23,6 +23,8 @@ const props = withDefaults(
     interactive?: boolean
     danger?: boolean
     disabled?: boolean
+    /** The row whose details are open beside the list: it keeps the fill. */
+    selected?: boolean
   }>(),
   {
     title: '',
@@ -35,6 +37,7 @@ const props = withDefaults(
     interactive: undefined,
     danger: false,
     disabled: false,
+    selected: false,
   },
 )
 
@@ -60,6 +63,7 @@ const tagAttrs = computed(() => {
       'list-row--danger': danger,
       'list-row--wrap': wrap,
       'list-row--disabled': disabled,
+      'list-row--selected': selected,
     }"
   >
     <span v-if="$slots.leading" class="list-row__leading"><slot name="leading" /></span>
@@ -112,7 +116,7 @@ const tagAttrs = computed(() => {
   display: inline-flex;
   flex: none;
   align-items: center;
-  color: var(--text-muted);
+  color: var(--text);
 }
 
 .list-row__body {
@@ -213,7 +217,8 @@ const tagAttrs = computed(() => {
   }
 }
 
-.list-row--interactive:active::before {
+.list-row--interactive:active::before,
+.list-row--selected::before {
   background: var(--pressed);
 }
 

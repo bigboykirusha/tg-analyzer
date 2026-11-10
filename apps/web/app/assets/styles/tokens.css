@@ -195,6 +195,8 @@
   /* Lines are 1 px; selection and focus rings are 2 px. */
   --ring-hairline: inset 0 0 0 1px var(--border);
   --ring-strong: inset 0 0 0 1px var(--border-strong);
+  /* Cuts an overlapping avatar out of the one under it. */
+  --ring-cutout: 0 0 0 2px var(--surface);
   /* An outline in the text's own colour: a button on the inverse toast. */
   --ring-current: inset 0 0 0 1px currentColor;
   --ring-selected: inset 0 0 0 2px var(--accent);
@@ -204,6 +206,8 @@
   --divider-bottom: inset 0 -1px 0 var(--border);
   --divider-left: inset 1px 0 0 var(--border);
   --divider-right: inset -1px 0 0 var(--border);
+  /* An outline on a poster: the small cover of «Итоги». */
+  --ring-on-poster: inset 0 0 0 1px var(--on-poster-line);
   --poster-divider-top: inset 0 1px 0 var(--on-poster-line);
   --poster-divider-bottom: inset 0 -1px 0 var(--on-poster-line);
   /* Floating controls (header circles, capsule, «Новый анализ»): a hairline ring and one soft shadow. */
@@ -535,6 +539,8 @@
   --text-small-strong: 500 14px/20px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
   --emoji-size: 28px;
+  /* The winner on a podium. */
+  --emoji-size-lg: 36px;
   --tracking-display: -0.045em;
   --tracking-figure: -0.035em;
   --tracking-h1: -0.025em;

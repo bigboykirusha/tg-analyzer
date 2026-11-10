@@ -56,8 +56,8 @@ const { t, formatNumber } = useI18n()
 }
 
 .sticker__emoji {
-  font-size: var(--emoji-size);
-  line-height: 1;
+  --sticker-emoji: var(--emoji-size) / 1 var(--font-sans);
+  font: var(--sticker-emoji);
 }
 
 .sticker__count {
