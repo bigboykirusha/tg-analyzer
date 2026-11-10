@@ -28,14 +28,12 @@ defineProps<{ header?: string; footer?: string }>()
 .group__header {
   padding: 0 var(--group-padding, var(--space-4)) var(--space-2);
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .group__card {
-  --btn-secondary-bg: transparent;
-  --btn-tinted-bg: var(--surface-2);
   padding: 0 var(--group-padding, var(--space-4));
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background: var(--group-bg, var(--surface));
 }
 
@@ -48,13 +46,13 @@ defineProps<{ header?: string; footer?: string }>()
 .group__footer {
   padding: var(--space-2) var(--group-padding, var(--space-4)) 0;
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 @media (min-width: 901px) {
   .group__card {
     padding: 0 var(--group-padding, var(--space-6));
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-card);
   }
 
   .group__header,

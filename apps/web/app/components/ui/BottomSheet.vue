@@ -107,9 +107,8 @@ watch(open, (value) => value && drag.reset())
 
 .sheet {
   --field-bg: var(--fill-raised);
-  --btn-tinted-bg: var(--fill-raised);
-  --icon-btn-fill: var(--fill-raised);
-  --btn-secondary-bg: transparent;
+  --btn-fill: var(--fill-raised);
+  --btn-segment-on: var(--surface-raised);
   /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
   --group-bg: transparent;
   --group-padding: 0;
@@ -118,7 +117,7 @@ watch(open, (value) => value && drag.reset())
   width: 100%;
   max-height: 100%;
   overflow: hidden;
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
   transform: translateY(var(--sheet-drag, 0));
@@ -142,7 +141,7 @@ watch(open, (value) => value && drag.reset())
   width: var(--control-sm);
   height: var(--space-1);
   margin: var(--space-2) 0;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--border-strong);
 }
 
@@ -157,8 +156,8 @@ watch(open, (value) => value && drag.reset())
 
 .sheet__title {
   overflow: hidden;
-  font: var(--text-h3);
-  letter-spacing: var(--tracking-h3);
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;

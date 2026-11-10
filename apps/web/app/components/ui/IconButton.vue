@@ -3,12 +3,12 @@ import type { Component } from 'vue'
 import Tooltip from './Tooltip.vue'
 
 /**
- * A round icon button. Tones:
- *   fill   a grey well (inside cards; inside sheets the raised fill) — the default
- *   chrome floats over content (header circles on a phone): raised surface, hairline ring, soft shadow
- *   poster on a person's poster: a translucent chip
- *   plain  no fill (desktop toolbars)
- * Sizes follow the buttons: sm 36 · md 44 on a phone, 36 on desktop · lg 44.
+ * The round icon button: the third of the three button looks (docs/design-system.md §7), a neutral fill. A
+ * coloured context (a poster) re-points the fill through tokens; the look does not change.
+ * Sizes follow the buttons: sm 36 · md 44 on a phone, 36 on desktop.
+ *
+ * Deprecated `tone` aliases, all the same look: `chrome` (header circles; the class stays so the headers can
+ * restyle it over a poster), `poster` (inverted for the poster), `plain`, `fill`. Size `lg` = md.
  */
 defineOptions({ inheritAttrs: false })
 
@@ -32,12 +32,24 @@ const attrs = useAttrs()
 function buttonAttrs() {
   return Object.fromEntries(Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'))
 }
-const classes = computed(() => ['icon-btn', `icon-btn--${props.tone}`, `icon-btn--${props.size}`])
+const classes = computed(() => [
+  'icon-btn',
+  `icon-btn--${props.tone}`,
+  `icon-btn--${props.size === 'sm' ? 'sm' : 'md'}`,
+])
+const onPoster = computed(() => props.tone === 'poster')
 </script>
 
 <template>
   <Tooltip :class="attrs.class" :style="attrs.style" :text="label" :describe="false" :disabled="noTooltip">
-    <NuxtLink v-if="to" v-bind="buttonAttrs()" :to="to" :class="classes" :aria-label="label">
+    <NuxtLink
+      v-if="to"
+      v-bind="buttonAttrs()"
+      :to="to"
+      :class="classes"
+      :data-on-poster="onPoster || undefined"
+      :aria-label="label"
+    >
       <component :is="icon" aria-hidden="true" />
     </NuxtLink>
     <button
@@ -45,6 +57,7 @@ const classes = computed(() => ['icon-btn', `icon-btn--${props.tone}`, `icon-btn
       type="button"
       v-bind="buttonAttrs()"
       :class="classes"
+      :data-on-poster="onPoster || undefined"
       :aria-label="label"
       :disabled="disabled || loading"
       :aria-busy="loading || undefined"
@@ -64,8 +77,9 @@ const classes = computed(() => ['icon-btn', `icon-btn--${props.tone}`, `icon-btn
   justify-content: center;
   width: var(--control-md);
   height: var(--control-md);
-  border-radius: var(--radius-full);
-  color: var(--text);
+  border-radius: var(--radius-pill);
+  background: var(--btn-fill, var(--surface-2));
+  color: var(--btn-fill-text, var(--text));
   -webkit-tap-highlight-color: transparent;
   transition:
     background-color var(--transition-fast),
@@ -89,20 +103,6 @@ const classes = computed(() => ['icon-btn', `icon-btn--${props.tone}`, `icon-btn
   content: '';
   position: absolute;
   inset: min(0px, calc((100% - var(--hit-min)) / 2));
-}
-
-.icon-btn--fill {
-  background: var(--icon-btn-fill, var(--surface-2));
-}
-
-.icon-btn--chrome {
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-chrome);
-}
-
-.icon-btn--poster {
-  background: var(--on-poster-chip);
-  color: var(--on-poster);
 }
 
 @media (hover: hover) and (pointer: fine) {

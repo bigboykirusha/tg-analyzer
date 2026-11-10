@@ -375,7 +375,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 }
 
 .select__label {
-  font: var(--text-small-strong);
+  font: var(--text-label);
 }
 
 /* A field-shaped trigger: 44, grey well, hairline; ink ring while open or focused. */
@@ -386,7 +386,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   width: 100%;
   height: var(--control-md);
   padding: 0 var(--space-3) 0 var(--space-4);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-well);
   background: var(--field-bg, var(--surface-2));
   box-shadow: var(--ring-hairline);
   font: var(--text-body);
@@ -435,15 +435,15 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   transform: rotate(180deg);
 }
 
-/* The country code inside a phone field: a pill inset 4 on every side, corners concentric (12 − 4). */
+/* The country code inside a phone field: a pill like every other control, inset 4 on every side. */
 .select__addon {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   height: calc(var(--control-md) - var(--space-1) * 2);
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-xs);
-  background: var(--surface-2);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--btn-segment-on, var(--surface));
   font: var(--text-body);
 }
 
@@ -477,7 +477,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   height: var(--control-sm);
   margin-bottom: var(--space-1);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-well);
   background: var(--fill-raised);
   color: var(--text-muted);
   font: var(--text-body);
@@ -513,7 +513,7 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 .select__empty {
   padding: var(--space-3);
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 /* An option is a menu row: 44, 12 corners; the chosen one sits on the selection fill. */
@@ -524,8 +524,8 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   gap: var(--space-3);
   min-height: var(--control-md);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
-  font: var(--text-ui);
+  border-radius: var(--radius-well);
+  font: var(--text-label);
   cursor: pointer;
 }
 
@@ -556,6 +556,6 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 
 .option__meta {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 </style>
