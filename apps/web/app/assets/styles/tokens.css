@@ -464,8 +464,10 @@
   --switch-width: 40px;
   --switch-height: 24px;
   --topbar-height: 56px;
-  /* The mark in headers: as tall as the circular buttons beside it. */
-  --brand-mark-size: 40px;
+  /* The logo is a picture, sized to its bar: on phones the mark sits between 44 px round buttons,
+     on computers beside 36 px controls and 14–16 px links. The wordmark is part of the logo, not a text role. */
+  --brand-mark-size: 32px;
+  --brand-word: 600 20px/24px var(--font-sans);
   --sidebar-width: 280px;
   /* The group member inspector beside the report (≥ 1200 px). */
   --inspector-width: 400px;
@@ -609,6 +611,8 @@
     --text-h1: 600 34px/40px var(--font-sans);
     --text-h2: 600 28px/36px var(--font-sans);
     --text-h3: 600 22px/28px var(--font-sans);
+    --brand-mark-size: 28px;
+    --brand-word: 600 18px/24px var(--font-sans);
     --size-h1: 34px;
     --size-h2: 28px;
     --page-top: var(--space-12);

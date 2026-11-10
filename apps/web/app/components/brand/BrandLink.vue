@@ -19,7 +19,7 @@ withDefaults(defineProps<{ to?: string; bare?: boolean; current?: boolean }>(), 
     :aria-current="current ? 'page' : undefined"
   >
     <BrandMark class="brand-link__mark" />
-    <span v-if="!bare" class="brand-link__name" aria-hidden="true">TG Analyzer</span>
+    <span v-if="!bare" class="brand-link__name brand-wordmark" aria-hidden="true">TG Analyzer</span>
   </NuxtLink>
 </template>
 
@@ -41,15 +41,15 @@ withDefaults(defineProps<{ to?: string; bare?: boolean; current?: boolean }>(), 
   min-width: var(--hit-min);
 }
 
-/* The mark is as tall as the circular buttons beside it. */
+/* Sized to the bar it sits in (tokens.css). */
 .brand-link__mark {
   width: var(--brand-mark-size);
   height: var(--brand-mark-size);
 }
 
-/* The wordmark: the h3 role. */
+/* The wordmark is part of the logo. */
 .brand-link__name {
-  font: var(--text-h3);
+  font: var(--brand-word);
   letter-spacing: var(--tracking-h3);
 }
 

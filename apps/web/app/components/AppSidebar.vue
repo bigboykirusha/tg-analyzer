@@ -38,7 +38,7 @@ function updating(report: ReportSummaryDto) {
       :aria-current="route.path === '/dashboard' ? 'page' : undefined"
     >
       <BrandMark class="sidebar__mark" />
-      <span class="sidebar__wordmark">TG Analyzer</span>
+      <span class="sidebar__wordmark brand-wordmark">TG Analyzer</span>
       <span class="sr-only">{{ t('nav.home') }}</span>
     </NuxtLink>
     <UiButton to="/new" variant="primary" block :icon="Plus" :aria-current="route.path === '/new' ? 'page' : undefined">
@@ -140,7 +140,7 @@ function updating(report: ReportSummaryDto) {
 }
 
 .sidebar__wordmark {
-  font: var(--text-h3);
+  font: var(--brand-word);
   letter-spacing: var(--tracking-h3);
 }
 

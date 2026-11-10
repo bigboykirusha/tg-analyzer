@@ -55,7 +55,10 @@ const collect = () => {
         w: Math.round(r.width),
       })
     }
-    const ownText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 1)
+    // The wordmark is part of the logo (a picture), not a text style of the interface.
+    const ownText =
+      !el.matches('.brand-wordmark') &&
+      [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 1)
     if (ownText) {
       out.text.push({
         sig: `${cs.fontSize}/${cs.lineHeight} w${cs.fontWeight}`,
