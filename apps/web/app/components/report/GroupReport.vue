@@ -2,33 +2,29 @@
 import type { ReportDto } from '@tg-analyzer/shared'
 import { LayoutGrid } from '../../lib/icons'
 
-/** A group's report, three parts of one long page: the people, how the chat talks, and when. */
-const props = defineProps<{ data: ReportDto }>()
+/**
+ * A group's report under its poster (the poster has «В ролях»): «Люди», «Роли», «Пары», «Время», «Слова и
+ * эмодзи» — five cards, one anatomy each, in reading order.
+ */
+defineProps<{ data: ReportDto }>()
+defineEmits<{ profanity: [show: boolean] }>()
 const { t } = useI18n()
-
-const group = computed(() => props.data.report.group)
-const headlines = useChapterHeadlines(() => props.data)
-const answerOf = (id: string) => headlines.value.find((headline) => headline.id === id)?.text ?? null
 </script>
 
 <template>
   <UiEmptyState
-    v-if="!group"
+    v-if="!data.report.group"
     :icon="LayoutGrid"
     :title="t('group.noGroupData')"
     :description="t('group.noGroupDataText')"
   />
 
   <div v-else class="report-flow">
-    <ReportPart id="people" :title="t('group.tabs.people')" :answer="answerOf('people')">
-      <GroupPeople :group="group" />
-    </ReportPart>
-    <ReportPart id="talk" :title="t('group.tabs.talk')" :answer="answerOf('talk')" columns>
-      <GroupTalk :data="data" :group="group" />
-    </ReportPart>
-    <ReportPart id="time" :title="t('report.tabs.time')" :answer="answerOf('time')">
-      <GroupTime :data="data" />
-    </ReportPart>
+    <GroupPeople :group="data.report.group" />
+    <GroupRoles :group="data.report.group" />
+    <GroupPairs :group="data.report.group" />
+    <GroupTime :data="data" />
+    <GroupWords :data="data" :group="data.report.group" @profanity="$emit('profanity', $event)" />
   </div>
 </template>
 
@@ -36,6 +32,7 @@ const answerOf = (id: string) => headlines.value.find((headline) => headline.id 
 .report-flow {
   display: flex;
   flex-direction: column;
+  gap: var(--card-gap);
   min-width: 0;
 }
 </style>

@@ -1,22 +1,14 @@
 <script setup lang="ts">
-import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
+import type { ReportDto } from '@tg-analyzer/shared'
 
 /**
- * «Время» in a group: when the chat is alive — the liveliest hour on the room itself, then every day of
- * the period and the week. One sentence per card, the fact its picture shows best.
+ * «Время» in a group: the 24 hours with the liveliest one lit; the busiest day of the week is one line
+ * under them. No calendar — the pulse on the poster shows the rhythm in time.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, tc, formatNumber } = useI18n()
-const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
+const { t } = useI18n()
 const activity = computed(() => props.data.report.activity)
 
-const activeDays = computed(() => {
-  const total = days.value.length
-  if (!total) return undefined
-  return tc('group.time.activeDays', total, {
-    active: formatNumber(days.value.filter((day) => day.total > 0).length),
-  })
-})
 function busiest(counts: { total: number }[]) {
   let best = -1
   counts.forEach((count, index) => {
@@ -26,24 +18,19 @@ function busiest(counts: { total: number }[]) {
 }
 const busiestDay = computed(() => {
   const day = busiest(activity.value.weekday)
-  return day < 0 ? undefined : t('group.time.busiestDay', { day: t('chart.weekdaysLong').split(',')[day] ?? '' })
+  return day < 0 ? null : t('group.time.busiestDay', { day: t('chart.weekdaysLong').split(',')[day] ?? '' })
 })
 const peakHour = computed(() => {
   const hour = busiest(activity.value.hourly)
-  if (hour < 0) return undefined
+  if (hour < 0) return null
   const pad = (value: number) => `${String(value % 24).padStart(2, '0')}:00`
   return t('group.time.peakHour', { from: pad(hour), to: pad(hour + 1) })
 })
 </script>
 
 <template>
-  <ReportSection hero :title="t('group.hoursTitle')" :answer="peakHour">
+  <ReportSection v-if="peakHour" id="part-time" :title="t('report.time.title')" :answer="peakHour">
     <HourlyChart :hourly="activity.hourly" />
-  </ReportSection>
-  <ReportSection wide :title="t('report.rhythm.heatmapTitle')" :answer="activeDays">
-    <ActivityHeatmap :points="days" />
-  </ReportSection>
-  <ReportSection wide :title="t('report.rhythm.weekdaysTitle')" :answer="busiestDay">
-    <WeekdayChart :weekday="activity.weekday" />
+    <template v-if="busiestDay" #note>{{ busiestDay }}</template>
   </ReportSection>
 </template>
