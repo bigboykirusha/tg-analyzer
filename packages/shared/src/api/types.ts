@@ -169,6 +169,8 @@ export interface DialogDto {
   lastMessageAt: string | null
   /** Pinned by the user in Telegram; absent in lists cached by an older version. */
   pinned?: boolean
+  /** Telegram has already said this chat has fewer messages than a report needs; no «Разобрать» for it. */
+  tooSmall?: boolean
 }
 
 export interface DialogsResponse {

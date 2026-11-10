@@ -28,10 +28,12 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   // The very first report opens by itself.
   await page.waitForURL('**/chat/1006')
   await page.goto('/dashboard')
-  // With a first report the home page turns into the summary: the report is a small poster.
-  const card = page.locator('.mini').filter({ hasText: 'Катя' })
+  // With a first report the home page turns into the summary: the report is a card.
+  const card = page.locator('.home-card').filter({ hasText: 'Катя' })
   await expect(card).toBeVisible()
-  expect(await card.locator('.mini__name').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+  expect(await card.locator('.home-card__name').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+    true,
+  )
   await page.screenshot({ path: testInfo.outputPath('dashboard.png'), fullPage: true, animations: 'disabled' })
   await card.getByRole('link', { name: 'Катя' }).click()
   await page.waitForURL('**/chat/1006')
@@ -45,6 +47,39 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.goto('/new')
   await expect(page.locator('a.chat-row[href="/chat/1006"]')).toBeVisible()
+})
+
+test('the first report opens by itself when the analysis starts on the home page', async ({ page }) => {
+  await signIn(page)
+  // A newcomer: «С кого начнём?» offers the busiest chats, one main button; chats too small are not offered.
+  await expect(page.getByRole('heading', { name: 'С кого начнём?' })).toBeVisible()
+  await expect(page.locator('.home-card:not([aria-busy])').first()).toBeVisible()
+  await expect(page.getByText('Курьер Игорь')).toHaveCount(0)
+  await expect(page.getByText('Олег Смирнов')).toHaveCount(0)
+  await page
+    .locator('.home-card:not([aria-busy])')
+    .first()
+    .getByRole('button', { name: /^Разобрать чат/ })
+    .click()
+  await page.waitForURL('**/chat/**', { timeout: 30_000 })
+})
+
+test('a chat with too few messages has no «Разобрать» in the full list', async ({ page }) => {
+  await signIn(page)
+  // The home summary has to be counted before the list is asked for.
+  await expect(page.locator('.home-card:not([aria-busy])').first()).toBeVisible()
+  await gotoHydrated(page, '/new')
+  const row = page.locator('.chat-row').filter({ hasText: 'Олег Смирнов' })
+  await expect(row).toBeVisible()
+  // Nothing is known about this chat yet: the button is there, the refusal teaches the list.
+  await row.getByRole('button', { name: 'Разобрать чат «Олег Смирнов»' }).click()
+  await expect(row.getByText('Мало сообщений')).toBeVisible()
+  await expect(row.getByRole('button')).toHaveCount(0)
+  // The home summary saw the courier’s size and flagged it without asking: no button from the start.
+  await page.reload()
+  const courier = page.locator('.chat-row').filter({ hasText: 'Курьер Игорь' })
+  await expect(courier.getByText('Мало сообщений')).toBeVisible()
+  await expect(courier.getByRole('button')).toHaveCount(0)
 })
 
 test('group chats get the group report', async ({ page }, testInfo) => {

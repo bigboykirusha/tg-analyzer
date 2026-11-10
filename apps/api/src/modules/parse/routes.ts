@@ -9,6 +9,7 @@ import {
   parseStatusQuerySchema,
   startParseBodySchema,
   type ClearHistoryResponse,
+  type DialogDto,
   type DialogsResponse,
   type Page,
   type ParseJobDto,
@@ -46,6 +47,8 @@ import {
   readCachedAvatars,
   readCachedDialogs,
   readCachedRecentActivity,
+  readSmallChats,
+  rememberChatSize,
   readProgress,
 } from './state'
 
@@ -53,8 +56,10 @@ const DAY_MS = 86_400_000
 
 /** The home summary looks at private chats with messages in this many days. */
 const RECENT_DAYS = 30
-/** Only the most recently active chats are counted: two Telegram searches each. */
+/** The summary lists at most this many chats… */
 const RECENT_CHAT_LIMIT = 10
+/** …and asks Telegram about at most this many (two searches each); chats known to be too small cost nothing. */
+const RECENT_SCAN_LIMIT = 16
 /** A summary younger than this is served from the cache. */
 const RECENT_FRESH_MS = 60 * 60 * 1000
 
@@ -65,9 +70,20 @@ const MAX_QUEUED_ANALYSES = 10
 async function countChatMessages(userId: string, chatId: string) {
   try {
     const counts = await withUserTelegram(userId, (api) => api.countRecent(chatId, new Date()), { waitMs: 1_000 })
+    await rememberChatSize(userId, chatId, counts.total, MIN_REPORT_MESSAGES).catch(() => undefined)
     return counts.total
   } catch {
     return null
+  }
+}
+
+/** Dialogs Telegram already told us are too small for a report get a flag: the list shows no «Разобрать» for them. */
+async function markSmall<T extends { dialogs: DialogDto[] }>(userId: string, result: T): Promise<T> {
+  const small = await readSmallChats(userId).catch(() => new Set<string>())
+  if (!small.size) return result
+  return {
+    ...result,
+    dialogs: result.dialogs.map((dialog) => (small.has(dialog.id) ? { ...dialog, tooSmall: true } : dialog)),
   }
 }
 
@@ -79,12 +95,12 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
     try {
       const result = await withUserTelegram(userId, (api) => api.listDialogs())
       await cacheDialogs(userId, result)
-      return { ...result, stale: false }
+      return { ...(await markSmall(userId, result)), stale: false }
     } catch (error) {
       // While an analysis holds the Telegram session, serve the last known list.
       const cached =
         error instanceof ApiError && error.code === 'TELEGRAM_BUSY' ? await readCachedDialogs(userId) : null
-      if (cached) return { ...cached, stale: true }
+      if (cached) return { ...(await markSmall(userId, cached)), stale: true }
       throw error
     }
   })
@@ -105,10 +121,18 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
               (dialog) => dialog.type === 'private' && dialog.lastMessageAt && new Date(dialog.lastMessageAt) >= since,
             )
             .sort((a, b) => (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? ''))
+          const small = await readSmallChats(userId).catch(() => new Set<string>())
           const chats = []
-          for (const dialog of active.slice(0, RECENT_CHAT_LIMIT)) {
+          let asked = 0
+          for (const dialog of active) {
+            if (chats.length >= RECENT_CHAT_LIMIT || asked >= RECENT_SCAN_LIMIT) break
+            if (small.has(dialog.id)) continue
+            asked += 1
             const counts = await api.countRecent(dialog.id, since).catch(() => null)
-            if (counts?.messages) chats.push({ ...dialog, ...counts })
+            if (!counts) continue
+            await rememberChatSize(userId, dialog.id, counts.total, MIN_REPORT_MESSAGES).catch(() => undefined)
+            // A chat too small for a report is no suggestion; its size is remembered for the next time.
+            if (counts.messages && counts.total >= MIN_REPORT_MESSAGES) chats.push({ ...dialog, ...counts })
           }
           chats.sort((a, b) => b.messages - a.messages)
           return {

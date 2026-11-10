@@ -333,6 +333,29 @@ test('a chat too small for a report is refused before it spends the quota', asyn
   assert.equal(Number(usage.rows[0].count), 0)
 })
 
+test('small chats are not suggested and are flagged in the dialog list', async () => {
+  const session = await login()
+
+  // The home summary skips chats too small for a report (the demo courier has 24 messages) …
+  const recent = await app.inject({ url: '/api/v1/parse/recent', headers: session.headers })
+  assert.equal(recent.statusCode, 200, recent.body)
+  const ids = recent.json().chats.map((chat: { id: string }) => chat.id)
+  assert.ok(!ids.includes('1014'))
+  assert.ok(ids.includes(PRIVATE_CHAT))
+
+  // … and remembers it, so the full list marks them without asking Telegram about every dialog.
+  const dialogs = await app.inject({ url: '/api/v1/parse/dialogs', headers: session.headers })
+  const list = dialogs.json().dialogs as { id: string; tooSmall?: boolean }[]
+  assert.equal(list.find((dialog) => dialog.id === '1014')?.tooSmall, true)
+  assert.equal(list.find((dialog) => dialog.id === PRIVATE_CHAT)?.tooSmall, undefined)
+
+  // A chat refused at the start is remembered too.
+  assert.equal((await post(session, '/api/v1/parse/start', { chatId: '1007' })).statusCode, 422)
+  const again = await app.inject({ url: '/api/v1/parse/dialogs', headers: session.headers })
+  const oleg = (again.json().dialogs as { id: string; tooSmall?: boolean }[]).find((dialog) => dialog.id === '1007')
+  assert.equal(oleg?.tooSmall, true)
+})
+
 test('concurrent analysis starts cannot exceed the queue capacity', async () => {
   const session = await login()
   const responses = await Promise.all(

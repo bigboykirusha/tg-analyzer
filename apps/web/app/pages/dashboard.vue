@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { deriveHomeEvents, type UserShareLinkDto } from '@tg-analyzer/shared'
 import { AlertCircle } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 /**
- * Home answers two questions: what you have already learned (the reports) and what is new (the news
- * about your people). A greeting, «Сейчас главное», the reports as small posters, the busiest chats
- * still without one. A newcomer gets «С кого начнём?» instead.
+ * Home answers two questions: what you have already learned (the reports, one card each, new messages in
+ * the chat as a badge on the card) and what else can be analysed (the busiest chats without a report). A
+ * newcomer gets «С кого начнём?» instead.
  */
 const { t } = useI18n()
 useSeoMeta({ title: () => t('dashboard.title') })
@@ -35,21 +34,6 @@ const reports = computed(() =>
         Date.parse(right.report!.analyzedAt) - Date.parse(left.report!.analyzedAt),
     ),
 )
-const links = ref<UserShareLinkDto[]>([])
-async function loadLinks() {
-  try {
-    links.value = (await api('GET /api/v1/links')).links
-  } catch {
-    links.value = []
-  }
-}
-const events = computed(() =>
-  deriveHomeEvents(
-    reports.value.map((chat) => chat.report!),
-    workspace.recent,
-    links.value,
-  ).filter((event) => event.kind !== 'unanalysed'),
-)
 
 const loading = computed(
   () => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
@@ -65,37 +49,22 @@ function loadReports() {
 onMounted(() => {
   void workspace.loadDialogs()
   void workspace.loadRecent()
-  void loadLinks()
   loadReports()
 })
 </script>
 
 <template>
   <UiPageContainer class="home">
-    <!-- Loading: the same greeting, tile and cards, so nothing moves when the content arrives. -->
+    <!-- Loading: the same greeting and cards, so nothing moves when the content arrives. -->
     <div v-if="loading" class="page" aria-busy="true">
       <div class="home__hello" aria-hidden="true">
         <UiSkeleton width="min(70%, 360px)" height="var(--space-8)" />
         <UiSkeleton width="min(50%, 260px)" height="var(--space-4)" />
       </div>
       <section class="home__section" aria-hidden="true">
-        <UiSkeleton width="160px" height="var(--space-6)" />
-        <div class="home__skeleton-tile">
-          <UiSkeleton width="40%" height="var(--space-3)" />
-          <UiSkeleton width="80%" height="var(--space-6)" />
-          <UiSkeleton width="60%" height="var(--space-3)" />
-          <UiSkeleton class="home__skeleton-foot" width="100%" height="var(--control-md)" radius="var(--radius-full)" />
-        </div>
-      </section>
-      <section class="home__section" aria-hidden="true">
         <UiSkeleton width="96px" height="var(--space-6)" />
         <div class="home__reports">
-          <div v-for="card in 4" :key="card" class="home__skeleton-card">
-            <UiSkeleton width="var(--avatar-sm)" height="var(--avatar-sm)" radius="var(--radius-full)" />
-            <UiSkeleton width="70%" height="var(--space-4)" />
-            <UiSkeleton width="50%" height="var(--space-3)" />
-            <UiSkeleton class="home__skeleton-foot" height="var(--space-6)" />
-          </div>
+          <HomeCard v-for="card in 4" :key="card" skeleton />
         </div>
       </section>
     </div>
@@ -105,12 +74,8 @@ onMounted(() => {
     <div v-else class="page">
       <header class="home__hello">
         <h1 class="t-h1">{{ greeting }}</h1>
-        <p class="home__lede">{{ t('home.greeting.lede') }}</p>
+        <p class="t-lede">{{ t('home.greeting.lede') }}</p>
       </header>
-
-      <UiPageSection v-if="events.length" :title="t('home.highlights')">
-        <HomeEvents :events="events" />
-      </UiPageSection>
 
       <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
         <UiEmptyState
@@ -126,7 +91,13 @@ onMounted(() => {
           </template>
         </UiEmptyState>
         <div v-else class="home__reports">
-          <ReportCard v-for="chat in reports" :key="chat.id" :report="chat.report!" :has-avatar="chat.hasAvatar" />
+          <ReportCard
+            v-for="chat in reports"
+            :key="chat.id"
+            :report="chat.report!"
+            :has-avatar="chat.hasAvatar"
+            :added="workspace.newMessages[chat.id]"
+          />
         </div>
       </UiPageSection>
 
@@ -142,7 +113,7 @@ onMounted(() => {
   gap: var(--page-gap);
 }
 
-/* Phones keep the floating «Новый анализ» clear of the last row. */
+/* Phones keep the floating «Новый анализ» clear of the last row and card. */
 @media (max-width: 900px) {
   .home .page {
     padding-bottom: var(--fab-clearance);
@@ -153,17 +124,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-}
-
-.home__lede {
-  color: var(--text-muted);
-  font: var(--text-small);
-}
-
-@media (min-width: 901px) {
-  .home__lede {
-    font: var(--text-body);
-  }
 }
 
 .home__section {
@@ -195,34 +155,5 @@ onMounted(() => {
   .home__reports {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-}
-
-.home__skeleton-tile,
-.home__skeleton-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--card-padding);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-}
-
-.home__skeleton-tile {
-  min-height: 176px;
-}
-
-.home__skeleton-card {
-  gap: var(--space-2);
-  min-height: 148px;
-}
-
-@media (min-width: 901px) {
-  .home__skeleton-card {
-    min-height: 188px;
-  }
-}
-
-.home__skeleton-foot {
-  margin-top: auto;
 }
 </style>

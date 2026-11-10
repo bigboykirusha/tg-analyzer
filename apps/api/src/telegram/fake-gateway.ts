@@ -45,6 +45,7 @@ const CHATS: FakeChatSpec[] = [
   { id: '1006', title: 'Катя', type: 'private', messages: 130, days: 40, myShare: 0.7 },
   { id: '1007', title: 'Олег Смирнов', type: 'private', messages: 60, days: 600, myShare: 0.5, quietDays: 140 },
   { id: '1013', title: 'Анна Петрова', type: 'private', messages: 1200, days: 180, myShare: 0.55 },
+  { id: '1014', title: 'Курьер Игорь', type: 'private', messages: 24, days: 20, myShare: 0.4 },
   { id: '-1002001', title: 'Продуктовая команда', type: 'group', messages: 9000, days: 365, myShare: 0.12,
     members: ['Алексей', 'Мария', 'Игорь', 'Наташа', 'Сергей', 'Юля', 'Павел'] },
   { id: '-1002006', title: 'Семья', type: 'group', messages: 3100, days: 800, myShare: 0.2,

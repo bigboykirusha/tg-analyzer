@@ -1,5 +1,7 @@
 import {
   ANALYZABLE_CHAT_TYPES,
+  HOME_MIN_NEW_MESSAGES,
+  MIN_REPORT_MESSAGES,
   type ChatType,
   type DialogDto,
   type RecentActivityResponse,
@@ -20,6 +22,8 @@ export interface WorkspaceChat {
   lastMessageAt?: string | null
   /** Pinned in Telegram; missing for chats known only from a report. */
   pinned?: boolean
+  /** Known to have fewer messages than a report needs: no «Разобрать». */
+  tooSmall?: boolean
   report: ReportSummaryDto | null
 }
 
@@ -51,8 +55,28 @@ export const useWorkspaceStore = defineStore('workspace', {
     /** Private chats of the last month, counted by Telegram without an analysis. */
     recent: null as RecentActivityResponse | null,
     recentState: 'idle' as LoadState,
+    recentError: null as ApiClientError | null,
   }),
   getters: {
+    /** The busiest chats of the month without a report; chats Telegram says are too small for one are no suggestion. */
+    suggestions(state): RecentActivityResponse['chats'] {
+      const withReport = new Set(state.reports.map((report) => report.chatId))
+      return (state.recent?.chats ?? []).filter(
+        (chat) => !withReport.has(chat.id) && (chat.total === undefined || chat.total >= MIN_REPORT_MESSAGES),
+      )
+    },
+    /** New messages in a chat since its report, by chat id: Telegram's size now minus the report's; only real news. */
+    newMessages(state): Record<string, number> {
+      const added: Record<string, number> = {}
+      const reports = new Map(state.reports.map((report) => [report.chatId, report]))
+      for (const chat of state.recent?.chats ?? []) {
+        const report = reports.get(chat.id)
+        if (!report || chat.total === undefined) continue
+        const diff = chat.total - report.totalMessages
+        if (diff >= HOME_MIN_NEW_MESSAGES) added[chat.id] = diff
+      }
+      return added
+    },
     chats(state): WorkspaceChat[] {
       const reports = new Map(state.reports.map((report) => [report.chatId, report]))
       const chats: WorkspaceChat[] = state.dialogs
@@ -96,14 +120,16 @@ export const useWorkspaceStore = defineStore('workspace', {
       const version = auth.sessionVersion
       if (this.recentState === 'loading') return
       this.recentState = 'loading'
+      this.recentError = null
       try {
         const result = await api('GET /api/v1/parse/recent')
         if (auth.sessionVersion !== version) return
         this.recent = result
         this.recentState = 'ready'
-      } catch {
+      } catch (error) {
         if (auth.sessionVersion !== version) return
-        // The summary is a bonus: without it the home page simply starts with the reports.
+        // With reports the summary is a bonus; for a newcomer it is the whole screen, so the error is kept.
+        this.recentError = error instanceof ApiClientError ? error : null
         this.recentState = 'error'
       }
     },
@@ -144,6 +170,12 @@ export const useWorkspaceStore = defineStore('workspace', {
       if (auth.sessionVersion !== version) return
       this.reports = this.reports.filter((report) => report.chatId !== chatId)
       delete this.openedReports[chatId]
+    },
+
+    /** A chat turned out too small for a report (the API or the worker said so): stop offering it. */
+    markTooSmall(chatId: string) {
+      this.dialogs = this.dialogs.map((dialog) => (dialog.id === chatId ? { ...dialog, tooSmall: true } : dialog))
+      if (this.recent) this.recent = { ...this.recent, chats: this.recent.chats.filter((chat) => chat.id !== chatId) }
     },
 
     reset() {

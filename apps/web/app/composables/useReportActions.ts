@@ -1,3 +1,5 @@
+import { ApiClientError } from './useApi'
+
 /**
  * What can be done to a chat from anywhere (a home card's «⋯», a chat row, the new-analysis list):
  * analyse or refresh it, ask to delete its report. One shared state; the confirmation lives once in
@@ -28,6 +30,7 @@ export function useReportActions() {
     try {
       await analysis.startAnalysis(chatId, title)
     } catch (error) {
+      if (error instanceof ApiClientError && error.code === 'CHAT_TOO_SMALL') workspace.markTooSmall(chatId)
       toast.error(t('analysis.startError'), errorMessage(error))
     } finally {
       starting.value = null

@@ -4,7 +4,9 @@ import { RotateCw, Share, Trash2 } from '../../lib/icons'
 
 /**
  * One Telegram chat in «Новый анализ»: avatar, name, one quiet line, one action. A chat with a report is
- * a link to it (chevron); without one, «Разобрать». While it is read, the percentage and «Отменить».
+ * a link to it (chevron); without one, «Разобрать». While it is read, the percentage and «Отменить»; a report
+ * finished a moment ago says «Отчёт готов» in the row itself, not only in a toast that goes away. A chat Telegram
+ * says is too small for a report has no button: «Мало сообщений».
  * As in Telegram, a long press (450 ms) or a right click opens the row's menu.
  */
 const props = defineProps<{ chat: WorkspaceChat }>()
@@ -13,11 +15,17 @@ const actions = useReportActions()
 const analysis = useAnalysis()
 const view = useAnalysisView()
 const menuOpen = ref(false)
+const now = useNow(30_000)
 
 const analysing = computed(() => analysis.isActive.value && analysis.progress.value.chatId === props.chat.id)
 const queuedJob = computed(() => analysis.queued.value.find((item) => item.chatId === props.chat.id)?.jobId ?? null)
+const READY_MS = 3 * 60_000
+const justReady = computed(() => !!props.chat.report && now.value - Date.parse(props.chat.report.analyzedAt) < READY_MS)
+const tooSmall = computed(() => !!props.chat.tooSmall && !props.chat.report)
 const meta = computed(() => {
   const group = props.chat.type !== 'private'
+  if (justReady.value) return t('dashboard.reportReady')
+  if (tooSmall.value) return t('newAnalysis.tooSmall')
   if (props.chat.report) {
     const line = t('dashboard.analysed', { time: formatRelative(props.chat.report.analyzedAt) })
     return group ? t('sidebar.groupMeta', { count: line.toLocaleLowerCase() }) : line
@@ -73,6 +81,7 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
         :to="chat.report ? `/chat/${chat.id}` : undefined"
         :title="chat.title"
         :subtitle="meta"
+        :class="{ 'chat-row--ready': justReady && !analysing && !queuedJob }"
         :chevron="!!chat.report && !analysing && !queuedJob"
         @contextmenu="openMenu"
         @pointerdown="pressDown"
@@ -85,7 +94,7 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
           <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" />
         </template>
         <template v-if="queuedJob" #trailing>
-          <UiButton variant="plain" size="sm" @click.prevent="analysis.cancel(queuedJob)">
+          <UiButton variant="secondary" size="sm" @click.prevent="analysis.cancel(queuedJob)">
             {{ t('dashboard.queued') }}
           </UiButton>
         </template>
@@ -93,7 +102,7 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
           <span class="chat-row__percent">{{ view?.percent !== null && view ? `${view.percent}%` : '' }}</span>
           <span class="spinner" aria-hidden="true" />
         </template>
-        <template v-else-if="!chat.report" #trailing>
+        <template v-else-if="!chat.report && !tooSmall" #trailing>
           <UiButton
             size="sm"
             :loading="actions.starting.value === chat.id"
@@ -123,8 +132,13 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
   -webkit-touch-callout: none;
 }
 
+.chat-row--ready :deep(.list-row__subtitle) {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .chat-row__percent {
   color: var(--text-muted);
-  font: var(--text-small-strong);
+  font: var(--text-label);
 }
 </style>
