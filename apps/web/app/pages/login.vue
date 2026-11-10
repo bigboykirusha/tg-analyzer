@@ -239,7 +239,7 @@ function changeNumber() {
   .login__card {
     max-width: var(--card-focus);
     padding: var(--space-8);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-card);
     background: var(--surface);
   }
 
