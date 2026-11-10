@@ -8,15 +8,16 @@
  */
 
 /** Prefixes that may stand before a root: «на», «по», «вы», «разъ»… Several can stack («недо-за-ебал»). */
-const PREFIX = String.raw`(?:на|по|за|вы|от|до|при|про|пре|пере|рас|раз|ис|из|об|о|не|ни|под|над|с|в|у|а|ох|ах|ух|съ|объ|подъ|надъ|разъ|отъ|недо)*`
+const PREFIX = String.raw`(?:на|по|за|вы|от|до|при|про|пре|пере|рас|раз|ис|из|об|о|не|ни|под|над|с|в|у|а|ох|ах|ух|съ|взъ|въ|изъ|объ|подъ|надъ|разъ|отъ|недо)*`
 /** The shorter list for the root «еб», where one-letter prefixes would catch «себя» and «веб». */
-const PREFIX_EB = String.raw`(?:на|по|за|вы|от|до|при|про|пере|об|у|съ|объ|подъ|надъ|разъ|отъ|недо)*`
+const PREFIX_EB = String.raw`(?:на|по|за|вы|от|до|при|про|пере|об|у|съ|въ|взъ|изъ|объ|подъ|надъ|разъ|отъ|недо)*`
 
 const stem = (root: string, prefix = PREFIX) => new RegExp(`^${prefix}(?:${root})`, 'u')
 
 const RUSSIAN: readonly RegExp[] = [
   // хуй, хуе-, хуя-, хую, хуи-; «хуже», «худой», «хулиган», «хутор» do not match.
-  stem(String.raw`ху(?:й|е|я|ю|и)`),
+  // «сухую», «всухую», «насухую» are «с-у-хую» to a prefix chain, so a «суху» near the start is excluded.
+  new RegExp(`^(?![а-я]{0,3}суху)${PREFIX}(?:ху(?:й|е|я|ю|и))`, 'u'),
   // нах, пох on their own
   /^(?:нах|пох|нихуя|нихера)$/u,
   // хер as a swear: хер, нахер, херня, херово; not «херес», «херувим», «Херсон».
@@ -26,6 +27,8 @@ const RUSSIAN: readonly RegExp[] = [
   /^(?:пздц|пзд|пздец)$/u,
   // еб-: ебал, ебан, ебать, ебу, ебись, ебло, еблан, ебн-; ё is folded to е
   stem(String.raw`еб(?:а|у|и|л|н|ы|ош|ок|к|ет|ешь|ем|ё)`, PREFIX_EB),
+  // compounds: долбоёб, дуроёб, долбоебизм, мудоёб; the stem before «еб» ends in a linking о/е
+  /^[а-я]{2,}?[ое]еб(?:$|а|у|и|л|н|ы|изм|ств|ск)/u,
   // бля, блять, блядь, блядский; not «бляха», «блин», «облако»
   /^(?:бля|блят[а-я]*|бляд[а-я]*|блеат[а-я]*)$/u,
   // сука, суки, сучара; not «сукно», «сучок», «суккулент»
@@ -38,7 +41,7 @@ const RUSSIAN: readonly RegExp[] = [
   /^пид[оа]р/u,
   /^пидр/u,
   /^педераст/u,
-  /^педик(?!юр)/u,
+  /^педик(?:а|и|у|е|ов|ам|ами|ах|ом|ск[а-я]*)?$/u,
   // залупа, шлюха, гандон/гондон: no ordinary word holds these
   /залуп/u,
   /шлюх/u,
@@ -61,10 +64,31 @@ const ALL = [...RUSSIAN, ...ENGLISH]
 const cache = new Map<string, boolean>()
 const CACHE_LIMIT = 5000
 
+/** Latin look-alikes of Cyrillic letters, for words that sneak them in: «хyй» with a Latin y. */
+const LOOKALIKE: Record<string, string> = {
+  a: 'а',
+  b: 'в',
+  c: 'с',
+  e: 'е',
+  h: 'н',
+  k: 'к',
+  m: 'м',
+  o: 'о',
+  p: 'р',
+  t: 'т',
+  x: 'х',
+  y: 'у',
+}
+
+/** A word that already holds Cyrillic gets its Latin look-alikes turned into Cyrillic; pure Latin stays. */
+function unmix(word: string) {
+  if (!/[а-яё]/u.test(word)) return word
+  return word.replace(/[abcehkmoptxy]/gu, (ch) => LOOKALIKE[ch] ?? ch)
+}
+
 /** Letters only, lower case, ё as е, a stretched vowel («бляяя», «хуууй») squeezed to one. */
 function fold(word: string) {
-  return word
-    .toLowerCase()
+  return unmix(word.toLowerCase())
     .replaceAll('ё', 'е')
     .replace(/(\p{L})\1{2,}/gu, '$1$1')
     .replace(/([аеиоуыэюя])\1+/gu, '$1')
