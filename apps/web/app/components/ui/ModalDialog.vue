@@ -174,17 +174,18 @@ watch(open, (value) => value && drag.reset())
 
 .modal-close {
   position: absolute;
-  top: var(--space-4);
-  right: var(--space-4);
+  top: var(--space-6);
+  right: var(--space-6);
   z-index: 1;
 }
 
+/* The title row is as tall as the close circle and centred on it. */
 .modal-header {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: var(--control-sm);
-  padding-right: calc(var(--control-sm) + var(--space-2));
+  min-height: var(--control-md);
+  padding-right: calc(var(--control-md) + var(--space-2));
 }
 
 .modal-panel--alert .modal-header {
@@ -218,8 +219,8 @@ watch(open, (value) => value && drag.reset())
 }
 
 .modal-title {
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
   text-wrap: balance;
 }
 
@@ -303,6 +304,8 @@ watch(open, (value) => value && drag.reset())
     display: flex;
     justify-content: center;
     padding: var(--space-2) 0 var(--space-1);
+    /* The grab strip is 16 tall; the close circle starts right under it and the title row is centred on it. */
+    margin-bottom: calc(-1 * var(--space-4));
     touch-action: none;
   }
 
@@ -316,7 +319,7 @@ watch(open, (value) => value && drag.reset())
   .modal-close,
   .modal-back {
     position: absolute;
-    top: calc(var(--space-4) + var(--space-0-5));
+    top: calc(var(--space-2) + var(--space-1) + var(--space-1));
     right: auto;
     left: var(--page-gutter);
   }

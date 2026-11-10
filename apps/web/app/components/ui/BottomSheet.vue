@@ -138,8 +138,8 @@ watch(open, (value) => value && drag.reset())
 
 .sheet__title {
   overflow: hidden;
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
