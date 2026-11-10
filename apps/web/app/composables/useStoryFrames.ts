@@ -198,9 +198,7 @@ export function useStoryFrames(data: () => ReportDto) {
         key: 'words',
         label: t('group.wordsTitle'),
         figure: first ? `«${first.value}»` : undefined,
-        title: first
-          ? t('group.sharedVocabularyAnswer', { word: first.value })
-          : t('group.favouriteEmoji', { emoji: emoji[0]!.value }),
+        title: first ? tc('report.words.word', first.count) : t('group.favouriteEmoji', { emoji: emoji[0]!.value }),
         sides: [{ key: 'shared', label: null, items: shared.slice(1, 7).map((item) => item.value) }],
         emoji,
       }

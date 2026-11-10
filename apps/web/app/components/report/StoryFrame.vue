@@ -52,8 +52,14 @@ const tick = (value: number, hour: number) => ({
           <div v-for="(row, position) in frame.rows" :key="row.key" class="row" :class="{ 'row--lead': !position }">
             <p class="row__label">{{ row.label }}</p>
             <div class="row__track" aria-hidden="true">
-              <i class="row__mine" :style="{ flex: Math.max(row.mine, 0.001) }" />
-              <i class="row__theirs" :style="{ flex: Math.max(row.theirs, 0.001) }" />
+              <i
+                class="row__mine"
+                :style="{ flex: `${Math.max(row.mine, 0.001) / (row.mine + row.theirs || 1)} 1 0` }"
+              />
+              <i
+                class="row__theirs"
+                :style="{ flex: `${Math.max(row.theirs, 0.001) / (row.mine + row.theirs || 1)} 1 0` }"
+              />
             </div>
             <p class="row__values">
               <b>{{ row.left }}</b>
@@ -123,7 +129,7 @@ const tick = (value: number, hour: number) => ({
 }
 
 .frame__body {
-  --f-figure: 600 30cqw / 1 var(--font-sans);
+  --f-figure: 600 24cqw / 1 var(--font-sans);
   --f-word: 600 15cqw / 1.05 var(--font-sans);
   --f-display: 600 14.4cqw / 1 var(--font-sans);
   --f-answer: 600 8cqw / 1.15 var(--font-sans);
@@ -148,7 +154,7 @@ const tick = (value: number, hour: number) => ({
 
 /* The saved picture: the same composition, clear of the app's top bar and reply field. */
 .frame--still .frame__body {
-  padding: calc(var(--f-1) * 26) calc(var(--f-1) * 6) calc(var(--f-1) * 34);
+  padding: calc(var(--f-1) * 22) calc(var(--f-1) * 6) calc(var(--f-1) * 32);
 }
 
 .who {
@@ -235,7 +241,7 @@ const tick = (value: number, hour: number) => ({
 
 /* Balance: rows of a label, a bar split between you (ink) and them, the two values. */
 .visual--rows {
-  gap: calc(var(--f-1) * 8);
+  gap: calc(var(--f-1) * 5);
 }
 
 .row {
@@ -296,8 +302,8 @@ const tick = (value: number, hour: number) => ({
 
 .dial {
   position: relative;
-  width: calc(var(--f-1) * 66);
-  height: calc(var(--f-1) * 66);
+  width: calc(var(--f-1) * 56);
+  height: calc(var(--f-1) * 56);
 }
 
 .dial__tick {
