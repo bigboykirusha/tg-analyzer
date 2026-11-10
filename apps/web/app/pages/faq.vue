@@ -7,9 +7,6 @@ useSeoMeta({
   ogDescription: () => t('faq.seoDescription'),
 })
 
-/** What happens to the chat, in the order people worry about it. */
-const facts = usePrivacyFacts()
-
 const questions = computed(() =>
   (['safe', 'notice', 'store', 'price', 'groups', 'phone', 'official'] as const).map((key) => ({
     key,
@@ -49,9 +46,6 @@ useHead({
         <UiListRow v-for="item in questions" :key="item.key" :title="item.question" :subtitle="item.answer" wrap />
       </UiGroup>
       <UiGroup :header="t('faq.dataTitle')">
-        <UiListRow v-for="fact in facts.slice(0, 3)" :key="fact.key" :title="fact.title" :subtitle="fact.text" wrap>
-          <template #leading><component :is="fact.icon" aria-hidden="true" /></template>
-        </UiListRow>
         <UiListRow to="/privacy" :title="t('privacy.pageTitle')" chevron />
       </UiGroup>
     </div>

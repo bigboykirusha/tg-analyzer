@@ -136,6 +136,7 @@ test('signing out from the account page returns to the login page', async ({ pag
 
   await page.getByRole('button', { name: 'Выйти', exact: true }).click()
   const dialog = page.getByRole('alertdialog')
+  await expect(dialog).toContainText('Отчёты останутся')
   await dialog.getByRole('button', { name: 'Выйти', exact: true }).click()
   await page.waitForURL('**/login')
 })
