@@ -97,9 +97,11 @@ async function deliver(positions: number[], send: boolean) {
   try {
     await image.run(async () => {
       const files = await renderFiles(positions)
-      if (send && canShare.value) return void (await image.share(files))
-      files.forEach((file) => image.download(file, file.name))
-      toast.success(t(files.length > 1 ? 'story.savedAll' : 'story.savedOne'))
+      // A refused share sheet (no files, no tap permission left) falls through to saving: no error.
+      if (send && canShare.value && (await image.share(files)) !== 'failed') return
+      const results = files.map((file) => image.download(file, file.name))
+      if (results.includes('opened')) toast.info(t('story.opened'))
+      else toast.success(t(files.length > 1 ? 'story.savedAll' : 'story.savedOne'))
     })
   } catch {
     toast.error(t('story.saveError'))
