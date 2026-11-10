@@ -192,6 +192,7 @@ onMounted(loadLinks)
               v-if="timezoneLabel"
               :title="t('accountPage.timezone')"
               :subtitle="t('accountPage.timezoneHint')"
+              wrap
             >
               <template #trailing>{{ timezoneLabel }}</template>
             </UiListRow>
