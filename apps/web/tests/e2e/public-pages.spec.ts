@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { gotoHydrated, noHorizontalScroll, usePreferences } from './helpers'
+import { gotoHydrated, noHorizontalScroll, openChapter, usePreferences } from './helpers'
 
 test('system dark theme hydrates without replacing the theme icon', async ({ page }) => {
   const errors: string[] = []
@@ -117,17 +117,9 @@ test('report navigation survives resizing between phone, tablet and desktop', as
       await expect
         .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
         .toBe(true)
-    // The example has no capsule (no sheet of chapters): tabs below 1200, the table of contents above.
-    const open = (name: string) =>
-      width >= 1200
-        ? page
-            .locator('.toc__row')
-            .filter({ has: page.getByText(name, { exact: true }) })
-            .click()
-        : page.getByRole('tab', { name, exact: true }).click()
-    await open('Время')
+    await openChapter(page, 'Время')
     await expect(page.locator('#part-time')).toBeInViewport()
-    await open('Вы двое')
+    await openChapter(page, 'Вы двое')
     await expect(page.locator('#part-together')).toBeInViewport()
   }
 })

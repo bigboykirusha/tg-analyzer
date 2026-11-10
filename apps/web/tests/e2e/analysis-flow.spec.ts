@@ -52,10 +52,7 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   ]) {
     await openChapter(page, tab)
     await expect(page.locator(`#part-${part}`)).toBeInViewport()
-    const width = page.viewportSize()!.width
-    if (width >= 1200) await expect(page.locator('.toc__row[aria-current]')).toContainText(tab)
-    else if (width > 900) await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
-    else await expect(page.locator('.capsule__status')).toHaveText(/\d/)
+    await expect(page.locator('.page-bar__lede')).toContainText(tab)
   }
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   // «октябрь 2026 г.» on the axis under the pulse (on the poster; a short chat has no chapters) never breaks before «г.».
@@ -134,7 +131,7 @@ test('code autofill and two-step verification complete sign-in', async ({ page }
   await page.locator('.phone-input').fill(phone)
   await page.getByRole('button', { name: 'Получить код' }).click()
   await page.locator('.otp-input').first().fill('12345')
-  await page.getByRole('button', { name: 'Подтвердить код' }).click()
+  await page.getByRole('button', { name: 'Войти', exact: true }).click()
   await page.locator('input[type="password"]').fill('secret')
   await page.getByRole('button', { name: 'Войти', exact: true }).click()
   await page.waitForURL('**/dashboard')

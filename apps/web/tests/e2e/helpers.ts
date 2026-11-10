@@ -30,7 +30,7 @@ export async function signIn(page: Page, options: { navigate?: boolean } = {}) {
   await page.getByRole('button', { name: 'Получить код' }).click()
   await page.locator('.otp-input').first().click()
   await page.keyboard.type('12345')
-  await page.getByRole('button', { name: 'Подтвердить код' }).click()
+  await page.getByRole('button', { name: 'Войти', exact: true }).click()
   await page.waitForURL('**/dashboard')
 }
 
@@ -44,25 +44,10 @@ export async function backendAvailable(baseURL: string) {
 }
 
 /**
- * Opens a chapter of a report. Wide screens (≥ 1200) have the table of contents beside the chapters;
- * between 901 and 1199 the header keeps its tabs; on phones and tablets the reader scrolls there.
+ * Opens a chapter of a report: the report is one long page, so the reader scrolls there; the bar then
+ * says which chapter they are in («Время, 2 из 3»).
  */
 export async function openChapter(page: Page, name: string) {
-  const width = page.viewportSize()!.width
-  // Wide screens: the table of contents beside the chapters.
-  if (width >= 1200) {
-    await page
-      .locator('.toc__row')
-      .filter({ has: page.getByText(name, { exact: true }) })
-      .click()
-    return
-  }
-  if (width > 900) {
-    await page.getByRole('tab', { name }).click()
-    return
-  }
-  // Phones and tablets have no chapter navigation of their own: the reader scrolls, and the capsule in
-  // the header says which chapter they are in.
   await page
     .locator(`.report-part:has(h2:text-is("${name}"))`)
     .evaluate((element) => element.scrollIntoView({ behavior: 'instant', block: 'start' }))

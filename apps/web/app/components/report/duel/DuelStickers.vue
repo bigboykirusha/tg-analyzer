@@ -74,7 +74,7 @@ const favourites = computed(() => {
 .favourite__art {
   display: grid;
   place-items: center;
-  width: calc(var(--space-20) + var(--space-4));
+  width: calc(calc(var(--space-16) + var(--space-4)) + var(--space-4));
   aspect-ratio: 1;
   margin-bottom: var(--space-2);
   border-radius: var(--radius-lg);

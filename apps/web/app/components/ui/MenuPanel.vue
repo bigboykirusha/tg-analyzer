@@ -95,8 +95,8 @@ defineExpose({ el })
 .menu-panel-enter-active,
 .menu-panel-leave-active {
   transition:
-    opacity var(--transition-normal),
-    transform var(--transition-normal);
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .menu-panel-leave-active {
