@@ -24,7 +24,7 @@
     "start:worker": "corepack pnpm --filter @tg-analyzer/api worker",
     "test:unit": "corepack pnpm --filter @tg-analyzer/shared test",
     "test:e2e": "corepack pnpm --filter @tg-analyzer/web test:e2e",
-    "services:test": "docker compose -f docker-compose.test.yml up -d --wait"
+    "services:test": "docker compose -p tganalizer-test -f docker-compose.test.yml up -d --wait"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
