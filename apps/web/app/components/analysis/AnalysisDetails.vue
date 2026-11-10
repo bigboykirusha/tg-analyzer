@@ -37,7 +37,7 @@ async function cancel() {
     <template v-if="view">
       <section class="details-card" :data-hue="view.chatId ? hueOf(view.chatId) : undefined">
         <div class="details-card__head">
-          <ChatAvatar v-if="view.chatId" :chat-id="view.chatId" :title="view.chat" size="md" />
+          <ChatAvatar v-if="view.chatId" :chat-id="view.chatId" :title="view.chat" size="md" on-poster />
           <span class="details-card__copy">
             <strong class="details-card__name">{{ view.chat }}</strong>
             <span v-if="view.reached" class="details-card__reached">{{ view.reached }}</span>
@@ -85,15 +85,15 @@ async function cancel() {
 </template>
 
 <style scoped>
-/* The same neutral card as everywhere; the person's colour is their avatar and the bar. */
+/* The chat's poster in miniature: its colour, ink type, the person's deep tone for the bar. */
 .details-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--card-padding);
-  border-radius: var(--radius-card);
-  background: var(--surface-2);
-  color: var(--text);
+  border-radius: var(--radius-lg);
+  background: var(--poster);
+  color: var(--on-poster);
 }
 
 .details-card__head {
@@ -111,7 +111,7 @@ async function cancel() {
 
 .details-card__name {
   overflow: hidden;
-  font: var(--text-body);
+  font: var(--text-title);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -119,8 +119,8 @@ async function cancel() {
 
 .details-card__reached,
 .details-card__note {
-  color: var(--text-muted);
-  font: var(--text-label);
+  color: var(--on-poster-muted);
+  font: var(--text-small);
 }
 
 .details-card__percent {
@@ -132,14 +132,14 @@ async function cancel() {
   height: var(--bar-height);
   overflow: hidden;
   border-radius: var(--radius-full);
-  background: var(--border);
+  background: var(--on-poster-chip);
 }
 
 .details-card__bar i {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--them);
+  background: var(--on-them);
   transform-origin: left;
   transition: transform var(--duration-chart) var(--ease-standard);
 }
