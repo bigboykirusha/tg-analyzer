@@ -6,9 +6,9 @@
  * Motion, each with one job:
  *   deal-in   on load the cards rise in one after another and settle into the fan; the front pulse grows
  *             once its card has landed
- *   deal      every few seconds the front report is flicked off to the left, turning as a card thrown by
- *             hand, and slides under the deck; the two behind step forward on a spring without overshoot;
- *             the new front's content fades up a moment after it lands, and its pulse grows
+ *   deal      every few seconds the front report slides out to the right past the deck, stops, goes under and
+ *             comes back behind it into the last place; the two others step forward; the new front's content
+ *             fades up a moment after it lands, and its pulse grows
  *   hover     the fan opens a little and the front card tilts towards the pointer (at most 6°), so the deck
  *             feels like a thing on the table
  *   click     deals the next report
@@ -29,7 +29,8 @@ const props = defineProps<{ cards: DeckCard[]; label: string }>()
 
 /** How long a report stays on top, and how long a deal takes (--duration-deal). */
 const INTERVAL_MS = 3600
-const DEAL_MS = 700
+/** How long putting the top report under the deck takes (--duration-shuffle). */
+const DEAL_MS = 1100
 /** The deal-in on load ends by then (700 ms and two staggers); after it the entrance is taken off the cards, so a
  *  card that has been dealt does not play it again when its deal animation comes off. */
 const ENTER_MS = 1200
@@ -251,22 +252,27 @@ watch(reduced, schedule)
   --pulse-delay: var(--duration-sheet);
 }
 
-/*
- * The top report leaves in one motion — down and to the left, turning a little, accelerating, fading — with its
- * content on it to the end. Only once it is invisible does it move to the back (and under the others), where it
- * fades in. No reversal mid-flight and no jump in front of the eye: that is what made the first version stutter.
- */
 /* After the deal-in the cards carry no entrance any more. */
 .deck--entered .deck__card {
   animation: none;
 }
 
+/*
+ * Putting the top report at the bottom of the deck, as a hand does — never fading it out:
+ *   out    it slides to the right, past the edge of the deck, turning a little: it starts gently and slows to a
+ *          stop (ease-in-out: no flick off the mark, no turn-around at speed). 125 % of its width with 8°
+ *          clears every other card on any screen.
+ *   under  only there, overlapping nothing, does it go under the others: no card pops through another.
+ *   back   it comes back behind the deck (ease-in-out: starts and lands softly) into the last place, where only
+ *          its colour shows; its content fades while it slides under.
+ * The two others step forward meanwhile. Off-screen on a phone the site clips it (overflow-x: clip).
+ */
 .deck .deck__card--leaving {
-  animation: deck-deal var(--duration-deal) both;
+  animation: deck-deal var(--duration-shuffle) both;
 }
 
 .deck__card--leaving :deep(.home-card > *) {
-  animation: deck-deal-content var(--duration-deal) step-end both;
+  animation: deck-deal-content var(--duration-shuffle) linear both;
   transition: none;
 }
 
@@ -281,39 +287,36 @@ watch(reduced, schedule)
 @keyframes deck-deal {
   0% {
     z-index: var(--deck-z-lift);
-    opacity: 1;
     transform: none;
-    animation-timing-function: var(--ease-exit);
+    animation-timing-function: var(--ease-in-out);
   }
 
-  38% {
+  48% {
     z-index: var(--deck-z-lift);
-    opacity: 0;
-    transform: translate(-18%, 8%) rotate(-6deg) scale(0.96);
+    transform: translateX(125%) rotate(8deg) scale(0.95);
     animation-timing-function: step-end;
   }
 
-  40% {
-    z-index: 0;
-    opacity: 0;
-    transform: var(--deck-2);
-    animation-timing-function: var(--ease-standard);
+  49% {
+    z-index: 1;
+    transform: translateX(125%) rotate(8deg) scale(0.95);
+    animation-timing-function: var(--ease-in-out);
   }
 
   100% {
-    z-index: 0;
-    opacity: 1;
+    z-index: 1;
     transform: var(--deck-2);
   }
 }
 
-/* The content stays on the leaving card while it can be seen, and is gone when it comes back behind. */
+/* The content stays while the card is out in view, and fades as it slides under the deck. */
 @keyframes deck-deal-content {
-  0% {
+  0%,
+  50% {
     opacity: 1;
   }
 
-  40%,
+  80%,
   100% {
     opacity: 0;
   }

@@ -512,6 +512,8 @@
   --stagger-bar: 14ms;
   --stagger-card: 60ms;
   --duration-deal: 700ms;
+  /* The landing deck puts its top report under the others: out, under, back. */
+  --duration-shuffle: 1100ms;
 
   /* One family, Onest: hierarchy from size, weight and colour. 400 reading, 500 interface, 600 titles and numbers. */
   --font-sans: 'Onest Variable', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
@@ -563,6 +565,8 @@
   /* Leaving, from Material 3 (emphasized accelerate): what goes away speeds up and is shorter. */
   --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
   --ease-loop: cubic-bezier(0.45, 0, 0.55, 1);
+  /* Starts and lands softly: a move that begins and ends at rest, as a hand moves a card (the landing deck). */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.5, 1);
   /* Apple's critically damped spring (damping 1, response 0.35 s) sampled into linear(). */
   --spring-snappy: linear(
     0,
