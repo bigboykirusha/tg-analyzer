@@ -6,6 +6,8 @@ import Tooltip from './Tooltip.vue'
  * The round icon button: the third of the three button looks (docs/design-system.md §7), a neutral fill. A
  * coloured context (a poster) re-points the fill through tokens; the look does not change.
  * Sizes follow the buttons: sm 36 · md 44 on a phone, 36 on desktop.
+ * `plain` — no fill, a quiet icon: only for a card's own «⋯» menu, where a filled circle would outweigh the
+ * card's name (docs/design-system.md, «Кит»). Its hover and press are the same fill as everywhere.
  */
 defineOptions({ inheritAttrs: false })
 
@@ -19,8 +21,9 @@ const props = withDefaults(
     loading?: boolean
     disabled?: boolean
     noTooltip?: boolean
+    plain?: boolean
   }>(),
-  { size: 'md', to: '', loading: false, disabled: false, noTooltip: false },
+  { size: 'md', to: '', loading: false, disabled: false, noTooltip: false, plain: false },
 )
 
 const attrs = useAttrs()
@@ -28,7 +31,7 @@ const attrs = useAttrs()
 function buttonAttrs() {
   return Object.fromEntries(Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'))
 }
-const classes = computed(() => ['icon-btn', `icon-btn--${props.size}`])
+const classes = computed(() => ['icon-btn', `icon-btn--${props.size}`, { 'icon-btn--plain': props.plain }])
 </script>
 
 <template>
@@ -79,6 +82,17 @@ const classes = computed(() => ['icon-btn', `icon-btn--${props.size}`])
     width: var(--control-sm);
     height: var(--control-sm);
   }
+}
+
+.icon-btn--plain {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.icon-btn--plain:active:not(:disabled),
+.icon-btn--plain[aria-expanded='true'] {
+  background: var(--pressed);
+  color: var(--text);
 }
 
 /* Compact circles still answer a 44 px tap. */

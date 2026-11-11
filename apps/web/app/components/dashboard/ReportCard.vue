@@ -59,6 +59,8 @@ function run(action: 'refresh' | 'share' | 'delete') {
             :label="t('dashboard.reportMenu', { chat: report.title })"
             :icon="MoreHorizontal"
             size="sm"
+            class="report-card__menu"
+            plain
             no-tooltip
             aria-haspopup="menu"
             :aria-expanded="menuOpen"
@@ -83,6 +85,11 @@ function run(action: 'refresh' | 'share' | 'delete') {
 </template>
 
 <style scoped>
+/* The quiet «⋯» sits on the card's edge optically: its glyph, not its circle, lines up with the padding. */
+.report-card__menu {
+  margin-right: calc(-1 * var(--space-2));
+}
+
 /* New messages: a quiet neutral pill beside the menu, never the person's colour. */
 .report-card__badge {
   padding: var(--space-0-5) var(--space-2);
