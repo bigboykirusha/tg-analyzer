@@ -10,6 +10,8 @@ const { syncTimeZone } = useAuth()
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
+/** No reports yet, and we know it: home is «С кого начнём?». */
+const newcomer = computed(() => workspace.reportsState === 'ready' && !workspace.reports.length)
 
 onMounted(() => {
   if (!workspace.reports.length) void workspace.loadReports().catch(() => undefined)
@@ -60,9 +62,10 @@ watch(analysis.finished, (job) => {
     </div>
     <!--
       Phones and tablets: one floating control at the bottom. On home it is «Новый анализ» (the chat list
-      as a sheet); while an analysis runs, on any screen, it is the analysis folded into a capsule.
+      as a sheet); while an analysis runs, on any screen, it is the analysis folded into a capsule. A newcomer's
+      home is itself the chat picker (with «Все чаты Telegram» at its end), so it has no second way to the same list.
     -->
-    <div v-if="analysis.isActive.value || route.path === '/dashboard'" class="workspace-dock no-print">
+    <div v-if="analysis.isActive.value || (route.path === '/dashboard' && !newcomer)" class="workspace-dock no-print">
       <AnalysisLive v-if="analysis.isActive.value" />
       <UiButton
         v-else

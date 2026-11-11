@@ -211,6 +211,8 @@ test('a late dialog response cannot populate the next account', async ({ page })
     await page
       .getByRole('link', { name: 'Новый анализ' })
       .or(page.getByRole('button', { name: 'Новый анализ' }))
+      // A newcomer's phone home has no floating button: the list ends with «Все чаты Telegram».
+      .or(page.getByRole('link', { name: 'Все чаты Telegram' }))
       .first()
       .click()
     await expect.poll(() => held).toBeGreaterThan(0)
@@ -226,6 +228,8 @@ test('a late dialog response cannot populate the next account', async ({ page })
     await page
       .getByRole('link', { name: 'Новый анализ' })
       .or(page.getByRole('button', { name: 'Новый анализ' }))
+      // A newcomer's phone home has no floating button: the list ends with «Все чаты Telegram».
+      .or(page.getByRole('link', { name: 'Все чаты Telegram' }))
       .first()
       .click()
     await expect(page.locator('.chat-row').filter({ hasText: 'Катя' })).toBeVisible()
