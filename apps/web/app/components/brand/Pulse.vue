@@ -4,6 +4,8 @@
  * ink, theirs below in the person's deep tone. Heights use a square-root scale so a quiet week still
  * shows and a record week does not flatten the rest. The data is folded into `bars` columns, so a
  * card, the poster and a story draw the same texture whatever they pass.
+ * `grow`: the bars rise out of the middle line, left to right, when the pulse appears (and again whenever
+ * `grow` turns on) — the product's one signature motion. Still under reduced motion.
  */
 const props = withDefaults(
   defineProps<{
@@ -12,8 +14,9 @@ const props = withDefaults(
     height?: number
     bars?: number
     label?: string
+    grow?: boolean
   }>(),
-  { height: 32, bars: 40, label: '' },
+  { height: 32, bars: 40, label: '', grow: false },
 )
 
 const columns = computed(() => {
@@ -47,16 +50,17 @@ const columns = computed(() => {
 <template>
   <div
     class="pulse"
+    :class="{ 'pulse--grow': grow }"
     :role="label ? 'img' : undefined"
     :aria-label="label || undefined"
     :aria-hidden="label ? undefined : 'true'"
     :style="height ? { '--pulse-half': `${height}px` } : undefined"
   >
     <div class="pulse__half pulse__half--up">
-      <i v-for="(column, index) in columns" :key="index" :style="{ height: column.up }" />
+      <i v-for="(column, index) in columns" :key="index" :style="{ height: column.up, '--i': index }" />
     </div>
     <div class="pulse__half pulse__half--down">
-      <i v-for="(column, index) in columns" :key="index" :style="{ height: column.down }" />
+      <i v-for="(column, index) in columns" :key="index" :style="{ height: column.down, '--i': index }" />
     </div>
   </div>
 </template>
@@ -95,5 +99,31 @@ const columns = computed(() => {
 
 .pulse__half--down i {
   background: var(--pulse-them, var(--them));
+}
+
+/* Each bar grows out of the line between the two voices; a wave runs left to right. */
+.pulse--grow i {
+  animation: pulse-grow var(--duration-sheet) var(--ease-standard) both;
+  animation-delay: calc(var(--i) * var(--pulse-stagger, var(--stagger-bar)));
+}
+
+.pulse--grow .pulse__half--up i {
+  transform-origin: 50% 100%;
+}
+
+.pulse--grow .pulse__half--down i {
+  transform-origin: 50% 0;
+}
+
+@keyframes pulse-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse--grow i {
+    animation: none;
+  }
 }
 </style>

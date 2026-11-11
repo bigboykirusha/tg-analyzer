@@ -36,6 +36,7 @@ function run(action: 'refresh' | 'share' | 'delete') {
     :chat-id="report.chatId"
     :title="report.title"
     :has-avatar="hasAvatar"
+    poster
     :to="`/chat/${report.chatId}`"
   >
     <template #end>
@@ -80,7 +81,7 @@ function run(action: 'refresh' | 'share' | 'delete') {
       <template v-if="updating"><span class="spinner" aria-hidden="true" /> {{ t('dashboard.analysingNow') }}</template>
       <template v-else>{{ meta }}</template>
     </template>
-    <Pulse v-if="pulse" :data="pulse" :height="12" :bars="28" />
+    <Pulse v-if="pulse" :data="pulse" :height="24" :bars="28" grow />
   </HomeCard>
 </template>
 
@@ -90,12 +91,12 @@ function run(action: 'refresh' | 'share' | 'delete') {
   margin-right: calc(-1 * var(--space-2));
 }
 
-/* New messages: a quiet neutral pill beside the menu, never the person's colour. */
+/* New messages: a quiet chip of poster ink beside the menu. */
 .report-card__badge {
   padding: var(--space-0-5) var(--space-2);
   border-radius: var(--radius-pill);
-  background: var(--surface-2);
-  color: var(--text);
+  background: var(--on-poster-chip);
+  color: var(--on-poster);
   white-space: nowrap;
 }
 </style>
