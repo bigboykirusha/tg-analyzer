@@ -21,8 +21,10 @@ const props = withDefaults(
     /** A guest's poster: «Дима и Мила» and who shared it, no legend, no actions. */
     heading?: string | null
     lede?: string | null
+    /** The name is the page's h1 (the example: its header carries no name). */
+    h1?: boolean
   }>(),
-  { data: null, title: null, actions: false, heading: null, lede: null },
+  { data: null, title: null, actions: false, heading: null, lede: null, h1: false },
 )
 const emit = defineEmits<{ story: []; share: [] }>()
 const { t, tc, formatNumber, formatDay } = useI18n()
@@ -100,6 +102,7 @@ const cast = computed(() => {
         <div class="poster__head">
           <!-- A guest's heading is the page's h1; the owner's name is the h1 in the bar, here its picture. -->
           <h1 v-if="heading" class="poster__name poster__name--pair">{{ heading }}</h1>
+          <h1 v-else-if="h1 && data" class="poster__name">{{ data.summary.title }}</h1>
           <p v-else-if="data || title" class="poster__name" aria-hidden="true">{{ data?.summary.title ?? title }}</p>
           <UiSkeleton v-else class="poster__name-skeleton" width="55%" radius="var(--radius-sm)" />
           <p v-if="meta" class="poster__meta">{{ meta }}</p>

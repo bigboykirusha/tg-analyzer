@@ -77,14 +77,10 @@ test('protected pages redirect to login', async ({ page }) => {
 
 test('the example report opens without signing in', async ({ page }, testInfo) => {
   await gotoHydrated(page, '/example')
-  // The name is the h1 of the bar; over the poster the bar shows it only as the poster's big name.
-  await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeAttached()
-  await expect(page.locator('#header-page').getByRole('link', { name: 'Войти' })).toBeVisible()
-  if (page.viewportSize()!.width <= 640 && (await page.locator('.page-bar__lede').count())) {
-    await expect
-      .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
-      .toBe(true)
-  }
+  // The name is the poster's h1; the public header is the logo and one «Войти», with no back circle.
+  await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeVisible()
+  await expect(page.locator('.site-header').getByRole('link', { name: 'Войти' })).toBeVisible()
+  await expect(page.locator('.site-header').getByRole('link', { name: 'Назад' })).toHaveCount(0)
   // The example is the same report as an owner's: three parts, «Вы двое», «Время» and «О чём».
   for (const id of ['together', 'time', 'words']) await expect(page.locator(`#chapter-${id}`)).toBeVisible()
   await expect(page.locator('.report-section')).not.toHaveCount(0)
