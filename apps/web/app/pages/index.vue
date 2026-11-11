@@ -26,24 +26,6 @@ const deck = computed(() =>
     }
   }),
 )
-/** While the hero's buttons are on screen the header keeps its own «Войти» out of the way (SiteHeader). */
-const heroInView = useState('hero-cta-in-view', () => true)
-const actions = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | undefined
-onMounted(() => {
-  if (!actions.value || !('IntersectionObserver' in window)) return (heroInView.value = false)
-  // A button gone under the sticky header counts as gone.
-  const header = document.querySelector<HTMLElement>('.site-header')?.offsetHeight ?? 0
-  observer = new IntersectionObserver(([entry]) => (heroInView.value = Boolean(entry?.isIntersecting)), {
-    rootMargin: `-${header}px 0px 0px 0px`,
-  })
-  observer.observe(actions.value)
-})
-onBeforeUnmount(() => {
-  observer?.disconnect()
-  heroInView.value = true
-})
-
 const runtimeConfig = useRuntimeConfig()
 useSeoMeta({ title: () => t('landing.seoTitle'), description: () => t('seo.description') })
 // Lets search engines show the app as free software rather than a plain page.
@@ -74,7 +56,7 @@ useHead({
       <section class="landing__copy" aria-labelledby="hero-title">
         <h1 id="hero-title" class="landing__title">{{ t('landing.title') }} {{ t('landing.titleSoft') }}</h1>
         <p class="landing__lede">{{ t('landing.lede') }}</p>
-        <div ref="actions" class="landing__actions">
+        <div class="landing__actions">
           <UiButton variant="primary" size="lg" to="/login">{{ t('landing.cta') }}</UiButton>
           <!-- The second way is a word, not a second slab: one call to action on the first screen. -->
           <NuxtLink class="landing__more" to="/example">
@@ -92,7 +74,7 @@ useHead({
 </template>
 
 <style scoped>
-/* One screen, phone or desktop: the title, the lead, two actions, the example tiles and a quiet line about privacy. */
+/* One screen, phone or desktop: the title, the lead, the call to action, a quiet line about privacy and the deck. */
 .landing {
   display: flex;
   flex: 1;
@@ -109,8 +91,13 @@ useHead({
   display: flex;
   flex: 1;
   flex-direction: column;
-  justify-content: space-between;
   gap: var(--space-6);
+  min-height: 0;
+}
+
+/* A phone: the copy takes what it needs, the deck the rest of the screen (it scales itself into it). */
+.landing__deck {
+  flex: 1 1 0;
   min-height: 0;
 }
 
@@ -125,6 +112,14 @@ useHead({
   font: var(--text-display);
   letter-spacing: var(--tracking-display);
   text-wrap: balance;
+}
+
+/* A phone: two lines, not three — the title gives the deck its height back. */
+@media (max-width: 900px) {
+  .landing__title {
+    font-size: var(--display-fit);
+    line-height: 1;
+  }
 }
 
 .landing__lede {
@@ -207,6 +202,10 @@ useHead({
     grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
     align-items: center;
     gap: var(--space-16);
+  }
+
+  .landing__deck {
+    flex: none;
   }
 
   .landing__copy {

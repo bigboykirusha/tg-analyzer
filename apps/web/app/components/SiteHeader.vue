@@ -1,20 +1,14 @@
 <script setup lang="ts">
 /**
  * The header of every public page (landing, privacy, sign-in, the example report, a shared link, 404): the logo
- * on the left — it is also the way home — and «Войти» on the right. Nothing else: the example and privacy are in
- * the page itself and in the footer, language and theme in the footer — a header that repeats the hero is noise.
- * «Войти» is one button everywhere (secondary, sm), absent on the sign-in page itself and offline. On the landing
- * it waits until the hero's own «Войти через Telegram» has scrolled away, so the first screen has one call to
- * action, not two. Over a poster (the example, a shared link) the bar is the poster with its ink; past it, glass.
+ * on the left — it is also the way home — and on the right the language and the theme as round icons, then
+ * «Войти». «Войти» is one button everywhere (secondary, sm); it is absent on the landing, whose own «Войти через
+ * Telegram» is always on its one screen, on the sign-in page itself and offline. Over a poster (the example, a
+ * shared link) the bar is the poster with its ink; past it, glass.
  */
 const { t } = useI18n()
 const route = useRoute()
-/** Not on the sign-in page itself, and not offline: without a connection there is nowhere to sign in. */
-const showSignIn = computed(() => route.path !== '/login' && route.path !== '/offline')
-/** On the landing: whether its hero buttons are on screen (pages/index.vue). True until it says otherwise, on the
- *  server and in the browser alike, so the first paint and the hydration agree. */
-const heroInView = useState('hero-cta-in-view', () => true)
-const waiting = computed(() => route.path === '/' && heroInView.value)
+const showSignIn = computed(() => !['/', '/login', '/offline'].includes(route.path))
 const { scrolled, overPoster } = usePosterHeader()
 </script>
 
@@ -26,17 +20,13 @@ const { scrolled, overPoster } = usePosterHeader()
   >
     <div class="site-header__in">
       <BrandLink class="site-header__brand" />
-      <UiButton
-        v-if="showSignIn"
-        to="/login"
-        size="sm"
-        class="site-header__sign-in"
-        :class="{ 'is-waiting': waiting }"
-        :tabindex="waiting ? -1 : undefined"
-        :aria-hidden="waiting || undefined"
-      >
-        {{ t('site.signIn') }}
-      </UiButton>
+      <div class="site-header__end">
+        <UiLocaleSwitch />
+        <UiThemeToggle />
+        <UiButton v-if="showSignIn" to="/login" size="sm" class="site-header__sign-in">
+          {{ t('site.signIn') }}
+        </UiButton>
+      </div>
     </div>
   </header>
 </template>
@@ -80,15 +70,14 @@ const { scrolled, overPoster } = usePosterHeader()
   padding: 0 var(--page-gutter);
 }
 
-/* «Войти» fades in once the hero's buttons are gone; its place is kept, so nothing shifts. */
-.site-header__sign-in {
-  transition:
-    opacity var(--duration-fast) var(--ease-standard),
-    visibility var(--duration-fast);
+.site-header__end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-.site-header__sign-in.is-waiting {
-  visibility: hidden;
-  opacity: 0;
+/* A little more air before the one text button than between the two icons. */
+.site-header__sign-in {
+  margin-left: var(--space-2);
 }
 </style>

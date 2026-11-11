@@ -1,9 +1,8 @@
 <script setup lang="ts">
 /**
- * The foot of every public page, quiet text only: the pages (the example, privacy and questions), the channel and
- * «Поддержать» when the site has them (NUXT_PUBLIC_CHANNEL_URL, NUXT_PUBLIC_SUPPORT_URL), then language and theme
- * as words, and the Telegram notice. Language and theme live here, as on Apple's, Stripe's and Linear's sites:
- * the language follows the browser and the theme the system, so they are corrections, not navigation.
+ * The foot of the public pages that scroll (privacy, sign-in, the example, a shared link), quiet text only: the
+ * pages, the channel and «Поддержать» when the site has them (NUXT_PUBLIC_CHANNEL_URL, NUXT_PUBLIC_SUPPORT_URL),
+ * and the Telegram notice. The landing is one screen and has none; language and theme are in the header.
  */
 const { t } = useI18n()
 const { channelUrl, supportUrl } = useRuntimeConfig().public
@@ -20,10 +19,6 @@ const current = (path: string) => (route.path === path ? 'page' : undefined)
         <a v-if="channelUrl" :href="channelUrl" target="_blank" rel="noopener">{{ t('site.channel') }}</a>
         <a v-if="supportUrl" :href="supportUrl" target="_blank" rel="noopener">{{ t('site.support') }}</a>
       </nav>
-      <div class="site-footer__prefs">
-        <UiLocaleSwitch />
-        <UiThemeToggle />
-      </div>
       <p class="site-footer__note">{{ t('site.unofficial') }}</p>
     </div>
   </footer>
@@ -43,8 +38,7 @@ const current = (path: string) => (route.path === path ? 'page' : undefined)
   font: var(--text-small);
 }
 
-.site-footer__nav,
-.site-footer__prefs {
+.site-footer__nav {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -55,9 +49,8 @@ const current = (path: string) => (route.path === path ? 'page' : undefined)
   grid-column: 1 / -1;
 }
 
-/* Links and the two word-buttons are one look: muted text that turns to ink. */
-.site-footer__nav > *,
-.site-footer__prefs > * {
+/* Links: muted text that turns to ink. */
+.site-footer__nav > * {
   display: inline-flex;
   align-items: center;
   min-height: var(--control-sm);
@@ -71,20 +64,18 @@ const current = (path: string) => (route.path === path ? 'page' : undefined)
 
 /* A finger gets a full 44 target without the line looking any different. */
 @media (pointer: coarse) {
-  .site-footer__nav > *,
-  .site-footer__prefs > * {
+  .site-footer__nav > * {
     min-height: var(--control-md);
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .site-footer__nav > :hover,
-  .site-footer__prefs > :hover {
+  .site-footer__nav > :hover {
     color: var(--text);
   }
 }
 
-/* Phones: one column, left-aligned like the page — the pages, then language and theme, then the notice. */
+/* Phones: one column, left-aligned like the page — the pages, then the notice. */
 @media (max-width: 640px) {
   .site-footer__in {
     grid-template-columns: minmax(0, 1fr);

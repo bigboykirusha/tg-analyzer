@@ -34,17 +34,12 @@ const collect = () => {
   for (const el of all) {
     const cs = getComputedStyle(el)
     const r = el.getBoundingClientRect()
-    const bg = cs.backgroundColor
-    const hasBg = bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent'
     // A control drawn as part of a text field (the country code before a phone number) is the field, not a button look.
-    // A control drawn as plain text — no fill, no border, no corners (the footer's «English», «Тёмная тема») — is the
-    // link look, whatever its tag: it is not a button look. A glyph button without a fill keeps its round shape and
-    // still counts.
-    const asText = !hasBg && cs.borderTopWidth === '0px' && cs.borderRadius === '0px'
     const isBtn =
       el.matches('button, a.btn, [role=button], a[class*="btn"], .chip, [role=tab], [role=switch]') &&
-      !el.matches('.select__addon') &&
-      !asText
+      !el.matches('.select__addon')
+    const bg = cs.backgroundColor
+    const hasBg = bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent'
     const rad = px(cs.borderRadius)
     if (cs.borderRadius !== '0px') out.radii.push(rad)
     if (isBtn) {

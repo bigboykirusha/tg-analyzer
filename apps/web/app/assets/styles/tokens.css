@@ -526,6 +526,8 @@
   /* Titles are 500: hierarchy from size and colour; a 600 headline over 14 px controls read as shouting. */
   --text-display: 500 52px/52px var(--font-sans);
   --display-max: 52px;
+  /* The landing's title on a phone: shrinks with the width so «Зеркало ваших» stays one line down to 360 px. */
+  --display-fit: min(var(--display-max), 12.6vw);
   --text-figure: 500 44px/48px var(--font-sans);
   --text-h1: 500 30px/36px var(--font-sans);
   --text-h2: 500 24px/30px var(--font-sans);

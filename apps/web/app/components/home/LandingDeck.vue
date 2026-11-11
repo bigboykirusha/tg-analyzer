@@ -17,6 +17,10 @@
  * rounds — it shows what reports look like, it is not a carousel to watch. Reduced motion: a still deck, no
  * tilt. Every card stays in the DOM in reading order, so a screen reader reads all three.
  *
+ * Fit: on a phone the landing is one screen, so the deck takes the height that is left under the copy and scales
+ * itself into it (never up, never under 55 %). It is measured before the deal-in plays, so the cards rise in at
+ * their final size — nothing shrinks after the page has appeared.
+ *
  * During a deal the cards move by keyframes only — no transitions underneath. Safari otherwise replays the slot
  * transition after the keyframes end and the card jumps back before settling; and the deal ends on the
  * animation's own `animationend`, not on a timer that a busy phone can beat.
@@ -40,6 +44,8 @@ const DEAL_FALLBACK_MS = 1200
 const ENTER_MS = 1200
 const ROUNDS = 2
 const TILT_DEG = 6
+/** The smallest the deck may get to fit a short phone; below it the page scrolls instead. */
+const MIN_FIT = 0.55
 
 /** order[0] is on top; order[1] and order[2] are behind it. */
 const order = ref(props.cards.map((_, index) => index))
@@ -50,6 +56,20 @@ const round = ref(0)
 const tilt = ref({ x: 0, y: 0 })
 const entered = ref(false)
 const reduced = useMediaQuery('(prefers-reduced-motion: reduce)')
+const stage = ref<HTMLElement | null>(null)
+const deck = ref<HTMLElement | null>(null)
+/** The deck's scale in its stage; null until measured (the deal-in waits for it). */
+const fit = ref<number | null>(null)
+let resize: ResizeObserver | undefined
+
+/** Phones only: the stage is the height left on the screen; the deck's own box does not change with `scale`. */
+function measure() {
+  if (!stage.value || !deck.value) return
+  const phone = window.matchMedia('(max-width: 900px)').matches
+  const room = stage.value.clientHeight
+  const natural = deck.value.offsetHeight
+  fit.value = phone && room > 0 && natural > 0 ? Math.max(MIN_FIT, Math.min(1, room / natural)) : 1
+}
 let paused = false
 let deals = 0
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -124,11 +144,17 @@ function onVisibility() {
 }
 
 onMounted(() => {
+  measure()
+  if (stage.value && 'ResizeObserver' in window) {
+    resize = new ResizeObserver(measure)
+    resize.observe(stage.value)
+  }
   enterTimer = setTimeout(() => (entered.value = true), ENTER_MS)
   document.addEventListener('visibilitychange', onVisibility)
   schedule()
 })
 onBeforeUnmount(() => {
+  resize?.disconnect()
   clearTimeout(timer)
   clearTimeout(fallback)
   clearTimeout(enterTimer)
@@ -138,48 +164,64 @@ watch(reduced, schedule)
 </script>
 
 <template>
-  <ul
-    class="deck"
-    :class="{ 'deck--entered': entered, 'deck--dealing': leaving !== null }"
-    :aria-label="label"
-    :style="{ '--tilt-x': `${tilt.x}deg`, '--tilt-y': `${tilt.y}deg` }"
-    @pointerenter="pause"
-    @pointerleave="resume"
-    @pointermove="onMove"
-    @focusin="pause"
-    @focusout="resume"
-    @click="onClick"
-  >
-    <li
-      v-for="(card, index) in cards"
-      :key="card.key"
-      class="deck__card"
-      :class="{ 'deck__card--leaving': leaving === index }"
-      :data-slot="slotOf(index)"
-      :style="{ '--n': index }"
-      @animationend="onAnimationEnd($event, index)"
+  <div ref="stage" class="deck-stage" :class="{ 'deck-stage--ready': fit !== null }">
+    <ul
+      ref="deck"
+      class="deck"
+      :class="{ 'deck--entered': entered, 'deck--dealing': leaving !== null }"
+      :aria-label="label"
+      :style="{ '--tilt-x': `${tilt.x}deg`, '--tilt-y': `${tilt.y}deg`, scale: fit ?? 1 }"
+      @pointerenter="pause"
+      @pointerleave="resume"
+      @pointermove="onMove"
+      @focusin="pause"
+      @focusout="resume"
+      @click="onClick"
     >
-      <HomeCard
-        :chat-id="card.chatId"
-        :title="card.title"
-        :avatar-title="card.avatarTitle"
-        :meta="card.meta"
-        :has-avatar="false"
-        poster
+      <li
+        v-for="(card, index) in cards"
+        :key="card.key"
+        class="deck__card"
+        :class="{ 'deck__card--leaving': leaving === index }"
+        :data-slot="slotOf(index)"
+        :style="{ '--n': index }"
+        @animationend="onAnimationEnd($event, index)"
       >
-        <Pulse
-          :key="slotOf(index) === 0 && leaving === null ? `front-${round}` : 'still'"
-          :data="card.pulse"
-          :height="0"
-          :bars="32"
-          :grow="slotOf(index) === 0 && leaving === null"
-        />
-      </HomeCard>
-    </li>
-  </ul>
+        <HomeCard
+          :chat-id="card.chatId"
+          :title="card.title"
+          :avatar-title="card.avatarTitle"
+          :meta="card.meta"
+          :has-avatar="false"
+          poster
+        >
+          <Pulse
+            :key="slotOf(index) === 0 && leaving === null ? `front-${round}` : 'still'"
+            :data="card.pulse"
+            :height="0"
+            :bars="32"
+            :grow="slotOf(index) === 0 && leaving === null"
+          />
+        </HomeCard>
+      </li>
+    </ul>
+  </div>
 </template>
 
 <style scoped>
+/* The room the deck has: centred in it; on a phone the landing gives it the height left under the copy. */
+.deck-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* Until it is measured the deck waits at the start of its deal-in, invisible. */
+.deck-stage:not(.deck-stage--ready) .deck__card {
+  animation-play-state: paused;
+}
+
 /*
  * One cell; the three cards are stacked in it. A slot is a place in the fan: 0 on top, flat; 1 and 2 behind,
  * nudged up and out, turned and a little smaller. --spread opens the fan on hover. Every place is written as the
