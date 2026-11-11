@@ -30,6 +30,9 @@ const props = defineProps<{ cards: DeckCard[]; label: string }>()
 /** How long a report stays on top, and how long a deal takes (--duration-deal). */
 const INTERVAL_MS = 3600
 const DEAL_MS = 700
+/** The deal-in on load ends by then (700 ms and two staggers); after it the entrance is taken off the cards, so a
+ *  card that has been dealt does not play it again when its deal animation comes off. */
+const ENTER_MS = 1200
 const ROUNDS = 2
 const TILT_DEG = 6
 
@@ -37,11 +40,13 @@ const TILT_DEG = 6
 const order = ref(props.cards.map((_, index) => index))
 const leaving = ref<number | null>(null)
 const tilt = ref({ x: 0, y: 0 })
+const entered = ref(false)
 const reduced = useMediaQuery('(prefers-reduced-motion: reduce)')
 let paused = false
 let deals = 0
 let timer: ReturnType<typeof setTimeout> | undefined
 let settle: ReturnType<typeof setTimeout> | undefined
+let enterTimer: ReturnType<typeof setTimeout> | undefined
 
 const slotOf = (index: number) => order.value.indexOf(index)
 
@@ -97,12 +102,14 @@ function onVisibility() {
 }
 
 onMounted(() => {
+  enterTimer = setTimeout(() => (entered.value = true), ENTER_MS)
   document.addEventListener('visibilitychange', onVisibility)
   schedule()
 })
 onBeforeUnmount(() => {
   clearTimeout(timer)
   clearTimeout(settle)
+  clearTimeout(enterTimer)
   document.removeEventListener('visibilitychange', onVisibility)
 })
 watch(reduced, schedule)
@@ -111,6 +118,7 @@ watch(reduced, schedule)
 <template>
   <ul
     class="deck"
+    :class="{ 'deck--entered': entered }"
     :aria-label="label"
     :style="{ '--tilt-x': `${tilt.x}deg`, '--tilt-y': `${tilt.y}deg` }"
     @pointerenter="pause"
@@ -175,8 +183,9 @@ watch(reduced, schedule)
 .deck__card {
   display: grid;
   grid-area: 1 / 1;
-  /* Places move on a critically damped spring: quick, no overshoot. */
-  transition: transform var(--duration-deal) var(--spring-snappy);
+  /* Places move on one ease-out: quick to start, soft to land, no overshoot. */
+  transition: transform var(--duration-deal) var(--ease-standard);
+  will-change: transform;
   /* Dealt in on load: the back card first, each rising from below and turning into its place. The individual
      `translate`/`rotate` properties compose with the slot's `transform`, so the entrance never fights the fan. */
   animation: deck-in var(--duration-deal) var(--ease-standard) both;
@@ -221,7 +230,7 @@ watch(reduced, schedule)
   transition-delay: var(--duration-fast);
 }
 
-.deck__card:not([data-slot='0']) :deep(.home-card > *) {
+.deck__card:not([data-slot='0'], .deck__card--leaving) :deep(.home-card > *) {
   opacity: 0;
   translate: 0 var(--space-1);
 }
@@ -242,9 +251,23 @@ watch(reduced, schedule)
   --pulse-delay: var(--duration-sheet);
 }
 
-/* The top report is flicked off to the left, turning, accelerating, then slides under into the last place. */
-.deck__card--leaving {
+/*
+ * The top report leaves in one motion — down and to the left, turning a little, accelerating, fading — with its
+ * content on it to the end. Only once it is invisible does it move to the back (and under the others), where it
+ * fades in. No reversal mid-flight and no jump in front of the eye: that is what made the first version stutter.
+ */
+/* After the deal-in the cards carry no entrance any more. */
+.deck--entered .deck__card {
+  animation: none;
+}
+
+.deck .deck__card--leaving {
   animation: deck-deal var(--duration-deal) both;
+}
+
+.deck__card--leaving :deep(.home-card > *) {
+  animation: deck-deal-content var(--duration-deal) step-end both;
+  transition: none;
 }
 
 @keyframes deck-in {
@@ -258,23 +281,41 @@ watch(reduced, schedule)
 @keyframes deck-deal {
   0% {
     z-index: var(--deck-z-lift);
+    opacity: 1;
     transform: none;
     animation-timing-function: var(--ease-exit);
   }
 
-  42% {
+  38% {
     z-index: var(--deck-z-lift);
-    transform: translate(-58%, 4%) rotate(-14deg);
-    animation-timing-function: var(--ease-standard);
+    opacity: 0;
+    transform: translate(-18%, 8%) rotate(-6deg) scale(0.96);
+    animation-timing-function: step-end;
   }
 
-  50% {
+  40% {
     z-index: 0;
+    opacity: 0;
+    transform: var(--deck-2);
+    animation-timing-function: var(--ease-standard);
   }
 
   100% {
     z-index: 0;
+    opacity: 1;
     transform: var(--deck-2);
+  }
+}
+
+/* The content stays on the leaving card while it can be seen, and is gone when it comes back behind. */
+@keyframes deck-deal-content {
+  0% {
+    opacity: 1;
+  }
+
+  40%,
+  100% {
+    opacity: 0;
   }
 }
 
