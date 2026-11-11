@@ -15,6 +15,9 @@ const newcomer = computed(() => workspace.reportsState === 'ready' && !workspace
 
 onMounted(() => {
   if (!workspace.reports.length) void workspace.loadReports().catch(() => undefined)
+  // The sidebar orders reports as home does — pinned in Telegram first — so it needs the chat list on every
+  // screen, not only on home and «Новый анализ» (the cached list answers at once). Home loads it itself first.
+  if (workspace.dialogsState === 'idle') void workspace.loadDialogs()
 })
 
 onMounted(() => {

@@ -72,6 +72,10 @@ function updating(report: ReportSummaryDto) {
           </span>
         </div>
       </template>
+      <!-- A failed list is not an empty one: say it failed (home shows «Повторить»), never «здесь появятся…». -->
+      <p v-else-if="!workspace.reports.length && workspace.reportsState === 'error'" class="sidebar__empty">
+        {{ t('dashboard.reportsError') }}
+      </p>
       <p v-else-if="!workspace.reports.length" class="sidebar__empty">{{ t('sidebar.empty') }}</p>
     </nav>
 

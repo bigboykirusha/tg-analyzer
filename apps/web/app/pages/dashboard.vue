@@ -93,7 +93,8 @@ onMounted(() => {
         </div>
       </UiPageSection>
 
-      <HomeUnanalysed />
+      <!-- Without the reports we cannot tell which chats are still to analyse: no suggestions that may already have one. -->
+      <HomeUnanalysed v-if="!failed" />
     </div>
   </UiPageContainer>
 </template>
