@@ -18,16 +18,16 @@
 
 ## Модули API
 
-| Модуль     | Ответственность                                                               |
-| ---------- | ----------------------------------------------------------------------------- |
-| `auth`     | вход через Telegram, JWT access + ротируемые refresh-семьи, WS-tickets        |
-| `account`  | пользователи, настройки, Telegram-сессии, отключение Telegram, удаление       |
-| `parse`    | диалоги, очередь, прогресс, анализ, восстановление задач после сбоя Redis     |
-| `reports`  | чтение и удаление отчётов                                                     |
-| `share`    | ссылки на отчёт и угадайку (`share_links`), публичные `/api/v1/public/:token` |
-| `notify`   | свой Telegram-бот: «Отчёт готов», `/start` и `/stop`                          |
-| `system`   | `/health`, `/ready` (Postgres, Redis, heartbeat worker), очистка по retention |
-| `telegram` | шлюз к Telegram: `live` (gramjs) и `fake` (детерминированный демо-аккаунт)    |
+| Модуль     | Ответственность                                                                                            |
+| ---------- | ---------------------------------------------------------------------------------------------------------- |
+| `auth`     | вход через Telegram, JWT access + ротируемые refresh-семьи, WS-tickets                                     |
+| `account`  | пользователи, настройки, Telegram-сессии, отключение Telegram, удаление                                    |
+| `parse`    | диалоги, очередь, прогресс, анализ, восстановление задач после сбоя Redis                                  |
+| `reports`  | чтение и удаление отчётов                                                                                  |
+| `share`    | ссылки на отчёт и угадайку (`share_links`), публичные `/api/v1/public/:token`                              |
+| `notify`   | свой Telegram-бот: «Отчёт готов», `/start` и `/stop`                                                       |
+| `system`   | `/health`, `/ready` (Postgres, Redis, heartbeat worker), очистка по retention                              |
+| `telegram` | шлюз к Telegram: `live` (teleproto — поддерживаемый форк GramJS) и `fake` (детерминированный демо-аккаунт) |
 
 Контракт эндпоинтов (`ApiEndpointMap`) и zod-схемы лежат в `packages/shared/src/api`, клиент вызывает их типобезопасно через `api('GET /api/v1/...')`.
 

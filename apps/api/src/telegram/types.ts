@@ -7,7 +7,7 @@ export interface TelegramUser {
 }
 
 export interface TelegramDialog {
-  /** Marked id as used by Bot API / gramjs: negative for groups and channels. */
+  /** Marked id as used by Bot API / teleproto: negative for groups and channels. */
   id: string
   title: string
   type: ChatType

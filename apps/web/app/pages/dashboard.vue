@@ -4,7 +4,8 @@ import { AlertCircle } from '../lib/icons'
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 /**
- * Home is what you have already learned: the reports, one poster tile each, new messages in the chat as a
+ * Home is what you have already learned: «Новое» first when there is news (a quiz answer the owner has not seen —
+ * it goes when the report is opened), then the reports, one poster tile each, new messages in the chat as a
  * badge on the tile. What else to analyse is «Новый анализ» (the dock, the sidebar), not a second list here
  * that counts every chat's month on each visit. A newcomer gets «С кого начнём?» instead.
  */
@@ -26,6 +27,19 @@ const greeting = computed(() => {
 
 /** The reports in the order the sidebar shows them too: pinned in Telegram first, then the freshest. */
 const reports = computed(() => workspace.reportChats)
+
+/** «Новое»: quiz answers the owner has not seen yet, one row each; the row opens the report and clears it. */
+const news = computed(() =>
+  reports.value.flatMap((chat) => {
+    const quiz = chat.report?.quiz
+    if (!quiz) return []
+    const subtitle =
+      quiz.score === null
+        ? t('dashboard.quizHidden')
+        : t('dashboard.quizScore', { score: quiz.score, total: quiz.total })
+    return [{ chat, subtitle }]
+  }),
+)
 
 const loading = computed(
   () => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
@@ -68,6 +82,23 @@ onMounted(() => {
         <h1 class="t-h1">{{ greeting }}</h1>
         <p class="t-lede">{{ t('home.greeting.lede') }}</p>
       </header>
+
+      <UiPageSection v-if="news.length" id="news" :title="t('dashboard.newsTitle')">
+        <UiGroup>
+          <UiListRow
+            v-for="item in news"
+            :key="item.chat.id"
+            :to="`/chat/${item.chat.id}`"
+            :title="item.chat.title"
+            :subtitle="item.subtitle"
+            chevron
+          >
+            <template #leading>
+              <ChatAvatar :chat-id="item.chat.id" :title="item.chat.title" :has-avatar="item.chat.hasAvatar" />
+            </template>
+          </UiListRow>
+        </UiGroup>
+      </UiPageSection>
 
       <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
         <UiEmptyState

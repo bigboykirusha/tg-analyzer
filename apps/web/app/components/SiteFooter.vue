@@ -1,21 +1,18 @@
 <script setup lang="ts">
 /**
- * The foot of the public pages that scroll (privacy, sign-in, the example, a shared link), quiet text only: the
- * pages, the channel and «Поддержать» when the site has them (NUXT_PUBLIC_CHANNEL_URL, NUXT_PUBLIC_SUPPORT_URL),
- * and the Telegram notice. The landing is one screen and has none; language and theme are in the header.
+ * The landing's last line on a computer, quiet text only: «Приватность», the channel and «Поддержать» when the
+ * site has them (NUXT_PUBLIC_CHANNEL_URL, NUXT_PUBLIC_SUPPORT_URL), and the Telegram notice. A phone has none:
+ * there privacy is a phrase of the landing's lead. Other pages have no footer.
  */
 const { t } = useI18n()
 const { channelUrl, supportUrl } = useRuntimeConfig().public
-const route = useRoute()
-const current = (path: string) => (route.path === path ? 'page' : undefined)
 </script>
 
 <template>
   <footer class="site-footer">
     <div class="site-footer__in">
       <nav class="site-footer__nav" :aria-label="t('site.footerNav')">
-        <NuxtLink to="/example" :aria-current="current('/example')">{{ t('site.example') }}</NuxtLink>
-        <NuxtLink to="/privacy" :aria-current="current('/privacy')">{{ t('site.privacy') }}</NuxtLink>
+        <NuxtLink to="/privacy">{{ t('site.privacy') }}</NuxtLink>
         <a v-if="channelUrl" :href="channelUrl" target="_blank" rel="noopener">{{ t('site.channel') }}</a>
         <a v-if="supportUrl" :href="supportUrl" target="_blank" rel="noopener">{{ t('site.support') }}</a>
       </nav>
@@ -45,8 +42,9 @@ const current = (path: string) => (route.path === path ? 'page' : undefined)
   gap: 0 var(--space-6);
 }
 
+/* One line on a computer: the links on the left, the notice on the right. */
 .site-footer__note {
-  grid-column: 1 / -1;
+  text-align: end;
 }
 
 /* Links: muted text that turns to ink. */
@@ -56,10 +54,6 @@ const current = (path: string) => (route.path === path ? 'page' : undefined)
   min-height: var(--control-sm);
   color: var(--text-muted);
   transition: color var(--transition-fast);
-}
-
-.site-footer__nav > [aria-current='page'] {
-  color: var(--text);
 }
 
 /* A finger gets a full 44 target without the line looking any different. */
@@ -72,18 +66,6 @@ const current = (path: string) => (route.path === path ? 'page' : undefined)
 @media (hover: hover) and (pointer: fine) {
   .site-footer__nav > :hover {
     color: var(--text);
-  }
-}
-
-/* Phones: one column, left-aligned like the page — the pages, then the notice. */
-@media (max-width: 640px) {
-  .site-footer__in {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
-
-  .site-footer__note {
-    margin-top: var(--space-2);
   }
 }
 </style>

@@ -46,7 +46,7 @@
 
 - `packages/shared/src/analytics/*` — вся аналитика отчёта, чистые функции с тестами; `significance.ts` — пороги, когда блок показывать.
 - `packages/shared/src/api/*` — контракт API (zod).
-- `apps/api/src/modules/*` — `auth` (вход, сессии), `parse` (разбор, очередь), `reports`, `share`, `account`, `system` (ошибки, алерты), `notify`; `telegram/` — шлюз GramJS и демо-шлюз `fake-gateway.ts`.
+- `apps/api/src/modules/*` — `auth` (вход, сессии), `parse` (разбор, очередь), `reports`, `share`, `account`, `system` (ошибки, алерты), `notify`; `telegram/` — шлюз teleproto (форк GramJS) и демо-шлюз `fake-gateway.ts`.
 
 ## Демо и стенд
 

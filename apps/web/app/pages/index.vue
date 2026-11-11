@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { MessageKey } from '../composables/useI18n'
-import { ArrowRight } from '../lib/icons'
 import { wave } from '../lib/wave'
 definePageMeta({ middleware: ['guest'], fit: true })
 
@@ -53,32 +52,31 @@ useHead({
 <template>
   <div class="landing">
     <!--
-      One sequence for both layouts, in the phone's reading order: the promise, «Пример отчёта», the deck, the
-      call to action, the privacy line. A computer lays the same items out as two columns.
+      One sequence for both layouts, in the phone's reading order: the promise (privacy is a phrase of it), the
+      deck, the call to action, «Пример отчёта». A computer lays the same items out as two columns.
     -->
     <section class="landing__first" aria-labelledby="hero-title">
       <h1 id="hero-title" class="landing__title">{{ t('landing.title') }} {{ t('landing.titleSoft') }}</h1>
-      <p class="landing__lede">{{ t('landing.lede') }}</p>
-      <!-- The second way is a word with an arrow, not a second slab: one call to action on the screen. -->
-      <NuxtLink class="landing__more" to="/example">
-        {{ t('landing.nav.example') }}<ArrowRight aria-hidden="true" />
-      </NuxtLink>
+      <!-- A phone has no footer, so the promise links to privacy itself; a computer has «Приватность» below. -->
+      <p class="landing__lede">
+        {{ t('landing.lede') }}
+        <NuxtLink class="link landing__privacy" to="/privacy">{{ t('landing.ledePrivacy') }}</NuxtLink
+        ><span class="landing__privacy-text">{{ t('landing.ledePrivacy') }}</span
+        >.
+      </p>
       <LandingDeck class="landing__deck" :cards="deck" :label="t('landing.examplesLabel')" />
       <UiButton class="landing__cta" variant="primary" size="lg" to="/login">{{ t('landing.cta') }}</UiButton>
-      <p class="landing__trust t-small">
-        {{ t('landing.trust') }}
-        <NuxtLink class="link" to="/privacy">{{ t('landing.trustLink') }}</NuxtLink>
-      </p>
+      <!-- The second way is a word, not a second slab: one call to action on the screen. -->
+      <NuxtLink class="landing__more" to="/example">{{ t('landing.nav.example') }}</NuxtLink>
     </section>
   </div>
 </template>
 
 <style scoped>
 /*
- * One screen, phone or desktop. A phone reads top to bottom in two groups: the story (title, lead, «Пример
- * отчёта») on top, the action (the button, the privacy line) under the thumb, and the deck takes the height
- * between them, scaling itself into it. Inside a group the step is --space-3; the deck keeps at least
- * --space-6 from both groups.
+ * One screen, phone or desktop. A phone reads top to bottom in two groups: the story (the title and the lead,
+ * whose last phrase is the privacy link) on top, the action («Войти через Telegram», «Пример отчёта» under it)
+ * under the thumb, and the deck takes the height between them, scaling itself into it.
  */
 .landing {
   display: flex;
@@ -112,30 +110,9 @@ useHead({
   font: var(--text-body);
 }
 
-/*
- * «Пример отчёта →»: ink text at a tap's height; the arrow says «another page», as a standalone link does
- * (privacy, inside a sentence, is underlined instead). Its box is taller than its line, so it sits flush under
- * the lead and its text still lands one --space-3 below it.
- */
-.landing__more {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  min-height: var(--control-md);
-  color: var(--text);
-  font: var(--text-ui);
-}
-
-.landing__more svg {
-  width: var(--icon-sm);
-  height: var(--icon-sm);
-  transition: translate var(--duration-fast) var(--ease-standard);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .landing__more:hover svg {
-    translate: var(--space-1) 0;
-  }
+/* On a computer the phrase is plain text: «Приватность» is in the footer. */
+.landing__privacy-text {
+  display: none;
 }
 
 /* The deck takes the height left between the groups. */
@@ -146,16 +123,28 @@ useHead({
   margin-block: var(--space-4) var(--space-6);
 }
 
-/* A phone: the one call to action is the width of the column, under the thumb; the privacy line centred under it. */
+/* A phone: the one call to action is the width of the column, under the thumb. */
 .landing__cta {
   align-self: stretch;
 }
 
-.landing__trust {
+/* «Пример отчёта»: ink text at a tap's height, centred under the button. */
+.landing__more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   align-self: stretch;
-  margin-top: var(--space-3);
-  color: var(--text-muted);
-  text-align: center;
+  min-height: var(--control-md);
+  margin-top: var(--space-1);
+  color: var(--text);
+  font: var(--text-ui);
+  transition: color var(--transition-fast);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing__more:hover {
+    color: var(--text-muted);
+  }
 }
 
 /* A phone: two lines, not three. */
@@ -175,13 +164,9 @@ useHead({
   animation-delay: var(--stagger-card);
 }
 
+.landing__cta,
 .landing__more {
   animation-delay: calc(var(--stagger-card) * 2);
-}
-
-.landing__cta,
-.landing__trust {
-  animation-delay: calc(var(--stagger-card) * 3);
 }
 
 @keyframes hero-in {
@@ -209,7 +194,7 @@ useHead({
   .landing__first {
     display: grid;
     grid-template-columns: max-content minmax(0, 2fr) minmax(0, 3fr);
-    grid-template-rows: 1fr repeat(4, auto) 1fr;
+    grid-template-rows: 1fr repeat(3, auto) 1fr;
     align-items: center;
     column-gap: var(--space-6);
   }
@@ -223,22 +208,24 @@ useHead({
     margin-top: var(--space-6);
   }
 
+  .landing__privacy {
+    display: none;
+  }
+
+  .landing__privacy-text {
+    display: inline;
+  }
+
   .landing__cta {
     grid-area: 4 / 1 / 5 / 2;
     justify-self: start;
-    margin-top: var(--space-6);
+    margin-top: var(--space-8);
   }
 
   .landing__more {
     grid-area: 4 / 2 / 5 / 3;
     justify-self: start;
-    margin-top: var(--space-6);
-  }
-
-  .landing__trust {
-    grid-area: 5 / 1 / 6 / 3;
-    margin-top: var(--space-6);
-    text-align: start;
+    margin-top: var(--space-8);
   }
 
   .landing__deck {

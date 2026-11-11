@@ -166,6 +166,8 @@ export interface ShareLinkResult {
   /** The guest let the author see the score. */
   share: boolean
   answeredAt: string
+  /** The owner has opened the report since the answer came (home stops showing it on the tile). */
+  seen?: boolean
 }
 
 export const shareLinks = pgTable(

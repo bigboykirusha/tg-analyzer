@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { gotoHydrated, noHorizontalScroll, openCard, usePreferences } from './helpers'
 
-test('system dark theme hydrates without replacing the theme icon', async ({ page }) => {
+test('system dark theme and the browser language hydrate without a mismatch', async ({ page }) => {
   const errors: string[] = []
   page.on('console', (message) => {
     if (/hydration.*mismatch/i.test(message.text())) errors.push(message.text())
@@ -10,7 +10,6 @@ test('system dark theme hydrates without replacing the theme icon', async ({ pag
   await page.emulateMedia({ colorScheme: 'dark' })
   await gotoHydrated(page, '/login')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await expect(page.getByRole('button', { name: 'Светлая тема', exact: true })).toBeVisible()
   expect(errors).toEqual([])
 })
 
@@ -45,12 +44,24 @@ test('country picker filters and selects a country', async ({ page, context }) =
   await expect(page.getByRole('button', { name: 'Получить код' })).toBeEnabled()
 })
 
-test('locale switch changes the interface language', async ({ page, context }) => {
-  await usePreferences(context, 'light', 'ru')
-  await gotoHydrated(page, '/login')
-  await expect(page.getByRole('button', { name: 'Получить код' })).toBeVisible()
-  await page.locator('.locale-switch').click()
-  await expect(page.getByRole('button', { name: 'Get code' })).toBeVisible()
+test('the first visit speaks the browser language', async ({ browser, baseURL }) => {
+  for (const [locale, button] of [
+    ['en-US', 'Get code'],
+    ['ru-RU', 'Получить код'],
+  ] as const) {
+    const context = await browser.newContext({ locale })
+    try {
+      const page = await context.newPage()
+      await page.goto(new URL('/login', baseURL).toString())
+      await expect(page.getByRole('button', { name: button })).toBeVisible()
+      // The server chose and kept it: the cookie is set, so the client hydrates in the same language.
+      expect((await context.cookies()).find((cookie) => cookie.name === 'tg-analyzer-locale')?.value).toBe(
+        locale.slice(0, 2),
+      )
+    } finally {
+      await context.close()
+    }
+  }
 })
 
 test('phone autofill keeps the country code and all eleven German digits', async ({ page, context }) => {
@@ -75,7 +86,8 @@ test('protected pages redirect to login', async ({ page }) => {
   await page.waitForURL('**/login')
 })
 
-test('the example report opens without signing in', async ({ page }, testInfo) => {
+test('the example report opens without signing in', async ({ page, context }, testInfo) => {
+  await usePreferences(context, 'light')
   await gotoHydrated(page, '/example')
   // The name is the poster's h1; the public header is the logo and one «Войти», with no back circle.
   await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeVisible()

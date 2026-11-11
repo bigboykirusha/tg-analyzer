@@ -788,6 +788,11 @@ export interface ReportSummaryDto {
   /** Weekly sent/received counts for up to the last 26 weeks of the chat, oldest first. */
   pulse: { sent: number; received: number }[]
   headline: ReportHeadlineDto
+  /**
+   * The other side answered the quiz and the owner has not opened the report since: the score (null when the
+   * guest kept it hidden). Home lists it under «Новое»; opening the report clears it.
+   */
+  quiz: { score: number | null; total: number } | null
 }
 
 export interface ReportsResponse {

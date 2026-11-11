@@ -62,7 +62,7 @@ async function main() {
   process.on('SIGTERM', () => void shutdown('SIGTERM'))
 }
 
-// A stray rejection (GramJS fires some after a client disconnects) must not
+// A stray rejection (teleproto, like GramJS before it, fires some after a client disconnects) must not
 // kill the worker: an exit mid-analysis makes BullMQ restart the job from scratch.
 process.on('unhandledRejection', (reason) => {
   logger.error({ err: reason }, 'unhandled rejection')

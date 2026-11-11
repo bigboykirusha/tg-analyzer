@@ -19,11 +19,29 @@ function interpolate(template: string, params?: Params) {
 }
 
 /**
- * Translations and locale-aware formatting. The locale is kept in a cookie so
- * that server-rendered pages already use the right language.
+ * The first visit's language, from the browser's own list (Accept-Language): Russian for Russian and its
+ * neighbours, English for the rest; Russian when the browser says nothing (a crawler). The server decides and
+ * writes the cookie, so the client hydrates in the same language.
+ */
+function browserLocale(): Locale {
+  const header = import.meta.server
+    ? (useRequestHeaders(['accept-language'])['accept-language'] ?? '')
+    : (navigator.languages?.join(',') ?? '')
+  const first = header.split(',')[0]?.trim().toLowerCase() ?? ''
+  if (!first || first === '*') return 'ru'
+  return /^(ru|uk|be|kk|uz|ky|tg|hy|az|ka)(-|;|$)/.test(first) ? 'ru' : 'en'
+}
+
+/**
+ * Translations and locale-aware formatting. The locale is kept in a cookie so that server-rendered pages already
+ * use the right language: the browser's on the first visit, then the one chosen in the account.
  */
 export function useI18n() {
-  const cookie = useCookie<Locale>(LOCALE_COOKIE, { default: () => 'ru', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' })
+  const cookie = useCookie<Locale>(LOCALE_COOKIE, {
+    default: browserLocale,
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: 'lax',
+  })
   const locale = computed<Locale>(() => (cookie.value === 'en' ? 'en' : 'ru'))
   const intlLocale = computed(() => (locale.value === 'ru' ? 'ru-RU' : 'en-US'))
 

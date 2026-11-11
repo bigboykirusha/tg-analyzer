@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * Public pages: the site header, the page in the shared column and the footer line.
- * Pages with `fit: true` (the landing) are exactly one screen, phone or desktop, with no footer: everything they
- * offer is on that screen. The page fits itself in (the landing's deck takes the height that is left); only a very
- * short screen scrolls.
+ * Public pages: the site header and the page in the shared column.
+ * Pages with `fit: true` (the landing) are exactly one screen, phone or desktop; the page fits itself in (the
+ * landing's deck takes the height that is left), only a very short screen scrolls. The footer belongs to the
+ * landing on a computer only (privacy, the channel, support, the Telegram notice in one line); a phone and every
+ * other page end with their content.
  */
 const route = useRoute()
 const { t } = useI18n()
@@ -17,7 +18,7 @@ const fit = computed(() => route.meta.fit === true)
     <main id="main" class="site-main" tabindex="-1">
       <slot />
     </main>
-    <SiteFooter />
+    <SiteFooter v-if="fit" />
   </div>
 </template>
 
@@ -41,10 +42,6 @@ const fit = computed(() => route.meta.fit === true)
   padding-bottom: var(--space-4);
 }
 
-.site--fit :deep(.site-footer) {
-  display: none;
-}
-
 /* Phones and tablets: one screen — the small viewport, so Safari's toolbars never cover the bottom. */
 @media (max-width: 900px) and (min-height: 560px) {
   .site--fit {
@@ -56,6 +53,12 @@ const fit = computed(() => route.meta.fit === true)
   .site--fit .site-main {
     min-height: 0;
     padding-top: var(--space-2);
+  }
+}
+
+@media (max-width: 900px) {
+  .site--fit :deep(.site-footer) {
+    display: none;
   }
 }
 

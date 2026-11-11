@@ -1,6 +1,6 @@
 import type { ChatType, MessageInput } from '@tg-analyzer/shared'
-import type { Api } from 'telegram'
-import type { Dialog } from 'telegram/tl/custom/dialog.js'
+import type { Api } from 'teleproto'
+import type { Dialog } from 'teleproto/tl/custom/dialog.js'
 import type { TelegramDialog } from './types'
 
 const TELEGRAM_SERVICE_USER_ID = '777000'
@@ -111,7 +111,7 @@ function reactions(message: Api.Message): MessageInput['reactions'] {
 }
 
 /**
- * Projects a gramjs message onto the metadata the analysis needs.
+ * Projects a teleproto (GramJS) message onto the metadata the analysis needs.
  * Returns null for service messages (joins, pins, calls…).
  */
 export function toMessageInput(message: Api.Message | Api.MessageService | Api.MessageEmpty): MessageInput | null {

@@ -4,6 +4,7 @@ import {
   telegramHueIndex,
   type PublicQuizDto,
   type PublicReportDto,
+  type ReportsResponse,
   type ShareLinkDto,
   type ShareLinksResponse,
 } from '@tg-analyzer/shared'
@@ -77,4 +78,24 @@ test('the quiz is answered once, and the owner sees the score only with consent'
   const result = owner.links.find((link) => link.kind === 'quiz')?.result
   assert.equal(result?.score, null)
   assert.equal(result?.correct, null)
+})
+
+test('a new quiz answer shows on the report tile until the owner opens the report', async () => {
+  const session = await analysed()
+  const { token } = (
+    await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'quiz', days: 7 })
+  ).json<ShareLinkDto>()
+  const tile = async () =>
+    (await app.inject({ url: '/api/v1/reports', headers: session.headers }))
+      .json<ReportsResponse>()
+      .reports.find((report) => report.chatId === CHAT)?.quiz
+
+  assert.equal(await tile(), null)
+  const quiz = (await app.inject({ url: `/api/v1/public/${token}` })).json<PublicQuizDto>()
+  const picks = quiz.questions.map((question) => question.answer)
+  assert.equal((await send(null, 'POST', `/api/v1/public/${token}/answer`, { picks, share: true })).statusCode, 200)
+  assert.deepEqual(await tile(), { score: quiz.questions.length, total: quiz.questions.length })
+
+  assert.equal((await app.inject({ url: `/api/v1/reports/${CHAT}`, headers: session.headers })).statusCode, 200)
+  assert.equal(await tile(), null)
 })

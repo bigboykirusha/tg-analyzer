@@ -48,7 +48,7 @@ const LOGIN_ERRORS: Array<[RegExp, TelegramLoginErrorReason]> = [
   [/PASSWORD_HASH_INVALID|SRP_PASSWORD_CHANGED/, 'password_invalid'],
 ]
 
-/** Translates a raw gramjs error into one of the normalised errors above, or returns it unchanged. */
+/** Translates a raw teleproto (GramJS) error into one of the normalised errors above, or returns it unchanged. */
 export function normalizeTelegramError(error: unknown): unknown {
   if (
     error instanceof TelegramFloodWaitError ||

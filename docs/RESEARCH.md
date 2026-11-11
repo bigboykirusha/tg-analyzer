@@ -63,7 +63,7 @@
 
 ## Технологии
 
-**Факт.** [GramJS](https://github.com/gram-js/gramjs) (npm `telegram`, у нас `^2.26.22` в `apps/api`) заархивирован 14.07.2026, README: «no longer maintained».
+**Факт.** [GramJS](https://github.com/gram-js/gramjs) (npm `telegram`, последний выпуск 2.26.22 от 12.02.2025) заархивирован 14.07.2026, README: «no longer maintained». С 12.11.2026 у нас teleproto 1.233.0.
 
 Преемник — [teleproto](https://github.com/sanyok12345/teleproto):
 
@@ -71,7 +71,7 @@
 - «largely compatible», но не прямая замена: изменены `proxy`/`networkSocket`, правила догрузки обновлений и т.д.;
 - строки сессий GramJS по README совместимы.
 
-Даты последних коммитов и релизов на странице не видны — проверить в npm перед миграцией.
+**Факт (npm, 12.11.2026).** teleproto 1.233.0 от 09.11.2026, 27 выпусков с мая, ~253 тыс. загрузок в месяц. Альтернатива — [mtcute](https://github.com/mtcute/mtcute) (`@mtcute/node` 0.32.8 от 09.11.2026, 15 выпусков с мая, ~510 тыс. загрузок): своя библиотека на TypeScript, а не форк — переезд на неё значит переписать шлюз (~545 строк) и сконвертировать сохранённые сессии (`@mtcute/convert`). Выбран teleproto: тот же API (типы сошлись без правок кода), сессии совместимы. mtcute — запасной путь, если teleproto заглохнет.
 
 **Факт.** [Вход по QR-коду](https://core.telegram.org/api/qr-login) — официальный поток: `auth.exportLoginToken`, токен живёт около 30 с и показывается как `tg://login…`; подтверждение — из уже вошедшего приложения.
 
