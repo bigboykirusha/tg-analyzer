@@ -91,6 +91,19 @@ export const useWorkspaceStore = defineStore('workspace', {
       }
       return chats
     },
+    /**
+     * The chats with a report, in the one order every list of reports uses (home, the sidebar): chats pinned
+     * in Telegram first, then the freshest report.
+     */
+    reportChats(): WorkspaceChat[] {
+      return this.chats
+        .filter((chat) => chat.report)
+        .sort(
+          (left, right) =>
+            Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)) ||
+            Date.parse(right.report!.analyzedAt) - Date.parse(left.report!.analyzedAt),
+        )
+    },
   },
   actions: {
     async loadDialogs() {

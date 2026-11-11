@@ -24,16 +24,8 @@ const greeting = computed(() => {
   return name ? `${hello}, ${name}` : hello
 })
 
-/** The reports, chats pinned in Telegram first, then the freshest. */
-const reports = computed(() =>
-  workspace.chats
-    .filter((chat) => chat.report)
-    .sort(
-      (left, right) =>
-        Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)) ||
-        Date.parse(right.report!.analyzedAt) - Date.parse(left.report!.analyzedAt),
-    ),
-)
+/** The reports in the order the sidebar shows them too: pinned in Telegram first, then the freshest. */
+const reports = computed(() => workspace.reportChats)
 
 const loading = computed(
   () => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',

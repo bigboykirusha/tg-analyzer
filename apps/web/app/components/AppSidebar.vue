@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { Plus } from '../lib/icons'
+import { House, Plus } from '../lib/icons'
 
 /**
- * The desktop sidebar (280): the mark row is «Главная»; then the one primary action, every report
- * (avatar, name, one quiet line), and at the foot the running analysis and your account.
+ * The desktop sidebar (280): the logo, the one primary action, «Главная», every report (avatar, name, one
+ * quiet line) in the order home shows them, and at the foot the running analysis and your account. The logo
+ * leads home too, but it is a logo: the place you are is marked on «Главная», never on the brand.
  */
 const workspace = useWorkspaceStore()
 const auth = useAuthStore()
@@ -32,34 +33,34 @@ function updating(report: ReportSummaryDto) {
 
 <template>
   <aside class="sidebar" :aria-label="t('sidebar.label')">
-    <NuxtLink
-      to="/dashboard"
-      class="sidebar__row sidebar__home"
-      :aria-current="route.path === '/dashboard' ? 'page' : undefined"
-    >
-      <BrandMark class="sidebar__mark" />
-      <span class="sidebar__wordmark brand-wordmark">TG Analyzer</span>
-      <span class="sr-only">{{ t('nav.home') }}</span>
-    </NuxtLink>
+    <BrandLink class="sidebar__brand" to="/dashboard" />
     <UiButton to="/new" variant="primary" block :icon="Plus" :aria-current="route.path === '/new' ? 'page' : undefined">
       {{ t('sidebar.newAnalysis') }}
     </UiButton>
+    <NuxtLink
+      to="/dashboard"
+      class="sidebar__row sidebar__nav"
+      :aria-current="route.path === '/dashboard' ? 'page' : undefined"
+    >
+      <House class="sidebar__icon" aria-hidden="true" />
+      {{ t('nav.home') }}
+    </NuxtLink>
 
     <nav class="sidebar__list" :aria-label="t('sidebar.reports')">
       <p class="sidebar__heading">{{ t('sidebar.reports') }}</p>
       <NuxtLink
-        v-for="report in workspace.reports"
-        :key="report.chatId"
-        :to="`/chat/${report.chatId}`"
+        v-for="chat in workspace.reportChats"
+        :key="chat.id"
+        :to="`/chat/${chat.id}`"
         class="sidebar__row sidebar__person"
-        :aria-current="activeId === report.chatId ? 'page' : undefined"
+        :aria-current="activeId === chat.id ? 'page' : undefined"
       >
-        <ChatAvatar :chat-id="report.chatId" :title="report.title" size="sm" />
+        <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" size="sm" />
         <span class="sidebar__copy">
-          <span class="sidebar__name">{{ report.title }}</span>
-          <span class="sidebar__meta">{{ meta(report) }}</span>
+          <span class="sidebar__name">{{ chat.title }}</span>
+          <span class="sidebar__meta">{{ meta(chat.report!) }}</span>
         </span>
-        <span v-if="updating(report)" class="spinner" role="img" :aria-label="t('sidebar.updating')" />
+        <span v-if="updating(chat.report!)" class="spinner" role="img" :aria-label="t('sidebar.updating')" />
       </NuxtLink>
       <!-- The list on its way: rows of the same height, so nothing jumps when it arrives. -->
       <template v-if="loading">
@@ -128,20 +129,23 @@ function updating(report: ReportSummaryDto) {
   }
 }
 
-/* The mark row is home: 48 tall, the wordmark beside the mark. */
-.sidebar__home {
+/* The logo sits on the row grid: its mark lines up with the avatars below. */
+.sidebar__brand {
+  align-self: flex-start;
   min-height: var(--space-12);
-  padding-left: var(--space-1);
+  margin-bottom: var(--space-1);
+  padding-inline: var(--space-2);
 }
 
-.sidebar__mark {
-  width: var(--brand-mark-size);
-  height: var(--brand-mark-size);
+/* «Главная»: a row like a report, its icon in the avatar's place. */
+.sidebar__nav {
+  min-height: var(--control-md);
+  margin-top: var(--space-2);
 }
 
-.sidebar__wordmark {
-  font: var(--brand-word);
-  letter-spacing: var(--tracking-h3);
+.sidebar__icon {
+  width: var(--avatar-sm);
+  --icon-size: var(--icon-md);
 }
 
 .sidebar__list {

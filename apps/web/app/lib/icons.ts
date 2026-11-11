@@ -35,6 +35,7 @@ export {
   Globe,
   Heart,
   Hourglass,
+  House,
   Info,
   LayoutGrid,
   Link,
