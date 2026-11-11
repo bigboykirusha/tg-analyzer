@@ -10,6 +10,7 @@
     "start": "node .output/server/index.mjs",
     "measure": "node tests/visual/measure.mjs",
     "measure:summary": "node tests/visual/summarize.mjs",
+    "shots": "node tests/visual/shots.mjs",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots"
   },
