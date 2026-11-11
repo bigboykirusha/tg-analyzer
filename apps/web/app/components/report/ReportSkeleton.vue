@@ -14,7 +14,7 @@ const { t } = useI18n()
   <div class="skeleton-report" aria-hidden="true">
     <UiPageBar :title="title ?? ''" back="/dashboard" bar>
       <template #actions>
-        <UiIconButton class="skeleton-report__share" :icon="Share" :label="t('share.open')" plain disabled no-tooltip />
+        <UiIconButton class="skeleton-report__share" :icon="Share" :label="t('share.open')" disabled no-tooltip />
       </template>
     </UiPageBar>
     <div class="skeleton-report__cards">

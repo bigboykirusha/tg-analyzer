@@ -49,7 +49,7 @@ test('locale switch changes the interface language', async ({ page, context }) =
   await usePreferences(context, 'light', 'ru')
   await gotoHydrated(page, '/login')
   await expect(page.getByRole('button', { name: 'Получить код' })).toBeVisible()
-  await page.locator('.locale-switch button').click()
+  await page.locator('.locale-switch').click()
   await expect(page.getByRole('button', { name: 'Get code' })).toBeVisible()
 })
 

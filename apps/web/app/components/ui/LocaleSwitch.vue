@@ -1,24 +1,27 @@
 <script setup lang="ts">
-import { Globe } from '../../lib/icons'
-import Button from './Button.vue'
+import type { Locale } from '../../composables/useI18n'
 
+/** The other language, by its own name, as a word in the footer: «English» on the Russian site and back. */
 const { locale, setLocale, t } = useI18n()
-
-function toggleLocale() {
-  setLocale(locale.value === 'ru' ? 'en' : 'ru')
-}
+const other = computed<{ code: Locale; label: string }>(() =>
+  locale.value === 'ru' ? { code: 'en', label: 'English' } : { code: 'ru', label: 'Русский' },
+)
 </script>
 
 <template>
-  <span class="locale-switch">
-    <Button variant="secondary" size="sm" :icon="Globe" :aria-label="t('nav.language')" @click="toggleLocale">
-      {{ locale.toUpperCase() }}
-    </Button>
-  </span>
+  <button
+    type="button"
+    class="locale-switch"
+    :lang="other.code"
+    :aria-label="`${t('nav.language')}: ${other.label}`"
+    @click="setLocale(other.code)"
+  >
+    {{ other.label }}
+  </button>
 </template>
 
 <style scoped>
 .locale-switch {
-  display: inline-flex;
+  font: inherit;
 }
 </style>

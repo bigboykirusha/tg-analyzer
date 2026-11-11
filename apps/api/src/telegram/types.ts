@@ -1,4 +1,4 @@
-import type { ChatType, CodeDeliveryDto, MessageInput, TelegramSessionDto } from '@tg-analyzer/shared'
+import type { ChatType, CodeDeliveryDto, MessageInput } from '@tg-analyzer/shared'
 
 export interface TelegramUser {
   id: string
@@ -64,10 +64,6 @@ export interface TelegramAccountApi {
   downloadAvatar(chatId: string | null): Promise<Buffer | null>
   /** Small previews of the stickers in the given messages, as data URLs keyed by message id. */
   stickerPreviews(chatId: string, messageIds: string[]): Promise<Map<string, string>>
-  /** Authorizations of the account (Settings → Devices). */
-  listSessions(): Promise<TelegramSessionDto[]>
-  /** Ends another authorization; throws TelegramSessionTooFreshError within a day of this one's login. */
-  endSession(hash: string): Promise<void>
   logOut(): Promise<void>
 }
 

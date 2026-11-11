@@ -46,7 +46,6 @@ const titleId = useId()
           :label="t('common.back')"
           :icon="ArrowLeft"
           class="page-bar__back"
-          plain
           no-tooltip
           @click="goBack"
         />
@@ -72,9 +71,7 @@ const titleId = useId()
 </template>
 
 <style scoped>
-/* Bar glyphs are plain, in the bar's ink (the poster's over a poster): no grey circles. */
 .page-bar {
-  --btn-plain-text: var(--btn-fill-text, var(--text));
   display: grid;
   grid-template-columns: 1fr minmax(0, auto) 1fr;
   align-items: center;

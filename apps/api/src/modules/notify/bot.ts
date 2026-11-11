@@ -6,8 +6,8 @@ import { redis } from '../../lib/redis'
 import { sleep } from '../../lib/time'
 
 /**
- * Our own Telegram bot says «the report is ready» once the user has pressed
- * Start in it. The bot learns who they are from Telegram itself: the sender
+ * Our own Telegram bot says «the report is ready» — and how a friend did in
+ * «Угадайка» — once the user has pressed Start in it. The bot learns who they are from Telegram itself: the sender
  * of /start is the same Telegram account they signed in with, so no codes or
  * links to match. /stop turns it off. Off entirely without TELEGRAM_BOT_TOKEN.
  */
@@ -76,6 +76,25 @@ export async function notifyReportReady(userId: string, chat: { chatId: string; 
     )
   } catch (error) {
     logger.warn({ err: error, userId }, 'could not send the «report ready» message')
+  }
+}
+
+/** «Аня прошла угадайку: 3 из 5» to the quiz's author who pressed Start; never throws. */
+export async function notifyQuizAnswered(userId: string, reportId: string, score: number, total: number) {
+  if (!botEnabled()) return
+  try {
+    const user = await db.query.users.findFirst({ where: eq(schema.users.id, userId) })
+    if (!user?.botNotify) return
+    const report = await db.query.chatReports.findFirst({ where: eq(schema.chatReports.id, reportId) })
+    if (!report) return
+    const site = siteUrl()
+    await sendBotMessage(
+      user.tgUserId,
+      `Угадайку по чату «${report.title}» прошли: ${score} из ${total}.`,
+      site ? { text: 'Открыть отчёт', url: `${site}/chat/${report.tgChatId}` } : undefined,
+    )
+  } catch (error) {
+    logger.warn({ err: error, userId }, 'could not send the «quiz answered» message')
   }
 }
 

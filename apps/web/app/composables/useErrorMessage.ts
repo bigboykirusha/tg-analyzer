@@ -14,7 +14,6 @@ const MESSAGES: Partial<Record<ApiClientError['code'], MessageKey>> = {
   TELEGRAM_FLOOD_WAIT: 'errors.floodWait',
   TELEGRAM_REAUTH_REQUIRED: 'errors.telegramReauth',
   TELEGRAM_BUSY: 'errors.telegramBusy',
-  TELEGRAM_SESSION_TOO_FRESH: 'errors.sessionTooFresh',
   TELEGRAM_UNAVAILABLE: 'errors.telegramUnavailable',
   CHAT_NOT_FOUND: 'errors.chatNotFound',
   CHAT_TOO_SMALL: 'errors.chatTooSmall',

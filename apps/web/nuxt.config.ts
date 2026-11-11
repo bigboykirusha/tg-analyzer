@@ -119,7 +119,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Overridden at runtime by NUXT_API_PROXY_TARGET.
     apiProxyTarget,
-    public: { wsUrl, siteUrl },
+    // The footer's «Канал» and «Поддержать»: each shows only when set (NUXT_PUBLIC_CHANNEL_URL,
+    // NUXT_PUBLIC_SUPPORT_URL, read at runtime).
+    public: { wsUrl, siteUrl, channelUrl: '', supportUrl: '' },
   },
   typescript: { strict: true },
 })

@@ -1,15 +1,20 @@
 <script setup lang="ts">
 /**
- * The header of every public page (landing, privacy, sign-in, the example report, a shared link, 404).
- * Always the logo on the left — it is also the way home; there is no back circle on public pages.
- * Right: on desktop «Пример отчёта», «Приватность» (the current one marked) and «Войти»; on a phone only
- * «Войти». «Войти» is one button everywhere (secondary, sm) and is absent on the sign-in page itself and offline.
- * Over a poster (the example, a shared link) the bar is the poster with its ink; past it, glass.
+ * The header of every public page (landing, privacy, sign-in, the example report, a shared link, 404): the logo
+ * on the left — it is also the way home — and «Войти» on the right. Nothing else: the example and privacy are in
+ * the page itself and in the footer, language and theme in the footer — a header that repeats the hero is noise.
+ * «Войти» is one button everywhere (secondary, sm), absent on the sign-in page itself and offline. On the landing
+ * it waits until the hero's own «Войти через Telegram» has scrolled away, so the first screen has one call to
+ * action, not two. Over a poster (the example, a shared link) the bar is the poster with its ink; past it, glass.
  */
 const { t } = useI18n()
 const route = useRoute()
 /** Not on the sign-in page itself, and not offline: without a connection there is nowhere to sign in. */
 const showSignIn = computed(() => route.path !== '/login' && route.path !== '/offline')
+/** On the landing: whether its hero buttons are on screen (pages/index.vue). True until it says otherwise, on the
+ *  server and in the browser alike, so the first paint and the hydration agree. */
+const heroInView = useState('hero-cta-in-view', () => true)
+const waiting = computed(() => route.path === '/' && heroInView.value)
 const { scrolled, overPoster } = usePosterHeader()
 </script>
 
@@ -21,23 +26,17 @@ const { scrolled, overPoster } = usePosterHeader()
   >
     <div class="site-header__in">
       <BrandLink class="site-header__brand" />
-      <nav class="site-header__nav" :aria-label="t('nav.main')">
-        <NuxtLink
-          to="/example"
-          class="nav-link nav-link--wide"
-          :aria-current="route.path === '/example' ? 'page' : undefined"
-        >
-          {{ t('site.example') }}
-        </NuxtLink>
-        <NuxtLink
-          to="/privacy"
-          class="nav-link nav-link--wide"
-          :aria-current="route.path === '/privacy' ? 'page' : undefined"
-        >
-          {{ t('site.privacy') }}
-        </NuxtLink>
-        <UiButton v-if="showSignIn" to="/login" size="sm">{{ t('site.signIn') }}</UiButton>
-      </nav>
+      <UiButton
+        v-if="showSignIn"
+        to="/login"
+        size="sm"
+        class="site-header__sign-in"
+        :class="{ 'is-waiting': waiting }"
+        :tabindex="waiting ? -1 : undefined"
+        :aria-hidden="waiting || undefined"
+      >
+        {{ t('site.signIn') }}
+      </UiButton>
     </div>
   </header>
 </template>
@@ -65,8 +64,7 @@ const { scrolled, overPoster } = usePosterHeader()
   color: var(--on-poster);
 }
 
-.site-header.is-over-poster :deep(.brand-link),
-.site-header.is-over-poster .nav-link {
+.site-header.is-over-poster :deep(.brand-link) {
   color: var(--on-poster);
 }
 
@@ -82,43 +80,15 @@ const { scrolled, overPoster } = usePosterHeader()
   padding: 0 var(--page-gutter);
 }
 
-.site-header__nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
+/* «Войти» fades in once the hero's buttons are gone; its place is kept, so nothing shifts. */
+.site-header__sign-in {
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    visibility var(--duration-fast);
 }
 
-/* Text links in headers: one look, a full hit area. */
-.nav-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--control-md);
-  color: var(--text-muted);
-  font: var(--text-ui);
-}
-
-.nav-link[aria-current='page'] {
-  color: var(--text);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .nav-link:hover {
-    color: var(--text);
-  }
-}
-
-/* Phones: only «Войти». */
-.nav-link--wide {
-  display: none;
-}
-
-@media (min-width: 901px) {
-  .nav-link--wide {
-    display: inline-flex;
-  }
-
-  .nav-link {
-    min-height: var(--control-sm);
-  }
+.site-header__sign-in.is-waiting {
+  visibility: hidden;
+  opacity: 0;
 }
 </style>

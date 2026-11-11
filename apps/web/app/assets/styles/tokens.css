@@ -512,8 +512,8 @@
   --stagger-bar: 14ms;
   --stagger-card: 60ms;
   --duration-deal: 700ms;
-  /* The landing deck puts its top report under the others: out, under, back. */
-  --duration-shuffle: 1100ms;
+  /* The landing deck is cut: the top report out right, the rest left, the top under, the halves together. */
+  --duration-shuffle: 800ms;
 
   /* One family, Onest: hierarchy from size, weight and colour. 400 reading, 500 interface, 600 titles and numbers. */
   --font-sans: 'Onest Variable', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;

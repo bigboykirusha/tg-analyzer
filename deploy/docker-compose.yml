@@ -105,6 +105,8 @@ services:
     restart: unless-stopped
     environment:
       NUXT_API_PROXY_TARGET: http://api:3001
+      NUXT_PUBLIC_CHANNEL_URL: ${CHANNEL_URL:-}
+      NUXT_PUBLIC_SUPPORT_URL: ${SUPPORT_URL:-}
     depends_on:
       api:
         condition: service_healthy

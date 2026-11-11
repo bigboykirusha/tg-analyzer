@@ -54,8 +54,8 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
     </div>
     <div class="home-card__foot">
       <slot v-if="!skeleton" />
-      <!-- The pulse's place: two 24 halves and the line between, so nothing moves when the tile arrives. -->
-      <UiSkeleton v-else height="calc(var(--space-6) * 2 + var(--space-0-5))" />
+      <!-- The pulse's place: its two halves and the line between, so nothing moves when the tile arrives. -->
+      <UiSkeleton v-else height="calc(var(--pulse-half) * 2 + var(--space-0-5))" />
     </div>
   </article>
 </template>
@@ -70,6 +70,8 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   padding: var(--card-padding);
   border-radius: var(--radius-card);
   background: var(--surface);
+  /* The pulse's half: 16 on a phone, where two tiles share a row and a taller one reads as a column, 24 wider. */
+  --pulse-half: var(--space-4);
   color: var(--text);
   transition: transform var(--duration-press) var(--ease-standard);
 }
@@ -180,7 +182,13 @@ a.home-card__name:focus-visible::after {
   flex-direction: column;
   gap: var(--space-2);
   margin-top: auto;
-  padding-top: var(--space-3);
+  padding-top: var(--space-1);
   min-width: 0;
+}
+
+@media (min-width: 641px) {
+  .home-card {
+    --pulse-half: var(--space-6);
+  }
 }
 </style>

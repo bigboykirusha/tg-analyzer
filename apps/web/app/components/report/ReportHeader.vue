@@ -22,7 +22,6 @@ const { t } = useI18n()
         :icon="Share"
         :label="t('share.open')"
         aria-haspopup="dialog"
-        plain
         no-tooltip
         @click="emit('share')"
       />

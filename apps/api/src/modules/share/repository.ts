@@ -17,6 +17,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { db, schema } from '../../db'
 import type { ShareLinkPayload, ShareLinkResult } from '../../db/schema'
 import { ApiError, conflict, notFound } from '../../lib/errors'
+import { notifyQuizAnswered } from '../notify/bot'
 import { getReport } from '../reports/repository'
 
 /** Fewer clear answers than this make no game. */
@@ -238,6 +239,8 @@ export async function answerQuiz(
     .set({ result })
     .where(eq(schema.shareLinks.id, row.id))
     .returning()
+  // The author learns the score in Telegram (if they turned the bot on) and in the report's «Поделиться».
+  void notifyQuizAnswered(row.userId, row.reportId, score, questions.length)
   return toPublic(updated!, await hueOf(updated!))
 }
 

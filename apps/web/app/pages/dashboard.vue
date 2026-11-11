@@ -4,9 +4,9 @@ import { AlertCircle } from '../lib/icons'
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 /**
- * Home answers two questions: what you have already learned (the reports, one card each, new messages in
- * the chat as a badge on the card) and what else can be analysed (the busiest chats without a report). A
- * newcomer gets «С кого начнём?» instead.
+ * Home is what you have already learned: the reports, one poster tile each, new messages in the chat as a
+ * badge on the tile. What else to analyse is «Новый анализ» (the dock, the sidebar), not a second list here
+ * that counts every chat's month on each visit. A newcomer gets «С кого начнём?» instead.
  */
 const { t } = useI18n()
 useSeoMeta({ title: () => t('dashboard.title') })
@@ -93,8 +93,6 @@ onMounted(() => {
         </div>
       </UiPageSection>
 
-      <!-- Without the reports we cannot tell which chats are still to analyse: no suggestions that may already have one. -->
-      <HomeUnanalysed v-if="!failed" />
     </div>
   </UiPageContainer>
 </template>

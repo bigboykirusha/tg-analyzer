@@ -24,7 +24,6 @@ import type {
   StartParseBody,
   StartParseResponse,
   SuccessResponse,
-  TelegramSessionsResponse,
   UpdateProfileBody,
   UserResponse,
   VerifyCodeBody,
@@ -95,7 +94,6 @@ export const avatarsBodySchema = z.object({
 export const chatIdParamsSchema = z.object({ chatId: telegramIdSchema })
 export const shareLinkKindSchema = z.enum(['report', 'quiz'])
 export const shareLinkParamsSchema = z.object({ chatId: telegramIdSchema, kind: shareLinkKindSchema })
-export const telegramSessionParamsSchema = z.object({ hash: z.string().regex(/^-?\d{1,20}$/) })
 export const shareTokenParamsSchema = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{8,32}$/) })
 export const shareReportSettingsSchema = z.object({
   showName: z.boolean(),
@@ -158,9 +156,6 @@ export interface ApiEndpointMap {
   'GET /api/v1/reports/:chatId/links': Endpoint<undefined, ShareLinksResponse>
   'POST /api/v1/reports/:chatId/links': Endpoint<CreateShareLinkBody, ShareLinkDto>
   'DELETE /api/v1/reports/:chatId/links/:kind': Endpoint<undefined, SuccessResponse>
-
-  'GET /api/v1/telegram/sessions': Endpoint<undefined, TelegramSessionsResponse>
-  'DELETE /api/v1/telegram/sessions/:hash': Endpoint<undefined, SuccessResponse>
 
   'GET /api/v1/links': Endpoint<undefined, UserShareLinksResponse>
 

@@ -23,21 +23,10 @@ export const en = {
   'accountPage.linkQuiz': 'Quiz «{chat}»',
   'accountPage.linkOn': 'Opens until {date}',
   'accountPage.linkForever': 'Opens without a time limit',
-  'accountPage.linkAnswered': '{name} answered: {score} of {total}',
   'accountPage.linkOff': 'Off',
   'accountPage.linkError': 'Could not change the link',
   'accountPage.logout': 'Log out',
   'accountPage.logoutFoot': 'On your last device we erase the Telegram session. Your reports stay.',
-  'accountPage.devicesTitle': 'Telegram devices',
-  'accountPage.devicesFoot': 'The list comes from Telegram each time you open this page. We do not store it.',
-  'accountPage.deviceThis': 'This service',
-  'accountPage.deviceUnofficial': 'unofficial app',
-  'accountPage.deviceToday': 'today at {time}',
-  'accountPage.deviceYesterday': 'yesterday at {time}',
-  'accountPage.deviceEnd': 'End',
-  'accountPage.deviceEndTitle': 'End this session?',
-  'accountPage.deviceEndText': '{device} will be signed out of Telegram. The account and your reports stay.',
-  'accountPage.deviceEndError': 'Could not end the session',
   'analysis.banner.closeTab': 'You can close the app: the report saves itself.',
   'analysis.banner.connecting': 'Connecting to Telegram…',
   'analysis.banner.eta.few': 'about {count} minutes left',
@@ -156,7 +145,6 @@ export const en = {
   'errors.queueUnavailable': 'The analysis service is unavailable. Try again later.',
   'errors.rateLimited': 'Too many attempts. Try again in {wait}.',
   'errors.telegramBusy': 'Telegram is busy with the running analysis. Try again in a moment.',
-  'errors.sessionTooFresh': 'Telegram lets you end other sessions a day after you signed in here.',
   'errors.telegramReauth': 'The Telegram session has ended. Sign in again to continue.',
   'errors.telegramUnavailable': 'Telegram is not responding right now. Try again later.',
   'example.cta': 'Analyse a chat',
@@ -169,24 +157,33 @@ export const en = {
   'faq.a.notice': 'No. We never write to the chat or send notifications. Only you see the report until you share it.',
   'faq.a.phone':
     "That is how sign-in works in the Telegram API: without it a chat can't be read. It's the same way you sign in to Telegram on a new device.",
-  'faq.delete.text': "From the report's menu on home or in «New analysis». Its stories and links go with it.",
-  'faq.delete.title': 'Delete a report',
-  'faq.keep.text':
-    'The finished statistics: numbers, hours, top words and emoji. Nothing a chat could be rebuilt from. Also kept: your encrypted Telegram session, so reports can be refreshed.',
-  'faq.keep.title': 'We keep',
-  'faq.never.text': 'Write on your behalf, read other chats or share data with third parties.',
-  'faq.never.title': 'We never',
-  'faq.notKeep.text':
-    'Message texts, photos, voice messages or files. Your cloud password, if you have one, goes straight to Telegram and never stays with us.',
-  'faq.notKeep.title': "We don't keep",
-  'faq.off.text':
-    'Telegram → Settings → Devices → TG Analyzer → Terminate session. Or “Sign out” in the account on your last device.',
-  'faq.off.title': 'Switch us off',
   'faq.q.notice': 'Will the other person find out?',
   'faq.q.phone': 'Why sign in with a phone number?',
+  'privacy.pageTitle': 'Privacy',
+  'privacy.pageLede':
+    'TG Analyzer reads only the chat you pick, and only while it is analysed. What stays is the finished statistics — numbers, hours, frequent words — not the conversation. Only you see a report until you share it yourself.',
+  'faq.q.read': 'What do you read?',
+  'faq.a.read':
+    "The messages of the one chat you picked, only while it is analysed and only in the server's memory: the texts are needed to count words and emoji. We also see the list of your chats (names, types and photos), so you can pick one, and your profile: Telegram ID, name, username and photo.",
+  'faq.q.keep': 'What do you keep?',
+  'faq.a.keep':
+    "Finished reports: message counts, active hours, reply speed, the most frequent words and emoji, and in groups the members' names. Your Telegram session, encrypted with AES-256-GCM, so reports can be updated. And records of sign-ins and analyses, to keep the service secure.",
+  'faq.q.notKeep': "And what don't you keep?",
+  'faq.a.notKeep':
+    'Message texts, photos, voice messages and files — nothing the conversation could be put back together from. Your cloud password, if you have one, goes straight to Telegram and never stays with us.',
+  'faq.q.share': 'Do you share my data with anyone?',
+  'faq.a.share':
+    'No. We do not sell or pass on data, never write on your behalf and do not train models on it. The service runs on a rented server; the hosting provider stores the data but does not use it. Stories pictures and report links are sent only by you.',
+  'faq.q.howLong': 'How long is it kept?',
+  'faq.a.howLong':
+    'Reports — until you delete them. The Telegram session — until you sign out on your last device. Records of finished analyses are deleted after a year.',
+  'faq.q.delete': 'How do I delete a report?',
+  'faq.a.delete':
+    "From the report's «⋯» menu on home. Its stories and links go with it. Signing in again later, you will see the reports you kept.",
+  'faq.q.off': 'How do I switch the service off in Telegram?',
+  'faq.a.off':
+    'Telegram → Settings → Devices → TG Analyzer → Terminate session. Or «Sign out» in the account on your last device: we erase the saved session.',
   'faq.questions': 'Frequent questions',
-  'faq.read.text': 'Messages of the chat you pick, only while it is analysed and only in server memory.',
-  'faq.read.title': 'We read',
   'faq.seoDescription':
     'What TG Analyzer reads, what it keeps and what it never does. How to delete a report and sign out.',
   'group.tabs.people': 'People',
@@ -216,8 +213,7 @@ export const en = {
   'home.greeting.day': 'Good afternoon',
   'home.greeting.evening': 'Good evening',
   'home.greeting.night': 'Good night',
-  'home.greeting.lede': 'Your reports and the chats still to analyse.',
-  'home.unanalysed': 'Not yet analysed',
+  'home.greeting.lede': 'What you have learned about your chats so far.',
   'home.unanalysedAction': 'Analyse the chat “{name}”',
   'home.unanalysedCount.one': '{count} this month',
   'home.unanalysedCount.few': '{count} this month',
@@ -281,7 +277,6 @@ export const en = {
   'nav.chats': 'Chats',
   'nav.home': 'Home',
   'nav.language': 'Language',
-  'nav.main': 'Main navigation',
   'newAnalysis.lede': 'A report in about a minute',
   'newAnalysis.tooSmall': 'Too few messages',
   'newAnalysis.seoTitle': 'New analysis',
@@ -293,36 +288,6 @@ export const en = {
   'offline.text':
     'Check your connection and try again. Your existing reports will remain available after reconnecting.',
   'offline.title': 'You are offline',
-  'privacy.delete.telegram': 'You can also end the session yourself in Telegram: Settings → Devices.',
-  'privacy.delete.text':
-    'Delete a report from its menu on home or in «New analysis»: its stories and share links go with it. Sign out on your last device and we erase the stored Telegram session. Reports stay until you delete them; sign in again and you will see them.',
-  'privacy.delete.title': 'How to delete your data',
-  'privacy.keep.text':
-    'Reports stay until you delete them. The Telegram session stays until you sign out. Records of finished analyses are removed after a year.',
-  'privacy.keep.title': 'How long we keep it',
-  'privacy.receive.chats': 'The list of your chats: names, types and photos.',
-  'privacy.receive.messages':
-    'Messages of the chats you choose to analyse. Texts are read only to count words and emoji.',
-  'privacy.receive.phone': 'Your phone number, to sign you in.',
-  'privacy.receive.profile': 'Your Telegram ID, username, name and profile photo.',
-  'privacy.receive.title': 'What we receive from Telegram',
-  'privacy.share.hosting':
-    'The service runs on cloud servers of hosting providers; they store the encrypted data but do not use it.',
-  'privacy.share.text':
-    'Nobody. We do not sell or hand over your data. Images you save from the Recap are shared only by you.',
-  'privacy.share.title': 'Who we share it with',
-  'privacy.store.reports':
-    'Reports: message counts, times of activity, reply times, the most frequent words and emoji, and in groups the names of participants.',
-  'privacy.store.session':
-    'Your Telegram session, encrypted with AES-256-GCM: it lets you refresh reports. We erase it when you sign out on your last device.',
-  'privacy.store.technical': 'Sign-in records and the history of analyses, to keep the service secure and working.',
-  'privacy.store.title': 'What we store',
-  'privacy.use.text':
-    'Only to sign you in, build the reports you ask for and protect the service from abuse. We do not use your data for advertising and do not train models on it.',
-  'privacy.use.title': 'How we use it',
-  'privacy.pageTitle': 'How we handle your data',
-  'privacy.pageLede': 'Short and without small print.',
-  'privacy.policyTitle': 'The policy in full',
   'report.delete': 'Delete report',
   'report.deleteError': 'Could not delete the report',
   'report.deleteText':
@@ -374,10 +339,12 @@ export const en = {
   'sidebar.reports': 'Reports',
   'sidebar.updating': 'Updating',
   'sidebar.groupMeta': 'Group, {count}',
-  'site.footerNav': 'Documents',
+  'site.footerNav': 'Site',
   'site.privacy': 'Privacy',
   'site.signIn': 'Sign in',
   'site.unofficial': 'Unofficial service built on the Telegram API',
+  'site.channel': 'Telegram channel',
+  'site.support': 'Support the project',
   'site.example': 'Example report',
   'story.next': 'Next',
   'story.previous': 'Previous',

@@ -102,6 +102,8 @@ const tagAttrs = computed(() => {
   gap: var(--space-3);
   width: 100%;
   min-width: 0;
+  /* In a group the row runs edge to edge and its text starts at the card's padding (UiGroup). */
+  padding-inline-start: var(--row-inset, 0px);
   color: var(--text);
   text-align: left;
   -webkit-tap-highlight-color: transparent;
@@ -126,7 +128,7 @@ const tagAttrs = computed(() => {
   gap: var(--space-3);
   min-width: 0;
   min-height: var(--row-height);
-  padding: var(--space-1) 0;
+  padding: var(--space-1) var(--row-inset, 0px) var(--space-1) 0;
   box-shadow: var(--divider-bottom);
 }
 
@@ -162,7 +164,7 @@ const tagAttrs = computed(() => {
 }
 
 .list-row--wrap > .list-row__body {
-  padding: var(--space-3) 0;
+  padding: var(--space-3) var(--row-inset, 0px) var(--space-3) 0;
 }
 
 .list-row--wrap .list-row__copy {
@@ -195,7 +197,8 @@ const tagAttrs = computed(() => {
   color: var(--danger);
 }
 
-/* The fill under the pointer reaches past the text to the group's padding. */
+/* In a group the fill is the whole row (UiGroup sets the inset and the corners); a row on its own, in a report
+   card, gets a soft rounded fill a little past its text. */
 .list-row--interactive {
   cursor: pointer;
   user-select: none;
@@ -204,8 +207,8 @@ const tagAttrs = computed(() => {
 .list-row--interactive::before {
   content: '';
   position: absolute;
-  inset: var(--space-0-5) calc(-1 * var(--space-3));
-  border-radius: var(--radius-well);
+  inset: var(--row-fill-inset, var(--space-0-5) calc(-1 * var(--space-3)));
+  border-radius: var(--row-fill-radius, var(--radius-well));
   background: transparent;
   pointer-events: none;
   transition: background-color var(--transition-fast);

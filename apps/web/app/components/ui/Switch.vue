@@ -26,6 +26,7 @@ const model = defineModel<boolean>({ required: true })
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  padding-inline-start: var(--row-inset, 0px);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -47,7 +48,7 @@ const model = defineModel<boolean>({ required: true })
   gap: var(--space-4);
   min-width: 0;
   min-height: var(--row-height);
-  padding: var(--space-1) 0;
+  padding: var(--space-1) var(--row-inset, 0px) var(--space-1) 0;
   box-shadow: var(--divider-bottom);
 }
 

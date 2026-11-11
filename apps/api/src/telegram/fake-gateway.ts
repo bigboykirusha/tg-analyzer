@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto'
-import type { MessageInput, TelegramSessionDto } from '@tg-analyzer/shared'
+import type { MessageInput } from '@tg-analyzer/shared'
 import type { Redis } from 'ioredis'
 import { DAY_MS, HOUR_MS, MINUTE_MS, sleep } from '../lib/time'
-import { TelegramLoginError, TelegramSessionTooFreshError } from './errors'
+import { TelegramLoginError } from './errors'
 import { acquireSessionLease } from './session-lease'
 import type { HistoryPage, TelegramAccountApi, TelegramDialog, TelegramGateway, TelegramUser } from './types'
 
@@ -198,58 +198,8 @@ function toDialog(spec: FakeChatSpec, lastMessage: MessageInput | undefined): Te
   }
 }
 
-/** The demo account's devices, as «Settings → Devices» would list them. */
-function fakeSessions(now: number): TelegramSessionDto[] {
-  const ago = (ms: number) => new Date(now - ms).toISOString()
-  return [
-    {
-      hash: '1001',
-      device: 'Chrome on Windows',
-      platform: 'Web',
-      app: 'TG Analyzer',
-      country: 'Georgia',
-      activeAt: ago(0),
-      current: true,
-      official: false,
-    },
-    {
-      hash: '1002',
-      device: 'iPhone 15',
-      platform: 'iOS',
-      app: 'Telegram iOS 11.2',
-      country: 'Georgia',
-      activeAt: ago(35 * MINUTE_MS),
-      current: false,
-      official: true,
-    },
-    {
-      hash: '1003',
-      device: 'MacBook Pro',
-      platform: 'macOS',
-      app: 'Telegram Desktop 5.8',
-      country: 'Germany',
-      activeAt: ago(3 * DAY_MS),
-      current: false,
-      official: true,
-    },
-    {
-      hash: '1004',
-      device: 'Pixel 8',
-      platform: 'Android',
-      app: 'Nicegram 10.4',
-      country: 'Georgia',
-      activeAt: ago(12 * DAY_MS),
-      current: false,
-      official: false,
-    },
-  ]
-}
-
 export class FakeTelegramGateway implements TelegramGateway {
   private generated = new Map<string, MessageInput[]>()
-  private readonly endedSessions = new Map<string, Set<string>>()
-  /** Telegram refuses to end other sessions during the first day after login; tests switch this on. */
-  freshLogin = false
 
   constructor(private readonly redis: Redis) {}
 
@@ -291,7 +241,7 @@ export class FakeTelegramGateway implements TelegramGateway {
   ): Promise<T> {
     const lease = await acquireSessionLease(this.redis, userId, options.waitMs ?? 15_000)
     try {
-      return await work(this.accountApi(userId))
+      return await work(this.accountApi())
     } finally {
       await lease.release()
     }
@@ -308,7 +258,7 @@ export class FakeTelegramGateway implements TelegramGateway {
     return messages
   }
 
-  private accountApi(userId: string): TelegramAccountApi {
+  private accountApi(): TelegramAccountApi {
     return {
       listDialogs: async () => ({
         dialogs: CHATS.map((spec) => toDialog(spec, this.messagesOf(spec).at(-1))),
@@ -343,16 +293,6 @@ export class FakeTelegramGateway implements TelegramGateway {
       downloadAvatar: async () => null,
       // The demo has no sticker files: the report shows each sticker's emoji instead.
       stickerPreviews: async () => new Map(),
-      listSessions: async () => {
-        const ended = this.endedSessions.get(userId)
-        return fakeSessions(Date.now()).filter((session) => !ended?.has(session.hash))
-      },
-      endSession: async (hash) => {
-        if (this.freshLogin) throw new TelegramSessionTooFreshError()
-        const set = this.endedSessions.get(userId) ?? new Set<string>()
-        set.add(hash)
-        this.endedSessions.set(userId, set)
-      },
       logOut: async () => undefined,
     }
   }

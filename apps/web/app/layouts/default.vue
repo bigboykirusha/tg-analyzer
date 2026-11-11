@@ -1,7 +1,9 @@
 <script setup lang="ts">
 /**
  * Public pages: the site header, the page in the shared column and the footer line.
- * Pages with `fit: true` (the landing) fill exactly one screen, phone or desktop.
+ * Pages with `fit: true` (the landing) fill exactly one screen on a computer. A phone scrolls them like any page:
+ * squeezed into one screen the deck was cut by Safari's floating toolbar and the footer (pages, language, theme)
+ * had to go.
  */
 const route = useRoute()
 const { t } = useI18n()
@@ -37,24 +39,6 @@ const fit = computed(() => route.meta.fit === true)
 
 .site--fit .site-main {
   padding-bottom: var(--space-4);
-}
-
-/* Phones and tablets: the same, with the footer inside the screen; short screens just scroll. */
-@media (max-width: 900px) and (min-height: 560px) {
-  .site--fit {
-    height: 100svh;
-    overflow: clip;
-  }
-
-  /* The landing on a phone is one screen: the documents live in the header and on the next pages. */
-  .site--fit :deep(.site-footer) {
-    display: none;
-  }
-
-  .site--fit .site-main {
-    min-height: 0;
-    padding-top: var(--space-2);
-  }
 }
 
 @media (min-width: 901px) and (min-height: 620px) {

@@ -1,78 +1,45 @@
 <script setup lang="ts">
 /**
- * «Как мы обращаемся с данными»: the promise as six rows, then the questions people ask next, then the
- * policy in full for whoever wants to read it.
+ * «Приватность»: the promise in three sentences, then the questions people ask, each opening its answer in place.
+ * The answers carry everything the old policy said — what we receive, keep and do not keep, who sees it, how long
+ * it stays and how to delete it — so there is one text, not a summary and a policy that can drift apart.
+ * Accordions suit a FAQ: a visitor comes for one answer, not all of them (NN/g).
  */
+import { ChevronDown } from '../lib/icons'
+import type { MessageKey } from '../composables/useI18n'
+
 const { t } = useI18n()
 useSeoMeta({ title: () => t('privacy.pageTitle'), description: () => t('faq.seoDescription') })
-const facts = usePrivacyFacts()
-const questions = computed(() =>
-  (['notice', 'phone'] as const).map((key) => ({ key, title: t(`faq.q.${key}`), text: t(`faq.a.${key}`) })),
-)
 
-const policy = computed(() => [
-  {
-    key: 'receive',
-    title: t('privacy.receive.title'),
-    items: [
-      t('privacy.receive.phone'),
-      t('privacy.receive.profile'),
-      t('privacy.receive.chats'),
-      t('privacy.receive.messages'),
-    ],
-  },
-  {
-    key: 'store',
-    title: t('privacy.store.title'),
-    items: [t('privacy.store.reports'), t('privacy.store.session'), t('privacy.store.technical')],
-  },
-  { key: 'use', title: t('privacy.use.title'), paragraphs: [t('privacy.use.text')] },
-  { key: 'share', title: t('privacy.share.title'), paragraphs: [t('privacy.share.text'), t('privacy.share.hosting')] },
-  { key: 'keep', title: t('privacy.keep.title'), paragraphs: [t('privacy.keep.text')] },
-  {
-    key: 'delete',
-    title: t('privacy.delete.title'),
-    paragraphs: [t('privacy.delete.text'), t('privacy.delete.telegram')],
-  },
-])
+const KEYS = ['read', 'keep', 'notKeep', 'notice', 'phone', 'share', 'howLong', 'delete', 'off'] as const
+const questions = computed(() =>
+  KEYS.map((key) => ({ key, q: t(`faq.q.${key}` as MessageKey), a: t(`faq.a.${key}` as MessageKey) })),
+)
 </script>
 
 <template>
   <div class="doc">
     <header class="doc__head">
       <h1 class="t-h1">{{ t('privacy.pageTitle') }}</h1>
-      <p class="doc__lede">{{ t('privacy.pageLede') }}</p>
+      <p class="t-lede">{{ t('privacy.pageLede') }}</p>
     </header>
-    <div class="doc__grid">
+    <section class="doc__faq" aria-labelledby="faq-title">
+      <h2 id="faq-title" class="t-h3">{{ t('faq.questions') }}</h2>
       <UiGroup>
-        <UiListRow v-for="fact in facts" :key="fact.key" :title="fact.title" :subtitle="fact.text" wrap>
-          <template #leading><component :is="fact.icon" aria-hidden="true" /></template>
-        </UiListRow>
+        <details v-for="item in questions" :key="item.key" class="faq">
+          <summary class="faq__q">
+            <span>{{ item.q }}</span>
+            <ChevronDown class="faq__chevron" aria-hidden="true" />
+          </summary>
+          <p class="faq__a">{{ item.a }}</p>
+        </details>
       </UiGroup>
-      <UiGroup :header="t('faq.questions')">
-        <UiListRow
-          v-for="question in questions"
-          :key="question.key"
-          :title="question.title"
-          :subtitle="question.text"
-          wrap
-        />
-      </UiGroup>
-    </div>
-    <section class="doc__policy" aria-labelledby="policy-title">
-      <h2 id="policy-title" class="t-h2">{{ t('privacy.policyTitle') }}</h2>
-      <div v-for="part in policy" :key="part.key" class="doc__part">
-        <h3 class="t-h3">{{ part.title }}</h3>
-        <ul v-if="part.items" class="doc__list">
-          <li v-for="item in part.items" :key="item">{{ item }}</li>
-        </ul>
-        <p v-for="paragraph in part.paragraphs ?? []" :key="paragraph">{{ paragraph }}</p>
-      </div>
     </section>
   </div>
 </template>
 
 <style scoped>
+/* The page's own column, left under the logo; the text keeps a reading width inside it. */
 .doc {
   display: flex;
   flex-direction: column;
@@ -83,60 +50,116 @@ const policy = computed(() => [
   padding: var(--space-4) var(--page-gutter) var(--page-bottom);
 }
 
-.doc__head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.doc__lede {
-  color: var(--text-muted);
-  font: var(--text-body);
-}
-
-.doc__grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
-.doc__policy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
+.doc > * {
   max-width: var(--page-max-narrow);
 }
 
-.doc__part {
+.doc__head,
+.doc__faq {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
+}
+
+.doc__head .t-lede {
+  max-width: var(--measure);
+}
+
+/*
+ * One question is one row of the group: the question at the row's inset, a chevron at the end that turns over when
+ * the answer is open, the fill of the whole row under the pointer, a hairline from the text to the edge between
+ * questions — the same row as everywhere else.
+ */
+.faq {
+  position: relative;
+}
+
+.faq:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 var(--row-inset);
+  height: 1px;
+  background: var(--border);
+}
+
+.faq__q {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--row-height);
+  padding: var(--space-3) var(--row-inset);
+  font: var(--text-body);
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.faq__q::-webkit-details-marker {
+  display: none;
+}
+
+.faq__q > * {
+  position: relative;
+}
+
+.faq__q::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--row-fill-radius);
+  background: transparent;
+  transition: background-color var(--transition-fast);
+}
+
+.faq[open] > .faq__q::before {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .faq__q:hover::before {
+    background: var(--hover);
+  }
+}
+
+.faq__q:active::before {
+  background: var(--pressed);
+}
+
+.faq__q:focus-visible {
+  outline: none;
+}
+
+.faq__q:focus-visible::before {
+  box-shadow: var(--ring-selected);
+}
+
+.faq__chevron {
+  flex: none;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--text-faint);
+  transition: rotate var(--duration-fast) var(--ease-standard);
+}
+
+.faq[open] .faq__chevron {
+  rotate: 180deg;
+}
+
+.faq__a {
+  max-width: var(--measure);
+  padding: 0 var(--row-inset) var(--space-4);
   color: var(--text-muted);
-}
-
-.doc__part h3 {
-  color: var(--text);
-}
-
-.doc__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding-left: var(--space-4);
-  list-style: disc;
+  font: var(--text-body);
 }
 
 @media (min-width: 901px) {
   .doc {
     gap: var(--space-10);
     padding-top: var(--page-top);
-  }
-
-  .doc__grid {
-    display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    align-items: start;
-    gap: var(--space-10);
   }
 }
 </style>

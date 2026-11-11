@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { MessageKey } from '../composables/useI18n'
+import { ArrowRight } from '../lib/icons'
 import { wave } from '../lib/wave'
 definePageMeta({ middleware: ['guest'], fit: true })
 
@@ -25,6 +26,24 @@ const deck = computed(() =>
     }
   }),
 )
+/** While the hero's buttons are on screen the header keeps its own «Войти» out of the way (SiteHeader). */
+const heroInView = useState('hero-cta-in-view', () => true)
+const actions = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | undefined
+onMounted(() => {
+  if (!actions.value || !('IntersectionObserver' in window)) return (heroInView.value = false)
+  // A button gone under the sticky header counts as gone.
+  const header = document.querySelector<HTMLElement>('.site-header')?.offsetHeight ?? 0
+  observer = new IntersectionObserver(([entry]) => (heroInView.value = Boolean(entry?.isIntersecting)), {
+    rootMargin: `-${header}px 0px 0px 0px`,
+  })
+  observer.observe(actions.value)
+})
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  heroInView.value = true
+})
+
 const runtimeConfig = useRuntimeConfig()
 useSeoMeta({ title: () => t('landing.seoTitle'), description: () => t('seo.description') })
 // Lets search engines show the app as free software rather than a plain page.
@@ -55,9 +74,12 @@ useHead({
       <section class="landing__copy" aria-labelledby="hero-title">
         <h1 id="hero-title" class="landing__title">{{ t('landing.title') }} {{ t('landing.titleSoft') }}</h1>
         <p class="landing__lede">{{ t('landing.lede') }}</p>
-        <div class="landing__actions">
+        <div ref="actions" class="landing__actions">
           <UiButton variant="primary" size="lg" to="/login">{{ t('landing.cta') }}</UiButton>
-          <UiButton size="lg" to="/example">{{ t('landing.nav.example') }}</UiButton>
+          <!-- The second way is a word, not a second slab: one call to action on the first screen. -->
+          <NuxtLink class="landing__more" to="/example">
+            {{ t('landing.nav.example') }}<ArrowRight aria-hidden="true" />
+          </NuxtLink>
         </div>
         <p class="landing__trust t-small">
           {{ t('landing.trust') }}
@@ -114,7 +136,30 @@ useHead({
 .landing__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-2) var(--space-6);
+}
+
+/* «Пример отчёта →»: ink text at the button's height, the arrow nudging forward under the pointer. */
+.landing__more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--control-md);
+  color: var(--text);
+  font: var(--text-ui);
+}
+
+.landing__more svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  transition: translate var(--duration-fast) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing__more:hover svg {
+    translate: var(--space-1) 0;
+  }
 }
 
 .landing__trust {

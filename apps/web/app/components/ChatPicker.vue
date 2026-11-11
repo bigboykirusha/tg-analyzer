@@ -221,6 +221,7 @@ onMounted(() => {
   align-items: center;
   gap: var(--space-3);
   min-height: var(--row-height);
+  padding-inline: var(--row-inset);
 }
 
 .picker__skeleton-copy {

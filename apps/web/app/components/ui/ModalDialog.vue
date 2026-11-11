@@ -82,7 +82,6 @@ watch(open, (value) => value && drag.reset())
             :label="closeLabel || t('common.close')"
             :icon="X"
             size="md"
-            plain
             no-tooltip
             :disabled="busy"
             @click="close"
@@ -97,7 +96,6 @@ watch(open, (value) => value && drag.reset())
               :label="t('common.back')"
               :icon="ArrowLeft"
               size="md"
-              plain
               no-tooltip
               @click="emit('back')"
             />
@@ -142,13 +140,13 @@ watch(open, (value) => value && drag.reset())
   background: var(--scrim);
 }
 
-/* Close and back are plain glyphs in the dialog's ink. */
 .modal-panel {
-  --btn-plain-text: var(--text);
   --field-bg: var(--fill-raised);
   /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
   --group-bg: transparent;
-  --group-padding: 0;
+  --group-radius: 0;
+  --group-inset: var(--space-6);
+  --group-bleed: var(--space-6);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -292,6 +290,8 @@ watch(open, (value) => value && drag.reset())
   }
 
   .modal-panel {
+    --group-inset: var(--page-gutter);
+    --group-bleed: var(--page-gutter);
     max-width: none;
     max-height: 100%;
     padding: 0 var(--page-gutter) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));

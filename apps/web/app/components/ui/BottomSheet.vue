@@ -54,15 +54,8 @@ watch(open, (value) => value && drag.reset())
           <div class="sheet__drag" v-on="drag.handlers">
             <span class="sheet__grabber" aria-hidden="true" />
             <header v-if="title || $slots.header" class="sheet__head">
-              <UiIconButton
-                v-if="back"
-                :label="t('common.back')"
-                :icon="ArrowLeft"
-                plain
-                no-tooltip
-                @click="emit('back')"
-              />
-              <UiIconButton v-else :label="t('common.close')" :icon="X" plain no-tooltip @click="close" />
+              <UiIconButton v-if="back" :label="t('common.back')" :icon="ArrowLeft" no-tooltip @click="emit('back')" />
+              <UiIconButton v-else :label="t('common.close')" :icon="X" no-tooltip @click="close" />
               <slot name="header">
                 <h2 :id="titleId" class="sheet__title">{{ title }}</h2>
               </slot>
@@ -100,7 +93,9 @@ watch(open, (value) => value && drag.reset())
   --field-bg: var(--fill-raised);
   /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
   --group-bg: transparent;
-  --group-padding: 0;
+  --group-radius: 0;
+  --group-inset: var(--page-gutter);
+  --group-bleed: var(--page-gutter);
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -134,9 +129,7 @@ watch(open, (value) => value && drag.reset())
   background: var(--border-strong);
 }
 
-/* The close and back glyphs are plain, in the sheet's ink, as in the bars. */
 .sheet__head {
-  --btn-plain-text: var(--text);
   display: grid;
   grid-template-columns: var(--control-md) minmax(0, 1fr) var(--control-md);
   align-items: center;
