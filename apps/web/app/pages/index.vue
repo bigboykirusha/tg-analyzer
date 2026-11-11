@@ -11,6 +11,20 @@ const examples = [
   { key: 'ex2', chatId: '1002', pulse: wave(2, 36) },
   { key: 'ex3', chatId: '1003', pulse: wave(3, 36) },
 ]
+/** The landing deck: the three examples as report posters, in the order they are dealt. */
+const deck = computed(() =>
+  examples.map((example) => {
+    const title = t(`landing.${example.key}.title` as MessageKey)
+    return {
+      key: example.key,
+      chatId: example.chatId,
+      title,
+      avatarTitle: title.split(',')[0]!,
+      meta: t(`landing.${example.key}.text` as MessageKey),
+      pulse: example.pulse,
+    }
+  }),
+)
 const runtimeConfig = useRuntimeConfig()
 useSeoMeta({ title: () => t('landing.seoTitle'), description: () => t('seo.description') })
 // Lets search engines show the app as free software rather than a plain page.
@@ -50,19 +64,7 @@ useHead({
           <NuxtLink class="link" to="/privacy">{{ t('landing.trustLink') }}</NuxtLink>
         </p>
       </section>
-      <ul class="landing__examples" :aria-label="t('landing.examplesLabel')">
-        <li v-for="example in examples" :key="example.key">
-          <HomeCard
-            :chat-id="example.chatId"
-            :title="t(`landing.${example.key}.title` as MessageKey)"
-            :avatar-title="t(`landing.${example.key}.title` as MessageKey).split(',')[0]"
-            :meta="t(`landing.${example.key}.text` as MessageKey)"
-            :has-avatar="false"
-          >
-            <Pulse :data="example.pulse" :height="12" :bars="28" />
-          </HomeCard>
-        </li>
-      </ul>
+      <LandingDeck class="landing__deck" :cards="deck" :label="t('landing.examplesLabel')" />
     </div>
   </div>
 </template>
@@ -119,29 +121,42 @@ useHead({
   color: var(--text-muted);
 }
 
-.landing__examples {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--card-gap);
+/* The one entrance of the page: the promise rises in, line by line, as the deck is dealt beside it. */
+.landing__copy > * {
+  animation: hero-in var(--duration-sheet) var(--ease-standard) both;
 }
 
-/* Cards in one row share its height. */
-.landing__examples > li {
-  display: grid;
+.landing__copy > :nth-child(2) {
+  animation-delay: var(--stagger-card);
 }
 
-/* Phones show two examples; the third waits for the wider screen. */
-.landing__examples > li:nth-child(3) {
-  display: none;
+.landing__copy > :nth-child(3) {
+  animation-delay: calc(var(--stagger-card) * 2);
 }
 
+.landing__copy > :nth-child(4) {
+  animation-delay: calc(var(--stagger-card) * 3);
+}
+
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    translate: 0 var(--space-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing__copy > * {
+    animation: none;
+  }
+}
+
+/* Desktop: the promise on the left, the deck of reports on the right, both on the screen's optical centre. */
 @media (min-width: 901px) {
   .landing {
     padding-block: var(--space-6);
   }
 
-  /* The promise on the left, three reports stacked on the right like cards on a table: each one wide enough
-     to read its line in full and to show its pulse, not a row of thumbnails. */
   .landing__first {
     display: grid;
     grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
@@ -151,27 +166,6 @@ useHead({
 
   .landing__copy {
     gap: var(--space-6);
-  }
-
-  .landing__examples {
-    justify-self: end;
-    width: 100%;
-    max-width: var(--card-focus);
-  }
-
-  .landing__examples > li:nth-child(2) {
-    transform: translateX(calc(-1 * var(--space-8)));
-  }
-
-  .landing__examples > li:nth-child(3) {
-    display: grid;
-  }
-}
-
-/* A short laptop screen keeps the landing one screen: two examples. */
-@media (min-width: 901px) and (max-height: 760px) {
-  .landing__examples > li:nth-child(3) {
-    display: none;
   }
 }
 </style>
