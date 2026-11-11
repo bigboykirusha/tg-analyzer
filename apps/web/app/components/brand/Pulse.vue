@@ -104,7 +104,8 @@ const columns = computed(() => {
 /* Each bar grows out of the line between the two voices; a wave runs left to right. */
 .pulse--grow i {
   animation: pulse-grow var(--duration-sheet) var(--ease-standard) both;
-  animation-delay: calc(var(--i) * var(--pulse-stagger, var(--stagger-bar)));
+  /* --pulse-delay holds the wave until its card has landed (the landing deck). */
+  animation-delay: calc(var(--pulse-delay, 0ms) + var(--i) * var(--pulse-stagger, var(--stagger-bar)));
 }
 
 .pulse--grow .pulse__half--up i {

@@ -1,12 +1,20 @@
 <script setup lang="ts">
 /**
- * The landing's one visual: a stack of three reports, each its poster in miniature — Sonner's stack of
- * toasts. The front one is read in full; the two behind show a strip of their colour. On load the cards rise
- * in one after another; every few seconds the front report leaves like a swiped toast, the next one moves up
- * with its pulse growing, and the old one fades in at the back. Hover lifts the strips; a click deals the next.
+ * The landing's one visual: a deck of three reports, each its poster in miniature — the same tile home
+ * shows. The front report is read in full; the two behind lean out and show only their colour.
+ *
+ * Motion, each with one job:
+ *   deal-in   on load the cards rise in one after another and settle into the fan; the front pulse grows
+ *             once its card has landed
+ *   deal      every few seconds the front report is flicked off to the left, turning as a card thrown by
+ *             hand, and slides under the deck; the two behind step forward on a spring without overshoot;
+ *             the new front's content fades up a moment after it lands, and its pulse grows
+ *   hover     the fan opens a little and the front card tilts towards the pointer (at most 6°), so the deck
+ *             feels like a thing on the table
+ *   click     deals the next report
  * The deal pauses while the pointer or focus is on the deck and while the tab is hidden, and stops after two
- * rounds — it shows what reports look like, it is not a carousel to watch. Reduced motion: a still deck.
- * Every card stays in the DOM in reading order, so a screen reader reads all three.
+ * rounds — it shows what reports look like, it is not a carousel to watch. Reduced motion: a still deck, no
+ * tilt. Every card stays in the DOM in reading order, so a screen reader reads all three.
  */
 export interface DeckCard {
   key: string
@@ -23,12 +31,14 @@ const props = defineProps<{ cards: DeckCard[]; label: string }>()
 const INTERVAL_MS = 3600
 const DEAL_MS = 700
 const ROUNDS = 2
+const TILT_DEG = 6
 
 /** order[0] is on top; order[1] and order[2] are behind it. */
 const order = ref(props.cards.map((_, index) => index))
 const leaving = ref<number | null>(null)
-const paused = ref(false)
+const tilt = ref({ x: 0, y: 0 })
 const reduced = useMediaQuery('(prefers-reduced-motion: reduce)')
+let paused = false
 let deals = 0
 let timer: ReturnType<typeof setTimeout> | undefined
 let settle: ReturnType<typeof setTimeout> | undefined
@@ -40,6 +50,7 @@ function deal() {
   const [front, ...rest] = order.value
   leaving.value = front!
   order.value = [...rest, front!]
+  tilt.value = { x: 0, y: 0 }
   deals += 1
   clearTimeout(settle)
   settle = setTimeout(() => (leaving.value = null), DEAL_MS)
@@ -47,8 +58,8 @@ function deal() {
 
 function schedule() {
   clearTimeout(timer)
-  if (reduced.value || paused.value || deals >= ROUNDS * props.cards.length) return
-  if (typeof document !== 'undefined' && document.hidden) return
+  if (reduced.value || paused || deals >= ROUNDS * props.cards.length) return
+  if (document.hidden) return
   timer = setTimeout(() => {
     deal()
     schedule()
@@ -56,13 +67,30 @@ function schedule() {
 }
 
 function pause() {
-  paused.value = true
+  paused = true
   clearTimeout(timer)
 }
 function resume() {
-  paused.value = false
+  paused = false
+  tilt.value = { x: 0, y: 0 }
   schedule()
 }
+function onClick() {
+  deal()
+  if (!paused) schedule()
+}
+
+/** The front card leans towards the pointer: ±6° around its centre, a mouse only. */
+function onMove(event: PointerEvent) {
+  if (reduced.value || event.pointerType !== 'mouse') return
+  const card = (event.currentTarget as HTMLElement).querySelector<HTMLElement>('[data-slot="0"]')
+  if (!card) return
+  const box = card.getBoundingClientRect()
+  const x = (event.clientX - box.left) / box.width - 0.5
+  const y = (event.clientY - box.top) / box.height - 0.5
+  tilt.value = { x: Math.max(-1, Math.min(1, x * 2)) * TILT_DEG, y: Math.max(-1, Math.min(1, -y * 2)) * TILT_DEG }
+}
+
 function onVisibility() {
   if (document.hidden) clearTimeout(timer)
   else schedule()
@@ -84,11 +112,13 @@ watch(reduced, schedule)
   <ul
     class="deck"
     :aria-label="label"
+    :style="{ '--tilt-x': `${tilt.x}deg`, '--tilt-y': `${tilt.y}deg` }"
     @pointerenter="pause"
     @pointerleave="resume"
+    @pointermove="onMove"
     @focusin="pause"
     @focusout="resume"
-    @click="deal"
+    @click="onClick"
   >
     <li
       v-for="(card, index) in cards"
@@ -97,7 +127,6 @@ watch(reduced, schedule)
       :class="{ 'deck__card--leaving': leaving === index }"
       :data-slot="slotOf(index)"
       :style="{ '--n': index }"
-      :aria-hidden="slotOf(index) === 0 ? undefined : 'true'"
     >
       <HomeCard
         :chat-id="card.chatId"
@@ -108,7 +137,7 @@ watch(reduced, schedule)
         poster
       >
         <Pulse
-          :key="slotOf(index) === 0 ? 'front' : 'behind'"
+          :key="slotOf(index) === 0 ? `front-${order.join()}` : 'behind'"
           :data="card.pulse"
           :height="0"
           :bars="32"
@@ -121,35 +150,35 @@ watch(reduced, schedule)
 
 <style scoped>
 /*
- * The stack is Sonner's (Emil Kowalski, «Building a toast component»): the cards share one cell and one
- * height; each one behind is lifted by one step and is 5 % smaller, scaled from its top edge so only a strip
- * of it shows above the one in front, and its content is hidden. Hover lifts the steps a little, as Sonner
- * expands its stack. Slots move with one ease-out (400 ms, as Sonner); nothing turns.
+ * One cell; the three cards are stacked in it. A slot is a place in the fan: 0 on top, flat; 1 and 2 behind,
+ * nudged up and out, turned and a little smaller. --spread opens the fan on hover.
  */
 .deck {
-  --lift: var(--space-4);
-  /* The stacking order inside the deck: the dealt card is lifted above the top one, then put under all. */
+  --spread: 1;
   --deck-z-lift: 4;
   --deck-z-top: 3;
   --deck-z-middle: 2;
-  --deck-1: translateY(calc(-1 * var(--lift))) scale(0.95);
-  --deck-2: translateY(calc(-2 * var(--lift))) scale(0.9);
+  --deck-1: translate(calc(var(--spread) * 6%), calc(var(--spread) * -7%)) rotate(calc(var(--spread) * 4deg))
+    scale(0.95);
+  --deck-2: translate(calc(var(--spread) * -5%), calc(var(--spread) * -12%)) rotate(calc(var(--spread) * -5deg))
+    scale(0.9);
   display: grid;
   width: 100%;
-  /* Room above the front card for the two strips behind it, and for the lift on hover. */
-  padding-top: calc(var(--space-6) * 2);
+  /* The fan stays inside the column: the cards behind lean out by a few per cent on each side. */
+  padding: var(--space-10) var(--space-4) 0;
   cursor: pointer;
   user-select: none;
+  perspective: 1200px;
   -webkit-tap-highlight-color: transparent;
 }
 
 .deck__card {
   display: grid;
   grid-area: 1 / 1;
-  transform-origin: 50% 0;
-  transition: transform var(--duration-sheet) var(--ease-standard);
-  /* Dealt in on load: each card rises from below, back one first, as a toast enters. The individual
-     `translate` property composes with the slot's `transform`, so the entrance never fights the stack. */
+  /* Places move on a critically damped spring: quick, no overshoot. */
+  transition: transform var(--duration-deal) var(--spring-snappy);
+  /* Dealt in on load: the back card first, each rising from below and turning into its place. The individual
+     `translate`/`rotate` properties compose with the slot's `transform`, so the entrance never fights the fan. */
   animation: deck-in var(--duration-deal) var(--ease-standard) both;
   animation-delay: calc((2 - var(--n)) * var(--stagger-card) * 2);
 }
@@ -168,18 +197,33 @@ watch(reduced, schedule)
   transform: var(--deck-2);
 }
 
-/* Behind the top card a report is only its colour (Sonner hides the content of the toasts behind). */
+.deck__card :deep(.home-card) {
+  min-height: 216px;
+  box-shadow: var(--shadow-float);
+  transition:
+    transform var(--duration-sheet) var(--ease-standard),
+    box-shadow var(--duration-sheet) var(--ease-standard);
+}
+
+/* The front card follows the pointer. */
+.deck__card[data-slot='0'] :deep(.home-card) {
+  transform: rotateY(var(--tilt-x, 0deg)) rotateX(var(--tilt-y, 0deg));
+}
+
+/* Behind the top card a report is only its colour; the new front's content comes up once it has landed. */
 .deck__card :deep(.home-card > *) {
-  transition: opacity var(--duration-fast) var(--ease-standard);
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    translate var(--duration-sheet) var(--ease-standard);
+}
+
+.deck__card[data-slot='0'] :deep(.home-card > *) {
+  transition-delay: var(--duration-fast);
 }
 
 .deck__card:not([data-slot='0']) :deep(.home-card > *) {
   opacity: 0;
-}
-
-.deck__card :deep(.home-card) {
-  min-height: 216px;
-  box-shadow: var(--shadow-float);
+  translate: 0 var(--space-1);
 }
 
 .deck__card :deep(.home-card__name) {
@@ -194,12 +238,11 @@ watch(reduced, schedule)
 
 .deck__card :deep(.pulse) {
   --pulse-half: var(--space-8);
+  /* The front pulse grows once its card has landed. */
+  --pulse-delay: var(--duration-sheet);
 }
 
-/*
- * The top report leaves as a swiped toast — down and out, accelerating — and comes back behind the others,
- * fading in at the last place while the two in front move up a step.
- */
+/* The top report is flicked off to the left, turning, accelerating, then slides under into the last place. */
 .deck__card--leaving {
   animation: deck-deal var(--duration-deal) both;
 }
@@ -207,41 +250,41 @@ watch(reduced, schedule)
 @keyframes deck-in {
   from {
     opacity: 0;
-    translate: 0 var(--space-12);
+    translate: 0 var(--space-16);
+    rotate: -6deg;
   }
 }
 
 @keyframes deck-deal {
   0% {
     z-index: var(--deck-z-lift);
-    opacity: 1;
     transform: none;
     animation-timing-function: var(--ease-exit);
   }
 
-  40% {
+  42% {
     z-index: var(--deck-z-lift);
-    opacity: 0;
-    transform: translateY(var(--space-10)) scale(0.98);
+    transform: translate(-58%, 4%) rotate(-14deg);
+    animation-timing-function: var(--ease-standard);
   }
 
-  41% {
+  50% {
     z-index: 0;
-    opacity: 0;
-    transform: var(--deck-2);
-    animation-timing-function: var(--ease-standard);
   }
 
   100% {
     z-index: 0;
-    opacity: 1;
     transform: var(--deck-2);
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
   .deck:hover {
-    --lift: var(--space-6);
+    --spread: 1.3;
+  }
+
+  .deck:hover .deck__card[data-slot='0'] :deep(.home-card) {
+    box-shadow: var(--shadow-overlay);
   }
 }
 
@@ -249,6 +292,7 @@ watch(reduced, schedule)
   .deck {
     justify-self: center;
     max-width: 400px;
+    padding: var(--space-12) 0 0;
   }
 
   .deck__card :deep(.home-card) {
@@ -265,6 +309,10 @@ watch(reduced, schedule)
   .deck__card,
   .deck__card--leaving {
     animation: none;
+  }
+
+  .deck__card[data-slot='0'] :deep(.home-card) {
+    transform: none;
   }
 }
 </style>
