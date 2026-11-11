@@ -158,7 +158,6 @@ defineExpose({ focus: focusFirstEmpty })
   height: var(--row-height);
   border-radius: var(--radius-well);
   background: var(--surface-2);
-  box-shadow: var(--ring-hairline);
   color: var(--text);
   font: var(--text-h2);
   letter-spacing: var(--tracking-h2);

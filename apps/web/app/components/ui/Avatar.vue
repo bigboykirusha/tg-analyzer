@@ -20,8 +20,11 @@ const props = withDefaults(
     onPoster?: boolean
     /** The letter to show instead of the one worked out from the title (a named «вы» in a quiz). */
     initial?: string
+    /** You, outside a report (the account, the app bar, the sidebar): ink, as «вы» are everywhere — with your own
+     *  initials and photo, never a person's colour. */
+    self?: boolean
   }>(),
-  { src: null, size: 'md', seed: null, side: null, onPoster: false, initial: '' },
+  { src: null, size: 'md', seed: null, side: null, onPoster: false, initial: '', self: false },
 )
 
 const { t } = useI18n()
@@ -49,7 +52,7 @@ const initials = computed(() => {
 })
 
 /** Their own colour; a side avatar inherits the report's. */
-const hue = computed(() => (props.side ? undefined : hueOf(props.seed ?? props.title ?? '')))
+const hue = computed(() => (props.side || props.self ? undefined : hueOf(props.seed ?? props.title ?? '')))
 const showImage = computed(() => !props.side && props.src && !failed.value)
 const tooltip = computed(() => {
   if (props.side === 'mine') return t('report.you')
@@ -61,7 +64,7 @@ const tooltip = computed(() => {
 <template>
   <span
     class="avatar"
-    :class="[`avatar--${size}`, { 'avatar--mine': side === 'mine', 'avatar--on-poster': onPoster }]"
+    :class="[`avatar--${size}`, { 'avatar--mine': side === 'mine' || self, 'avatar--on-poster': onPoster }]"
     :data-hue="hue"
     :title="tooltip"
   >

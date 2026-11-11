@@ -388,7 +388,6 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
   padding: 0 var(--space-3) 0 var(--space-4);
   border-radius: var(--radius-well);
   background: var(--field-bg, var(--surface-2));
-  box-shadow: var(--ring-hairline);
   font: var(--text-body);
   text-align: left;
   transition: box-shadow var(--transition-fast);

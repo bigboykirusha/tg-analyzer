@@ -13,5 +13,5 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UiAvatar :title="title" :src="src" :size="size" :seed="auth.user?.id ?? title" />
+  <UiAvatar :title="title" :src="src" :size="size" self />
 </template>

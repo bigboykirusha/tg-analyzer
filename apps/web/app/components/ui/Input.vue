@@ -132,7 +132,8 @@ defineExpose({ focus: () => inputRef.value?.focus(), el: inputRef })
 </template>
 
 <style scoped>
-/* 44 tall, grey at rest with a hairline; white with a 2 px ink ring on focus; a red ring when invalid. */
+/* 44 tall, a grey well at rest (one treatment: the fill, no hairline over it, as in Telegram); white with a 2 px
+   ink ring on focus; a red ring when invalid. */
 .input {
   display: flex;
   align-items: center;
@@ -141,7 +142,6 @@ defineExpose({ focus: () => inputRef.value?.focus(), el: inputRef })
   padding: 0 var(--space-4);
   border-radius: var(--radius-well);
   background: var(--field-bg, var(--surface-2));
-  box-shadow: var(--ring-hairline);
   font: var(--text-body);
   transition:
     background-color var(--transition-fast),
