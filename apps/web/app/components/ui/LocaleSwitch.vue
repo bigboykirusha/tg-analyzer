@@ -16,6 +16,7 @@ const other = computed<{ code: Locale; label: string }>(() =>
     :icon="Globe"
     :label="`${t('nav.language')}: ${other.label}`"
     size="sm"
+    plain
     @click="setLocale(other.code)"
   />
 </template>

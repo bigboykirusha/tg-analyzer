@@ -20,6 +20,7 @@ const isDark = computed(() => (mounted.value ? resolved.value : preference.value
     :icon="isDark ? Sun : Moon"
     :label="isDark ? t('theme.light') : t('theme.dark')"
     size="sm"
+    plain
     @click="setPreference(isDark ? 'light' : 'dark')"
   />
 </template>

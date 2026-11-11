@@ -70,10 +70,24 @@ const { scrolled, overPoster } = usePosterHeader()
   padding: 0 var(--page-gutter);
 }
 
+/*
+ * Language and theme are quiet glyphs, not slabs: no circle until pressed. The last glyph's box overhangs the
+ * gutter by its own padding, so the glyph itself — not its invisible box — lines up with the page's right edge.
+ */
 .site-header__end {
+  --btn-plain-text: var(--text-muted);
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  margin-right: calc((var(--icon-md) - var(--control-sm)) / 2);
+}
+
+.site-header__end:has(.site-header__sign-in) {
+  margin-right: 0;
+}
+
+.site-header.is-over-poster .site-header__end {
+  --btn-plain-text: var(--on-poster);
 }
 
 /* A little more air before the one text button than between the two icons. */

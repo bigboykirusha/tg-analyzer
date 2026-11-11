@@ -52,60 +52,51 @@ useHead({
 
 <template>
   <div class="landing">
-    <div class="landing__first">
-      <section class="landing__copy" aria-labelledby="hero-title">
-        <h1 id="hero-title" class="landing__title">{{ t('landing.title') }} {{ t('landing.titleSoft') }}</h1>
-        <p class="landing__lede">{{ t('landing.lede') }}</p>
-        <div class="landing__actions">
-          <UiButton variant="primary" size="lg" to="/login">{{ t('landing.cta') }}</UiButton>
-          <!-- The second way is a word, not a second slab: one call to action on the first screen. -->
-          <NuxtLink class="landing__more" to="/example">
-            {{ t('landing.nav.example') }}<ArrowRight aria-hidden="true" />
-          </NuxtLink>
-        </div>
-        <p class="landing__trust t-small">
-          {{ t('landing.trust') }}
-          <NuxtLink class="link" to="/privacy">{{ t('landing.trustLink') }}</NuxtLink>
-        </p>
-      </section>
+    <!--
+      One sequence for both layouts, in the phone's reading order: the promise, «Пример отчёта», the deck, the
+      call to action, the privacy line. A computer lays the same items out as two columns.
+    -->
+    <section class="landing__first" aria-labelledby="hero-title">
+      <h1 id="hero-title" class="landing__title">{{ t('landing.title') }} {{ t('landing.titleSoft') }}</h1>
+      <p class="landing__lede">{{ t('landing.lede') }}</p>
+      <!-- The second way is a word with an arrow, not a second slab: one call to action on the screen. -->
+      <NuxtLink class="landing__more" to="/example">
+        {{ t('landing.nav.example') }}<ArrowRight aria-hidden="true" />
+      </NuxtLink>
       <LandingDeck class="landing__deck" :cards="deck" :label="t('landing.examplesLabel')" />
-    </div>
+      <UiButton class="landing__cta" variant="primary" size="lg" to="/login">{{ t('landing.cta') }}</UiButton>
+      <p class="landing__trust t-small">
+        {{ t('landing.trust') }}
+        <NuxtLink class="link" to="/privacy">{{ t('landing.trustLink') }}</NuxtLink>
+      </p>
+    </section>
   </div>
 </template>
 
 <style scoped>
-/* One screen, phone or desktop: the title, the lead, the call to action, a quiet line about privacy and the deck. */
+/*
+ * One screen, phone or desktop. A phone reads top to bottom in two groups: the story (title, lead, «Пример
+ * отчёта») on top, the action (the button, the privacy line) under the thumb, and the deck takes the height
+ * between them, scaling itself into it. Inside a group the step is --space-3; the deck keeps at least
+ * --space-6 from both groups.
+ */
 .landing {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-6);
   width: 100%;
   min-height: 0;
   max-width: calc(var(--page-max) + var(--page-gutter) * 2);
   margin: 0 auto;
-  padding: var(--space-4) var(--page-gutter) var(--space-4);
+  padding: var(--space-4) var(--page-gutter) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
 }
 
 .landing__first {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-6);
-  min-height: 0;
-}
-
-/* A phone: the copy takes what it needs, the deck the rest of the screen (it scales itself into it). */
-.landing__deck {
-  flex: 1 1 0;
-  min-height: 0;
-}
-
-.landing__copy {
-  display: flex;
-  flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-4);
+  min-height: 0;
 }
 
 .landing__title {
@@ -114,28 +105,18 @@ useHead({
   text-wrap: balance;
 }
 
-/* A phone: two lines, not three — the title gives the deck its height back. */
-@media (max-width: 900px) {
-  .landing__title {
-    font-size: var(--display-fit);
-    line-height: 1;
-  }
-}
-
 .landing__lede {
   max-width: var(--measure);
+  margin-top: var(--space-3);
   color: var(--text-muted);
   font: var(--text-body);
 }
 
-.landing__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-6);
-}
-
-/* «Пример отчёта →»: ink text at the button's height, the arrow nudging forward under the pointer. */
+/*
+ * «Пример отчёта →»: ink text at a tap's height; the arrow says «another page», as a standalone link does
+ * (privacy, inside a sentence, is underlined instead). Its box is taller than its line, so it sits flush under
+ * the lead and its text still lands one --space-3 below it.
+ */
 .landing__more {
   display: inline-flex;
   align-items: center;
@@ -157,24 +138,49 @@ useHead({
   }
 }
 
-.landing__trust {
-  color: var(--text-muted);
+/* The deck takes the height left between the groups. */
+.landing__deck {
+  flex: 1 1 0;
+  align-self: stretch;
+  min-height: 0;
+  margin-block: var(--space-4) var(--space-6);
 }
 
-/* The one entrance of the page: the promise rises in, line by line, as the deck is dealt beside it. */
-.landing__copy > * {
+/* A phone: the one call to action is the width of the column, under the thumb; the privacy line centred under it. */
+.landing__cta {
+  align-self: stretch;
+}
+
+.landing__trust {
+  align-self: stretch;
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* A phone: two lines, not three. */
+@media (max-width: 900px) {
+  .landing__title {
+    font-size: var(--display-fit);
+    line-height: 1;
+  }
+}
+
+/* The one entrance of the page: the copy rises in, line by line, as the deck is dealt. */
+.landing__first > :not(.landing__deck) {
   animation: hero-in var(--duration-sheet) var(--ease-standard) both;
 }
 
-.landing__copy > :nth-child(2) {
+.landing__lede {
   animation-delay: var(--stagger-card);
 }
 
-.landing__copy > :nth-child(3) {
+.landing__more {
   animation-delay: calc(var(--stagger-card) * 2);
 }
 
-.landing__copy > :nth-child(4) {
+.landing__cta,
+.landing__trust {
   animation-delay: calc(var(--stagger-card) * 3);
 }
 
@@ -186,12 +192,15 @@ useHead({
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing__copy > * {
+  .landing__first > * {
     animation: none;
   }
 }
 
-/* Desktop: the promise on the left, the deck of reports on the right, both on the screen's optical centre. */
+/*
+ * Desktop: the promise on the left, the deck on the right, both on the screen's optical centre. The left column
+ * is two tracks (the button, then «Пример отчёта» beside it); the empty rows above and below centre the copy.
+ */
 @media (min-width: 901px) {
   .landing {
     padding-block: var(--space-6);
@@ -199,17 +208,42 @@ useHead({
 
   .landing__first {
     display: grid;
-    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    grid-template-columns: max-content minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-rows: 1fr repeat(4, auto) 1fr;
     align-items: center;
-    gap: var(--space-16);
+    column-gap: var(--space-6);
+  }
+
+  .landing__title {
+    grid-area: 2 / 1 / 3 / 3;
+  }
+
+  .landing__lede {
+    grid-area: 3 / 1 / 4 / 3;
+    margin-top: var(--space-6);
+  }
+
+  .landing__cta {
+    grid-area: 4 / 1 / 5 / 2;
+    justify-self: start;
+    margin-top: var(--space-6);
+  }
+
+  .landing__more {
+    grid-area: 4 / 2 / 5 / 3;
+    justify-self: start;
+    margin-top: var(--space-6);
+  }
+
+  .landing__trust {
+    grid-area: 5 / 1 / 6 / 3;
+    margin-top: var(--space-6);
+    text-align: start;
   }
 
   .landing__deck {
-    flex: none;
-  }
-
-  .landing__copy {
-    gap: var(--space-6);
+    grid-area: 1 / 3 / -1 / 4;
+    margin: 0 0 0 var(--space-10);
   }
 }
 </style>

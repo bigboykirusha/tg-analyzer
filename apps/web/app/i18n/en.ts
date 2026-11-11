@@ -234,7 +234,7 @@ export const en = {
   'landing.seoTitle': 'Telegram chat statistics: who writes first',
   'landing.title': 'A mirror',
   'landing.titleSoft': 'of your chats',
-  'landing.trust': 'We read only the chat you pick and keep only statistics.',
+  'landing.trust': 'We never store your messages.',
   'landing.trustLink': 'Privacy',
   'landing.examplesLabel': 'Examples',
   'login.changeNumber': 'Change number',

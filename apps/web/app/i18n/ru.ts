@@ -236,7 +236,7 @@ export const ru: Record<MessageKey, string> = {
   'landing.seoTitle': 'Статистика переписки в Telegram: кто пишет первым',
   'landing.title': 'Зеркало',
   'landing.titleSoft': 'ваших переписок',
-  'landing.trust': 'Читаем только выбранный чат, храним только статистику.',
+  'landing.trust': 'Тексты переписок не сохраняем.',
   'landing.trustLink': 'Приватность',
   'landing.examplesLabel': 'Примеры',
   'login.changeNumber': 'Изменить номер',
