@@ -71,7 +71,8 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   max-width: 100%;
   height: var(--control-md);
   padding: 0 var(--space-4);
-  border-radius: var(--radius-pill);
+  /* A rounded rectangle, as Telegram's own buttons: the pill is for chips and filters. */
+  border-radius: var(--radius-well);
   font: var(--text-label);
   text-align: center;
   white-space: nowrap;

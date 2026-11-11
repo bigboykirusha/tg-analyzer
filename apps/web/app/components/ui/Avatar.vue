@@ -5,7 +5,7 @@ export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg'
 export type AvatarSide = 'mine' | 'theirs'
 
 /**
- * A person: their colour as a soft vertical gradient, ink initials — as in Telegram, in the light family.
+ * A person: their poster colour, flat, ink initials — the same colour their report tile and poster carry.
  * 24 / 32 / 40 / 64 (--avatar-*). `side` draws one side of a two-person report: `mine` is an ink circle,
  * `theirs` takes the colour of the report around it. On a person's own poster pass `on-poster`.
  */
@@ -80,7 +80,7 @@ const tooltip = computed(() => {
   height: var(--avatar-size);
   overflow: hidden;
   border-radius: var(--radius-pill);
-  background: linear-gradient(var(--room-tint), var(--poster));
+  background: var(--poster);
   color: var(--on-poster);
   /*
    * Initials are one of the text roles, never a fraction of the circle: 24 caption, 32 and 40 label, 64 h2. Only a

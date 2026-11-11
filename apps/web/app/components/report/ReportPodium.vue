@@ -67,7 +67,7 @@ const steps = computed(() => {
 .podium__bar {
   width: 100%;
   height: var(--space-12);
-  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+  border-radius: var(--radius-mark) var(--radius-mark) 0 0;
   background: var(--surface-2);
 }
 

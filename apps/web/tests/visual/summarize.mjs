@@ -7,8 +7,9 @@ const dirArg = process.argv[2] || '.'
 const check = process.argv.includes('--check')
 
 // Thresholds (docs/design-system.md §1, POLISH.md §6).
-// Four looks: ink, neutral fill, round neutral icon, and the plain icon of a card's own «⋯» menu (11.11).
-const LIMITS = { buttonLooks: 4, buttonSizes: 2, textStylesPerScreen: 8, textStylesTotal: 8, radii: 4 }
+// Four looks: ink, neutral fill, round neutral icon, and the plain glyph (bars, sheets, a card's «⋯»), 11.11.
+// Five radii: mark 8 (chart bars), well 12 (controls), card 16, sheet 24, pill.
+const LIMITS = { buttonLooks: 4, buttonSizes: 2, textStylesPerScreen: 8, textStylesTotal: 8, radii: 5 }
 
 // Rows (list rows, sidebar links) and data chips are tappable but are not buttons.
 const NOT_BUTTONS = /(^|\.)(list-row|router-link-(exact-)?active|menu-item|chip)(\.|$)/

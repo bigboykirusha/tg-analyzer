@@ -31,8 +31,12 @@ defineProps<{ header?: string; footer?: string }>()
   font: var(--text-label);
 }
 
+/*
+ * The card's edges are even: a 40 avatar in a 56 row stands 8 from the row's edge, so the card adds the rest
+ * above and below — the first avatar is as far from the top as from the side. Bare groups (in sheets) add none.
+ */
 .group__card {
-  padding: 0 var(--group-padding, var(--space-4));
+  padding: max(0px, calc(var(--group-padding, var(--space-4)) - var(--space-2))) var(--group-padding, var(--space-4));
   border-radius: var(--radius-card);
   background: var(--group-bg, var(--surface));
 }
@@ -51,7 +55,7 @@ defineProps<{ header?: string; footer?: string }>()
 
 @media (min-width: 901px) {
   .group__card {
-    padding: 0 var(--group-padding, var(--space-6));
+    padding: max(0px, calc(var(--group-padding, var(--space-6)) - var(--space-2))) var(--group-padding, var(--space-6));
     border-radius: var(--radius-card);
   }
 

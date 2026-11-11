@@ -404,6 +404,7 @@
 .is-over-poster {
   --btn-fill: var(--poster-button);
   --btn-fill-text: var(--on-poster);
+  --btn-plain-text: var(--on-poster);
 }
 
 /* ─── Theme-independent scales ──────────────────────────────────────────── */
@@ -424,14 +425,15 @@
   --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
-  /* Corners: four in the whole system. well 8 (fields, menu rows, marks, chips) · card 20 (every card, group and menu) ·
-   * sheet 28 (sheets and dialogs) · pill (controls, avatars). */
-  --radius-well: 8px;
-  --radius-card: 20px;
-  --radius-sheet: 28px;
+  /* Corners, nested (inner = outer − padding): mark 8 (chart bars, heat cells) · well 12 (buttons, fields, menu rows —
+   * the rounded rectangle of Telegram's own buttons) · card 16 (every card, group, menu and poster tile) ·
+   * sheet 24 (sheets and dialogs) · pill (chips, filters, avatars, round icons). */
+  --radius-mark: 8px;
+  --radius-well: 12px;
+  --radius-card: 16px;
+  --radius-sheet: 24px;
   --radius-pill: 999px;
   /* Deprecated names of the old nine-step scale, kept so pages not yet rewritten still render. */
-  --radius-mark: var(--radius-well);
   --radius-xs: var(--radius-well);
   --radius-sm: var(--radius-well);
   --radius-md: var(--radius-card);
@@ -506,6 +508,10 @@
   --duration-spin: 700ms;
   --duration-spin-calm: 1200ms;
   --duration-shimmer: 1600ms;
+  /* Waves: the next bar of a growing pulse, the next card of an entrance, the landing deck dealing a report. */
+  --stagger-bar: 14ms;
+  --stagger-card: 60ms;
+  --duration-deal: 700ms;
 
   /* One family, Onest: hierarchy from size, weight and colour. 400 reading, 500 interface, 600 titles and numbers. */
   --font-sans: 'Onest Variable', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
@@ -515,12 +521,13 @@
    *   first finding · h3 — a card's answer, a dialog · body — reading, rows, names · label — a card's
    *   question, buttons, fields, meta · caption — axes and counts
    */
-  --text-display: 600 56px/56px var(--font-sans);
-  --display-max: 56px;
-  --text-figure: 600 44px/48px var(--font-sans);
-  --text-h1: 600 30px/36px var(--font-sans);
-  --text-h2: 600 24px/32px var(--font-sans);
-  --text-h3: 600 20px/28px var(--font-sans);
+  /* Titles are 500: hierarchy from size and colour; a 600 headline over 14 px controls read as shouting. */
+  --text-display: 500 52px/52px var(--font-sans);
+  --display-max: 52px;
+  --text-figure: 500 44px/48px var(--font-sans);
+  --text-h1: 500 30px/36px var(--font-sans);
+  --text-h2: 500 24px/30px var(--font-sans);
+  --text-h3: 500 20px/26px var(--font-sans);
   --text-body: 400 16px/24px var(--font-sans);
   --text-label: 500 14px/20px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
@@ -533,7 +540,7 @@
   --emoji-size: var(--size-h2);
   /* The winner on a podium. */
   --emoji-size-lg: var(--size-h1);
-  --tracking-display: -0.045em;
+  --tracking-display: -0.035em;
   --tracking-figure: -0.035em;
   --tracking-h1: -0.025em;
   --tracking-h2: -0.02em;
@@ -605,12 +612,12 @@
 /* Desktop: bigger type for the big roles, larger tiles, the 40 gutter and sections. */
 @media (min-width: 901px) {
   :root {
-    --text-display: 600 88px/88px var(--font-sans);
-    --display-max: 88px;
-    --text-figure: 600 56px/60px var(--font-sans);
-    --text-h1: 600 34px/40px var(--font-sans);
-    --text-h2: 600 28px/36px var(--font-sans);
-    --text-h3: 600 22px/28px var(--font-sans);
+    --text-display: 500 76px/76px var(--font-sans);
+    --display-max: 76px;
+    --text-figure: 500 56px/60px var(--font-sans);
+    --text-h1: 500 34px/40px var(--font-sans);
+    --text-h2: 500 28px/34px var(--font-sans);
+    --text-h3: 500 20px/26px var(--font-sans);
     --brand-mark-size: 28px;
     --brand-word: 600 18px/24px var(--font-sans);
     --size-h1: 34px;

@@ -84,15 +84,16 @@ const classes = computed(() => ['icon-btn', `icon-btn--${props.size}`, { 'icon-b
   }
 }
 
+/* On a poster (a report tile) the glyph is the poster's ink: --btn-plain-text. */
 .icon-btn--plain {
   background: transparent;
-  color: var(--text-muted);
+  color: var(--btn-plain-text, var(--text-muted));
 }
 
 .icon-btn--plain:active:not(:disabled),
 .icon-btn--plain[aria-expanded='true'] {
   background: var(--pressed);
-  color: var(--text);
+  color: var(--btn-plain-text, var(--text));
 }
 
 /* Compact circles still answer a 44 px tap. */

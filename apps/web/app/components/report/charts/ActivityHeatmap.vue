@@ -139,7 +139,7 @@ function describe(cell: Cell) {
 .calendar-empty {
   padding: var(--space-8);
   border: 1px dashed var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-mark);
   color: var(--text-muted);
   text-align: center;
 }

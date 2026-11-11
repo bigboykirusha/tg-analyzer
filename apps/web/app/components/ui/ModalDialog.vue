@@ -82,6 +82,7 @@ watch(open, (value) => value && drag.reset())
             :label="closeLabel || t('common.close')"
             :icon="X"
             size="md"
+            plain
             no-tooltip
             :disabled="busy"
             @click="close"
@@ -96,6 +97,7 @@ watch(open, (value) => value && drag.reset())
               :label="t('common.back')"
               :icon="ArrowLeft"
               size="md"
+              plain
               no-tooltip
               @click="emit('back')"
             />
@@ -140,7 +142,9 @@ watch(open, (value) => value && drag.reset())
   background: var(--scrim);
 }
 
+/* Close and back are plain glyphs in the dialog's ink. */
 .modal-panel {
+  --btn-plain-text: var(--text);
   --field-bg: var(--fill-raised);
   /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
   --group-bg: transparent;
