@@ -85,6 +85,29 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   --btn-plain-text: var(--on-poster);
 }
 
+/* On a colour the 4 % step of a white card is lost: a poster steps by its own chip tint. */
+.home-card.home-card--poster::before {
+  background: var(--on-poster-chip);
+}
+
+/* A card that opens a report answers the pointer with one surface step over its own colour (lighter in dark). */
+.home-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--hover);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-card:has(a.home-card__name):hover::before {
+    opacity: 1;
+  }
+}
+
 .home-card:has(a.home-card__name):active:not(:has(.home-card__end :active)) {
   transform: scale(var(--press-scale-lg));
 }

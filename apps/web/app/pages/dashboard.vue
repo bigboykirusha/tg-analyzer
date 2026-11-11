@@ -125,7 +125,8 @@ onMounted(() => {
   gap: var(--space-3);
 }
 
-/* Reports: two on a phone, four on a tablet and wide screens, three beside the sidebar on a laptop. */
+/* Reports: two on a phone, three on a tablet and beside the sidebar on a laptop, four on wide screens — a tile
+   never narrower than its name and its pulse need. */
 .home__reports {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -134,7 +135,7 @@ onMounted(() => {
 
 @media (min-width: 641px) {
   .home__reports {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

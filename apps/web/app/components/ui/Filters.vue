@@ -63,4 +63,15 @@ const model = defineModel<T>({ required: true })
   background: var(--accent);
   color: var(--on-accent);
 }
+
+/* The same step as a secondary button; the chosen one stays as it is. */
+@media (hover: hover) and (pointer: fine) {
+  .segmented__item:not(.is-on):hover {
+    background-image: linear-gradient(var(--hover), var(--hover));
+  }
+}
+
+.segmented__item:active:not(.is-on) {
+  background-image: linear-gradient(var(--pressed), var(--pressed));
+}
 </style>

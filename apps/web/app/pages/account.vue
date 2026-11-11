@@ -167,17 +167,18 @@ onMounted(() => void Promise.all([loadLinks(), loadDevices()]))
   <UiPageContainer>
     <div class="account">
       <UiPageBar :title="t('accountPage.title')" back="/dashboard" />
-      <!-- Who you are: one calm card, as at the top of iOS settings. -->
-      <section class="account__me" :aria-label="displayName">
-        <ProfileAvatar :title="displayName" size="lg" />
-        <div class="account__who">
-          <p class="account__name t-h3">{{ displayName }}</p>
-          <p v-if="handle" class="account__handle">{{ handle }}</p>
-        </div>
-      </section>
-
       <div class="account__grid">
         <div class="account__col">
+          <!-- Who you are: one calm card, as at the top of iOS settings; on a computer it heads the left column
+               instead of a full-width strip with a name at one end and nothing at the other. -->
+          <section class="account__me" :aria-label="displayName">
+            <ProfileAvatar :title="displayName" size="lg" />
+            <div class="account__who">
+              <p class="account__name t-h3">{{ displayName }}</p>
+              <p v-if="handle" class="account__handle">{{ handle }}</p>
+            </div>
+          </section>
+
           <UiGroup :header="t('accountPage.lookTitle')">
             <UiPopoverMenu
               v-model:open="languageOpen"
@@ -322,7 +323,8 @@ onMounted(() => void Promise.all([loadLinks(), loadDevices()]))
   align-items: center;
   gap: var(--space-4);
   min-width: 0;
-  padding: var(--space-4);
+  /* The groups' inset: the avatar stands on the same line as every row's text below it. */
+  padding: var(--card-padding);
   border-radius: var(--radius-card);
   background: var(--surface);
 }
@@ -361,6 +363,11 @@ onMounted(() => void Promise.all([loadLinks(), loadDevices()]))
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
     gap: var(--page-gap);
+  }
+
+  /* Cards line up at the top; the right column's first card has a header (label 20 + 8) hanging above it. */
+  .account__col:first-child {
+    padding-top: calc(var(--space-6) + var(--space-1));
   }
 }
 </style>
