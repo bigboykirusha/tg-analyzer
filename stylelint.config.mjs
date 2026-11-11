@@ -108,7 +108,8 @@ const FONT_WEIGHTS = ['400', '500', '600', 'inherit', 'normal', String.raw`/^var
 const COLOR_FUNCTIONS = ['color-mix', 'rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color']
 
 const MEDIA_WIDTHS = ['340px', '640px', '641px', '900px', '901px', '1024px', '1100px', '1200px', '1600px']
-const MEDIA_HEIGHTS = ['560px', '620px']
+// 760: a short laptop screen (1280×720, 1366×768) — the one-screen landing shows two examples, not three.
+const MEDIA_HEIGHTS = ['560px', '620px', '760px']
 
 /** @type {import('stylelint').Config} */
 export default {

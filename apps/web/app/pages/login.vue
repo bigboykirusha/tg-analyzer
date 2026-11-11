@@ -138,55 +138,57 @@ function changeNumber() {
 <template>
   <div class="login">
     <section class="login__card">
-      <header class="login__head">
-        <p v-if="sessionEnded && step === 'phone'" class="login__notice" role="status">{{ t('login.sessionEnded') }}</p>
-        <h1 class="login__title">
-          <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
-          <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
-          <template v-else>{{ t('login.passwordTitle') }}</template>
-        </h1>
-        <p class="login__lede">
-          <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
-          <template v-else-if="step === 'code'">
-            {{ codeDescription }}
-            <button type="button" class="link" :disabled="loading" @click="changeNumber">
-              {{ t('login.changeNumber') }}
-            </button>
-          </template>
-          <template v-else>{{ t('login.passwordDescription') }}</template>
-        </p>
-      </header>
-
+      <!-- A step is its title and its form together: they leave and arrive as one, never a new title over the old form. -->
       <Transition name="auth-step" mode="out-in">
-        <PhoneStep
-          v-if="step === 'phone'"
-          key="phone"
-          v-model:phone="phone"
-          :loading="loading"
-          :error="error"
-          @submit="requestCode"
-        />
-        <CodeStep
-          v-else-if="step === 'code'"
-          key="code"
-          v-model:code="code"
-          :loading="loading"
-          :error="error"
-          :resend-seconds="deliveryBlocked ? 0 : resendSeconds"
-          :resend-label="resendLabel"
-          :length="delivery?.length ?? 5"
-          @submit="submitCode"
-          @resend="requestResend"
-        />
-        <PasswordStep
-          v-else
-          key="password"
-          v-model:password="password"
-          :hint="passwordHint"
-          :loading="loading"
-          :error="error"
-          @submit="submitPassword"
-        />
+        <div :key="step" class="login__step">
+          <header class="login__head">
+            <p v-if="sessionEnded && step === 'phone'" class="login__notice" role="status">
+              {{ t('login.sessionEnded') }}
+            </p>
+            <h1 class="login__title">
+              <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
+              <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
+              <template v-else>{{ t('login.passwordTitle') }}</template>
+            </h1>
+            <p class="login__lede">
+              <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
+              <template v-else-if="step === 'code'">
+                {{ codeDescription }}
+                <button type="button" class="link" :disabled="loading" @click="changeNumber">
+                  {{ t('login.changeNumber') }}
+                </button>
+              </template>
+              <template v-else>{{ t('login.passwordDescription') }}</template>
+            </p>
+          </header>
+
+          <PhoneStep
+            v-if="step === 'phone'"
+            v-model:phone="phone"
+            :loading="loading"
+            :error="error"
+            @submit="requestCode"
+          />
+          <CodeStep
+            v-else-if="step === 'code'"
+            v-model:code="code"
+            :loading="loading"
+            :error="error"
+            :resend-seconds="deliveryBlocked ? 0 : resendSeconds"
+            :resend-label="resendLabel"
+            :length="delivery?.length ?? 5"
+            @submit="submitCode"
+            @resend="requestResend"
+          />
+          <PasswordStep
+            v-else
+            v-model:password="password"
+            :hint="passwordHint"
+            :loading="loading"
+            :error="error"
+            @submit="submitPassword"
+          />
+        </div>
       </Transition>
     </section>
   </div>
@@ -202,10 +204,13 @@ function changeNumber() {
 }
 
 .login__card {
+  width: 100%;
+}
+
+.login__step {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  width: 100%;
 }
 
 .login__head {

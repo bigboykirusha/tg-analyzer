@@ -10,12 +10,13 @@ import type { RouteLocationRaw } from 'vue-router'
  *   secondary  neutral fill — everything else (the default)
  *   (icon      a round neutral fill — UiIconButton)
  *   link       inline text inside copy, not a button
- * sm 36 · md 44 on a phone, 36 on desktop.
+ * sm 36 · md 44 on a phone, 36 on desktop · lg 44 everywhere — only the one call to action of a whole screen
+ * (the landing), where a 36 pill under display type reads as an afterthought.
  * On a poster (`[data-poster]`, `[data-on-poster]`) the same looks come out inverted through the `--btn-*` tokens.
  * There is no danger button: a destructive confirm is primary, a destructive menu row has red text.
  */
 export type ButtonVariant = 'primary' | 'secondary' | 'link'
-export type ButtonSize = 'sm' | 'md'
+export type ButtonSize = 'sm' | 'md' | 'lg'
 
 defineOptions({ inheritAttrs: false })
 
@@ -99,6 +100,10 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   .btn--md {
     height: var(--control-sm);
   }
+
+  .btn--lg {
+    padding: 0 var(--space-6);
+  }
 }
 
 .btn--block {
@@ -145,6 +150,15 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
 
 .btn:disabled:not([aria-busy='true']) {
   opacity: var(--opacity-disabled);
+}
+
+/*
+ * An unavailable main action is not a faded ink pill (white on grey reads as broken): it is the neutral
+ * look, faded, and turns ink the moment it can be pressed.
+ */
+.btn--primary:disabled:not([aria-busy='true']) {
+  background: var(--btn-fill, var(--fill-control));
+  color: var(--btn-fill-text, var(--text));
 }
 
 /* A loading button keeps its colour: it is busy, not unavailable. */

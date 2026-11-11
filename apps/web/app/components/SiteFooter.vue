@@ -6,7 +6,7 @@ const { t } = useI18n()
 <template>
   <footer class="site-footer">
     <div class="site-footer__in">
-      <span>{{ t('site.unofficial') }}</span>
+      <span class="site-footer__note">{{ t('site.unofficial') }}</span>
       <div class="site-footer__end">
         <nav class="site-footer__nav" :aria-label="t('site.footerNav')">
           <NuxtLink to="/privacy">{{ t('site.privacy') }}</NuxtLink>
@@ -33,6 +33,11 @@ const { t } = useI18n()
   padding: var(--space-6) var(--page-gutter) max(var(--space-6), env(safe-area-inset-bottom, 0px));
   color: var(--text-muted);
   font: var(--text-small);
+}
+
+/* Two even lines on a phone, never «API» alone on the second. */
+.site-footer__note {
+  text-wrap: balance;
 }
 
 .site-footer__end,

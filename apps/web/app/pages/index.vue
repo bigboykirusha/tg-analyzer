@@ -42,8 +42,8 @@ useHead({
         <h1 id="hero-title" class="landing__title">{{ t('landing.title') }} {{ t('landing.titleSoft') }}</h1>
         <p class="landing__lede">{{ t('landing.lede') }}</p>
         <div class="landing__actions">
-          <UiButton variant="primary" to="/login">{{ t('landing.cta') }}</UiButton>
-          <UiButton to="/example">{{ t('landing.nav.example') }}</UiButton>
+          <UiButton variant="primary" size="lg" to="/login">{{ t('landing.cta') }}</UiButton>
+          <UiButton size="lg" to="/example">{{ t('landing.nav.example') }}</UiButton>
         </div>
         <p class="landing__trust t-small">
           {{ t('landing.trust') }}
@@ -140,9 +140,11 @@ useHead({
     padding-block: var(--space-6);
   }
 
+  /* The promise on the left, three reports stacked on the right like cards on a table: each one wide enough
+     to read its line in full and to show its pulse, not a row of thumbnails. */
   .landing__first {
     display: grid;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
     align-items: center;
     gap: var(--space-16);
   }
@@ -152,11 +154,24 @@ useHead({
   }
 
   .landing__examples {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-self: end;
+    width: 100%;
+    max-width: var(--card-focus);
+  }
+
+  .landing__examples > li:nth-child(2) {
+    transform: translateX(calc(-1 * var(--space-8)));
   }
 
   .landing__examples > li:nth-child(3) {
     display: grid;
+  }
+}
+
+/* A short laptop screen keeps the landing one screen: two examples. */
+@media (min-width: 901px) and (max-height: 760px) {
+  .landing__examples > li:nth-child(3) {
+    display: none;
   }
 }
 </style>
