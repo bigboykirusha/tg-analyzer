@@ -6,7 +6,6 @@
  */
 const { t, tc, formatNumber } = useI18n()
 const workspace = useWorkspaceStore()
-const actions = useReportActions()
 const errorMessage = useErrorMessage()
 
 const MAX = 5
@@ -45,14 +44,7 @@ const failed = computed(() => !workspace.recent && workspace.recentState === 'er
           <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" />
         </template>
         <template #trailing>
-          <UiButton
-            size="sm"
-            :loading="actions.busy(chat.id)"
-            :aria-label="t('home.unanalysedAction', { name: chat.title })"
-            @click="actions.analyse(chat.id, chat.title)"
-          >
-            {{ t('month.analyse') }}
-          </UiButton>
+          <AnalyseButton :chat-id="chat.id" :title="chat.title" />
         </template>
       </UiListRow>
     </UiGroup>

@@ -9,7 +9,6 @@ import { AlertCircle, Search } from '../../lib/icons'
  */
 const { t, tc, formatNumber } = useI18n()
 const workspace = useWorkspaceStore()
-const actions = useReportActions()
 const errorMessage = useErrorMessage()
 const isPhone = useMediaQuery('(max-width: 900px)')
 const allChats = computed(() => (isPhone.value ? { query: { pick: null } } : '/new'))
@@ -68,15 +67,13 @@ const reload = () => workspace.loadRecent()
               : tc('home.unanalysedCount', chat.messages, { count: formatNumber(chat.messages) })
           "
         >
-          <UiButton
+          <AnalyseButton
+            :chat-id="chat.id"
+            :title="chat.title"
             :variant="index === 0 ? 'primary' : 'secondary'"
+            size="md"
             block
-            :loading="actions.busy(chat.id)"
-            :aria-label="t('home.unanalysedAction', { name: chat.title })"
-            @click="actions.analyse(chat.id, chat.title)"
-          >
-            {{ t('month.analyse') }}
-          </UiButton>
+          />
         </HomeCard>
       </div>
 
@@ -92,14 +89,7 @@ const reload = () => workspace.loadRecent()
             <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" />
           </template>
           <template #trailing>
-            <UiButton
-              size="sm"
-              :loading="actions.busy(chat.id)"
-              :aria-label="t('home.unanalysedAction', { name: chat.title })"
-              @click="actions.analyse(chat.id, chat.title)"
-            >
-              {{ t('month.analyse') }}
-            </UiButton>
+            <AnalyseButton :chat-id="chat.id" :title="chat.title" />
           </template>
         </UiListRow>
         <UiListRow :to="allChats" :title="t('home.allChats')" chevron>

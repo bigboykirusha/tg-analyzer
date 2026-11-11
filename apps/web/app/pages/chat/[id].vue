@@ -129,7 +129,8 @@ onMounted(load)
         />
       </div>
 
-      <UiPageBar v-else-if="notFound || loadError" :title="knownTitle ?? t('nav.back')" back="/dashboard" />
+      <!-- A screen is named by what it is about: the chat, or «Отчёт» — never by the way out («Назад»). -->
+      <UiPageBar v-else-if="notFound || loadError" :title="knownTitle ?? t('report.title')" back="/dashboard" />
 
       <UiEmptyState
         v-if="!data && notFound"

@@ -4,7 +4,8 @@ import { RotateCw, Share, Trash2 } from '../../lib/icons'
 
 /**
  * One Telegram chat in «Новый анализ»: avatar, name, one quiet line, one action. A chat with a report is
- * a link to it (chevron); without one, «Разобрать». While it is read, the percentage and «Отменить»; a report
+ * a link to it (chevron); without one, «Разобрать» (AnalyseButton: the same button reads the percentage while
+ * the chat is read and «В очереди» while it waits, as on home); a report
  * finished a moment ago says «Отчёт готов» in the row itself, not only in a toast that goes away. A chat Telegram
  * says is too small for a report has no button: «Мало сообщений».
  * As in Telegram, a long press (450 ms) or a right click opens the row's menu.
@@ -13,7 +14,6 @@ const props = defineProps<{ chat: WorkspaceChat }>()
 const { t, formatRelative } = useI18n()
 const actions = useReportActions()
 const analysis = useAnalysis()
-const view = useAnalysisView()
 const menuOpen = ref(false)
 const now = useNow(30_000)
 
@@ -93,24 +93,8 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
         <template #leading>
           <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" />
         </template>
-        <template v-if="queuedJob" #trailing>
-          <UiButton variant="secondary" size="sm" @click.prevent="analysis.cancel(queuedJob)">
-            {{ t('dashboard.queued') }}
-          </UiButton>
-        </template>
-        <template v-else-if="analysing" #trailing>
-          <span class="chat-row__percent">{{ view?.percent !== null && view ? `${view.percent}%` : '' }}</span>
-          <span class="spinner" aria-hidden="true" />
-        </template>
-        <template v-else-if="!chat.report && !tooSmall" #trailing>
-          <UiButton
-            size="sm"
-            :loading="actions.starting.value === chat.id"
-            :aria-label="t('home.unanalysedAction', { name: chat.title })"
-            @click="actions.analyse(chat.id, chat.title)"
-          >
-            {{ t('dashboard.analyse') }}
-          </UiButton>
+        <template v-if="queuedJob || analysing || (!chat.report && !tooSmall)" #trailing>
+          <AnalyseButton :chat-id="chat.id" :title="chat.title" />
         </template>
       </UiListRow>
     </template>
@@ -135,10 +119,5 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
 .chat-row--ready :deep(.list-row__subtitle) {
   color: var(--text);
   font-weight: 600;
-}
-
-.chat-row__percent {
-  color: var(--text-muted);
-  font: var(--text-label);
 }
 </style>
