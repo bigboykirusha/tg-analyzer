@@ -22,10 +22,14 @@ const radiusOf = (sig) => part(sig, / r(\S+) /)
 const bgOf = (sig) => part(sig, /bg:(rgba?\([^)]*\)|transparent)/)
 const borderOf = (sig) => (sig.includes('bd:0px') ? 'no-border' : 'border')
 const colorOf = (sig) => part(sig, / c:(rgba?\([^)]*\))/)
-/** A look is what the eye tells apart: fill, outline, text colour, shape (circle / pill / other). */
+/**
+ * A look is what the eye tells apart: fill, outline, text colour, shape. The system has two shapes by role —
+ * the 12 px rounded rectangle of a button and the round of an icon, chip or filter — and they are one shape
+ * family here; any other corner is a look of its own.
+ */
 const lookOf = (b) => {
   const r = radiusOf(b.sig)
-  const shape = r.split('/').every((x) => +x >= 100) ? 'round' : 'other-r' + r
+  const shape = r.split('/').every((x) => +x >= 100 || +x === 12) ? 'system' : 'other-r' + r
   return `${bgOf(b.sig)} | ${borderOf(b.sig)} | ${colorOf(b.sig)} | ${shape}`
 }
 
