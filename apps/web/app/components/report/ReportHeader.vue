@@ -9,37 +9,32 @@ import { Share } from '../../lib/icons'
  */
 defineProps<{
   summary: ReportSummaryDto
-  /** The example report: back to the landing, «Войти» instead of sharing. */
-  demo?: boolean
 }>()
 const emit = defineEmits<{ share: [] }>()
 const { t } = useI18n()
 </script>
 
 <template>
-  <UiPageBar :title="summary.title" :back="demo ? '/' : '/dashboard'" bar>
+  <UiPageBar :title="summary.title" back="/dashboard" bar>
     <template #actions>
-      <UiButton v-if="demo" variant="primary" size="sm" to="/login">{{ t('site.signIn') }}</UiButton>
-      <template v-else>
-        <UiIconButton
-          class="report-bar__narrow"
-          :icon="Share"
-          :label="t('share.open')"
-          aria-haspopup="dialog"
-          no-tooltip
-          @click="emit('share')"
-        />
-        <UiButton
-          class="report-bar__wide"
-          variant="secondary"
-          size="sm"
-          :icon="Share"
-          aria-haspopup="dialog"
-          @click="emit('share')"
-        >
-          {{ t('share.open') }}
-        </UiButton>
-      </template>
+      <UiIconButton
+        class="report-bar__narrow"
+        :icon="Share"
+        :label="t('share.open')"
+        aria-haspopup="dialog"
+        no-tooltip
+        @click="emit('share')"
+      />
+      <UiButton
+        class="report-bar__wide"
+        variant="secondary"
+        size="sm"
+        :icon="Share"
+        aria-haspopup="dialog"
+        @click="emit('share')"
+      >
+        {{ t('share.open') }}
+      </UiButton>
     </template>
   </UiPageBar>
 </template>

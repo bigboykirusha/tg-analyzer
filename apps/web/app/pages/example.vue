@@ -18,11 +18,9 @@ useHead({ htmlAttrs: { 'data-hue': () => hueOf('example') } })
 
 <template>
   <div>
-    <ReportPoster :data="data" />
+    <ReportPoster :data="data" h1 />
     <UiPageContainer>
       <div class="page example-page">
-        <ReportHeader :summary="data.summary" demo />
-
         <PrivateReport :data="data" />
 
         <section class="tile example-invite">

@@ -1,62 +1,42 @@
 <script setup lang="ts">
-import { ArrowLeft } from '../lib/icons'
-
 /**
- * The header of every public page.
- * Phones: the mark with its word and one quiet link (on the landing «Войти», elsewhere «Приватность»);
- * a step inside a flow (sign-in, privacy) has a back circle instead of the mark.
- * Desktop: the mark on the column's edge; «Пример отчёта», «Приватность» and «Войти» on the right —
- * except on sign-in, where the footer carries the documents.
- * The example report puts its own bar here (UiPageBar), like a report in the app.
+ * The header of every public page (landing, privacy, sign-in, the example report, a shared link, 404).
+ * Always the logo on the left — it is also the way home; there is no back circle on public pages.
+ * Right: on desktop «Пример отчёта», «Приватность» (the current one marked) and «Войти»; on a phone only
+ * «Войти». «Войти» is one button everywhere (secondary, sm) and is absent on the sign-in page itself.
+ * Over a poster (the example, a shared link) the bar is the poster with its ink; past it, glass.
  */
 const { t } = useI18n()
 const route = useRoute()
-const router = useRouter()
-const step = computed(() => ['/login', '/privacy'].includes(route.path))
-const showNav = computed(() => route.path !== '/login')
-const { overPoster } = usePosterHeader()
-
-function back(event: MouseEvent) {
-  if (typeof window.history.state?.back !== 'string') return
-  event.preventDefault()
-  router.back()
-}
+const showSignIn = computed(() => route.path !== '/login')
+const { scrolled, overPoster } = usePosterHeader()
 </script>
 
 <template>
-  <header class="site-header" data-toolbar :class="{ 'is-over-poster': overPoster }">
+  <header
+    class="site-header"
+    data-toolbar
+    :class="{ 'is-over-poster': overPoster, 'is-scrolled': scrolled && !overPoster }"
+  >
     <div class="site-header__in">
-      <div id="header-page" class="site-header__page" />
-      <div class="site-header__default">
-        <UiIconButton
-          v-if="step"
-          class="site-header__back"
-          to="/"
-          :label="t('common.back')"
-          :icon="ArrowLeft"
-          no-tooltip
-          @click="back"
-        />
-        <BrandLink class="site-header__brand" :class="{ 'site-header__brand--step': step }" />
-        <nav class="site-header__nav" :aria-label="t('nav.main')">
-          <template v-if="showNav">
-            <NuxtLink to="/example" class="nav-link nav-link--wide">{{ t('site.example') }}</NuxtLink>
-            <NuxtLink
-              to="/privacy"
-              class="nav-link"
-              :class="{ 'nav-link--narrow-hidden': route.path === '/' }"
-              :aria-current="route.path === '/privacy' ? 'page' : undefined"
-            >
-              {{ t('site.privacy') }}
-            </NuxtLink>
-            <NuxtLink v-if="route.path === '/'" to="/login" class="nav-link nav-link--ink site-header__signin-narrow">
-              {{ t('site.signIn') }}
-            </NuxtLink>
-            <UiButton to="/login" size="md" class="site-header__signin-wide">{{ t('site.signIn') }}</UiButton>
-          </template>
-          <NuxtLink v-else to="/privacy" class="nav-link site-header__privacy-narrow">{{ t('site.privacy') }}</NuxtLink>
-        </nav>
-      </div>
+      <BrandLink class="site-header__brand" />
+      <nav class="site-header__nav" :aria-label="t('nav.main')">
+        <NuxtLink
+          to="/example"
+          class="nav-link nav-link--wide"
+          :aria-current="route.path === '/example' ? 'page' : undefined"
+        >
+          {{ t('site.example') }}
+        </NuxtLink>
+        <NuxtLink
+          to="/privacy"
+          class="nav-link nav-link--wide"
+          :aria-current="route.path === '/privacy' ? 'page' : undefined"
+        >
+          {{ t('site.privacy') }}
+        </NuxtLink>
+        <UiButton v-if="showSignIn" to="/login" size="sm">{{ t('site.signIn') }}</UiButton>
+      </nav>
     </div>
   </header>
 </template>
@@ -70,38 +50,35 @@ function back(event: MouseEvent) {
   background: var(--bg);
 }
 
+/* Past a poster, as in the app: the material and a hairline. */
+.site-header.is-scrolled {
+  background: var(--header-glass);
+  box-shadow: var(--divider-bottom);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+
+/* Over a poster every element is the poster's ink. */
 .site-header.is-over-poster {
   background: var(--poster);
+  color: var(--on-poster);
+}
+
+.site-header.is-over-poster :deep(.brand-link),
+.site-header.is-over-poster .nav-link {
   color: var(--on-poster);
 }
 
 .site-header__in {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
   width: 100%;
   max-width: calc(var(--page-max) + var(--page-gutter) * 2);
   min-height: var(--topbar-height);
   margin: 0 auto;
   padding: 0 var(--page-gutter);
-}
-
-.site-header__page {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-}
-
-.site-header__default {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-}
-
-.site-header:not(:has(.page-bar)) .site-header__page,
-.site-header:has(.page-bar) .site-header__default {
-  display: none;
 }
 
 .site-header__nav {
@@ -119,10 +96,6 @@ function back(event: MouseEvent) {
   font: var(--text-ui);
 }
 
-.nav-link--ink {
-  color: var(--text);
-}
-
 .nav-link[aria-current='page'] {
   color: var(--text);
 }
@@ -133,35 +106,14 @@ function back(event: MouseEvent) {
   }
 }
 
-.nav-link--wide,
-.site-header__signin-wide {
+/* Phones: only «Войти». */
+.nav-link--wide {
   display: none;
 }
 
-/* Phones: a step shows the back circle instead of the mark. */
-@media (max-width: 900px) {
-  .site-header__brand--step {
-    display: none;
-  }
-
-  .nav-link--narrow-hidden {
-    display: none;
-  }
-}
-
 @media (min-width: 901px) {
-  .site-header__back,
-  .site-header__signin-narrow {
-    display: none;
-  }
-
-  .nav-link--wide,
-  .site-header__signin-wide {
+  .nav-link--wide {
     display: inline-flex;
-  }
-
-  .site-header__privacy-narrow {
-    display: none;
   }
 
   .nav-link {
