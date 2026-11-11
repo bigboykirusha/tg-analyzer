@@ -54,7 +54,8 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
     </div>
     <div class="home-card__foot">
       <slot v-if="!skeleton" />
-      <UiSkeleton v-else height="var(--space-8)" />
+      <!-- The pulse's place: two 24 halves and the line between, so nothing moves when the tile arrives. -->
+      <UiSkeleton v-else height="calc(var(--space-6) * 2 + var(--space-0-5))" />
     </div>
   </article>
 </template>

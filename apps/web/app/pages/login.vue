@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
 import { ApiClientError } from '../composables/useApi'
+import { Info } from '../lib/icons'
 
 definePageMeta({ middleware: ['guest'] })
 
@@ -143,6 +144,7 @@ function changeNumber() {
         <div :key="step" class="login__step">
           <header class="login__head">
             <p v-if="sessionEnded && step === 'phone'" class="login__notice" role="status">
+              <Info class="login__notice-icon" aria-hidden="true" />
               {{ t('login.sessionEnded') }}
             </p>
             <h1 class="login__title">
@@ -224,10 +226,28 @@ function changeNumber() {
   letter-spacing: var(--tracking-h1);
 }
 
-.login__lede,
-.login__notice {
+.login__lede {
   color: var(--text-muted);
   font: var(--text-body);
+}
+
+/* Something happened, not a lede: a quiet well with an icon, in the text colour, above the title. */
+.login__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-well);
+  background: var(--surface-2);
+  color: var(--text);
+  font: var(--text-label);
+}
+
+.login__notice-icon {
+  flex: none;
+  margin-top: var(--space-0-5);
+  --icon-size: var(--icon-sm);
 }
 
 .login__lede .link {

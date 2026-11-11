@@ -3,12 +3,13 @@
  * The header of every public page (landing, privacy, sign-in, the example report, a shared link, 404).
  * Always the logo on the left — it is also the way home; there is no back circle on public pages.
  * Right: on desktop «Пример отчёта», «Приватность» (the current one marked) and «Войти»; on a phone only
- * «Войти». «Войти» is one button everywhere (secondary, sm) and is absent on the sign-in page itself.
+ * «Войти». «Войти» is one button everywhere (secondary, sm) and is absent on the sign-in page itself and offline.
  * Over a poster (the example, a shared link) the bar is the poster with its ink; past it, glass.
  */
 const { t } = useI18n()
 const route = useRoute()
-const showSignIn = computed(() => route.path !== '/login')
+/** Not on the sign-in page itself, and not offline: without a connection there is nowhere to sign in. */
+const showSignIn = computed(() => route.path !== '/login' && route.path !== '/offline')
 const { scrolled, overPoster } = usePosterHeader()
 </script>
 

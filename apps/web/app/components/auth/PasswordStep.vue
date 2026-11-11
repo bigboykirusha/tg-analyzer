@@ -41,9 +41,9 @@ const { t } = useI18n()
   gap: var(--space-6);
 }
 
+/* Left, like every line of the step above it. */
 .auth-note {
   color: var(--text-muted);
   font: var(--text-small);
-  text-align: center;
 }
 </style>
