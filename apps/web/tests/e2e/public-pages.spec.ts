@@ -86,6 +86,17 @@ test('protected pages redirect to login', async ({ page }) => {
   await page.waitForURL('**/login')
 })
 
+test('signed-in pages render only in the browser and stay out of search', async ({ request }) => {
+  // The session is restored in the browser, so a server render shows an anonymous account and the page
+  // then fails hydration: every signed-in page is `ssr: false` with a noindex header (nuxt.config.ts).
+  for (const path of ['/dashboard', '/new', '/notifications', '/account', '/chat/1011']) {
+    const response = await request.get(path)
+    expect(response.status(), path).toBe(200)
+    expect(response.headers()['x-robots-tag'], path).toBe('noindex, nofollow')
+    expect(await response.text(), path).toContain('<div id="__nuxt"></div>')
+  }
+})
+
 test('the example report opens without signing in', async ({ page, context }, testInfo) => {
   await usePreferences(context, 'light')
   await gotoHydrated(page, '/example')

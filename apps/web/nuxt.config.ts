@@ -93,6 +93,7 @@ export default defineNuxtConfig({
     // They never reach a crawler as HTML, so noindex goes in a header.
     '/dashboard': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
     '/new': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
+    '/notifications': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
     '/account': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
     // Built in the browser from a made-up chat; nothing to render on the server.
     '/example': { ssr: false },
