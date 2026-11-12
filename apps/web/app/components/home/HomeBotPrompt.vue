@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * Once, when the first report is ready: a sheet asking whether the next ones should arrive in Telegram — «Подключить
- * бота» opens the bot's Start (Start there is the consent), «Не сейчас» closes it for good in this browser. Shown
- * only while the bot is set up and not yet on; afterwards the offer lives at the top of «Уведомления» and as the
- * switch in the account.
+ * Once, when the first report is ready: a sheet asking whether the next ones should arrive in Telegram — a question
+ * set as a headline, one line of what the bot does, «Подключить бота» and «Не сейчас» right under it. «Подключить»
+ * opens the bot's Start (Start there is the consent); either answer closes it for good in this browser. Shown only
+ * while the bot is set up and not yet on; afterwards the offer lives at the top of «Уведомления» and in the account.
  */
 const DISMISS_KEY = 'tg-analyzer:bot-prompt-dismissed'
 const auth = useAuthStore()
@@ -33,28 +33,48 @@ const open = computed(
 </script>
 
 <template>
-  <UiModalDialog :open="open" :title="t('home.botTitle')" :description="t('home.botText')" @close="dismiss">
+  <!-- A question, not a form: no close cross — «Не сейчас» is the way out (and Escape, and a swipe down). -->
+  <UiModalDialog :open="open" role="alertdialog" :description="t('home.botText')" @close="dismiss">
+    <template #header>
+      <h2 class="bot-title">{{ t('home.botTitle') }}</h2>
+    </template>
     <template #actions>
-      <!-- The dialog stacks its actions bottom-up on a phone: listed «Не сейчас» first, it stands under the main one. -->
-      <UiButton variant="link" block class="bot-later" @click="dismiss">{{ t('home.botLater') }}</UiButton>
-      <UiButton
-        variant="primary"
-        size="lg"
-        block
-        :to="auth.user?.botUrl ?? undefined"
-        target="_blank"
-        rel="noopener"
-        @click="dismiss"
-      >
-        {{ t('home.botConnect') }}
-      </UiButton>
+      <div class="bot-actions">
+        <UiButton
+          variant="primary"
+          size="lg"
+          block
+          :to="auth.user?.botUrl ?? undefined"
+          target="_blank"
+          rel="noopener"
+          @click="dismiss"
+        >
+          {{ t('home.botConnect') }}
+        </UiButton>
+        <UiButton variant="link" block class="bot-later" @click="dismiss">{{ t('home.botLater') }}</UiButton>
+      </div>
     </template>
   </UiModalDialog>
 </template>
 
 <style scoped>
-/* «Не сейчас» is a word under the main button, as «Пример отчёта» under «Войти через Telegram». */
-.bot-later {
+.bot-title {
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
+  text-align: left;
+  text-wrap: balance;
+}
+
+/* The main button and, close under it, the word that declines: one group, not two rows of the dialog's footer. */
+.bot-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  padding-top: var(--space-4);
+}
+
+.bot-actions .bot-later {
   min-height: var(--control-md);
   color: var(--text-muted);
   text-decoration: none;

@@ -213,12 +213,18 @@ test('a late dialog response cannot populate the next account', async ({ page })
     await page
       .getByRole('link', { name: 'Новый анализ' })
       .or(page.getByRole('button', { name: 'Новый анализ' }))
-      // A newcomer's phone home has no floating button: the list ends with «Все чаты Telegram».
+      // A phone has no «Новый анализ» button: «Все чаты Telegram» opens the chat list as a sheet.
       .or(page.getByRole('link', { name: 'Все чаты Telegram' }))
       .first()
       .click()
     await expect.poll(() => held).toBeGreaterThan(0)
-    await page.goBack() // back to the home page inside the app, where the avatar leads to the account
+    // Back to home inside the app, where the avatar leads to the account: on a phone the chat list is a sheet over
+    // home (close it), on a computer it is the «Новый анализ» page (go back).
+    const sheet = page.getByRole('dialog')
+    if (await sheet.isVisible().catch(() => false)) {
+      await page.keyboard.press('Escape')
+      await expect(sheet).toBeHidden()
+    } else await page.goBack()
     await page.locator('a[href="/account"]:visible').first().click()
     await page.waitForURL('**/account')
     await page.getByRole('button', { name: 'Выйти', exact: true }).click()
@@ -230,7 +236,7 @@ test('a late dialog response cannot populate the next account', async ({ page })
     await page
       .getByRole('link', { name: 'Новый анализ' })
       .or(page.getByRole('button', { name: 'Новый анализ' }))
-      // A newcomer's phone home has no floating button: the list ends with «Все чаты Telegram».
+      // A phone has no «Новый анализ» button: «Все чаты Telegram» opens the chat list as a sheet.
       .or(page.getByRole('link', { name: 'Все чаты Telegram' }))
       .first()
       .click()
