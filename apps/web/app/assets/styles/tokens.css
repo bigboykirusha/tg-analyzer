@@ -565,8 +565,6 @@
   --menu-min: 240px;
   --menu-max-height: 360px;
   --tooltip-max: 260px;
-  /* Space kept free under the content for the floating «Новый анализ» on phones. */
-  --fab-clearance: 128px;
   --card-padding: var(--space-6);
   --card-gap: var(--space-4);
   --opacity-disabled: 0.5;

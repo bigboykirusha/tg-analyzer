@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { MIN_REPORT_MESSAGES } from '@tg-analyzer/shared'
-import { Plus } from '../lib/icons'
 
 // Signed-in screens are personal: keep them out of search.
 useSeoMeta({ robots: 'noindex, nofollow' })
@@ -11,8 +10,6 @@ const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
 const notifications = useNotificationsStore()
-/** No reports yet, and we know it: home is «С кого начнём?». */
-const newcomer = computed(() => workspace.reportsState === 'ready' && !workspace.reports.length)
 
 onMounted(() => {
   if (!workspace.reports.length) void workspace.loadReports().catch(() => undefined)
@@ -74,23 +71,6 @@ watch(analysis.finished, (job) => {
         <slot />
       </main>
     </div>
-    <!--
-      Phones and tablets: one floating control at the bottom. On home it is «Новый анализ» (the chat list
-      as a sheet); while an analysis runs, on any screen, it is the analysis folded into a capsule. A newcomer's
-      home is itself the chat picker (with «Все чаты Telegram» at its end), so it has no second way to the same list.
-    -->
-    <div v-if="analysis.isActive.value || (route.path === '/dashboard' && !newcomer)" class="workspace-dock no-print">
-      <AnalysisLive v-if="analysis.isActive.value" />
-      <UiButton
-        v-else
-        :to="{ query: { ...route.query, pick: null } }"
-        variant="primary"
-        class="workspace-dock__new"
-        :icon="Plus"
-      >
-        {{ t('sidebar.newAnalysis') }}
-      </UiButton>
-    </div>
     <ChatPickerSheet />
     <ReportActionsHost />
   </div>
@@ -117,23 +97,6 @@ watch(analysis.finished, (job) => {
   padding: var(--page-top) 0 var(--page-bottom);
 }
 
-/* The dock floats over the content; screens leave --fab-clearance free under their last block. */
-.workspace-dock {
-  position: fixed;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--space-4));
-  left: 50%;
-  z-index: var(--z-dock);
-  display: flex;
-  justify-content: center;
-  width: max-content;
-  max-width: calc(100% - var(--page-gutter) * 2);
-  transform: translateX(-50%);
-}
-
-.workspace-dock__new {
-  box-shadow: var(--shadow-float);
-}
-
 @media (min-width: 901px) {
   .workspace {
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
@@ -141,10 +104,6 @@ watch(analysis.finished, (job) => {
 
   .workspace-sidebar {
     display: block;
-  }
-
-  .workspace-dock {
-    display: none;
   }
 }
 </style>

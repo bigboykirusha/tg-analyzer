@@ -5,8 +5,9 @@ definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 /**
  * Home is what you have already learned: the reports, one poster tile each, new messages in the chat as a badge
- * on the tile. News about them (a quiz answered, a link opened) is in «Уведомления», behind the bell. What else to analyse is «Новый анализ» (the dock, the sidebar), not a second list here
- * that counts every chat's month on each visit. A newcomer gets «С кого начнём?» instead.
+ * on the tile. News about them (a quiz answered, a link opened) is in «Уведомления», behind the bell. What else to
+ * analyse is the row «Разобрать ещё» above the reports (the people of the month, «Все чаты» first) — nothing floats
+ * over the page. A newcomer gets «С кого начнём?» instead.
  */
 const { t } = useI18n()
 useSeoMeta({ title: () => t('dashboard.title') })
@@ -60,6 +61,8 @@ onMounted(() => {
         <p class="t-lede">{{ t('home.greeting.lede') }}</p>
       </header>
 
+      <HomeMore />
+
       <HomeBotPrompt />
 
       <section id="reports" class="home__section">
@@ -94,13 +97,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--page-gap);
-}
-
-/* Phones keep the floating «Новый анализ» clear of the last row and card. */
-@media (max-width: 900px) {
-  .home .page {
-    padding-bottom: var(--fab-clearance);
-  }
 }
 
 .home__hello {

@@ -192,8 +192,27 @@ onMounted(() => void loadLinks())
           </UiListRow>
         </UiGroup>
 
-        <UiGroup v-if="auth.user?.botUrl || auth.user?.botNotify" :header="t('accountPage.notifyTitle')">
-          <UiSwitch v-model="notify" :label="t('accountPage.notify')" :hint="t('accountPage.notifyHint')" />
+        <!-- The bot: «the report is ready» there, and problems reported through it — one place for one bot. -->
+        <UiGroup
+          v-if="auth.user?.botUrl || auth.user?.botNotify || auth.user?.feedbackUrl"
+          :header="t('accountPage.botTitle')"
+        >
+          <UiSwitch
+            v-if="auth.user?.botUrl || auth.user?.botNotify"
+            v-model="notify"
+            :label="t('accountPage.notify')"
+            :hint="t('accountPage.notifyHint')"
+          />
+          <UiListRow
+            v-if="auth.user?.feedbackUrl"
+            as="a"
+            :href="auth.user.feedbackUrl"
+            target="_blank"
+            rel="noopener"
+            :title="t('accountPage.feedback')"
+            :subtitle="t('accountPage.feedbackHint')"
+            chevron
+          />
         </UiGroup>
 
         <UiGroup v-if="links.length" :header="t('accountPage.linksTitle')" :footer="t('accountPage.linksFoot')">
@@ -207,18 +226,6 @@ onMounted(() => void loadLinks())
           >
             <template #leading><ChatAvatar :chat-id="link.chatId" :title="link.title" /></template>
           </UiSwitch>
-        </UiGroup>
-
-        <UiGroup v-if="auth.user?.feedbackUrl">
-          <UiListRow
-            as="a"
-            :href="auth.user.feedbackUrl"
-            target="_blank"
-            rel="noopener"
-            :title="t('accountPage.feedback')"
-            :subtitle="t('accountPage.feedbackHint')"
-            chevron
-          />
         </UiGroup>
 
         <UiGroup :footer="t('accountPage.logoutFoot')">

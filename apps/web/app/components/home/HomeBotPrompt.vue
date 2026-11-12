@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { Bell, X } from '../../lib/icons'
-
 /**
- * After the first report: one quiet card on home offering the bot — «the next report arrives in Telegram». Shown
- * while the bot is set up and not yet on; «Подключить» opens the bot's Start, the cross hides the card for good
- * (this browser). Nothing is turned on from here: Start in the bot is the consent.
+ * Once, when the first report is ready: a sheet asking whether the next ones should arrive in Telegram — «Подключить
+ * бота» opens the bot's Start (Start there is the consent), «Не сейчас» closes it for good in this browser. Shown
+ * only while the bot is set up and not yet on; afterwards the offer lives at the top of «Уведомления» and as the
+ * switch in the account.
  */
 const DISMISS_KEY = 'tg-analyzer:bot-prompt-dismissed'
 const auth = useAuthStore()
@@ -24,101 +23,40 @@ function dismiss() {
   try {
     localStorage.setItem(DISMISS_KEY, '1')
   } catch {
-    // Private mode: the card stays hidden for this visit only.
+    // Private mode: the sheet stays closed for this visit only.
   }
 }
 
-const shown = computed(
+const open = computed(
   () => !dismissed.value && Boolean(auth.user?.botUrl) && !auth.user?.botNotify && workspace.reports.length > 0,
 )
 </script>
 
 <template>
-  <aside v-if="shown" class="bot-prompt" :aria-label="t('home.botTitle')">
-    <span class="bot-prompt__icon" aria-hidden="true"><Bell /></span>
-    <div class="bot-prompt__copy">
-      <p class="t-body bot-prompt__title">{{ t('home.botTitle') }}</p>
-      <p class="t-label bot-prompt__text">{{ t('home.botText') }}</p>
-    </div>
-    <UiButton
-      class="bot-prompt__go"
-      :to="auth.user!.botUrl!"
-      variant="quiet"
-      size="sm"
-      target="_blank"
-      rel="noopener"
-      @click="dismiss"
-    >
-      {{ t('home.botConnect') }}
-    </UiButton>
-    <UiIconButton class="bot-prompt__close" :icon="X" size="sm" :label="t('common.close')" @click="dismiss" />
-  </aside>
+  <UiModalDialog :open="open" :title="t('home.botTitle')" :description="t('home.botText')" @close="dismiss">
+    <template #actions>
+      <!-- The dialog stacks its actions bottom-up on a phone: listed «Не сейчас» first, it stands under the main one. -->
+      <UiButton variant="link" block class="bot-later" @click="dismiss">{{ t('home.botLater') }}</UiButton>
+      <UiButton
+        variant="primary"
+        size="lg"
+        block
+        :to="auth.user?.botUrl ?? undefined"
+        target="_blank"
+        rel="noopener"
+        @click="dismiss"
+      >
+        {{ t('home.botConnect') }}
+      </UiButton>
+    </template>
+  </UiModalDialog>
 </template>
 
 <style scoped>
-/* A white card with a hairline, the bell in the place of an avatar: an offer, not a report. */
-.bot-prompt {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  box-shadow: var(--ring-card);
-}
-
-.bot-prompt__icon {
-  display: grid;
-  place-items: center;
-  width: var(--avatar-md);
-  height: var(--avatar-md);
-  border-radius: var(--radius-pill);
-  background: var(--surface-2);
-  --icon-size: var(--icon-md);
-}
-
-.bot-prompt__copy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-0-5);
-  min-width: 0;
-}
-
-.bot-prompt__title {
-  font-weight: 500;
-}
-
-.bot-prompt__text {
+/* «Не сейчас» is a word under the main button, as «Пример отчёта» under «Войти через Telegram». */
+.bot-later {
+  min-height: var(--control-md);
   color: var(--text-muted);
-}
-
-/* A phone: the button goes under the words, the cross stays in the corner. */
-@media (max-width: 640px) {
-  .bot-prompt {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      'icon copy close'
-      '. go go';
-  }
-
-  .bot-prompt__icon {
-    grid-area: icon;
-    align-self: start;
-  }
-
-  .bot-prompt__copy {
-    grid-area: copy;
-  }
-
-  .bot-prompt__close {
-    grid-area: close;
-    align-self: start;
-  }
-
-  .bot-prompt__go {
-    grid-area: go;
-    justify-self: start;
-  }
+  text-decoration: none;
 }
 </style>
