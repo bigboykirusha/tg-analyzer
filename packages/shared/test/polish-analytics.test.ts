@@ -79,6 +79,37 @@ test('group word lists are kept as they are', () => {
   assert.equal(view.members.a!.topWords.length, 2)
 })
 
+test("a member's words keep the use threshold, and the signature is not cut by it", () => {
+  const group = {
+    sharedVocabulary: [],
+    uniqueGroupWords: [],
+    participants: [
+      {
+        id: 'a',
+        topWords: [
+          { value: 'кофе', count: 9 },
+          { value: 'бег', count: 2 },
+        ],
+        // Ratios against the group (1.8× more often), not numbers of uses.
+        topicSignature: [
+          { value: 'кофе', count: 1.8 },
+          { value: 'релиз', count: 3.5 },
+        ],
+      },
+    ],
+  }
+  const report = { vocabulary: sweary().vocabulary, totals: { textMessages: 500 }, group } as unknown as ChatReport
+  const member = deriveWords(report).group!.members.a!
+  assert.deepEqual(
+    member.topWords.map((word) => word.value),
+    ['кофе'],
+  )
+  assert.deepEqual(
+    member.topicSignature.map((word) => word.value),
+    ['кофе', 'релиз'],
+  )
+})
+
 // ---------------------------------------------------------------------------
 // D2. Significance
 // ---------------------------------------------------------------------------

@@ -48,7 +48,10 @@ function deriveGroupWords(group: GroupReportDto): DerivedGroupWords {
         participant.id,
         {
           topWords: withMinCount(participant.topWords, MIN_VOCABULARY_WORD_COUNT),
-          topicSignature: withMinCount(participant.topicSignature, MIN_VOCABULARY_WORD_COUNT),
+          // A signature word's `count` is how many times more often the person uses it than the group (a ratio),
+          // not a number of uses, so a threshold of uses does not apply: the analysis keeps only words used
+          // at least three times.
+          topicSignature: participant.topicSignature,
         },
       ]),
     ),
