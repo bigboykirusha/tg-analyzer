@@ -21,8 +21,20 @@ export async function noHorizontalScroll(page: Page) {
   return page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
 }
 
+/**
+ * Tests sign in with made-up numbers: against an API in live mode that would send real Telegram codes to
+ * strangers. A fake-mode API marks every answer with `x-telegram-mode: fake` (apps/api/src/http/server.ts).
+ */
+export async function assertFakeTelegram(page: Page) {
+  const response = await page.request.get('/api/v1/notifications/unread')
+  if (response.headers()['x-telegram-mode'] !== 'fake') {
+    throw new Error('The API is not in TELEGRAM_MODE=fake: a test sign-in would send a real Telegram code.')
+  }
+}
+
 /** Signs in through the fake Telegram gateway (TELEGRAM_MODE=fake, code 12345). */
 export async function signIn(page: Page, options: { navigate?: boolean } = {}) {
+  await assertFakeTelegram(page)
   // A fresh number per test keeps analysis cooldowns from leaking between runs.
   const phone = `900${String(Math.floor(Math.random() * 1e7)).padStart(7, '0')}`.replace(/9$/, '1')
   if (options.navigate !== false) await gotoHydrated(page, '/login')

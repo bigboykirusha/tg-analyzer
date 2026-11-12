@@ -113,6 +113,11 @@ await grab('example')
 await p.goto(BASE + '/login')
 await ready()
 await grab('login')
+// A made-up number sent to a live API would reach a stranger's Telegram: only a fake-mode API may be used.
+const telegramMode = (await fetch(`${BASE}/api/v1/notifications/unread`)).headers.get('x-telegram-mode')
+if (telegramMode !== 'fake') {
+  throw new Error('The API is not in TELEGRAM_MODE=fake: refusing to sign in with a made-up number.')
+}
 const phone = `900${String(Math.floor(Math.random() * 1e7)).padStart(7, '0')}`.replace(/9$/, '1')
 await p.locator('.phone-input').fill(phone)
 await p.getByRole('button', { name: 'Получить код' }).click()

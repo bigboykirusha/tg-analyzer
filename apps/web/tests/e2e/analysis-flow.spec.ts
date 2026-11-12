@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import {
   analyseChat,
+  assertFakeTelegram,
   backendAvailable,
   gotoHydrated,
   noHorizontalScroll,
@@ -120,6 +121,7 @@ test('a completed analysis is recovered when websocket progress is unavailable',
 })
 
 test('code autofill and two-step verification complete sign-in', async ({ page }) => {
+  await assertFakeTelegram(page)
   await gotoHydrated(page, '/login')
   const phone = `900${String(Math.floor(Math.random() * 1e6)).padStart(6, '0')}9`
   await page.locator('.phone-input').fill(phone)

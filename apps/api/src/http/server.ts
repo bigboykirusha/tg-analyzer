@@ -54,6 +54,9 @@ export async function buildServer() {
 
   app.addHook('onRequest', async (request, reply) => {
     reply.headers({ ...SECURITY_HEADERS, 'x-request-id': request.id })
+    // Local test runs sign in with made-up numbers: they check this header first, so a stack started in live
+    // mode never sends a real Telegram code. Production refuses fake mode, so it never carries the header.
+    if (config.TELEGRAM_MODE === 'fake') reply.header('x-telegram-mode', 'fake')
 
     // CSRF defence: state-changing requests from browsers must come from an allowed origin.
     if (SAFE_METHODS.has(request.method)) return

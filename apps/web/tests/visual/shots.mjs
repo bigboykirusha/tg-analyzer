@@ -83,6 +83,9 @@ for (const mode of modes) {
     await page.goto(BASE + '/login')
     await ready()
     await shot('05-login', false)
+    // A made-up number sent to a live API would reach a stranger's Telegram: only a fake-mode API may be used.
+    const mode = (await fetch(`${BASE}/api/v1/notifications/unread`)).headers.get('x-telegram-mode')
+    if (mode !== 'fake') throw new Error('The API is not in TELEGRAM_MODE=fake: refusing to sign in.')
     const number = `900${String(Math.floor(Math.random() * 1e7)).padStart(7, '0')}`.replace(/9$/, '1')
     await page.locator('.phone-input').fill(number)
     await page.getByRole('button', { name: 'Получить код' }).click()

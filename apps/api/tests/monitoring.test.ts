@@ -158,3 +158,12 @@ test('the server cuts addresses, query strings, e-mails and phone numbers out of
   assert.match(text, /\/chat\/12/)
   assert.equal(scrubClientText('plain message'), 'plain message')
 })
+
+test('a fake-mode API says so on every answer, so local test sign-ins can refuse a live stack', async () => {
+  assert.equal(config.TELEGRAM_MODE, 'fake')
+  const health = await app.inject({ method: 'GET', url: '/health' })
+  assert.equal(health.headers['x-telegram-mode'], 'fake')
+  const unauthorised = await app.inject({ method: 'GET', url: '/api/v1/notifications/unread' })
+  assert.equal(unauthorised.statusCode, 401)
+  assert.equal(unauthorised.headers['x-telegram-mode'], 'fake')
+})
