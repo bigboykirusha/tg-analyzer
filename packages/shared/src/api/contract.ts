@@ -6,6 +6,8 @@ import type {
   ShareLinkDto,
   ShareLinksResponse,
   UserShareLinksResponse,
+  NotificationsResponse,
+  NotificationsUnreadResponse,
   AuthSuccessResponse,
   AvatarsBody,
   AvatarsResponse,
@@ -158,6 +160,10 @@ export interface ApiEndpointMap {
   'DELETE /api/v1/reports/:chatId/links/:kind': Endpoint<undefined, SuccessResponse>
 
   'GET /api/v1/links': Endpoint<undefined, UserShareLinksResponse>
+
+  'GET /api/v1/notifications': Endpoint<undefined, NotificationsResponse>
+  'GET /api/v1/notifications/unread': Endpoint<undefined, NotificationsUnreadResponse>
+  'POST /api/v1/notifications/read': Endpoint<undefined, SuccessResponse>
 
   'GET /api/v1/public/:token': Endpoint<undefined, PublicShareDto>
   'POST /api/v1/public/:token/answer': Endpoint<AnswerQuizBody, PublicShareDto>

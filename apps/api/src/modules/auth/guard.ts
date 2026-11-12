@@ -26,6 +26,16 @@ export async function requireAuth(request: FastifyRequest) {
   request.auth = { userId: claims.sub, familyId: claims.familyId }
 }
 
+/** The signed-in user behind a public request, if any; never throws. */
+export async function optionalUserId(request: FastifyRequest): Promise<string | null> {
+  try {
+    await requireAuth(request)
+    return request.auth?.userId ?? null
+  } catch {
+    return null
+  }
+}
+
 /** The authenticated user id; only valid in routes guarded by {@link requireAuth}. */
 export function userIdOf(request: FastifyRequest) {
   if (!request.auth) throw unauthorized()

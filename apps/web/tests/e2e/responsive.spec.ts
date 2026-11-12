@@ -107,7 +107,7 @@ for (const locale of ['ru', 'en'] as const)
 
       const widths = testInfo.project.name === 'desktop' ? [1440] : [320, 360, 390, 430, 768, 844]
       for (const width of widths) {
-        for (const path of ['/dashboard', '/new', '/account', '/chat/1006', '/chat/-1002004']) {
+        for (const path of ['/dashboard', '/new', '/account', '/notifications', '/chat/1006', '/chat/-1002004']) {
           await inspectPage(context, width, path, locale, theme, testInfo)
         }
       }

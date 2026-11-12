@@ -788,11 +788,6 @@ export interface ReportSummaryDto {
   /** Weekly sent/received counts for up to the last 26 weeks of the chat, oldest first. */
   pulse: { sent: number; received: number }[]
   headline: ReportHeadlineDto
-  /**
-   * The other side answered the quiz and the owner has not opened the report since: the score (null when the
-   * guest kept it hidden). Home lists it under «Новое»; opening the report clears it.
-   */
-  quiz: { score: number | null; total: number } | null
 }
 
 export interface ReportsResponse {
@@ -820,6 +815,39 @@ export interface ReportDto {
 
 /** A link that opens part of a report without signing in: the report itself or the quiz. */
 export type ShareLinkKind = 'report' | 'quiz'
+
+/**
+ * One line of «Уведомления»: something that happened to a chat's report while its owner may not have been looking.
+ * The chat's name is kept with it (an analysis can fail before there is a report); never a message's text.
+ */
+export type NotificationDto = {
+  id: string
+  createdAt: string
+  /** Shown in the list before: the unread count no longer includes it. */
+  read: boolean
+  chatId: string
+  title: string
+} & NotificationEvent
+
+export type NotificationEvent =
+  | { kind: 'report_ready'; messages: number }
+  | { kind: 'analysis_failed'; error: ParseErrorCode }
+  /** score is null when the guest kept it to themselves. */
+  | { kind: 'quiz_answered'; score: number | null; total: number }
+  /** Someone other than the owner opened the report link for the first time. */
+  | { kind: 'link_opened' }
+  | { kind: 'link_expiring'; link: ShareLinkKind; expiresAt: string }
+
+export type NotificationKind = NotificationEvent['kind']
+
+export interface NotificationsResponse {
+  notifications: NotificationDto[]
+  unread: number
+}
+
+export interface NotificationsUnreadResponse {
+  unread: number
+}
 
 /** What a report link shows besides the always-shown numbers. */
 export interface ShareReportSettings {

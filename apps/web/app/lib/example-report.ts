@@ -139,7 +139,6 @@ export function buildExampleReport(partnerName: string): ReportDto {
       analyzedAt: new Date(LAST_DAY + DAY_MS).toISOString(),
       pulse: weeklyPulse(report.activity.daily),
       headline: reportHeadline(report),
-      quiz: null,
     },
     report,
     derived: deriveReportMetrics(report),

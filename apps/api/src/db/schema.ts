@@ -16,6 +16,8 @@ import type {
   ChatReport,
   ChatType,
   JobStatus,
+  NotificationEvent,
+  NotificationKind,
   QuizQuestionDto,
   ReportDto,
   ReportSnapshotDto,
@@ -166,8 +168,6 @@ export interface ShareLinkResult {
   /** The guest let the author see the score. */
   share: boolean
   answeredAt: string
-  /** The owner has opened the report since the answer came (home stops showing it on the tile). */
-  seen?: boolean
 }
 
 export const shareLinks = pgTable(
@@ -194,3 +194,28 @@ export const shareLinks = pgTable(
     uniqueIndex('share_links_report_kind_idx').on(table.reportId, table.kind),
   ],
 )
+
+/**
+ * «Уведомления»: what happened to a report while its owner may not have been looking. The chat's name and the
+ * numbers only, never a message; deleting the report or the account deletes them, and the nightly cleanup drops
+ * them after NOTIFICATION_RETENTION_DAYS.
+ */
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    reportId: uuid('report_id').references(() => chatReports.id, { onDelete: 'cascade' }),
+    kind: varchar('kind', { length: 32 }).$type<NotificationKind>().notNull(),
+    data: jsonb('data').$type<NotificationData>().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    readAt: timestamp('read_at', { withTimezone: true }),
+  },
+  (table) => [index('notifications_user_created_idx').on(table.userId, table.createdAt)],
+)
+
+/** A notification's own fields: the chat and what happened. */
+export type NotificationData = { chatId: string; title: string } & NotificationEvent
+export type NotificationRow = typeof notifications.$inferSelect

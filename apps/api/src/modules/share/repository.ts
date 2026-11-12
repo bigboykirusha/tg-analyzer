@@ -17,7 +17,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { db, schema } from '../../db'
 import type { ShareLinkPayload, ShareLinkResult } from '../../db/schema'
 import { ApiError, conflict, notFound } from '../../lib/errors'
-import { notifyQuizAnswered } from '../notify/bot'
+import { notify } from '../notify/notifications'
 import { getReport } from '../reports/repository'
 
 /** Fewer clear answers than this make no game. */
@@ -212,12 +212,28 @@ function toPublic(row: Row, hue: number): PublicShareDto {
   }
 }
 
-export async function openLink(token: string): Promise<PublicShareDto> {
+/** The chat a link is about, for its notifications. */
+async function chatOf(reportId: string) {
+  const report = await db.query.chatReports.findFirst({
+    columns: { tgChatId: true, title: true },
+    where: eq(schema.chatReports.id, reportId),
+  })
+  return report ? { chatId: String(report.tgChatId), title: report.title } : null
+}
+
+/** Opens a link for a guest. The owner looking at their own link (viewerId) is not a view. */
+export async function openLink(token: string, viewerId: string | null = null): Promise<PublicShareDto> {
   const row = await openRow(token)
-  await db
-    .update(schema.shareLinks)
-    .set({ views: row.views + 1 })
-    .where(eq(schema.shareLinks.id, row.id))
+  if (viewerId !== row.userId) {
+    await db
+      .update(schema.shareLinks)
+      .set({ views: row.views + 1 })
+      .where(eq(schema.shareLinks.id, row.id))
+    if (row.kind === 'report' && row.views === 0) {
+      const chat = await chatOf(row.reportId)
+      if (chat) void notify(row.userId, chat, { kind: 'link_opened' })
+    }
+  }
   return toPublic(row, await hueOf(row))
 }
 
@@ -240,7 +256,9 @@ export async function answerQuiz(
     .where(eq(schema.shareLinks.id, row.id))
     .returning()
   // The author learns the score in Telegram (if they turned the bot on) and in the report's «Поделиться».
-  void notifyQuizAnswered(row.userId, row.reportId, score, questions.length)
+  const chat = await chatOf(row.reportId)
+  if (chat)
+    void notify(row.userId, chat, { kind: 'quiz_answered', score: share ? score : null, total: questions.length })
   return toPublic(updated!, await hueOf(updated!))
 }
 

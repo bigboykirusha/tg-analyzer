@@ -45,7 +45,7 @@ pnpm dev                 # web :3000, API :3001, worker
 - Демо-чаты: Мила (1011, 4800 сообщений, лайм), Мама, Артём, Sofia, Дима (работа), Катя (1006), Олег, Анна. Группы: Продуктовая команда (-1002001), Семья, Бег по утрам, Weekend plans (-1002004). Каналы и бот в список не попадают.
 - Демо-чаты заканчиваются сегодняшним днём (кроме тех, у кого задан `quietDays`).
 - Пустые значения вида `KEY=` в `.env` считаются незаданными (так сделано в `apps/api/src/config.ts`).
-- ⚠️ В `.env` владельца `DATABASE_URL` и `REDIS_URL` смотрят в облачные Neon и Upstash. Для локального демо передавай их явно, переменные окружения важнее `.env`: `DATABASE_URL=postgresql://postgres:password@127.0.0.1:5432/tganalyzer REDIS_URL=redis://127.0.0.1:6379 TELEGRAM_MODE=fake`. Никогда не запускай fake-worker и `db:migrate` против облака.
+- В `.env` владельца с 12.11 `DATABASE_URL` и `REDIS_URL` смотрят в локальный Docker (облачные Neon и Upstash от Railway больше не используются, их строки закомментированы). Для демо всё равно передавай их явно, переменные окружения важнее `.env`: `DATABASE_URL=postgresql://postgres:password@127.0.0.1:5432/tganalyzer REDIS_URL=redis://127.0.0.1:6379 TELEGRAM_MODE=fake`. Никогда не запускай fake-worker и `db:migrate` против облака.
 
 **Без Docker** (облачная сессия Claude): Postgres 16 и redis-server стоят в системе. Нужно сделать `initdb` во временный каталог, создать базы `tganalyzer` и `tganalyzer_test`, запустить redis на портах 6379 и 56379, затем запустить api, worker и web через `pnpm --filter … dev`. Для e2e добавь `AUTH_RATE_LIMIT_MAX=1000` в `.env`: иначе частые входы упрутся в лимит.
 

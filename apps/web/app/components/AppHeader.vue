@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { Bell } from '../lib/icons'
+
 /**
  * The app bar of signed-in screens.
  *
  * Phones and tablets: 56 tall. A screen puts its bar here (UiPageBar: back, title, actions); without
- * one (home) the bar is the bare mark on the left and your avatar on the right — the way to the account.
+ * one (home) the bar is the bare mark on the left and, on the right, the bell («Уведомления», a dot while there are
+ * unread ones) and your avatar — the way to the account.
  * Clear at the top, the material once the page scrolls under it. Over a report's poster the bar takes
  * the poster's colour and its circles turn into poster chips; past the poster it melts into the material.
  *
@@ -14,6 +17,10 @@ const route = useRoute()
 const { t } = useI18n()
 const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
 const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
+const notifications = useNotificationsStore()
+const bellLabel = computed(() =>
+  notifications.unread ? t('notifications.unreadLabel', { count: notifications.unread }) : t('nav.notifications'),
+)
 </script>
 
 <template>
@@ -27,9 +34,15 @@ const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
       <div id="header-page" class="app-bar__page" />
       <div class="app-bar__home">
         <BrandLink to="/dashboard" bare :current="route.path === '/dashboard'" />
-        <NuxtLink to="/account" class="app-bar__account" :aria-label="t('account.settings')">
-          <ProfileAvatar :title="displayName" size="md" />
-        </NuxtLink>
+        <span class="app-bar__end">
+          <span class="app-bar__bell">
+            <UiIconButton to="/notifications" :icon="Bell" :label="bellLabel" no-tooltip />
+            <span v-if="notifications.unread" class="app-bar__dot" aria-hidden="true" />
+          </span>
+          <NuxtLink to="/account" class="app-bar__account" :aria-label="t('account.settings')">
+            <ProfileAvatar :title="displayName" size="md" />
+          </NuxtLink>
+        </span>
       </div>
     </div>
   </header>
@@ -74,6 +87,30 @@ const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
 
 .app-bar:not(:has(.page-bar)) .app-bar__page {
   display: none;
+}
+
+.app-bar__end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The bell is the round icon of every bar; unread news is a dot on its shoulder, not a number. */
+.app-bar__bell {
+  position: relative;
+  display: inline-flex;
+}
+
+.app-bar__dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--space-3);
+  height: var(--space-3);
+  border: var(--space-0-5) solid var(--bg);
+  border-radius: var(--radius-pill);
+  background: var(--text);
+  pointer-events: none;
 }
 
 /* Your avatar stands alone, 44 to tap: no ring, no plate around it. */

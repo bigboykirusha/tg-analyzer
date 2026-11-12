@@ -12,6 +12,7 @@ import { parseRoutes } from '../modules/parse/routes'
 import { progressSocketRoutes } from '../modules/parse/progress-socket'
 import { reportRoutes } from '../modules/reports/routes'
 import { publicShareRoutes, shareLinkRoutes, userLinkRoutes } from '../modules/share/routes'
+import { notificationRoutes } from '../modules/notify/routes'
 import { recordError, startWorkerWatch } from '../modules/system/alerts'
 import { clientErrorRoutes } from '../modules/system/client-errors'
 import { systemRoutes } from '../modules/system/routes'
@@ -90,6 +91,7 @@ export async function buildServer() {
   await app.register(shareLinkRoutes, { prefix: '/api/v1/reports' })
   await app.register(publicShareRoutes, { prefix: '/api/v1/public' })
   await app.register(userLinkRoutes, { prefix: '/api/v1/links' })
+  await app.register(notificationRoutes, { prefix: '/api/v1/notifications' })
   await app.register(progressSocketRoutes, { prefix: '/ws' })
 
   return app

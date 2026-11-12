@@ -49,6 +49,8 @@ export function useReportActions() {
       await workspace.deleteReport(chatId)
       toast.success(t('report.deleted'))
       pendingDelete.value = null
+      // Deleted from its own page: there is nothing left to look at.
+      if (useRoute().path === `/chat/${chatId}`) await navigateTo('/dashboard')
     } catch (error) {
       toast.error(t('report.deleteError'), errorMessage(error))
     } finally {

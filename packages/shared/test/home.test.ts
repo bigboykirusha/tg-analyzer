@@ -10,7 +10,6 @@ const report = (chatId: string, title: string, totalMessages: number, perWeek: n
   firstMessageAt: null,
   lastMessageAt: null,
   analyzedAt: '2026-10-03T12:00:00.000Z',
-  quiz: null,
   pulse: Array.from({ length: 8 }, () => ({ sent: perWeek / 2, received: perWeek / 2 })),
   headline: { sentSharePct: 50, iWriteFirstPct: 50, medianMineSec: 60, medianTheirsSec: 60 },
 })

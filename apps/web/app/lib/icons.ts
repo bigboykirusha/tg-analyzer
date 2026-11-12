@@ -13,6 +13,7 @@ export {
   ArrowRight,
   ArrowUp,
   Ban,
+  Bell,
   BarChart2,
   BookOpen,
   Calendar,

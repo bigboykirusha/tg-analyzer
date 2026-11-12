@@ -22,6 +22,8 @@ const props = defineProps<{
   to?: string
   skeleton?: boolean
   poster?: boolean
+  /** Phones: one tile per row — the avatar, the name and the end slot on one line, the foot under them. */
+  wide?: boolean
 }>()
 
 const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
@@ -30,7 +32,7 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 <template>
   <article
     class="home-card"
-    :class="{ 'home-card--poster': poster && !skeleton }"
+    :class="{ 'home-card--poster': poster && !skeleton, 'home-card--wide': wide }"
     :data-hue="hue"
     :aria-busy="skeleton || undefined"
   >
@@ -189,6 +191,55 @@ a.home-card__name:focus-visible::after {
 @media (min-width: 641px) {
   .home-card {
     --pulse-half: var(--space-6);
+  }
+}
+
+/*
+ * A wide tile on a phone: one row of avatar, name and badge, the pulse the full width under it — a list you
+ * scan top to bottom, not a grid of squares.
+ */
+@media (max-width: 640px) {
+  .home-card--wide {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'avatar text end'
+      'foot foot foot';
+    align-items: center;
+    column-gap: var(--space-3);
+    row-gap: var(--space-4);
+  }
+
+  .home-card--wide .home-card__top {
+    display: contents;
+  }
+
+  .home-card--wide .home-card__top > :first-child {
+    grid-area: avatar;
+  }
+
+  .home-card--wide .home-card__end {
+    grid-area: end;
+  }
+
+  .home-card--wide .home-card__text {
+    grid-area: text;
+    margin-top: 0;
+  }
+
+  .home-card--wide .home-card__meta {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+
+  .home-card--wide .home-card__foot {
+    grid-area: foot;
+    padding-top: 0;
+  }
+
+  /* Stretched to the full width the bars would swell into drops: they keep the thin stroke, the gaps widen. */
+  .home-card--wide .home-card__foot :deep(.pulse__half) {
+    gap: var(--space-2);
   }
 }
 </style>

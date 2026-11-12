@@ -9,7 +9,8 @@ const { redis } = await import('../src/lib/redis')
 const { buildServer } = await import('../src/http/server')
 const { closeAnalysisQueue, analysisQueue } = await import('../src/modules/parse/queue')
 const { runAnalysis } = await import('../src/modules/parse/analysis')
-const { REFRESH_COOKIE_NAME } = await import('../src/config')
+const configModule = await import('../src/config')
+const { REFRESH_COOKIE_NAME } = configModule
 
 export { db, pool, redis, REFRESH_COOKIE_NAME, analysisQueue }
 
@@ -20,12 +21,39 @@ let ipCounter = 0
 /** Each call gets its own client IP so login rate limits do not leak between tests. */
 export const nextIp = () => `10.0.${Math.floor(++ipCounter / 250)}.${ipCounter % 250}`
 
+/**
+ * Every test wipes the database and Redis. If a test file imported the app before ./setup (so the config read
+ * .env — the cloud database and live Telegram), stop before touching anything.
+ */
+function assertLocalTestServices() {
+  const local = (url: string | undefined) => {
+    try {
+      return ['127.0.0.1', 'localhost', '::1', '[::1]'].includes(new URL(url ?? '').hostname)
+    } catch {
+      return false
+    }
+  }
+  const { config } = configModule
+  if (
+    config.NODE_ENV !== 'test' ||
+    config.TELEGRAM_MODE !== 'fake' ||
+    !local(config.DATABASE_URL) ||
+    !local(config.REDIS_URL)
+  )
+    throw new Error(
+      'Integration tests must run on a local test database and Redis with TELEGRAM_MODE=fake. ' +
+        'Import ./helpers before anything from ../src in the test file.',
+    )
+}
+
 export function useTestServer() {
   before(async () => {
+    assertLocalTestServices()
     await migrate(db, { migrationsFolder: './src/db/migrations' })
     app = await buildServer()
   })
   beforeEach(async () => {
+    assertLocalTestServices()
     await pool.query('TRUNCATE users CASCADE')
     await redis.flushdb()
     await analysisQueue().obliterate({ force: true })

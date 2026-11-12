@@ -116,8 +116,8 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
   -webkit-touch-callout: none;
 }
 
+/* Just analysed: the line in full ink — colour, not a heavier weight, as everywhere else. */
 .chat-row--ready :deep(.list-row__subtitle) {
   color: var(--text);
-  font-weight: 600;
 }
 </style>

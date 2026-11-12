@@ -18,7 +18,7 @@ import {
 } from '@tg-analyzer/shared'
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db, schema } from '../../db'
-import type { ChatReportRow, ShareLinkResult } from '../../db/schema'
+import type { ChatReportRow } from '../../db/schema'
 
 const EMPTY_RESPONSES: ResponseStatsDto = {
   medianMineSec: null,
@@ -46,12 +46,7 @@ type SummaryReportParts = {
   responses: Partial<ResponseStatsDto> | null
 }
 
-function toQuiz(result: ShareLinkResult | null | undefined): ReportSummaryDto['quiz'] {
-  if (!result || result.seen) return null
-  return { score: result.share ? result.score : null, total: result.total }
-}
-
-function toSummary(row: SummaryRow, parts: SummaryReportParts, quiz: ShareLinkResult | null = null): ReportSummaryDto {
+function toSummary(row: SummaryRow, parts: SummaryReportParts): ReportSummaryDto {
   const totals = { messages: 0, sent: 0, received: 0, chars: 0, words: 0, textMessages: 0, ...parts.totals }
   return {
     chatId: String(row.tgChatId),
@@ -63,7 +58,6 @@ function toSummary(row: SummaryRow, parts: SummaryReportParts, quiz: ShareLinkRe
     analyzedAt: row.analyzedAt.toISOString(),
     pulse: weeklyPulse(Array.isArray(parts.daily) ? parts.daily : []),
     headline: reportHeadline({ totals, responses: { ...EMPTY_RESPONSES, ...parts.responses } }),
-    quiz: toQuiz(quiz),
   }
 }
 
@@ -82,22 +76,11 @@ export async function listReportSummaries(userId: string): Promise<ReportSummary
       daily: sql<DatedActivityDto[] | null>`${report}->'activity'->'daily'`,
       totals: sql<Partial<ChatReport['totals']> | null>`${report}->'totals'`,
       responses: sql<Partial<ResponseStatsDto> | null>`${report}->'responses'`,
-      // A quiz answer the owner has not seen yet (the report was not opened since): home's «Новое».
-      // Spelled out: inside a one-table select Drizzle may leave columns unqualified, and a bare "id" here would
-      // be the link's own.
-      quiz: sql<ShareLinkResult | null>`(
-        select sl.result from share_links sl
-        where sl.report_id = "chat_reports"."id"
-          and sl.kind = 'quiz'
-          and sl.result is not null
-          and not coalesce((sl.result->>'seen')::boolean, false)
-        limit 1
-      )`,
     })
     .from(schema.chatReports)
     .where(eq(schema.chatReports.userId, userId))
     .orderBy(desc(schema.chatReports.analyzedAt))
-  return rows.map((row) => toSummary(row, row, row.quiz))
+  return rows.map((row) => toSummary(row, row))
 }
 
 /** The report the owner reads, words as they are. */
@@ -106,19 +89,6 @@ export async function getReport(userId: string, chatId: string): Promise<ReportD
     where: and(eq(schema.chatReports.userId, userId), eq(schema.chatReports.tgChatId, Number(chatId))),
   })
   if (!row) return null
-
-  // Opening the report is seeing the quiz answer: home stops showing it on the tile.
-  await db
-    .update(schema.shareLinks)
-    .set({ result: sql`jsonb_set(${schema.shareLinks.result}, '{seen}', 'true')` })
-    .where(
-      and(
-        eq(schema.shareLinks.reportId, row.id),
-        eq(schema.shareLinks.kind, 'quiz'),
-        sql`${schema.shareLinks.result} is not null`,
-        sql`not coalesce((${schema.shareLinks.result}->>'seen')::boolean, false)`,
-      ),
-    )
 
   const full = normalizeReport(row.report, row)
   return {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReportSummaryDto } from '@tg-analyzer/shared'
-import { House, Plus } from '../lib/icons'
+import { Bell, House, Plus } from '../lib/icons'
 
 /**
  * The desktop sidebar (280): the logo, the one primary action, «Главная», every report (avatar, name, one
@@ -14,6 +14,7 @@ const { t, tc, formatNumber } = useI18n()
 const analysis = useAnalysis()
 
 const activeId = computed(() => (route.path.startsWith('/chat/') ? String(route.params.id) : null))
+const notifications = useNotificationsStore()
 const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
 const loading = computed(
   () => !workspace.reports.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
@@ -44,6 +45,18 @@ function updating(report: ReportSummaryDto) {
     >
       <House class="sidebar__icon" aria-hidden="true" />
       {{ t('nav.home') }}
+    </NuxtLink>
+    <NuxtLink
+      to="/notifications"
+      class="sidebar__row sidebar__nav sidebar__nav--next"
+      :aria-current="route.path === '/notifications' ? 'page' : undefined"
+    >
+      <Bell class="sidebar__icon" aria-hidden="true" />
+      <span class="sidebar__nav-label">{{ t('nav.notifications') }}</span>
+      <span v-if="notifications.unread" class="sidebar__count t-caption">
+        <span class="sr-only">{{ t('notifications.unreadLabel', { count: notifications.unread }) }}</span>
+        <span aria-hidden="true">{{ notifications.unread }}</span>
+      </span>
     </NuxtLink>
 
     <nav class="sidebar__list" :aria-label="t('sidebar.reports')">
@@ -145,6 +158,24 @@ function updating(report: ReportSummaryDto) {
 .sidebar__nav {
   min-height: var(--control-md);
   margin-top: var(--space-2);
+}
+
+.sidebar__nav--next {
+  margin-top: 0;
+}
+
+.sidebar__nav-label {
+  flex: 1;
+}
+
+/* Unread news: a small ink capsule at the row's end, as in Mail's sidebar. */
+.sidebar__count {
+  min-width: var(--space-6);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--text);
+  color: var(--bg);
+  text-align: center;
 }
 
 .sidebar__icon {

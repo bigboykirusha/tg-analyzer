@@ -205,7 +205,7 @@ onMounted(() => void loadLinks())
             :hint="linkHint(link)"
             @update:model-value="toggleLink(link, $event)"
           >
-            <template #leading><ChatAvatar :chat-id="link.chatId" :title="link.title" size="sm" /></template>
+            <template #leading><ChatAvatar :chat-id="link.chatId" :title="link.title" /></template>
           </UiSwitch>
         </UiGroup>
 

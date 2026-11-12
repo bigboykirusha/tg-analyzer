@@ -24,7 +24,7 @@ import {
   logOutTelegramSession,
 } from '../account/telegram-sessions'
 import { findUser } from '../account/users'
-import { notifyReportReady } from '../notify/bot'
+import { notify } from '../notify/notifications'
 import { saveReportAndCompleteJob } from '../reports/repository'
 import { failJob, hasActiveJobs, isJobActive, markJobRunning, setJobChatTitle } from './jobs'
 import type { AnalysisJobData } from './queue'
@@ -158,11 +158,11 @@ export async function runAnalysis(job: Job<AnalysisJobData>, token?: string) {
     logger.warn({ err: error, jobId }, 'analysis completed, but announcing it failed')
   }
   logger.info({ jobId, messages: progress.scannedMessages }, 'analysis completed')
-  await notifyReportReady(userId, {
-    chatId,
-    title: progress.chatTitle ?? chatId,
-    messages: progress.scannedMessages,
-  })
+  await notify(
+    userId,
+    { chatId, title: progress.chatTitle ?? chatId },
+    { kind: 'report_ready', messages: progress.scannedMessages },
+  )
 
   try {
     await disconnectIfAsked(userId)
@@ -298,6 +298,12 @@ async function handleFailure(job: Job<AnalysisJobData>, error: unknown, progress
   logger.error({ err: error, jobId, code }, 'analysis failed')
   await failJob(jobId, code)
   await publishProgress(userId, { ...progress, status: 'failed', phase: null, waitSeconds: null, error: code })
+  if (progress.chatId)
+    await notify(
+      userId,
+      { chatId: progress.chatId, title: progress.chatTitle ?? progress.chatId },
+      { kind: 'analysis_failed', error: code },
+    )
   // Mark the BullMQ job as failed without further retries.
   throw new UnrecoverableError(code)
 }

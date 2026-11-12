@@ -10,6 +10,7 @@ const { syncTimeZone } = useAuth()
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
+const notifications = useNotificationsStore()
 /** No reports yet, and we know it: home is «С кого начнём?». */
 const newcomer = computed(() => workspace.reportsState === 'ready' && !workspace.reports.length)
 
@@ -19,6 +20,15 @@ onMounted(() => {
   // screen, not only on home and «Новый анализ» (the cached list answers at once). Home loads it itself first.
   if (workspace.dialogsState === 'idle') void workspace.loadDialogs()
 })
+
+// The bell's dot: checked on arrival and on every screen change (a cheap count), and after an analysis.
+watch(
+  () => route.path,
+  (path) => {
+    if (path !== '/notifications') void notifications.loadUnread()
+  },
+  { immediate: true },
+)
 
 onMounted(() => {
   analysis.start()
@@ -50,6 +60,7 @@ watch(analysis.finished, (job) => {
     )
   } else if (job.status === 'cancelled') toast.info(t('analysis.cancelled'))
   void workspace.loadReports().catch(() => undefined)
+  void notifications.loadUnread()
 })
 </script>
 

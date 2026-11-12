@@ -1,13 +1,14 @@
 import { eq } from 'drizzle-orm'
 import { config } from '../../config'
 import { db, schema } from '../../db'
+import type { NotificationData } from '../../db/schema'
 import { logger } from '../../lib/logger'
 import { redis } from '../../lib/redis'
 import { sleep } from '../../lib/time'
 
 /**
- * Our own Telegram bot says «the report is ready» — and how a friend did in
- * «Угадайка» — once the user has pressed Start in it. The bot learns who they are from Telegram itself: the sender
+ * Our own Telegram bot repeats the important lines of «Уведомления» — a report ready, an analysis failed, how a
+ * friend did in «Угадайка» — once the user has pressed Start in it. The bot learns who they are from Telegram itself: the sender
  * of /start is the same Telegram account they signed in with, so no codes or
  * links to match. /stop turns it off. Off entirely without TELEGRAM_BOT_TOKEN.
  */
@@ -62,39 +63,39 @@ export async function sendBotMessage(chatId: number, text: string, button?: { te
   })
 }
 
-/** «Отчёт готов» to a user who pressed Start; never throws. */
-export async function notifyReportReady(userId: string, chat: { chatId: string; title: string; messages: number }) {
-  if (!botEnabled()) return
-  try {
-    const user = await db.query.users.findFirst({ where: eq(schema.users.id, userId) })
-    if (!user?.botNotify) return
-    const site = siteUrl()
-    await sendBotMessage(
-      user.tgUserId,
-      `Отчёт по чату «${chat.title}» готов: ${chat.messages.toLocaleString('ru-RU')} сообщений.`,
-      site ? { text: 'Открыть отчёт', url: `${site}/chat/${chat.chatId}` } : undefined,
-    )
-  } catch (error) {
-    logger.warn({ err: error, userId }, 'could not send the «report ready» message')
+/** What the bot says for an event; only these three are worth a message, the rest wait on the page. */
+function botText(event: NotificationData): string | null {
+  switch (event.kind) {
+    case 'report_ready':
+      return `Отчёт по чату «${event.title}» готов: ${event.messages.toLocaleString('ru-RU')} сообщений.`
+    case 'analysis_failed':
+      return `Не получилось разобрать чат «${event.title}». Попробуйте ещё раз с сайта.`
+    case 'quiz_answered':
+      // The guest decides whether the score is shown; the bot keeps that choice as the page does.
+      return event.score === null
+        ? `Угадайку по чату «${event.title}» прошли, счёт решили не показывать.`
+        : `Угадайку по чату «${event.title}» прошли: ${event.score} из ${event.total}.`
+    default:
+      return null
   }
 }
 
-/** «Аня прошла угадайку: 3 из 5» to the quiz's author who pressed Start; never throws. */
-export async function notifyQuizAnswered(userId: string, reportId: string, score: number, total: number) {
+/** The event to a user who pressed Start in the bot; never throws. */
+export async function sendNotificationToBot(userId: string, event: NotificationData) {
   if (!botEnabled()) return
+  const text = botText(event)
+  if (!text) return
   try {
     const user = await db.query.users.findFirst({ where: eq(schema.users.id, userId) })
     if (!user?.botNotify) return
-    const report = await db.query.chatReports.findFirst({ where: eq(schema.chatReports.id, reportId) })
-    if (!report) return
     const site = siteUrl()
     await sendBotMessage(
       user.tgUserId,
-      `Угадайку по чату «${report.title}» прошли: ${score} из ${total}.`,
-      site ? { text: 'Открыть отчёт', url: `${site}/chat/${report.tgChatId}` } : undefined,
+      text,
+      site ? { text: 'Открыть', url: `${site}/chat/${event.chatId}` } : undefined,
     )
   } catch (error) {
-    logger.warn({ err: error, userId }, 'could not send the «quiz answered» message')
+    logger.warn({ err: error, userId, kind: event.kind }, 'could not send a bot message')
   }
 }
 

@@ -25,7 +25,7 @@
 | `parse`    | диалоги, очередь, прогресс, анализ, восстановление задач после сбоя Redis                                  |
 | `reports`  | чтение и удаление отчётов                                                                                  |
 | `share`    | ссылки на отчёт и угадайку (`share_links`), публичные `/api/v1/public/:token`                              |
-| `notify`   | свой Telegram-бот: «Отчёт готов», `/start` и `/stop`                                                       |
+| `notify`   | «Уведомления» (таблица `notifications`, `notify()`), свой Telegram-бот повторяет важные; `/start`, `/stop` |
 | `system`   | `/health`, `/ready` (Postgres, Redis, heartbeat worker), очистка по retention                              |
 | `telegram` | шлюз к Telegram: `live` (teleproto — поддерживаемый форк GramJS) и `fake` (детерминированный демо-аккаунт) |
 

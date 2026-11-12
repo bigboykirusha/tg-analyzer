@@ -13,7 +13,7 @@ import {
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify'
 import { parse } from '../../http/validation'
 import { notFound } from '../../lib/errors'
-import { requireAuth, userIdOf } from '../auth/guard'
+import { optionalUserId, requireAuth, userIdOf } from '../auth/guard'
 import { answerQuiz, createLink, deleteLink, listLinks, listUserLinks, openLink } from './repository'
 
 /** The owner's links of one report: list, make (or replace), delete. */
@@ -53,7 +53,7 @@ const publicLimit = {
 export const publicShareRoutes: FastifyPluginAsync = async (app) => {
   app.get('/:token', { config: publicLimit }, async (request): Promise<PublicShareDto> => {
     const { token } = parse(shareTokenParamsSchema, request.params)
-    return openLink(token)
+    return openLink(token, await optionalUserId(request))
   })
 
   app.post('/:token/answer', { config: publicLimit }, async (request): Promise<PublicShareDto> => {

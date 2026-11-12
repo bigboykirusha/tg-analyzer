@@ -160,13 +160,22 @@ onMounted(() => {
     align-items: center;
   }
 
+  .picker__search::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: calc((var(--control-sm) - var(--hit-min)) / 2) 0;
+  }
+
   .picker--sticky .picker__search {
     flex: 1;
   }
 }
 
-/* The search well: 36, grey, no ring — as in iOS. */
+/* The search well: 36, grey, no ring — as in iOS; a finger still gets 44 (the band above and below focuses it). */
 .picker__search {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   gap: var(--space-2);
