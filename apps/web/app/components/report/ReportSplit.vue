@@ -53,8 +53,12 @@ const shown = computed(() => {
 </template>
 
 <style scoped>
-/* You in ink, the other side in their colour, as every two-sided bar of the report. */
+/*
+ * You in ink, the other side in their colour, as every two-sided bar of the report. The bar sits at the foot of the
+ * card: beside a taller card in the same row the figure stays at the top and the split at the bottom, no hole.
+ */
 .split {
+  margin-top: auto;
   display: flex;
   gap: var(--space-0-5);
   height: var(--space-3);

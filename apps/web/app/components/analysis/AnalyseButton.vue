@@ -13,11 +13,11 @@ const props = withDefaults(
   defineProps<{
     chatId: string
     title: string
-    variant?: 'primary' | 'secondary'
+    variant?: 'primary' | 'secondary' | 'quiet'
     size?: 'sm' | 'md'
     block?: boolean
   }>(),
-  { variant: 'secondary', size: 'sm', block: false },
+  { variant: 'quiet', size: 'sm', block: false },
 )
 const { t } = useI18n()
 const actions = useReportActions()

@@ -123,6 +123,7 @@ const cast = computed(() => {
           >
             {{ t('share.open') }}
           </UiButton>
+          <slot name="menu" />
         </div>
       </div>
 

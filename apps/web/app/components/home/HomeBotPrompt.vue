@@ -40,7 +40,15 @@ const shown = computed(
       <p class="t-body bot-prompt__title">{{ t('home.botTitle') }}</p>
       <p class="t-label bot-prompt__text">{{ t('home.botText') }}</p>
     </div>
-    <UiButton class="bot-prompt__go" :to="auth.user!.botUrl!" size="sm" target="_blank" rel="noopener" @click="dismiss">
+    <UiButton
+      class="bot-prompt__go"
+      :to="auth.user!.botUrl!"
+      variant="quiet"
+      size="sm"
+      target="_blank"
+      rel="noopener"
+      @click="dismiss"
+    >
       {{ t('home.botConnect') }}
     </UiButton>
     <UiIconButton class="bot-prompt__close" :icon="X" size="sm" :label="t('common.close')" @click="dismiss" />

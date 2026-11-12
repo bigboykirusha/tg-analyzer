@@ -103,6 +103,7 @@ onMounted(load)
       @share="openShare"
     >
       <template v-if="data" #badge><ReportChange :data="data" /></template>
+      <template v-if="data" #menu><ReportMenu :summary="data.summary" /></template>
     </ReportPoster>
     <UiPageContainer>
       <div v-if="data" class="page report-page">

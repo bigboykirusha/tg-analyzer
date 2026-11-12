@@ -181,7 +181,8 @@ onMounted(() => {
   gap: var(--space-2);
   height: var(--control-sm);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-well);
+  /* A pill, as the filters beside it: one row, one shape. */
+  border-radius: var(--radius-pill);
   background: var(--field-bg, var(--surface-2));
   color: var(--text-muted);
   font: var(--text-body);
@@ -189,6 +190,7 @@ onMounted(() => {
 
 .picker--sticky .picker__search {
   background: var(--surface);
+  box-shadow: var(--ring-card);
 }
 
 .picker__search:focus-within {

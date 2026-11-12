@@ -61,7 +61,7 @@ async function cancel() {
         <UiListRow :title="t('analysis.details.notify')" :subtitle="t('analysis.details.notifyHint')">
           <template #leading><Send aria-hidden="true" /></template>
           <template #trailing>
-            <UiButton :to="botUrl" size="sm" target="_blank" rel="noopener">{{
+            <UiButton :to="botUrl" variant="quiet" size="sm" target="_blank" rel="noopener">{{
               t('analysis.details.notifyOn')
             }}</UiButton>
           </template>

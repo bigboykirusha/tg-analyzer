@@ -8,6 +8,8 @@ import type { RouteLocationRaw } from 'vue-router'
  * inverted.
  *   primary    ink fill — the one main action of a screen or card
  *   secondary  ink outline — everything else (the default); a translucent chip over a poster
+ *   quiet      a grey pill without an outline — an action inside a row of a list («Разобрать», «Подключить»),
+ *              where a column of outlines would read as a wall of buttons
  *   (icon      a bare glyph in a round hit area — UiIconButton; a chip over a poster)
  *   link       inline text inside copy, not a button
  * sm 36 · md 44 on a phone, 36 on desktop · lg 44 everywhere — only the one call to action of a whole screen
@@ -15,7 +17,7 @@ import type { RouteLocationRaw } from 'vue-router'
  * On a poster (`[data-poster]`, `[data-on-poster]`) the same looks come out inverted through the `--btn-*` tokens.
  * There is no danger button: a destructive confirm is primary, a destructive menu row has red text.
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'link'
+export type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'link'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
 defineOptions({ inheritAttrs: false })
@@ -126,6 +128,13 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   backdrop-filter: var(--btn-blur, none);
 }
 
+.btn--quiet {
+  background: var(--btn-fill, var(--fill-control));
+  color: var(--btn-fill-text, var(--text));
+  -webkit-backdrop-filter: var(--btn-blur, none);
+  backdrop-filter: var(--btn-blur, none);
+}
+
 .btn.btn--link {
   height: auto;
   padding: 0;
@@ -141,7 +150,8 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
     background: var(--btn-ink-hover, var(--accent-hover));
   }
 
-  .btn--secondary:hover {
+  .btn--secondary:hover,
+  .btn--quiet:hover {
     background-image: linear-gradient(var(--pressed), var(--pressed));
   }
 
