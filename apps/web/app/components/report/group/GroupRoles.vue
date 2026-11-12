@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { formatVoiceDuration, type GroupParticipantDto, type GroupReportDto } from '@tg-analyzer/shared'
+import { Trophy } from '../../../lib/icons'
 
 /**
  * «Роли»: who plays which part in the chat, at most six — who starts conversations, the star of the
@@ -86,7 +87,13 @@ const answer = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="roles.length > 1" id="part-roles" :title="t('group.awards.title')" :answer="answer">
+  <ReportSection
+    v-if="roles.length > 1"
+    id="part-roles"
+    :icon="Trophy"
+    :title="t('group.awards.title')"
+    :answer="answer"
+  >
     <div class="roles">
       <UiListRow
         v-for="item in roles"

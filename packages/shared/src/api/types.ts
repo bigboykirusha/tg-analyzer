@@ -36,6 +36,7 @@ export type ApiErrorCode =
   | 'CHAT_NOT_FOUND'
   | 'CHAT_TOO_SMALL'
   | 'LINK_NOT_FOUND'
+  | 'LINK_EXPIRED'
   | 'QUIZ_UNAVAILABLE'
   | 'QUIZ_ANSWERED'
   | 'PARSE_ALREADY_RUNNING'

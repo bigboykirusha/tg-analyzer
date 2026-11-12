@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DerivedGroupWords, GroupParticipantDto, GroupReportDto } from '@tg-analyzer/shared'
+import { Users } from '../../../lib/icons'
 
 /**
  * «Люди»: who takes part and how — you first, then the others by their share of the messages; a tap
@@ -48,7 +49,7 @@ const answer = computed(() => {
 <template>
   <div class="people report-section--wide" :class="{ 'people--solo': !selected }">
     <div class="people__main">
-      <ReportSection id="part-people" :title="t('group.tabs.people')" :answer="answer">
+      <ReportSection id="part-people" :icon="Users" :title="t('group.tabs.people')" :answer="answer">
         <div class="people__list">
           <template v-for="person in visible" :key="person.id">
             <UiListRow v-if="person.isSelf" :title="nameOf(person)" :subtitle="roleLabel(person.role)">

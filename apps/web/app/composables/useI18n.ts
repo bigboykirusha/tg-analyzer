@@ -172,9 +172,13 @@ export function useI18n() {
     return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${rest}` : `${minutes}:${rest}`
   }
 
+  /** A word quoted as the language quotes it: «слово» in Russian, “word” in English. */
+  const quote = (text: string) => (locale.value === 'en' ? `“${text}”` : `«${text}»`)
+
   return {
     locale,
     intlLocale,
+    quote,
     setLocale,
     t,
     tc,

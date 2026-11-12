@@ -1,6 +1,5 @@
 import {
   ANALYZABLE_CHAT_TYPES,
-  HOME_MIN_NEW_MESSAGES,
   MIN_REPORT_MESSAGES,
   type ChatType,
   type DialogDto,
@@ -28,6 +27,8 @@ export interface WorkspaceChat {
 }
 
 const DIALOG_CACHE_KEY = 'tg-analyzer:dialogs'
+/** A message within a minute of the report's last one is the same moment, not news. */
+const NEWS_AFTER_MS = 60_000
 /** How many reports this browser saw last time: the skeletons draw that many, so the list does not jump. */
 const REPORTS_HINT_KEY = 'tg-analyzer:reports-count'
 
@@ -87,17 +88,19 @@ export const useWorkspaceStore = defineStore('workspace', {
         (chat) => !withReport.has(chat.id) && (chat.total === undefined || chat.total >= MIN_REPORT_MESSAGES),
       )
     },
-    /** New messages in a chat since its report, by chat id: Telegram's size now minus the report's; only real news. */
-    newMessages(state): Record<string, number> {
-      const added: Record<string, number> = {}
-      const reports = new Map(state.reports.map((report) => [report.chatId, report]))
-      for (const chat of state.recent?.chats ?? []) {
-        const report = reports.get(chat.id)
-        if (!report || chat.total === undefined) continue
-        const diff = chat.total - report.totalMessages
-        if (diff >= HOME_MIN_NEW_MESSAGES) added[chat.id] = diff
+    /**
+     * Reports whose chat has moved on since the analysis, private or group: Telegram's newest message is later than
+     * the newest one the report read. A mark on the tile; the exact count is the report's own line.
+     */
+    withNews(state): Record<string, true> {
+      const fresh: Record<string, true> = {}
+      const last = new Map(state.dialogs.map((dialog) => [dialog.id, dialog.lastMessageAt]))
+      for (const report of state.reports) {
+        const now = last.get(report.chatId)
+        if (!now || !report.lastMessageAt) continue
+        if (Date.parse(now) - Date.parse(report.lastMessageAt) > NEWS_AFTER_MS) fresh[report.chatId] = true
       }
-      return added
+      return fresh
     },
     chats(state): WorkspaceChat[] {
       const reports = new Map(state.reports.map((report) => [report.chatId, report]))

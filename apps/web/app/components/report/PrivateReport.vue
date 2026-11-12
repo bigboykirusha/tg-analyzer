@@ -28,16 +28,14 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
       <Info aria-hidden="true" />
       {{ t('report.lowData') }}
     </p>
-    <ReportPart id="main" :title="t('report.tabs.main')">
-      <ReportHighlights :data="data" />
-    </ReportPart>
     <ReportPart id="together" :title="t('report.tabs.withName', { name: data.summary.title })">
+      <ReportSplit :data="data" />
       <ReportRelationship :data="data" />
       <ReportMatch :data="data" />
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">
       <ReportTime :data="data" parts />
-      <ReportDays :data="data" />
+      <ReportDays :data="data" streak />
       <ReportRecords :data="data" />
       <ReportMilestones :data="data" />
     </ReportPart>

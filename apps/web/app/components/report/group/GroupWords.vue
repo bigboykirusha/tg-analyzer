@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { GroupReportDto, ReportDto } from '@tg-analyzer/shared'
+import { BarChart2 } from '../../../lib/icons'
 
 /**
  * «Слова и эмодзи» of a group: the word most members share as the answer, the shared words as chips and
@@ -20,6 +21,7 @@ const emoji = computed(() => props.data.derived.favourites.topEmoji.slice(0, 8))
   <ReportSection
     v-if="top || emoji.length"
     id="part-words"
+    :icon="BarChart2"
     :title="t('group.wordsTitle')"
     :answer="
       top

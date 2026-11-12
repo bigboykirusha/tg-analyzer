@@ -62,6 +62,55 @@ const THEIRS = [
   'Как концерт?',
 ]
 
+/** The same chat in English, line for line, so the English example tells the same story in its own words. */
+const MINE_EN = [
+  'How was your day?',
+  'Coffee tomorrow morning?',
+  'Movie tonight?',
+  'On my way, twenty minutes',
+  'Send me the photos from the weekend',
+  'Raining again, forgot my umbrella',
+  'Got tickets for the gig on Saturday',
+  'Call after work?',
+  'haha yes',
+  'How is your project going?',
+  'Good night',
+  'Good morning ☀️',
+  'What should I get mum for her birthday?',
+  'Found that book you told me about',
+  'What time are we meeting?',
+  'Where are you?',
+  'Run in the park tomorrow at eight',
+  'Ok, deal 👍',
+  'Best thing I have seen all week 😂',
+  'Miss you',
+]
+
+const THEIRS_EN = [
+  'Fine, a bit tired',
+  'Sure! Nine at the coffee place',
+  'Yes, just not a horror 😅',
+  'Waiting',
+  'Sending now',
+  'Hahaha, a classic',
+  'Yay, finally!',
+  'Yes, after seven',
+  'Hahaha',
+  'Getting there, deadline on Friday',
+  'Sweet dreams ❤️',
+  'Morning ☀️',
+  'Maybe a blanket? She is always cold',
+  'Oh, lend it to me after',
+  'Seven at the station then',
+  'Leaving now',
+  'I am out, I will oversleep 😴',
+  'Deal',
+  '😂😂😂',
+  'Me too ❤️',
+  'Did you see the news?',
+  'How was the gig?',
+]
+
 const DAY_MS = 86_400_000
 const MINUTE_MS = 60_000
 /** The chat ends here, so the example reads the same on every visit. */
@@ -78,15 +127,16 @@ function createRandom(seed: number) {
 
 export const EXAMPLE_CHAT_ID = 'example'
 
-export function buildExampleReport(partnerName: string): ReportDto {
+export function buildExampleReport(partnerName: string, locale: 'ru' | 'en' = 'ru'): ReportDto {
   const random = createRandom(42)
+  const [mine, theirs] = locale === 'en' ? [MINE_EN, THEIRS_EN] : [MINE, THEIRS]
   const pick = <T>(items: readonly T[]) => items[Math.floor(random() * items.length)]!
   /** Reply delay: usually a minute or two, sometimes an hour. */
   const delay = (median: number) => Math.round(median * Math.exp((random() - 0.5) * 2.6) * MINUTE_MS)
 
   const builder = new ChatReportBuilder('Europe/Moscow')
   let id = 0
-  const add = (ts: number, outgoing: boolean, text = pick(outgoing ? MINE : THEIRS)) => {
+  const add = (ts: number, outgoing: boolean, text = pick(outgoing ? mine : theirs)) => {
     const message: MessageInput = {
       id: String((id += 1)),
       date: new Date(ts),

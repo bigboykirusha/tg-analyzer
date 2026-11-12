@@ -2,7 +2,7 @@
 import { buildExampleReport } from '../lib/example-report'
 import { hueOf } from '../lib/hue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 useSeoMeta({
   title: () => t('example.title'),
   description: () => t('example.description'),
@@ -10,8 +10,8 @@ useSeoMeta({
   ogDescription: () => t('example.description'),
 })
 
-// Rebuilt when the language changes, so the partner's name matches it.
-const data = computed(() => buildExampleReport(t('example.partner')))
+// Rebuilt when the language changes, so the partner's name and the words of the chat match it.
+const data = computed(() => buildExampleReport(t('example.partner'), locale.value))
 // The example partner wears the same colour as on the landing.
 useHead({ htmlAttrs: { 'data-hue': () => hueOf('example') } })
 </script>

@@ -64,7 +64,10 @@ const facts = computed(() => {
     out.push({
       key: 'active',
       label: t('report.time.active'),
-      value: t('report.time.activeOf', { active: formatNumber(active), total: formatNumber(days.value.length) }),
+      value: tc('report.time.activeOf', days.value.length, {
+        active: formatNumber(active),
+        count: formatNumber(days.value.length),
+      }),
     })
   return out
 })

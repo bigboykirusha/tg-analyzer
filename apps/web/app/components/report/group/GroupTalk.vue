@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { GroupReportDto, ReportDto } from '@tg-analyzer/shared'
+import { Heart, MessageCircle, Quote, Sticker } from '../../../lib/icons'
 
 /**
  * «Общение» in a group, card by card: the favourite reactions on a podium, who starts conversations, each
@@ -52,6 +53,7 @@ const stickerAnswer = computed(() => {
 <template>
   <ReportSection
     v-if="reactions.length"
+    :icon="Heart"
     :title="t('group.talk.reactionsTitle')"
     :answer="favourite(reactions[0]!.value, reactions[0]!.count)"
   >
@@ -60,6 +62,7 @@ const stickerAnswer = computed(() => {
 
   <ReportSection
     v-if="starters.length"
+    :icon="MessageCircle"
     :title="t('group.startersTitle')"
     :answer="t('group.startersAnswer', { name: nameOf(starters[0]!) })"
   >
@@ -75,13 +78,13 @@ const stickerAnswer = computed(() => {
     </div>
   </ReportSection>
 
-  <ReportSection v-if="signatures.length" :title="t('group.signatureTitle')">
+  <ReportSection v-if="signatures.length" :icon="Quote" :title="t('group.signatureTitle')">
     <ReportFacts
       :facts="signatures.map((item) => ({ key: item.person.id, label: nameOf(item.person), value: item.words }))"
     />
   </ReportSection>
 
-  <ReportSection v-if="stickers.length" :title="t('report.talk.stickersTitle')" :answer="stickerAnswer">
+  <ReportSection v-if="stickers.length" :icon="Sticker" :title="t('report.talk.stickersTitle')" :answer="stickerAnswer">
     <StickerGrid :stickers="stickers.slice(0, 8)" />
   </ReportSection>
 </template>

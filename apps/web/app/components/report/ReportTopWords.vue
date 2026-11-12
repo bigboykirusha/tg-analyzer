@@ -8,7 +8,7 @@ import { BarChart2 } from '../../lib/icons'
  * is taken from.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, formatNumber } = useI18n()
+const { t, formatNumber, quote } = useI18n()
 
 const LIMIT = 10
 const MIN = 5
@@ -19,7 +19,7 @@ const answer = computed(() =>
   t('report.topWords.answer', {
     words: words.value
       .slice(0, 3)
-      .map((word) => `«${word.value}»`)
+      .map((word) => quote(word.value))
       .join(', '),
   }),
 )

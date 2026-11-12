@@ -5,7 +5,8 @@ import { nbsp } from '../../lib/nbsp'
 
 /**
  * «Что изменилось», a quiet badge on the poster and nothing when nothing did:
- *   - Telegram has more messages than the report has read — «+640 новых», «Обновить»;
+ *   - Telegram has more messages than the report has read — «+640 новых», «Обновить»; when only the date of the
+ *     newest message says so (a group, a chat outside the month's list) — «Есть новые сообщения», «Обновить»;
  *   - otherwise, after a fresh analysis, the new messages and only the values that really moved
  *     («ваш ответ: 5 мин → 3 мин»); a value that stayed the same is not mentioned.
  */
@@ -37,6 +38,9 @@ const isEvenShare = (pct: number) => {
   return low > 0 ? high / low < 1.25 : false
 }
 
+/** The chat has moved on since the report, even where its size is not known (groups). */
+const fresh = computed(() => Boolean(workspace.withNews[props.data.summary.chatId]))
+
 const since = computed(() => {
   const before = props.data.report.group ? null : props.data.previous
   if (!before) return null
@@ -62,8 +66,10 @@ const since = computed(() => {
 </script>
 
 <template>
-  <div v-if="unread" class="change" role="status">
-    <span class="change__text t-label">{{ t('report.change.unread', { count: formatNumber(unread) }) }}</span>
+  <div v-if="unread || fresh" class="change" role="status">
+    <span class="change__text t-label">{{
+      unread ? t('report.change.unread', { count: formatNumber(unread) }) : t('report.change.fresh')
+    }}</span>
     <UiButton
       variant="secondary"
       size="sm"

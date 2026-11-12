@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
 import { parseWindow } from '../../../lib/persona'
+import { Clock } from '../../../lib/icons'
 
 /**
  * «Время» in a group: the 24 hours with the usual window lit — `derived.availabilityProfile.peakWindow`,
@@ -34,7 +35,7 @@ const answer = computed(() =>
 </script>
 
 <template>
-  <ReportSection v-if="answer" id="part-time" :title="t('report.time.title')" :answer="answer">
+  <ReportSection v-if="answer" id="part-time" :icon="Clock" :title="t('report.time.title')" :answer="answer">
     <HourlyChart :hourly="activity.hourly" :peak="peakHours" />
     <template v-if="busiestDay" #note>{{ busiestDay }}</template>
   </ReportSection>

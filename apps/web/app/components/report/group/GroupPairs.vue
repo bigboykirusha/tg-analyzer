@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { GroupParticipantDto, GroupReportDto } from '@tg-analyzer/shared'
+import { HeartHandshake } from '../../../lib/icons'
 
 /** «Пары»: the three pairs who answer each other most, one row each — two avatars and the two names. */
 const props = defineProps<{ group: GroupReportDto }>()
@@ -20,7 +21,13 @@ const pairs = computed(() =>
 </script>
 
 <template>
-  <ReportSection v-if="pairs.length" id="part-pairs" :title="t('group.pairs.title')" :answer="t('group.pairs.lead')">
+  <ReportSection
+    v-if="pairs.length"
+    id="part-pairs"
+    :icon="HeartHandshake"
+    :title="t('group.pairs.title')"
+    :answer="t('group.pairs.lead')"
+  >
     <div class="pairs">
       <UiListRow
         v-for="pair in pairs"

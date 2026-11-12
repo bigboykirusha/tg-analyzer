@@ -79,7 +79,7 @@ onMounted(() => {
             :key="chat.id"
             :report="chat.report!"
             :has-avatar="chat.hasAvatar"
-            :added="workspace.newMessages[chat.id]"
+            :fresh="workspace.withNews[chat.id]"
           />
         </div>
       </section>

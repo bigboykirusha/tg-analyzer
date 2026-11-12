@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
+import { Scale } from '../../lib/icons'
 
 /**
  * «Баланс»: who carries the chat. The answer is one phrase («Пишете на равных») or one figure («×1,8» and
@@ -17,7 +18,15 @@ const { name, me, answer, figure, rows } = useBalance(
 </script>
 
 <template>
-  <ReportSection v-if="answer" id="part-balance" :title="t('report.balance.title')" :figure="figure" :answer="answer">
+  <ReportSection
+    v-if="answer"
+    id="part-balance"
+    tone="ink"
+    :icon="Scale"
+    :title="t('report.balance.title')"
+    :figure="figure"
+    :answer="answer"
+  >
     <div class="balance">
       <p v-if="!author" class="balance__sides t-label" aria-hidden="true">
         <span>{{ me }}</span>

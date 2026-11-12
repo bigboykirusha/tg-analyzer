@@ -29,6 +29,8 @@ type Row = typeof schema.shareLinks.$inferSelect
 
 const newToken = () => randomBytes(12).toString('base64url')
 const linkNotFound = () => notFound('LINK_NOT_FOUND', 'Link not found')
+/** A link whose time ran out is not a deleted one: the guest is told so (410), not «turned off». */
+const linkExpired = () => new ApiError(410, 'LINK_EXPIRED', 'Link expired')
 
 async function reportRow(userId: string, chatId: string) {
   const row = await db.query.chatReports.findFirst({
@@ -166,7 +168,8 @@ export async function deleteLink(userId: string, chatId: string, kind: ShareLink
 
 async function openRow(token: string): Promise<Row> {
   const row = await db.query.shareLinks.findFirst({ where: eq(schema.shareLinks.token, token) })
-  if (!row || (row.expiresAt && row.expiresAt.getTime() <= Date.now())) throw linkNotFound()
+  if (!row) throw linkNotFound()
+  if (row.expiresAt && row.expiresAt.getTime() <= Date.now()) throw linkExpired()
   return row
 }
 

@@ -57,7 +57,7 @@ export type StoryFrameModel =
  * from `derived.words`, so a frame never says what the report does not.
  */
 export function useStoryFrames(data: () => ReportDto) {
-  const { t, tc, formatNumber, formatPercent, formatDay } = useI18n()
+  const { t, tc, formatNumber, formatPercent, formatDay, quote } = useI18n()
   const auth = useAuthStore()
   const nameOf = useParticipantName()
 
@@ -149,7 +149,7 @@ export function useStoryFrames(data: () => ReportDto) {
         kind: 'words',
         key: 'words',
         label: t('group.wordsTitle'),
-        figure: first ? `«${first.value}»` : undefined,
+        figure: first ? quote(first.value) : undefined,
         title: first ? tc('report.words.word', first.count) : t('group.favouriteEmoji', { emoji: emoji[0]!.value }),
         sides: [{ key: 'shared', label: null, items: shared.slice(1, 7).map((item) => item.value) }],
         emoji,

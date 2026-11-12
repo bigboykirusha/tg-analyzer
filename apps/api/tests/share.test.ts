@@ -2,12 +2,15 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   telegramHueIndex,
+  type ApiErrorResponse,
   type PublicQuizDto,
   type PublicReportDto,
   type ShareLinkDto,
   type ShareLinksResponse,
 } from '@tg-analyzer/shared'
-import { ORIGIN, app, login, processJob, useTestServer, type Session } from './helpers'
+import { eq } from 'drizzle-orm'
+import * as schema from '../src/db/schema'
+import { ORIGIN, app, db, login, processJob, useTestServer, type Session } from './helpers'
 
 useTestServer()
 
@@ -53,6 +56,20 @@ test('a report link shows only what the owner allowed, to anyone, until it is tu
 
   assert.equal((await send(session, 'DELETE', `/api/v1/reports/${CHAT}/links/report`)).statusCode, 200)
   assert.equal((await app.inject({ url: `/api/v1/public/${link.token}` })).statusCode, 404)
+})
+
+test('an expired link says so (410), a deleted one is not found (404)', async () => {
+  const session = await analysed()
+  const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'report', days: 30 })
+  const link = made.json<ShareLinkDto>()
+  await db
+    .update(schema.shareLinks)
+    .set({ expiresAt: new Date(Date.now() - 1000) })
+    .where(eq(schema.shareLinks.token, link.token))
+  const expired = await app.inject({ url: `/api/v1/public/${link.token}` })
+  assert.equal(expired.statusCode, 410)
+  assert.equal(expired.json<ApiErrorResponse>().code, 'LINK_EXPIRED')
+  assert.equal((await app.inject({ url: '/api/v1/public/no-such-token-here' })).statusCode, 404)
 })
 
 test('the quiz is answered once, and the owner sees the score only with consent', async () => {

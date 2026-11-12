@@ -58,7 +58,6 @@ const groups = computed(() => {
       key: 'talk',
       title: t('report.match.group.talk'),
       rows: [
-        row('messages', t('report.match.messages'), report.totals.sent, report.totals.received),
         starts === null
           ? null
           : row('starts', t('report.habits.starts'), starts, 100 - starts, (value) => formatPercent(value)),
@@ -110,7 +109,17 @@ const groups = computed(() => {
               formatDuration,
             )
           : null,
-        counted('round', t('report.duel.roundLabel'), voice?.round.count),
+        voice &&
+        voice.round.count.mine + voice.round.count.theirs >= MIN &&
+        voice.round.seconds.mine + voice.round.seconds.theirs > 0
+          ? row(
+              'round',
+              t('report.duel.roundLabel'),
+              voice.round.seconds.mine,
+              voice.round.seconds.theirs,
+              formatDuration,
+            )
+          : null,
       ].filter((item): item is Row => item !== null),
     },
   ]

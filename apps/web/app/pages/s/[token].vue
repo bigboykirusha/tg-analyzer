@@ -13,7 +13,7 @@ const route = useRoute()
 const { t } = useI18n()
 const token = computed(() => String(route.params.token))
 const share = ref<PublicShareDto | null>(null)
-const state = ref<'loading' | 'ready' | 'gone' | 'failed'>('loading')
+const state = ref<'loading' | 'ready' | 'gone' | 'expired' | 'failed'>('loading')
 useSeoMeta({
   title: () => (share.value?.kind === 'quiz' ? t('publicQuiz.seoTitle') : t('report.title')),
   robots: 'noindex, nofollow',
@@ -21,8 +21,9 @@ useSeoMeta({
 // The person keeps the colour the owner sees them in; the quiz wears it too.
 useHead({ htmlAttrs: { 'data-hue': () => (share.value ? hueAt(share.value.hue) : undefined) } })
 
-/** The API answers 404 for a link that is off, deleted or expired, and 400 for an address that cannot be one. */
+/** The API answers 404 for a link that is off or deleted, 400 for an address that cannot be one, 410 for one that ran out. */
 const isGone = (error: unknown) => error instanceof FetchError && (error.status === 404 || error.status === 400)
+const isExpired = (error: unknown) => error instanceof FetchError && error.status === 410
 
 async function open() {
   state.value = 'loading'
@@ -30,7 +31,7 @@ async function open() {
     share.value = await ofetch<PublicShareDto>(buildApiPath('/api/v1/public/:token', { token: token.value }))
     state.value = 'ready'
   } catch (error) {
-    state.value = isGone(error) ? 'gone' : 'failed'
+    state.value = isExpired(error) ? 'expired' : isGone(error) ? 'gone' : 'failed'
   }
 }
 
@@ -48,6 +49,15 @@ onMounted(open)
       :text="t('errors.network')"
       :action="t('common.retry')"
       @action="open"
+    />
+    <StatusPage
+      v-else-if="state === 'expired'"
+      :title="t('publicShare.expiredTitle')"
+      :text="t('publicShare.expiredText')"
+      :action="t('publicReport.cta')"
+      to="/login"
+      :secondary="t('publicShare.about')"
+      secondary-to="/"
     />
     <StatusPage
       v-else-if="state === 'gone' || !share"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
+import type { ReportDto } from '@tg-analyzer/shared'
 import { Trophy } from '../../lib/icons'
 import type { ReportTile } from './ReportTiles.vue'
 
@@ -61,10 +61,7 @@ const facts = computed<ReportTile[]>(() => {
         count: formatNumber(sessions.averageSessionMessages),
       }),
     })
-  // A streak as long as the whole chat is the calendar's answer («208 из 208 дней»), not a record.
-  const streak = known.maxStreak
-  if (streak.days > 1 && streak.days < fillDailyGaps(report.value.activity.daily).length)
-    out.push({ key: 'streak', label: t('report.records.streak'), value: tc('insight.days', streak.days) })
+  // The run of days lives on the calendar card («Дней подряд»): one number, one place.
   return out
 })
 

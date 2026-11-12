@@ -102,7 +102,7 @@ onMounted(load)
       @story="openStory('view')"
       @share="openShare"
     >
-      <template v-if="data && data.summary.type !== 'group'" #badge><ReportChange :data="data" /></template>
+      <template v-if="data" #badge><ReportChange :data="data" /></template>
     </ReportPoster>
     <UiPageContainer>
       <div v-if="data" class="page report-page">
