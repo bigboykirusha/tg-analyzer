@@ -4,7 +4,7 @@
 
 Access-token действует 15 минут и существует только в памяти браузера. Refresh-token находится только в `HttpOnly` cookie и привязан к отзываемой семье в PostgreSQL. Операции с cookie требуют разрешённый `Origin`; Redis rate limit для входа работает fail-closed (`skipOnError: false`): при недоступном Redis вход не должен обходить защиту.
 
-Для production web и API должны быть на sibling-доменах одного зарегистрированного сайта, например `app.example.com` и `api.example.com`. Тогда refresh-cookie остаётся first-party при `SameSite=Lax` или `Strict` по фактическому flow. Размещение web на `*.vercel.app` вместе с API на другом сайте создаёт third-party cookie: Safari/Firefox могут заблокировать тихий refresh даже при верном CORS. До выбора собственного домена это не считается production-ready конфигурацией.
+В production сайт и API живут на одном адресе: Caddy отдаёт сайт, а сайт сам проксирует `/api` в API (WebSocket `/ws` Caddy передаёт API напрямую). Refresh-cookie поэтому first-party при `SameSite=Lax`; разносить web и API по разным сайтам нельзя — cookie станет third-party, и Safari/Firefox могут заблокировать тихий refresh.
 
 ## WebSocket
 

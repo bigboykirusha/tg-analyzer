@@ -2,7 +2,7 @@
 
 Веб-приложение, которое превращает Telegram-чат в понятный отчёт: баланс переписки, скорость и доля ответов, ритм по часам и дням, словарь и эмодзи, сессии общения; для групп — роли участников, динамика, связи и общий словарь. Тексты сообщений не сохраняются: в базе лежит только агрегированный отчёт.
 
-Стек: Nuxt 4 (web) · Fastify 5 (API) · BullMQ worker · PostgreSQL · Redis · gramjs.
+Стек: Nuxt 4 (web) · Fastify 5 (API) · BullMQ worker · PostgreSQL · Redis · teleproto (форк GramJS).
 
 ```text
 apps/api         API (src/index.ts), worker (src/worker.ts), миграции (src/migrate.ts)
@@ -43,7 +43,6 @@ pnpm build
 - [Прод на своём сервере](docs/DEPLOY-VPS.md)
 - [Архитектура](docs/ARCHITECTURE.md)
 - [Переменные окружения](docs/ENVIRONMENT.md)
-- [Деплой](docs/DEPLOY.md)
 - [Безопасность](docs/SECURITY.md)
 - [Runbook](docs/RUNBOOK.md)
 - [Миграция 0009](docs/migrations/0009-chat-reports.md)

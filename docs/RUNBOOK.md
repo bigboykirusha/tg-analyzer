@@ -52,7 +52,7 @@ WHERE schemaname = current_schema()
 - `client_error` с полем `clientError` — необработанная ошибка в браузере (`POST /api/v1/client-errors`). Внутри: `kind` (`vue`, `app`, `window`, `promise`), шаблон маршрута (`/chat/:id()`, без адреса и ID), сообщение до 300 и стек до 2000 символов, `build`, `ua`. Текстов переписок, телефонов и cookie там нет, в базу ничего не пишется. Браузер шлёт каждую ошибку один раз и не больше 10 за страницу, API принимает до 30 в минуту с одного адреса и тело до 6 КБ.
 - Ошибки worker (`analysis worker error`, `unhandled rejection`).
 
-Поиск в логах Railway: `client_error` (фронт), `request_failed` (бэк). Версию сборки `build` сверяйте с последним деплоем web: старая сборка в кэше браузера даёт ошибки, которых в новой уже нет.
+Поиск в логах (`docker compose logs api worker` в `/opt/tganalyzer/deploy`): `client_error` (фронт), `request_failed` (бэк). Версию сборки `build` сверяйте с последним деплоем web: старая сборка в кэше браузера даёт ошибки, которых в новой уже нет.
 
 **Алерт.** Включается переменными `ALERT_WEBHOOK_URL` или парой `ALERT_TELEGRAM_BOT_TOKEN` + `ALERT_TELEGRAM_CHAT_ID` (см. [ENVIRONMENT.md](ENVIRONMENT.md)); без них тихо выключен. Поводы:
 
