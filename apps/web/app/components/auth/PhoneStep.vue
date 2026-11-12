@@ -25,13 +25,11 @@ function getCountryName(code: string) {
   return countryNames.value.of(code) ?? code
 }
 
+/** The country's grouping in zeros — «(000) 000 00 00»: a format, not a number that looks made up. */
 const phonePlaceholder = computed(() => {
   const [firstGroup = 0, ...rest] = phoneInput.country.value.pattern
-  const prefix =
-    firstGroup > 0 ? `(${Array.from({ length: firstGroup }, (_, index) => String((index + 1) % 10)).join('')})` : ''
-  const suffix = rest
-    .map((size) => Array.from({ length: size }, (_, index) => String((index + 1) % 10)).join(''))
-    .join(' ')
+  const prefix = firstGroup > 0 ? `(${'0'.repeat(firstGroup)})` : ''
+  const suffix = rest.map((size) => '0'.repeat(size)).join(' ')
 
   return [prefix, suffix].filter(Boolean).join(' ')
 })
@@ -102,7 +100,7 @@ function submit() {
       </Input>
     </Field>
 
-    <Button type="submit" variant="primary" :loading="loading" :disabled="!phoneInput.isValid.value" block>
+    <Button type="submit" variant="primary" size="lg" :loading="loading" :disabled="!phoneInput.isValid.value" block>
       {{ loading ? t('login.sendingCode') : t('login.getCode') }}
     </Button>
     <p class="auth-trust">

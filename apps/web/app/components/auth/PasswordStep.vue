@@ -27,7 +27,7 @@ const { t } = useI18n()
         spellcheck="false"
       />
     </Field>
-    <Button type="submit" variant="primary" :loading="loading" :disabled="!password" block>
+    <Button type="submit" variant="primary" size="lg" :loading="loading" :disabled="!password" block>
       {{ t('login.signIn') }}
     </Button>
     <p class="auth-note">{{ t('login.passwordForgot') }}</p>
