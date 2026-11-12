@@ -17,16 +17,11 @@ import {
   type TelegramAccountApi,
   type TelegramDialog,
 } from '../../telegram'
-import {
-  deactivateTelegramSession,
-  deleteTelegramSession,
-  getTelegramSession,
-  logOutTelegramSession,
-} from '../account/telegram-sessions'
+import { deactivateTelegramSession, getTelegramSession } from '../account/telegram-sessions'
 import { findUser } from '../account/users'
 import { notify } from '../notify/notifications'
 import { saveReportAndCompleteJob } from '../reports/repository'
-import { failJob, hasActiveJobs, isJobActive, markJobRunning, setJobChatTitle } from './jobs'
+import { failJob, isJobActive, markJobRunning, setJobChatTitle } from './jobs'
 import type { AnalysisJobData } from './queue'
 import { idleProgress, publishProgress, rememberChatSize, startCooldown } from './state'
 
@@ -163,22 +158,6 @@ export async function runAnalysis(job: Job<AnalysisJobData>, token?: string) {
     { chatId, title: progress.chatTitle ?? chatId },
     { kind: 'report_ready', messages: progress.scannedMessages },
   )
-
-  try {
-    await disconnectIfAsked(userId)
-  } catch (error) {
-    logger.warn({ err: error, jobId }, 'signing out of Telegram after the analysis failed')
-  }
-}
-
-/** Honours the "sign out after every analysis" setting once the queue is empty. */
-async function disconnectIfAsked(userId: string) {
-  const user = await findUser(userId)
-  if (!user?.disconnectAfterAnalysis || (await hasActiveJobs(userId))) return
-  const session = await getTelegramSession(userId)
-  if (session) await logOutTelegramSession(userId, session)
-  await deleteTelegramSession(userId)
-  logger.info({ userId }, 'signed out of Telegram after the analysis, as the user asked')
 }
 
 async function withRetries<T>(work: () => Promise<T>): Promise<T> {

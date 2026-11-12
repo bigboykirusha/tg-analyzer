@@ -76,7 +76,6 @@ export const verifyPasswordBodySchema = z.object({
 export const updateProfileBodySchema = z
   .object({
     timezone: z.string().min(1).max(64).optional(),
-    disconnectAfterAnalysis: z.boolean().optional(),
     /** Only off from the site: turning it on takes Start in the bot. */
     botNotify: z.literal(false).optional(),
   })
@@ -138,8 +137,6 @@ export interface ApiEndpointMap {
   'POST /api/v1/auth/ws-ticket': Endpoint<undefined, WsTicketResponse>
   'GET /api/v1/auth/me': Endpoint<undefined, UserResponse>
   'PATCH /api/v1/auth/profile': Endpoint<UpdateProfileBody, UserResponse>
-  'DELETE /api/v1/auth/account': Endpoint<undefined, SuccessResponse>
-  'POST /api/v1/auth/telegram/disconnect': Endpoint<undefined, UserResponse>
   'GET /api/v1/auth/avatar': Endpoint<undefined, Blob>
 
   'GET /api/v1/parse/dialogs': Endpoint<undefined, DialogsResponse>

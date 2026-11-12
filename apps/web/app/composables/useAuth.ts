@@ -70,13 +70,6 @@ export function useAuth() {
     auth.updateUser(user)
   }
 
-  /** Signs the app out of Telegram; the account and its reports stay. */
-  async function disconnectTelegram() {
-    const { user } = await api('POST /api/v1/auth/telegram/disconnect')
-    void useAnalysis().refresh()
-    auth.updateUser(user)
-  }
-
   /** Keeps report bucketing aligned with the browser's time zone. */
   async function syncTimeZone() {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -96,6 +89,5 @@ export function useAuth() {
     syncTimeZone,
     updateSettings,
     refreshUser,
-    disconnectTelegram,
   }
 }

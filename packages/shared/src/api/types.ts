@@ -65,8 +65,6 @@ export interface UserDto {
   username: string | null
   firstName: string | null
   timezone: string
-  /** Sign out of Telegram after every analysis. */
-  disconnectAfterAnalysis: boolean
   /** Pressed Start in our bot: «the report is ready» arrives there. */
   botNotify: boolean
   /** The bot's Start link; null when the bot is not set up. */
@@ -134,7 +132,6 @@ export type VerifyCodeResponse = AuthSuccessResponse | PasswordRequiredResponse
 
 export interface UpdateProfileBody {
   timezone?: string
-  disconnectAfterAnalysis?: boolean
   botNotify?: false
 }
 

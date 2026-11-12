@@ -20,7 +20,6 @@ import { parse } from '../../http/validation'
 import { ApiError, badRequest, notFound, unauthorized } from '../../lib/errors'
 import { telegram, TelegramFloodWaitError, TelegramLoginError, type TelegramUser } from '../../telegram'
 import type { TelegramLoginErrorReason } from '../../telegram/errors'
-import { deleteAccount, disconnectTelegram } from '../account/account.service'
 import { withUserTelegram } from '../account/telegram-access'
 import {
   deleteTelegramSession,
@@ -244,32 +243,13 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   })
 
   app.patch('/profile', { preHandler: requireAuth }, async (request): Promise<UserResponse> => {
-    const { timezone, disconnectAfterAnalysis, botNotify } = parse(updateProfileBodySchema, request.body)
+    const { timezone, botNotify } = parse(updateProfileBodySchema, request.body)
     const user = await updateUserSettings(userIdOf(request), {
       ...(timezone === undefined ? {} : { timezone: validTimeZone(timezone) }),
-      ...(disconnectAfterAnalysis === undefined ? {} : { disconnectAfterAnalysis }),
       ...(botNotify === undefined ? {} : { botNotify }),
     })
     if (!user) throw notFound()
     return { user: await toUserDto(user) }
-  })
-
-  app.post(
-    '/telegram/disconnect',
-    { config: SESSION_RATE_LIMIT, preHandler: requireAuth },
-    async (request): Promise<UserResponse> => {
-      const userId = userIdOf(request)
-      await disconnectTelegram(userId)
-      const user = await findUser(userId)
-      if (!user) throw notFound()
-      return { user: await toUserDto(user, false) }
-    },
-  )
-
-  app.delete('/account', { preHandler: requireAuth }, async (request, reply): Promise<SuccessResponse> => {
-    await deleteAccount(userIdOf(request))
-    clearRefreshCookie(reply)
-    return { success: true }
   })
 
   app.get('/avatar', { preHandler: requireAuth }, async (request, reply) => {

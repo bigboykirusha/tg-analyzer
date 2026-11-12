@@ -27,10 +27,7 @@ export function findUser(userId: string) {
   return db.query.users.findFirst({ where: eq(schema.users.id, userId) })
 }
 
-export async function updateUserSettings(
-  userId: string,
-  settings: { timezone?: string; disconnectAfterAnalysis?: boolean; botNotify?: boolean },
-) {
+export async function updateUserSettings(userId: string, settings: { timezone?: string; botNotify?: boolean }) {
   const [row] = await db.update(schema.users).set(settings).where(eq(schema.users.id, userId)).returning()
   return row ?? null
 }
@@ -42,7 +39,6 @@ export async function toUserDto(user: UserRow, telegramSessionActive?: boolean):
     username: user.username,
     firstName: user.firstName,
     timezone: user.timezone,
-    disconnectAfterAnalysis: user.disconnectAfterAnalysis,
     botNotify: user.botNotify,
     botUrl: botUrl(),
     telegramSessionActive: telegramSessionActive ?? (await hasActiveTelegramSession(user.id)),

@@ -95,17 +95,6 @@ export async function cacheAvatar(userId: string, chatId: string, dataUrl: strin
   await redis.set(avatarKey(userId, chatId), dataUrl ?? NO_AVATAR, 'EX', AVATAR_CACHE_TTL_SECONDS)
 }
 
-/** Removes every transient key that belongs to the user. */
-export async function purgeUserState(userId: string) {
-  let cursor = '0'
-  do {
-    const [next, keys] = await redis.scan(cursor, 'MATCH', `*:${userId}*`, 'COUNT', 200)
-    cursor = next
-    const owned = keys.filter((key) => /^(parse|telegram):/.test(key))
-    if (owned.length) await redis.del(...owned)
-  } while (cursor !== '0')
-}
-
 const recentKey = (userId: string) => `telegram:recent:${userId}`
 const RECENT_CACHE_TTL_SECONDS = 6 * 60 * 60
 
