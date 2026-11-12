@@ -40,23 +40,23 @@ defineProps<{ id: string; title: string }>()
     padding-top: var(--space-10);
   }
 
+  /*
+   * Two cards to a row, wrapping: equal halves side by side, and a card left alone in its row — whatever
+   * stands around it — grows to the whole row, so no row has a hole.
+   */
   .report-cards {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    flex-flow: row wrap;
+    align-items: flex-start;
+  }
+
+  .report-cards > :deep(*) {
+    flex: 1 1 40%;
+    min-width: 0;
   }
 
   .report-cards > :deep(.report-section--wide),
   .report-cards > :deep(.report-note) {
-    grid-column: 1 / -1;
-  }
-
-  /* A card left alone in its row (a card before it or after it is wide, or missing) takes the whole row. */
-  .report-cards > :deep(:first-child:not(.report-section--wide):has(+ .report-section--wide)),
-  .report-cards > :deep(.report-section--wide + :not(.report-section--wide):has(+ .report-section--wide)),
-  .report-cards > :deep(.report-section--wide + :not(.report-section--wide):last-child),
-  .report-cards > :deep(:first-child:not(.report-section--wide):last-child) {
-    grid-column: 1 / -1;
+    flex-basis: 100%;
   }
 }
 </style>
