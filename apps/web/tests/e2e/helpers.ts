@@ -25,8 +25,8 @@ export async function noHorizontalScroll(page: Page) {
  * Tests sign in with made-up numbers: against an API in live mode that would send real Telegram codes to
  * strangers. A fake-mode API marks every answer with `x-telegram-mode: fake` (apps/api/src/http/server.ts).
  */
-export async function assertFakeTelegram(page: Page) {
-  const response = await page.request.get('/api/v1/notifications/unread')
+export async function assertFakeTelegram(target: Page | BrowserContext) {
+  const response = await target.request.get('/api/v1/notifications/unread')
   if (response.headers()['x-telegram-mode'] !== 'fake') {
     throw new Error('The API is not in TELEGRAM_MODE=fake: a test sign-in would send a real Telegram code.')
   }

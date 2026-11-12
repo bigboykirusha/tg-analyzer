@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext, type TestInfo } from '@playwright/test'
-import { gotoHydrated, noHorizontalScroll, usePreferences } from './helpers'
+import { assertFakeTelegram, gotoHydrated, noHorizontalScroll, usePreferences } from './helpers'
 
 async function inspectPage(
   context: BrowserContext,
@@ -83,6 +83,7 @@ for (const locale of ['ru', 'en'] as const)
     test(`workspace pages fit phone widths in ${locale}, ${theme}`, async ({ context, baseURL }, testInfo) => {
       test.setTimeout(360_000)
       await usePreferences(context, theme, locale)
+      await assertFakeTelegram(context)
       const phone = `+7900${String(Math.floor(Math.random() * 1e6)).padStart(6, '0')}1`
       const sent = await context.request.post('/api/v1/auth/send-code', { data: { phone } })
       expect(sent.ok()).toBe(true)
