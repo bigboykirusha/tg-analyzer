@@ -17,13 +17,9 @@ const apiProxyTarget = (process.env.NUXT_API_PROXY_TARGET || 'http://localhost:3
 const wsUrl = (
   process.env.NUXT_PUBLIC_WS_URL || (process.env.NODE_ENV === 'production' ? '' : apiProxyTarget.replace(/^http/, 'ws'))
 ).replace(/\/$/, '')
-// Canonical, og:image and sitemap links need an absolute address. Until a domain is bought,
-// production falls back to the Vercel address instead of localhost.
-const siteUrl = (
-  process.env.NUXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '') ||
-  (process.env.NODE_ENV === 'production' ? 'https://tg-analyzer-web.vercel.app' : 'http://localhost:3000')
-).replace(/\/$/, '')
+// Canonical, og:image and sitemap links need an absolute address: the production image is built with
+// NUXT_PUBLIC_SITE_URL (https://SITE_HOST, deploy/docker-compose.yml); locally it is the dev server.
+const siteUrl = (process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
 
 const securityHeaders = {
   'content-security-policy': [
@@ -109,14 +105,6 @@ export default defineNuxtConfig({
   // second copy of Vue, lost its injection context and the first render after a cold
   // start failed with a 500 («Cannot destructure property 'size' of useLucideProps()»).
   build: { transpile: ['@lucide/vue'] },
-  hooks: {
-    // The living UI kit (/kit) is a development tool: production builds leave it out.
-    'pages:extend'(pages) {
-      if (process.env.NODE_ENV !== 'production') return
-      const index = pages.findIndex((page) => page.path === '/kit')
-      if (index >= 0) pages.splice(index, 1)
-    },
-  },
   runtimeConfig: {
     // Overridden at runtime by NUXT_API_PROXY_TARGET.
     apiProxyTarget,
