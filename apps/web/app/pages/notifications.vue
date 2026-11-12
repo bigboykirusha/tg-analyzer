@@ -16,6 +16,9 @@ const { t, tc, formatDate, formatNumber } = useI18n()
 useSeoMeta({ title: () => t('notifications.title') })
 const store = useNotificationsStore()
 const workspace = useWorkspaceStore()
+const auth = useAuthStore()
+/** «Настроить» leads to the bot switch in the account, which exists only when the bot is set up. */
+const botAvailable = computed(() => Boolean(auth.user?.botUrl || auth.user?.botNotify))
 
 onMounted(() => void store.open())
 
@@ -153,7 +156,7 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
             </li>
           </ul>
         </section>
-        <p class="feed__foot t-label">
+        <p v-if="botAvailable" class="feed__foot t-label">
           {{ t('notifications.foot') }}
           <NuxtLink class="link" to="/account">{{ t('notifications.footLink') }}</NuxtLink>
         </p>
