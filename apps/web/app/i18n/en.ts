@@ -479,6 +479,7 @@ export const en = {
   'publicQuiz.verdict.low': 'This chat is full of surprises',
   'publicShare.goneTitle': 'This link no longer works',
   'publicShare.goneText': 'The author turned it off or deleted the report. Ask them for a new one.',
+  'publicShare.failedTitle': "Couldn't open the link",
   'publicShare.loading': 'Opening the link…',
   'publicShare.about': 'What is TG Analyzer',
   'publicReport.endTitle': 'How about you?',

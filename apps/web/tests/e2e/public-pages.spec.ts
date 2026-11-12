@@ -97,6 +97,26 @@ test('signed-in pages render only in the browser and stay out of search', async 
   }
 })
 
+test('a shared link that fails to load offers a retry, and only a missing link is gone', async ({ page, context }) => {
+  await usePreferences(context, 'light')
+  // The link may still work after a dropped connection, a server error or a burst of requests.
+  let answer: 'abort' | number = 500
+  await page.route('**/api/v1/public/**', (route) =>
+    answer === 'abort'
+      ? route.abort('internetdisconnected')
+      : route.fulfill({ status: answer, json: { code: 'TEST', message: 'test' } }),
+  )
+  for (const failure of ['abort', 500, 429] as const) {
+    answer = failure
+    await gotoHydrated(page, '/s/retry-test-token')
+    await expect(page.getByRole('heading', { name: 'Не получилось открыть ссылку' }), String(failure)).toBeVisible()
+  }
+  // «Повторить» asks again; a 404 means the link is off, deleted or expired.
+  answer = 404
+  await page.getByRole('button', { name: 'Повторить' }).click()
+  await expect(page.getByRole('heading', { name: 'Ссылка больше не работает' })).toBeVisible()
+})
+
 test('the example report opens without signing in', async ({ page, context }, testInfo) => {
   await usePreferences(context, 'light')
   await gotoHydrated(page, '/example')

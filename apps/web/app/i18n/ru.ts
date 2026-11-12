@@ -480,6 +480,7 @@ export const ru: Record<MessageKey, string> = {
   'publicQuiz.verdict.low': 'Эта переписка полна сюрпризов',
   'publicShare.goneTitle': 'Ссылка больше не работает',
   'publicShare.goneText': 'Автор выключил её или удалил отчёт. Попросите прислать новую.',
+  'publicShare.failedTitle': 'Не получилось открыть ссылку',
   'publicShare.loading': 'Открываем ссылку…',
   'publicShare.about': 'Что такое TG Analyzer',
   'publicReport.endTitle': 'А как у вас?',
