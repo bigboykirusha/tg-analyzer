@@ -188,7 +188,6 @@ export const en = {
     'What TG Analyzer reads, what it keeps and what it never does. How to delete a report and sign out.',
   'group.tabs.people': 'People',
   'group.time.busiestDay': 'Busiest on {day}',
-  'group.time.peakHour': 'The liveliest hour is {from}\u2060–\u2060{to}',
   'group.lastSeen': 'Last message',
   'group.membersShowAll': 'All members ({count})',
   'group.membersCollapse': 'Show fewer',

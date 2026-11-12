@@ -116,25 +116,15 @@ export function useStoryFrames(data: () => ReportDto) {
     }
   }
 
-  /** «Время»: a private chat's usual window, a group's liveliest hour — as on the card. */
+  /** «Время»: the chat's usual window, private or group — as on the card. */
   function time(): StoryFrameModel | null {
     const hourly = report.value.activity.hourly
     const totals = Array.from({ length: 24 }, (_, hour) => hourly[hour]?.total ?? 0)
     const top = Math.max(1, ...totals)
-    let title: string
-    let peak: number[]
-    if (isGroup.value) {
-      const best = totals.reduce((at, value, hour) => (value > (totals[at] ?? 0) ? hour : at), 0)
-      if (!totals[best]) return null
-      const pad = (value: number) => `${String(value % 24).padStart(2, '0')}:00`
-      title = t('group.time.peakHour', { from: pad(best), to: pad(best + 1) })
-      peak = [best]
-    } else {
-      const window = parseWindow(data().derived.availabilityProfile.peakWindow)
-      if (!window) return null
-      title = t('report.time.peak', { from: window.from, to: window.to }).replace(/–/gu, '⁠–⁠')
-      peak = Array.from({ length: window.length }, (_, index) => (window.start + index) % 24)
-    }
+    const window = parseWindow(data().derived.availabilityProfile.peakWindow)
+    if (!window) return null
+    const title = t('report.time.peak', { from: window.from, to: window.to }).replace(/–/gu, '⁠–⁠')
+    const peak = Array.from({ length: window.length }, (_, index) => (window.start + index) % 24)
     return {
       kind: 'time',
       key: 'time',

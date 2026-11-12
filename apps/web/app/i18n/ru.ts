@@ -190,7 +190,6 @@ export const ru: Record<MessageKey, string> = {
   'faq.seoDescription': 'Что TG Analyzer читает, что хранит и чего не делает. Как удалить отчёт и выйти.',
   'group.tabs.people': 'Люди',
   'group.time.busiestDay': 'Больше всего пишут {day}',
-  'group.time.peakHour': 'Самый оживлённый час — {from}\u2060–\u2060{to}',
   'group.lastSeen': 'Последнее сообщение',
   'group.membersShowAll': 'Все участники ({count})',
   'group.membersCollapse': 'Свернуть',
