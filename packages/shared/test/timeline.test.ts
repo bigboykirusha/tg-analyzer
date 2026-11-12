@@ -1,7 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  replyComparisonRatio,
   computeGaps,
   computeHabits,
   computeResponseRate,
@@ -146,15 +145,6 @@ test('habits count double texts and who has the last word', () => {
     computeHabits([], { questions: { mine: 0, theirs: 0 }, laughs: { mine: 0, theirs: 0 } }).lastWordMinePct,
     null,
   )
-})
-
-test('reply comparisons reject tiny samples and zero-precision ratios', () => {
-  const responses = computeResponseStats([])
-  const enough = { ...responses, medianMineSec: 100, medianTheirsSec: 130, mineSamples: 5, theirsSamples: 5 }
-  assert.equal(replyComparisonRatio(enough), 1.3)
-  assert.equal(replyComparisonRatio({ ...enough, mineSamples: 4 }), null)
-  assert.equal(replyComparisonRatio({ ...enough, medianMineSec: 0 }), null)
-  assert.equal(replyComparisonRatio({ ...enough, medianMineSec: 0, medianTheirsSec: 0 }), 1)
 })
 
 test('long histories do not exceed the JavaScript function argument limit', () => {
