@@ -607,7 +607,7 @@
   --display-max: 64px;
   /* The landing's title on a phone: shrinks with the width so «Зеркало ваших» stays one line down to 360 px. */
   --display-fit: min(var(--display-max), 12.6vw);
-  --text-figure: 600 48px/52px var(--font-sans);
+  --text-figure: 600 44px/48px var(--font-sans);
   --text-h1: 600 32px/36px var(--font-sans);
   --text-h2: 600 24px/28px var(--font-sans);
   --text-h3: 500 20px/26px var(--font-sans);
