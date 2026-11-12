@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import type { GroupParticipantDto, GroupReportDto } from '@tg-analyzer/shared'
+import type { DerivedGroupWords, GroupParticipantDto, GroupReportDto } from '@tg-analyzer/shared'
 
 /**
  * «Люди»: who takes part and how — you first, then the others by their share of the messages; a tap
  * opens the member (a sheet on a phone, the panel beside the list on desktop).
  */
-const props = defineProps<{ group: GroupReportDto }>()
+/** `words`: the members' words with the thin ones left out (`derived.words.group`). */
+const props = defineProps<{ group: GroupReportDto; words: DerivedGroupWords | null }>()
 const { t, tc, formatPercent } = useI18n()
 const nameOf = useParticipantName()
 
@@ -86,10 +87,19 @@ const answer = computed(() => {
     </div>
 
     <aside v-if="selected && wide" class="tile people__panel">
-      <GroupMemberDetails :participant="selected" :group="group" />
+      <GroupMemberDetails
+        :participant="selected"
+        :group="group"
+        :top-words="words?.members[selected.id]?.topWords ?? []"
+      />
     </aside>
     <UiBottomSheet :open="!wide && sheetOpen" :title="t('group.member')" @close="sheetOpen = false">
-      <GroupMemberDetails v-if="selected" :participant="selected" :group="group" />
+      <GroupMemberDetails
+        v-if="selected"
+        :participant="selected"
+        :group="group"
+        :top-words="words?.members[selected.id]?.topWords ?? []"
+      />
     </UiBottomSheet>
   </div>
 </template>

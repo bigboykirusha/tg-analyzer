@@ -24,14 +24,16 @@ const starters = computed(() =>
     .slice(0, 3),
 )
 
+/** Each talker's words as `derived` keeps them: the same source as every other word on the report. */
+const signatureOf = (id: string) => props.data.derived.words.group?.members[id]?.topicSignature ?? []
 const signatures = computed(() =>
   [...props.group.participants]
-    .filter((person) => person.topicSignature.length)
+    .filter((person) => signatureOf(person.id).length)
     .sort((a, b) => b.messageCount - a.messageCount)
     .slice(0, 4)
     .map((person) => ({
       person,
-      words: person.topicSignature
+      words: signatureOf(person.id)
         .slice(0, 3)
         .map((word) => word.value)
         .join(', '),

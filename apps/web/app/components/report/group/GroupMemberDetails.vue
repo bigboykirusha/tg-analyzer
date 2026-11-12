@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import type { GroupParticipantDto, GroupReportDto } from '@tg-analyzer/shared'
+import type { GroupParticipantDto, GroupReportDto, TopItemDto } from '@tg-analyzer/shared'
 import type { Fact } from '../ReportFacts.vue'
 
 /**
  * One member of a group: who they are in the chat, their numbers as rows, the words they lean on and
  * the people they answer most. The same body in the phone sheet and in the desktop panel.
  */
-const props = defineProps<{ participant: GroupParticipantDto; group: GroupReportDto }>()
+/** `topWords`: the member's words from `derived.words.group`, only those used often enough to say something. */
+const props = defineProps<{ participant: GroupParticipantDto; group: GroupReportDto; topWords: TopItemDto[] }>()
 const { t, formatNumber, formatPercent, formatDate } = useI18n()
 const nameOf = useParticipantName()
 
@@ -67,9 +68,9 @@ const connections = computed(() =>
 
     <ReportFacts :facts="facts" />
 
-    <section v-if="participant.topWords.length" class="member__block">
+    <section v-if="topWords.length" class="member__block">
       <h4 class="member__label">{{ t('group.topWords') }}</h4>
-      <WordChips :items="participant.topWords.slice(0, 6)" :counts="false" />
+      <WordChips :items="topWords.slice(0, 6)" :counts="false" />
     </section>
 
     <section v-if="connections.length" class="member__block member__block--rows">

@@ -21,7 +21,7 @@ const { t } = useI18n()
 
   <div v-else class="report-flow">
     <ReportPart id="people" :title="t('group.tabs.people')">
-      <GroupPeople :group="data.report.group" />
+      <GroupPeople :group="data.report.group" :words="data.derived.words.group" />
       <GroupRoles :group="data.report.group" />
       <GroupPairs :group="data.report.group" />
     </ReportPart>
