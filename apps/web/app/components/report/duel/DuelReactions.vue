@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
 import type { Versus } from '../../../composables/useVersus'
+import { Heart } from '../../../lib/icons'
 
 /**
  * Reactions: each side's three favourites on a podium of its own (ReportPodium), yours in ink, theirs
@@ -53,7 +54,7 @@ const answer = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="sides.length" :title="t('report.talk.reactionsTitle')" :answer="answer">
+  <ReportSection v-if="sides.length" :icon="Heart" :title="t('report.talk.reactionsTitle')" :answer="answer">
     <div class="podiums">
       <ReportPodium v-for="side in sides" :key="side.key" :items="side.items" :tone="side.key" :who="side.who" />
     </div>

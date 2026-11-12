@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
+import { CalendarDays } from '../../lib/icons'
 
 /**
  * «Активность по дням»: every day of the period as a calendar, and the seven days of the week as bars.
@@ -28,10 +29,22 @@ const busiestDay = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="activeDays" wide :title="t('report.rhythm.heatmapTitle')" :answer="activeDays">
+  <ReportSection
+    v-if="activeDays"
+    wide
+    :icon="CalendarDays"
+    :title="t('report.rhythm.heatmapTitle')"
+    :answer="activeDays"
+  >
     <ActivityHeatmap :points="days" />
   </ReportSection>
-  <ReportSection v-if="busiestDay" wide :title="t('report.rhythm.weekdaysTitle')" :answer="busiestDay">
+  <ReportSection
+    v-if="busiestDay"
+    wide
+    :icon="CalendarDays"
+    :title="t('report.rhythm.weekdaysTitle')"
+    :answer="busiestDay"
+  >
     <WeekdayChart :weekday="weekday" />
   </ReportSection>
 </template>

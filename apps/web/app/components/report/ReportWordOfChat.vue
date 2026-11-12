@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
+import { Quote } from '../../lib/icons'
 
 /**
  * The word of the chat, the one tile of «О чём» in the person's poster colour: the word at the size of
@@ -22,7 +23,7 @@ const sides = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="word" tone="ink" :title="t('report.fmt.wordTitle')">
+  <ReportSection v-if="word" tone="ink" :icon="Quote" :title="t('report.fmt.wordTitle')">
     <div class="word">
       <p class="word__value">{{ word.value }}</p>
       <p class="word__count">{{ tc('report.fmt.wordCount', word.count) }}</p>

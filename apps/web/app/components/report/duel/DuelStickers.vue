@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
+import { Sticker } from '../../../lib/icons'
 
 /**
  * Stickers: who sends them more often in the answer («Мила шлёт их в 2 раза чаще»), then one
@@ -36,7 +37,7 @@ const favourites = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="favourites.length" :title="t('report.talk.stickersTitle')" :answer="answer">
+  <ReportSection v-if="favourites.length" :icon="Sticker" :title="t('report.talk.stickersTitle')" :answer="answer">
     <ul class="favourites">
       <li v-for="item in favourites" :key="item.key" class="favourite" :class="`favourite--${item.key}`">
         <span class="favourite__art">

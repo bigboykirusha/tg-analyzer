@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
+import { MessageCircle } from '../../lib/icons'
 
 /**
  * «Ваш словарь», each word in one place (`derived.words`, already split and thinned by the significance
@@ -30,7 +31,7 @@ const hasWords = computed(() => split.value.shared.length + split.value.mine.len
 </script>
 
 <template>
-  <ReportSection v-if="hasWords" :title="t('report.words.title')" :answer="answer">
+  <ReportSection v-if="hasWords" :icon="MessageCircle" :title="t('report.words.title')" :answer="answer">
     <ReportSideGroups :mine="split.mine" :theirs="split.theirs" :shared="split.shared" :name="name" :counts="false" />
   </ReportSection>
 </template>

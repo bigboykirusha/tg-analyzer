@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
+import { Smile } from '../../lib/icons'
 
 /**
  * «Эмодзи и реакции»: the answer says each side's favourite emoji; one row of the chat's emoji with how
@@ -60,6 +61,7 @@ const sides = computed(() => {
   <ReportSection
     v-if="answer"
     id="part-favourites"
+    :icon="Smile"
     :title="t(lean ? 'report.favourites.titleLean' : 'report.favourites.title')"
     :answer="answer"
   >

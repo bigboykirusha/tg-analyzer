@@ -2,6 +2,7 @@
 import { fillDailyGaps, shouldShowYear, type ReportDto } from '@tg-analyzer/shared'
 import { nbsp } from '../../lib/nbsp'
 import { parseWindow } from '../../lib/persona'
+import { Clock } from '../../lib/icons'
 
 /**
  * «Время»: when you are in touch. The answer is the usual window (`availabilityProfile.peakWindow`, the
@@ -70,12 +71,20 @@ const facts = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="window && answer" id="part-time" wide hero :title="t('report.time.title')" :answer="answer">
+  <ReportSection
+    v-if="window && answer"
+    id="part-time"
+    wide
+    hero
+    :icon="Clock"
+    :title="t('report.time.title')"
+    :answer="answer"
+  >
     <HourlyChart :hourly="report.activity.hourly" :peak="peakHours" />
     <ol v-if="parts && dayParts.length" class="day-parts">
       <li v-for="part in dayParts" :key="part.key">
-        <b class="t-label">{{ formatPercent(part.share) }}</b>
-        <span class="t-caption">{{ t(part.label) }}</span>
+        <b class="t-h3">{{ formatPercent(part.share) }}</b>
+        <span class="t-label">{{ t(part.label) }}</span>
       </li>
     </ol>
     <dl v-else-if="!parts && facts.length" class="facts">
@@ -91,7 +100,7 @@ const facts = computed(() => {
 .day-parts {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-1);
+  gap: var(--space-2);
   padding-top: var(--space-3);
   box-shadow: var(--divider-top);
   text-align: center;
@@ -106,6 +115,7 @@ const facts = computed(() => {
 
 .day-parts b {
   color: var(--text);
+  letter-spacing: var(--tracking-h3);
 }
 
 .facts {
