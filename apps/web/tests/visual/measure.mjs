@@ -59,9 +59,13 @@ const collect = () => {
     const ownText =
       !el.matches('.brand-wordmark') &&
       [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 1)
+    // The landing's title is the display role fitted to the width on phones (--display-fit: two lines down to
+    // 360 px), so it counts as the display style at its full size, not as a style of its own.
+    const fitted = el.closest('.landing__title')
+    const display = getComputedStyle(document.documentElement).getPropertyValue('--display-max').trim()
     if (ownText) {
       out.text.push({
-        sig: `${cs.fontSize}/${cs.lineHeight} w${cs.fontWeight}`,
+        sig: fitted ? `${display}/${display} w${cs.fontWeight}` : `${cs.fontSize}/${cs.lineHeight} w${cs.fontWeight}`,
         color: cs.color,
         tag: el.tagName.toLowerCase(),
         sample: [...el.childNodes]

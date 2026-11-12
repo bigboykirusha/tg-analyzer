@@ -65,7 +65,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     services: *services
     env:
       NODE_ENV: development
@@ -101,12 +101,23 @@ jobs:
           for i in $(seq 1 30); do curl -fs http://127.0.0.1:3001/ready && exit 0; sleep 1; done
           cat ../../api.log ../../worker.log; exit 1
       - run: pnpm test:e2e
+      # The visual vocabulary as rendered: button looks, text styles, radii (apps/web/tests/visual/README.md).
+      - name: Measure the design system
+        run: |
+          nohup pnpm --filter @tg-analyzer/web dev > web.log 2>&1 &
+          for i in $(seq 1 90); do curl -fs http://127.0.0.1:3000/login > /dev/null && break; sleep 2; done
+          mkdir -p measure
+          node apps/web/tests/visual/measure.mjs http://127.0.0.1:3000 measure desktop
+          node apps/web/tests/visual/measure.mjs http://127.0.0.1:3000 measure mobile
+          node apps/web/tests/visual/summarize.mjs measure --check
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-results
           path: |
             apps/web/test-results
+            measure
             api.log
             worker.log
+            web.log
           if-no-files-found: ignore
