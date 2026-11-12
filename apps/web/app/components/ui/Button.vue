@@ -3,7 +3,7 @@ import type { Component } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 
 /**
- * One button family: three looks, two sizes (docs/design-system.md §7). Monochrome — colour means a person,
+ * One button family: three looks, two sizes (docs/design-system.md). Monochrome — colour means a person,
  * never an action; a coloured context (a poster) re-points the fills through tokens and the same looks come out
  * inverted.
  *   primary    ink fill — the one main action of a screen or card

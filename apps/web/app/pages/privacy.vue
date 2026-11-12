@@ -35,7 +35,7 @@ const questions = computed(() =>
         </details>
       </UiGroup>
     </section>
-    <p class="doc__note t-small">{{ t('site.unofficial') }}</p>
+    <p class="doc__note t-label">{{ t('site.unofficial') }}</p>
   </div>
 </template>
 

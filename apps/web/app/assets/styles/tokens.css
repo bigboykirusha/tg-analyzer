@@ -1,9 +1,10 @@
 /*
- * Design tokens — «Портрет» v3 (docs/design/portrait-v3). A calm, neutral interface; the person you are
- * looking at brings their own colour — and only the poster, the data marks and the avatar carry it (data-hue on
- * <html> or on an element). Every screen stands on one neutral page and white cards. «You» are always ink.
+ * Design tokens — «люди — постеры, интерфейс — чернила» (docs/design-system.md), grown from «Портрет» v3. A calm,
+ * neutral interface; the person you are looking at brings their own colour — and only the poster, the data marks
+ * and the avatar carry it (data-hue on <html> or on an element). Every screen stands on one neutral page and white
+ * cards. «You» are always ink.
  *
- * Three layers (docs/design-system.md §2):
+ * Three layers:
  *   1. Primitives  — --gray-*, --night-*, --hue-<name>-*, --red-*. Values live here and nowhere else.
  *   2. Semantic    — --bg, --surface, --text, --you, --them, --poster… Re-pointed once for dark and
  *                    once per person.
@@ -17,13 +18,11 @@
 :root {
   /* Neutrals, light: Apple's grouped background, labels and separators. */
   --gray-0: #ffffff;
-  --gray-1: #f7f7f9;
   --gray-2: #f2f2f7;
   --gray-3: #eeeef2;
   --gray-4: #e5e5ea;
   --gray-5: #d1d1d6;
   --gray-6: #c7c7cc;
-  --gray-7: #aeaeb2;
   --gray-8: #8e8e93;
   --gray-9: #6c6c72;
   --gray-11: #3a3a3c;
@@ -35,6 +34,8 @@
   --gray-a6: rgba(29, 29, 31, 0.3);
   --gray-a8: rgba(29, 29, 31, 0.72);
   --gray-a9: rgba(29, 29, 31, 0.82);
+  /* The activity ramp's middle step, between the labels' greys. */
+  --gray-heat-2: #9c9ca3;
 
   /* Neutrals, dark: true black ground, raised greys above it. */
   --night-0: #000000;
@@ -49,6 +50,11 @@
   --night-12: #f5f5f7;
   --night-a1: rgba(235, 235, 245, 0.06);
   --night-a2: rgba(235, 235, 245, 0.12);
+  /* The activity ramp in the dark, and the near-black behind «Итоги» on a computer in either theme. */
+  --night-heat-1: #48484c;
+  --night-heat-3: #94949b;
+  --night-heat-4: #c4c4ca;
+  --night-backdrop: #0b0b0c;
 
   /*
    * People: seven families, the ones Telegram gives a person's avatar (abs(peer id) % 7 — its red slot is
@@ -124,9 +130,8 @@
   /* The desktop sidebar: one opaque column, its selected row a soft fill. */
   --sidebar-glass: var(--gray-0);
   --sidebar-selection: var(--gray-a2);
-  /* Bars that content scrolls under: a material, never a flat colour. */
-  --toolbar-glass: rgba(242, 242, 247, 0.8);
-  /* The app bar over a page of coloured cards: dense enough that no card's colour shows through. */
+  /* Bars that content scrolls under: a material, never a flat colour — dense enough that no card's colour
+     shows through. */
   --header-glass: rgba(242, 242, 247, 0.94);
   --glass-filter: saturate(180%) blur(20px);
   --border: var(--gray-4);
@@ -159,9 +164,6 @@
   --poster-button: var(--gray-0);
   --on-poster-faint: var(--gray-a6);
   --room-tint: var(--gray-3);
-  /* Deprecated aliases of the old tinted «room»: the page is one neutral colour now. */
-  --room: var(--bg);
-  --room-glass: var(--toolbar-glass);
   --danger: var(--red-6);
   --danger-subtle: var(--red-1);
   /* Toasts and tooltips: ink in light, light in dark. */
@@ -172,9 +174,8 @@
   --danger-on-inverse: var(--red-d6);
   --scrim: rgba(0, 0, 0, 0.32);
   /* Intensity: a neutral ramp (both of you together), stopping short of ink, which means «you». */
-  --heat-0: var(--gray-3);
   --heat-1: var(--gray-6);
-  --heat-2: #9c9ca3;
+  --heat-2: var(--gray-heat-2);
   --heat-3: var(--gray-9);
   --heat-4: var(--gray-11);
   /* The whole chat (both sides together): grey, with a strong step for the peak. */
@@ -185,7 +186,6 @@
   --shadow-float: 0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.04);
   /* Lines are 1 px; selection and focus rings are 2 px. */
-  --ring-hairline: inset 0 0 0 1px var(--border);
   --ring-strong: inset 0 0 0 1px var(--border-strong);
   /* Cuts an overlapping avatar out of the one under it. */
   --ring-cutout: 0 0 0 2px var(--surface);
@@ -201,28 +201,19 @@
   /* An outline on a poster: the small cover of «Итоги». */
   --ring-on-poster: inset 0 0 0 1px var(--on-poster-line);
   --poster-divider-top: inset 0 1px 0 var(--on-poster-line);
-  --poster-divider-bottom: inset 0 -1px 0 var(--on-poster-line);
   /* Floating controls (header circles, capsule, «Новый анализ»): a hairline ring and one soft shadow. */
   --shadow-chrome: inset 0 0 0 1px var(--border), var(--shadow-float);
   --focus-ring-color: var(--accent);
 
-  /* The mark: ink on top, the seven families below (the only place colour means people in general). */
+  /* The mark: one ink, because colour means a person and the mark is nobody's; the tile is the app icon. */
   --brand-ink: var(--gray-12);
-  --brand-1: var(--hue-yellow-them);
-  --brand-2: var(--hue-orange-them);
-  --brand-3: var(--hue-green-them);
-  --brand-4: var(--hue-teal-them);
-  --brand-5: var(--hue-blue-them);
-  --brand-6: var(--hue-violet-them);
-  --brand-7: var(--hue-pink-them);
   --brand-tile: var(--gray-12);
 
   /* A person's circle on their own poster: a light well. */
   --avatar-on-poster: rgba(255, 255, 255, 0.6);
 
   /* «Итоги»: frames are pictures on the person's poster; the desktop viewer sits on a dark backdrop. */
-  --story-backdrop: #0b0b0c;
-  --story-hint: var(--gray-7);
+  --story-backdrop: var(--night-backdrop);
 }
 
 /* ─── 2. Semantic, dark (the only dark block; the head script sets the theme before paint) ─ */
@@ -238,7 +229,6 @@
   --fill-control: var(--night-4);
   --sidebar-glass: var(--night-1);
   --sidebar-selection: var(--night-3);
-  --toolbar-glass: rgba(0, 0, 0, 0.72);
   --header-glass: rgba(0, 0, 0, 0.92);
   --border: var(--night-4);
   --border-strong: var(--night-5);
@@ -264,12 +254,11 @@
   --on-inverse-hover: var(--gray-a3);
   --danger-on-inverse: var(--red-6);
   --scrim: rgba(0, 0, 0, 0.6);
-  --heat-0: var(--night-3);
-  --heat-1: #48484c;
+  --heat-1: var(--night-heat-1);
   --heat-2: var(--gray-9);
-  --heat-3: #94949b;
-  --heat-4: #c4c4ca;
-  --chart-neutral: #48484c;
+  --heat-3: var(--night-heat-3);
+  --heat-4: var(--night-heat-4);
+  --chart-neutral: var(--night-heat-1);
   --chart-neutral-strong: var(--night-11);
   --shadow-float: 0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
@@ -433,16 +422,8 @@
   --radius-card: 16px;
   --radius-sheet: 24px;
   --radius-pill: 999px;
-  /* Deprecated names of the old nine-step scale, kept so pages not yet rewritten still render. */
-  --radius-xs: var(--radius-well);
-  --radius-sm: var(--radius-well);
-  --radius-md: var(--radius-card);
-  --radius-lg: var(--radius-card);
-  --radius-xl: var(--radius-sheet);
-  --radius-full: var(--radius-pill);
-  /* Every proportion bar (compare, meters, day parts, progress) is this thick; the hero's is thicker. */
+  /* Every proportion bar (compare, meters, day parts, progress) is this thick. */
   --bar-height: 8px;
-  --bar-height-lg: 12px;
   /* Charts: the hours of the day, the bars of a week. */
   --chart-h: 96px;
   /*
@@ -481,7 +462,6 @@
   --dialog-md: 520px;
   --dialog-lg: 680px;
   --card-focus: 440px;
-  --toc-width: 264px;
   --measure: 60ch;
   --menu-min: 240px;
   --menu-max-height: 360px;
@@ -536,27 +516,14 @@
   --text-label: 500 14px/20px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
   /* Bare sizes for what is not a line of text: avatar initials, emoji. */
-  --size-h1: 30px;
   --size-h2: 24px;
-  --size-body: 16px;
   --size-label: 14px;
-  --size-caption: 12px;
   --emoji-size: var(--size-h2);
-  /* The winner on a podium. */
-  --emoji-size-lg: var(--size-h1);
   --tracking-display: -0.035em;
   --tracking-figure: -0.035em;
   --tracking-h1: -0.025em;
   --tracking-h2: -0.02em;
-  /* Deprecated names of the old nine-role scale. Each is an alias of one of the eight; pages not yet
-   * rewritten keep rendering, and new code does not use them (docs/design-system.md §3). */
-  --text-num: var(--text-h2);
-  --text-title: var(--text-body);
-  --text-ui: var(--text-label);
-  --text-small: var(--text-label);
-  --text-small-strong: var(--text-label);
   --tracking-h3: -0.015em;
-  --tracking-num: var(--tracking-h2);
   /* The page frame: space under the header, between sections, at the bottom. */
   --page-top: var(--space-2);
   --page-gap: var(--space-8);
@@ -626,7 +593,6 @@
     --text-h3: 500 20px/26px var(--font-sans);
     --brand-mark-size: 28px;
     --brand-word: 600 18px/24px var(--font-sans);
-    --size-h1: 34px;
     --size-h2: 28px;
     --page-top: var(--space-12);
     --page-gap: var(--space-10);
@@ -651,9 +617,7 @@
 /* Reduce Transparency: the glass bars turn solid. */
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --toolbar-glass: var(--bg);
     --header-glass: var(--bg);
-    --room-glass: var(--room);
     --glass-filter: none;
   }
 }

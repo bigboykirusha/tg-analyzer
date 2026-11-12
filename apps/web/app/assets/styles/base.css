@@ -173,16 +173,6 @@ strong {
   text-wrap: balance;
 }
 
-.t-num {
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
-  white-space: nowrap;
-}
-
-.t-title {
-  font: var(--text-body);
-}
-
 .t-body {
   font: var(--text-body);
 }
@@ -194,18 +184,6 @@ strong {
 }
 
 .t-label {
-  font: var(--text-label);
-}
-
-.t-ui {
-  font: var(--text-label);
-}
-
-.t-small {
-  font: var(--text-label);
-}
-
-.t-small-strong {
   font: var(--text-label);
 }
 
