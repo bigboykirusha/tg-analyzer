@@ -10,13 +10,11 @@ const props = withDefaults(
 )
 const { formatNumber } = useI18n()
 
-/** Second, first, third — the order of a real podium. */
-const steps = computed(() => {
-  const [first, second, third] = props.items
-  return [second && { ...second, place: 2 }, first && { ...first, place: 1 }, third && { ...third, place: 3 }].filter(
-    (step): step is { value: string; count: number; place: number } => Boolean(step),
-  )
-})
+/**
+ * First, second, third in the page, so a screen reader says the places in order; CSS stands them as a real
+ * podium — second, first, third.
+ */
+const steps = computed(() => props.items.slice(0, 3).map((item, index) => ({ ...item, place: index + 1 })))
 </script>
 
 <template>
@@ -57,6 +55,19 @@ const steps = computed(() => {
   gap: var(--space-1);
   min-width: 0;
   max-width: var(--space-16);
+}
+
+/* A real podium: second, first, third — only on screen; the list keeps the places in order. */
+.podium__step--2 {
+  order: 1;
+}
+
+.podium__step--1 {
+  order: 2;
+}
+
+.podium__step--3 {
+  order: 3;
 }
 
 .podium__emoji {
