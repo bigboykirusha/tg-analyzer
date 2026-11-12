@@ -35,3 +35,11 @@
   background: var(--poster);
   color: var(--on-poster);
 }
+
+/*
+ * In the dark the poster is dimmed: the person's deep tone keeps 3:1 for marks (the pulse) but not 4.5:1 for small
+ * text, so text that would take it is the poster's ink.
+ */
+:root[data-theme='dark'] .tile--ink {
+  --them-ink: var(--on-poster);
+}

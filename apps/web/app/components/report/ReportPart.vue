@@ -41,12 +41,12 @@ defineProps<{ id: string; title: string }>()
   }
 
   /*
-   * Two cards to a row, wrapping: equal halves side by side, and a card left alone in its row — whatever
-   * stands around it — grows to the whole row, so no row has a hole.
+   * Two cards to a row, wrapping: equal halves of one height side by side (a shorter card does not leave a gap
+   * under it), and a card left alone in its row — whatever stands around it — grows to the whole row.
    */
   .report-cards {
     flex-flow: row wrap;
-    align-items: flex-start;
+    align-items: stretch;
   }
 
   .report-cards > :deep(*) {
