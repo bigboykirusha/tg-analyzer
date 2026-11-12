@@ -355,6 +355,7 @@ export const en = {
   'site.footerNav': 'Site',
   'site.privacy': 'Privacy',
   'site.signIn': 'Sign in',
+  'site.myReports': 'My reports',
   'site.unofficial': 'Unofficial service built on the Telegram API',
   'site.channel': 'Telegram channel',
   'site.support': 'Support the project',

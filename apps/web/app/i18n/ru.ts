@@ -356,6 +356,7 @@ export const ru: Record<MessageKey, string> = {
   'site.footerNav': 'Разделы сайта',
   'site.privacy': 'Приватность',
   'site.signIn': 'Войти',
+  'site.myReports': 'Мои отчёты',
   'site.unofficial': 'Неофициальный сервис, работает через Telegram API',
   'site.channel': 'Канал в Telegram',
   'site.support': 'Поддержать проект',

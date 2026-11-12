@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SIGNED_IN_HINT } from '../stores/auth'
+
 /**
  * The header of every public page (landing, privacy, sign-in, the example report, a shared link, 404): the logo
  * on the left — it is also the way home — and «Войти» on the right (secondary, sm). It is absent on the landing,
@@ -9,6 +11,8 @@
 const { t } = useI18n()
 const route = useRoute()
 const showSignIn = computed(() => !['/', '/login', '/offline'].includes(route.path))
+// Someone already signed in goes to their reports, not to the sign-in page (the hint is set by the auth store).
+const signedIn = useCookie(SIGNED_IN_HINT, { readonly: true })
 const { scrolled, overPoster } = usePosterHeader()
 </script>
 
@@ -20,7 +24,10 @@ const { scrolled, overPoster } = usePosterHeader()
   >
     <div class="site-header__in">
       <BrandLink class="site-header__brand" />
-      <UiButton v-if="showSignIn" to="/login" size="sm">{{ t('site.signIn') }}</UiButton>
+      <template v-if="showSignIn">
+        <UiButton v-if="signedIn" to="/dashboard" size="sm">{{ t('site.myReports') }}</UiButton>
+        <UiButton v-else to="/login" size="sm">{{ t('site.signIn') }}</UiButton>
+      </template>
     </div>
   </header>
 </template>
