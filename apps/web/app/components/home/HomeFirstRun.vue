@@ -62,7 +62,7 @@ const reload = () => workspace.loadRecent()
           :meta="
             index === 0
               ? t('home.firstMost', {
-                  count: tc('home.monthMessages', chat.messages, { count: formatNumber(chat.messages) }),
+                  count: tc('home.unanalysedCount', chat.messages, { count: formatNumber(chat.messages) }),
                 })
               : tc('home.unanalysedCount', chat.messages, { count: formatNumber(chat.messages) })
           "

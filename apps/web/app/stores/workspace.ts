@@ -28,6 +28,26 @@ export interface WorkspaceChat {
 }
 
 const DIALOG_CACHE_KEY = 'tg-analyzer:dialogs'
+/** How many reports this browser saw last time: the skeletons draw that many, so the list does not jump. */
+const REPORTS_HINT_KEY = 'tg-analyzer:reports-count'
+
+function readReportsHint() {
+  if (!import.meta.client) return 0
+  try {
+    return Math.max(0, Number(localStorage.getItem(REPORTS_HINT_KEY)) || 0)
+  } catch {
+    return 0
+  }
+}
+
+function saveReportsHint(count: number) {
+  if (!import.meta.client) return
+  try {
+    localStorage.setItem(REPORTS_HINT_KEY, String(count))
+  } catch {
+    // A private window may refuse storage: the hint is only a convenience.
+  }
+}
 
 function readCachedDialogs(userId: string): DialogDto[] {
   try {
@@ -51,6 +71,8 @@ export const useWorkspaceStore = defineStore('workspace', {
     dialogsTruncated: false,
     reports: [] as ReportSummaryDto[],
     reportsState: 'idle' as LoadState,
+    /** The number of reports last seen here, for the skeletons; 0 when unknown. */
+    reportsHint: readReportsHint(),
     openedReports: {} as Record<string, ReportDto>,
     /** Private chats of the last month, counted by Telegram without an analysis. */
     recent: null as RecentActivityResponse | null,
@@ -155,6 +177,8 @@ export const useWorkspaceStore = defineStore('workspace', {
         const result = await api('GET /api/v1/reports')
         if (auth.sessionVersion !== version) return
         this.reports = result.reports
+        this.reportsHint = result.reports.length
+        saveReportsHint(result.reports.length)
         this.reportsState = 'ready'
       } catch (error) {
         if (auth.sessionVersion !== version) return
@@ -189,7 +213,10 @@ export const useWorkspaceStore = defineStore('workspace', {
 
     reset() {
       this.$reset()
-      if (import.meta.client) localStorage.removeItem(DIALOG_CACHE_KEY)
+      if (import.meta.client) {
+        localStorage.removeItem(DIALOG_CACHE_KEY)
+        localStorage.removeItem(REPORTS_HINT_KEY)
+      }
     },
   },
 })

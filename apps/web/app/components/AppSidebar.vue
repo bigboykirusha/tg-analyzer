@@ -8,6 +8,8 @@ import { Bell, House, Plus } from '../lib/icons'
  * leads home too, but it is a logo: the place you are is marked on «Главная», never on the brand.
  */
 const workspace = useWorkspaceStore()
+/** As many skeleton rows as there were reports last time (two when unknown), so the list does not jump. */
+const skeletonRows = computed(() => Math.min(8, workspace.reportsHint || 2))
 const auth = useAuthStore()
 const route = useRoute()
 const { t, tc, formatNumber } = useI18n()
@@ -38,26 +40,28 @@ function updating(report: ReportSummaryDto) {
     <UiButton to="/new" variant="primary" block :icon="Plus" :aria-current="route.path === '/new' ? 'page' : undefined">
       {{ t('sidebar.newAnalysis') }}
     </UiButton>
-    <NuxtLink
-      to="/dashboard"
-      class="sidebar__row sidebar__nav"
-      :aria-current="route.path === '/dashboard' ? 'page' : undefined"
-    >
-      <House class="sidebar__icon" aria-hidden="true" />
-      {{ t('nav.home') }}
-    </NuxtLink>
-    <NuxtLink
-      to="/notifications"
-      class="sidebar__row sidebar__nav sidebar__nav--next"
-      :aria-current="route.path === '/notifications' ? 'page' : undefined"
-    >
-      <Bell class="sidebar__icon" aria-hidden="true" />
-      <span class="sidebar__nav-label">{{ t('nav.notifications') }}</span>
-      <span v-if="notifications.unread" class="sidebar__count t-caption">
-        <span class="sr-only">{{ t('notifications.unreadLabel', { count: notifications.unread }) }}</span>
-        <span aria-hidden="true">{{ notifications.unread }}</span>
-      </span>
-    </NuxtLink>
+    <div class="sidebar__navs">
+      <NuxtLink
+        to="/dashboard"
+        class="sidebar__row sidebar__nav"
+        :aria-current="route.path === '/dashboard' ? 'page' : undefined"
+      >
+        <House class="sidebar__icon" aria-hidden="true" />
+        {{ t('nav.home') }}
+      </NuxtLink>
+      <NuxtLink
+        to="/notifications"
+        class="sidebar__row sidebar__nav"
+        :aria-current="route.path === '/notifications' ? 'page' : undefined"
+      >
+        <Bell class="sidebar__icon" aria-hidden="true" />
+        <span class="sidebar__nav-label">{{ t('nav.notifications') }}</span>
+        <span v-if="notifications.unread" class="sidebar__count t-caption">
+          <span class="sr-only">{{ t('notifications.unreadLabel', { count: notifications.unread }) }}</span>
+          <span aria-hidden="true">{{ notifications.unread }}</span>
+        </span>
+      </NuxtLink>
+    </div>
 
     <nav class="sidebar__list" :aria-label="t('sidebar.reports')">
       <p class="sidebar__heading">{{ t('sidebar.reports') }}</p>
@@ -77,7 +81,7 @@ function updating(report: ReportSummaryDto) {
       </NuxtLink>
       <!-- The list on its way: rows of the same height, so nothing jumps when it arrives. -->
       <template v-if="loading">
-        <div v-for="row in 4" :key="row" class="sidebar__row sidebar__person" aria-hidden="true">
+        <div v-for="row in skeletonRows" :key="row" class="sidebar__row sidebar__person" aria-hidden="true">
           <UiSkeleton width="var(--avatar-sm)" height="var(--avatar-sm)" radius="var(--radius-pill)" />
           <span class="sidebar__copy">
             <UiSkeleton :width="`${76 - row * 8}%`" height="var(--space-3)" />
@@ -154,14 +158,15 @@ function updating(report: ReportSummaryDto) {
   padding-inline: var(--space-2);
 }
 
-/* «Главная»: a row like a report, its icon in the avatar's place. */
-.sidebar__nav {
-  min-height: var(--control-md);
+/*
+ * «Главная» and «Уведомления»: one tight group, like the report rows below (36 tall, 2 apart), the icon in the
+ * avatar's place.
+ */
+.sidebar__navs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
   margin-top: var(--space-2);
-}
-
-.sidebar__nav--next {
-  margin-top: 0;
 }
 
 .sidebar__nav-label {

@@ -140,13 +140,19 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   margin-top: var(--space-1);
 }
 
-/* The name is the card's link; it stretches over the whole card, the end slot sits above it. One line. */
+/*
+ * The name is the card's link; it stretches over the whole card, the end slot sits above it. Two lines at most in
+ * a grid tile («Продуктовая команда» is not cut to «Продуктовая коман…»), one on a wide phone tile.
+ */
 .home-card__name {
+  display: -webkit-box;
   overflow: hidden;
   font: var(--text-h3);
   letter-spacing: var(--tracking-h3);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 
 a.home-card__name::after {
@@ -227,6 +233,7 @@ a.home-card__name:focus-visible::after {
     margin-top: 0;
   }
 
+  .home-card--wide .home-card__name,
   .home-card--wide .home-card__meta {
     -webkit-line-clamp: 1;
     line-clamp: 1;
@@ -235,11 +242,6 @@ a.home-card__name:focus-visible::after {
   .home-card--wide .home-card__foot {
     grid-area: foot;
     padding-top: 0;
-  }
-
-  /* Stretched to the full width the bars would swell into drops: they keep the thin stroke, the gaps widen. */
-  .home-card--wide .home-card__foot :deep(.pulse__half) {
-    gap: var(--space-2);
   }
 }
 </style>

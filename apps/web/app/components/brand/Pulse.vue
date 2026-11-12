@@ -4,8 +4,12 @@
  * ink, theirs below in the person's deep tone. Heights use a square-root scale so a quiet week still
  * shows and a record week does not flatten the rest. The data is folded into `bars` columns, so a
  * card, the poster and a story draw the same texture whatever they pass.
+ * `pitch`: the room one bar and its gap take, in px; the count then follows the pulse's own width (`bars` is only
+ * the first guess), so a narrow tile and a wide one show the same fine texture as the poster, not the same number
+ * of ever wider bars or ever wider gaps.
  * `grow`: the bars rise out of the middle line, left to right, when the pulse appears (and again whenever
- * `grow` turns on) — the product's one signature motion. Still under reduced motion.
+ * `grow` turns on) — the product's one signature motion. The wave takes as long whatever the count. Still under
+ * reduced motion.
  */
 const props = withDefaults(
   defineProps<{
@@ -13,27 +17,42 @@ const props = withDefaults(
     /** Height of each half in px; 0 leaves it to the caller's `--pulse-half` (a story frame sizes in cqw). */
     height?: number
     bars?: number
+    pitch?: number
     label?: string
     grow?: boolean
   }>(),
-  { height: 32, bars: 40, label: '', grow: false },
+  { height: 32, bars: 40, pitch: 0, label: '', grow: false },
 )
+
+const root = ref<HTMLElement>()
+const fitted = ref(0)
+let observer: ResizeObserver | undefined
+onMounted(() => {
+  if (!props.pitch || !root.value || typeof ResizeObserver === 'undefined') return
+  observer = new ResizeObserver(([entry]) => {
+    const width = entry?.contentRect.width ?? 0
+    if (width) fitted.value = Math.max(12, Math.round(width / props.pitch))
+  })
+  observer.observe(root.value)
+})
+onBeforeUnmount(() => observer?.disconnect())
+const count = computed(() => fitted.value || props.bars)
 
 const columns = computed(() => {
   const source = props.data.length ? props.data : [{ sent: 0, received: 0 }]
-  // Always `bars` columns: a long history is folded, a short one is stretched, so every pulse has one texture.
-  const count = props.bars
-  const out = Array.from({ length: count }, () => ({ sent: 0, received: 0 }))
-  if (source.length >= count)
+  // Always `count` columns: a long history is folded, a short one is stretched, so every pulse has one texture.
+  const bars = count.value
+  const out = Array.from({ length: bars }, () => ({ sent: 0, received: 0 }))
+  if (source.length >= bars)
     source.forEach((item, index) => {
-      const slot = out[Math.min(count - 1, Math.floor((index * count) / source.length))]!
+      const slot = out[Math.min(bars - 1, Math.floor((index * bars) / source.length))]!
       slot.sent += item.sent
       slot.received += item.received
     })
   else
     // A short history is drawn smoothly between its points, not as steps of equal bars.
     out.forEach((slot, index) => {
-      const at = (index * (source.length - 1)) / Math.max(1, count - 1)
+      const at = (index * (source.length - 1)) / Math.max(1, bars - 1)
       const low = source[Math.floor(at)]!
       const high = source[Math.ceil(at)]!
       const mix = at - Math.floor(at)
@@ -49,12 +68,13 @@ const columns = computed(() => {
 
 <template>
   <div
+    ref="root"
     class="pulse"
     :class="{ 'pulse--grow': grow }"
     :role="label ? 'img' : undefined"
     :aria-label="label || undefined"
     :aria-hidden="label ? undefined : 'true'"
-    :style="height ? { '--pulse-half': `${height}px` } : undefined"
+    :style="{ '--n': count, ...(height ? { '--pulse-half': `${height}px` } : {}) }"
   >
     <div class="pulse__half pulse__half--up">
       <i v-for="(column, index) in columns" :key="index" :style="{ height: column.up, '--i': index }" />
@@ -104,8 +124,9 @@ const columns = computed(() => {
 /* Each bar grows out of the line between the two voices; a wave runs left to right. */
 .pulse--grow i {
   animation: pulse-grow var(--duration-sheet) var(--ease-standard) both;
-  /* --pulse-delay holds the wave until its card has landed (the landing deck). */
-  animation-delay: calc(var(--pulse-delay, 0ms) + var(--i) * var(--pulse-stagger, var(--stagger-bar)));
+  /* --pulse-delay holds the wave until its card has landed (the landing deck). The wave lasts as long as 32 bars at
+     the bar stagger, however many bars there are. */
+  animation-delay: calc(var(--pulse-delay, 0ms) + var(--i) * var(--stagger-bar) * 32 / var(--n));
 }
 
 .pulse--grow .pulse__half--up i {

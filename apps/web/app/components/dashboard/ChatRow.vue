@@ -27,10 +27,10 @@ const meta = computed(() => {
   if (justReady.value) return t('dashboard.reportReady')
   if (tooSmall.value) return t('newAnalysis.tooSmall')
   if (props.chat.report) {
-    const line = t('dashboard.analysed', { time: formatRelative(props.chat.report.analyzedAt) })
+    const line = t('dashboard.analysed', { time: formatRelative(props.chat.report.analyzedAt, 'short') })
     return group ? t('sidebar.groupMeta', { count: line.toLocaleLowerCase() }) : line
   }
-  const time = props.chat.lastMessageAt ? formatRelative(props.chat.lastMessageAt) : null
+  const time = props.chat.lastMessageAt ? formatRelative(props.chat.lastMessageAt, 'short') : null
   const line = time ? t('newAnalysis.wrote', { time }) : ''
   return group ? (line ? t('sidebar.groupMeta', { count: line.toLocaleLowerCase() }) : t('chatType.group')) : line
 })

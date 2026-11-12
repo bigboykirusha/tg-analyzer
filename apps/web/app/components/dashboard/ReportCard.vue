@@ -47,7 +47,7 @@ const pulse = computed(() =>
       <template v-if="updating"><span class="spinner" aria-hidden="true" /> {{ t('dashboard.analysingNow') }}</template>
       <template v-else>{{ meta }}</template>
     </template>
-    <Pulse v-if="pulse" :data="pulse" :height="0" :bars="28" grow />
+    <Pulse v-if="pulse" :data="pulse" :height="0" :bars="48" :pitch="6" grow />
   </HomeCard>
 </template>
 

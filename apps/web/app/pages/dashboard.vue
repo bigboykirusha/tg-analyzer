@@ -12,17 +12,9 @@ const { t } = useI18n()
 useSeoMeta({ title: () => t('dashboard.title') })
 
 const workspace = useWorkspaceStore()
-const auth = useAuthStore()
-const now = useNow(60_000)
+/** As many skeleton tiles as there were reports last time (two when unknown). */
+const skeletonCards = computed(() => Math.min(8, workspace.reportsHint || 2))
 const errorMessage = useErrorMessage()
-
-const greeting = computed(() => {
-  const hour = new Date(now.value).getHours()
-  const part = hour < 5 ? 'night' : hour < 12 ? 'morning' : hour < 18 ? 'day' : hour < 23 ? 'evening' : 'night'
-  const name = auth.user?.firstName?.trim()
-  const hello = t(`home.greeting.${part}`)
-  return name ? `${hello}, ${name}` : hello
-})
 
 /** The reports in the order the sidebar shows them too: pinned in Telegram first, then the freshest. */
 const reports = computed(() => workspace.reportChats)
@@ -47,16 +39,15 @@ onMounted(() => {
 
 <template>
   <UiPageContainer class="home">
-    <!-- Loading: the same greeting and cards, so nothing moves when the content arrives. -->
+    <!-- Loading: the same title and cards, so nothing moves when the content arrives. -->
     <div v-if="loading" class="page" aria-busy="true">
       <div class="home__hello" aria-hidden="true">
         <UiSkeleton width="min(70%, 360px)" height="var(--space-8)" />
         <UiSkeleton width="min(50%, 260px)" height="var(--space-4)" />
       </div>
       <section class="home__section" aria-hidden="true">
-        <UiSkeleton width="96px" height="var(--space-6)" />
         <div class="home__reports">
-          <HomeCard v-for="card in 4" :key="card" skeleton wide />
+          <HomeCard v-for="card in skeletonCards" :key="card" skeleton wide />
         </div>
       </section>
     </div>
@@ -65,11 +56,11 @@ onMounted(() => {
 
     <div v-else class="page">
       <header class="home__hello">
-        <h1 class="t-h1">{{ greeting }}</h1>
+        <h1 class="t-h1">{{ t('dashboard.reportsTitle') }}</h1>
         <p class="t-lede">{{ t('home.greeting.lede') }}</p>
       </header>
 
-      <UiPageSection id="reports" :title="t('dashboard.reportsTitle')">
+      <section id="reports" class="home__section">
         <UiEmptyState
           v-if="failed"
           tone="danger"
@@ -91,7 +82,7 @@ onMounted(() => {
             :added="workspace.newMessages[chat.id]"
           />
         </div>
-      </UiPageSection>
+      </section>
     </div>
   </UiPageContainer>
 </template>
