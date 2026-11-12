@@ -21,6 +21,8 @@
     "@fastify/jwt": "^10.2.2",
     "@fastify/rate-limit": "^10.3.0",
     "@fastify/websocket": "^11.3.3",
+    "@fontsource/onest": "^5.3.1",
+    "@resvg/resvg-js": "^2.6.2",
     "@tg-analyzer/shared": "workspace:*",
     "az": "0.2.3",
     "bullmq": "^5.56.5",
@@ -31,6 +33,7 @@
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
     "pino": "^10.4.0",
+    "satori": "^0.63.2",
     "teleproto": "1.233.0",
     "zod": "^4.6.7"
   },

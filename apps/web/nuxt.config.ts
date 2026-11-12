@@ -64,7 +64,7 @@ export default defineNuxtConfig({
     head: {
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { name: 'theme-color', content: '#f2f2f5', tagPriority: -9 },
+        { name: 'theme-color', content: '#f4f4f5', tagPriority: -9 },
       ],
       link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
       // CSR shells have no server theme attribute: preserve the explicit cookie
@@ -72,7 +72,7 @@ export default defineNuxtConfig({
       script: [
         {
           innerHTML:
-            "(function(){var d=document.documentElement;var p=document.cookie.match(/(?:^|; *)tg-analyzer-theme=(light|dark)(?:;|$)/);d.dataset.theme=d.dataset.theme||(p?p[1]:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var m=document.querySelector('meta[name=theme-color]');if(m)m.content=d.dataset.theme==='dark'?'#000000':'#f2f2f5'})()",
+            "(function(){var d=document.documentElement;var p=document.cookie.match(/(?:^|; *)tg-analyzer-theme=(light|dark)(?:;|$)/);d.dataset.theme=d.dataset.theme||(p?p[1]:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var m=document.querySelector('meta[name=theme-color]');if(m)m.content=d.dataset.theme==='dark'?'#0e0e10':'#f4f4f5'})()",
           tagPosition: 'head',
           tagPriority: 'critical',
         },
@@ -98,8 +98,9 @@ export default defineNuxtConfig({
     // The job log page was removed; old links land on the chats list.
     '/history': { redirect: '/dashboard' },
     '/chat/**': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
-    // Shared reports and quizzes: private by nature, fetched in the browser, never indexed.
-    '/s/**': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
+    // Shared reports and quizzes: private by nature, fetched in the browser, never indexed. The shell renders on the
+    // server so a messenger reads the link's preview (og:image — the person's poster from the API).
+    '/s/**': { headers: { 'x-robots-tag': 'noindex, nofollow' } },
   },
   // Bundle the icons with the app: left external on the server, @lucide/vue reached a
   // second copy of Vue, lost its injection context and the first render after a cold

@@ -14,7 +14,8 @@ import type { FastifyPluginAsync, FastifyRequest } from 'fastify'
 import { parse } from '../../http/validation'
 import { notFound } from '../../lib/errors'
 import { optionalUserId, requireAuth, userIdOf } from '../auth/guard'
-import { answerQuiz, createLink, deleteLink, listLinks, listUserLinks, openLink } from './repository'
+import { renderShareCard } from './card'
+import { answerQuiz, createLink, deleteLink, listLinks, listUserLinks, openLink, previewLink } from './repository'
 
 /** The owner's links of one report: list, make (or replace), delete. */
 export const shareLinkRoutes: FastifyPluginAsync = async (app) => {
@@ -54,6 +55,16 @@ export const publicShareRoutes: FastifyPluginAsync = async (app) => {
   app.get('/:token', { config: publicLimit }, async (request): Promise<PublicShareDto> => {
     const { token } = parse(shareTokenParamsSchema, request.params)
     return openLink(token, await optionalUserId(request))
+  })
+
+  // The link's preview picture for messengers: what the guest page shows, as the person's poster.
+  app.get('/:token/card.png', { config: publicLimit }, async (request, reply) => {
+    const { token } = parse(shareTokenParamsSchema, request.params)
+    const lang = (request.query as { lang?: string }).lang === 'en' ? 'en' : 'ru'
+    const share = await previewLink(token)
+    const settings = share.kind === 'report' ? `${share.settings.showName}` : 'quiz'
+    const png = await renderShareCard(share, lang, `${token}:${lang}:${settings}`)
+    return reply.header('content-type', 'image/png').header('cache-control', 'public, max-age=3600').send(png)
   })
 
   app.post('/:token/answer', { config: publicLimit }, async (request): Promise<PublicShareDto> => {

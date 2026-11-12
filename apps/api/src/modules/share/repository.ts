@@ -240,6 +240,12 @@ export async function openLink(token: string, viewerId: string | null = null): P
   return toPublic(row, await hueOf(row))
 }
 
+/** What a link shows, for its preview picture: no view is counted and the author is not told it was opened. */
+export async function previewLink(token: string): Promise<PublicShareDto> {
+  const row = await openRow(token)
+  return toPublic(row, await hueOf(row))
+}
+
 /** Stores the guest's answers once; a second answer gets the first result back. */
 export async function answerQuiz(
   token: string,

@@ -95,3 +95,17 @@ test('the quiz is answered once, and the owner sees the score only with consent'
   assert.equal(result?.score, null)
   assert.equal(result?.correct, null)
 })
+
+test('a link has a preview picture that counts no view', async () => {
+  const session = await analysed()
+  const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'report', days: 30 })
+  const link = made.json<ShareLinkDto>()
+  const card = await app.inject({ url: `/api/v1/public/${link.token}/card.png?lang=en` })
+  assert.equal(card.statusCode, 200)
+  assert.equal(card.headers['content-type'], 'image/png')
+  const png = card.rawPayload
+  assert.equal(png.subarray(1, 4).toString(), 'PNG')
+  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1200, 630])
+  const list = await app.inject({ url: `/api/v1/reports/${CHAT}/links`, headers: session.headers })
+  assert.equal(list.json<ShareLinksResponse>().links[0]?.views, 0)
+})

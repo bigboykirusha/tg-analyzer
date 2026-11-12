@@ -74,3 +74,32 @@ test('a stranger who presses Start is asked to sign in first', async () => {
     bot.restore()
   }
 })
+
+test('a message to the bot after «Сообщить о проблеме» reaches the developer', async () => {
+  const { config } = await import('../src/config')
+  const previous = { token: config.ALERT_TELEGRAM_BOT_TOKEN, chat: config.ALERT_TELEGRAM_CHAT_ID }
+  config.ALERT_TELEGRAM_BOT_TOKEN = '654321:alerts-only-bot-token-abcdefghijkl'
+  config.ALERT_TELEGRAM_CHAT_ID = '-100500'
+  const session = await login('+79990000301')
+  const me = await app.inject({ method: 'GET', url: '/api/v1/auth/me', headers: session.headers })
+  const user = me.json<{ user: { tgUserId: string; feedbackUrl: string | null } }>().user
+  assert.equal(user.feedbackUrl, 'https://t.me/tganalyzer_test_bot?start=feedback')
+  const bot = captureBot()
+  try {
+    const from = Number(user.tgUserId)
+    const chat = { id: from, type: 'private' }
+    await handleBotUpdate({ update_id: 10, message: { chat, from: { id: from }, text: '/start feedback' } })
+    await handleBotUpdate({ update_id: 11, message: { chat, from: { id: from }, text: 'Не открывается отчёт' } })
+    const delivered = bot.calls.find((call) => call.body.chat_id === '-100500')
+    assert.ok(delivered, 'the message went to the developer chat')
+    assert.match(String(delivered.body.text), /Не открывается отчёт/)
+    // The person is thanked; «Start» for feedback does not turn on the report notifications.
+    assert.match(String(bot.calls.at(-1)!.body.text), /передано/)
+    const { rows } = await pool.query('SELECT bot_notify FROM users WHERE id = $1', [session.userId])
+    assert.equal(rows[0].bot_notify, false)
+  } finally {
+    bot.restore()
+    config.ALERT_TELEGRAM_BOT_TOKEN = previous.token
+    config.ALERT_TELEGRAM_CHAT_ID = previous.chat
+  }
+})

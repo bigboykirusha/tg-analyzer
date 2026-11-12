@@ -4,6 +4,7 @@ import { db, schema } from '../../db'
 import type { NotificationData } from '../../db/schema'
 import { logger } from '../../lib/logger'
 import { redis } from '../../lib/redis'
+import { alertsEnabled, sendFeedback } from '../system/alerts'
 import { sleep } from '../../lib/time'
 
 /**
@@ -26,6 +27,13 @@ export function botEnabled() {
 }
 
 /** Where «Подключить» leads: the bot with the Start button. */
+/** «Сообщить о проблеме»: the bot's Start link for a report; null without the bot or a place to deliver it. */
+export function botFeedbackUrl() {
+  return botEnabled() && config.TELEGRAM_BOT_USERNAME && alertsEnabled()
+    ? `https://t.me/${config.TELEGRAM_BOT_USERNAME}?start=feedback`
+    : null
+}
+
 export function botUrl() {
   return botEnabled() && config.TELEGRAM_BOT_USERNAME
     ? `https://t.me/${config.TELEGRAM_BOT_USERNAME}?start=notify`
@@ -39,7 +47,7 @@ function siteUrl() {
 
 interface BotUpdate {
   update_id: number
-  message?: { chat: { id: number; type: string }; from?: { id: number }; text?: string }
+  message?: { chat: { id: number; type: string }; from?: { id: number; username?: string }; text?: string }
 }
 
 async function call<T>(method: string, body: Record<string, unknown>, signal?: AbortSignal): Promise<T> {
@@ -112,9 +120,23 @@ export async function handleBotUpdate(update: BotUpdate) {
   const message = update.message
   const from = message?.from?.id
   if (!message || !from || message.chat.type !== 'private') return
-  const command = (message.text ?? '').trim().split(/\s|@/)[0]?.toLowerCase()
+  const text = (message.text ?? '').trim()
+  const [command, payload] = text.split(/\s+/).map((part) => part.split('@')[0]!.toLowerCase())
   const site = siteUrl()
-  if (command === '/start') {
+  if (command === '/start' && payload === 'feedback') {
+    await sendBotMessage(
+      message.chat.id,
+      'Опишите, что случилось, одним сообщением: на каком экране и что вы ждали увидеть. Я передам разработчику.',
+    )
+  } else if (text && !text.startsWith('/')) {
+    // Anything that is not a command is a message for the developer: the bot has nothing else to say.
+    const who = message.from?.username ? `@${message.from.username}` : `id ${from}`
+    const sent = await sendFeedback(`Сообщение о проблеме от ${who}:\n${text.slice(0, 3500)}`)
+    await sendBotMessage(
+      message.chat.id,
+      sent ? 'Спасибо, сообщение передано разработчику.' : 'Я понимаю только /start и /stop.',
+    )
+  } else if (command === '/start') {
     const known = await setNotify(from, true)
     await sendBotMessage(
       message.chat.id,

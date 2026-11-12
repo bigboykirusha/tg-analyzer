@@ -107,6 +107,8 @@ function submit() {
       {{ t('login.trust') }}
       <NuxtLink to="/privacy" class="link">{{ t('login.trustLink') }}</NuxtLink>
     </p>
+    <!-- Telegram's terms: the app says in its intro that it is unofficial and works through the Telegram API. -->
+    <p class="auth-trust auth-trust--unofficial">{{ t('site.unofficial') }}</p>
   </form>
 </template>
 
@@ -120,5 +122,11 @@ function submit() {
 .auth-trust {
   color: var(--text-muted);
   font: var(--text-label);
+}
+
+/* The notice Telegram asks for: the quietest line of the card, set apart from the promise above it. */
+.auth-trust--unofficial {
+  margin-top: calc(-1 * var(--space-2));
+  font: var(--text-caption);
 }
 </style>

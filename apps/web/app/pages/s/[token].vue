@@ -10,13 +10,22 @@ import { hueAt } from '../../lib/hue'
  * work. Plain requests, not `api()`: a guest has no session to refresh.
  */
 const route = useRoute()
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const runtimeConfig = useRuntimeConfig()
 const token = computed(() => String(route.params.token))
 const share = ref<PublicShareDto | null>(null)
 const state = ref<'loading' | 'ready' | 'gone' | 'expired' | 'failed'>('loading')
 useSeoMeta({
   title: () => (share.value?.kind === 'quiz' ? t('publicQuiz.seoTitle') : t('report.title')),
   robots: 'noindex, nofollow',
+  // The preview a messenger shows under the link: the person's poster, drawn by the API from what the guest may see.
+  ogTitle: () => t('publicShare.ogTitle'),
+  ogDescription: () => t('publicShare.ogDescription'),
+  ogImage: () =>
+    `${String(runtimeConfig.public.siteUrl ?? '').replace(/\/$/, '')}${buildApiPath('/api/v1/public/:token/card.png', { token: token.value })}?lang=${locale.value}`,
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
+  twitterCard: 'summary_large_image',
 })
 // The person keeps the colour the owner sees them in; the quiz wears it too.
 useHead({ htmlAttrs: { 'data-hue': () => (share.value ? hueAt(share.value.hue) : undefined) } })

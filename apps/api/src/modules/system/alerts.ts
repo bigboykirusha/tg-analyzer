@@ -67,6 +67,13 @@ async function firstInWindow(key: string) {
   }
 }
 
+/** A user's own message from «Сообщить о проблеме» goes where alerts go, never throttled. Never throws. */
+export async function sendFeedback(text: string) {
+  if (!alertsEnabled()) return false
+  await deliver(text)
+  return true
+}
+
 /** Sends `text` unless the same `key` was sent within the throttle window. Never throws. */
 export async function sendAlert(key: string, text: string) {
   if (!alertsEnabled()) return false

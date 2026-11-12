@@ -3,7 +3,7 @@ const BLEND_PX = 56
 /** Over the first this-many pixels of scroll the poster's big name goes under the bar and the capsule rises. */
 const TITLE_PX = 56
 
-const THEME_COLOR_NEUTRAL = { light: '#f2f2f5', dark: '#000000' }
+const THEME_COLOR_NEUTRAL = { light: '#f4f4f5', dark: '#0e0e10' }
 
 /**
  * The colour of the browser's own chrome (the status strip above the page) has to say what is under it.

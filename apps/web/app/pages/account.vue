@@ -209,6 +209,18 @@ onMounted(() => void loadLinks())
           </UiSwitch>
         </UiGroup>
 
+        <UiGroup v-if="auth.user?.feedbackUrl">
+          <UiListRow
+            as="a"
+            :href="auth.user.feedbackUrl"
+            target="_blank"
+            rel="noopener"
+            :title="t('accountPage.feedback')"
+            :subtitle="t('accountPage.feedbackHint')"
+            chevron
+          />
+        </UiGroup>
+
         <UiGroup :footer="t('accountPage.logoutFoot')">
           <UiListRow as="button" :title="t('accountPage.logout')" danger @click="signOutOpen = true" />
         </UiGroup>

@@ -60,6 +60,8 @@ onMounted(() => {
         <p class="t-lede">{{ t('home.greeting.lede') }}</p>
       </header>
 
+      <HomeBotPrompt />
+
       <section id="reports" class="home__section">
         <UiEmptyState
           v-if="failed"

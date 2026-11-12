@@ -70,6 +70,8 @@ export interface UserDto {
   botNotify: boolean
   /** The bot's Start link; null when the bot is not set up. */
   botUrl: string | null
+  /** «Сообщить о проблеме» in the bot; null when the bot or a place to deliver it is not set up. */
+  feedbackUrl: string | null
   telegramSessionActive: boolean
 }
 
