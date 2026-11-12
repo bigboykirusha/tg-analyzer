@@ -101,9 +101,10 @@ const FONT_WEIGHTS = ['400', '500', '600', 'inherit', 'normal', String.raw`/^var
 // Raw colour functions outside tokens.css; color-mix is banned everywhere.
 const COLOR_FUNCTIONS = ['color-mix', 'rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color']
 
-const MEDIA_WIDTHS = ['340px', '640px', '641px', '900px', '901px', '1024px', '1100px', '1200px', '1600px']
-// 760: a short laptop screen (1280×720, 1366×768) — the one-screen landing shows two examples, not three.
-const MEDIA_HEIGHTS = ['560px', '620px', '760px']
+// The breakpoints in use: phone ≤ 640, tablet 641–900, desktop ≥ 901, the group inspector ≥ 1200; the one-screen
+// landing's heights 560 and 620. A new one is a decision, not a value.
+const MEDIA_WIDTHS = ['640px', '641px', '900px', '901px', '1200px']
+const MEDIA_HEIGHTS = ['560px', '620px']
 
 /** @type {import('stylelint').Config} */
 export default {

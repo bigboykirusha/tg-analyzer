@@ -17,9 +17,5 @@ dump.rdb
 .claude/
 *.bundle
 
-# Impeccable live-server runtime state
-**/.impeccable/live/
-__pycache__/
-
 # production backups on the server
 deploy/backups/

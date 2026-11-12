@@ -18,7 +18,6 @@
     "lint": "eslint . && stylelint \"apps/web/app/**/*.{vue,css}\" && node scripts/check-tokens.mjs",
     "lint:css": "stylelint \"apps/web/app/**/*.{vue,css}\" && node scripts/check-tokens.mjs",
     "format:check": "prettier --check .",
-    "start": "node scripts/service.mjs start",
     "start:api": "corepack pnpm --filter @tg-analyzer/api start",
     "start:web": "corepack pnpm --filter @tg-analyzer/web start",
     "start:worker": "corepack pnpm --filter @tg-analyzer/api worker",

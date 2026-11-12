@@ -92,7 +92,6 @@ onMounted(() => {
           />
         </div>
       </UiPageSection>
-
     </div>
   </UiPageContainer>
 </template>
