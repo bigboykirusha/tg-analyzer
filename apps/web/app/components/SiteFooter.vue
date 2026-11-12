@@ -32,7 +32,7 @@ const { channelUrl, supportUrl } = useRuntimeConfig().public
   margin: 0 auto;
   padding: var(--space-6) var(--page-gutter) max(var(--space-6), env(safe-area-inset-bottom, 0px));
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .site-footer__nav {

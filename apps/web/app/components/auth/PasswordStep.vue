@@ -44,6 +44,6 @@ const { t } = useI18n()
 /* Left, like every line of the step above it. */
 .auth-note {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 </style>

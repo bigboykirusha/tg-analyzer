@@ -31,7 +31,7 @@ withDefaults(defineProps<{ to?: string; bare?: boolean; current?: boolean }>(), 
   align-items: center;
   gap: var(--space-2);
   min-height: var(--control-md);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-well);
   color: var(--text);
   white-space: nowrap;
 }

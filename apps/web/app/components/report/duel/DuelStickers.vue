@@ -78,7 +78,7 @@ const favourites = computed(() => {
   width: calc(calc(var(--space-16) + var(--space-4)) + var(--space-4));
   aspect-ratio: 1;
   margin-bottom: var(--space-2);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface-2);
 }
 

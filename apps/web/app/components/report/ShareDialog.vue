@@ -206,7 +206,7 @@ const title = computed(() =>
   width: calc(var(--space-12) * 5);
   min-height: calc(var(--space-12) * 8);
   padding: var(--space-4);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--poster);
   color: var(--on-poster);
 }
@@ -219,7 +219,7 @@ const title = computed(() =>
 .cover__segments i {
   flex: 1;
   height: var(--space-1);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--on-poster-faint);
 }
 
@@ -244,7 +244,7 @@ const title = computed(() =>
 
 .cover__meta {
   color: var(--on-poster-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .feature {
@@ -260,7 +260,7 @@ const title = computed(() =>
     align-items: stretch;
     gap: var(--space-4);
     padding: var(--space-4);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-card);
     background: var(--poster);
     color: var(--on-poster);
   }
@@ -277,7 +277,7 @@ const title = computed(() =>
     width: calc(var(--space-16) + var(--space-2));
     min-height: calc(var(--space-16) * 2);
     padding: var(--space-2);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-well);
     box-shadow: var(--ring-on-poster);
   }
 
@@ -305,7 +305,7 @@ const title = computed(() =>
 
   .feature__text {
     color: var(--on-poster-muted);
-    font: var(--text-small);
+    font: var(--text-label);
   }
 
   .feature__watch {

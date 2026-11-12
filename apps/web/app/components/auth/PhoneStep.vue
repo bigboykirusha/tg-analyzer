@@ -121,6 +121,6 @@ function submit() {
 
 .auth-trust {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 </style>

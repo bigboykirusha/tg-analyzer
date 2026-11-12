@@ -91,7 +91,7 @@ async function cancel() {
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--card-padding);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--poster);
   color: var(--on-poster);
 }
@@ -111,7 +111,7 @@ async function cancel() {
 
 .details-card__name {
   overflow: hidden;
-  font: var(--text-title);
+  font: var(--text-body);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -120,7 +120,7 @@ async function cancel() {
 .details-card__reached,
 .details-card__note {
   color: var(--on-poster-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .details-card__percent {
@@ -131,7 +131,7 @@ async function cancel() {
 .details-card__bar {
   height: var(--bar-height);
   overflow: hidden;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--on-poster-chip);
 }
 

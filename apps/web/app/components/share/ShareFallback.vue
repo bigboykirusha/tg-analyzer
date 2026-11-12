@@ -29,14 +29,14 @@ const { t } = useI18n()
 
 .fallback__note {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .fallback__url {
   padding: var(--space-3);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-well);
   background: var(--fill-raised);
-  font: var(--text-small);
+  font: var(--text-label);
   overflow-wrap: anywhere;
   user-select: all;
 }

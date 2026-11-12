@@ -204,7 +204,7 @@ const invitation = wave(4, 40)
 .quiz__steps i {
   flex: 1;
   height: var(--space-1);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--on-poster-faint);
 }
 
@@ -246,7 +246,7 @@ const invitation = wave(4, 40)
 
 .quiz__note {
   color: var(--on-poster-muted);
-  font: var(--text-small);
+  font: var(--text-label);
   text-align: center;
 }
 
@@ -268,7 +268,7 @@ const invitation = wave(4, 40)
   gap: var(--space-3);
   min-height: var(--row-height);
   padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface);
   color: var(--text);
   text-align: left;
@@ -287,7 +287,7 @@ const invitation = wave(4, 40)
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font: var(--text-title);
+  font: var(--text-body);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -298,14 +298,14 @@ const invitation = wave(4, 40)
   align-items: center;
   gap: var(--space-1);
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
   --icon-size: var(--icon-sm);
 }
 
 /* The line keeps its height before the answer, so nothing jumps when it arrives. */
 .quiz__reveal {
   min-height: calc(var(--space-12));
-  font: var(--text-ui);
+  font: var(--text-label);
 }
 
 .quiz__foot {

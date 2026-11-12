@@ -37,7 +37,7 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
     :aria-busy="skeleton || undefined"
   >
     <div class="home-card__top">
-      <UiSkeleton v-if="skeleton" width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-full)" />
+      <UiSkeleton v-if="skeleton" width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-pill)" />
       <ChatAvatar v-else :chat-id="chatId!" :title="avatarTitle ?? title" :has-avatar="hasAvatar" :on-poster="poster" />
       <div v-if="!skeleton" class="home-card__end"><slot name="end" /></div>
     </div>

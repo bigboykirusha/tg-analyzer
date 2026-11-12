@@ -253,7 +253,7 @@ watch(
 }
 
 .stories__frame.is-dragging {
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-sheet);
 }
 
 .stories__stage {
@@ -285,7 +285,7 @@ watch(
   flex: 1;
   height: var(--space-1);
   overflow: hidden;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--on-poster-faint);
 }
 
@@ -293,7 +293,7 @@ watch(
   display: block;
   width: 0;
   height: 100%;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--on-poster);
 }
 
@@ -325,7 +325,7 @@ watch(
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font: var(--text-ui);
+  font: var(--text-label);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -381,7 +381,7 @@ watch(
     width: auto;
     height: min(100%, 844px);
     aspect-ratio: 9 / 16;
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-sheet);
   }
 
   .stories__arrow {

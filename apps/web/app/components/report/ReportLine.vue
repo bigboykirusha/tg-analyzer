@@ -107,7 +107,7 @@ const spoken = computed(
   gap: var(--space-0-5);
   height: var(--bar-height);
   overflow: hidden;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
 }
 
 .cmp--lg .cmp__bar {
@@ -122,7 +122,7 @@ const spoken = computed(
 .cmp__bar i {
   flex-basis: 0;
   min-width: var(--space-1);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
 }
 
 .cmp__mine {

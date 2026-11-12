@@ -103,7 +103,7 @@ button:disabled,
 }
 
 ::-webkit-scrollbar-thumb {
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--border-strong);
 }
 
@@ -174,13 +174,13 @@ strong {
 }
 
 .t-num {
-  font: var(--text-num);
-  letter-spacing: var(--tracking-num);
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
   white-space: nowrap;
 }
 
 .t-title {
-  font: var(--text-title);
+  font: var(--text-body);
 }
 
 .t-body {
@@ -198,15 +198,15 @@ strong {
 }
 
 .t-ui {
-  font: var(--text-ui);
+  font: var(--text-label);
 }
 
 .t-small {
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .t-small-strong {
-  font: var(--text-small-strong);
+  font: var(--text-label);
 }
 
 .t-caption {
@@ -270,10 +270,10 @@ strong {
   left: var(--space-2);
   z-index: var(--z-skip-link);
   padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--accent);
   color: var(--on-accent);
-  font: var(--text-ui);
+  font: var(--text-label);
   transform: translateY(-200%);
 }
 
@@ -325,7 +325,7 @@ main:focus {
   height: var(--icon-sm);
   border: 2px solid currentColor;
   border-right-color: transparent;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   animation: spin var(--duration-spin) linear infinite;
 }
 

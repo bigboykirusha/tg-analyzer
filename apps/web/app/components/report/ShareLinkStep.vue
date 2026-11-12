@@ -132,7 +132,7 @@ async function copy() {
 .link-step__label,
 .link-step__note {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .link-step__note {
@@ -146,7 +146,7 @@ async function copy() {
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-4);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--poster);
   color: var(--on-poster);
 }
@@ -161,7 +161,7 @@ async function copy() {
 
 .link-step__meta {
   color: var(--on-poster-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .link-step__pulse {

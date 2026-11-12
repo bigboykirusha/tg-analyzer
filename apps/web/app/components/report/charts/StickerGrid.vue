@@ -45,7 +45,7 @@ const { t, formatNumber } = useI18n()
   width: var(--avatar-lg);
   height: var(--avatar-lg);
   place-items: center;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background: var(--surface-2);
 }
 

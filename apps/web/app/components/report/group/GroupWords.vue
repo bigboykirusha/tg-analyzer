@@ -49,7 +49,7 @@ const emoji = computed(() => props.data.derived.favourites.topEmoji.slice(0, 8))
   align-items: center;
   gap: var(--space-1);
   padding: 0 var(--space-3) 0 var(--space-2);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--surface-2);
 }
 </style>

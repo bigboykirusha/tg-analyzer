@@ -107,7 +107,7 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
       <div v-if="store.state === 'loading'" class="feed" aria-busy="true">
         <div class="feed__list">
           <div v-for="row in 3" :key="row" class="note note--skeleton">
-            <UiSkeleton width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-full)" />
+            <UiSkeleton width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-pill)" />
             <div class="note__copy">
               <UiSkeleton width="60%" height="var(--space-4)" />
               <UiSkeleton width="40%" height="var(--space-3)" />

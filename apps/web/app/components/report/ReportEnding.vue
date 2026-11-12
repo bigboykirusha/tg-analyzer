@@ -105,7 +105,7 @@ const lede = computed(() =>
     align-items: center;
     gap: var(--space-10);
     padding: var(--space-8);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-card);
     background: var(--poster);
   }
 

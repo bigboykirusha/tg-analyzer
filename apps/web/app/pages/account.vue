@@ -259,7 +259,7 @@ onMounted(() => void loadLinks())
 
 .account__handle {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 /* One column on every screen, as iOS and macOS settings: a few groups side by side read as a dashboard with a

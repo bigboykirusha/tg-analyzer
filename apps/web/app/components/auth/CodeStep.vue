@@ -81,7 +81,7 @@ function submit() {
 .resend {
   align-self: flex-start;
   margin-top: calc(var(--space-3) * -1);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .resend:disabled {

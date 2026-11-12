@@ -78,6 +78,6 @@ onMounted(open)
   justify-content: center;
   gap: var(--space-2);
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 </style>

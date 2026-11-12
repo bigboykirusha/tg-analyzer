@@ -35,7 +35,7 @@ const { formatNumber } = useI18n()
   max-width: 100%;
   min-height: var(--space-8);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--surface-2);
   font: var(--text-label);
   overflow-wrap: anywhere;

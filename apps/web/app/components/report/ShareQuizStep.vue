@@ -148,13 +148,13 @@ async function copy() {
 }
 
 .quiz-step__title {
-  font: var(--text-title);
+  font: var(--text-body);
 }
 
 .quiz-step__text,
 .quiz-step__note {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .quiz-step__note {
@@ -169,7 +169,7 @@ async function copy() {
   min-height: var(--control-md);
   padding: var(--space-2) 0;
   box-shadow: var(--divider-bottom);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .quiz-step__list li:last-child {
@@ -183,7 +183,7 @@ async function copy() {
   place-items: center;
   width: var(--avatar-xs);
   height: var(--avatar-xs);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--fill-raised);
   color: var(--text-muted);
   font: var(--text-caption);

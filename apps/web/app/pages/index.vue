@@ -137,7 +137,7 @@ useHead({
   min-height: var(--control-md);
   margin-top: var(--space-1);
   color: var(--text);
-  font: var(--text-ui);
+  font: var(--text-label);
   transition: color var(--transition-fast);
 }
 

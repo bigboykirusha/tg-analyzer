@@ -268,7 +268,7 @@ const tick = (value: number, hour: number) => ({
 
 .row__track i {
   min-width: calc(var(--f-1) * 1);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
 }
 
 .row__mine {
@@ -323,7 +323,7 @@ const tick = (value: number, hour: number) => ({
   bottom: 18%;
   left: 0;
   height: calc(80% * var(--tick));
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--on-them);
   opacity: 0.45;
 }
@@ -396,7 +396,7 @@ const tick = (value: number, hour: number) => ({
   gap: calc(var(--f-1) * 1.5);
   max-width: 100%;
   padding: calc(var(--f-1) * 1.5) calc(var(--f-1) * 3.5);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--on-poster-chip);
   font: var(--f-title);
   overflow-wrap: anywhere;
@@ -439,7 +439,7 @@ const tick = (value: number, hour: number) => ({
 
 .cast__share {
   padding: 0 calc(var(--f-1) * 1.5);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--on-poster);
   color: var(--poster);
   font: var(--f-caption);

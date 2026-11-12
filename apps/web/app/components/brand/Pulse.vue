@@ -90,7 +90,7 @@ const columns = computed(() => {
 .pulse i {
   flex: 1;
   min-width: 1px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
 }
 
 .pulse__half--up i {

@@ -104,7 +104,7 @@ const cast = computed(() => {
           <h1 v-if="heading" class="poster__name poster__name--pair">{{ heading }}</h1>
           <h1 v-else-if="h1 && data" class="poster__name">{{ data.summary.title }}</h1>
           <p v-else-if="data || title" class="poster__name" aria-hidden="true">{{ data?.summary.title ?? title }}</p>
-          <UiSkeleton v-else class="poster__name-skeleton" width="55%" radius="var(--radius-sm)" />
+          <UiSkeleton v-else class="poster__name-skeleton" width="55%" radius="var(--radius-well)" />
           <p v-if="meta" class="poster__meta">{{ meta }}</p>
           <UiSkeleton v-else class="poster__meta-skeleton" width="62%" />
           <slot name="badge" />
@@ -153,7 +153,7 @@ const cast = computed(() => {
           :height="wide ? 40 : 32"
           :label="pulseLabel"
         />
-        <UiSkeleton v-else class="poster__pulse-skeleton" radius="var(--radius-sm)" />
+        <UiSkeleton v-else class="poster__pulse-skeleton" radius="var(--radius-well)" />
         <div class="poster__axis" aria-hidden="true">
           <template v-if="axis">
             <span
@@ -276,7 +276,7 @@ const cast = computed(() => {
 .legend__dot {
   width: var(--space-2);
   height: var(--space-2);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--on-poster);
 }
 
@@ -330,7 +330,7 @@ const cast = computed(() => {
   place-items: center;
   width: var(--avatar-md);
   height: var(--avatar-md);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--on-poster-chip);
   color: var(--on-poster);
   font: var(--text-label);

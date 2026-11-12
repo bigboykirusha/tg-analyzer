@@ -68,7 +68,7 @@ const C = 2 * Math.PI * R
   max-width: 100%;
   height: var(--control-md);
   padding: 0 var(--space-4) 0 var(--space-0-5);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--surface-raised);
   box-shadow: var(--shadow-chrome);
 }

@@ -82,7 +82,7 @@ onMounted(() => {
     <!-- The list on its way: rows of the real height, so nothing jumps. -->
     <UiGroup v-if="firstLoad" aria-hidden="true">
       <div v-for="row in 7" :key="row" class="picker__skeleton">
-        <UiSkeleton width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-full)" />
+        <UiSkeleton width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-pill)" />
         <span class="picker__skeleton-copy">
           <UiSkeleton :width="`${64 - (row % 3) * 12}%`" height="var(--space-3)" />
           <UiSkeleton width="36%" height="var(--space-2)" />

@@ -119,7 +119,7 @@ const bellLabel = computed(() =>
   place-items: center;
   width: var(--control-md);
   height: var(--control-md);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   transition: transform var(--duration-press) var(--ease-standard);
 }
 

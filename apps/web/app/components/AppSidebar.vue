@@ -78,7 +78,7 @@ function updating(report: ReportSummaryDto) {
       <!-- The list on its way: rows of the same height, so nothing jumps when it arrives. -->
       <template v-if="loading">
         <div v-for="row in 4" :key="row" class="sidebar__row sidebar__person" aria-hidden="true">
-          <UiSkeleton width="var(--avatar-sm)" height="var(--avatar-sm)" radius="var(--radius-full)" />
+          <UiSkeleton width="var(--avatar-sm)" height="var(--avatar-sm)" radius="var(--radius-pill)" />
           <span class="sidebar__copy">
             <UiSkeleton :width="`${76 - row * 8}%`" height="var(--space-3)" />
             <UiSkeleton width="40%" height="var(--space-2)" />
@@ -130,9 +130,9 @@ function updating(report: ReportSummaryDto) {
   gap: var(--space-3);
   min-height: var(--control-sm);
   padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-well);
   color: var(--text);
-  font: var(--text-ui);
+  font: var(--text-label);
   transition: background-color var(--transition-fast);
 }
 
@@ -218,13 +218,13 @@ function updating(report: ReportSummaryDto) {
 
 .sidebar__meta {
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .sidebar__empty {
   padding: var(--space-1) var(--space-2);
   color: var(--text-muted);
-  font: var(--text-small);
+  font: var(--text-label);
 }
 
 .sidebar__foot {
