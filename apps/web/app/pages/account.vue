@@ -245,6 +245,7 @@ onMounted(() => void loadLinks())
   padding: var(--card-padding);
   border-radius: var(--radius-card);
   background: var(--surface);
+  box-shadow: var(--ring-card);
 }
 
 .account__who {

@@ -207,7 +207,8 @@ const title = computed(() =>
   min-height: calc(var(--space-12) * 8);
   padding: var(--space-4);
   border-radius: var(--radius-card);
-  background: var(--poster);
+  background-color: var(--poster);
+  background-image: var(--poster-image);
   color: var(--on-poster);
 }
 
@@ -261,7 +262,8 @@ const title = computed(() =>
     gap: var(--space-4);
     padding: var(--space-4);
     border-radius: var(--radius-card);
-    background: var(--poster);
+    background-color: var(--poster);
+    background-image: var(--poster-image);
     color: var(--on-poster);
   }
 

@@ -6,21 +6,22 @@ import { SIGNED_IN_HINT } from '../stores/auth'
  * on the left — it is also the way home — and «Войти» on the right (secondary, sm). It is absent on the landing,
  * whose own «Войти через Telegram» is always on its one screen, on the sign-in page itself and offline. No
  * language or theme here: the language comes from the browser and the theme from the system; both are changed in
- * the account. Over a poster (the example, a shared link) the bar is the poster with its ink; past it, glass.
+ * the account. On a phone over a poster (the example, a shared link) the bar floats over it in the poster's ink; past
+ * it, glass.
  */
 const { t } = useI18n()
 const route = useRoute()
 const showSignIn = computed(() => !['/', '/login', '/offline'].includes(route.path))
 // Someone already signed in goes to their reports, not to the sign-in page (the hint is set by the auth store).
 const signedIn = useCookie(SIGNED_IN_HINT, { readonly: true })
-const { scrolled, overPoster } = usePosterHeader()
+const { scrolled, overPoster, hasPoster } = usePosterHeader()
 </script>
 
 <template>
   <header
     class="site-header"
     data-toolbar
-    :class="{ 'is-over-poster': overPoster, 'is-scrolled': scrolled && !overPoster }"
+    :class="{ 'is-over-poster': overPoster, 'is-scrolled': scrolled && !overPoster, 'has-poster': hasPoster }"
   >
     <div class="site-header__in">
       <BrandLink class="site-header__brand" />
@@ -49,14 +50,37 @@ const { scrolled, overPoster } = usePosterHeader()
   backdrop-filter: var(--glass-filter);
 }
 
-/* Over a poster every element is the poster's ink. */
-.site-header.is-over-poster {
-  background: var(--poster);
-  color: var(--on-poster);
+/*
+ * Phones and tablets: over a poster (the example, a shared link) the bar gives its height back and floats over it,
+ * transparent, every element in the poster's ink. On a computer the poster is a card below an ordinary bar.
+ */
+@media (max-width: 900px) {
+  .site-header.has-poster {
+    margin-bottom: calc(-1 * (var(--topbar-height) + env(safe-area-inset-top, 0px)));
+  }
+
+  .site-header.is-over-poster {
+    background: transparent;
+    color: var(--on-poster);
+  }
+
+  .site-header.is-over-poster :deep(.brand-link) {
+    color: var(--on-poster);
+  }
 }
 
-.site-header.is-over-poster :deep(.brand-link) {
-  color: var(--on-poster);
+/* A computer: the bar stands above the poster card, on the page — its buttons keep their page look. */
+@media (min-width: 901px) {
+  .site-header.is-over-poster {
+    --btn-fill: initial;
+    --btn-fill-text: initial;
+    --btn-plain-text: initial;
+    --btn-ring: initial;
+    --btn-blur: initial;
+    --btn-ink: initial;
+    --btn-ink-text: initial;
+    --btn-ink-hover: initial;
+  }
 }
 
 .site-header__in {

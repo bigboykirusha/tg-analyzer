@@ -92,7 +92,8 @@ async function cancel() {
   gap: var(--space-3);
   padding: var(--card-padding);
   border-radius: var(--radius-card);
-  background: var(--poster);
+  background-color: var(--poster);
+  background-image: var(--poster-image);
   color: var(--on-poster);
 }
 

@@ -72,15 +72,18 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   padding: var(--card-padding);
   border-radius: var(--radius-card);
   background: var(--surface);
+  box-shadow: var(--ring-card);
   /* The pulse's half: 16 on a phone, where two tiles share a row and a taller one reads as a column, 24 wider. */
   --pulse-half: var(--space-4);
   color: var(--text);
-  transition: transform var(--duration-press) var(--ease-standard);
+  transition: transform var(--duration-fast) var(--ease-standard);
 }
 
 /* A report is its poster: the person's colour, ink type, the pulse in their two inks. */
 .home-card--poster {
-  background: var(--poster);
+  background-color: var(--poster);
+  background-image: var(--poster-image);
+  box-shadow: var(--shadow-lift);
   color: var(--on-poster);
   --pulse-you: var(--on-poster);
   --pulse-them: var(--on-them);
@@ -110,10 +113,16 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   .home-card:has(a.home-card__name):hover::before {
     opacity: 1;
   }
+
+  /* A poster is an object: under the pointer it rises a little, as a card picked up from the table. */
+  .home-card--poster:has(a.home-card__name):hover {
+    transform: translateY(calc(-1 * var(--space-0-5)));
+  }
 }
 
 .home-card:has(a.home-card__name):active:not(:has(.home-card__end :active)) {
   transform: scale(var(--press-scale-lg));
+  transition-duration: var(--duration-press);
 }
 
 /* The avatar and the «⋯» share one centre line. */

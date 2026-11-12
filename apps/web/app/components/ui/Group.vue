@@ -46,6 +46,7 @@ defineProps<{ header?: string; footer?: string }>()
 .group__card {
   border-radius: var(--group-radius, var(--radius-card));
   background: var(--group-bg, var(--surface));
+  box-shadow: var(--group-ring, var(--ring-card));
 }
 
 /* The fill of the first and last rows follows the card's corners (the card cannot clip: menus open from rows). */

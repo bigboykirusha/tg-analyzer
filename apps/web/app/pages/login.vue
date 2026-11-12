@@ -266,6 +266,7 @@ function changeNumber() {
     padding: var(--space-8);
     border-radius: var(--radius-card);
     background: var(--surface);
+    box-shadow: var(--ring-card);
   }
 
   .login__title {

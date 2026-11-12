@@ -140,8 +140,10 @@ function updating(report: ReportSummaryDto) {
   transition: background-color var(--transition-fast);
 }
 
+/* The open screen: a raised white row with a hairline edge — the same object as a card on the page. */
 .sidebar__row[aria-current='page'] {
   background: var(--sidebar-selection);
+  box-shadow: var(--ring-card);
 }
 
 @media (hover: hover) and (pointer: fine) {

@@ -16,40 +16,46 @@
 /* ─── 1. Primitives ─────────────────────────────────────────────────────── */
 
 :root {
-  /* Neutrals, light: Apple's grouped background, labels and separators. */
+  /* Neutrals, light: graphite paper — no blue cast, so the people's colours are the only colour on the page. */
   --gray-0: #ffffff;
-  --gray-2: #f2f2f7;
-  --gray-3: #eeeef2;
-  --gray-4: #e5e5ea;
-  --gray-5: #d1d1d6;
-  --gray-6: #c7c7cc;
-  --gray-8: #8e8e93;
-  --gray-9: #6c6c72;
-  --gray-11: #3a3a3c;
-  --gray-12: #1d1d1f;
-  --gray-a1: rgba(29, 29, 31, 0.04);
-  --gray-a2: rgba(29, 29, 31, 0.07);
-  --gray-a3: rgba(29, 29, 31, 0.08);
-  --gray-a4: rgba(29, 29, 31, 0.16);
-  --gray-a6: rgba(29, 29, 31, 0.3);
-  --gray-a8: rgba(29, 29, 31, 0.72);
-  --gray-a9: rgba(29, 29, 31, 0.82);
+  --gray-2: #f4f4f5;
+  --gray-3: #efeff1;
+  --gray-4: #e4e4e7;
+  --gray-5: #d4d4d8;
+  --gray-6: #c4c4ca;
+  --gray-8: #8b8b93;
+  --gray-9: #6c6c74;
+  --gray-11: #3f3f46;
+  --gray-12: #17171a;
+  --gray-a1: rgba(23, 23, 26, 0.04);
+  --gray-a2: rgba(23, 23, 26, 0.06);
+  --gray-a3: rgba(23, 23, 26, 0.08);
+  --gray-a4: rgba(23, 23, 26, 0.14);
+  --gray-a6: rgba(23, 23, 26, 0.3);
+  --gray-a8: rgba(23, 23, 26, 0.7);
+  --gray-a9: rgba(23, 23, 26, 0.8);
+  /* Light on a poster: the translucent fill of a control over the person's colour, the lit top edge. */
+  --white-a3: rgba(255, 255, 255, 0.3);
+  --white-a5: rgba(255, 255, 255, 0.52);
   /* The activity ramp's middle step, between the labels' greys. */
   --gray-heat-2: #9c9ca3;
 
-  /* Neutrals, dark: true black ground, raised greys above it. */
-  --night-0: #000000;
-  --night-1: #1c1c1e;
-  --night-3: #2c2c2e;
-  --night-4: #38383a;
-  --night-5: #48484a;
-  --night-6: #3a3a3c;
-  --night-7: #6e6e73;
-  --night-9: #98989d;
-  --night-11: #d1d1d6;
-  --night-12: #f5f5f7;
-  --night-a1: rgba(235, 235, 245, 0.06);
-  --night-a2: rgba(235, 235, 245, 0.12);
+  /* Neutrals, dark: a deep graphite ground (not black), surfaces stepping up from it, so depth reads without shadows. */
+  --night-0: #0e0e10;
+  --night-1: #18181b;
+  --night-3: #232327;
+  --night-4: #2c2c31;
+  --night-5: #3a3a40;
+  --night-6: #333338;
+  --night-7: #6f6f78;
+  --night-9: #9b9ba3;
+  --night-11: #d4d4d8;
+  --night-12: #f2f2f3;
+  --night-a1: rgba(255, 255, 255, 0.05);
+  --night-a2: rgba(255, 255, 255, 0.1);
+  --night-a3: rgba(255, 255, 255, 0.08);
+  --night-a4: rgba(255, 255, 255, 0.14);
+  --black-a2: rgba(0, 0, 0, 0.16);
   /* The activity ramp in the dark, and the near-black behind «Итоги» on a computer in either theme. */
   --night-heat-1: #48484c;
   --night-heat-3: #94949b;
@@ -105,6 +111,41 @@
   --hue-pink-ink: #ae297f;
   --hue-pink-deep: #7c1f5a;
   --hue-pink-poster-d: #d580b3;
+  /*
+   * The poster's material: light pooling at the top-left corner (the poster mixed with white) and the colour deepening
+   * towards the bottom-right (mixed with the person's own deeper tone) — a printed, lit object, not a flat fill.
+   * OKLab mixes, precomputed: light 55 % poster, shade 80 % poster + 20 % them; dark: 82 % poster-d, 70 % + deep.
+   */
+  --hue-yellow-light: #fde9a1;
+  --hue-yellow-shade: #eac328;
+  --hue-yellow-light-d: #edc459;
+  --hue-yellow-shade-d: #bd9308;
+  --hue-orange-light: #ffdab0;
+  --hue-orange-shade: #f4ab59;
+  --hue-orange-light-d: #dea86b;
+  --hue-orange-shade-d: #b67932;
+  --hue-violet-light: #dfd9ff;
+  --hue-violet-shade: #b8aafc;
+  --hue-violet-light-d: #b1a5e6;
+  --hue-violet-shade-d: #8375cc;
+  --hue-green-light: #d7eead;
+  --hue-green-shade: #a7d052;
+  --hue-green-light-d: #a6c46c;
+  --hue-green-shade-d: #769832;
+  --hue-teal-light: #b6f2e6;
+  --hue-teal-shade: #5dd7c4;
+  --hue-teal-light-d: #76c9ba;
+  --hue-teal-shade-d: #3c9d8d;
+  --hue-blue-light: #c4e2ff;
+  --hue-blue-shade: #7fbdf9;
+  --hue-blue-light-d: #88b4dc;
+  --hue-blue-shade-d: #5288bd;
+  --hue-pink-light: #ffceeb;
+  --hue-pink-shade: #f792cf;
+  --hue-pink-light-d: #de97c0;
+  --hue-pink-shade-d: #ba6397;
+  /* Fine paper grain over a poster: dark specks at a few per cent, no blend mode, so html2canvas draws it too. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.16 0.11'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 
   /* Signals: only for what destroys or fails. */
   --red-1: #fdecea;
@@ -128,14 +169,15 @@
   /* The fill of a secondary button or a round icon on the page: one step darker than the page, so it reads on grey. */
   --fill-control: var(--gray-4);
   /* The desktop sidebar: one opaque column, its selected row a soft fill. */
-  --sidebar-glass: var(--gray-0);
-  --sidebar-selection: var(--gray-a2);
+  --sidebar-glass: var(--gray-2);
+  --sidebar-selection: var(--gray-0);
   /* Bars that content scrolls under: a material, never a flat colour — dense enough that no card's colour
      shows through. */
-  --header-glass: rgba(242, 242, 247, 0.94);
+  --header-glass: rgba(244, 244, 245, 0.92);
   --glass-filter: saturate(180%) blur(20px);
-  --border: var(--gray-4);
-  --border-strong: var(--gray-5);
+  /* Hairlines: ink at a few per cent, so one line reads the same on the page, a card and a sheet. */
+  --border: var(--gray-a3);
+  --border-strong: var(--gray-a4);
   --hover: var(--gray-a1);
   --pressed: var(--gray-a3);
   --text: var(--gray-12);
@@ -156,12 +198,14 @@
   --on-them: var(--gray-11);
   /* The person's poster (ink type on it) and the tint of chips and avatars. Nothing else takes their colour. */
   --poster: var(--gray-4);
+  --poster-light: var(--gray-3);
+  --poster-shade: var(--gray-5);
   --on-poster: var(--gray-12);
   --on-poster-muted: var(--gray-a8);
   --on-poster-line: var(--gray-a4);
   --on-poster-chip: var(--gray-a3);
-  /* A secondary button or a round icon on a poster: a solid light fill, the only third look beside ink and grey. */
-  --poster-button: var(--gray-0);
+  /* A secondary button or a round icon on a poster: a translucent light chip over the colour. */
+  --poster-button: var(--white-a5);
   --on-poster-faint: var(--gray-a6);
   --room-tint: var(--gray-3);
   --danger: var(--red-6);
@@ -183,7 +227,13 @@
   --chart-neutral-strong: var(--gray-11);
 
   /* Elevation: flat content; only floating layers cast a shadow — two levels. */
-  --shadow-float: 0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-float: 0 8px 24px -8px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.06);
+  /* A poster as an object: light along its top edge, a soft shadow under it (home tiles, the landing deck). */
+  --shadow-lift: inset 0 1px 0 var(--white-a5), 0 1px 1px rgba(0, 0, 0, 0.05), 0 18px 40px -20px rgba(20, 20, 30, 0.32);
+  /* The lit top edge alone: a poster that lies flat (the report's own, a hero card). */
+  --edge-light: inset 0 1px 0 var(--white-a5);
+  /* A card on the page: a hairline edge, no shadow. */
+  --ring-card: inset 0 0 0 1px var(--border);
   --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.04);
   /* Lines are 1 px; selection and focus rings are 2 px. */
   --ring-strong: inset 0 0 0 1px var(--border-strong);
@@ -227,11 +277,11 @@
   --surface-raised: var(--night-3);
   --fill-raised: var(--night-6);
   --fill-control: var(--night-4);
-  --sidebar-glass: var(--night-1);
-  --sidebar-selection: var(--night-3);
-  --header-glass: rgba(0, 0, 0, 0.92);
-  --border: var(--night-4);
-  --border-strong: var(--night-5);
+  --sidebar-glass: var(--night-0);
+  --sidebar-selection: var(--night-1);
+  --header-glass: rgba(14, 14, 16, 0.9);
+  --border: var(--night-a3);
+  --border-strong: var(--night-a4);
   --hover: var(--night-a1);
   --pressed: var(--night-a2);
   --text: var(--night-12);
@@ -245,7 +295,7 @@
   --on-you: var(--gray-12);
   /* Posters stay light enough for ink: the muted line is a little denser to keep 4.5:1. */
   --on-poster-muted: var(--gray-a9);
-  --poster-button: var(--on-poster-chip);
+  --poster-button: var(--black-a2);
   --danger: var(--red-d6);
   --danger-subtle: var(--red-d1);
   --inverse-surface: var(--night-12);
@@ -260,7 +310,9 @@
   --heat-4: var(--night-heat-4);
   --chart-neutral: var(--night-heat-1);
   --chart-neutral-strong: var(--night-11);
-  --shadow-float: 0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-float: 0 8px 24px -8px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-lift: inset 0 1px 0 var(--white-a3), 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+  --edge-light: inset 0 1px 0 var(--white-a3);
   --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
   --brand-ink: var(--night-12);
 }
@@ -272,6 +324,8 @@
  */
 [data-hue='yellow'] {
   --poster: var(--hue-yellow-poster);
+  --poster-light: var(--hue-yellow-light);
+  --poster-shade: var(--hue-yellow-shade);
   --room-tint: var(--hue-yellow-tint);
   --them: var(--hue-yellow-them);
   --them-ink: var(--hue-yellow-ink);
@@ -280,6 +334,8 @@
 
 [data-hue='orange'] {
   --poster: var(--hue-orange-poster);
+  --poster-light: var(--hue-orange-light);
+  --poster-shade: var(--hue-orange-shade);
   --room-tint: var(--hue-orange-tint);
   --them: var(--hue-orange-them);
   --them-ink: var(--hue-orange-ink);
@@ -288,6 +344,8 @@
 
 [data-hue='violet'] {
   --poster: var(--hue-violet-poster);
+  --poster-light: var(--hue-violet-light);
+  --poster-shade: var(--hue-violet-shade);
   --room-tint: var(--hue-violet-tint);
   --them: var(--hue-violet-them);
   --them-ink: var(--hue-violet-ink);
@@ -296,6 +354,8 @@
 
 [data-hue='green'] {
   --poster: var(--hue-green-poster);
+  --poster-light: var(--hue-green-light);
+  --poster-shade: var(--hue-green-shade);
   --room-tint: var(--hue-green-tint);
   --them: var(--hue-green-them);
   --them-ink: var(--hue-green-ink);
@@ -304,6 +364,8 @@
 
 [data-hue='teal'] {
   --poster: var(--hue-teal-poster);
+  --poster-light: var(--hue-teal-light);
+  --poster-shade: var(--hue-teal-shade);
   --room-tint: var(--hue-teal-tint);
   --them: var(--hue-teal-them);
   --them-ink: var(--hue-teal-ink);
@@ -312,6 +374,8 @@
 
 [data-hue='blue'] {
   --poster: var(--hue-blue-poster);
+  --poster-light: var(--hue-blue-light);
+  --poster-shade: var(--hue-blue-shade);
   --room-tint: var(--hue-blue-tint);
   --them: var(--hue-blue-them);
   --them-ink: var(--hue-blue-ink);
@@ -320,6 +384,8 @@
 
 [data-hue='pink'] {
   --poster: var(--hue-pink-poster);
+  --poster-light: var(--hue-pink-light);
+  --poster-shade: var(--hue-pink-shade);
   --room-tint: var(--hue-pink-tint);
   --them: var(--hue-pink-them);
   --them-ink: var(--hue-pink-ink);
@@ -330,6 +396,8 @@
 :root[data-theme='dark'][data-hue='yellow'],
 :root[data-theme='dark'] [data-hue='yellow'] {
   --poster: var(--hue-yellow-poster-d);
+  --poster-light: var(--hue-yellow-light-d);
+  --poster-shade: var(--hue-yellow-shade-d);
   --them: var(--hue-yellow-poster);
   --them-ink: var(--hue-yellow-poster);
 }
@@ -337,6 +405,8 @@
 :root[data-theme='dark'][data-hue='orange'],
 :root[data-theme='dark'] [data-hue='orange'] {
   --poster: var(--hue-orange-poster-d);
+  --poster-light: var(--hue-orange-light-d);
+  --poster-shade: var(--hue-orange-shade-d);
   --them: var(--hue-orange-poster);
   --them-ink: var(--hue-orange-poster);
 }
@@ -344,6 +414,8 @@
 :root[data-theme='dark'][data-hue='violet'],
 :root[data-theme='dark'] [data-hue='violet'] {
   --poster: var(--hue-violet-poster-d);
+  --poster-light: var(--hue-violet-light-d);
+  --poster-shade: var(--hue-violet-shade-d);
   --them: var(--hue-violet-poster);
   --them-ink: var(--hue-violet-poster);
 }
@@ -351,6 +423,8 @@
 :root[data-theme='dark'][data-hue='green'],
 :root[data-theme='dark'] [data-hue='green'] {
   --poster: var(--hue-green-poster-d);
+  --poster-light: var(--hue-green-light-d);
+  --poster-shade: var(--hue-green-shade-d);
   --them: var(--hue-green-poster);
   --them-ink: var(--hue-green-poster);
 }
@@ -358,6 +432,8 @@
 :root[data-theme='dark'][data-hue='teal'],
 :root[data-theme='dark'] [data-hue='teal'] {
   --poster: var(--hue-teal-poster-d);
+  --poster-light: var(--hue-teal-light-d);
+  --poster-shade: var(--hue-teal-shade-d);
   --them: var(--hue-teal-poster);
   --them-ink: var(--hue-teal-poster);
 }
@@ -365,6 +441,8 @@
 :root[data-theme='dark'][data-hue='blue'],
 :root[data-theme='dark'] [data-hue='blue'] {
   --poster: var(--hue-blue-poster-d);
+  --poster-light: var(--hue-blue-light-d);
+  --poster-shade: var(--hue-blue-shade-d);
   --them: var(--hue-blue-poster);
   --them-ink: var(--hue-blue-poster);
 }
@@ -372,8 +450,21 @@
 :root[data-theme='dark'][data-hue='pink'],
 :root[data-theme='dark'] [data-hue='pink'] {
   --poster: var(--hue-pink-poster-d);
+  --poster-light: var(--hue-pink-light-d);
+  --poster-shade: var(--hue-pink-shade-d);
   --them: var(--hue-pink-poster);
   --them-ink: var(--hue-pink-poster);
+}
+
+/*
+ * The poster's material (light pooling top-left, the colour deepening bottom-right, grain), declared wherever a
+ * person is set so it resolves with that person's colours. Read with `background-image: var(--poster-image)`.
+ */
+:root,
+[data-hue] {
+  --poster-image:
+    var(--grain), radial-gradient(130% 100% at 0% 0%, var(--poster-light) 0%, transparent 60%),
+    linear-gradient(165deg, var(--poster) 30%, var(--poster-shade) 100%);
 }
 
 /* In the dark theme the tint of chips and avatar tops is the raised grey. */
@@ -384,9 +475,9 @@
 
 /*
  * ─── 3. Component: buttons ────────────────────────────────────────────────
- * Three looks (primary — ink fill, secondary — neutral fill, icon — a round neutral fill), two sizes.
- * The ink fill stays ink on a poster (never the poster's own colour as text); the neutral fill becomes a
- * solid light one. Never a new variant for a new background.
+ * Three looks, all pills (primary — ink fill, secondary — an ink outline, icon — a bare glyph in a round hit area),
+ * two sizes. The ink fill stays ink on a poster (never the poster's own colour as text); the outline and the bare
+ * glyph become a translucent light chip there. Never a new variant for a new background.
  */
 [data-poster],
 [data-on-poster],
@@ -394,6 +485,13 @@
   --btn-fill: var(--poster-button);
   --btn-fill-text: var(--on-poster);
   --btn-plain-text: var(--on-poster);
+  /* Over a colour a secondary control is a translucent chip: no outline, the colour blurred through it. */
+  --btn-ring: none;
+  --btn-blur: var(--glass-filter);
+  /* The main action stays the poster's ink in both themes (white on a dimmed poster read as a hole). */
+  --btn-ink: var(--on-poster);
+  --btn-ink-text: var(--gray-0);
+  --btn-ink-hover: var(--gray-11);
 }
 
 /* ─── Theme-independent scales ──────────────────────────────────────────── */
@@ -409,18 +507,19 @@
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
+  --space-5: 20px;
   --space-6: 24px;
   --space-8: 32px;
   --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
-  /* Corners, nested (inner = outer − padding): mark 8 (chart bars, heat cells) · well 12 (buttons, fields, menu rows —
-   * the rounded rectangle of Telegram's own buttons) · card 16 (every card, group, menu and poster tile) ·
-   * sheet 24 (sheets and dialogs) · pill (chips, filters, avatars, round icons). */
+  /* Corners, nested (inner = outer − padding): mark 8 (chart bars, heat cells) · well 12 (fields, wells, menu rows) ·
+   * card 24 (every card, group and poster tile — soft, an object you could pick up) · sheet 32 (sheets, dialogs, the
+   * report's sheet over its poster) · pill (every button, chips, filters, avatars, round icons). */
   --radius-mark: 8px;
   --radius-well: 12px;
-  --radius-card: 16px;
-  --radius-sheet: 24px;
+  --radius-card: 24px;
+  --radius-sheet: 32px;
   --radius-pill: 999px;
   /* Every proportion bar (compare, meters, day parts, progress) is this thick. */
   --bar-height: 8px;
@@ -503,14 +602,14 @@
    *   first finding · h3 — a card's answer, a dialog · body — reading, rows, names · label — a card's
    *   question, buttons, fields, meta · caption — axes and counts
    */
-  /* Titles are 500: hierarchy from size and colour; a 600 headline over 14 px controls read as shouting. */
-  --text-display: 500 52px/52px var(--font-sans);
-  --display-max: 52px;
+  /* Big type is 600 and set tight — a name, a number, a screen title are objects; reading stays 400, controls 500. */
+  --text-display: 600 64px/64px var(--font-sans);
+  --display-max: 64px;
   /* The landing's title on a phone: shrinks with the width so «Зеркало ваших» stays one line down to 360 px. */
   --display-fit: min(var(--display-max), 12.6vw);
-  --text-figure: 500 44px/48px var(--font-sans);
-  --text-h1: 500 30px/36px var(--font-sans);
-  --text-h2: 500 24px/30px var(--font-sans);
+  --text-figure: 600 48px/52px var(--font-sans);
+  --text-h1: 600 32px/36px var(--font-sans);
+  --text-h2: 600 24px/28px var(--font-sans);
   --text-h3: 500 20px/26px var(--font-sans);
   --text-body: 400 16px/24px var(--font-sans);
   --text-label: 500 14px/20px var(--font-sans);
@@ -519,10 +618,10 @@
   --size-h2: 24px;
   --size-label: 14px;
   --emoji-size: var(--size-h2);
-  --tracking-display: -0.035em;
-  --tracking-figure: -0.035em;
-  --tracking-h1: -0.025em;
-  --tracking-h2: -0.02em;
+  --tracking-display: -0.05em;
+  --tracking-figure: -0.045em;
+  --tracking-h1: -0.035em;
+  --tracking-h2: -0.025em;
   --tracking-h3: -0.015em;
   /* The page frame: space under the header, between sections, at the bottom. */
   --page-top: var(--space-2);
@@ -570,7 +669,7 @@
 @media (max-width: 900px) {
   :root {
     --page-gutter: max(var(--space-4), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
-    --card-padding: var(--space-4);
+    --card-padding: var(--space-5);
     --card-gap: var(--space-3);
   }
 }
@@ -585,11 +684,11 @@
 /* Desktop: bigger type for the big roles, larger tiles, the 40 gutter and sections. */
 @media (min-width: 901px) {
   :root {
-    --text-display: 500 76px/76px var(--font-sans);
-    --display-max: 76px;
-    --text-figure: 500 56px/60px var(--font-sans);
-    --text-h1: 500 34px/40px var(--font-sans);
-    --text-h2: 500 28px/34px var(--font-sans);
+    --text-display: 600 96px/96px var(--font-sans);
+    --display-max: 96px;
+    --text-figure: 600 60px/64px var(--font-sans);
+    --text-h1: 600 40px/44px var(--font-sans);
+    --text-h2: 600 28px/32px var(--font-sans);
     --text-h3: 500 20px/26px var(--font-sans);
     --brand-mark-size: 28px;
     --brand-word: 600 18px/24px var(--font-sans);

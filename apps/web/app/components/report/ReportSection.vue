@@ -63,16 +63,13 @@ defineProps<{
   color: var(--them-ink);
 }
 
+/* The topic's glyph, bare, in the person's ink: it names the theme without a badge around it. */
 .report-section__icon {
   display: inline-grid;
   flex: none;
   place-items: center;
-  width: var(--icon-lg);
-  height: var(--icon-lg);
-  border-radius: var(--radius-pill);
-  background: var(--them);
-  color: var(--surface);
-  --icon-size: var(--icon-sm);
+  color: var(--them-ink);
+  --icon-size: var(--icon-md);
 }
 
 .report-section__figure {

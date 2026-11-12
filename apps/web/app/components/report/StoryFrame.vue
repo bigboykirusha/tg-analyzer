@@ -124,7 +124,8 @@ const tick = (value: number, hour: number) => ({
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--poster);
+  background-color: var(--poster);
+  background-image: var(--poster-image);
   color: var(--on-poster);
 }
 

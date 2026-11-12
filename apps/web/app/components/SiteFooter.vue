@@ -22,6 +22,11 @@ const { channelUrl, supportUrl } = useRuntimeConfig().public
 </template>
 
 <style scoped>
+/* The footer stands apart from the screen above it: one hairline across the page. */
+.site-footer {
+  box-shadow: var(--divider-top);
+}
+
 .site-footer__in {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

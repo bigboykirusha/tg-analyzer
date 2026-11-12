@@ -174,7 +174,8 @@ const invitation = wave(4, 40)
   flex: 1;
   flex-direction: column;
   margin: calc(-1 * var(--page-top)) 0 calc(-1 * var(--page-bottom));
-  background: var(--poster);
+  background-color: var(--poster);
+  background-image: var(--poster-image);
   color: var(--on-poster);
 }
 
@@ -270,6 +271,7 @@ const invitation = wave(4, 40)
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-card);
   background: var(--surface);
+  box-shadow: var(--ring-card);
   color: var(--text);
   text-align: left;
   transition: transform var(--duration-press) var(--ease-standard);

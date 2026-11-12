@@ -135,9 +135,16 @@ const bellLabel = computed(() =>
   backdrop-filter: var(--glass-filter);
 }
 
-/* Over the poster the bar is the poster; its floating circles become chips on it. */
+/*
+ * A report: the bar gives its height back and floats over the poster, transparent, so the poster's material runs
+ * up to the screen's edge; its circles become translucent chips on it.
+ */
+.app-bar.has-poster {
+  margin-bottom: calc(-1 * (var(--topbar-height) + env(safe-area-inset-top, 0px)));
+}
+
 .app-bar.is-over-poster {
-  background: var(--poster);
+  background: transparent;
   color: var(--on-poster);
 }
 
@@ -172,12 +179,7 @@ const bellLabel = computed(() =>
    * Over a report's poster the bar takes no room and shows nothing: the poster carries the name and its
    * actions. It arrives as the poster leaves, the name and chapter in the material.
    */
-  .app-bar.has-poster {
-    margin-bottom: calc(-1 * var(--topbar-height));
-  }
-
   .app-bar.is-over-poster {
-    background: transparent;
     pointer-events: none;
   }
 

@@ -206,6 +206,7 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-card);
   background: var(--surface);
+  box-shadow: var(--ring-card);
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
   transition:

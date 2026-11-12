@@ -144,6 +144,7 @@ watch(open, (value) => value && drag.reset())
   --field-bg: var(--fill-raised);
   /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
   --group-bg: transparent;
+  --group-ring: none;
   --group-radius: 0;
   --group-inset: var(--space-6);
   --group-bleed: var(--space-6);

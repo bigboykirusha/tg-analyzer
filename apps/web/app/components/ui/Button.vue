@@ -7,8 +7,8 @@ import type { RouteLocationRaw } from 'vue-router'
  * never an action; a coloured context (a poster) re-points the fills through tokens and the same looks come out
  * inverted.
  *   primary    ink fill — the one main action of a screen or card
- *   secondary  neutral fill — everything else (the default)
- *   (icon      a round neutral fill — UiIconButton)
+ *   secondary  ink outline — everything else (the default); a translucent chip over a poster
+ *   (icon      a bare glyph in a round hit area — UiIconButton; a chip over a poster)
  *   link       inline text inside copy, not a button
  * sm 36 · md 44 on a phone, 36 on desktop · lg 44 everywhere — only the one call to action of a whole screen
  * (the landing), where a 36 pill under display type reads as an afterthought.
@@ -71,8 +71,8 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   max-width: 100%;
   height: var(--control-md);
   padding: 0 var(--space-4);
-  /* A rounded rectangle, as Telegram's own buttons: the pill is for chips and filters. */
-  border-radius: var(--radius-well);
+  /* Every button is a pill: actions are round, objects (cards, tiles, posters) have corners. */
+  border-radius: var(--radius-pill);
   font: var(--text-label);
   text-align: center;
   white-space: nowrap;
@@ -80,6 +80,7 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   transition:
     background-color var(--transition-fast),
     box-shadow var(--transition-fast),
+    color var(--transition-fast),
     transform var(--duration-press) var(--ease-standard);
 }
 
@@ -117,8 +118,12 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
 }
 
 .btn--secondary {
-  background: var(--btn-fill, var(--fill-control));
+  /* On the page an ink outline; over a poster a translucent chip (tokens.css re-points the three knobs). */
+  background: var(--btn-fill, transparent);
+  box-shadow: var(--btn-ring, inset 0 0 0 1px var(--text));
   color: var(--btn-fill-text, var(--text));
+  -webkit-backdrop-filter: var(--btn-blur, none);
+  backdrop-filter: var(--btn-blur, none);
 }
 
 .btn.btn--link {
@@ -137,7 +142,7 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   }
 
   .btn--secondary:hover {
-    background-image: linear-gradient(var(--hover), var(--hover));
+    background-image: linear-gradient(var(--pressed), var(--pressed));
   }
 
   .btn--link:hover {
@@ -158,8 +163,8 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
  * look, faded, and turns ink the moment it can be pressed.
  */
 .btn--primary:disabled:not([aria-busy='true']) {
-  background: var(--btn-fill, var(--fill-control));
-  color: var(--btn-fill-text, var(--text));
+  background: var(--fill-control);
+  color: var(--text);
 }
 
 /* A loading button keeps its colour: it is busy, not unavailable. */

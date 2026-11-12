@@ -201,19 +201,20 @@ strong {
   color: var(--text-muted);
 }
 
-/* A text link inside copy: ink, underlined, a quiet underline. */
+/* A text link inside copy: ink, a thin ink underline set well below the letters (a printed footnote, not a web link). */
 .link {
   border-radius: var(--radius-mark);
   color: var(--text);
   text-decoration: underline;
-  text-decoration-color: var(--border-strong);
-  text-underline-offset: 3px;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
   transition: text-decoration-color var(--transition-fast);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .link:hover {
-    text-decoration-color: currentColor;
+    text-decoration-color: var(--text-muted);
   }
 }
 

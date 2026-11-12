@@ -55,7 +55,8 @@ const lede = computed(() =>
   margin-top: var(--page-gap);
   margin-bottom: calc(-1 * var(--page-bottom));
   padding: var(--space-8) 0 calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
-  background: var(--poster);
+  background-color: var(--poster);
+  background-image: var(--poster-image);
   color: var(--on-poster);
 }
 
@@ -106,7 +107,8 @@ const lede = computed(() =>
     gap: var(--space-10);
     padding: var(--space-8);
     border-radius: var(--radius-card);
-    background: var(--poster);
+    background-color: var(--poster);
+    background-image: var(--poster-image);
   }
 
   .ending__pulse {

@@ -183,10 +183,25 @@ const cast = computed(() => {
   --skeleton: var(--on-poster-chip);
   --pulse-you: var(--on-poster);
   --pulse-them: var(--on-them);
+  position: relative;
+  /* The poster runs up under the bar (the bar gives its height back and is transparent over it): no seam. */
   margin-top: calc(-1 * var(--page-top));
-  padding: var(--space-4) 0 var(--space-6);
-  background: var(--poster);
+  padding: calc(var(--topbar-height) + env(safe-area-inset-top, 0px) + var(--space-4)) 0
+    calc(var(--space-8) + var(--radius-sheet));
+  background-color: var(--poster);
+  background-image: var(--poster-image);
   color: var(--on-poster);
+}
+
+/* The report is a sheet laid over its poster: the page comes up with rounded shoulders. */
+.poster::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 calc(-1 * var(--space-0-5));
+  height: calc(var(--radius-sheet) + var(--space-0-5));
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--bg);
+  pointer-events: none;
 }
 
 .poster__in {
@@ -338,8 +353,22 @@ const cast = computed(() => {
 
 /* Desktop: the actions stand at the top right, the name in full display size, the year on the axis. */
 @media (min-width: 901px) {
+  /* A computer: the poster is an object in the column — a rounded card on the page, the bar's controls over it. */
   .poster {
+    width: calc(100% - var(--page-gutter) * 2);
+    max-width: var(--page-max);
+    margin: calc(var(--space-6) - var(--page-top)) auto 0;
     padding: var(--space-8) 0;
+    border-radius: var(--radius-sheet);
+    box-shadow: var(--edge-light);
+  }
+
+  .poster::after {
+    display: none;
+  }
+
+  .poster__in {
+    --page-gutter: var(--space-8);
   }
 
   .poster__in {

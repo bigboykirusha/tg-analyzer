@@ -64,8 +64,11 @@ const classes = computed(() => ['icon-btn', `icon-btn--${props.size}`, { 'icon-b
   width: var(--control-md);
   height: var(--control-md);
   border-radius: var(--radius-pill);
-  background: var(--btn-fill, var(--fill-control));
+  /* A bare glyph on the page (the bell, «назад», «закрыть»); over a poster a translucent chip. */
+  background: var(--btn-fill, transparent);
   color: var(--btn-fill-text, var(--text));
+  -webkit-backdrop-filter: var(--btn-blur, none);
+  backdrop-filter: var(--btn-blur, none);
   -webkit-tap-highlight-color: transparent;
   transition:
     background-color var(--transition-fast),
@@ -105,7 +108,7 @@ const classes = computed(() => ['icon-btn', `icon-btn--${props.size}`, { 'icon-b
 
 @media (hover: hover) and (pointer: fine) {
   .icon-btn:hover:not(:disabled) {
-    background-image: linear-gradient(var(--hover), var(--hover));
+    background-image: linear-gradient(var(--pressed), var(--pressed));
   }
 }
 

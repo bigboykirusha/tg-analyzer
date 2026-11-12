@@ -138,6 +138,10 @@ useHead({
   margin-top: var(--space-1);
   color: var(--text);
   font: var(--text-label);
+  /* The second way in is a word, underlined like a link in print — never a second plate beside the main button. */
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
   transition: color var(--transition-fast);
 }
 
