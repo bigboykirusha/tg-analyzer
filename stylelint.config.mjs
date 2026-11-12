@@ -1,13 +1,8 @@
-// Design-system guardrails for apps/web (docs/design-system.md, docs/DESIGN-AUDIT-2026-11-07.md §4 step 6).
+// Design-system guardrails for apps/web (docs/design-system.md).
 // Prettier owns formatting, so there is no stylistic preset here: every rule below protects a token.
 
 const TOKENS_FILE = 'apps/web/app/assets/styles/tokens.css'
 const BASE_FILE = 'apps/web/app/assets/styles/base.css'
-const ILLUSTRATIONS = [
-  'apps/web/app/components/landing/PhoneMockup.vue',
-  'apps/web/app/components/landing/ProductWindow.vue',
-]
-const STORY = ['apps/web/app/components/report/StorySlide.vue', 'apps/web/app/components/report/ReportStory.vue']
 
 // declaration-strict-value splits a value by spaces and checks every item on its own; var(--…) items
 // always pass. Each entry below is one more allowed item ("/regex/" or an exact string).
@@ -18,7 +13,6 @@ const CURRENT_COLOR = '/^currentcolor$/i'
 const VAR_IN_LIST = String.raw`/^var\(--[\w-]+\),$/`
 // calc()/min()/max()/clamp() built from a token, e.g. calc(var(--z-header) - 1).
 const MATH_WITH_VAR = String.raw`/^(calc|min|max|clamp)\(.*var\(--.*\)$/`
-const CQMIN = String.raw`/^-?\d*\.?\d+cqmin,?$/`
 
 const COLOR_PROPS = [
   'color',
@@ -150,39 +144,12 @@ export default {
       },
     },
     {
-      // §9: touch inputs stay at 16px, otherwise iOS zooms the page.
+      // Touch inputs stay at 16px, otherwise iOS zooms the page.
       // prefers-reduced-motion collapses every animation to 1ms.
       files: [BASE_FILE],
       rules: {
         'scale-unlimited/declaration-strict-value': strictValue({
           extra: { 'font-size': ['16px'], 'transition-duration': ['1ms'], 'animation-duration': ['1ms'] },
-        }),
-      },
-    },
-    {
-      // §9: landing illustrations draw a device (frame radii and shadows, iOS status bar in 600 and
-      // the system font). Only colours stay strict.
-      files: ILLUSTRATIONS,
-      rules: {
-        'scale-unlimited/declaration-strict-value': strictValue({
-          props: COLOR_PROPS.filter((prop) => prop !== 'box-shadow'),
-        }),
-        'declaration-property-value-allowed-list': { 'font-weight': [...FONT_WEIGHTS] },
-        'declaration-property-value-disallowed-list': null,
-      },
-    },
-    {
-      // §9: «Итоги» scale with the slide and export as 1080×1920, so sizes are in cqmin.
-      files: STORY,
-      rules: {
-        'scale-unlimited/declaration-strict-value': strictValue({
-          extra: {
-            'font-size': [CQMIN],
-            'letter-spacing': [CQMIN, String.raw`/^-?\d*\.?\d+em$/`],
-            'border-radius': [CQMIN],
-            'box-shadow': ['0', 'inset', CQMIN],
-            ...Object.fromEntries(SPACE_PROPS.map((prop) => [prop, [CQMIN]])),
-          },
         }),
       },
     },
