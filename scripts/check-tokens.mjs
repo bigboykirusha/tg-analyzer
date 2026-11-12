@@ -2,8 +2,10 @@
 // Usage: node scripts/check-tokens.mjs — exits 1 when something is missing.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const root = new URL('../apps/web/app/', import.meta.url).pathname
+// fileURLToPath, not URL.pathname: on Windows the pathname is «/L:/…» and the walk fails.
+const root = fileURLToPath(new URL('../apps/web/app/', import.meta.url))
 const files = []
 const walk = (dir) => {
   for (const name of readdirSync(dir)) {
