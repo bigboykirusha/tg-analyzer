@@ -195,6 +195,7 @@
   --pressed: var(--gray-a3);
   --text: var(--gray-12);
   --text-muted: var(--gray-9);
+  /* Glyphs only (chevrons): 3.4:1 is enough for a mark, never for words. */
   --text-faint: var(--gray-8);
   /* Actions are ink: monochrome, so colour can mean a person. */
   --accent: var(--gray-12);
@@ -202,6 +203,8 @@
   --on-accent: var(--gray-0);
   --switch-off: var(--gray-5);
   --switch-knob: var(--gray-0);
+  /* The off track is light, as in iOS, but its edge is a 1 px line of 3.4:1: the fill alone was 1.5:1 on white. */
+  --switch-off-ring: inset 0 0 0 1px var(--gray-8);
   /* The two voices: you are ink everywhere; they are the person's colour (neutral outside a report). */
   --you: var(--gray-12);
   --on-you: var(--gray-0);
@@ -306,6 +309,8 @@
   --accent-hover: var(--gray-0);
   --on-accent: var(--gray-12);
   --switch-off: var(--night-7);
+  /* The dark off track is already 3.6:1 on its own. */
+  --switch-off-ring: none;
   --you: var(--night-12);
   --on-you: var(--gray-12);
   /* Posters stay light enough for ink: the muted line is denser (86 % ink) to keep 4.5:1 over the whole poster. */
@@ -540,7 +545,7 @@
   --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
-  /* Corners, nested (inner = outer − padding): mark 8 (chart bars, heat cells) · well 12 (fields, wells, menu rows) ·
+  /* Corners, by the size of the thing, not computed from padding: mark 8 (chart bars, heat cells) · well 12 (fields, wells, menu rows) ·
    * card 24 (every card, group and poster tile — soft, an object you could pick up) · sheet 32 (sheets, dialogs, the
    * report's sheet over its poster) · pill (every button, chips, filters, avatars, round icons). */
   --radius-mark: 8px;
@@ -639,7 +644,7 @@
   --text-figure: 600 44px/48px var(--font-sans);
   --text-h1: 600 32px/36px var(--font-sans);
   --text-h2: 600 24px/28px var(--font-sans);
-  --text-h3: 500 20px/26px var(--font-sans);
+  --text-h3: 500 20px/28px var(--font-sans);
   --text-body: 400 16px/24px var(--font-sans);
   --text-label: 500 14px/20px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
@@ -718,7 +723,7 @@
     --text-figure: 600 60px/64px var(--font-sans);
     --text-h1: 600 40px/44px var(--font-sans);
     --text-h2: 600 28px/32px var(--font-sans);
-    --text-h3: 500 20px/26px var(--font-sans);
+    --text-h3: 500 20px/28px var(--font-sans);
     --brand-mark-size: 28px;
     --brand-word: 600 18px/24px var(--font-sans);
     --size-h2: 28px;
@@ -729,16 +734,19 @@
   }
 }
 
-/* Increase Contrast: secondary text darkens and hairlines become visible lines. */
+/*
+ * Increase Contrast: secondary text darkens and hairlines become lines of 3:1 (3.4 light, 3.6 dark) — the edges of
+ * cards and groups, and the sidebar's open row, whose ring is the same line.
+ */
 @media (prefers-contrast: more) {
   :root:not([data-theme='dark']) {
     --text-muted: var(--gray-11);
-    --border: var(--gray-6);
+    --border: var(--gray-8);
   }
 
   :root[data-theme='dark'] {
     --text-muted: var(--night-11);
-    --border: var(--night-6);
+    --border: var(--night-7);
   }
 }
 

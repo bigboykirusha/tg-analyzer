@@ -76,6 +76,7 @@ const model = defineModel<boolean>({ required: true })
   height: var(--switch-height);
   border-radius: var(--radius-pill);
   background: var(--switch-off);
+  box-shadow: var(--switch-off-ring);
   appearance: none;
   cursor: inherit;
   transition: background-color var(--transition-fast);
@@ -96,6 +97,7 @@ const model = defineModel<boolean>({ required: true })
 
 .switch:checked {
   background: var(--accent);
+  box-shadow: none;
 }
 
 .switch:checked::after {

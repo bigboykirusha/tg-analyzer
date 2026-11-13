@@ -65,7 +65,7 @@ function up(event: PointerEvent) {
   width: 100%;
 }
 
-/* The search of the list it opens: the same grey pill, a size a thumb finds without looking. */
+/* The search of the list it opens: the grey of controls on a sheet (its muted words keep 4.5:1), a size a thumb finds. */
 .peek__search {
   display: flex;
   align-items: center;
@@ -74,7 +74,7 @@ function up(event: PointerEvent) {
   height: var(--control-md);
   padding: 0 var(--space-4);
   border-radius: var(--radius-pill);
-  background: var(--fill-control);
+  background: var(--fill-raised);
   color: var(--text-muted);
   font: var(--text-body);
   -webkit-tap-highlight-color: transparent;
