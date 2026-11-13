@@ -3,7 +3,7 @@
   "short_name": "TG Analyzer",
   "description": "Статистика переписки в Telegram: кто пишет первым, кто быстрее отвечает и когда вы ближе всего. Тексты сообщений не сохраняются.",
   "lang": "ru",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#f4f4f5",
   "theme_color": "#f4f4f5",

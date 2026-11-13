@@ -138,7 +138,7 @@ test('the guard accepts only live access tokens', async () => {
   }
 })
 
-test('refresh rotates the token, tolerates races and revokes the family on replay', async () => {
+test('refresh rotates the token and tolerates races', async () => {
   const session = await login()
 
   const [first, second] = await Promise.all([refresh(session.cookie), refresh(session.cookie)])
@@ -146,23 +146,48 @@ test('refresh rotates the token, tolerates races and revokes the family on repla
   assert.equal(second.statusCode, 200)
   const rotated = first.cookies.find((cookie) => cookie.name === REFRESH_COOKIE_NAME)
   assert.ok(rotated)
+  const next = await refresh(`${REFRESH_COOKIE_NAME}=${rotated.value}`)
+  assert.equal(next.statusCode, 200)
+})
 
-  // The successor is used; then, outside the grace period, reusing the old token is treated as theft.
-  const used = await refresh(`${REFRESH_COOKIE_NAME}=${rotated.value}`)
-  assert.equal(used.statusCode, 200)
-  const latest = used.cookies.find((cookie) => cookie.name === REFRESH_COOKIE_NAME)
-  assert.ok(latest)
+test('a copy of the cookie (Safari and the installed app) branches instead of signing both out', async () => {
+  const session = await login()
+  // Safari goes on rotating; the installed app still holds the cookie iOS copied at «На экран Домой».
+  const safari = await refresh(session.cookie)
+  const safariCookie = safari.cookies.find((cookie) => cookie.name === REFRESH_COOKIE_NAME)
+  assert.ok(safariCookie)
+  const safariNext = await refresh(`${REFRESH_COOKIE_NAME}=${safariCookie.value}`)
+  assert.equal(safariNext.statusCode, 200)
+  const safariLatest = safariNext.cookies.find((cookie) => cookie.name === REFRESH_COOKIE_NAME)
+  assert.ok(safariLatest)
   await pool.query(
     `UPDATE refresh_sessions SET grace_until = now() - interval '1 second' WHERE grace_until IS NOT NULL`,
   )
-  const replay = await refresh(session.cookie)
-  assert.equal(replay.statusCode, 401)
-  assert.equal(replay.json().code, 'AUTH_REFRESH_REPLAYED')
 
-  const afterReplay = await refresh(`${REFRESH_COOKIE_NAME}=${latest.value}`)
-  assert.equal(afterReplay.statusCode, 401)
-  const access = await app.inject({ url: '/api/v1/reports', headers: session.headers })
-  assert.equal(access.statusCode, 401)
+  const app2 = await refresh(session.cookie)
+  assert.equal(app2.statusCode, 200)
+  const appCookie = app2.cookies.find((cookie) => cookie.name === REFRESH_COOKIE_NAME)
+  assert.ok(appCookie)
+  assert.notEqual(appCookie.value, safariLatest.value)
+
+  // Both go on; «Выйти» in one ends the login in both.
+  const safariAfter = await refresh(`${REFRESH_COOKIE_NAME}=${safariLatest.value}`)
+  assert.equal(safariAfter.statusCode, 200)
+  const safariNow = safariAfter.cookies.find((cookie) => cookie.name === REFRESH_COOKIE_NAME)
+  assert.ok(safariNow)
+  const appAfter = await refresh(`${REFRESH_COOKIE_NAME}=${appCookie.value}`)
+  assert.equal(appAfter.statusCode, 200)
+  const appLatest = appAfter.cookies.find((cookie) => cookie.name === REFRESH_COOKIE_NAME)
+  assert.ok(appLatest)
+  const logout = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/logout',
+    headers: { cookie: `${REFRESH_COOKIE_NAME}=${appLatest.value}`, origin: ORIGIN },
+    remoteAddress: nextIp(),
+  })
+  assert.equal(logout.statusCode, 200)
+  const safariGone = await refresh(`${REFRESH_COOKIE_NAME}=${safariNow.value}`)
+  assert.equal(safariGone.statusCode, 401)
 })
 
 test('a refresh whose answer was lost keeps the person signed in', async () => {

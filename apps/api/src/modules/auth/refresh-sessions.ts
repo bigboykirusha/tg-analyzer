@@ -7,10 +7,15 @@ import { addMs, DAY_MS } from '../../lib/time'
 import { REFRESH_TOKEN_TTL_DAYS } from './tokens'
 
 /**
- * Refresh tokens rotate on every use. A token family is revoked entirely when an already-rotated token is replayed
- * after the short grace period while its successor has been used too (theft detection: two holders of one family).
- * A successor that was never used means the client never got it — a phone put the tab to sleep while the answer with
- * the new cookie was on its way — so the old token gets that successor again instead of signing the person out.
+ * Refresh tokens rotate on every use, and one login is one family: «Выйти» revokes all of it. An already-rotated token
+ * that comes back is not taken for theft, because on an iPhone it rarely is:
+ * - a phone put the tab to sleep while the answer with the new cookie was on its way: the successor was never used, so
+ *   the old token gets that successor again;
+ * - since iOS 17.2 «На экран Домой» copies Safari's cookies into the installed app, so Safari and the app each hold the
+ *   same token and the one that refreshes second carries a rotated one (WebKit also has an open bug that sends an older
+ *   cookie back). Its chain has moved on in the other jar, so the old token starts a branch of its own in the same
+ *   family, the way a second device would; both stay signed in and «Выйти» still ends the login everywhere.
+ * Revoking the family here signed people out of Safari and the installed app alike (13.11).
  */
 
 const expiresAt = (from: Date) => addMs(from, REFRESH_TOKEN_TTL_DAYS * DAY_MS)
@@ -25,7 +30,7 @@ export async function createRefreshSession(userId: string, familyId = randomUUID
 }
 
 export type RotationResult =
-  { status: 'rotated' | 'grace'; session: RefreshSessionRow } | { status: 'invalid' | 'replayed' }
+  { status: 'rotated' | 'grace' | 'forked'; session: RefreshSessionRow } | { status: 'invalid' }
 
 export function rotateRefreshSession(tokenId: string, userId: string, familyId: string): Promise<RotationResult> {
   return db.transaction(async (tx) => {
@@ -72,9 +77,6 @@ export function rotateRefreshSession(tokenId: string, userId: string, familyId: 
       return { status: 'invalid' }
     }
 
-    const revokeFamily = () =>
-      tx.update(schema.refreshSessions).set({ revokedAt: now }).where(eq(schema.refreshSessions.familyId, familyId))
-
     const successor = await tx.query.refreshSessions.findFirst({
       where: and(
         eq(schema.refreshSessions.tokenId, current.replacedByTokenId),
@@ -82,19 +84,19 @@ export function rotateRefreshSession(tokenId: string, userId: string, familyId: 
         gt(schema.refreshSessions.expiresAt, now),
       ),
     })
+    if (!successor) return { status: 'invalid' }
 
-    // A concurrent request (e.g. two tabs) may legitimately reuse the token for a moment; later, only while the
-    // successor has never been used (the answer that carried it was lost).
+    // A concurrent request (two tabs) or a lost answer: the successor is this holder's own next token.
     const inGrace = Boolean(current.graceUntil && current.graceUntil >= now)
-    if (!inGrace && (!successor || successor.replacedByTokenId)) {
-      await revokeFamily()
-      return { status: 'replayed' }
-    }
-    if (!successor) {
-      await revokeFamily()
-      return { status: 'invalid' }
-    }
-    return { status: 'grace', session: successor }
+    if (inGrace || !successor.replacedByTokenId) return { status: 'grace', session: successor }
+
+    // The chain went on under another holder of the same cookie: a branch of its own, same login.
+    const [branch] = await tx
+      .insert(schema.refreshSessions)
+      .values({ userId, familyId, tokenId: randomUUID(), expiresAt: expiresAt(now) })
+      .returning()
+    if (!branch) throw new Error('Refresh session persistence failed')
+    return { status: 'forked', session: branch }
   })
 }
 

@@ -40,6 +40,7 @@ onMounted(() => {
   observer = new ResizeObserver(measure)
   if (root.value) observer.observe(root.value)
   if (head.value) observer.observe(head.value)
+  if (safe.value) observer.observe(safe.value)
   window.setTimeout(() => (listReady.value = true), 600)
 })
 onBeforeUnmount(() => observer?.disconnect())
@@ -58,6 +59,13 @@ const y = computed(() => {
 })
 /** 0 at rest, 1 open: the scrim follows. */
 const progress = computed(() => (closed.value ? Math.min(1, Math.max(0, 1 - y.value / closed.value)) : 0))
+/**
+ * At rest the home indicator's strip under the head is the sheet too, and the list would peek into it (an installed
+ * app has the strip; Safari's toolbar hides it). A veil of the sheet's own surface covers it and melts over the first
+ * stretch of a pull, so the chats still come up under the finger.
+ */
+const VEIL_PX = 48
+const veil = computed(() => Math.min(1, Math.max(0, 1 - (closed.value - y.value) / VEIL_PX)))
 
 function openSheet() {
   if (open.value) return
@@ -164,6 +172,7 @@ function tap() {
         @click="tap"
       >
         <span class="chats__handle" aria-hidden="true" />
+        <span class="chats__veil" :style="{ opacity: veil }" aria-hidden="true" />
         <AnalysisLive v-if="view && !open" />
         <div v-else class="chats__bar">
           <label class="chats__search">
@@ -256,9 +265,26 @@ function tap() {
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
+  position: relative;
   padding: var(--space-2) var(--page-gutter) var(--space-3);
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+.chats__veil {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  height: env(safe-area-inset-bottom, 0px);
+  background: var(--surface-raised);
+  pointer-events: none;
+  transition: opacity var(--duration-sheet) var(--ease-drawer);
+}
+
+.chats__sheet.is-dragging .chats__veil {
+  transition: none;
 }
 
 .chats__handle {
@@ -372,6 +398,7 @@ function tap() {
 
 @media (prefers-reduced-motion: reduce) {
   .chats__sheet,
+  .chats__veil,
   .chats__close {
     transition-duration: var(--duration-none);
   }

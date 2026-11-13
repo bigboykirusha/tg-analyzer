@@ -172,6 +172,17 @@ const bellLabel = computed(() =>
   transition: transform var(--duration-sheet) var(--ease-standard);
 }
 
+/*
+ * A phone's status strip takes its colour from a solid bar at the top edge (Safari 26 and the installed app); a
+ * transparent bar is skipped and the colour it showed last is kept — a report's poster stayed on the strip over home
+ * (13.11). At the top of a page the bar is the page's own paper, so the strip always has a colour to read.
+ */
+@media (max-width: 900px) {
+  .app-bar:not(.is-over-poster, .is-scrolled) {
+    background-color: var(--bg);
+  }
+}
+
 /* Scrolled: the material, one hairline. */
 .app-bar.is-scrolled {
   background: var(--header-glass);

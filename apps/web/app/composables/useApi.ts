@@ -43,7 +43,7 @@ function toClientError(error: unknown): ApiClientError {
   return new ApiClientError(error instanceof Error ? error.message : 'Network error', null, 'NETWORK_ERROR')
 }
 
-const SESSION_ENDED: ReadonlySet<string> = new Set(['AUTH_REFRESH_INVALID', 'AUTH_REFRESH_REPLAYED'])
+const SESSION_ENDED: ReadonlySet<string> = new Set(['AUTH_REFRESH_INVALID'])
 
 // ─── Access token refresh ──────────────────────────────────────────────────
 

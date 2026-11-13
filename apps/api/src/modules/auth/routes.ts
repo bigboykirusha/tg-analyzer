@@ -183,20 +183,19 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   })
 
   app.post('/refresh', { config: REFRESH_RATE_LIMIT }, async (request, reply): Promise<AuthSuccessResponse> => {
-    const fail = (code: ApiErrorCode = 'AUTH_REFRESH_INVALID') => {
+    const fail = () => {
       clearRefreshCookie(reply)
-      return unauthorized(code, 'Session expired, please sign in again')
+      return unauthorized('AUTH_REFRESH_INVALID', 'Session expired, please sign in again')
     }
 
     const claims = readRefreshClaims(request)
     if (!claims?.sessionId) throw fail()
 
     const rotation = await rotateRefreshSession(claims.sessionId, claims.sub, claims.familyId)
-    if (rotation.status === 'replayed') {
-      request.log.warn({ userId: claims.sub }, 'refresh token replay detected; session family revoked')
-      throw fail('AUTH_REFRESH_REPLAYED')
-    }
     if (!('session' in rotation)) throw fail()
+    if (rotation.status === 'forked') {
+      request.log.info({ userId: claims.sub }, 'rotated refresh token came back from a second holder; branched')
+    }
 
     const user = await findUser(claims.sub)
     if (!user) throw fail()

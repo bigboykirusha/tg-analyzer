@@ -19,7 +19,6 @@ export type ApiErrorCode =
   // app session
   | 'AUTH_UNAUTHORIZED'
   | 'AUTH_REFRESH_INVALID'
-  | 'AUTH_REFRESH_REPLAYED'
   // telegram login
   | 'LOGIN_PHONE_INVALID'
   | 'LOGIN_PHONE_BANNED'
