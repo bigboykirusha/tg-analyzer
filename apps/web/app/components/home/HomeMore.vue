@@ -15,7 +15,6 @@ const view = useAnalysisView()
 const actions = useReportActions()
 const isPhone = useMediaQuery('(max-width: 900px)')
 const route = useRoute()
-const detailsOpen = ref(false)
 
 const MAX = 12
 const R = 31
@@ -50,7 +49,7 @@ const firstName = (title: string) => title.split(/\s+/)[0] || title
 const percent = computed(() => view.value?.percent ?? null)
 
 function tap(person: Person) {
-  if (reading(person.id)) detailsOpen.value = true
+  if (reading(person.id)) analysis.details.value = true
   else if (!waiting(person.id)) void actions.analyse(person.id, person.title)
 }
 
@@ -113,7 +112,6 @@ const loading = computed(() => !workspace.recent && workspace.recentState === 'l
         </button>
       </li>
     </ul>
-    <AnalysisDetails :open="detailsOpen" @close="detailsOpen = false" />
   </section>
 </template>
 

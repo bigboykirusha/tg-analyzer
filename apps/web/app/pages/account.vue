@@ -64,7 +64,7 @@ const notify = computed({
       window.addEventListener('focus', () => void refreshUser().catch(() => undefined), { once: true })
     } else if (!value)
       void updateSettings({ botNotify: false }).catch((error) =>
-        toast.error(t('accountPage.linkError'), errorMessage(error)),
+        toast.error(t('accountPage.notifyError'), errorMessage(error)),
       )
   },
 })
@@ -83,12 +83,14 @@ async function toggleLink(link: UserShareLinkDto & { on: boolean }, on: boolean)
   link.on = on
   try {
     const params = { chatId: link.chatId, kind: link.kind as ShareLinkKind }
-    if (on)
-      await api('POST /api/v1/reports/:chatId/links', {
+    if (on) {
+      // A new link with a new address, but showing what the old one showed: the author's choice of names and words.
+      const made = await api('POST /api/v1/reports/:chatId/links', {
         params: { chatId: link.chatId },
-        body: { kind: link.kind, days: 30 },
+        body: { kind: link.kind, days: 30, ...(link.settings ? { settings: link.settings } : {}) },
       })
-    else await api('DELETE /api/v1/reports/:chatId/links/:kind', { params })
+      link.expiresAt = made.expiresAt
+    } else await api('DELETE /api/v1/reports/:chatId/links/:kind', { params })
   } catch (error) {
     link.on = previous
     toast.error(t('accountPage.linkError'), errorMessage(error))

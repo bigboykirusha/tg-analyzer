@@ -10,6 +10,10 @@ import { Bell } from '../lib/icons'
  * Clear at the top, the material once the page scrolls under it. Over a report's poster the bar takes
  * the poster's colour and its circles turn into poster chips; past the poster it melts into the material.
  *
+ * A running analysis away from home is a thin line along the screen's top edge, filling as the chat is read: on
+ * home it is the person's ring in «Разобрать ещё», on desktop the card in the sidebar. Nothing floats over the
+ * page; the line only says «still going» — the details and cancel are a tap away on home, the result is a toast.
+ *
  * Desktop: only a report keeps a bar (its name after the poster); other screens title themselves.
  */
 const auth = useAuthStore()
@@ -18,6 +22,9 @@ const { t } = useI18n()
 const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
 const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
 const notifications = useNotificationsStore()
+const analysisView = useAnalysisView()
+/** The line shows wherever the ring of «Разобрать ещё» does not: every signed-in screen but home. */
+const running = computed(() => (route.path === '/dashboard' ? null : analysisView.value))
 const bellLabel = computed(() =>
   notifications.unread ? t('notifications.unreadLabel', { count: notifications.unread }) : t('nav.notifications'),
 )
@@ -45,6 +52,17 @@ const bellLabel = computed(() =>
         </span>
       </div>
     </div>
+    <span
+      v-if="running"
+      class="app-bar__progress"
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      :aria-valuenow="running.percent ?? undefined"
+      :aria-label="running.title"
+    >
+      <i :style="{ transform: `scaleX(${(running.percent ?? 4) / 100})` }" />
+    </span>
   </header>
 </template>
 
@@ -127,6 +145,28 @@ const bellLabel = computed(() =>
   transform: scale(var(--press-scale));
 }
 
+/*
+ * The running analysis: a 2 px line of ink along the top edge of the screen, where browsers draw a page's loading —
+ * the same over paper, the material and a poster (under the bar it would underline the poster's chips).
+ */
+.app-bar__progress {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--space-0-5);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.app-bar__progress i {
+  display: block;
+  height: 100%;
+  background: currentColor;
+  transform-origin: left center;
+  transition: transform var(--duration-sheet) var(--ease-standard);
+}
+
 /* Scrolled: the material, one hairline. */
 .app-bar.is-scrolled {
   background: var(--header-glass);
@@ -168,6 +208,11 @@ const bellLabel = computed(() =>
 
   .app-bar__home {
     display: none !important;
+  }
+
+  /* The sidebar's card tells it here. */
+  .app-bar__progress {
+    display: none;
   }
 
   .app-bar__inner {

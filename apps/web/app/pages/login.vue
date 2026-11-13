@@ -35,10 +35,6 @@ onMounted(() => {
 
 useSeoMeta({ title: () => t('login.seoTitle'), description: () => t('seo.description'), robots: 'noindex' })
 
-watch(step, () => {
-  error.value = ''
-})
-
 async function run(action: () => Promise<void>) {
   loading.value = true
   error.value = ''
@@ -46,10 +42,11 @@ async function run(action: () => Promise<void>) {
     await action()
   } catch (caught) {
     error.value = errorMessage(caught)
-    // An expired login cannot be continued; start over from the phone step.
+    // An expired login cannot be continued: start over from the phone step, which says why it is back.
     if (caught instanceof ApiClientError && caught.code === 'LOGIN_SESSION_EXPIRED') {
+      code.value = ''
+      password.value = ''
       step.value = 'phone'
-      error.value = errorMessage(caught)
     }
   } finally {
     loading.value = false
@@ -128,9 +125,12 @@ function submitPassword() {
   })
 }
 
+/** Back to the number from the code or the password step: a wrong number is not a dead end. */
 function changeNumber() {
   step.value = 'phone'
+  error.value = ''
   code.value = ''
+  password.value = ''
   delivery.value = null
   resendAvailableAt.value = 0
 }
@@ -160,7 +160,12 @@ function changeNumber() {
                   {{ t('login.changeNumber') }}
                 </button>
               </template>
-              <template v-else>{{ t('login.passwordDescription') }}</template>
+              <template v-else>
+                {{ t('login.passwordDescription') }}
+                <button type="button" class="link" :disabled="loading" @click="changeNumber">
+                  {{ t('login.changeNumber') }}
+                </button>
+              </template>
             </p>
           </header>
 

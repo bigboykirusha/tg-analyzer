@@ -55,19 +55,8 @@ watch(chatId, () => {
   void load()
 })
 
-/** A known chat without a report is not a dead end: it can be analysed right here. */
+/** A known chat without a report is not a dead end: it can be analysed right here (AnalyseButton, as everywhere). */
 const knownChat = computed(() => workspace.chats.find((chat) => chat.id === chatId.value) ?? null)
-const starting = ref(false)
-async function analyseHere() {
-  starting.value = true
-  try {
-    await analysis.startAnalysis(chatId.value, knownChat.value?.title ?? null)
-  } catch (error) {
-    loadError.value = error
-  } finally {
-    starting.value = false
-  }
-}
 
 const shareUsed = ref(false)
 const storyUsed = ref(false)
@@ -140,14 +129,14 @@ onMounted(load)
         :description="knownChat ? t('report.notFoundKnownText') : t('report.notFoundText')"
       >
         <template #action>
-          <UiButton
-            v-if="knownChat"
+          <span v-if="knownChat && knownChat.tooSmall" class="t-label">{{ t('newAnalysis.tooSmall') }}</span>
+          <AnalyseButton
+            v-else-if="knownChat"
+            :chat-id="knownChat.id"
+            :title="knownChat.title"
             variant="primary"
-            :loading="starting || analysis.isActive.value"
-            @click="analyseHere"
-          >
-            {{ t('report.analyseHere') }}
-          </UiButton>
+            size="md"
+          />
           <UiButton v-else variant="primary" to="/new">{{ t('common.goToChats') }}</UiButton>
         </template>
       </UiEmptyState>

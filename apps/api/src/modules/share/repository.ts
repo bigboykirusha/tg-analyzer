@@ -287,6 +287,7 @@ export async function listUserLinks(userId: string): Promise<UserShareLinkDto[]>
       title,
       kind: link.kind,
       expiresAt: link.expiresAt?.toISOString() ?? null,
+      settings: link.kind === 'report' ? (link.settings ?? DEFAULT_REPORT_SETTINGS) : null,
       result: toResult(link),
     }))
 }

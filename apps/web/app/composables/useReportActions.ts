@@ -1,6 +1,19 @@
 import { ApiClientError } from './useApi'
 
 /**
+ * Refusals the service makes on purpose — a limit, a pause between analyses, a chat too small, a full queue. They
+ * are not failures: one calm line says what and when, without «Не удалось запустить разбор» over it.
+ */
+const EXPECTED = new Set<ApiClientError['code']>([
+  'CHAT_TOO_SMALL',
+  'PARSE_COOLDOWN',
+  'PARSE_DAILY_LIMIT',
+  'PARSE_QUEUE_FULL',
+  'PARSE_ALREADY_QUEUED',
+  'PARSE_ALREADY_RUNNING',
+])
+
+/**
  * What can be done to a chat from anywhere (a home card's «⋯», a chat row, the new-analysis list):
  * analyse or refresh it, ask to delete its report. One shared state; the confirmation lives once in
  * the workspace layout (ReportActionsHost).
@@ -31,7 +44,8 @@ export function useReportActions() {
       await analysis.startAnalysis(chatId, title)
     } catch (error) {
       if (error instanceof ApiClientError && error.code === 'CHAT_TOO_SMALL') workspace.markTooSmall(chatId)
-      toast.error(t('analysis.startError'), errorMessage(error))
+      if (error instanceof ApiClientError && EXPECTED.has(error.code)) toast.info(errorMessage(error))
+      else toast.error(t('analysis.startError'), errorMessage(error))
     } finally {
       starting.value = null
     }

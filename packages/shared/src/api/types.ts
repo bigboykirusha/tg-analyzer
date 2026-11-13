@@ -943,6 +943,8 @@ export interface UserShareLinkDto {
   title: string
   kind: ShareLinkKind
   expiresAt: string | null
+  /** What a report link shows (names, words): turning the link on again keeps the author's choice. Null for a quiz. */
+  settings: ShareReportSettings | null
   result: QuizResultDto | null
 }
 

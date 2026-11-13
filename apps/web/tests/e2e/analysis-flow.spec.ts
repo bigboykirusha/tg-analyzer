@@ -284,3 +284,39 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
   expect(png.subarray(1, 4).toString()).toBe('PNG')
   expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1920])
 })
+
+test('a running analysis shows away from home and its button opens the details', async ({ page }, testInfo) => {
+  await signIn(page)
+  await expect(page.locator('.home-card:not([aria-busy])').first()).toBeVisible()
+  // A long analysis, as the status endpoint tells it: «Дима (работа)» at 63 %.
+  await page.route('**/api/v1/parse/status*', (route) =>
+    route.fulfill({
+      json: {
+        jobId: '00000000-0000-4000-8000-000000000001',
+        status: 'running',
+        phase: 'scanning',
+        chatId: '1005',
+        chatTitle: 'Дима (работа)',
+        scannedMessages: 1638,
+        totalMessages: 2600,
+        startedAt: Date.now() - 20_000,
+        waitSeconds: null,
+        error: null,
+        queued: [],
+      },
+    }),
+  )
+  await gotoHydrated(page, '/new')
+  // The chat's own button reads the percentage and opens the running analysis, where it can be cancelled.
+  const row = page.locator('.chat-row').filter({ hasText: 'Дима (работа)' })
+  await row.getByRole('button', { name: 'Разбираем чат «Дима (работа)», 63%' }).click()
+  const details = page.getByRole('dialog', { name: 'Разбираем переписку' })
+  await expect(details.getByRole('button', { name: 'Отменить разбор' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(details).toBeHidden()
+  // A phone has no sidebar card: away from home the analysis is the line along the top of the screen.
+  if (testInfo.project.name !== 'desktop') {
+    await gotoHydrated(page, '/account')
+    await expect(page.locator('.app-bar__progress')).toHaveAttribute('aria-valuenow', '63')
+  }
+})

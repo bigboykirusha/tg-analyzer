@@ -88,7 +88,9 @@ const coverMeta = computed(() =>
     days: tc('insight.days', days.value.length),
   }),
 )
-const frames = computed(() => (isGroup.value ? 5 : 4))
+/** As many segments and pictures as «Итоги» really has for this report: a small chat can lack a frame. */
+const story = useStoryFrames(() => props.data)
+const frames = computed(() => story.frames.value.length)
 const title = computed(() =>
   step.value === 'link' ? t('share.link.title') : step.value === 'quiz' ? t('share.quiz.short') : t('share.open'),
 )
@@ -127,7 +129,7 @@ const title = computed(() =>
         </span>
         <span class="feature__copy">
           <b class="feature__title">{{ t('share.title', { name }) }}</b>
-          <span class="feature__text">{{ t(isGroup ? 'share.ledeGroup' : 'share.lede') }}</span>
+          <span class="feature__text">{{ tc(isGroup ? 'share.ledeGroup' : 'share.lede', frames) }}</span>
           <UiButton
             class="feature__watch"
             variant="primary"

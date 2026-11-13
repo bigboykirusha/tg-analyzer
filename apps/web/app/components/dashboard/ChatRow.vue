@@ -31,8 +31,9 @@ const meta = computed(() => {
     return group ? t('sidebar.groupMeta', { count: line.toLocaleLowerCase() }) : line
   }
   const time = props.chat.lastMessageAt ? formatRelative(props.chat.lastMessageAt, 'short') : null
-  const line = time ? t('newAnalysis.wrote', { time }) : ''
-  return group ? (line ? t('sidebar.groupMeta', { count: line.toLocaleLowerCase() }) : t('chatType.group')) : line
+  // A group's line already starts with «Группа»: the time alone keeps it whole beside the button («Группа, 6 ч назад»).
+  if (group) return time ? t('sidebar.groupMeta', { count: time }) : t('chatType.group')
+  return time ? t('newAnalysis.wrote', { time }) : ''
 })
 
 const PRESS_MS = 450
@@ -98,7 +99,7 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
         </template>
       </UiListRow>
     </template>
-    <UiMenuItem role="menuitem" :icon="RotateCw" @click="run('refresh')">{{ t('dashboard.reanalyse') }}</UiMenuItem>
+    <UiMenuItem role="menuitem" :icon="RotateCw" @click="run('refresh')">{{ t('dashboard.refreshReport') }}</UiMenuItem>
     <UiMenuItem v-if="chat.type === 'private'" role="menuitem" :icon="Share" @click="run('share')">
       {{ t('share.open') }}
     </UiMenuItem>

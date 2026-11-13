@@ -2,12 +2,14 @@
 import { X } from '../../lib/icons'
 
 /**
- * «Разобрать» for one chat, wherever a chat is offered (home, the newcomer's home, «Новый анализ»): one
- * button that tells the same state everywhere, in its own place: no second spinner beside the capsule's number.
+ * «Разобрать» for one chat, wherever a chat is offered (the newcomer's home, «Новый анализ», a chat's page
+ * without a report): one button that tells the same state everywhere, in its own place.
  *   idle      «Разобрать»
  *   starting  the same label, busy
- *   reading   busy, the percentage the capsule and the sheet show (or «Разбираем…» before the first number)
+ *   reading   the percentage (or «Разбираем…» before the first number) beside a spinner; pressing it opens
+ *             «Разбираем переписку» — how far it got, and where it can be cancelled
  *   queued    «В очереди» with a cross: pressing it takes the chat out of the line
+ * The state changes the words, never the look: the button keeps the variant its place gave it.
  */
 const props = withDefaults(
   defineProps<{
@@ -19,23 +21,20 @@ const props = withDefaults(
   }>(),
   { variant: 'quiet', size: 'sm', block: false },
 )
-const { t } = useI18n()
+const { t, formatNumber } = useI18n()
 const actions = useReportActions()
 const analysis = useAnalysis()
 const view = useAnalysisView()
 
 const queuedJob = computed(() => analysis.queued.value.find((item) => item.chatId === props.chatId)?.jobId ?? null)
 const reading = computed(() => analysis.isActive.value && analysis.progress.value.chatId === props.chatId)
-const label = computed(() => {
-  if (!reading.value) return t('month.analyse')
-  const percent = view.value?.percent
-  return percent === null || percent === undefined ? t('dashboard.analysingNow') : `${percent}%`
-})
+const percent = computed(() => view.value?.percent ?? null)
 </script>
 
 <template>
   <UiButton
     v-if="queuedJob"
+    :variant="variant === 'primary' ? 'secondary' : variant"
     :size="size"
     :block="block"
     :icon="X"
@@ -45,15 +44,27 @@ const label = computed(() => {
     {{ t('dashboard.queued') }}
   </UiButton>
   <UiButton
+    v-else-if="reading"
+    :variant="variant === 'primary' ? 'secondary' : variant"
+    :size="size"
+    :block="block"
+    aria-haspopup="dialog"
+    :aria-label="t('home.moreReading', { name: title, percent: percent === null ? '…' : formatNumber(percent) })"
+    @click.prevent="analysis.details.value = true"
+  >
+    <template #icon><span class="spinner" aria-hidden="true" /></template>
+    <span class="analyse-button__label">{{ percent === null ? t('dashboard.analysingNow') : `${percent}%` }}</span>
+  </UiButton>
+  <UiButton
     v-else
     :variant="variant"
     :size="size"
     :block="block"
-    :loading="reading || actions.starting.value === chatId"
-    :aria-label="reading ? undefined : t('home.unanalysedAction', { name: title })"
+    :loading="actions.starting.value === chatId"
+    :aria-label="t('home.unanalysedAction', { name: title })"
     @click.prevent="actions.analyse(chatId, title)"
   >
-    <span class="analyse-button__label">{{ label }}</span>
+    <span class="analyse-button__label">{{ t('month.analyse') }}</span>
   </UiButton>
 </template>
 

@@ -6,7 +6,7 @@
  */
 withDefaults(defineProps<{ variant?: 'card' }>(), { variant: 'card' })
 const view = useAnalysisView()
-const open = ref(false)
+const analysis = useAnalysis()
 const { t } = useI18n()
 const R = 18
 const C = 2 * Math.PI * R
@@ -20,7 +20,7 @@ const C = 2 * Math.PI * R
       :class="`live--${variant}`"
       aria-haspopup="dialog"
       :aria-label="`${view.title}. ${view.status}`"
-      @click="open = true"
+      @click="analysis.details.value = true"
     >
       <span class="live__ring">
         <svg viewBox="0 0 40 40" aria-hidden="true">
@@ -44,7 +44,6 @@ const C = 2 * Math.PI * R
         >+{{ view.queued }}</span
       >
     </button>
-    <AnalysisDetails :open="open" @close="open = false" />
   </template>
 </template>
 

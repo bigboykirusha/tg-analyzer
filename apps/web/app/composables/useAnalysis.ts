@@ -38,6 +38,8 @@ export function useAnalysis() {
   const finished = useState<ParseProgressDto | null>('analysis-finished', () => null)
   /** Chats waiting after the running one, oldest first. */
   const queued = useState<QueuedAnalysisDto[]>('analysis-queued', () => [])
+  /** «Разбираем переписку» is open: one sheet for the whole app (ReportActionsHost), opened from wherever the analysis shows. */
+  const details = useState('analysis-details', () => false)
   const config = useRuntimeConfig()
   const isActive = computed(() => ACTIVE.has(progress.value.status))
 
@@ -147,6 +149,7 @@ export function useAnalysis() {
     progress.value = idle()
     finished.value = null
     queued.value = []
+    details.value = false
   }
 
   async function startAnalysis(chatId: string, chatTitle: string | null) {
@@ -176,5 +179,5 @@ export function useAnalysis() {
     await refresh()
   }
 
-  return { progress, finished, queued, isActive, start, stop, refresh, startAnalysis, cancel }
+  return { progress, finished, queued, details, isActive, start, stop, refresh, startAnalysis, cancel }
 }

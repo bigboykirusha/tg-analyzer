@@ -13,9 +13,6 @@ const { t } = useI18n()
 const titleId = useId()
 const wide = useMediaQuery('(min-width: 901px)')
 const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
-const lede = computed(() =>
-  props.data.summary.type === 'group' ? t('report.ending.ledeGroup') : t('report.ending.lede'),
-)
 </script>
 
 <template>
@@ -33,7 +30,7 @@ const lede = computed(() =>
           <h2 :id="titleId" class="ending__title">
             {{ t('report.ending.title', { name: data.summary.title }) }}
           </h2>
-          <p class="ending__lede">{{ lede }}</p>
+          <p class="ending__lede">{{ t('report.ending.lede') }}</p>
           <div class="ending__actions">
             <UiButton variant="primary" :icon="Play" @click="emit('story')">{{ t('share.watch') }}</UiButton>
             <UiButton variant="secondary" :icon="Share" aria-haspopup="dialog" @click="emit('share')">
