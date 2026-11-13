@@ -15,8 +15,10 @@ const props = withDefaults(
     busy?: boolean
     /** A second step: the left button goes back instead of closing. */
     back?: boolean
+    /** A selector inside the sheet to focus on opening, when the person asked for it (a tapped search). */
+    initialFocus?: string
   }>(),
-  { title: '', role: 'dialog', busy: false, back: false },
+  { title: '', role: 'dialog', busy: false, back: false, initialFocus: '' },
 )
 
 const emit = defineEmits<{ close: []; back: [] }>()
@@ -31,8 +33,13 @@ function close() {
 }
 
 useBodyScrollLock(open)
-// The sheet itself takes focus: a search field first would pop the keyboard over the list on a phone.
-useFocusTrap(panelRef, open, { onEscape: close, initial: () => panelRef.value })
+// The sheet itself takes focus: a search field first would pop the keyboard over the list on a phone — unless the
+// person opened it by tapping a search (`initialFocus`), and then the keyboard is what they asked for.
+useFocusTrap(panelRef, open, {
+  onEscape: close,
+  initial: () =>
+    (props.initialFocus ? panelRef.value?.querySelector<HTMLElement>(props.initialFocus) : null) ?? panelRef.value,
+})
 const drag = useSheetDrag(panelRef, close)
 watch(open, (value) => value && drag.reset())
 </script>

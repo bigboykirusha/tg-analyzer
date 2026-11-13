@@ -24,9 +24,18 @@ const filterOptions = computed(() => [
   { value: 'groups' as const, label: t('dashboard.filter.groups') },
 ])
 
+/** Telegram's own order: pinned chats first, then the latest message; chats known only from a report go last. */
+const ordered = computed(() =>
+  [...workspace.chats].sort(
+    (left, right) =>
+      Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)) ||
+      (right.lastMessageAt ? Date.parse(right.lastMessageAt) : 0) -
+        (left.lastMessageAt ? Date.parse(left.lastMessageAt) : 0),
+  ),
+)
 const filteredChats = computed(() => {
   const query = search.value.trim().toLocaleLowerCase()
-  return workspace.chats.filter((chat) => {
+  return ordered.value.filter((chat) => {
     if (filter.value === 'private' && chat.type !== 'private') return false
     if (filter.value === 'groups' && chat.type === 'private') return false
     return !query || chat.title.toLocaleLowerCase().includes(query)
@@ -69,6 +78,9 @@ onMounted(() => {
       </label>
       <UiFilters v-model="filter" :options="filterOptions" :label="t('dashboard.filter.label')" />
     </div>
+
+    <!-- What the page puts over the list (the people of the month in the sheet); out of the way while searching. -->
+    <slot v-if="!search" name="lead" />
 
     <p v-if="!auth.telegramSessionActive" class="picker__note" role="status">
       {{ t('dashboard.sessionInactive') }}

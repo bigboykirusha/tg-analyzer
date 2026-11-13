@@ -2,7 +2,8 @@
 /**
  * «Чаты Telegram» on a phone: the chat list as a sheet over the screen you are on, instead of a page of
  * its own, the people of the month over the list. It has its own URL (`?pick`), so the browser's back closes it;
- * `/new` stays for wide screens and direct links. On home its edge rests at the bottom (HomeChatsPeek).
+ * `/new` stays for wide screens and direct links. On home its edge rests at the bottom (HomeChatsPeek); opened by its
+ * search (`?pick=search`) the sheet arrives with the caret in its search.
  */
 const route = useRoute()
 const router = useRouter()
@@ -17,10 +18,16 @@ function close() {
 </script>
 
 <template>
-  <UiBottomSheet :open="open" :title="t('newAnalysis.sheetTitle')" @close="close">
-    <!-- A phone keeps the people of the month here, over the whole list: home shows only the list's edge. -->
-    <HomeMore in-sheet />
-    <ChatPicker class="picker-sheet" />
+  <UiBottomSheet
+    :open="open"
+    :title="t('newAnalysis.sheetTitle')"
+    :initial-focus="route.query.pick === 'search' ? 'input[type=search]' : ''"
+    @close="close"
+  >
+    <ChatPicker class="picker-sheet">
+      <!-- The people of the month, under the search and over the whole list; they step aside while you type. -->
+      <template #lead><HomeMore in-sheet /></template>
+    </ChatPicker>
   </UiBottomSheet>
 </template>
 

@@ -11,7 +11,15 @@ import { Search } from '../../lib/icons'
 const { t } = useI18n()
 const route = useRoute()
 const view = useAnalysisView()
-const to = computed(() => ({ query: { ...route.query, pick: null } }))
+const to = computed(() => ({ query: { ...route.query, pick: 'search' } }))
+/**
+ * iOS shows the keyboard only for a focus made inside the tap itself, and the sheet's search is not on the page yet:
+ * the tap focuses this hidden field first, so the keyboard is already up when the sheet hands focus to its search.
+ */
+const proxy = ref<HTMLInputElement | null>(null)
+function holdKeyboard() {
+  proxy.value?.focus({ preventScroll: true })
+}
 
 /** A pull up of more than a few pixels opens the list, as the sheet's own handle would. */
 const PULL = 24
@@ -28,8 +36,9 @@ function up(event: PointerEvent) {
 <template>
   <div class="peek" @pointerdown="down" @pointerup="up" @pointercancel="startY = null">
     <span class="peek__handle" aria-hidden="true" />
+    <input ref="proxy" class="peek__proxy" type="search" tabindex="-1" aria-hidden="true" />
     <AnalysisLive v-if="view" />
-    <NuxtLink v-else :to="to" class="peek__search">
+    <NuxtLink v-else :to="to" class="peek__search" @click="holdKeyboard">
       <Search aria-hidden="true" />
       <span>{{ t('home.peekSearch') }}</span>
     </NuxtLink>
@@ -52,6 +61,18 @@ function up(event: PointerEvent) {
   background: var(--surface-raised);
   box-shadow: var(--shadow-peek);
   touch-action: none;
+}
+
+/* Off the screen and invisible, but a real field (16 px, so iOS does not zoom) — see holdKeyboard. */
+.peek__proxy {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  font: var(--text-body);
+  pointer-events: none;
 }
 
 .peek__handle {
