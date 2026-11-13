@@ -7,8 +7,10 @@ import { addMs, DAY_MS } from '../../lib/time'
 import { REFRESH_TOKEN_TTL_DAYS } from './tokens'
 
 /**
- * Refresh tokens rotate on every use. A token family is revoked entirely when
- * an already-rotated token is replayed after the short grace period (theft detection).
+ * Refresh tokens rotate on every use. A token family is revoked entirely when an already-rotated token is replayed
+ * after the short grace period while its successor has been used too (theft detection: two holders of one family).
+ * A successor that was never used means the client never got it — a phone put the tab to sleep while the answer with
+ * the new cookie was on its way — so the old token gets that successor again instead of signing the person out.
  */
 
 const expiresAt = (from: Date) => addMs(from, REFRESH_TOKEN_TTL_DAYS * DAY_MS)
@@ -73,12 +75,6 @@ export function rotateRefreshSession(tokenId: string, userId: string, familyId: 
     const revokeFamily = () =>
       tx.update(schema.refreshSessions).set({ revokedAt: now }).where(eq(schema.refreshSessions.familyId, familyId))
 
-    // A concurrent request (e.g. two tabs) may legitimately reuse the token for a moment.
-    if (!current.graceUntil || current.graceUntil < now) {
-      await revokeFamily()
-      return { status: 'replayed' }
-    }
-
     const successor = await tx.query.refreshSessions.findFirst({
       where: and(
         eq(schema.refreshSessions.tokenId, current.replacedByTokenId),
@@ -86,6 +82,14 @@ export function rotateRefreshSession(tokenId: string, userId: string, familyId: 
         gt(schema.refreshSessions.expiresAt, now),
       ),
     })
+
+    // A concurrent request (e.g. two tabs) may legitimately reuse the token for a moment; later, only while the
+    // successor has never been used (the answer that carried it was lost).
+    const inGrace = Boolean(current.graceUntil && current.graceUntil >= now)
+    if (!inGrace && (!successor || successor.replacedByTokenId)) {
+      await revokeFamily()
+      return { status: 'replayed' }
+    }
     if (!successor) {
       await revokeFamily()
       return { status: 'invalid' }

@@ -43,7 +43,7 @@ const bellLabel = computed(() =>
         <BrandLink to="/dashboard" bare :current="route.path === '/dashboard'" />
         <span class="app-bar__end">
           <span class="app-bar__bell">
-            <UiIconButton to="/notifications" :icon="Bell" :label="bellLabel" no-tooltip />
+            <UiIconButton to="/notifications" :icon="Bell" :label="bellLabel" bare no-tooltip />
             <span v-if="notifications.unread" class="app-bar__dot" aria-hidden="true" />
           </span>
           <NuxtLink to="/account" class="app-bar__account" :aria-label="t('account.settings')">

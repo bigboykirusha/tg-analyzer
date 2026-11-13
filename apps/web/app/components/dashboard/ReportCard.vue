@@ -44,12 +44,16 @@ const pulse = computed(() =>
 </template>
 
 <style scoped>
-/* New messages: a quiet chip of poster ink at the end of the tile's first line. */
+/* New messages: a crisp pill of the poster's ink with the person's colour in it, at the end of the tile's first line —
+   a translucent chip read as a smudge on the colour (13.11). */
 .report-card__badge {
-  padding: var(--space-0-5) var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  height: var(--space-6);
+  padding: 0 var(--space-2);
   border-radius: var(--radius-pill);
-  background: var(--on-poster-chip);
-  color: var(--on-poster);
+  background: var(--on-poster);
+  color: var(--poster);
   white-space: nowrap;
 }
 </style>

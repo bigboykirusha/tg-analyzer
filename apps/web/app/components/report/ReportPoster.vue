@@ -207,6 +207,26 @@ const cast = computed(() => {
   color: var(--on-poster);
 }
 
+/*
+ * A phone: the poster runs up under the browser's status strip, which Safari paints one flat colour (`--poster`,
+ * usePosterHeader) — a lit top met it with a seam (13.11). Here the top is the flat colour under the bar and the light
+ * of the material begins below it; the rest is `--poster-image` layer for layer.
+ */
+@media (max-width: 900px) {
+  .poster {
+    --poster-flat: calc(env(safe-area-inset-top, 0px) + var(--topbar-height));
+    background-image:
+      var(--grain),
+      linear-gradient(
+        180deg,
+        var(--poster) var(--poster-flat),
+        transparent calc(var(--poster-flat) + var(--space-12) * 2)
+      ),
+      radial-gradient(130% 100% at 0% 0%, var(--poster-light) 0%, transparent 60%),
+      linear-gradient(165deg, var(--poster) 30%, var(--poster-shade) 100%);
+  }
+}
+
 /* The report is a sheet laid over its poster: the page comes up with rounded shoulders. */
 .poster::after {
   content: '';

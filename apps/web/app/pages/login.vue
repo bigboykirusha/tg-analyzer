@@ -166,9 +166,6 @@ function changeNumber() {
               </template>
               <template v-else>
                 {{ t('login.passwordDescription') }}
-                <button type="button" class="link" :disabled="loading" @click="changeNumber">
-                  {{ t('login.changeNumber') }}
-                </button>
               </template>
             </p>
           </header>

@@ -3,9 +3,10 @@ import { AlertCircle, MessageSquare, Search, WifiOff, X } from '../lib/icons'
 
 /**
  * Every Telegram chat, to analyse one: a search well, «Все / Личные / Группы», then rows (ChatRow) —
- * the same list as a page on desktop (`/new`) and as a sheet on a phone (`?pick`).
+ * the same list as a page on desktop (`/new`), on a newcomer's home and as a sheet on a phone (`?pick`). The sheet on
+ * home carries the search in its own head (`ownSearch: false`, `v-model:search`).
  */
-withDefaults(defineProps<{ sticky?: boolean }>(), { sticky: false })
+withDefaults(defineProps<{ sticky?: boolean; ownSearch?: boolean }>(), { sticky: false, ownSearch: true })
 
 const PAGE_SIZE = 30
 const { t, tc } = useI18n()
@@ -14,7 +15,7 @@ const workspace = useWorkspaceStore()
 const errorMessage = useErrorMessage()
 const { relogin } = useAuth()
 
-const search = ref('')
+const search = defineModel<string>('search', { default: '' })
 const filter = ref<'all' | 'private' | 'groups'>('all')
 const visibleCount = ref(PAGE_SIZE)
 const sentinel = ref<HTMLElement | null>(null)
@@ -61,7 +62,7 @@ onMounted(() => {
 <template>
   <div class="picker" :class="{ 'picker--sticky': sticky }">
     <div class="picker__tools">
-      <label class="picker__search">
+      <label v-if="ownSearch" class="picker__search">
         <Search class="icon-sm" aria-hidden="true" />
         <input
           v-model="search"
@@ -78,9 +79,6 @@ onMounted(() => {
       </label>
       <UiFilters v-model="filter" :options="filterOptions" :label="t('dashboard.filter.label')" />
     </div>
-
-    <!-- What the page puts over the list (the people of the month in the sheet); out of the way while searching. -->
-    <slot v-if="!search" name="lead" />
 
     <p v-if="!auth.telegramSessionActive" class="picker__note" role="status">
       {{ t('dashboard.sessionInactive') }}

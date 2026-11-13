@@ -158,7 +158,7 @@ export const ru: Record<MessageKey, string> = {
   'faq.q.phone': 'Почему вход через номер телефона?',
   'privacy.pageTitle': 'Приватность',
   'privacy.pageLede':
-    'TG Analyzer читает только чат, который вы выбрали, и только во время разбора. Остаётся готовая статистика — числа, часы, частые слова, — а не переписка. Отчёт видите только вы, пока сами им не поделитесь.',
+    'TG Analyzer читает только чат, который вы выбрали, и только во время разбора. Остаётся готовая статистика — числа, часы, частые слова, — а не переписка. Отчёт видите только вы, пока сами им не поделитесь. Это неофициальный сервис: он работает через Telegram API.',
   'faq.q.read': 'Что вы читаете?',
   'faq.a.read':
     'Сообщения одного чата, который вы выбрали, — только во время разбора и только в памяти сервера: тексты нужны, чтобы посчитать слова и эмодзи. Ещё мы видим список ваших чатов (названия, типы и фото), чтобы вы могли выбрать, и профиль: ID в Telegram, имя, имя пользователя и фото.',
@@ -173,7 +173,7 @@ export const ru: Record<MessageKey, string> = {
     'Нет. Мы не продаём и не передаём данные, не пишем от вашего имени и не обучаем на них модели. Сервис работает на арендованном сервере: хостинг-провайдер хранит данные, но не использует их. Картинки «Итогов» и ссылки на отчёт отправляете только вы сами.',
   'faq.q.howLong': 'Как долго хранятся данные?',
   'faq.a.howLong':
-    'Отчёты — пока вы их не удалите. Сеанс Telegram — пока вы не выйдете на последнем устройстве. Записи о завершённых разборах удаляются через год.',
+    'Отчёты — пока вы их не удалите. Сеанс Telegram — пока вы не выйдете на последнем устройстве или 60 дней не будете заходить. Записи о входах удаляются через 90 дней, о завершённых разборах — через год.',
   'faq.q.delete': 'Как удалить отчёт?',
   'faq.a.delete':
     'В меню «⋯» в шапке отчёта. Вместе с ним удаляются «Итоги», ссылки и уведомления о нём. Войдёте снова — увидите отчёты, которые оставили.',
@@ -215,13 +215,8 @@ export const ru: Record<MessageKey, string> = {
   'home.botLater': 'Не сейчас',
   'home.firstTitle': 'С кого начнём?',
   'home.firstLede': 'Разбор занимает около минуты, для длинной переписки — дольше.',
-  'home.firstPrivacy': 'Тексты сообщений не сохраняются: в базе только готовый отчёт.',
   'home.greeting.lede': 'Что вы уже узнали о своих переписках',
   'home.unanalysedAction': 'Разобрать чат «{name}»',
-  'home.unanalysedCount.one': '{count} за месяц',
-  'home.unanalysedCount.few': '{count} за месяц',
-  'home.unanalysedCount.many': '{count} за месяц',
-  'home.unanalysedCount.other': '{count} за месяц',
   'insight.days.few': '{count} дня',
   'insight.days.many': '{count} дней',
   'insight.days.one': '{count} день',
@@ -252,7 +247,8 @@ export const ru: Record<MessageKey, string> = {
   'login.delivery.unsupported':
     'Telegram выбрал способ отправки, который поддерживают только официальные приложения. Запросите код ещё раз, чтобы получить его другим способом.',
   'login.getCode': 'Получить код',
-  'login.passwordDescription': 'В Telegram включена двухэтапная защита. Пароль проверяет Telegram, мы его не храним.',
+  'login.passwordDescription':
+    'В Telegram включена двухэтапная защита. Пароль проверяет Telegram, мы его не храним. Забыли — сбросить можно только в Telegram.',
   'login.passwordHint': 'Подсказка: {hint}',
   'login.passwordLabel': 'Облачный пароль',
   'login.passwordPlaceholder': 'Пароль Telegram',
@@ -265,11 +261,8 @@ export const ru: Record<MessageKey, string> = {
   'login.resendCall': 'Позвонить вместо этого',
   'login.resendIn': 'Отправить снова через {time}',
   'login.resendSms': 'Отправить по SMS',
-  'login.trust': 'Мы читаем только выбранный вами чат и храним только статистику, а не тексты сообщений.',
-  'login.trustLink': 'Приватность',
   'login.seoTitle': 'Вход',
   'login.signIn': 'Войти',
-  'login.passwordForgot': 'Забыли пароль? Сбросить его можно только в Telegram.',
   'login.sendingCode': 'Отправляем код…',
   'month.analyse': 'Разобрать',
   'nav.notifications': 'Уведомления',
@@ -499,11 +492,7 @@ export const ru: Record<MessageKey, string> = {
   'analysis.details.notifyHint': 'Сообщение придёт в Telegram',
   'analysis.details.notifyOn': 'Включить',
   'analysis.queuedCount': 'Ещё {count} в очереди',
-  'home.firstMost': '{count}, больше всех',
-  'home.firstOthers': 'Или кто-то ещё',
   'home.allChats': 'Все чаты Telegram',
-  'home.loadingChats': 'Загружаем чаты из Telegram…',
-  'home.loadingChatsError': 'Не удалось загрузить чаты',
   'landing.ex1.title': 'Мила, 52 на 48',
   'landing.ex1.text': 'Пишете на равных, отвечаете одинаково быстро',
   'landing.ex2.title': 'Артём, в 3 раза',
@@ -768,5 +757,4 @@ export const ru: Record<MessageKey, string> = {
   'report.change.refreshingAt': 'Обновляем отчёт, {percent}%',
   'report.change.queued': 'Обновим, когда дойдёт очередь',
   'home.peekSearch': 'Найти чат и разобрать',
-  'newAnalysis.recent': 'Чаще всего за месяц',
 }

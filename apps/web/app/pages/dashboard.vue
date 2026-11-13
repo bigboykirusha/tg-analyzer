@@ -7,7 +7,7 @@ definePageMeta({ layout: 'workspace', middleware: ['auth'] })
  * Home is what you have already learned: the reports, one poster tile each (two to a row on a phone, a long name
  * across the row), new messages in the chat as a badge on the tile. News about them (a quiz answered, a link opened)
  * is in «Уведомления», behind the bell. What else to analyse: on a computer the row «Разобрать ещё» under the
- * reports; on a phone the chat list peeking from the bottom (HomeChatsPeek), the people of the month inside it.
+ * reports; on a phone the chat list as a sheet resting at the bottom (HomeChatsSheet), pulled up to the whole screen.
  * A newcomer gets «С кого начнём?» instead.
  */
 const { t } = useI18n()
@@ -17,10 +17,8 @@ const workspace = useWorkspaceStore()
 /** As many skeleton tiles as there were reports last time (two when unknown). */
 const skeletonCards = computed(() => Math.min(8, workspace.reportsHint || 2))
 const errorMessage = useErrorMessage()
-const route = useRoute()
-/** Phones and tablets: the chat list rests at the bottom (HomeChatsPeek) and the people row lives in it. */
+/** Phones and tablets: the chat list is a sheet resting at the bottom (HomeChatsSheet). */
 const narrow = useMediaQuery('(max-width: 900px)')
-const peek = computed(() => narrow.value && route.query.pick === undefined)
 
 /** The reports in the order the sidebar shows them too: pinned in Telegram first, then the freshest. */
 const reports = computed(() => workspace.reportChats)
@@ -101,7 +99,7 @@ onMounted(() => {
       </section>
       <!-- A computer: who else to analyse comes after what you already know, a hint under the reports. -->
       <HomeMore v-if="!narrow" />
-      <HomeChatsPeek v-if="peek" />
+      <HomeChatsSheet v-if="narrow" />
     </div>
   </UiPageContainer>
 </template>

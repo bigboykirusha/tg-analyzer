@@ -17,13 +17,8 @@ const props = withDefaults(
     back?: boolean
     /** The whole screen but a strip at the top, as iOS's large sheet: a long list (the chats). */
     full?: boolean
-    /**
-     * It grows out of an edge resting at the bottom (HomeChatsPeek) and settles back into it: it starts at
-     * `--peek-rise` from the bottom and leaves to `--peek-rest`, both set on the root by the edge.
-     */
-    rest?: boolean
   }>(),
-  { title: '', role: 'dialog', busy: false, back: false, full: false, rest: false },
+  { title: '', role: 'dialog', busy: false, back: false, full: false },
 )
 
 const emit = defineEmits<{ close: []; back: [] }>()
@@ -47,12 +42,7 @@ watch(open, (value) => value && drag.reset())
 <template>
   <Teleport to="#teleports">
     <Transition name="sheet">
-      <div
-        v-if="open"
-        class="sheet-scrim"
-        :class="{ 'sheet-scrim--full': full, 'sheet-scrim--rest': rest }"
-        @click.self="close"
-      >
+      <div v-if="open" class="sheet-scrim" :class="{ 'sheet-scrim--full': full }" @click.self="close">
         <section
           ref="panelRef"
           tabindex="-1"
@@ -233,17 +223,6 @@ watch(open, (value) => value && drag.reset())
 
 .sheet-scrim--full .sheet {
   height: 100%;
-}
-
-/* From an edge resting at the bottom, back into it (with reduced motion it fades in place, as every sheet). */
-@media (prefers-reduced-motion: no-preference) {
-  .sheet-scrim--rest.sheet-enter-from .sheet {
-    transform: translateY(calc(100% - var(--peek-rise, 0px)));
-  }
-
-  .sheet-scrim--rest.sheet-leave-to .sheet {
-    transform: translateY(calc(100% - var(--peek-rest, 0px)));
-  }
 }
 
 /* Reduced motion: no travel, the sheet fades in place. */

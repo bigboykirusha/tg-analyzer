@@ -103,12 +103,6 @@ function submit() {
     <Button type="submit" variant="primary" size="lg" :loading="loading" :disabled="!phoneInput.isValid.value" block>
       {{ loading ? t('login.sendingCode') : t('login.getCode') }}
     </Button>
-    <p class="auth-trust">
-      {{ t('login.trust') }}
-      <NuxtLink to="/privacy" class="link">{{ t('login.trustLink') }}</NuxtLink>
-    </p>
-    <!-- Telegram's terms: the app says in its intro that it is unofficial and works through the Telegram API. -->
-    <p class="auth-trust auth-trust--unofficial">{{ t('site.unofficial') }}</p>
   </form>
 </template>
 
@@ -117,16 +111,5 @@ function submit() {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-}
-
-.auth-trust {
-  color: var(--text-muted);
-  font: var(--text-label);
-}
-
-/* The notice Telegram asks for: the quietest line of the card, set apart from the promise above it. */
-.auth-trust--unofficial {
-  margin-top: calc(-1 * var(--space-2));
-  font: var(--text-caption);
 }
 </style>

@@ -8,6 +8,8 @@ import Tooltip from './Tooltip.vue'
  * Sizes follow the buttons: sm 36 · md 44 on a phone, 36 on desktop.
  * `plain` — no fill, a quiet icon: only for a card's own «⋯» menu, where a filled circle would outweigh the
  * card's name (docs/design-system.md, «Кит»). Its hover and press are the same fill as everywhere.
+ * `bare` — no fill, the ink of the text: only the bell, a status rather than an action (13.11: every other icon in
+ * a header, a sheet or a dialog stands on a grey circle — «назад», «поделиться», «⋯», «закрыть»).
  */
 defineOptions({ inheritAttrs: false })
 
@@ -22,8 +24,9 @@ const props = withDefaults(
     disabled?: boolean
     noTooltip?: boolean
     plain?: boolean
+    bare?: boolean
   }>(),
-  { size: 'md', to: '', loading: false, disabled: false, noTooltip: false, plain: false },
+  { size: 'md', to: '', loading: false, disabled: false, noTooltip: false, plain: false, bare: false },
 )
 
 const attrs = useAttrs()
@@ -31,7 +34,11 @@ const attrs = useAttrs()
 function buttonAttrs() {
   return Object.fromEntries(Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'))
 }
-const classes = computed(() => ['icon-btn', `icon-btn--${props.size}`, { 'icon-btn--plain': props.plain }])
+const classes = computed(() => [
+  'icon-btn',
+  `icon-btn--${props.size}`,
+  { 'icon-btn--plain': props.plain, 'icon-btn--bare': props.bare },
+])
 </script>
 
 <template>
@@ -64,8 +71,8 @@ const classes = computed(() => ['icon-btn', `icon-btn--${props.size}`, { 'icon-b
   width: var(--control-md);
   height: var(--control-md);
   border-radius: var(--radius-pill);
-  /* A bare glyph on the page (the bell, «назад», «закрыть»); over a poster a translucent chip. */
-  background: var(--btn-fill, transparent);
+  /* A grey circle on the page, in a sheet and on the glass bar; over a poster a translucent chip. */
+  background: var(--btn-fill, var(--fill-raised));
   color: var(--btn-fill-text, var(--text));
   -webkit-backdrop-filter: var(--btn-blur, none);
   backdrop-filter: var(--btn-blur, none);
@@ -97,6 +104,10 @@ const classes = computed(() => ['icon-btn', `icon-btn--${props.size}`, { 'icon-b
 .icon-btn--plain[aria-expanded='true'] {
   background: var(--pressed);
   color: var(--btn-plain-text, var(--text));
+}
+
+.icon-btn--bare {
+  background: transparent;
 }
 
 /* Compact circles still answer a 44 px tap. */

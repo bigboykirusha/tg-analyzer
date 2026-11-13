@@ -155,7 +155,7 @@ export const en = {
   'faq.q.phone': 'Why sign in with a phone number?',
   'privacy.pageTitle': 'Privacy',
   'privacy.pageLede':
-    'TG Analyzer reads only the chat you pick, and only while it is analysed. What stays is the finished statistics — numbers, hours, frequent words — not the conversation. Only you see a report until you share it yourself.',
+    'TG Analyzer reads only the chat you pick, and only while it is analysed. What stays is the finished statistics — numbers, hours, frequent words — not the conversation. Only you see a report until you share it yourself. This is an unofficial service that works through the Telegram API.',
   'faq.q.read': 'What do you read?',
   'faq.a.read':
     "The messages of the one chat you picked, only while it is analysed and only in the server's memory: the texts are needed to count words and emoji. We also see the list of your chats (names, types and photos), so you can pick one, and your profile: Telegram ID, name, username and photo.",
@@ -170,7 +170,7 @@ export const en = {
     'No. We do not sell or pass on data, never write on your behalf and do not train models on it. The service runs on a rented server; the hosting provider stores the data but does not use it. Stories pictures and report links are sent only by you.',
   'faq.q.howLong': 'How long is it kept?',
   'faq.a.howLong':
-    'Reports — until you delete them. The Telegram session — until you sign out on your last device. Records of finished analyses are deleted after a year.',
+    'Reports — until you delete them. The Telegram session — until you sign out on your last device or stay away for 60 days. Sign-in records are deleted after 90 days, records of finished analyses after a year.',
   'faq.q.delete': 'How do I delete a report?',
   'faq.a.delete':
     "From the “⋯” menu in the report's bar. Its stories, links and notifications go with it. Signing in again later, you will see the reports you kept.",
@@ -214,13 +214,8 @@ export const en = {
   'home.botLater': 'Not now',
   'home.firstTitle': 'Who shall we start with?',
   'home.firstLede': 'Analysis takes about a minute, longer for a long chat.',
-  'home.firstPrivacy': 'Message texts are never stored: only the finished report is.',
   'home.greeting.lede': 'What you have learned about your chats so far',
   'home.unanalysedAction': 'Analyse the chat “{name}”',
-  'home.unanalysedCount.one': '{count} this month',
-  'home.unanalysedCount.few': '{count} this month',
-  'home.unanalysedCount.many': '{count} this month',
-  'home.unanalysedCount.other': '{count} this month',
   'insight.days.few': '{count} days',
   'insight.days.many': '{count} days',
   'insight.days.one': '{count} day',
@@ -251,7 +246,7 @@ export const en = {
     'Telegram chose a way to send the code that only official apps support. Request the code again to get it another way.',
   'login.getCode': 'Get code',
   'login.passwordDescription':
-    'Your Telegram has two-step verification. Telegram checks the password; we do not store it.',
+    'Your Telegram has two-step verification. Telegram checks the password; we do not store it. Forgot it? It can only be reset in Telegram.',
   'login.passwordHint': 'Hint: {hint}',
   'login.passwordLabel': 'Cloud password',
   'login.passwordPlaceholder': 'Your Telegram password',
@@ -264,11 +259,8 @@ export const en = {
   'login.resendCall': 'Call me instead',
   'login.resendIn': 'Send again in {time}',
   'login.resendSms': 'Send by SMS',
-  'login.trust': 'We read only the chat you pick and keep only statistics, never the texts of your messages.',
-  'login.trustLink': 'Privacy',
   'login.seoTitle': 'Sign in',
   'login.signIn': 'Sign in',
-  'login.passwordForgot': 'Forgot the password? It can only be reset in Telegram.',
   'login.sendingCode': 'Sending the code…',
   'month.analyse': 'Analyse',
   'nav.notifications': 'Notifications',
@@ -499,11 +491,7 @@ export const en = {
   'analysis.details.notifyHint': 'A message comes in Telegram',
   'analysis.details.notifyOn': 'Turn on',
   'analysis.queuedCount': '{count} more in the queue',
-  'home.firstMost': '{count}, the most',
-  'home.firstOthers': 'Or someone else',
   'home.allChats': 'All Telegram chats',
-  'home.loadingChats': 'Loading your chats from Telegram…',
-  'home.loadingChatsError': 'Could not load your chats',
   'landing.ex1.title': 'Mila, 52 to 48',
   'landing.ex1.text': 'You write equally and reply just as fast',
   'landing.ex2.title': 'Artyom, 3 times',
@@ -764,7 +752,6 @@ export const en = {
   'report.change.refreshingAt': 'Refreshing the report, {percent}%',
   'report.change.queued': 'Will refresh when its turn comes',
   'home.peekSearch': 'Find a chat to analyse',
-  'newAnalysis.recent': 'Most active this month',
 } as const
 
 export type MessageKey = keyof typeof en

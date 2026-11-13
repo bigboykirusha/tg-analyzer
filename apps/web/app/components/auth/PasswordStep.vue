@@ -30,7 +30,6 @@ const { t } = useI18n()
     <Button type="submit" variant="primary" size="lg" :loading="loading" :disabled="!password" block>
       {{ t('login.signIn') }}
     </Button>
-    <p class="auth-note">{{ t('login.passwordForgot') }}</p>
   </form>
 </template>
 
@@ -42,8 +41,4 @@ const { t } = useI18n()
 }
 
 /* Left, like every line of the step above it. */
-.auth-note {
-  color: var(--text-muted);
-  font: var(--text-label);
-}
 </style>

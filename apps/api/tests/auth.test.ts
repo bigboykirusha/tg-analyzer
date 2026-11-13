@@ -147,7 +147,11 @@ test('refresh rotates the token, tolerates races and revokes the family on repla
   const rotated = first.cookies.find((cookie) => cookie.name === REFRESH_COOKIE_NAME)
   assert.ok(rotated)
 
-  // Outside the grace period, reusing the old token is treated as theft.
+  // The successor is used; then, outside the grace period, reusing the old token is treated as theft.
+  const used = await refresh(`${REFRESH_COOKIE_NAME}=${rotated.value}`)
+  assert.equal(used.statusCode, 200)
+  const latest = used.cookies.find((cookie) => cookie.name === REFRESH_COOKIE_NAME)
+  assert.ok(latest)
   await pool.query(
     `UPDATE refresh_sessions SET grace_until = now() - interval '1 second' WHERE grace_until IS NOT NULL`,
   )
@@ -155,10 +159,27 @@ test('refresh rotates the token, tolerates races and revokes the family on repla
   assert.equal(replay.statusCode, 401)
   assert.equal(replay.json().code, 'AUTH_REFRESH_REPLAYED')
 
-  const afterReplay = await refresh(`${REFRESH_COOKIE_NAME}=${rotated.value}`)
+  const afterReplay = await refresh(`${REFRESH_COOKIE_NAME}=${latest.value}`)
   assert.equal(afterReplay.statusCode, 401)
   const access = await app.inject({ url: '/api/v1/reports', headers: session.headers })
   assert.equal(access.statusCode, 401)
+})
+
+test('a refresh whose answer was lost keeps the person signed in', async () => {
+  const session = await login()
+  // The server rotated the token, but the phone never received the new cookie.
+  const lost = await refresh(session.cookie)
+  assert.equal(lost.statusCode, 200)
+  await pool.query(
+    `UPDATE refresh_sessions SET grace_until = now() - interval '1 second' WHERE grace_until IS NOT NULL`,
+  )
+  // Much later the old cookie comes back: the never-used successor is handed out again.
+  const again = await refresh(session.cookie)
+  assert.equal(again.statusCode, 200)
+  const cookie = again.cookies.find((item) => item.name === REFRESH_COOKIE_NAME)
+  assert.ok(cookie)
+  const next = await refresh(`${REFRESH_COOKIE_NAME}=${cookie.value}`)
+  assert.equal(next.statusCode, 200)
 })
 
 test('cookie operations require an allowed origin', async () => {

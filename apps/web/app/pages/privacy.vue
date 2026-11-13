@@ -35,15 +35,10 @@ const questions = computed(() =>
         </details>
       </UiGroup>
     </section>
-    <p class="doc__note t-label">{{ t('site.unofficial') }}</p>
   </div>
 </template>
 
 <style scoped>
-.doc__note {
-  color: var(--text-muted);
-}
-
 /* The page's own column, left under the logo; the text keeps a reading width inside it. */
 .doc {
   display: flex;

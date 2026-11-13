@@ -52,13 +52,11 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
 
 test('the first report opens by itself when the analysis starts on the home page', async ({ page }) => {
   await signIn(page)
-  // A newcomer: «С кого начнём?» offers the busiest chats, one main button; chats too small are not offered.
+  // A newcomer: «С кого начнём?» and the whole chat list under it, each row with «Разобрать».
   await expect(page.getByRole('heading', { name: 'С кого начнём?' })).toBeVisible()
-  await expect(page.locator('.home-card:not([aria-busy])').first()).toBeVisible()
-  await expect(page.getByText('Курьер Игорь')).toHaveCount(0)
-  await expect(page.getByText('Олег Смирнов')).toHaveCount(0)
   await page
-    .locator('.home-card:not([aria-busy])')
+    .locator('.chat-row')
+    .filter({ hasText: 'Мила' })
     .first()
     .getByRole('button', { name: /^Разобрать чат/ })
     .click()
@@ -67,8 +65,7 @@ test('the first report opens by itself when the analysis starts on the home page
 
 test('a chat with too few messages has no «Разобрать» in the full list', async ({ page }) => {
   await signIn(page)
-  // The home summary has to be counted before the list is asked for.
-  await expect(page.locator('.home-card:not([aria-busy])').first()).toBeVisible()
+  await expect(page.locator('.chat-row').first()).toBeVisible()
   await gotoHydrated(page, '/new')
   const row = page.locator('.chat-row').filter({ hasText: 'Олег Смирнов' })
   await expect(row).toBeVisible()
@@ -209,22 +206,8 @@ test('a late dialog response cannot populate the next account', async ({ page })
   })
   try {
     await signIn(page)
-    // The home page does not load the chat list; open it inside the app so the held request stays alive.
-    await page
-      .getByRole('link', { name: 'Новый анализ' })
-      .or(page.getByRole('button', { name: 'Новый анализ' }))
-      // A phone has no «Новый анализ» button: «Все чаты Telegram» opens the chat list as a sheet.
-      .or(page.getByRole('link', { name: 'Все чаты Telegram' }))
-      .first()
-      .click()
+    // A newcomer's home is the chat list: its request is held while this account signs out.
     await expect.poll(() => held).toBeGreaterThan(0)
-    // Back to home inside the app, where the avatar leads to the account: on a phone the chat list is a sheet over
-    // home (close it), on a computer it is the «Новый анализ» page (go back).
-    const sheet = page.getByRole('dialog')
-    if (await sheet.isVisible().catch(() => false)) {
-      await page.keyboard.press('Escape')
-      await expect(sheet).toBeHidden()
-    } else await page.goBack()
     await page.locator('a[href="/account"]:visible').first().click()
     await page.waitForURL('**/account')
     await page.getByRole('button', { name: 'Выйти', exact: true }).click()
@@ -232,14 +215,7 @@ test('a late dialog response cannot populate the next account', async ({ page })
     await page.waitForURL('**/login')
     previousAccount = false
     await signIn(page, { navigate: false })
-    // The chat list of the new account, opened inside the app (a reload would start a fresh page).
-    await page
-      .getByRole('link', { name: 'Новый анализ' })
-      .or(page.getByRole('button', { name: 'Новый анализ' }))
-      // A phone has no «Новый анализ» button: «Все чаты Telegram» opens the chat list as a sheet.
-      .or(page.getByRole('link', { name: 'Все чаты Telegram' }))
-      .first()
-      .click()
+    // The chat list of the new account, on its home inside the app (a reload would start a fresh page).
     await expect(page.locator('.chat-row').filter({ hasText: 'Катя' })).toBeVisible()
     const lateResponse = page.waitForResponse('**/api/v1/parse/dialogs')
     release()
@@ -321,7 +297,7 @@ test('a running analysis shows away from home and its button opens the details',
   }
 })
 
-test('a phone keeps the chat list at the bottom of home, the people of the month inside it', async ({
+test('a phone keeps the chat list at the bottom of home as a sheet that opens full screen', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name === 'desktop', 'the list rests at the bottom of home only on phones and tablets')
@@ -330,11 +306,12 @@ test('a phone keeps the chat list at the bottom of home, the people of the month
   await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 30_000 })
   await page.waitForURL('**/chat/1006')
   await gotoHydrated(page, '/dashboard')
-  // Home shows the reports and the list's edge; the row of people lives in the list.
+  // Home shows the reports and the sheet resting at the bottom; no row of people on a phone.
   await expect(page.locator('.home-card').filter({ hasText: 'Катя' })).toBeVisible()
-  await expect(page.locator('.more:not(.more--sheet)')).toHaveCount(0)
-  await page.getByRole('link', { name: 'Найти чат и разобрать' }).click()
+  await expect(page.locator('.more')).toHaveCount(0)
+  await page.locator('.chats__head').click()
   const sheet = page.getByRole('dialog', { name: 'Новый анализ' })
-  await expect(sheet.getByText('Чаще всего за месяц')).toBeVisible()
   await expect(sheet.locator('.chat-row').first()).toBeVisible()
+  await sheet.getByRole('button', { name: 'Закрыть' }).click()
+  await expect(page.getByRole('dialog', { name: 'Новый анализ' })).toHaveCount(0)
 })

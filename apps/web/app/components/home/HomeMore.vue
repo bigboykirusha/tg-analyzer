@@ -7,11 +7,7 @@ import { Search } from '../../lib/icons'
  * chat being analysed and those waiting, then the busiest chats of the month without a report. A tap starts the
  * analysis; while it runs, that person's circle fills with a ring and the percentage, and a tap opens its
  * details (where it can be cancelled). Nothing floats over the page: the action lives where the people are.
- *
- * `inSheet`: on a phone the row lives in the chat list's sheet (home shows the list's edge instead, HomeChatsPeek):
- * no «Все чаты» circle — the whole list is right under it — and «Чаще всего за месяц» as a quiet label.
  */
-const props = defineProps<{ inSheet?: boolean }>()
 const { t, formatNumber } = useI18n()
 const workspace = useWorkspaceStore()
 const analysis = useAnalysis()
@@ -58,23 +54,13 @@ function tap(person: Person) {
 }
 
 const loading = computed(() => !workspace.recent && workspace.recentState === 'loading')
-// The sheet can open on any screen of the workspace, before home has asked Telegram for the month.
-onMounted(() => {
-  if (props.inSheet && workspace.recentState === 'idle') void workspace.loadRecent()
-})
 </script>
 
 <template>
-  <section
-    v-if="!inSheet || loading || people.length"
-    class="more"
-    :class="{ 'more--sheet': inSheet }"
-    :aria-label="inSheet ? t('newAnalysis.recent') : t('home.moreTitle')"
-  >
-    <p v-if="inSheet" class="t-label more__label">{{ t('newAnalysis.recent') }}</p>
-    <h2 v-else class="t-h3 more__title">{{ t('home.moreTitle') }}</h2>
+  <section class="more" :aria-label="t('home.moreTitle')">
+    <h2 class="t-h3 more__title">{{ t('home.moreTitle') }}</h2>
     <ul class="more__row">
-      <li v-if="!inSheet">
+      <li>
         <NuxtLink :to="allChats" class="more__person" :aria-label="t('home.allChats')">
           <span class="more__circle more__circle--all" aria-hidden="true"><Search /></span>
           <span class="more__name">{{ t('home.allShort') }}</span>
@@ -148,14 +134,6 @@ onMounted(() => {
   /* Snapping aligns to the padding edge, not the scroll box's edge: without it the first circle sits on the screen's edge. */
   scroll-padding-inline: var(--page-gutter);
   scrollbar-width: none;
-}
-
-.more__label {
-  color: var(--text-muted);
-}
-
-.more--sheet {
-  gap: var(--space-2);
 }
 
 .more__row::-webkit-scrollbar {

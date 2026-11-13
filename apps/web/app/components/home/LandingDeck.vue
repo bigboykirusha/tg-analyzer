@@ -467,6 +467,28 @@ watch(reduced, schedule)
   }
 }
 
+/*
+ * A phone: square cards (13.11), as the report tiles at home, as large as the room between the copy and the button
+ * allows — the stage is a size container, so the square is the smaller of its width (less room for the fan on both
+ * sides) and its height (less the fan's rise over the front card), never under 240 so a card holds its words; a
+ * shorter room (an SE in Safari) scales that whole deck down, as before.
+ */
+@media (max-width: 900px) {
+  .deck-stage {
+    container-type: size;
+  }
+
+  .deck {
+    width: max(240px, min(100cqw - var(--space-8), 100cqh - var(--space-6)));
+    max-width: none;
+  }
+
+  .deck__card :deep(.home-card) {
+    min-height: 0;
+    aspect-ratio: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .deck__card,
   .deck__card--leaving {
