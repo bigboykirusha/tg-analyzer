@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { MessageKey } from '../composables/useI18n'
 import { wave } from '../lib/wave'
-definePageMeta({ middleware: ['guest'], fit: true })
+definePageMeta({
+  middleware: ['guest'],
+  fit: true,
+  // Landing ↔ login is one path: the page changes as a step of the sign-in does (base.css, .page-step).
+  pageTransition: { name: 'page-step', mode: 'out-in' },
+})
 
 const { t } = useI18n()
 
@@ -74,9 +79,10 @@ useHead({
 
 <style scoped>
 /*
- * One screen, phone or desktop. A phone reads top to bottom in two groups: the story (the title and the lead,
- * whose last phrase is the privacy link) on top, the action («Войти через Telegram», «Пример отчёта» under it)
- * under the thumb, and the deck takes the height between them, scaling itself into it.
+ * One screen, phone or desktop. A phone reads top to bottom as one block — the title and the lead (its last phrase
+ * is the privacy link), the deck, «Войти через Telegram» and «Пример отчёта» — set at its natural height in the
+ * middle of the screen, the room left shared above and below it. Spread over the height, the deck sat between two
+ * holes that grew with the screen. A short phone has no room to share: the deck shrinks into what is left.
  */
 .landing {
   display: flex;
@@ -94,6 +100,7 @@ useHead({
   flex: 1;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
   min-height: 0;
 }
 
@@ -115,12 +122,15 @@ useHead({
   display: none;
 }
 
-/* The deck takes the height left between the groups. */
+/*
+ * The deck takes the height left (so it gives way on a short phone) but no more than its own (LandingDeck caps its
+ * stage): what remains is shared above and below the whole block by the centring above.
+ */
 .landing__deck {
   flex: 1 1 0;
   align-self: stretch;
   min-height: 0;
-  margin-block: var(--space-4) var(--space-6);
+  margin-block: var(--space-6);
 }
 
 /* A phone: the one call to action is the width of the column, under the thumb. */

@@ -265,6 +265,27 @@ main:focus {
 
 /* ─── Motion ─────────────────────────────────────────────────────────────── */
 
+/*
+ * Landing ↔ login: the page leaves and the next one arrives as one step of the sign-in does — 16 px sideways and a
+ * fade, never a slide across the screen. Reduced motion zeroes the duration (below), so the page simply changes.
+ */
+.page-step-enter-active,
+.page-step-leave-active {
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+.page-step-enter-from {
+  opacity: 0;
+  transform: translateX(var(--space-4));
+}
+
+.page-step-leave-to {
+  opacity: 0;
+  transform: translateX(calc(-1 * var(--space-4)));
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

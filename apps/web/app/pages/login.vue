@@ -3,7 +3,11 @@ import type { CodeDeliveryDto, CodeDeliveryType } from '@tg-analyzer/shared'
 import { ApiClientError } from '../composables/useApi'
 import { Info } from '../lib/icons'
 
-definePageMeta({ middleware: ['guest'] })
+definePageMeta({
+  middleware: ['guest'],
+  // Landing ↔ login is one path: the page changes as a step of the sign-in does (base.css, .page-step).
+  pageTransition: { name: 'page-step', mode: 'out-in' },
+})
 
 const RESEND_DELAY_SECONDS = 60
 
