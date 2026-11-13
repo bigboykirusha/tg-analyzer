@@ -33,7 +33,11 @@
   --gray-a4: rgba(23, 23, 26, 0.14);
   --gray-a6: rgba(23, 23, 26, 0.3);
   --gray-a8: rgba(23, 23, 26, 0.7);
-  --gray-a9: rgba(23, 23, 26, 0.8);
+  --gray-a9: rgba(23, 23, 26, 0.86);
+  /* A calendar on a poster: ink at three even steps under full ink, so every level of a day reads apart. */
+  --gray-heat-a1: rgba(23, 23, 26, 0.18);
+  --gray-heat-a2: rgba(23, 23, 26, 0.38);
+  --gray-heat-a3: rgba(23, 23, 26, 0.64);
   /* Light on a poster: the translucent fill of a control over the person's colour, the lit top edge. */
   --white-a3: rgba(255, 255, 255, 0.3);
   --white-a5: rgba(255, 255, 255, 0.52);
@@ -45,8 +49,8 @@
   --night-1: #18181b;
   --night-3: #232327;
   --night-4: #2c2c31;
-  --night-5: #3a3a40;
-  --night-6: #333338;
+  --night-5: #333338;
+  --night-6: #3a3a40;
   --night-7: #6f6f78;
   --night-9: #9b9ba3;
   --night-11: #d4d4d8;
@@ -55,7 +59,6 @@
   --night-a2: rgba(255, 255, 255, 0.1);
   --night-a3: rgba(255, 255, 255, 0.08);
   --night-a4: rgba(255, 255, 255, 0.14);
-  --black-a2: rgba(0, 0, 0, 0.16);
   /* The activity ramp in the dark, and the near-black behind «Итоги» on a computer in either theme. */
   --night-heat-1: #48484c;
   --night-heat-3: #94949b;
@@ -67,7 +70,8 @@
    * our yellow, then orange, violet, green, teal, blue, pink; lib/hue.ts). One OKLCH ladder for all seven:
    *   poster .82–.85 (yellow .88: lower it reads as mustard) — the report's top, ink type on it ≥ 9:1
    *   tint .92 — chips and avatar tops · them .62 — their bar on white ≥ 3:1 · ink .52 — their name ≥ 5:1
-   *   deep .41 — the person on their own poster ≥ 5:1 · poster-d — the dark theme poster, dimmed.
+   *   deep .41 — the person on their own poster ≥ 5:1 · poster-d — the dark theme poster, dimmed ·
+   *   deep-d — the person on that dimmed poster: deep mixed 30 % with ink, ≥ 3.6:1 even in its darkest corner.
    */
   --hue-yellow-poster: #fbd530;
   --hue-yellow-tint: #fcebae;
@@ -75,75 +79,84 @@
   --hue-yellow-ink: #826401;
   --hue-yellow-deep: #5d4703;
   --hue-yellow-poster-d: #e9b60b;
+  --hue-yellow-deep-d: #473814;
   --hue-orange-poster: #ffbb69;
   --hue-orange-tint: #fedfb8;
   --hue-orange-them: #c66b01;
   --hue-orange-ink: #9f5104;
   --hue-orange-deep: #6f3c02;
   --hue-orange-poster-d: #d69546;
+  --hue-orange-deep-d: #533113;
   --hue-violet-poster: #c6b9fe;
   --hue-violet-tint: #e7dfff;
   --hue-violet-them: #846cef;
   --hue-violet-ink: #634ad6;
   --hue-violet-deep: #45339e;
   --hue-violet-poster-d: #a191df;
+  --hue-violet-deep-d: #352d74;
   --hue-green-poster: #b8df5e;
   --hue-green-tint: #ddeeac;
   --hue-green-them: #649820;
   --hue-green-ink: #4a7812;
   --hue-green-deep: #365502;
   --hue-green-poster-d: #93b745;
+  --hue-green-deep-d: #2d4214;
   --hue-teal-poster: #6ce6d2;
   --hue-teal-tint: #bef1e8;
   --hue-teal-them: #149b8c;
   --hue-teal-ink: #147a6a;
   --hue-teal-deep: #0a574c;
   --hue-teal-poster-d: #50bdab;
+  --hue-teal-deep-d: #17433c;
   --hue-blue-poster: #92cafe;
   --hue-blue-tint: #d1e7ff;
   --hue-blue-them: #2a89e1;
   --hue-blue-ink: #1869bd;
   --hue-blue-deep: #104a88;
   --hue-blue-poster-d: #6ea4d4;
+  --hue-blue-deep-d: #183b65;
   --hue-pink-poster: #ffa4da;
   --hue-pink-tint: #ffd7ef;
   --hue-pink-them: #d544a4;
   --hue-pink-ink: #ae297f;
   --hue-pink-deep: #7c1f5a;
   --hue-pink-poster-d: #d580b3;
+  --hue-pink-deep-d: #5d2046;
   /*
    * The poster's material: light pooling at the top-left corner (the poster mixed with white) and the colour deepening
    * towards the bottom-right (mixed with the person's own deeper tone) — a printed, lit object, not a flat fill.
-   * OKLab mixes, precomputed: light 55 % poster, shade 80 % poster + 20 % them; dark: 82 % poster-d, 70 % + deep.
+   * OKLab mixes, precomputed: light 55 % poster, shade 80 % poster + 20 % them; dark: 82 % poster-d, and a shade of
+   * 87 % poster-d + 13 % deep — shallower than in the light, so ink type keeps ≥ 5.5:1 and the muted line ≥ 4.5:1 down to
+   * the poster's darkest corner (with 30 % deep they fell to 4.5:1 and 3.6:1).
    */
   --hue-yellow-light: #fde9a1;
   --hue-yellow-shade: #eac328;
   --hue-yellow-light-d: #edc459;
-  --hue-yellow-shade-d: #bd9308;
+  --hue-yellow-shade-d: #d6a70a;
   --hue-orange-light: #ffdab0;
   --hue-orange-shade: #f4ab59;
   --hue-orange-light-d: #dea86b;
-  --hue-orange-shade-d: #b67932;
+  --hue-orange-shade-d: #c8893e;
   --hue-violet-light: #dfd9ff;
   --hue-violet-shade: #b8aafc;
   --hue-violet-light-d: #b1a5e6;
-  --hue-violet-shade-d: #8375cc;
+  --hue-violet-shade-d: #9485d7;
   --hue-green-light: #d7eead;
   --hue-green-shade: #a7d052;
   --hue-green-light-d: #a6c46c;
-  --hue-green-shade-d: #769832;
+  --hue-green-shade-d: #86aa3d;
   --hue-teal-light: #b6f2e6;
   --hue-teal-shade: #5dd7c4;
   --hue-teal-light-d: #76c9ba;
-  --hue-teal-shade-d: #3c9d8d;
+  --hue-teal-shade-d: #47af9e;
   --hue-blue-light: #c4e2ff;
   --hue-blue-shade: #7fbdf9;
   --hue-blue-light-d: #88b4dc;
-  --hue-blue-shade-d: #5288bd;
+  --hue-blue-shade-d: #6298ca;
   --hue-pink-light: #ffceeb;
   --hue-pink-shade: #f792cf;
   --hue-pink-light-d: #de97c0;
-  --hue-pink-shade-d: #ba6397;
+  --hue-pink-shade-d: #c973a7;
   /* Fine paper grain over a poster: dark specks at a few per cent, no blend mode, so html2canvas draws it too. */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.16 0.11'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 
@@ -166,7 +179,7 @@
   /* Overlays (menus, dialogs, sheets) and the grey fill of controls inside them. */
   --surface-raised: var(--gray-0);
   --fill-raised: var(--gray-3);
-  /* The fill of a secondary button or a round icon on the page: one step darker than the page, so it reads on grey. */
+  /* The fill of a quiet button, a filter or a field on the page: one step darker than the page, so it reads on grey. */
   --fill-control: var(--gray-4);
   /* The desktop sidebar: one opaque column, its selected row a soft fill. */
   --sidebar-glass: var(--gray-2);
@@ -275,7 +288,7 @@
   --surface-2: var(--night-3);
   --skeleton: var(--night-3);
   --surface-raised: var(--night-3);
-  --fill-raised: var(--night-6);
+  --fill-raised: var(--night-5);
   --fill-control: var(--night-4);
   --sidebar-glass: var(--night-0);
   --sidebar-selection: var(--night-1);
@@ -293,9 +306,10 @@
   --switch-off: var(--night-7);
   --you: var(--night-12);
   --on-you: var(--gray-12);
-  /* Posters stay light enough for ink: the muted line is a little denser to keep 4.5:1. */
+  /* Posters stay light enough for ink: the muted line is denser (86 % ink) to keep 4.5:1 over the whole poster. */
   --on-poster-muted: var(--gray-a9);
-  --poster-button: var(--black-a2);
+  /* A light chip here too: a darker one under the same ink type fell to 3.4:1 on a dimmed poster (now ≥ 7:1). */
+  --poster-button: var(--white-a3);
   --danger: var(--red-d6);
   --danger-subtle: var(--red-d1);
   --inverse-surface: var(--night-12);
@@ -398,6 +412,7 @@
   --poster: var(--hue-yellow-poster-d);
   --poster-light: var(--hue-yellow-light-d);
   --poster-shade: var(--hue-yellow-shade-d);
+  --on-them: var(--hue-yellow-deep-d);
   --them: var(--hue-yellow-poster);
   --them-ink: var(--hue-yellow-poster);
 }
@@ -407,6 +422,7 @@
   --poster: var(--hue-orange-poster-d);
   --poster-light: var(--hue-orange-light-d);
   --poster-shade: var(--hue-orange-shade-d);
+  --on-them: var(--hue-orange-deep-d);
   --them: var(--hue-orange-poster);
   --them-ink: var(--hue-orange-poster);
 }
@@ -416,6 +432,7 @@
   --poster: var(--hue-violet-poster-d);
   --poster-light: var(--hue-violet-light-d);
   --poster-shade: var(--hue-violet-shade-d);
+  --on-them: var(--hue-violet-deep-d);
   --them: var(--hue-violet-poster);
   --them-ink: var(--hue-violet-poster);
 }
@@ -425,6 +442,7 @@
   --poster: var(--hue-green-poster-d);
   --poster-light: var(--hue-green-light-d);
   --poster-shade: var(--hue-green-shade-d);
+  --on-them: var(--hue-green-deep-d);
   --them: var(--hue-green-poster);
   --them-ink: var(--hue-green-poster);
 }
@@ -434,6 +452,7 @@
   --poster: var(--hue-teal-poster-d);
   --poster-light: var(--hue-teal-light-d);
   --poster-shade: var(--hue-teal-shade-d);
+  --on-them: var(--hue-teal-deep-d);
   --them: var(--hue-teal-poster);
   --them-ink: var(--hue-teal-poster);
 }
@@ -443,6 +462,7 @@
   --poster: var(--hue-blue-poster-d);
   --poster-light: var(--hue-blue-light-d);
   --poster-shade: var(--hue-blue-shade-d);
+  --on-them: var(--hue-blue-deep-d);
   --them: var(--hue-blue-poster);
   --them-ink: var(--hue-blue-poster);
 }
@@ -452,6 +472,7 @@
   --poster: var(--hue-pink-poster-d);
   --poster-light: var(--hue-pink-light-d);
   --poster-shade: var(--hue-pink-shade-d);
+  --on-them: var(--hue-pink-deep-d);
   --them: var(--hue-pink-poster);
   --them-ink: var(--hue-pink-poster);
 }
@@ -475,7 +496,8 @@
 
 /*
  * ─── 3. Component: buttons ────────────────────────────────────────────────
- * Three looks, all pills (primary — ink fill, secondary — an ink outline, icon — a bare glyph in a round hit area),
+ * Five looks, all pills (primary — ink fill, secondary — an ink outline, quiet — a grey fill inside a list row,
+ * icon — a bare glyph in a round hit area, and the translucent chip the outline and the glyph become on a poster),
  * two sizes. The ink fill stays ink on a poster (never the poster's own colour as text); the outline and the bare
  * glyph become a translucent light chip there. Never a new variant for a new background.
  */
@@ -492,6 +514,8 @@
   --btn-ink: var(--on-poster);
   --btn-ink-text: var(--gray-0);
   --btn-ink-hover: var(--gray-11);
+  /* The focus ring on a poster is the poster's ink: the dark theme's light ring vanished on the colour (1.5:1). */
+  --focus-ring-color: var(--on-poster);
 }
 
 /* ─── Theme-independent scales ──────────────────────────────────────────── */
@@ -709,7 +733,7 @@
 
   :root[data-theme='dark'] {
     --text-muted: var(--night-11);
-    --border: var(--night-5);
+    --border: var(--night-6);
   }
 }
 

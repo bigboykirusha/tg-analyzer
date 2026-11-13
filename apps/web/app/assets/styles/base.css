@@ -133,9 +133,8 @@ svg.lucide {
 }
 
 /*
- * ─── Type: seven roles (tokens.css): .t-display .t-figure .t-h1 .t-h2 .t-body .t-label .t-caption ──────
- * The classes carry the tracking. .t-h3 .t-num .t-title .t-ui .t-small .t-small-strong are deprecated
- * aliases (the token of the same name points at one of the seven); new code uses the seven.
+ * ─── Type: eight roles (tokens.css): .t-display .t-figure .t-h1 .t-h2 .t-h3 .t-body .t-label .t-caption ──
+ * The classes carry the tracking. There are no other text styles: the measure (tests/visual) counts them.
  */
 
 b,
@@ -264,21 +263,6 @@ main:focus {
   outline: none;
 }
 
-/* A compact control still answers a 44 px tap: an invisible ring around it. */
-.hit-area {
-  position: relative;
-}
-
-.hit-area::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: max(100%, var(--hit-min));
-  height: max(100%, var(--hit-min));
-  transform: translate(-50%, -50%);
-}
-
 /* ─── Motion ─────────────────────────────────────────────────────────────── */
 
 @keyframes spin {
@@ -331,6 +315,43 @@ main:focus {
 :root[data-theme-switching] *::before,
 :root[data-theme-switching] *::after {
   transition: none !important;
+}
+
+/*
+ * Forced colours (Windows «Контрастные темы»): the system removes every box-shadow and background, and the
+ * interface draws its edges with exactly those — cards, groups, fields and buttons would dissolve into the page.
+ * An outline survives the mode, so each surface and control gets one in the system's own colours.
+ */
+@media (forced-colors: active) {
+  .tile,
+  .group__card,
+  .home-card,
+  .note,
+  .choice,
+  .account__me,
+  .login__card,
+  .status__card,
+  .sidebar__row,
+  .more__circle--all {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .btn,
+  .icon-btn,
+  .input,
+  .otp-input,
+  .select,
+  .picker__search,
+  .segmented__item {
+    outline: 1px solid ButtonText;
+    outline-offset: -1px;
+  }
+
+  :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
 }
 
 @media print {
