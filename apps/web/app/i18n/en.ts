@@ -18,8 +18,6 @@ export const en = {
   'accountPage.notify': 'Message me in Telegram',
   'accountPage.notifyHint': 'When a report is ready',
   'accountPage.linksTitle': 'Report links',
-  'accountPage.linksFoot':
-    'A link that is off stops opening. Turn it on again and its new address is in the report’s “Share”.',
   'accountPage.linkReport': 'Report “{chat}”',
   'accountPage.linkQuiz': 'Quiz “{chat}”',
   'accountPage.linkOn': 'Opens until {date}',
@@ -27,7 +25,6 @@ export const en = {
   'accountPage.linkOff': 'Off',
   'accountPage.linkError': 'Could not change the link',
   'accountPage.logout': 'Log out',
-  'accountPage.logoutFoot': 'On your last device we erase the Telegram session. Your reports stay.',
   'analysis.banner.closeTab': 'You can close the app: the report saves itself.',
   'analysis.banner.connecting': 'Connecting to Telegram…',
   'analysis.banner.eta.few': 'about {count} minutes left',

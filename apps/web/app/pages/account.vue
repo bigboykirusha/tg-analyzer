@@ -217,7 +217,7 @@ onMounted(() => void loadLinks())
           />
         </UiGroup>
 
-        <UiGroup v-if="links.length" :header="t('accountPage.linksTitle')" :footer="t('accountPage.linksFoot')">
+        <UiGroup v-if="links.length" :header="t('accountPage.linksTitle')">
           <UiSwitch
             v-for="link in links"
             :key="`${link.chatId}-${link.kind}`"
@@ -230,7 +230,7 @@ onMounted(() => void loadLinks())
           </UiSwitch>
         </UiGroup>
 
-        <UiGroup :footer="t('accountPage.logoutFoot')">
+        <UiGroup>
           <UiListRow as="button" :title="t('accountPage.logout')" danger @click="signOutOpen = true" />
         </UiGroup>
       </div>
@@ -262,8 +262,9 @@ onMounted(() => void loadLinks())
   align-items: center;
   gap: var(--space-4);
   min-width: 0;
-  /* The groups' inset: the avatar stands on the same line as every row's text below it. */
-  padding: var(--card-padding);
+  /* The groups' inset: the avatar stands on the same line as every row's text below it; above and below, the 16 of
+     a row, so the card reads as one more group of the same list. */
+  padding: var(--space-4) var(--card-padding);
   border-radius: var(--radius-card);
   background: var(--surface);
   box-shadow: var(--ring-card);

@@ -3,7 +3,8 @@ import type { RouteLocationRaw } from 'vue-router'
 
 /**
  * One row of a list (inside UiGroup): a leading avatar or icon, a title with an optional second line,
- * a trailing value or action, an optional chevron. 56 tall. The hairline under the row belongs to its
+ * a trailing value or action, an optional chevron. 56 tall with one line; with a second line 12 above and below, so
+ * the text keeps air against the hairline as a one-line row does (16 around 24). The hairline under the row belongs to its
  * body, so it starts where the text starts — as in iOS lists — and the last row has none.
  *
  * Renders a NuxtLink with `to`, an <a> with `href`, a <button> with `as="button"`, otherwise `as`.
@@ -64,6 +65,7 @@ const tagAttrs = computed(() => {
       'list-row--wrap': wrap,
       'list-row--disabled': disabled,
       'list-row--selected': selected,
+      'list-row--two': subtitle || $slots.subtitle,
     }"
   >
     <span v-if="$slots.leading" class="list-row__leading"><slot name="leading" /></span>
@@ -152,6 +154,11 @@ const tagAttrs = computed(() => {
   font: var(--text-label);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Two lines: 12 above and below instead of the one-line row's centring in 56. */
+.list-row--two > .list-row__body {
+  padding-block: var(--space-3);
 }
 
 /* Long second lines (privacy): wrap, 12 above and below, the icon at the first line. */

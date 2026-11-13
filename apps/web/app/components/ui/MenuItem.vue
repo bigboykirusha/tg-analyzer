@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
+import { Check } from '../../lib/icons'
 
 /**
  * One action in a menu: an optional 20 px icon, the label, an optional hint under it or a value at the
  * end. 44 tall in a popover; in a phone sheet it becomes a list row with a hairline from the text.
- * A destructive item comes last, after a divider.
+ * A destructive item comes last, after a divider. The chosen one of a choice («Тема») carries a check at the end, as
+ * in iOS and macOS menus — not a grey fill, which on a phone read as a stuck press.
  */
 defineOptions({ inheritAttrs: false })
 
@@ -39,6 +41,7 @@ withDefaults(
       </span>
       <span v-if="meta" class="menu-item__meta">{{ meta }}</span>
       <slot name="trailing" />
+      <Check v-if="selected" class="menu-item__check" aria-hidden="true" />
     </span>
   </button>
 </template>
@@ -96,8 +99,11 @@ withDefaults(
   color: var(--danger);
 }
 
-.menu-item--selected {
-  background: var(--sidebar-selection);
+.menu-item__check {
+  flex: none;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  color: var(--text);
 }
 
 @media (hover: hover) and (pointer: fine) {

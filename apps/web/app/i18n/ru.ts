@@ -20,8 +20,6 @@ export const ru: Record<MessageKey, string> = {
   'accountPage.notify': 'Писать в Telegram',
   'accountPage.notifyHint': 'Когда отчёт готов',
   'accountPage.linksTitle': 'Ссылки на отчёты',
-  'accountPage.linksFoot':
-    'Выключенная ссылка перестаёт открываться. Включите снова — новый адрес будет в «Поделиться» отчёта.',
   'accountPage.linkReport': 'Отчёт «{chat}»',
   'accountPage.linkQuiz': 'Угадайка «{chat}»',
   'accountPage.linkOn': 'Открывается до {date}',
@@ -29,7 +27,6 @@ export const ru: Record<MessageKey, string> = {
   'accountPage.linkOff': 'Выключена',
   'accountPage.linkError': 'Не удалось изменить ссылку',
   'accountPage.logout': 'Выйти',
-  'accountPage.logoutFoot': 'На последнем устройстве сотрём сеанс Telegram. Отчёты останутся.',
   'analysis.banner.closeTab': 'Можно закрыть приложение — отчёт сохранится сам.',
   'analysis.banner.connecting': 'Подключаемся к Telegram…',
   'analysis.banner.eta.few': 'ещё около {count} минут',

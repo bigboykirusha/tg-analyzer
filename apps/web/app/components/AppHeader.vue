@@ -189,8 +189,17 @@ const bellLabel = computed(() =>
 }
 
 .app-bar.is-over-poster {
-  background: transparent;
   color: var(--on-poster);
+}
+
+@media (max-width: 900px) {
+  .app-bar.is-over-poster {
+    /* A piece of the poster under it (usePosterHeader): what scrolls up goes under the material, not into the logo. */
+    background-color: var(--bar-poster-color, transparent);
+    background-image: var(--bar-poster-image, none);
+    background-position: var(--bar-poster-position, 0 0);
+    background-size: var(--bar-poster-size, auto);
+  }
 }
 
 .app-bar.is-over-poster :deep(.page-bar__copy) {

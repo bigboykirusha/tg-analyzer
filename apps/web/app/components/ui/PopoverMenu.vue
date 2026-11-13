@@ -173,14 +173,23 @@ onBeforeUnmount(() => {
   flex-direction: column;
 }
 
-/* In a phone sheet a menu item is a list row: 56 tall, no inline padding, a hairline from the text. */
+/*
+ * In a phone sheet a menu item is a list row, as UiGroup's rows in a sheet: 56 tall, running to the sheet's edges, the
+ * text at the gutter, the hairline from the text to the edge — so a press fills the whole row, never a box that
+ * starts where the words start.
+ */
+.popover-sheet {
+  margin-inline: calc(-1 * var(--page-gutter));
+}
+
 .popover-sheet :deep(.menu-item) {
   min-height: var(--row-height);
-  padding: 0;
+  padding: 0 0 0 var(--page-gutter);
   border-radius: 0;
 }
 
 .popover-sheet :deep(.menu-item__body) {
+  padding-right: var(--page-gutter);
   box-shadow: var(--divider-bottom);
 }
 

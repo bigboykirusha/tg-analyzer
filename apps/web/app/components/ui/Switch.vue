@@ -9,7 +9,7 @@ const model = defineModel<boolean>({ required: true })
 </script>
 
 <template>
-  <label class="switch-row" :class="{ 'is-disabled': disabled }">
+  <label class="switch-row" :class="{ 'is-disabled': disabled, 'switch-row--two': hint }">
     <span v-if="$slots.leading" class="switch-row__leading"><slot name="leading" /></span>
     <span class="switch-row__body">
       <span class="switch-row__copy">
@@ -50,6 +50,11 @@ const model = defineModel<boolean>({ required: true })
   min-height: var(--row-height);
   padding: var(--space-1) var(--row-inset, 0px) var(--space-1) 0;
   box-shadow: var(--divider-bottom);
+}
+
+/* With a hint under the label: 12 above and below, as a two-line list row. */
+.switch-row--two .switch-row__body {
+  padding-block: var(--space-3);
 }
 
 .switch-row__copy {

@@ -157,8 +157,9 @@
   --hue-pink-shade: #f792cf;
   --hue-pink-light-d: #de97c0;
   --hue-pink-shade-d: #c973a7;
-  /* Fine paper grain over a poster: dark specks at a few per cent, no blend mode, so html2canvas draws it too. */
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.16 0.11'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  /* Fine paper grain over a poster, almost invisible (12.11): dark specks at 1–4 %, no blend mode, so html2canvas draws
+     it too. At 4–11 % it read as dirt on a phone's screen (13.11). */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.06 0.04'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 
   /* Signals: only for what destroys or fails. */
   --red-1: #fdecea;

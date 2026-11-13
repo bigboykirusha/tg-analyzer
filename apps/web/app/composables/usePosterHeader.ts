@@ -38,6 +38,57 @@ function syncBrowserChrome() {
 }
 
 /**
+ * Over the poster the bar is a piece of the poster itself: the same colour, light and grain, positioned where the
+ * poster is, so what scrolls under the bar (the poster's big name) goes under poster material and is cut at the bar's
+ * edge — never under a transparent bar where it ran into the logo and the chips. At the top it is pixel for pixel
+ * what lay there, so nothing shows. Written as variables on the bar; the bar's CSS reads them on a phone.
+ */
+function posterPainter() {
+  let image = ''
+  let layers: boolean[] = []
+  /** The top-level layers of a computed `background-image`: true for an image (url), false for a gradient. */
+  function kinds(value: string) {
+    const out: boolean[] = []
+    let depth = 0
+    let start = 0
+    for (let index = 0; index <= value.length; index += 1) {
+      const char = value[index]
+      if (char === '(') depth += 1
+      else if (char === ')') depth -= 1
+      else if ((char === ',' && depth === 0) || index === value.length) {
+        out.push(value.slice(start, index).trim().startsWith('url('))
+        start = index + 1
+      }
+    }
+    return out
+  }
+  return function paint(poster: HTMLElement | null, bar: HTMLElement | null) {
+    if (!bar) return
+    if (!poster) {
+      for (const name of ['color', 'image', 'size', 'position']) bar.style.removeProperty(`--bar-poster-${name}`)
+      image = ''
+      return
+    }
+    // Read each time: the poster is grey while the report loads and takes the person's colour when it arrives.
+    const style = getComputedStyle(poster)
+    if (style.backgroundImage !== image) {
+      image = style.backgroundImage
+      layers = kinds(image)
+      bar.style.setProperty('--bar-poster-image', image)
+    }
+    bar.style.setProperty('--bar-poster-color', style.backgroundColor)
+    const rect = poster.getBoundingClientRect()
+    const own = bar.getBoundingClientRect()
+    // The grain keeps its own tile; the gradients span the poster.
+    bar.style.setProperty(
+      '--bar-poster-size',
+      layers.map((tile) => (tile ? 'auto' : `${rect.width}px ${rect.height}px`)).join(', ') || 'auto',
+    )
+    bar.style.setProperty('--bar-poster-position', `${rect.left - own.left}px ${rect.top - own.top}px`)
+  }
+}
+
+/**
  * The toolbar over a page: at the top of a report it is the poster (the name is on the poster, so the
  * bar shows only its controls); when the poster's edge passes under it, the bar keeps the colour for a
  * moment and melts into glass while the screen's title rises into the bar — Apple's large title, as one continuous
@@ -48,6 +99,7 @@ function syncBrowserChrome() {
  */
 export function usePosterHeader() {
   const applyChrome = syncBrowserChrome()
+  const paint = posterPainter()
   const scrolled = ref(false)
   const progress = ref(1)
   /** 0 at the top of a report (the name is on the poster), 1 once the name has gone under the bar. */
@@ -69,6 +121,7 @@ export function usePosterHeader() {
     scrolled.value = window.scrollY > 4
     if (!poster?.isConnected) find()
     hasPoster.value = Boolean(poster)
+    paint(poster, bar)
     if (!poster) {
       progress.value = 1
       titleProgress.value = 1
