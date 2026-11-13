@@ -5,7 +5,7 @@ import { Info } from '../lib/icons'
 
 definePageMeta({
   middleware: ['guest'],
-  // Landing ↔ login is one path: the page changes as a step of the sign-in does (base.css, .page-step).
+  // Landing ↔ login is one path (middleware/page-step.global.ts keeps the step to these two pages).
   pageTransition: { name: 'page-step', mode: 'out-in' },
 })
 
