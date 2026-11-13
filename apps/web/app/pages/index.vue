@@ -79,10 +79,10 @@ useHead({
 
 <style scoped>
 /*
- * One screen, phone or desktop. A phone reads top to bottom as one block — the title and the lead (its last phrase
- * is the privacy link), the deck, «Войти через Telegram» and «Пример отчёта» — set at its natural height in the
- * middle of the screen, the room left shared above and below it. Spread over the height, the deck sat between two
- * holes that grew with the screen. A short phone has no room to share: the deck shrinks into what is left.
+ * One screen, phone or desktop. A phone reads top to bottom in two groups: the story (the title and the lead,
+ * whose last phrase is the privacy link) on top, the action («Войти через Telegram», «Пример отчёта» under it)
+ * under the thumb, and the deck in the middle of the height between them, scaling itself into it — larger on a
+ * taller phone, so it fills the middle instead of floating in it.
  */
 .landing {
   display: flex;
@@ -100,7 +100,6 @@ useHead({
   flex: 1;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
   min-height: 0;
 }
 
@@ -122,10 +121,7 @@ useHead({
   display: none;
 }
 
-/*
- * The deck takes the height left (so it gives way on a short phone) but no more than its own (LandingDeck caps its
- * stage): what remains is shared above and below the whole block by the centring above.
- */
+/* The deck takes the height left between the groups and sits in its middle. */
 .landing__deck {
   flex: 1 1 0;
   align-self: stretch;

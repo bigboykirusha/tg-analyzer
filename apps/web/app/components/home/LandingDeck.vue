@@ -17,8 +17,8 @@
  * rounds — it shows what reports look like, it is not a carousel to watch. Reduced motion: a still deck, no
  * tilt. Every card stays in the DOM in reading order, so a screen reader reads all three.
  *
- * Fit: on a phone the landing is one screen, set as one block in the middle; when the screen is too short for it the
- * deck's box gives way and the deck scales itself into what is left (never up, never under 55 %). It is measured before the deal-in plays, so the cards rise in at
+ * Fit: on a phone the landing is one screen, so the deck takes the height left between the copy and the button, sits
+ * in its middle and scales itself into it (never up, never under 45 %); a taller phone holds a larger deck. It is measured before the deal-in plays, so the cards rise in at
  * their final size — nothing shrinks after the page has appeared.
  *
  * During a deal the cards move by keyframes only — no transitions underneath. Safari otherwise replays the slot
@@ -44,8 +44,8 @@ const DEAL_FALLBACK_MS = 1200
 const ENTER_MS = 1200
 const ROUNDS = 2
 const TILT_DEG = 6
-/** The smallest the deck may get to fit a short phone; below it the page scrolls instead. */
-const MIN_FIT = 0.55
+/** The smallest the deck may get to fit a short phone (an iPhone SE in Safari needs 0.45 to keep its gaps). */
+const MIN_FIT = 0.45
 
 /** order[0] is on top; order[1] and order[2] are behind it. */
 const order = ref(props.cards.map((_, index) => index))
@@ -60,12 +60,6 @@ const stage = ref<HTMLElement | null>(null)
 const deck = ref<HTMLElement | null>(null)
 /** The deck's scale in its stage; null until measured (the deal-in waits for it). */
 const fit = ref<number | null>(null)
-/**
- * Phones: the stage may grow only to the deck's own height. It takes the height left on the screen (so it can give
- * way on a short phone), but never more than the deck needs — the rest of the room goes above and below the whole
- * block, not into two holes around the deck.
- */
-const cap = ref<string | undefined>(undefined)
 let resize: ResizeObserver | undefined
 
 /** Phones only: the stage is the height left on the screen; the deck's own box does not change with `scale`. */
@@ -75,7 +69,6 @@ function measure() {
   const room = stage.value.clientHeight
   const natural = deck.value.offsetHeight
   fit.value = phone && room > 0 && natural > 0 ? Math.max(MIN_FIT, Math.min(1, room / natural)) : 1
-  cap.value = phone && natural > 0 ? `${natural}px` : undefined
 }
 let paused = false
 let deals = 0
@@ -171,7 +164,7 @@ watch(reduced, schedule)
 </script>
 
 <template>
-  <div ref="stage" class="deck-stage" :class="{ 'deck-stage--ready': fit !== null }" :style="{ maxHeight: cap }">
+  <div ref="stage" class="deck-stage" :class="{ 'deck-stage--ready': fit !== null }">
     <ul
       ref="deck"
       class="deck"
@@ -258,7 +251,9 @@ watch(reduced, schedule)
   /* A phone: a hand-sized deck in the middle, with room on both sides for the fan and the cut; a taller phone
      (Pro Max) holds it a little larger, at most 320. */
   max-width: clamp(264px, 38dvh, 320px);
-  padding: var(--space-10) 0 0;
+  /* Room over the front card for the fan: the cards behind rise about 27 px, so the deck's box ends where they do and
+     the gaps above and below the deck look equal (with 40 the top one read 13 px larger). */
+  padding: var(--space-6) 0 0;
   cursor: pointer;
   user-select: none;
   perspective: 1200px;
