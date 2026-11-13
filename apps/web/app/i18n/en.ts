@@ -766,6 +766,8 @@ export const en = {
   'report.change.refreshing': 'Refreshing the report…',
   'report.change.refreshingAt': 'Refreshing the report, {percent}%',
   'report.change.queued': 'Will refresh when its turn comes',
+  'home.peekSearch': 'Find a chat to analyse',
+  'newAnalysis.recent': 'Most active this month',
 } as const
 
 export type MessageKey = keyof typeof en

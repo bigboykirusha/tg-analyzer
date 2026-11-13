@@ -119,10 +119,15 @@ const bellLabel = computed(() =>
   display: inline-flex;
 }
 
+/*
+ * The dot sits on the glyph's shoulder, not on the corner of the 44 px tap area (there it hung apart from the bell).
+ * The glyph is 20 in a 44 circle: 8 from the top and the right puts the dot's centre on its upper right edge; the
+ * paper-coloured ring cuts the bell's line, as a badge on an iOS icon.
+ */
 .app-bar__dot {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: var(--space-2);
+  right: var(--space-2);
   width: var(--space-3);
   height: var(--space-3);
   border: var(--space-0-5) solid var(--bg);

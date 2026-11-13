@@ -4,10 +4,11 @@ import { AlertCircle } from '../lib/icons'
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 /**
- * Home is what you have already learned: the reports, one poster tile each, new messages in the chat as a badge
- * on the tile. News about them (a quiz answered, a link opened) is in «Уведомления», behind the bell. What else to
- * analyse is the row «Разобрать ещё» above the reports (the people of the month, «Все чаты» first) — nothing floats
- * over the page. A newcomer gets «С кого начнём?» instead.
+ * Home is what you have already learned: the reports, one poster tile each (two to a row on a phone, a long name
+ * across the row), new messages in the chat as a badge on the tile. News about them (a quiz answered, a link opened)
+ * is in «Уведомления», behind the bell. What else to analyse: on a computer the row «Разобрать ещё» above the
+ * reports; on a phone the chat list peeking from the bottom (HomeChatsPeek), the people of the month inside it.
+ * A newcomer gets «С кого начнём?» instead.
  */
 const { t } = useI18n()
 useSeoMeta({ title: () => t('dashboard.title') })
@@ -16,9 +17,20 @@ const workspace = useWorkspaceStore()
 /** As many skeleton tiles as there were reports last time (two when unknown). */
 const skeletonCards = computed(() => Math.min(8, workspace.reportsHint || 2))
 const errorMessage = useErrorMessage()
+const route = useRoute()
+/** Phones and tablets: the chat list rests at the bottom (HomeChatsPeek) and the people row lives in it. */
+const narrow = useMediaQuery('(max-width: 900px)')
+const peek = computed(() => narrow.value && route.query.pick === undefined)
 
 /** The reports in the order the sidebar shows them too: pinned in Telegram first, then the freshest. */
 const reports = computed(() => workspace.reportChats)
+const grid = ref<HTMLElement | null>(null)
+/** Which tiles take the whole row on a phone: a name too long for a half tile, or a tile without a neighbour. */
+const tiles = useTileRows(
+  () => reports.value,
+  (chat) => chat.title,
+  grid,
+)
 
 const loading = computed(
   () => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
@@ -48,7 +60,7 @@ onMounted(() => {
       </div>
       <section class="home__section" aria-hidden="true">
         <div class="home__reports">
-          <HomeCard v-for="card in skeletonCards" :key="card" skeleton wide />
+          <HomeCard v-for="card in skeletonCards" :key="card" skeleton />
         </div>
       </section>
     </div>
@@ -61,7 +73,7 @@ onMounted(() => {
         <p class="t-lede">{{ t('home.greeting.lede') }}</p>
       </header>
 
-      <HomeMore />
+      <HomeMore v-if="!narrow" />
 
       <HomeBotPrompt />
 
@@ -78,16 +90,18 @@ onMounted(() => {
             <UiButton @click="loadReports">{{ t('common.retry') }}</UiButton>
           </template>
         </UiEmptyState>
-        <div v-else class="home__reports">
+        <div v-else ref="grid" class="home__reports">
           <ReportCard
-            v-for="chat in reports"
+            v-for="{ item: chat, wide } in tiles"
             :key="chat.id"
             :report="chat.report!"
             :has-avatar="chat.hasAvatar"
             :fresh="workspace.withNews[chat.id]"
+            :wide="wide"
           />
         </div>
       </section>
+      <HomeChatsPeek v-if="peek" />
     </div>
   </UiPageContainer>
 </template>
@@ -105,17 +119,22 @@ onMounted(() => {
   gap: var(--space-1);
 }
 
+/* Room at the end for the chat list's edge resting over the bottom of the screen. */
+.home:has(.peek) {
+  padding-bottom: calc(var(--peek-height) + env(safe-area-inset-bottom, 0px));
+}
+
 .home__section {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-/* Reports: one wide tile per row on a phone, three on a tablet and beside the sidebar on a laptop, four on wide
-   screens — a tile never narrower than its name and its pulse need. */
+/* Reports: two tiles to a row on a phone (a long name takes the row — useTileRows), three on a tablet and beside the
+   sidebar on a laptop, four on wide screens — a tile never narrower than its name and its pulse need. */
 .home__reports {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--card-gap);
 }
 

@@ -770,4 +770,6 @@ export const ru: Record<MessageKey, string> = {
   'report.change.refreshing': 'Обновляем отчёт…',
   'report.change.refreshingAt': 'Обновляем отчёт, {percent}%',
   'report.change.queued': 'Обновим, когда дойдёт очередь',
+  'home.peekSearch': 'Найти чат и разобрать',
+  'newAnalysis.recent': 'Чаще всего за месяц',
 }

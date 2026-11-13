@@ -6,9 +6,10 @@ import type { ReportSummaryDto } from '@tg-analyzer/shared'
  * person's colour. A chat that has moved on since the report carries a quiet mark «Есть новые» (the exact count is
  * on the report itself), for private chats and groups alike. The whole card opens
  * the report; «Обновить», «Поделиться» and «Удалить» are the report's own (its bar), not the tile's. On a phone
- * the tile is wide, one per row: the avatar, the name and the badge on one line, the pulse under them.
+ * tiles stand two to a row; `wide` (a name too long for a half tile, or a tile without a neighbour — useTileRows)
+ * takes the whole row: the avatar, the name and the badge on one line, the pulse under them.
  */
-const props = defineProps<{ report: ReportSummaryDto; hasAvatar?: boolean; fresh?: boolean }>()
+const props = defineProps<{ report: ReportSummaryDto; hasAvatar?: boolean; fresh?: boolean; wide?: boolean }>()
 const { t, tc, formatNumber } = useI18n()
 const actions = useReportActions()
 const updating = computed(() => actions.busy(props.report.chatId))
@@ -31,7 +32,7 @@ const pulse = computed(() =>
     :has-avatar="hasAvatar"
     poster
     :to="`/chat/${report.chatId}`"
-    wide
+    :wide="wide"
   >
     <template #end>
       <span v-if="fresh && !updating" class="report-card__badge t-caption">{{ t('dashboard.hasNews') }}</span>

@@ -320,3 +320,21 @@ test('a running analysis shows away from home and its button opens the details',
     await expect(page.locator('.app-bar__progress')).toHaveAttribute('aria-valuenow', '63')
   }
 })
+
+test('a phone keeps the chat list at the bottom of home, the people of the month inside it', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === 'desktop', 'the list rests at the bottom of home only on phones and tablets')
+  await signIn(page)
+  await analyseChat(page, 'Катя')
+  await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 30_000 })
+  await page.waitForURL('**/chat/1006')
+  await gotoHydrated(page, '/dashboard')
+  // Home shows the reports and the list's edge; the row of people lives in the list.
+  await expect(page.locator('.home-card').filter({ hasText: 'Катя' })).toBeVisible()
+  await expect(page.locator('.more:not(.more--sheet)')).toHaveCount(0)
+  await page.getByRole('link', { name: 'Найти чат и разобрать' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Новый анализ' })
+  await expect(sheet.getByText('Чаще всего за месяц')).toBeVisible()
+  await expect(sheet.locator('.chat-row').first()).toBeVisible()
+})

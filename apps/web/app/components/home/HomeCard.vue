@@ -22,7 +22,7 @@ const props = defineProps<{
   to?: string
   skeleton?: boolean
   poster?: boolean
-  /** Phones: one tile per row — the avatar, the name and the end slot on one line, the foot under them. */
+  /** Phones: the tile takes the whole row — the avatar, the name and the end slot on one line, the foot under them. */
   wide?: boolean
 }>()
 
@@ -210,12 +210,23 @@ a.home-card__name:focus-visible::after {
 }
 
 /*
- * A wide tile on a phone: one row of avatar, name and badge, the pulse the full width under it — a list you
- * scan top to bottom, not a grid of squares.
+ * A phone: report tiles stand two to a row, small posters with a one-line name (a longer name makes the tile wide).
+ * A wide tile takes the whole row: one line of avatar, name and badge, the pulse the full width under it.
  */
 @media (max-width: 640px) {
+  .home-card--poster:not(.home-card--wide) {
+    padding: var(--space-4);
+  }
+
+  .home-card--poster:not(.home-card--wide) .home-card__name {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    overflow-wrap: normal;
+  }
+
   .home-card--wide {
     display: grid;
+    grid-column: 1 / -1;
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
       'avatar text end'

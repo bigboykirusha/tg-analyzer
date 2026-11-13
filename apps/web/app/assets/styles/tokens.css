@@ -241,6 +241,8 @@
 
   /* Elevation: flat content; only floating layers cast a shadow — two levels. */
   --shadow-float: 0 8px 24px -8px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.06);
+  /* The edge of a sheet resting at the bottom of the screen: a hairline on top and a soft shade upwards. */
+  --shadow-peek: inset 0 1px 0 var(--border), 0 -8px 24px -12px rgba(20, 20, 30, 0.22);
   /* A poster as an object: light along its top edge, a soft shadow under it (home tiles, the landing deck). */
   --shadow-lift: inset 0 1px 0 var(--white-a5), 0 1px 1px rgba(0, 0, 0, 0.05), 0 18px 40px -20px rgba(20, 20, 30, 0.32);
   /* The lit top edge alone: a poster that lies flat (the report's own, a hero card). */
@@ -325,6 +327,7 @@
   --chart-neutral: var(--night-heat-1);
   --chart-neutral-strong: var(--night-11);
   --shadow-float: 0 8px 24px -8px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-peek: inset 0 1px 0 var(--border), 0 -8px 24px -12px rgba(0, 0, 0, 0.7);
   --shadow-lift: inset 0 1px 0 var(--white-a3), 0 18px 40px -18px rgba(0, 0, 0, 0.7);
   --edge-light: inset 0 1px 0 var(--white-a3);
   --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
@@ -595,6 +598,8 @@
   /* Layers: Primer's scale (sticky 100 · modal 400 · popover 500 · skip link 600); a toast sits above a modal. */
   --z-header: 100;
   --z-dock: 150;
+  /* The room a page keeps at its end for the chat list peeking from below (handle, gap, a 44 pill, paddings). */
+  --peek-height: 84px;
   --z-modal: 400;
   --z-toast: 450;
   --z-popover: 500;
