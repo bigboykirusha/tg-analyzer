@@ -13,12 +13,10 @@ const props = defineProps<{ report: ReportSummaryDto; hasAvatar?: boolean; fresh
 const { t, tc, formatNumber } = useI18n()
 const actions = useReportActions()
 const updating = computed(() => actions.busy(props.report.chatId))
-const meta = computed(() => {
-  const count = tc('common.messagesCount', props.report.totalMessages, {
-    count: formatNumber(props.report.totalMessages),
-  })
-  return props.report.type === 'group' ? t('sidebar.groupMeta', { count }) : count
-})
+/** Only how many messages: a tile does not say «Группа» (13.11) — the name and the avatar tell a group already. */
+const meta = computed(() =>
+  tc('common.messagesCount', props.report.totalMessages, { count: formatNumber(props.report.totalMessages) }),
+)
 const pulse = computed(() =>
   props.report.pulse?.some((week) => week.sent || week.received) ? props.report.pulse : null,
 )

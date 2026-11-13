@@ -214,8 +214,13 @@ a.home-card__name:focus-visible::after {
  * A wide tile takes the whole row: one line of avatar, name and badge, the pulse the full width under it.
  */
 @media (max-width: 640px) {
+  /* A half tile is a square (13.11): a little tighter inside and a lower pulse, so a name and a count fit it; a
+     group's two-line count may make it taller rather than spill. A wide tile keeps its own lower height. */
   .home-card--poster:not(.home-card--wide) {
+    gap: var(--space-2);
+    aspect-ratio: 1;
     padding: var(--space-4);
+    --pulse-half: var(--space-3);
   }
 
   .home-card--poster:not(.home-card--wide) .home-card__name {
