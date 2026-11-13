@@ -5,24 +5,13 @@ import { Clock } from '../../../lib/icons'
 
 /**
  * «Время» in a group: the 24 hours with the usual window lit — `derived.availabilityProfile.peakWindow`,
- * the same answer as a private report and «Итоги»; the busiest day of the week is one line under them.
- * No calendar — the pulse on the poster shows the rhythm in time.
+ * the same answer as a private report and «Итоги». The busiest day of the week is the answer of the week's own
+ * card right under this one (ReportDays), so it is not said here a second time.
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t } = useI18n()
 const activity = computed(() => props.data.report.activity)
 
-function busiest(counts: { total: number }[]) {
-  let best = -1
-  counts.forEach((count, index) => {
-    if (count.total > 0 && (best < 0 || count.total > counts[best]!.total)) best = index
-  })
-  return best
-}
-const busiestDay = computed(() => {
-  const day = busiest(activity.value.weekday)
-  return day < 0 ? null : t('group.time.busiestDay', { day: t('chart.weekdaysLong').split(',')[day] ?? '' })
-})
 const window = computed(() => parseWindow(props.data.derived.availabilityProfile.peakWindow))
 const peakHours = computed(() => {
   const peak = window.value
@@ -37,6 +26,5 @@ const answer = computed(() =>
 <template>
   <ReportSection v-if="answer" id="part-time" :icon="Clock" :title="t('report.time.title')" :answer="answer">
     <HourlyChart :hourly="activity.hourly" :peak="peakHours" />
-    <template v-if="busiestDay" #note>{{ busiestDay }}</template>
   </ReportSection>
 </template>

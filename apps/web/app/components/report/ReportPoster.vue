@@ -84,6 +84,15 @@ const pulseLabel = computed(() =>
   isGroup.value ? t('report.pulse.labelGroup') : t('report.pulse.label', { name: partner.value }),
 )
 
+/**
+ * The name is the display role fitted to the poster: its longest word sets the size, so «Продуктовая команда»
+ * breaks between its words, never inside one.
+ */
+const nameChars = computed(() => {
+  const name = props.data?.summary.title ?? props.title ?? ''
+  return Math.max(1, ...name.split(/\s+/u).map((word) => [...word].length))
+})
+
 /** A group's most active members, then «+N ещё»; each leads to «Люди». */
 const cast = computed(() => {
   // A phone's row holds five circles: four people and «+N».
@@ -102,8 +111,12 @@ const cast = computed(() => {
         <div class="poster__head">
           <!-- A guest's heading is the page's h1; the owner's name is the h1 in the bar, here its picture. -->
           <h1 v-if="heading" class="poster__name poster__name--pair">{{ heading }}</h1>
-          <h1 v-else-if="h1 && data" class="poster__name">{{ data.summary.title }}</h1>
-          <p v-else-if="data || title" class="poster__name" aria-hidden="true">{{ data?.summary.title ?? title }}</p>
+          <h1 v-else-if="h1 && data" class="poster__name" :style="{ '--name-chars': nameChars }">
+            {{ data.summary.title }}
+          </h1>
+          <p v-else-if="data || title" class="poster__name" :style="{ '--name-chars': nameChars }" aria-hidden="true">
+            {{ data?.summary.title ?? title }}
+          </p>
           <UiSkeleton v-else class="poster__name-skeleton" width="55%" radius="var(--radius-well)" />
           <p v-if="meta" class="poster__meta">{{ meta }}</p>
           <UiSkeleton v-else class="poster__meta-skeleton" width="62%" />
@@ -225,12 +238,22 @@ const cast = computed(() => {
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
+  /* The name measures itself against this column. */
+  container-type: inline-size;
 }
 
+/*
+ * The display role, fitted: a name whose longest word is wider than the poster steps down until that word fits
+ * (a glyph of Onest 600 at this tracking is about 0.62 em), down to the h1 size; only then may a word break.
+ */
 .poster__name {
   display: -webkit-box;
   overflow: hidden;
   font: var(--text-display);
+  /* Declared here, not in tokens.css: it reads this name's own length and this poster's width. */
+  --display-name-fit: clamp(var(--display-min), calc(100cqi / (var(--name-chars, 1) * 0.62)), var(--display-max));
+  font-size: var(--display-name-fit);
+  line-height: 1;
   letter-spacing: var(--tracking-display);
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;

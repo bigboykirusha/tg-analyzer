@@ -155,19 +155,13 @@ export function useStoryFrames(data: () => ReportDto) {
         emoji,
       }
     }
-    const { mine, theirs, word, figure, answer, any } = wordFacts
+    const { mine, theirs, next, figure, answer, any } = wordFacts
     if (!any.value) return null
-    const sides = [
-      { key: 'mine', label: t('report.words.mine') as string | null, items: mine.value.map((item) => item.value) },
-      { key: 'theirs', label: name.value as string | null, items: theirs.value.map((item) => item.value) },
+    const sides: { key: string; label: string | null; items: string[] }[] = [
+      { key: 'mine', label: t('report.words.mine'), items: mine.value.map((item) => item.value) },
+      { key: 'theirs', label: name.value, items: theirs.value.map((item) => item.value) },
+      { key: 'next', label: t('report.topWords.title'), items: next.value.map((item) => item.value) },
     ].filter((side) => side.items.length)
-    // Nobody has words of their own (you write alike): the frame is not left empty under its one word — the
-    // chat's next most frequent words stand there, the list of the report's «Чаще всего».
-    if (!sides.length) {
-      const next = clean.topWords.filter((item) => item.value !== word.value?.value).slice(0, 6)
-      if (next.length)
-        sides.push({ key: 'top', label: t('report.topWords.title'), items: next.map((item) => item.value) })
-    }
     return {
       kind: 'words',
       key: 'words',

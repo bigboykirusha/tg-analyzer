@@ -603,6 +603,8 @@
   /* Big type is 600 and set tight — a name, a number, a screen title are objects; reading stays 400, controls 500. */
   --text-display: 600 64px/64px var(--font-sans);
   --display-max: 64px;
+  /* A fitted display line (a long name on a poster) never goes below the h1 size. */
+  --display-min: 32px;
   /* The landing's title on a phone: shrinks with the width so «Зеркало ваших» stays one line down to 360 px. */
   --display-fit: min(var(--display-max), 12.6vw);
   --text-figure: 600 44px/48px var(--font-sans);

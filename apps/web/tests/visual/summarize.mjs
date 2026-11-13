@@ -11,8 +11,9 @@ const check = process.argv.includes('--check')
 // Five radii: mark 8 (chart bars), well 12 (controls), card 16, sheet 24, pill.
 const LIMITS = { buttonLooks: 5, buttonSizes: 2, textStylesPerScreen: 8, textStylesTotal: 8, radii: 5 }
 
-// Rows (list rows, sidebar links) and data chips are tappable but are not buttons.
-const NOT_BUTTONS = /(^|\.)(list-row|router-link-(exact-)?active|menu-item|chip)(\.|$)/
+// Rows (list rows, sidebar links), data chips and a person's circle with their name («Разобрать ещё») are tappable
+// but are not buttons: they are objects of a list.
+const NOT_BUTTONS = /(^|\.)(list-row|router-link-(exact-)?active|menu-item|chip|more__person)(\.|$)/
 const uniq = (arr) => [...new Set(arr)]
 const count = (arr) => arr.reduce((acc, key) => ((acc[key] = (acc[key] || 0) + 1), acc), {})
 // "h44 r999 bg:rgb() bd:0px rgb() fs14px/500 c:rgb()" → parts.

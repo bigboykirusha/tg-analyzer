@@ -53,7 +53,7 @@ const allowed = computed(() => props.share.settings.words)
         <section class="tile guest__invite">
           <h2 class="t-h3">{{ t('publicReport.endTitle') }}</h2>
           <p class="t-label guest__invite-text">{{ t('publicReport.endText') }}</p>
-          <UiButton variant="primary" block to="/login">{{ t('publicReport.cta') }}</UiButton>
+          <UiButton class="guest__cta" variant="primary" to="/login">{{ t('publicReport.cta') }}</UiButton>
         </section>
       </div>
     </UiPageContainer>
@@ -78,17 +78,34 @@ const allowed = computed(() => props.share.settings.words)
   color: var(--text-muted);
 }
 
+/* A phone: the invitation's button under the thumb, the card's whole width. */
+.guest__cta {
+  align-self: stretch;
+}
+
+/*
+ * Desktop: the report's own rule (ReportPart) — two cards to a row of one height, a card left alone takes the
+ * whole row; the invitation's button is as wide as its words.
+ */
 @media (min-width: 901px) {
   .guest__flow {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    flex-flow: row wrap;
+    align-items: stretch;
     padding-top: var(--space-8);
   }
 
+  .guest__flow > :deep(*) {
+    flex: 1 1 40%;
+    min-width: 0;
+  }
+
   .guest__flow > :deep(.report-section--wide),
-  .guest__invite {
-    grid-column: 1 / -1;
+  .guest__flow > .guest__invite {
+    flex-basis: 100%;
+  }
+
+  .guest__cta {
+    align-self: flex-start;
   }
 }
 </style>

@@ -61,7 +61,8 @@ const collect = () => {
       [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 1)
     // The landing's title is the display role fitted to the width on phones (--display-fit: two lines down to
     // 360 px), so it counts as the display style at its full size, not as a style of its own.
-    const fitted = el.closest('.landing__title')
+    // A report's name on its poster is the same role fitted to its longest word («Продуктовая команда»).
+    const fitted = el.closest('.landing__title, .poster__name:not(.poster__name--pair)')
     const display = getComputedStyle(document.documentElement).getPropertyValue('--display-max').trim()
     if (ownText) {
       out.text.push({
