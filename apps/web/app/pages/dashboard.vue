@@ -6,7 +6,7 @@ definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 /**
  * Home is what you have already learned: the reports, one poster tile each (two to a row on a phone, a long name
  * across the row), new messages in the chat as a badge on the tile. News about them (a quiz answered, a link opened)
- * is in «Уведомления», behind the bell. What else to analyse: on a computer the row «Разобрать ещё» above the
+ * is in «Уведомления», behind the bell. What else to analyse: on a computer the row «Разобрать ещё» under the
  * reports; on a phone the chat list peeking from the bottom (HomeChatsPeek), the people of the month inside it.
  * A newcomer gets «С кого начнём?» instead.
  */
@@ -73,8 +73,6 @@ onMounted(() => {
         <p class="t-lede">{{ t('home.greeting.lede') }}</p>
       </header>
 
-      <HomeMore v-if="!narrow" />
-
       <HomeBotPrompt />
 
       <section id="reports" class="home__section">
@@ -101,6 +99,8 @@ onMounted(() => {
           />
         </div>
       </section>
+      <!-- A computer: who else to analyse comes after what you already know, a hint under the reports. -->
+      <HomeMore v-if="!narrow" />
       <HomeChatsPeek v-if="peek" />
     </div>
   </UiPageContainer>

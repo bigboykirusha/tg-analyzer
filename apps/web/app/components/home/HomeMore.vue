@@ -2,7 +2,7 @@
 import { Search } from '../../lib/icons'
 
 /**
- * «Разобрать ещё»: what else to analyse, as a row of people over the reports — the way Telegram lays out its
+ * «Разобрать ещё»: what else to analyse, as a row of people under the reports (a computer) — the way Telegram lays out its
  * stories. First «Все чаты Telegram» (the picker: a sheet on a phone, «Новый анализ» on a computer), then the
  * chat being analysed and those waiting, then the busiest chats of the month without a report. A tap starts the
  * analysis; while it runs, that person's circle fills with a ring and the percentage, and a tap opens its
