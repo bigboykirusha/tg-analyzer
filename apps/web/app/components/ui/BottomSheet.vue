@@ -235,13 +235,15 @@ watch(open, (value) => value && drag.reset())
   height: 100%;
 }
 
-/* From an edge resting at the bottom, back into it. */
-.sheet-scrim--rest.sheet-enter-from .sheet {
-  transform: translateY(calc(100% - var(--peek-rise, 0px)));
-}
+/* From an edge resting at the bottom, back into it (with reduced motion it fades in place, as every sheet). */
+@media (prefers-reduced-motion: no-preference) {
+  .sheet-scrim--rest.sheet-enter-from .sheet {
+    transform: translateY(calc(100% - var(--peek-rise, 0px)));
+  }
 
-.sheet-scrim--rest.sheet-leave-to .sheet {
-  transform: translateY(calc(100% - var(--peek-rest, 0px)));
+  .sheet-scrim--rest.sheet-leave-to .sheet {
+    transform: translateY(calc(100% - var(--peek-rest, 0px)));
+  }
 }
 
 /* Reduced motion: no travel, the sheet fades in place. */

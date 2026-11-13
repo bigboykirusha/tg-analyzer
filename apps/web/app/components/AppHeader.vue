@@ -196,9 +196,10 @@ const bellLabel = computed(() =>
   .app-bar.is-over-poster {
     /* A piece of the poster under it (usePosterHeader): what scrolls up goes under the material, not into the logo. */
     background-color: var(--bar-poster-color, transparent);
-    background-image: var(--bar-poster-image, none);
-    background-position: var(--bar-poster-position, 0 0);
-    background-size: var(--bar-poster-size, auto);
+    background-image: linear-gradient(var(--bg), var(--bg)), var(--bar-poster-image, none);
+    background-position: var(--bar-poster-position, 0 100%);
+    background-repeat: var(--bar-poster-repeat, no-repeat);
+    background-size: var(--bar-poster-size, 0 0);
   }
 }
 

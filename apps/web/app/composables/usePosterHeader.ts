@@ -65,7 +65,8 @@ function posterPainter() {
   return function paint(poster: HTMLElement | null, bar: HTMLElement | null) {
     if (!bar) return
     if (!poster) {
-      for (const name of ['color', 'image', 'size', 'position']) bar.style.removeProperty(`--bar-poster-${name}`)
+      for (const name of ['color', 'image', 'size', 'position', 'repeat'])
+        bar.style.removeProperty(`--bar-poster-${name}`)
       image = ''
       return
     }
@@ -79,12 +80,18 @@ function posterPainter() {
     bar.style.setProperty('--bar-poster-color', style.backgroundColor)
     const rect = poster.getBoundingClientRect()
     const own = bar.getBoundingClientRect()
-    // The grain keeps its own tile; the gradients span the poster.
+    // The first layer is the page under the poster's lower edge (the bar's CSS draws it), so the poster never repeats
+    // there as it leaves; the grain keeps its own tile; the gradients span the poster once.
+    const at = `${rect.left - own.left}px ${rect.top - own.top}px`
     bar.style.setProperty(
       '--bar-poster-size',
-      layers.map((tile) => (tile ? 'auto' : `${rect.width}px ${rect.height}px`)).join(', ') || 'auto',
+      ['100% 100%', ...layers.map((tile) => (tile ? 'auto' : `${rect.width}px ${rect.height}px`))].join(', '),
     )
-    bar.style.setProperty('--bar-poster-position', `${rect.left - own.left}px ${rect.top - own.top}px`)
+    bar.style.setProperty('--bar-poster-position', [`0 ${rect.bottom - own.top}px`, ...layers.map(() => at)].join(', '))
+    bar.style.setProperty(
+      '--bar-poster-repeat',
+      ['no-repeat', ...layers.map((tile) => (tile ? 'repeat' : 'no-repeat'))].join(', '),
+    )
   }
 }
 
@@ -95,7 +102,8 @@ function posterPainter() {
  * material driven by the scroll, not a switch at one pixel.
  *
  * `progress` is 0 over the poster and 1 once it has gone (or when the page has no poster); the bar
- * writes it to `--poster-progress`. `overPoster` flips the control colours at the midpoint.
+ * writes it to `--poster-progress`. `overPoster` flips the bar to glass as soon as the poster's edge reaches the
+ * controls' lower edge: past that, the poster's ink would stand on the page's paper (dark on dark in the dark theme).
  */
 export function usePosterHeader() {
   const applyChrome = syncBrowserChrome()
@@ -105,7 +113,7 @@ export function usePosterHeader() {
   /** 0 at the top of a report (the name is on the poster), 1 once the name has gone under the bar. */
   const titleProgress = ref(1)
   const hasPoster = ref(false)
-  const overPoster = computed(() => hasPoster.value && progress.value < 0.5)
+  const overPoster = computed(() => hasPoster.value && progress.value < 0.15)
   let observer: ResizeObserver | null = null
   let frame = 0
   let poster: HTMLElement | null = null
