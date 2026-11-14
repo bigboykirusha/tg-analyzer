@@ -713,6 +713,8 @@ export const ru: Record<MessageKey, string> = {
   'report.match.reactions': 'Реакции',
   'report.match.goodMorning': '«Доброе утро»',
   'report.match.goodNight': '«Спокойной ночи»',
+  'report.match.evenCount': 'поровну: {count}',
+  'report.match.evenList': 'Поровну: {names}',
   'report.milestones.title': 'Вехи',
   'report.milestones.first': 'Первое сообщение',
   'report.milestones.nth': '{n}-е сообщение',

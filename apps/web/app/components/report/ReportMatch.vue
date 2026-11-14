@@ -5,8 +5,8 @@ import { Users } from '../../lib/icons'
 /**
  * «Вы и {имя}»: everything the two of you can be compared in, as one sheet — a match's statistics. You on the
  * left in ink, the other side on the right in their colour; each row the two values, what they are of, and two
- * bars from the middle out. Rows grouped by topic: the conversation, the answers, the mood, mornings and nights,
- * voice. A row with too few events behind it is left out. Reply time and the starter come from `useVersus`, so
+ * bars from the middle out. A scoreboard first (how many rows each side leads); only the rows with a leader get
+ * bars, grouped by topic; the even ones fold into one line of names. A row with too few events behind it is left out. Reply time and the starter come from `useVersus`, so
  * they read the same here and in the «Итоги».
  */
 const props = defineProps<{ data: ReportDto }>()
@@ -127,6 +127,23 @@ const groups = computed(() => {
 })
 
 const rows = computed(() => groups.value.flatMap((group) => group.rows))
+/** Only the rows where one side leads get bars; the even ones fold into a single line of names. */
+const decisive = computed(() =>
+  groups.value
+    .map((group) => ({ ...group, rows: group.rows.filter((item) => item.lead) }))
+    .filter((group) => group.rows.length),
+)
+const tally = computed(() => ({
+  mine: rows.value.filter((item) => item.lead === 'mine').length,
+  theirs: rows.value.filter((item) => item.lead === 'theirs').length,
+  even: rows.value.filter((item) => !item.lead).length,
+}))
+const evenNames = computed(() =>
+  rows.value
+    .filter((item) => !item.lead)
+    .map((item) => item.label.toLocaleLowerCase())
+    .join(', '),
+)
 /** The sheet's answer: who is ahead more often, or that it is even almost everywhere. */
 const answer = computed(() => {
   const all = rows.value
@@ -142,11 +159,18 @@ const answer = computed(() => {
 <template>
   <ReportSection v-if="answer" id="part-match" wide :icon="Users" :title="t('report.match.title')" :answer="answer">
     <div class="sheet">
-      <p class="sheet__sides t-label" aria-hidden="true">
-        <span>{{ t('report.you') }}</span>
-        <span class="sheet__them">{{ name }}</span>
-      </p>
-      <section v-for="group in groups" :key="group.key" class="sheet__group" :aria-label="group.title">
+      <div class="score">
+        <p class="score__side">
+          <span class="t-figure score__figure">{{ tally.mine }}</span>
+          <span class="t-label score__name">{{ t('report.you') }}</span>
+        </p>
+        <p class="t-label score__even">{{ t('report.match.evenCount', { count: tally.even }) }}</p>
+        <p class="score__side score__side--theirs">
+          <span class="t-figure score__figure score__figure--theirs">{{ tally.theirs }}</span>
+          <span class="t-label score__name score__name--theirs">{{ name }}</span>
+        </p>
+      </div>
+      <section v-for="group in decisive" :key="group.key" class="sheet__group" :aria-label="group.title">
         <h4 class="t-label sheet__title">{{ group.title }}</h4>
         <div v-for="item in group.rows" :key="item.key" class="vs">
           <span class="t-body vs__value" :class="{ 'vs__value--behind': item.lead === 'theirs' }">{{ item.mine }}</span>
@@ -160,6 +184,7 @@ const answer = computed(() => {
           </span>
         </div>
       </section>
+      <p v-if="tally.even" class="t-label sheet__even">{{ t('report.match.evenList', { names: evenNames }) }}</p>
     </div>
   </ReportSection>
 </template>
@@ -171,13 +196,52 @@ const answer = computed(() => {
   gap: var(--space-4);
 }
 
-.sheet__sides {
-  display: flex;
-  justify-content: space-between;
+/* The scoreboard: how many comparisons each side leads, the even ones quietly between. */
+.score {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-3);
 }
 
-.sheet__them {
+.score__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.score__side--theirs {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.score__figure--theirs,
+.score__name--theirs {
   color: var(--them-ink);
+}
+
+.score__name {
+  color: var(--text-muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score__name--theirs {
+  color: var(--them-ink);
+}
+
+.score__even {
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sheet__even {
+  color: var(--text-muted);
+  text-wrap: pretty;
 }
 
 .sheet__group {

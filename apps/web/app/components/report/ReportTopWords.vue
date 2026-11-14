@@ -3,8 +3,8 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { BarChart2 } from '../../lib/icons'
 
 /**
- * «Чаще всего»: the ten words the chat says most, as a chart — each a bar of its count against the first,
- * the count beside it. The words come thinned from `derived.words`, the same list the word of the chat
+ * «Чаще всего»: the ten words the chat says most. The first three are big, each with its count under it; places
+ * 4–10 are a compact numbered list. The words come thinned from `derived.words`, the same list the word of the chat
  * is taken from.
  */
 const props = defineProps<{ data: ReportDto }>()
@@ -14,7 +14,8 @@ const LIMIT = 10
 const MIN = 5
 
 const words = computed(() => props.data.derived.words.topWords.slice(0, LIMIT))
-const max = computed(() => words.value[0]?.count ?? 1)
+const podium = computed(() => words.value.slice(0, 3))
+const rest = computed(() => words.value.slice(3))
 const answer = computed(() =>
   t('report.topWords.answer', {
     words: words.value
@@ -27,52 +28,78 @@ const answer = computed(() =>
 
 <template>
   <ReportSection v-if="words.length >= MIN" :icon="BarChart2" :title="t('report.topWords.title')" :answer="answer">
-    <ol class="top">
-      <li v-for="(word, index) in words" :key="word.value" class="top__row">
-        <span class="t-label top__place">{{ index + 1 }}</span>
-        <span class="t-body top__word">{{ word.value }}</span>
-        <span class="t-label top__count">{{ formatNumber(word.count) }}</span>
-        <span class="top__track" aria-hidden="true"><i :style="{ width: `${(100 * word.count) / max}%` }" /></span>
+    <div class="podium">
+      <p v-for="word in podium" :key="word.value" class="podium__item">
+        <span class="t-h3 podium__word">{{ word.value }}</span>
+        <span class="t-label podium__count">{{ formatNumber(word.count) }}</span>
+      </p>
+    </div>
+    <ol v-if="rest.length" class="rest" start="4">
+      <li v-for="(word, index) in rest" :key="word.value" class="rest__row">
+        <span class="t-label rest__place">{{ index + 4 }}</span>
+        <span class="t-body rest__word">{{ word.value }}</span>
+        <span class="t-label rest__count">{{ formatNumber(word.count) }}</span>
       </li>
     </ol>
   </ReportSection>
 </template>
 
 <style scoped>
-.top {
-  display: flex;
-  flex-direction: column;
+/* The first three, big: a word and its count under it, three columns. */
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-3);
 }
 
-.top__row {
-  display: grid;
-  grid-template-columns: var(--space-6) minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-2);
+.podium__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
-.top__place,
-.top__count {
+.podium__word {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium__count,
+.rest__place,
+.rest__count {
   color: var(--text-muted);
 }
 
-.top__word {
-  overflow-wrap: anywhere;
+/* Places 4–10: a compact numbered list in two columns, filled down the first, then the second. */
+.rest {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(4, auto);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-5);
+  margin-top: var(--space-4);
 }
 
-.top__track {
-  grid-column: 2 / -1;
-  height: var(--space-2);
-  border-radius: var(--radius-pill);
-  background: var(--room-tint);
+/* A phone's card is too narrow for two columns of long words: one column there. */
+@media (max-width: 640px) {
+  .rest {
+    grid-auto-flow: row;
+    grid-template-rows: none;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rest__row {
+  display: grid;
+  grid-template-columns: var(--space-5) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.rest__word {
   overflow: hidden;
-}
-
-.top__track i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--them);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

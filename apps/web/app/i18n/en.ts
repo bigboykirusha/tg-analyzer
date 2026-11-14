@@ -708,6 +708,8 @@ export const en = {
   'report.match.reactions': 'Reactions',
   'report.match.goodMorning': '“Good morning”',
   'report.match.goodNight': '“Good night”',
+  'report.match.evenCount': 'even: {count}',
+  'report.match.evenList': 'Even: {names}',
   'report.milestones.title': 'Milestones',
   'report.milestones.first': 'First message',
   'report.milestones.nth': 'Message no. {n}',
