@@ -21,12 +21,11 @@ const toast = useToast()
 const { state, busy, enable } = usePush()
 
 const shown = computed(() =>
-  props.offerOnly
-    ? state.value === 'off'
-    : state.value === 'off' || state.value === 'install' || state.value === 'denied',
+  props.offerOnly ? state.value === 'off' : ['off', 'install', 'safari', 'denied'].includes(state.value),
 )
 const subtitle = computed(() => {
   if (state.value === 'install') return t('push.installText')
+  if (state.value === 'safari') return t('push.safariText')
   if (state.value === 'denied') return t('push.deniedText')
   return props.text || t('push.offText')
 })
@@ -43,7 +42,7 @@ async function turnOn() {
 <template>
   <UiGroup v-if="shown">
     <UiListRow
-      :title="state === 'install' ? t('push.installTitle') : title || t('push.title')"
+      :title="state === 'install' || state === 'safari' ? t('push.installTitle') : title || t('push.title')"
       :subtitle="subtitle"
       wrap
     >

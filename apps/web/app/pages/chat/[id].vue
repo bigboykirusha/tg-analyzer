@@ -65,12 +65,17 @@ function openShare() {
   shareOpen.value = true
 }
 
-/** «Поделиться» on a report card of the home page opens this page with the sheet already up. */
-onMounted(() => {
+/**
+ * «Поделиться» on a report card of the home page (or a tap on a push about a link or the quiz) opens this page with
+ * the sheet already up — also when the page is already open and only the address changes.
+ */
+function shareFromQuery() {
   if (route.query.share === undefined) return
   void navigateTo({ query: { ...route.query, share: undefined } }, { replace: true })
   openShare()
-})
+}
+onMounted(shareFromQuery)
+watch(() => route.query.share, shareFromQuery)
 
 function openStory(intent: StoryIntent) {
   storyIntent.value = intent

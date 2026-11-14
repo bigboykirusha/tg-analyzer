@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray, notInArray } from 'drizzle-orm'
 import webpush from 'web-push'
 import { config } from '../../config'
 import { db, schema } from '../../db'
@@ -11,6 +11,12 @@ import { logger } from '../../lib/logger'
  * no longer carries them). The browser's push service only relays an encrypted payload; we keep its address and keys.
  * Off without VAPID keys.
  */
+
+/** Browsers one person may have subscribed; the oldest beyond this are dropped. */
+const MAX_SUBSCRIPTIONS_PER_USER = 10
+
+if (!pushEnabled() && (config.VAPID_PUBLIC_KEY || config.VAPID_PRIVATE_KEY || config.VAPID_SUBJECT))
+  logger.warn('web push is off: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT are needed together')
 
 export function pushEnabled() {
   return Boolean(config.VAPID_PUBLIC_KEY && config.VAPID_PRIVATE_KEY && config.VAPID_SUBJECT)
@@ -137,6 +143,21 @@ export async function savePushSubscription(
       target: schema.pushSubscriptions.endpoint,
       set: { userId, p256dh: subscription.p256dh, auth: subscription.auth, locale: subscription.locale },
     })
+  const kept = await db
+    .select({ id: schema.pushSubscriptions.id })
+    .from(schema.pushSubscriptions)
+    .where(eq(schema.pushSubscriptions.userId, userId))
+    .orderBy(desc(schema.pushSubscriptions.createdAt))
+    .limit(MAX_SUBSCRIPTIONS_PER_USER)
+  await db.delete(schema.pushSubscriptions).where(
+    and(
+      eq(schema.pushSubscriptions.userId, userId),
+      notInArray(
+        schema.pushSubscriptions.id,
+        kept.map((row) => row.id),
+      ),
+    ),
+  )
 }
 
 export async function deletePushSubscription(userId: string, endpoint: string) {

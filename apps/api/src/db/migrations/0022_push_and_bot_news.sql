@@ -21,6 +21,6 @@ CREATE TABLE IF NOT EXISTS "bot_subscribers" (
 );
 --> statement-breakpoint
 -- Those who turned the bot on before keep it: their private chat with the bot has their own Telegram id.
+-- "users"."bot_notify" stays for one release: the old API and worker still read it while the new ones start.
+-- A later migration drops it.
 INSERT INTO "bot_subscribers" ("chat_id") SELECT "tg_user_id" FROM "users" WHERE "bot_notify" ON CONFLICT DO NOTHING;
---> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN IF EXISTS "bot_notify";

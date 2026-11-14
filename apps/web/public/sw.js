@@ -14,16 +14,25 @@ self.addEventListener('push', (event) => {
   } catch {
     data = { body: event.data ? event.data.text() : '' }
   }
-  // A push must always show something: browsers punish a silent one.
   event.waitUntil(
-    self.registration.showNotification(data.title || 'TGDuet', {
-      body: data.body || '',
-      tag: data.tag,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      lang: 'ru',
-      data: { url: data.url || '/notifications' },
-    }),
+    (async () => {
+      // TGDuet open and in front: the page shows it itself (the bell, the tile), told here; a push on top would say
+      // it twice. Browsers allow skipping the notification only then.
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      if (windows.some((client) => client.focused)) {
+        for (const client of windows) client.postMessage({ type: 'tgduet:push', title: data.title, url: data.url })
+        return
+      }
+      await self.registration.showNotification(data.title || 'TGDuet', {
+        body: data.body || '',
+        tag: data.tag,
+        // The same chat's news again (a report refreshed): a new alert, not a silent swap.
+        renotify: Boolean(data.tag),
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        data: { url: data.url || '/notifications' },
+      })
+    })(),
   )
 })
 

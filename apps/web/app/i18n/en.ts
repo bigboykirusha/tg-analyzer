@@ -154,7 +154,7 @@ export const en = {
     "The messages of the one chat you picked, only while it is analysed and only in the server's memory: the texts are needed to count words and emoji. We also see the list of your chats (names, types and photos), so you can pick one, and your profile: Telegram ID, name, username and photo.",
   'faq.q.keep': 'What do you keep?',
   'faq.a.keep':
-    "Finished reports: message counts, active hours, reply speed, the most frequent words and emoji, and in groups the members' names. Your Telegram session, encrypted with AES-256-GCM, so reports can be updated. Notifications: the chat's name and numbers, for 90 days. And records of sign-ins and analyses, to keep the service secure.",
+    "Finished reports: message counts, active hours, reply speed, the most frequent words and emoji, and in groups the members' names. Your Telegram session, encrypted with AES-256-GCM, so reports can be updated. Notifications: the chat's name and numbers, for 90 days; for push, your browser's push service address. For the bot's subscribers, only the chat id with the bot. And records of sign-ins and analyses, to keep the service secure.",
   'faq.q.notKeep': "And what don't you keep?",
   'faq.a.notKeep':
     'Message texts, photos, voice messages and files — nothing the conversation could be put back together from. Your cloud password, if you have one, goes straight to Telegram and never stays with us.',
@@ -345,9 +345,6 @@ export const en = {
   'story.title': 'Chat recap',
   'story.you': 'You',
   'story.pair': 'You and {name}',
-  'telegramSignIn.byPhone': 'Sign in with a phone number',
-  'telegramSignIn.text': 'Recognising you by Telegram — a couple of seconds.',
-  'telegramSignIn.title': 'Opening TGDuet',
   'toast.error': 'Error',
   'toast.info': 'Info',
   'toast.success': 'Success',
@@ -765,6 +762,9 @@ export const en = {
   'push.unsupportedText': 'This browser cannot show notifications',
   'push.error': 'Could not turn on notifications',
   'accountPage.pushTitle': 'Notifications',
+  'push.safariText':
+    'Open TGDuet in Safari and add it to the Home Screen: Share → Add to Home Screen. iOS 16.4 or later.',
+  'analysis.details.reading': 'Reading the history',
 } as const
 
 export type MessageKey = keyof typeof en

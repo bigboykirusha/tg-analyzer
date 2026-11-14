@@ -10,31 +10,47 @@ import { BotApiError, botEnabled, botSubscribersAfter, sendBotMessage, setBotSub
  *
  *   pnpm --filter @tg-analyzer/api broadcast -- "Текст"            # dev: count only
  *   pnpm --filter @tg-analyzer/api broadcast -- --send "Текст"     # dev: send
- *   docker compose exec worker node dist/broadcast.js --send --file /tmp/news.txt   # on the server
+ *   docker compose exec worker node dist/broadcast.js --send --file /tmp/news.txt   # the file inside the container
+ *   … --send --after 123456789 "Текст"   # carry on after an interrupted run: the last chat id it printed
  *
  * Plain text, up to 4096 characters. About 25 messages a second (Telegram's limit is 30); a 429 waits as told,
- * someone who blocked the bot (403) is unsubscribed.
+ * someone who blocked the bot (403) or whose chat is gone (400 chat not found) is unsubscribed. Every 100 messages
+ * it prints how far it got.
  */
 
 const PAGE = 500
 const PAUSE_MS = 40
 
 function readArgs(argv: string[]) {
-  const send = argv.includes('--send')
-  const fileAt = argv.indexOf('--file')
-  const file = fileAt >= 0 ? argv[fileAt + 1] : undefined
-  const words = argv.filter((arg, index) => !arg.startsWith('--') && (fileAt < 0 || index !== fileAt + 1))
+  let send = false
+  let file: string | undefined
+  let after = 0
+  const words: string[] = []
+  for (let index = 0; index < argv.length; index++) {
+    const arg = argv[index]!
+    if (arg === '--') continue
+    if (arg === '--send') send = true
+    else if (arg === '--file' || arg === '--after') {
+      const value = argv[++index]
+      if (!value) throw new Error(`${arg} needs a value`)
+      if (arg === '--file') file = value
+      else if (/^\d+$/.test(value)) after = Number(value)
+      else throw new Error('--after takes a chat id')
+    } else if (arg.startsWith('--')) throw new Error(`Unknown option ${arg}`)
+    else words.push(arg)
+  }
+  if (file && words.length) throw new Error('Pass the text or --file, not both')
   const text = (file ? readFileSync(file, 'utf8') : words.join(' ')).trim()
-  return { send, text }
+  return { send, text, after }
 }
 
 async function main() {
-  const { send, text } = readArgs(process.argv.slice(2))
+  const { send, text, after: start } = readArgs(process.argv.slice(2))
   if (!botEnabled()) throw new Error('TELEGRAM_BOT_TOKEN is not set')
   if (!text) throw new Error('Nothing to send: pass the text, or --file path')
   if (text.length > 4096) throw new Error(`The text is ${text.length} characters; Telegram takes 4096`)
 
-  let after = 0
+  let after = start
   let total = 0
   let sent = 0
   let blocked = 0
@@ -55,7 +71,10 @@ async function main() {
             await sleep((error.retryAfter ?? 5) * 1000)
             continue
           }
-          if (error instanceof BotApiError && error.code === 403) {
+          if (
+            error instanceof BotApiError &&
+            (error.code === 403 || (error.code === 400 && /chat not found/i.test(error.message)))
+          ) {
             await setBotSubscribed(chatId, false)
             blocked++
           } else {
@@ -65,6 +84,8 @@ async function main() {
         }
         break
       }
+      const done = sent + blocked + failed
+      if (done % 100 === 0) console.log(`… ${done} done, last chat ${chatId}`)
       await sleep(PAUSE_MS)
     }
   }

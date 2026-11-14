@@ -65,6 +65,8 @@ const pushHint = computed(() => {
   switch (push.state.value) {
     case 'install':
       return t('push.installText')
+    case 'safari':
+      return t('push.safariText')
     case 'denied':
       return t('push.deniedText')
     case 'unsupported':
@@ -226,6 +228,7 @@ onMounted(() => {
             :disabled="
               push.busy.value ||
               push.state.value === 'install' ||
+              push.state.value === 'safari' ||
               push.state.value === 'denied' ||
               push.state.value === 'unsupported'
             "

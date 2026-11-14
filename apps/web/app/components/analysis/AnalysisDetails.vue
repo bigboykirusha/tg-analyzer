@@ -40,7 +40,9 @@ async function cancel() {
           <span class="details-card__copy">
             <strong class="details-card__name">{{ view.chat }}</strong>
             <!-- How far back the reading got; while connecting, waiting for Telegram or assembling — that instead. -->
-            <span class="details-card__reached">{{ view.reached || view.status }}</span>
+            <span class="details-card__reached">{{
+              view.reached || (view.note || view.percent === null ? view.status : t('analysis.details.reading'))
+            }}</span>
           </span>
           <span v-if="view.percent !== null" class="details-card__percent">{{ view.percent }}%</span>
         </div>

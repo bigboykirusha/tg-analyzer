@@ -53,7 +53,7 @@ test('Start in the bot subscribes to its news only: a ready report goes by push,
       url: '/api/v1/notifications/push',
       headers: { ...session.headers, origin: ORIGIN },
       payload: {
-        endpoint: 'https://push.example.com/send/abc',
+        endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
         keys: { p256dh: 'B'.repeat(87), auth: 'a'.repeat(22) },
         locale: 'ru',
       },
@@ -69,7 +69,7 @@ test('Start in the bot subscribes to its news only: a ready report goes by push,
     await processJob(session.userId, started.json<{ jobId: string }>().jobId)
     assert.equal(bot.calls.length, 1, 'the bot said nothing about the report')
     const ready = pushed.at(-1)!
-    assert.equal(ready.endpoint, 'https://push.example.com/send/abc')
+    assert.equal(ready.endpoint, 'https://fcm.googleapis.com/fcm/send/abc')
     assert.equal(ready.payload.title, 'Отчёт готов')
     assert.match(ready.payload.body!, /Катя · [\d\s]+ сообщени/)
     assert.equal(ready.payload.url, '/chat/1006')
@@ -99,8 +99,8 @@ test('a push service that forgot the browser removes its subscription; signing o
       headers: { ...session.headers, origin: ORIGIN },
       payload: { endpoint, keys: { p256dh: 'B'.repeat(87), auth: 'a'.repeat(22) }, locale: 'en' },
     })
-  await subscribe('https://push.example.com/send/gone')
-  await subscribe('https://push.example.com/send/kept')
+  await subscribe('https://fcm.googleapis.com/fcm/send/gone')
+  await subscribe('https://fcm.googleapis.com/fcm/send/kept')
   const pushed: Record<string, string>[] = []
   setPushSender(async (subscription, payload) => {
     if (subscription.endpoint.endsWith('gone')) throw Object.assign(new Error('Gone'), { statusCode: 410 })
@@ -116,15 +116,18 @@ test('a push service that forgot the browser removes its subscription; signing o
       (await pool.query('SELECT endpoint FROM push_subscriptions WHERE user_id = $1', [session.userId])).rows.map(
         (row) => row.endpoint,
       )
-    assert.deepEqual(await count(), ['https://push.example.com/send/kept'])
+    assert.deepEqual(await count(), ['https://fcm.googleapis.com/fcm/send/kept'])
 
     const removed = await app.inject({
       method: 'POST',
       url: '/api/v1/notifications/push/remove',
       headers: { ...session.headers, origin: ORIGIN },
-      payload: { endpoint: 'https://push.example.com/send/kept' },
+      payload: { endpoint: 'https://fcm.googleapis.com/fcm/send/kept' },
     })
     assert.equal(removed.statusCode, 200)
+    // Only push services: the server is not to be made to post anywhere else.
+    const stranger = await subscribe('https://10.0.0.1/hook')
+    assert.equal(stranger.statusCode, 400)
     assert.deepEqual(await count(), [])
     const key = await app.inject({ method: 'GET', url: '/api/v1/notifications/push', headers: session.headers })
     assert.match(key.json<{ publicKey: string }>().publicKey, /^B/)

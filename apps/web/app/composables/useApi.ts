@@ -166,6 +166,8 @@ export function refreshSession(): Promise<AuthSuccessResponse | null> {
     } else {
       reportSessionEnd('refresh refused (401)', wasSignedIn)
       auth.signOut()
+      // Signed out without «Выйти»: this browser stops showing the person's news (the server drops it on its 410).
+      void unsubscribePushHere()
     }
     return result
   }

@@ -84,8 +84,26 @@ export const updateProfileBodySchema = z
   })
   .refine((body) => Object.keys(body).length > 0, 'Nothing to update') satisfies z.ZodType<UpdateProfileBody, unknown>
 
-/** A push service address: https, as every browser's is. */
-const pushEndpointSchema = z.url({ protocol: /^https$/ }).max(1024)
+/**
+ * Push services of the browsers people use: Chrome/Edge/Opera (Google), Safari (Apple), Firefox (Mozilla), the old
+ * Edge (Windows). Only these: the server must not be made to post to any other address.
+ */
+export const PUSH_SERVICE_HOSTS = [
+  '.googleapis.com',
+  '.google.com',
+  '.push.apple.com',
+  '.mozilla.com',
+  '.notify.windows.com',
+]
+
+/** A push service address: https, on one of the known push services. */
+const pushEndpointSchema = z
+  .url({ protocol: /^https$/ })
+  .max(1024)
+  .refine((value) => {
+    const host = new URL(value).hostname
+    return PUSH_SERVICE_HOSTS.some((suffix) => host.endsWith(suffix))
+  }, 'Not a known push service')
 
 export const pushSubscribeBodySchema = z.object({
   endpoint: pushEndpointSchema,

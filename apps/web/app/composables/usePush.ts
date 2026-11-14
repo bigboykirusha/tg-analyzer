@@ -6,10 +6,11 @@
  * - `hidden` — the server has no push set up, or the page is not ready yet: nothing to show;
  * - `unsupported` — this browser cannot (an old one, or Telegram's in-app browser);
  * - `install` — an iPhone or iPad in Safari: push works only for the site added to the Home Screen (iOS 16.4+);
+ * - `safari` — an iPhone or iPad in another app's browser (Telegram's): open the site in Safari first;
  * - `denied` — refused once; only the browser's settings can allow it again;
  * - `off` — can be turned on; `on` — this browser receives them.
  */
-export type PushState = 'hidden' | 'unsupported' | 'install' | 'denied' | 'off' | 'on'
+export type PushState = 'hidden' | 'unsupported' | 'install' | 'safari' | 'denied' | 'off' | 'on'
 
 const SW_URL = '/sw.js'
 
@@ -17,6 +18,12 @@ function isAppleMobile() {
   const nav = navigator as Navigator & { standalone?: boolean }
   // iPadOS reports itself as a Mac; a touch screen gives it away.
   return /iPhone|iPad|iPod/.test(nav.userAgent) || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1)
+}
+
+/** Safari itself; an app's own browser (Telegram's, Instagram's) has no «На экран „Домой“». */
+function isSafari() {
+  const agent = navigator.userAgent
+  return /Safari\//.test(agent) && !/CriOS|FxiOS|EdgiOS|Telegram|Instagram|FBAN|FBAV/.test(agent)
 }
 
 function isInstalled() {
@@ -79,7 +86,9 @@ export function usePush() {
   async function refresh() {
     if (!import.meta.client) return
     if (!(await loadKey())) return void (state.value = 'hidden')
-    if (!supported()) return void (state.value = isAppleMobile() && !isInstalled() ? 'install' : 'unsupported')
+    if (!supported())
+      return void (state.value =
+        isAppleMobile() && !isInstalled() ? (isSafari() ? 'install' : 'safari') : 'unsupported')
     if (Notification.permission === 'denied') return void (state.value = 'denied')
     const subscription = Notification.permission === 'granted' ? await currentSubscription() : null
     state.value = subscription ? 'on' : 'off'
@@ -130,6 +139,15 @@ export function usePush() {
   }
 
   return { state, busy, refresh, enable, disable }
+}
+
+/** Drops this browser's subscription locally only (no session left to tell the server). */
+export async function unsubscribePushHere() {
+  try {
+    await (await currentSubscription())?.unsubscribe()
+  } catch {
+    // Nothing to drop.
+  }
 }
 
 /**
