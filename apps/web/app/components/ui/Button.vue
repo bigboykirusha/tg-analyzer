@@ -72,7 +72,8 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   min-width: 0;
   max-width: 100%;
   height: var(--control-md);
-  padding: 0 var(--space-4);
+  /* Sides twice the room above and below the label: a pill's round ends take space, so equal padding looks cramped. */
+  padding: 0 var(--space-6);
   /* Every button is a pill: actions are round, objects (cards, tiles, posters) have corners. */
   border-radius: var(--radius-pill);
   font: var(--text-label);
@@ -89,7 +90,7 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
 .btn--sm {
   gap: var(--space-1);
   height: var(--control-sm);
-  padding: 0 var(--space-3);
+  padding: 0 var(--space-4);
   --icon-size: var(--icon-sm);
 }
 
@@ -103,10 +104,7 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
 @media (min-width: 901px) {
   .btn--md {
     height: var(--control-sm);
-  }
-
-  .btn--lg {
-    padding: 0 var(--space-6);
+    padding: 0 var(--space-4);
   }
 }
 
