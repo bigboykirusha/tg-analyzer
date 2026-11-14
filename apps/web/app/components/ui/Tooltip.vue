@@ -141,4 +141,10 @@ onBeforeUnmount(() => window.clearTimeout(timer))
     opacity: 0;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip {
+    animation: none;
+  }
+}
 </style>

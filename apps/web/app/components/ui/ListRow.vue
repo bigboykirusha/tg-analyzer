@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router'
+import { ChevronRight } from '../../lib/icons'
 
 /**
  * One row of a list (inside UiGroup): a leading avatar or icon, a title with an optional second line,
@@ -79,19 +80,7 @@ const tagAttrs = computed(() => {
         </span>
       </span>
       <span v-if="$slots.trailing" class="list-row__trailing"><slot name="trailing" /></span>
-      <svg
-        v-if="chevron"
-        class="list-row__chevron"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <path d="m9 18 6-6-6-6" />
-      </svg>
+      <ChevronRight v-if="chevron" class="list-row__chevron" aria-hidden="true" />
     </span>
   </component>
 </template>

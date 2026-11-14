@@ -101,8 +101,8 @@ onMounted(() => {
     <!-- Loading: the same title and cards, so nothing moves when the content arrives. -->
     <div v-if="loading" class="page" aria-busy="true">
       <div class="home__hello" aria-hidden="true">
-        <UiSkeleton width="min(70%, 360px)" height="var(--space-8)" />
-        <UiSkeleton width="min(50%, 260px)" height="var(--space-4)" />
+        <UiSkeleton class="home__hello-title" width="min(70%, 360px)" />
+        <UiSkeleton class="home__hello-lede" width="min(50%, 260px)" />
       </div>
       <section class="home__section" aria-hidden="true">
         <div class="home__reports">
@@ -165,6 +165,20 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+}
+
+/* The skeleton's lines are the real title's and lede's boxes. */
+.home__hello-title,
+.home__hello-lede {
+  height: 1lh;
+}
+
+.home__hello-title {
+  font: var(--text-h1);
+}
+
+.home__hello-lede {
+  font: var(--text-body);
 }
 
 /* Room at the end for the chat list's edge resting over the bottom of the screen. */

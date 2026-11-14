@@ -133,6 +133,27 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   backdrop-filter: var(--btn-blur, none);
 }
 
+/* The state layer: a tinted overlay under the label, faded with opacity (a background-image cannot be transitioned). */
+.btn--secondary,
+.btn--quiet {
+  isolation: isolate;
+}
+
+.btn--secondary::before,
+.btn--quiet::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--hover);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
 .btn.btn--link {
   height: auto;
   padding: 0;
@@ -148,14 +169,20 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
     background: var(--btn-ink-hover, var(--accent-hover));
   }
 
-  .btn--secondary:hover,
-  .btn--quiet:hover {
-    background-image: linear-gradient(var(--pressed), var(--pressed));
+  .btn--secondary:hover::before,
+  .btn--quiet:hover::before {
+    opacity: 1;
   }
 
   .btn--link:hover {
     text-decoration-color: currentColor;
   }
+}
+
+.btn--secondary:active:not(:disabled)::before,
+.btn--quiet:active:not(:disabled)::before {
+  background: var(--pressed);
+  opacity: 1;
 }
 
 .btn:active:not(:disabled, .btn--link) {

@@ -264,7 +264,7 @@ a.note:active {
   border-radius: var(--radius-pill);
   background: var(--text);
   color: var(--bg);
-  --icon-size: var(--space-3);
+  --icon-size: var(--icon-sm);
 }
 
 .note__copy {

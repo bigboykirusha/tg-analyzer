@@ -43,8 +43,8 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
     </div>
     <div class="home-card__text">
       <template v-if="skeleton">
-        <UiSkeleton width="70%" height="var(--space-4)" />
-        <UiSkeleton width="50%" height="var(--space-3)" />
+        <UiSkeleton class="home-card__line home-card__line--name" width="70%" />
+        <UiSkeleton class="home-card__line home-card__line--meta" width="50%" />
       </template>
       <template v-else>
         <NuxtLink v-if="to" :to="to" class="home-card__name">{{ title }}</NuxtLink>
@@ -124,6 +124,19 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 .home-card:has(a.home-card__name):active:not(:has(.home-card__end :active)) {
   transform: scale(var(--press-scale-lg));
   transition-duration: var(--duration-press);
+}
+
+/* The skeleton's lines are the real lines' boxes: the name's h3 line, the meta's label line. */
+.home-card__line {
+  height: 1lh;
+}
+
+.home-card__line--name {
+  font: var(--text-h3);
+}
+
+.home-card__line--meta {
+  font: var(--text-label);
 }
 
 /* The avatar and the «⋯» share one centre line. */

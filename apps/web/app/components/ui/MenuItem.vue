@@ -54,7 +54,8 @@ withDefaults(
   width: 100%;
   min-height: var(--control-md);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-well);
+  /* Concentric with the panel: its radius minus its padding. */
+  border-radius: calc(var(--radius-card) - var(--space-1));
   color: var(--text);
   font: var(--text-label);
   text-align: left;

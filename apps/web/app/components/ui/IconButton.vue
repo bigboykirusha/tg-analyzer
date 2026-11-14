@@ -76,6 +76,7 @@ const classes = computed(() => [
   color: var(--btn-fill-text, var(--text));
   -webkit-backdrop-filter: var(--btn-blur, none);
   backdrop-filter: var(--btn-blur, none);
+  isolation: isolate;
   -webkit-tap-highlight-color: transparent;
   transition:
     background-color var(--transition-fast),
@@ -100,7 +101,6 @@ const classes = computed(() => [
   color: var(--btn-plain-text, var(--text-muted));
 }
 
-.icon-btn--plain:active:not(:disabled),
 .icon-btn--plain[aria-expanded='true'] {
   background: var(--pressed);
   color: var(--btn-plain-text, var(--text));
@@ -108,6 +108,21 @@ const classes = computed(() => [
 
 .icon-btn--bare {
   background: transparent;
+}
+
+/* The state layer: a tinted overlay under the glyph, faded with opacity (a background-image cannot be transitioned). */
+.icon-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--hover);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 /* Compact circles still answer a 44 px tap. */
@@ -118,9 +133,14 @@ const classes = computed(() => [
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .icon-btn:hover:not(:disabled) {
-    background-image: linear-gradient(var(--pressed), var(--pressed));
+  .icon-btn:hover:not(:disabled)::before {
+    opacity: 1;
   }
+}
+
+.icon-btn:active:not(:disabled)::before {
+  background: var(--pressed);
+  opacity: 1;
 }
 
 .icon-btn:active:not(:disabled) {

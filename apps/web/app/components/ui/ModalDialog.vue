@@ -48,6 +48,13 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
 // Phones show the dialog as a sheet, and a sheet answers the finger: grab its top and pull it down.
 const drag = useSheetDrag(panelRef, close)
 watch(open, (value) => value && drag.reset())
+// The whole header drags like a BottomSheet's, but only where the dialog is a sheet (≤ 640): on desktop it stays put.
+const headerHandlers = {
+  ...drag.handlers,
+  pointerdown(event: PointerEvent) {
+    if (window.matchMedia('(max-width: 640px)').matches) drag.handlers.pointerdown(event)
+  },
+}
 </script>
 
 <template>
@@ -89,7 +96,7 @@ watch(open, (value) => value && drag.reset())
           <div v-if="$slots.aside" class="modal-aside">
             <slot name="aside" />
           </div>
-          <header class="modal-header">
+          <header class="modal-header" v-on="headerHandlers">
             <IconButton
               v-if="back"
               class="modal-back"
@@ -308,15 +315,14 @@ watch(open, (value) => value && drag.reset())
   .modal-grab {
     display: flex;
     justify-content: center;
-    padding: var(--space-2) 0 var(--space-1);
-    /* The grab strip is 16 tall; the close circle starts right under it and the title row is centred on it. */
-    margin-bottom: calc(-1 * var(--space-4));
     touch-action: none;
   }
 
+  /* The grabber of a BottomSheet: 8 above and below it; the header and the close circle start under it. */
   .modal-grabber {
     width: var(--control-sm);
     height: var(--space-1);
+    margin: var(--space-2) 0;
     border-radius: var(--radius-pill);
     background: var(--border-strong);
   }
@@ -326,7 +332,7 @@ watch(open, (value) => value && drag.reset())
   .modal-close,
   .modal-back {
     position: absolute;
-    top: calc(var(--space-2) + var(--space-1) + var(--space-1));
+    top: calc(var(--space-2) + var(--space-1) + var(--space-2));
   }
 
   .modal-close {
@@ -340,8 +346,9 @@ watch(open, (value) => value && drag.reset())
   .modal-header {
     justify-content: center;
     min-height: var(--control-md);
-    padding: 0 calc(var(--control-md) + var(--space-2));
+    padding: 0 calc(var(--control-md) + var(--space-2)) var(--space-3);
     text-align: center;
+    touch-action: none;
   }
 
   .modal-panel--alert .modal-header {

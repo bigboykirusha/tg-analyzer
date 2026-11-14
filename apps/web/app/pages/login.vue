@@ -280,11 +280,6 @@ function changeNumber() {
     background: var(--surface);
     box-shadow: var(--ring-card);
   }
-
-  .login__title {
-    font: var(--text-h2);
-    letter-spacing: var(--tracking-h2);
-  }
 }
 
 .auth-step-enter-active,

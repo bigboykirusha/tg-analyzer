@@ -52,7 +52,7 @@ withDefaults(
   width: var(--avatar-md);
   height: var(--avatar-md);
   border-radius: var(--radius-pill);
-  background: var(--surface-2);
+  background: var(--fill-raised);
   color: var(--text-muted);
 }
 

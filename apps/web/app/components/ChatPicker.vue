@@ -58,6 +58,7 @@ onMounted(() => {
           type="search"
           name="chat-search"
           autocomplete="off"
+          enterkeyhint="search"
           spellcheck="false"
           :placeholder="t('newAnalysis.searchPlaceholder')"
           :aria-label="t('dashboard.search')"
@@ -78,8 +79,8 @@ onMounted(() => {
       <div v-for="row in 7" :key="row" class="picker__skeleton">
         <UiSkeleton width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-pill)" />
         <span class="picker__skeleton-copy">
-          <UiSkeleton :width="`${64 - (row % 3) * 12}%`" height="var(--space-3)" />
-          <UiSkeleton width="36%" height="var(--space-2)" />
+          <UiSkeleton class="picker__line picker__line--title" :width="`${64 - (row % 3) * 12}%`" />
+          <UiSkeleton class="picker__line picker__line--sub" width="36%" />
         </span>
       </div>
     </UiGroup>
@@ -221,14 +222,26 @@ onMounted(() => {
   align-items: center;
   gap: var(--space-3);
   min-height: var(--row-height);
-  padding-inline: var(--row-inset);
+  padding: var(--space-3) var(--row-inset);
 }
 
 .picker__skeleton-copy {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-2);
+}
+
+/* One line box of the real row's title (16/24) and subtitle (14/20). */
+.picker__line {
+  height: 1lh;
+}
+
+.picker__line--title {
+  font: var(--text-body);
+}
+
+.picker__line--sub {
+  font: var(--text-label);
 }
 
 .picker__foot {

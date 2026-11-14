@@ -84,6 +84,7 @@ function submit() {
         name="phone"
         inputmode="tel"
         autocomplete="tel"
+        enterkeyhint="next"
         @update:model-value="handleInput"
       >
         <template #leading>

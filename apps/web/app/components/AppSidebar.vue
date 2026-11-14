@@ -84,8 +84,8 @@ function updating(report: ReportSummaryDto) {
         <div v-for="row in skeletonRows" :key="row" class="sidebar__row sidebar__person" aria-hidden="true">
           <UiSkeleton width="var(--avatar-sm)" height="var(--avatar-sm)" radius="var(--radius-pill)" />
           <span class="sidebar__copy">
-            <UiSkeleton :width="`${76 - row * 8}%`" height="var(--space-3)" />
-            <UiSkeleton width="40%" height="var(--space-2)" />
+            <UiSkeleton class="sidebar__line sidebar__line--name" :width="`${76 - row * 8}%`" />
+            <UiSkeleton class="sidebar__line sidebar__line--meta" width="40%" />
           </span>
         </div>
       </template>
@@ -221,6 +221,12 @@ function updating(report: ReportSummaryDto) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* The skeleton's lines are one line box of the name and of the meta. */
+.sidebar__line {
+  height: 1lh;
+  font: var(--text-label);
 }
 
 .sidebar__meta {

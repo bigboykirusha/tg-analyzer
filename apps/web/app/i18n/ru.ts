@@ -360,7 +360,6 @@ export const ru: Record<MessageKey, string> = {
   'telegramSignIn.title': 'Открываем TG Analyzer',
   'toast.error': 'Ошибка',
   'toast.info': 'Информация',
-  'toast.notifications': 'Уведомления',
   'toast.success': 'Успех',
   'toast.warning': 'Внимание',
   'report.duel.starts': 'Кто начинает разговор',

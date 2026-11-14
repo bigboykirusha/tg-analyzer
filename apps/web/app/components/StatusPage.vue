@@ -78,11 +78,6 @@ defineEmits<{ action: [] }>()
     box-shadow: var(--ring-card);
   }
 
-  .status__title {
-    font: var(--text-h2);
-    letter-spacing: var(--tracking-h2);
-  }
-
   .status__actions {
     margin-top: var(--space-2);
   }

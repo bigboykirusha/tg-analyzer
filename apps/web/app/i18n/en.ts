@@ -359,7 +359,6 @@ export const en = {
   'telegramSignIn.title': 'Opening TG Analyzer',
   'toast.error': 'Error',
   'toast.info': 'Info',
-  'toast.notifications': 'Notifications',
   'toast.success': 'Success',
   'toast.warning': 'Warning',
   'report.duel.starts': 'Who starts conversations',

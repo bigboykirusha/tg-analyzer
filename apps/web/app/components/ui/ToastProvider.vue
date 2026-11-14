@@ -58,22 +58,36 @@ function activate(toast: ToastMessage) {
   remove(toast.id)
 }
 
+/** The hit area's name is what it does (its text is already announced by the live region). */
 function label(toast: ToastMessage) {
-  return [toast.title, toast.description, toast.action?.label].filter(Boolean).join('. ')
+  return toast.action?.label ?? t('common.close')
 }
+
+/** Two live regions: errors interrupt (assertive), everything else waits its turn (polite). No roles on the banners. */
+const lives = computed(() => [
+  { live: 'polite' as const, items: toasts.value.filter((toast) => toast.variant !== 'error') },
+  { live: 'assertive' as const, items: toasts.value.filter((toast) => toast.variant === 'error') },
+])
 </script>
 
 <template>
   <Teleport to="#teleports">
-    <div class="toast-region" role="region" aria-live="polite" :aria-label="t('toast.notifications')">
-      <TransitionGroup name="toast">
+    <div class="toast-region">
+      <TransitionGroup
+        v-for="group in lives"
+        :key="group.live"
+        tag="div"
+        class="toast-live"
+        name="toast"
+        :aria-live="group.live"
+        aria-atomic="false"
+      >
         <article
-          v-for="toast in toasts"
+          v-for="toast in group.items"
           :key="toast.id"
           class="toast"
           :class="[`toast--${toast.variant}`, { 'toast--person': toast.chatId, 'is-dragging': drag[toast.id] }]"
           :data-hue="toast.chatId ? hueOf(toast.chatId) : undefined"
-          :role="toast.variant === 'error' ? 'alert' : 'status'"
           :style="drag[toast.id] ? { transform: `translateY(${drag[toast.id]}px)` } : undefined"
           @pointerenter="pause(toast.id)"
           @pointerleave="resume(toast.id)"
@@ -116,6 +130,18 @@ function label(toast: ToastMessage) {
 </template>
 
 <style scoped>
+.toast-live {
+  display: flex;
+  flex-direction: column;
+  align-items: inherit;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.toast-live:has(.toast) + .toast-live:has(.toast) {
+  margin-top: var(--space-2);
+}
+
 /* On top, out of the way of the sheets and the bottom panel. */
 .toast-region {
   position: fixed;
@@ -126,7 +152,6 @@ function label(toast: ToastMessage) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
   pointer-events: none;
 }
 

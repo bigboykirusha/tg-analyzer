@@ -219,6 +219,7 @@ function openReady() {
               type="search"
               name="chat-search"
               autocomplete="off"
+              enterkeyhint="search"
               spellcheck="false"
               :readonly="!open"
               :tabindex="open ? 0 : -1"

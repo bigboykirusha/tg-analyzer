@@ -22,6 +22,7 @@ const { t } = useI18n()
         :placeholder="t('login.passwordPlaceholder')"
         name="current-password"
         autocomplete="current-password"
+        enterkeyhint="done"
         autocapitalize="off"
         autocorrect="off"
         spellcheck="false"
