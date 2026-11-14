@@ -8,7 +8,7 @@ const props = withDefaults(
     title?: string
     description?: string
     closeLabel?: string
-    /** sm 420 · md 520 · lg 680 (--dialog-*). */
+    /** sm 440 · md 520 · lg 680 (--dialog-*). */
     size?: 'sm' | 'md' | 'lg'
     /** Blocks closing while an action runs. */
     busy?: boolean
@@ -186,7 +186,7 @@ const headerHandlers = {
   position: absolute;
   top: var(--space-6);
   right: var(--space-6);
-  z-index: 1;
+  z-index: var(--z-raise);
 }
 
 /* The title row is as tall as the close circle and centred on it. */

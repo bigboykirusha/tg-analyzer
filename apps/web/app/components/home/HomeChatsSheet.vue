@@ -330,7 +330,7 @@ function openReady() {
   top: 100%;
   right: 0;
   left: 0;
-  z-index: 1;
+  z-index: var(--z-raise);
   height: env(safe-area-inset-bottom, 0px);
   background: var(--surface-raised);
   pointer-events: none;

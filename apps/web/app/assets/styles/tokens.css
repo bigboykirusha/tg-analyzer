@@ -28,7 +28,6 @@
   --gray-11: #3f3f46;
   --gray-12: #17171a;
   --gray-a1: rgba(23, 23, 26, 0.04);
-  --gray-a2: rgba(23, 23, 26, 0.06);
   --gray-a3: rgba(23, 23, 26, 0.08);
   --gray-a4: rgba(23, 23, 26, 0.14);
   --gray-a6: rgba(23, 23, 26, 0.3);
@@ -50,7 +49,6 @@
   --night-3: #232327;
   --night-4: #2c2c31;
   --night-5: #333338;
-  --night-6: #3a3a40;
   --night-7: #6f6f78;
   --night-9: #9b9ba3;
   --night-11: #d4d4d8;
@@ -227,12 +225,9 @@
   --room-tint: var(--gray-3);
   --danger: var(--red-6);
   --danger-subtle: var(--red-1);
-  /* Toasts and tooltips: ink in light, light in dark. */
+  /* Tooltips: ink in light, light in dark. */
   --inverse-surface: var(--gray-12);
   --on-inverse: var(--gray-0);
-  --on-inverse-muted: rgba(255, 255, 255, 0.72);
-  --on-inverse-hover: rgba(255, 255, 255, 0.12);
-  --danger-on-inverse: var(--red-d6);
   --scrim: rgba(0, 0, 0, 0.32);
   /* Intensity: a neutral ramp (both of you together), stopping short of ink, which means «you». */
   --heat-1: var(--gray-6);
@@ -258,7 +253,7 @@
   --ring-strong: inset 0 0 0 1px var(--border-strong);
   /* Cuts an overlapping avatar out of the one under it. */
   --ring-cutout: 0 0 0 2px var(--surface);
-  /* An outline in the text's own colour: a button on the inverse toast. */
+  /* A 2 px ring in the accent: a row or a menu item with keyboard focus, the selected one. */
   --ring-selected: inset 0 0 0 2px var(--accent);
   --ring-field-focus: inset 0 0 0 2px var(--accent);
   --ring-field-error: inset 0 0 0 2px var(--danger);
@@ -268,7 +263,7 @@
   --divider-right: inset -1px 0 0 var(--border);
   /* An outline on a poster: the small cover of «Итоги». */
   --ring-on-poster: inset 0 0 0 1px var(--on-poster-line);
-  /* Floating controls (header circles, capsule, «Новый анализ»): a hairline ring and one soft shadow. */
+  /* The focus ring's colour: ink on the page, the poster's ink over a colour (re-pointed under [data-poster]). */
   --focus-ring-color: var(--accent);
 
   /* The mark: one ink, because colour means a person and the mark is nobody's; the tile is the app icon. */
@@ -319,9 +314,6 @@
   --danger-subtle: var(--red-d1);
   --inverse-surface: var(--night-12);
   --on-inverse: var(--gray-12);
-  --on-inverse-muted: var(--gray-a8);
-  --on-inverse-hover: var(--gray-a3);
-  --danger-on-inverse: var(--red-6);
   --scrim: rgba(0, 0, 0, 0.6);
   --heat-1: var(--night-heat-1);
   --heat-2: var(--gray-9);
@@ -605,6 +597,9 @@
   --card-gap: var(--space-4);
   --opacity-disabled: 0.5;
   /* Layers: Primer's scale (sticky 100 · modal 400 · popover 500 · skip link 600); a toast sits above a modal. */
+  /* Inside one component: a control above its sibling (1), a state layer under its own content (-1). */
+  --z-raise: 1;
+  --z-under: -1;
   --z-header: 100;
   /* The room a page keeps at its end for the chat list peeking from below (handle, gap, a 44 pill, paddings). */
   --peek-height: 84px;

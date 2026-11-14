@@ -3,7 +3,7 @@ import type { Component } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 
 /**
- * One button family: three looks, two sizes (docs/design-system.md). Monochrome — colour means a person,
+ * One button family: primary, secondary, quiet and an inline link, three sizes (docs/design-system.md). Monochrome — colour means a person,
  * never an action; a coloured context (a poster) re-points the fills through tokens and the same looks come out
  * inverted.
  *   primary    ink fill — the one main action of a screen or card
@@ -144,7 +144,7 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: var(--z-under);
   border-radius: inherit;
   background: var(--hover);
   opacity: 0;
@@ -190,13 +190,10 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
 }
 
 .btn:disabled:not([aria-busy='true']) {
+  /* An unavailable main action stays an ink pill, faded: a grey pill looked like one more input field next to the
+     grey fields of a form. It returns to full ink the moment it can be pressed. */
   opacity: var(--opacity-disabled);
 }
-
-/*
- * An unavailable main action stays an ink pill, faded: a grey pill looked like one more input field next to the
- * grey fields of a form. It returns to full ink the moment it can be pressed.
- */
 
 /* A loading button keeps its colour: it is busy, not unavailable. */
 .btn[aria-busy='true'] {

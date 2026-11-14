@@ -3,7 +3,7 @@ import type { Component } from 'vue'
 import Tooltip from './Tooltip.vue'
 
 /**
- * The round icon button: the third of the three button looks (docs/design-system.md §7), a neutral fill. A
+ * The round icon button (docs/design-system.md, «Компоненты кита»): a grey circle, a neutral fill. A
  * coloured context (a poster) re-points the fill through tokens; the look does not change.
  * Sizes follow the buttons: sm 36 · md 44 on a phone, 36 on desktop.
  * `plain` — no fill, a quiet icon: only for a card's own «⋯» menu, where a filled circle would outweigh the
@@ -115,7 +115,7 @@ const classes = computed(() => [
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: var(--z-under);
   border-radius: inherit;
   background: var(--hover);
   opacity: 0;

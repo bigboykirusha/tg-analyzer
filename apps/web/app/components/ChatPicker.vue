@@ -157,7 +157,7 @@ onMounted(() => {
   .picker__search::after {
     content: '';
     position: absolute;
-    z-index: -1;
+    z-index: var(--z-under);
     inset: calc((var(--control-sm) - var(--hit-min)) / 2) 0;
   }
 }

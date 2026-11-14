@@ -149,7 +149,7 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 
 .home-card__end {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-raise);
   display: flex;
   align-items: center;
   gap: var(--space-2);

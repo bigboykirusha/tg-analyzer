@@ -6,7 +6,7 @@ import { fieldKey } from './Field.vue'
 /**
  * A text field: the global `.input` box with an `.input__control` inside, so it can carry a leading
  * icon or add-on (the country code), a clear button and a password reveal. Grey at rest, white with
- * an ink outline on focus, pink when invalid. Inside UiField it takes the field's id, description
+ * an ink ring on focus, a red ring when invalid. Inside UiField it takes the field's id, description
  * and invalid state.
  *
  * `class` and `style` go to the box; every other attribute (type, name, autocomplete, inputmode,
