@@ -22,7 +22,7 @@ const sides = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="word" tone="ink" :icon="Quote" :title="t('report.fmt.wordTitle')">
+  <ReportSection v-if="word" id="part-word" tone="ink" :icon="Quote" :title="t('report.fmt.wordTitle')">
     <div class="word">
       <p class="word__value">{{ word.value }}</p>
       <p class="word__count">{{ tc('report.fmt.wordCount', word.count) }}</p>

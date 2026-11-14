@@ -1,176 +1,52 @@
 <script setup lang="ts">
-import { isEven, type ReportDto } from '@tg-analyzer/shared'
+import type { ReportDto } from '@tg-analyzer/shared'
 import { Users } from '../../lib/icons'
 
 /**
  * «Вы и {имя}»: everything the two of you can be compared in, as one sheet — a match's statistics. You on the
  * left in ink, the other side on the right in their colour; each row the two values, what they are of, and two
  * bars from the middle out. A scoreboard first (how many rows each side leads); only the rows with a leader get
- * bars, grouped by topic; the even ones fold into one line of names. A row with too few events behind it is left out. Reply time and the starter come from `useVersus`, so
- * they read the same here and in the «Итоги».
+ * bars, grouped by topic; the even ones fold into one line of names. When most rows are even a score of «1 : 1»
+ * says nothing, so the scoreboard gives way to one figure — «Поровну в 11 из 13» — and a line of who leads where.
+ * The rows, the tally and the answer come from `useMatch`, so the card and the verdict under the poster agree.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t, formatNumber, formatPercent, formatDuration } = useI18n()
-const versus = useVersus(() => props.data)
+const { t } = useI18n()
+const { rows, decisive, tally, evenNames, answer, mostlyEven, leads } = useMatch(() => props.data)
 const name = computed(() => props.data.summary.title)
 
-/** Fewer events than this on both sides together is noise. */
-const MIN = 5
-
-interface Row {
-  key: string
-  label: string
-  mine: string
-  theirs: string
-  /** Each side's share of the bar, 0–100; for reply time the faster side gets the longer bar. */
-  shareMine: number
-  lead: 'mine' | 'theirs' | null
-  /** Whether a bigger value is a merit; «more unanswered questions» or «more double texts» score no point. */
-  scored: boolean
-}
-
-function row(
-  key: string,
-  label: string,
-  mine: number,
-  theirs: number,
-  format: typeof formatNumber = formatNumber,
-  faster = false,
-  scored = true,
-): Row | null {
-  if (mine + theirs <= 0) return null
-  const [a, b] = faster ? [theirs, mine] : [mine, theirs]
-  const shareMine = Math.round((100 * a) / Math.max(1, a + b))
-  const lead = isEven(a, b) ? null : a > b ? 'mine' : 'theirs'
-  return { key, label, mine: format(mine), theirs: format(theirs), shareMine, lead, scored }
-}
-
-const counted = (key: string, label: string, count: { mine: number; theirs: number } | undefined, scored = true) =>
-  count && count.mine + count.theirs >= MIN
-    ? row(key, label, count.mine, count.theirs, formatNumber, false, scored)
-    : null
-
-const groups = computed(() => {
-  const { report } = props.data
-  const habits = report.habits
-  const rituals = report.rituals
-  const voice = report.voice
-  const starts = report.responses.iWriteFirstPct
-  const speed = versus.value.speed?.pairs[0]
-  const lastWord = habits?.lastWordMinePct ?? null
-  const out: { key: string; title: string; rows: Row[] }[] = [
-    {
-      key: 'talk',
-      title: t('report.match.group.talk'),
-      rows: [
-        starts === null
-          ? null
-          : row('starts', t('report.habits.starts'), starts, 100 - starts, (value) => formatPercent(value)),
-        lastWord === null
-          ? null
-          : row('lastWord', t('report.match.lastWord'), lastWord, 100 - lastWord, (value) => formatPercent(value)),
-        counted('double', t('report.match.doubleTexts'), habits?.doubleTexts, false),
-      ].filter((item): item is Row => item !== null),
-    },
-    {
-      key: 'answers',
-      title: t('report.match.group.answers'),
-      rows: [
-        speed
-          ? row('speed', t('report.match.speed'), speed.mine.value, speed.theirs.value, formatDuration, true)
-          : null,
-        counted('questions', t('report.match.questions'), habits?.questionTurns),
-        counted('unanswered', t('report.match.unanswered'), habits?.unansweredQuestions, false),
-      ].filter((item): item is Row => item !== null),
-    },
-    {
-      key: 'mood',
-      title: t('report.match.group.mood'),
-      rows: [
-        counted('laughs', t('report.match.laughs'), habits?.laughs),
-        counted('reactions', t('report.match.reactions'), report.reactions?.given),
-        counted('stickers', t('report.talk.stickersTitle'), report.stickers?.count),
-      ].filter((item): item is Row => item !== null),
-    },
-    {
-      key: 'day',
-      title: t('report.match.group.day'),
-      rows: [
-        counted('goodMorning', t('report.match.goodMorning'), rituals?.goodMorning),
-        counted('morningFirst', t('report.habits.morning'), rituals?.morningFirst),
-        counted('goodNight', t('report.match.goodNight'), rituals?.goodNight),
-      ].filter((item): item is Row => item !== null),
-    },
-    {
-      key: 'voice',
-      title: t('report.match.group.voice'),
-      rows: [
-        voice && voice.voice.seconds.mine + voice.voice.seconds.theirs > 0
-          ? row(
-              'voice',
-              t('report.duel.voiceLabel'),
-              voice.voice.seconds.mine,
-              voice.voice.seconds.theirs,
-              formatDuration,
-            )
-          : null,
-        voice &&
-        voice.round.count.mine + voice.round.count.theirs >= MIN &&
-        voice.round.seconds.mine + voice.round.seconds.theirs > 0
-          ? row(
-              'round',
-              t('report.duel.roundLabel'),
-              voice.round.seconds.mine,
-              voice.round.seconds.theirs,
-              formatDuration,
-            )
-          : null,
-      ].filter((item): item is Row => item !== null),
-    },
-  ]
-  return out.filter((group) => group.rows.length)
-})
-
-const rows = computed(() => groups.value.flatMap((group) => group.rows))
-/** Only the rows where one side leads get bars; the even ones fold into a single line of names. */
-const decisive = computed(() =>
-  groups.value
-    .map((group) => ({ ...group, rows: group.rows.filter((item) => item.lead) }))
-    .filter((group) => group.rows.length),
+/** «Вы — впереди: вопросы» · «Мила — впереди: смех»: only the rows that score, one phrase a side. */
+const leadLine = computed(() =>
+  (['mine', 'theirs'] as const)
+    .map((who) => {
+      const labels = leads.value.filter((item) => item.scored && item.lead === who).map((item) => item.label)
+      return labels.length
+        ? {
+            who,
+            text: t('report.match.leads', {
+              who: who === 'mine' ? t('report.you') : name.value,
+              labels: labels.join(', ').toLocaleLowerCase(),
+            }),
+          }
+        : null
+    })
+    .filter((item): item is { who: 'mine' | 'theirs'; text: string } => item !== null),
 )
-const tally = computed(() => ({
-  mine: rows.value.filter((item) => item.scored && item.lead === 'mine').length,
-  theirs: rows.value.filter((item) => item.scored && item.lead === 'theirs').length,
-  even: rows.value.filter((item) => !item.lead).length,
-}))
-const evenNames = computed(() =>
-  rows.value
-    .filter((item) => !item.lead)
-    .map((item) => item.label.toLocaleLowerCase())
-    .join(', '),
-)
-/**
- * The sheet's answer, from the scoreboard's own counts: equal leads are «even»; «almost everywhere» only when
- * the other side leads in at most one row and the leader in at least three; otherwise a plain «more often».
- * Rows where more is no merit (unanswered questions, double texts) score nothing and are left out here.
- */
-const answer = computed(() => {
-  if (rows.value.filter((item) => item.scored).length < 3) return null
-  const { mine, theirs, even } = tally.value
-  // Even sides, or most comparisons even (2 : 1 with eleven even reads «почти везде поровну», not a win).
-  if (mine === theirs || even > mine + theirs) return t('report.match.answerEven')
-  const mineLeads = mine > theirs
-  const [lead, other] = mineLeads ? [mine, theirs] : [theirs, mine]
-  const most = lead >= 3 && other <= 1
-  if (mineLeads) return t(most ? 'report.match.answerMostMine' : 'report.match.answerMine')
-  return t(most ? 'report.match.answerMostTheirs' : 'report.match.answerTheirs', { name: name.value })
-})
 </script>
 
 <template>
   <ReportSection v-if="answer" id="part-match" wide :icon="Users" :title="t('report.match.title')" :answer="answer">
     <div class="sheet">
-      <div class="score">
+      <div v-if="mostlyEven" class="mostly">
+        <p class="t-figure">{{ t('report.match.evenFigure', { even: tally.even, total: rows.length }) }}</p>
+        <p v-if="leadLine.length" class="t-label mostly__leads">
+          <template v-for="(item, index) in leadLine" :key="item.who">
+            <template v-if="index"> · </template>
+            <span :class="{ mostly__theirs: item.who === 'theirs' }">{{ item.text }}</span>
+          </template>
+        </p>
+      </div>
+      <div v-else class="score">
         <p class="score__side">
           <span class="t-figure score__figure">{{ tally.mine }}</span>
           <span class="t-label score__name">{{ t('report.you') }}</span>
@@ -205,6 +81,22 @@ const answer = computed(() => {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+/* An even chat: one figure and, quietly under it, where someone is ahead. */
+.mostly {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.mostly__theirs {
+  color: var(--them-ink);
+}
+
+.mostly__leads {
+  color: var(--text-muted);
+  text-wrap: pretty;
 }
 
 /* The scoreboard: how many comparisons each side leads, the even ones quietly between. */

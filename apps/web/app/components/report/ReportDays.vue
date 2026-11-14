@@ -37,6 +37,7 @@ const busiestDay = computed(() => {
 <template>
   <ReportSection
     v-if="activeDays && run"
+    id="part-streak"
     wide
     tone="ink"
     :icon="Flame"

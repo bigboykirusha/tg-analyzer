@@ -28,6 +28,7 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
       <Info aria-hidden="true" />
       {{ t('report.lowData') }}
     </p>
+    <ReportHighlights :data="data" :no-words="noWords" />
     <ReportPart id="together" :title="t('report.tabs.withName', { name: data.summary.title })">
       <ReportSplit :data="data" />
       <ReportRelationship :data="data" />

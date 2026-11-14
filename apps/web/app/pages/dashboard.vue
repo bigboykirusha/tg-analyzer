@@ -8,8 +8,9 @@ definePageMeta({ layout: 'workspace', middleware: ['auth'] })
  * Home is what you have already learned: the reports, one poster tile each (two to a row on a phone, a long name
  * across the row), new messages in the chat as a badge on the tile. A running analysis is the tile its report will
  * be, its pulse drawn as the history is read (AnalysisTile). News about them (a quiz answered, a link opened)
- * is in «Уведомления», behind the bell. What else to analyse: on a computer the row «Разобрать ещё» under the
- * reports; on a phone the chat list as a sheet resting at the bottom (HomeChatsSheet), pulled up to the whole screen.
+ * is in «Уведомления», behind the bell. What else to analyse: the row «Разобрать ещё» under the reports (on a phone
+ * its first circle opens the chat list), and on a phone also the chat list as a sheet resting at the bottom
+ * (HomeChatsSheet), pulled up to the whole screen.
  * A newcomer gets «С кого начнём?» instead.
  */
 const { t } = useI18n()
@@ -147,8 +148,8 @@ onMounted(() => {
           </template>
         </div>
       </section>
-      <!-- A computer: who else to analyse comes after what you already know, a hint under the reports. -->
-      <HomeMore v-if="!narrow" />
+      <!-- Who else to analyse comes after what you already know, a row under the reports; on a phone its first circle opens the chat sheet below. -->
+      <HomeMore />
       <HomeChatsSheet v-if="narrow" />
     </div>
   </UiPageContainer>

@@ -101,6 +101,11 @@ function submit() {
       </Input>
     </Field>
 
+    <p class="auth-note">
+      {{ t('login.privacyNote') }}
+      <NuxtLink to="/privacy" class="link">{{ t('login.privacyLink') }}</NuxtLink>
+    </p>
+
     <Button type="submit" variant="primary" size="lg" :loading="loading" :disabled="!phoneInput.isValid.value" block>
       {{ loading ? t('login.sendingCode') : t('login.getCode') }}
     </Button>
@@ -112,5 +117,12 @@ function submit() {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+}
+
+/* A quiet line under the field: closer to it than to the button, so it reads as the field's own note. */
+.auth-note {
+  margin-top: calc(-1 * var(--space-3));
+  color: var(--text-muted);
+  font: var(--text-label);
 }
 </style>

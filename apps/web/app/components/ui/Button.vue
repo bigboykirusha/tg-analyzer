@@ -194,13 +194,9 @@ const classes = computed(() => ['btn', `btn--${props.variant}`, `btn--${props.si
 }
 
 /*
- * An unavailable main action is not a faded ink pill (white on grey reads as broken): it is the neutral
- * look, faded, and turns ink the moment it can be pressed.
+ * An unavailable main action stays an ink pill, faded: a grey pill looked like one more input field next to the
+ * grey fields of a form. It returns to full ink the moment it can be pressed.
  */
-.btn--primary:disabled:not([aria-busy='true']) {
-  background: var(--fill-control);
-  color: var(--text);
-}
 
 /* A loading button keeps its colour: it is busy, not unavailable. */
 .btn[aria-busy='true'] {

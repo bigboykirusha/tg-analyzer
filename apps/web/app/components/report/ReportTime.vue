@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { fillDailyGaps, shouldShowYear, type ReportDto } from '@tg-analyzer/shared'
 import { nbsp } from '../../lib/nbsp'
-import { parseWindow } from '../../lib/persona'
 import { Clock } from '../../lib/icons'
 
 /**
@@ -28,15 +27,7 @@ const dayParts = computed(() => {
 })
 
 const report = computed(() => props.data.report)
-const window = computed(() => parseWindow(props.data.derived.availabilityProfile.peakWindow))
-const peakHours = computed(() => {
-  const peak = window.value
-  return peak ? Array.from({ length: peak.length }, (_, index) => (peak.start + index) % 24) : []
-})
-/** «Пик — с 11:00 до 14:00», the dash held to its numbers. */
-const answer = computed(() =>
-  window.value ? t('report.time.peak', { from: window.value.from, to: window.value.to }).replace(/–/gu, '⁠–⁠') : null,
-)
+const { window, hours: peakHours, answer } = usePeakWindow(() => props.data)
 
 const days = computed(() => fillDailyGaps(report.value.activity.daily))
 const facts = computed(() => {
