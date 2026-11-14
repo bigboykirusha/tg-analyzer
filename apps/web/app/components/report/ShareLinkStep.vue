@@ -6,7 +6,7 @@ import { Copy } from '../../lib/icons'
  * «Ссылка на отчёт», the second step of «Поделиться»: how the other side will see the page, two
  * choices — names, and words with emoji (names are on, words are off until you say so) — and one row that copies the
  * address. Changing a choice makes a new address: whoever had the old one sees «Ссылка больше не
- * работает». A link lives 30 days; it is turned off right here (or in the account).
+ * работает». A link lives 30 days and is turned off in the account.
  */
 const props = defineProps<{ data: ReportDto; link: ShareLinkDto | null }>()
 const emit = defineEmits<{ update: [link: ShareLinkDto | null] }>()
@@ -21,9 +21,6 @@ const settings = reactive({
   words: props.link?.settings?.words ?? false,
 })
 const busy = ref(false)
-const stopping = ref(false)
-/** The link was turned off in this step: the row says so until a new one is made. */
-const turnedOff = ref(false)
 const name = computed(() => props.data.summary.title)
 const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
 
@@ -47,7 +44,7 @@ const changed = computed(
 )
 const status = computed(() => {
   const link = props.link
-  if (!link) return turnedOff.value ? t('share.link.turnedOff') : t('share.link.hint')
+  if (!link) return t('share.link.hint')
   const until = link.expiresAt
     ? t('share.link.onUntil', { date: formatDate(link.expiresAt, { day: 'numeric', month: 'long' }) })
     : t('share.link.on')
@@ -67,31 +64,12 @@ async function copy() {
         body: { kind: 'report', days: 30, settings: body },
       })
       emit('update', link)
-      turnedOff.value = false
     }
     await copyLink.copy(`${location.origin}/s/${link.token}`)
   } catch (error) {
     toast.error(errorMessage(error))
   } finally {
     busy.value = false
-  }
-}
-
-/** Turns the link off: whoever has the address sees «Ссылка больше не работает». */
-async function turnOff() {
-  stopping.value = true
-  try {
-    await api('DELETE /api/v1/reports/:chatId/links/:kind', {
-      params: { chatId: props.data.summary.chatId, kind: 'report' },
-    })
-    emit('update', null)
-    // A dead address must not stay on screen as the one to copy.
-    copyLink.fallback.value = ''
-    turnedOff.value = true
-  } catch (error) {
-    toast.error(t('share.link.turnOffError'), errorMessage(error))
-  } finally {
-    stopping.value = false
   }
 }
 </script>
@@ -121,9 +99,6 @@ async function turnOff() {
         @share="copyLink.share"
       />
       <p v-else class="link-step__note" role="status">{{ status }}</p>
-      <UiButton v-if="link" variant="quiet" size="sm" class="link-step__off" :loading="stopping" @click="turnOff">
-        {{ t('share.link.turnOff') }}
-      </UiButton>
     </div>
   </div>
 </template>
@@ -155,10 +130,6 @@ async function turnOff() {
 
 .link-step__note {
   text-align: center;
-}
-
-.link-step__off {
-  align-self: center;
 }
 
 .link-step__poster {
