@@ -57,6 +57,8 @@ watch(analysis.finished, (job) => {
     )
   } else if (job.status === 'cancelled') toast.info(t('analysis.cancelled'))
   void workspace.loadReports().catch(() => undefined)
+  // While Telegram was busy reading, the chat list came from the cache (quietly, 14.11): fetch it fresh now.
+  if (workspace.dialogsStale) void workspace.loadDialogs()
   void notifications.loadUnread()
 })
 </script>

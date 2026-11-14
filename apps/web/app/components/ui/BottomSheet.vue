@@ -16,7 +16,7 @@ const props = withDefaults(
     busy?: boolean
     /** A second step: a back button on the left; close stays on the right. */
     back?: boolean
-    /** The whole screen but a strip at the top, as iOS's large sheet: a long list (the chats). */
+    /** The whole screen, a page of its own (14.11): no grabber, no corners, under the status bar — a long list (the chats). */
     full?: boolean
   }>(),
   { title: '', role: 'dialog', busy: false, back: false, full: false },
@@ -212,13 +212,21 @@ watch(open, (value) => value && drag.reset())
   transform: translateY(calc(100% + var(--space-4)));
 }
 
-/* Full: the screen but a strip of what is behind at the top. */
+/* Full: the whole screen, one surface up to the status bar — no grabber, no corners, no edge (14.11). It still
+   closes by a pull of its head. */
 .sheet-scrim--full {
-  padding-top: calc(env(safe-area-inset-top, 0px) + var(--space-3));
+  padding-top: 0;
 }
 
 .sheet-scrim--full .sheet {
   height: 100%;
+  padding-top: env(safe-area-inset-top, 0px);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sheet-scrim--full .sheet__grabber {
+  visibility: hidden;
 }
 
 /* Reduced motion: no travel, the sheet fades in place. */

@@ -84,10 +84,6 @@ onMounted(() => {
       {{ t('dashboard.sessionInactive') }}
       <button type="button" class="link" @click="relogin">{{ t('common.relogin') }}</button>
     </p>
-    <p v-else-if="workspace.dialogsStale" class="picker__note" role="status">
-      {{ t('dashboard.staleDialogs') }}
-      <button type="button" class="link" @click="workspace.loadDialogs()">{{ t('common.refresh') }}</button>
-    </p>
 
     <!-- The list on its way: rows of the real height, so nothing jumps. -->
     <UiGroup v-if="firstLoad" aria-hidden="true">

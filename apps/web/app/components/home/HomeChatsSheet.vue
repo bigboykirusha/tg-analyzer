@@ -230,10 +230,11 @@ function tap() {
   transition: none;
 }
 
-/* The whole screen but the status bar; at rest pushed down so only the head shows. */
+/* The whole screen; at rest pushed down so only the head shows. Open, it is a page of its own (14.11): it reaches
+   under the status bar, its corners, edge and handle go, one surface from top to bottom. */
 .chats__sheet {
   position: fixed;
-  top: env(safe-area-inset-top, 0px);
+  top: 0;
   right: 0;
   bottom: 0;
   left: 0;
@@ -244,7 +245,11 @@ function tap() {
   background: var(--surface-raised);
   box-shadow: var(--shadow-peek);
   outline: none;
-  transition: transform var(--duration-sheet) var(--ease-drawer);
+  transition:
+    transform var(--duration-sheet) var(--ease-drawer),
+    padding-top var(--duration-sheet) var(--ease-drawer),
+    border-radius var(--duration-sheet) var(--ease-drawer),
+    box-shadow var(--duration-sheet) var(--ease-drawer);
   --field-bg: var(--fill-raised);
   --group-bg: transparent;
   --group-ring: none;
@@ -255,6 +260,12 @@ function tap() {
 
 .chats__sheet.is-dragging {
   transition: none;
+}
+
+.chats.is-open .chats__sheet {
+  padding-top: env(safe-area-inset-top, 0px);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .chats__head {
@@ -290,6 +301,12 @@ function tap() {
   height: var(--space-1);
   border-radius: var(--radius-pill);
   background: var(--border-strong);
+  transition: opacity var(--transition-fast);
+}
+
+/* Open, the sheet is a page: no handle (its place stays, so the head does not move under the finger). */
+.chats.is-open .chats__handle {
+  opacity: 0;
 }
 
 /* The search and, open, the close button beside it on one line. */

@@ -105,7 +105,6 @@ export const ru: Record<MessageKey, string> = {
   'dashboard.search': 'Поиск чата Telegram',
   'dashboard.sessionInactive': 'Сеанс Telegram завершился. Чтобы разобрать новый чат, войдите снова.',
   'dashboard.shown': 'Показано {shown} из {total}',
-  'dashboard.staleDialogs': 'Telegram занят разбором — показан последний загруженный список.',
   'dashboard.title': 'Главная',
   'dashboard.truncated': 'Показаны 500 последних чатов.',
   'dashboard.reportsTitle': 'Отчёты',
