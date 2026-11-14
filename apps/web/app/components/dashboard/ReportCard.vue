@@ -3,8 +3,9 @@ import type { ReportSummaryDto } from '@tg-analyzer/shared'
 
 /**
  * A report on home: the card of every home screen — the avatar, the name, how many messages, the pulse in the
- * person's colour. A chat that has moved on since the report carries a quiet mark «Есть новые» (the exact count is
- * on the report itself), for private chats and groups alike. The whole card opens
+ * person's colour. A chat that has moved on since the report rings the person's avatar in the poster's ink, as
+ * Telegram rings an unseen story (14.11; the exact count is on the report itself), for private chats and groups alike;
+ * a screen reader hears «Есть новые» after the count. The whole card opens
  * the report; «Обновить», «Поделиться» and «Удалить» are the report's own (its bar), not the tile's. On a phone
  * tiles stand two to a row; `wide` (a name too long for a half tile, or a tile without a neighbour — useTileRows)
  * takes the whole row: the avatar, the name and the badge on one line, the pulse under them.
@@ -20,6 +21,8 @@ const reading = computed(() => (view.value?.chatId === props.report.chatId ? vie
 const meta = computed(() =>
   tc('common.messagesCount', props.report.totalMessages, { count: formatNumber(props.report.totalMessages) }),
 )
+/** New messages since the report; not while it is being read again. */
+const news = computed(() => props.fresh && !updating.value)
 const pulse = computed(() =>
   props.report.pulse?.some((week) => week.sent || week.received) ? props.report.pulse : null,
 )
@@ -28,6 +31,7 @@ const pulse = computed(() =>
 <template>
   <HomeCard
     class="report-card"
+    :class="{ 'report-card--news': news }"
     :chat-id="report.chatId"
     :title="report.title"
     :has-avatar="hasAvatar"
@@ -35,15 +39,14 @@ const pulse = computed(() =>
     :to="`/chat/${report.chatId}`"
     :wide="wide"
   >
-    <template #end>
-      <span v-if="fresh && !updating" class="report-card__badge t-caption">{{ t('dashboard.hasNews') }}</span>
-    </template>
     <template #meta>
       <template v-if="reading">{{ reading.short }}</template>
       <template v-else-if="updating"
         ><span class="spinner" aria-hidden="true" /> {{ t('dashboard.analysingNow') }}</template
       >
-      <template v-else>{{ meta }}</template>
+      <template v-else
+        >{{ meta }}<span v-if="news" class="sr-only">. {{ t('dashboard.hasNews') }}</span></template
+      >
     </template>
     <Pulse v-if="reading" :data="reading.pulse" :height="0" :bars="48" :pitch="6" :read="reading.share" />
     <Pulse v-else-if="pulse" :data="pulse" :height="0" :bars="48" :pitch="6" grow />
@@ -51,16 +54,7 @@ const pulse = computed(() =>
 </template>
 
 <style scoped>
-/* New messages: a crisp pill of the poster's ink with the person's colour in it, at the end of the tile's first line —
-   a translucent chip read as a smudge on the colour (13.11). */
-.report-card__badge {
-  display: inline-flex;
-  align-items: center;
-  height: var(--space-6);
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-pill);
-  background: var(--on-poster);
-  color: var(--poster);
-  white-space: nowrap;
+.report-card--news :deep(.avatar) {
+  box-shadow: var(--ring-news);
 }
 </style>

@@ -345,6 +345,12 @@
  * data-hue on <html> (a report, the example, a public link) or on any element (an avatar, a home tile)
  * re-points the person's tokens for that subtree. Light, then dark.
  */
+/* New messages since the report: a ring of the poster's ink around the person, a gap of the poster's colour inside —
+   as Telegram rings someone with an unseen story (14.11). Declared where the person's colour is, so it is theirs. */
+[data-hue] {
+  --ring-news: 0 0 0 var(--space-0-5) var(--poster), 0 0 0 var(--space-1) var(--on-poster);
+}
+
 [data-hue='yellow'] {
   --poster: var(--hue-yellow-poster);
   --poster-light: var(--hue-yellow-light);
