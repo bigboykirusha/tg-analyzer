@@ -16,13 +16,10 @@ self.addEventListener('push', (event) => {
   }
   event.waitUntil(
     (async () => {
-      // TGDuet open and in front: the page shows it itself (the bell, the tile), told here; a push on top would say
-      // it twice. Browsers allow skipping the notification only then.
+      // Open pages light the bell at once. The notification is shown anyway: Safari ends a subscription whose
+      // pushes show nothing.
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      if (windows.some((client) => client.focused)) {
-        for (const client of windows) client.postMessage({ type: 'tgduet:push', title: data.title, url: data.url })
-        return
-      }
+      for (const client of windows) client.postMessage({ type: 'tgduet:push', title: data.title, url: data.url })
       await self.registration.showNotification(data.title || 'TGDuet', {
         body: data.body || '',
         tag: data.tag,

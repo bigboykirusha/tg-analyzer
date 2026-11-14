@@ -188,7 +188,10 @@ export async function sendPush(userId: string, event: NotificationData) {
         }
       }),
     )
-    if (gone.length) await db.delete(schema.pushSubscriptions).where(inArray(schema.pushSubscriptions.id, gone))
+    if (gone.length) {
+      logger.info({ userId, count: gone.length }, 'push subscriptions gone (404/410), removed')
+      await db.delete(schema.pushSubscriptions).where(inArray(schema.pushSubscriptions.id, gone))
+    }
   } catch (error) {
     logger.warn({ err: error, userId, kind: event.kind }, 'could not send pushes')
   }

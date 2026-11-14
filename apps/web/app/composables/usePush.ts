@@ -141,15 +141,6 @@ export function usePush() {
   return { state, busy, refresh, enable, disable }
 }
 
-/** Drops this browser's subscription locally only (no session left to tell the server). */
-export async function unsubscribePushHere() {
-  try {
-    await (await currentSubscription())?.unsubscribe()
-  } catch {
-    // Nothing to drop.
-  }
-}
-
 /**
  * Signing out: this browser stops receiving the person's news (the next account on a shared computer must not get
  * them). Called while the session still works; never blocks the sign-out.
