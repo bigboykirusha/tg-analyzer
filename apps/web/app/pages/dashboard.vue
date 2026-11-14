@@ -74,8 +74,9 @@ const tiles = useTileRows(
   grid,
 )
 
+/** Skeletons only while nothing is known: a growing tile stays put while a newcomer's report list reloads. */
 const loading = computed(
-  () => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
+  () => !items.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
 )
 const failed = computed(() => !reports.value.length && workspace.reportsState === 'error')
 /** A newcomer's first analysis is already a tile on home: «С кого начнём?» gives way to it. */
