@@ -85,7 +85,9 @@ docker compose restart worker
 - Вход не доходит до кода — `docker compose logs api`, проверьте `TELEGRAM_API_ID/HASH` в `.env`.
 - Разбор висит — `docker compose logs worker`.
 
-Бот: `TELEGRAM_BOT_TOKEN` и `TELEGRAM_BOT_USERNAME` в `.env`, затем в @BotFather `/setdomain` → домен сайта (`SITE_HOST`). С доменом кнопка «Открыть» в сообщениях бота входит на сайт без кода (во встроенном браузере Telegram нет cookie Safari); без домена бот шлёт обычную ссылку.
+Пуш-уведомления («Отчёт готов» и остальные события человека): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` и `VAPID_SUBJECT` (`mailto:адрес`) в `.env`, ключи — `docker compose run --rm api npx web-push generate-vapid-keys` (или на любом компьютере с Node), затем `docker compose up -d`. Ключи не меняйте: подписки, сделанные со старыми, перестанут работать.
+
+Бот (новости для подписчиков и «Сообщить о проблеме»): `TELEGRAM_BOT_TOKEN` и `TELEGRAM_BOT_USERNAME` в `.env`. Персональных сообщений и входа на сайт у бота нет. Рассылка всем подписчикам: `docker compose exec worker node dist/broadcast.js "Текст"` покажет, сколько человек её получат, с `--send` — отправит (длинный текст — `--file путь`, файл должен быть внутри контейнера).
 
 Алерты в Telegram: заполните `ALERT_TELEGRAM_BOT_TOKEN` и `ALERT_TELEGRAM_CHAT_ID` в `.env` и выполните `docker compose up -d`.
 

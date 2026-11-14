@@ -6,7 +6,8 @@ import type { ThemePreference } from '../composables/useTheme'
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 /**
- * The account as grouped settings: who you are, how the app looks, whether Telegram messages you, the
+ * The account as grouped settings: who you are, how the app looks, notifications on this device (web push), the
+ * bot's news and «Сообщить о проблеме», the
  * links you shared (each with a switch — the list manages links; how a friend did in «Угадайка» is the report's
  * news, in its «Поделиться»), and signing out — the reports stay.
  */
@@ -54,7 +55,26 @@ const themes = computed<{ value: ThemePreference; label: string }[]>(() => [
 const languageOpen = ref(false)
 const themeOpen = ref(false)
 
-/** Telegram messages: turned on in the bot (a link), turned off here. */
+/** Web push on this browser: the person's own news. On asks the browser; off forgets this browser. */
+const push = usePush()
+const pushOn = computed({
+  get: () => push.state.value === 'on',
+  set: (value: boolean) => void (value ? push.enable() : push.disable()).catch(() => toast.error(t('push.error'))),
+})
+const pushHint = computed(() => {
+  switch (push.state.value) {
+    case 'install':
+      return t('push.installText')
+    case 'denied':
+      return t('push.deniedText')
+    case 'unsupported':
+      return t('push.unsupportedText')
+    default:
+      return t('push.offText')
+  }
+})
+
+/** The bot's news: subscribed by Start in the bot (a link), unsubscribed here. */
 const notify = computed({
   get: () => Boolean(auth.user?.botNotify),
   set: (value: boolean) => {
@@ -115,7 +135,10 @@ async function signOut() {
   }
 }
 
-onMounted(() => void loadLinks())
+onMounted(() => {
+  void loadLinks()
+  void push.refresh().catch(() => undefined)
+})
 </script>
 
 <template>
@@ -194,7 +217,22 @@ onMounted(() => void loadLinks())
           </UiListRow>
         </UiGroup>
 
-        <!-- The bot: «the report is ready» there, and problems reported through it — one place for one bot. -->
+        <!-- This device's notifications; where they cannot be turned on, the switch says why. -->
+        <UiGroup v-if="push.state.value !== 'hidden'" :header="t('accountPage.pushTitle')">
+          <UiSwitch
+            v-model="pushOn"
+            :label="t('push.title')"
+            :hint="pushHint"
+            :disabled="
+              push.busy.value ||
+              push.state.value === 'install' ||
+              push.state.value === 'denied' ||
+              push.state.value === 'unsupported'
+            "
+          />
+        </UiGroup>
+
+        <!-- The bot: its news, and problems reported through it — one place for one bot. -->
         <UiGroup
           v-if="auth.user?.botUrl || auth.user?.botNotify || auth.user?.feedbackUrl"
           :header="t('accountPage.botTitle')"

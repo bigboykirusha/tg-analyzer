@@ -35,8 +35,6 @@ export const users = pgTable('users', {
   firstName: varchar('first_name', { length: 255 }),
   /** IANA time zone used to bucket report activity. */
   timezone: varchar('timezone', { length: 64 }).default('UTC').notNull(),
-  /** Pressed Start in our bot: say «the report is ready» there. */
-  botNotify: boolean('bot_notify').default(false).notNull(),
   createdAt: createdAt(),
   lastLogin: timestamp('last_login', { withTimezone: true }),
 })
@@ -217,3 +215,38 @@ export const notifications = pgTable(
 /** A notification's own fields: the chat and what happened. */
 export type NotificationData = { chatId: string; title: string } & NotificationEvent
 export type NotificationRow = typeof notifications.$inferSelect
+
+/**
+ * Web push: one row per browser that allowed notifications (its push service address and keys). A browser belongs
+ * to whoever subscribed it last; signing out removes it. The language is the one the site had then: the server
+ * writes the text.
+ */
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    endpoint: text('endpoint').notNull(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    locale: varchar('locale', { length: 8 }).default('ru').notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('push_subscriptions_endpoint_idx').on(table.endpoint),
+    index('push_subscriptions_user_idx').on(table.userId),
+  ],
+)
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect
+
+/**
+ * Who pressed Start in our bot: the audience of its news. Anyone may, signed in on the site or not; /stop (or blocking
+ * the bot) sets `stoppedAt`, Start again clears it. Only the Telegram chat id is kept.
+ */
+export const botSubscribers = pgTable('bot_subscribers', {
+  chatId: bigint('chat_id', { mode: 'number' }).primaryKey(),
+  startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
+  stoppedAt: timestamp('stopped_at', { withTimezone: true }),
+})

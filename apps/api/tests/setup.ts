@@ -16,3 +16,7 @@ process.env.AUTH_RATE_LIMIT_MAX = '5'
 process.env.FREE_ANALYSES_PER_DAY = '0'
 process.env.TELEGRAM_BOT_TOKEN = '123456:integration-only-bot-token-abcdefghijkl'
 process.env.TELEGRAM_BOT_USERNAME = 'tganalyzer_test_bot'
+// Web push with a throwaway key pair: the push service itself is replaced in the tests that send.
+process.env.VAPID_PUBLIC_KEY = 'BMWJJQNOPwmDdlSax3ufZq6yhp7-P3iD4-hwI3gKrtjvn5bFCoViHeAbbCUB0xni8qHWHNe_pLXyZ-umfrXsGSk'
+process.env.VAPID_PRIVATE_KEY = 'FqMCQLial9cF35CkQDmYcdgCLTMQd7-Ya-xEtJC3Vuk'
+process.env.VAPID_SUBJECT = 'mailto:tests@example.com'

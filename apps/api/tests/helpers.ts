@@ -54,7 +54,7 @@ export function useTestServer() {
   })
   beforeEach(async () => {
     assertLocalTestServices()
-    await pool.query('TRUNCATE users CASCADE')
+    await pool.query('TRUNCATE users, bot_subscribers CASCADE')
     await redis.flushdb()
     await analysisQueue().obliterate({ force: true })
   })

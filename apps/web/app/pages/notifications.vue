@@ -10,19 +10,13 @@ definePageMeta({ layout: 'workspace', middleware: ['auth'] })
  * a quiz answered, your report link opened by someone, a link about to end. They look like the notifications
  * people already know, iPhone's: one card each, the chat's avatar with the kind of news as a small badge on it,
  * what happened in bold with the time at its end, then the chat and the detail. Grouped by day; a card opens where
- * to act. Opening the page reads them all (the bell's dot is the «new»). The bot repeats the important ones.
+ * to act. Opening the page reads them all (the bell's dot is the «new»). The same news arrives by web push where it
+ * is on: the offer to turn it on sits on top of the feed.
  */
 const { t, tc, formatDate, formatNumber } = useI18n()
 useSeoMeta({ title: () => t('notifications.title') })
 const store = useNotificationsStore()
 const workspace = useWorkspaceStore()
-const auth = useAuthStore()
-/**
- * The bot at the top of the feed: «Подключить» while it is off (Start in the bot is the consent), «Приходят и в
- * Telegram» once it is on — leading to the switch in the account. Only when the bot is set up.
- */
-const botOn = computed(() => Boolean(auth.user?.botNotify))
-const botUrl = computed(() => (auth.user?.botNotify ? null : (auth.user?.botUrl ?? null)))
 
 onMounted(() => void store.open())
 
@@ -108,26 +102,7 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
     <div class="page">
       <UiPageBar :title="t('notifications.title')" back="/dashboard" />
 
-      <UiGroup v-if="botOn || botUrl" class="tg">
-        <UiListRow
-          v-if="botOn"
-          to="/account"
-          chevron
-          :title="t('notifications.tgOnTitle')"
-          :subtitle="t('notifications.tgOnText')"
-          wrap
-        >
-          <template #leading><TelegramMark /></template>
-        </UiListRow>
-        <UiListRow v-else :title="t('notifications.tgTitle')" :subtitle="t('notifications.tgText')" wrap>
-          <template #leading><TelegramMark /></template>
-          <template #trailing>
-            <UiButton :to="botUrl!" variant="quiet" size="sm" target="_blank" rel="noopener">{{
-              t('notifications.tgConnect')
-            }}</UiButton>
-          </template>
-        </UiListRow>
-      </UiGroup>
+      <PushRow />
 
       <div v-if="store.state === 'loading'" class="feed" aria-busy="true">
         <div class="feed__list">
@@ -297,6 +272,4 @@ a.note:active {
 .note__time {
   flex: none;
 }
-
-/* The bot's mark: an ink circle, as the bot's own avatar in Telegram — the one row here that is not a chat. */
 </style>

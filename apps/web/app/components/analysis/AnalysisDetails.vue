@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { Send } from '../../lib/icons'
 import { hueOf } from '../../lib/hue'
 
 /**
  * The running analysis, unfolded: a card in the chat's colour (avatar, name, how far back the reading got,
  * the percentage and the pulse read so far — drawn from today back, dots for what is ahead, as the growing tile on
- * home), how much is read and that the app may be closed, the Telegram nudge, cancel.
+ * home), how much is read, the offer of a push when it is ready, cancel. The card keeps one height while it reads:
+ * every line is always there, one line each.
  * A dialog on desktop, a sheet on a phone (UiModalDialog does both).
  */
 defineProps<{ open: boolean }>()
@@ -13,11 +13,9 @@ const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
 const view = useAnalysisView()
 const analysis = useAnalysis()
-const auth = useAuthStore()
 const toast = useToast()
 const confirming = ref(false)
 const cancelling = ref(false)
-const botUrl = computed(() => (auth.user?.botUrl && !auth.user.botNotify ? auth.user.botUrl : null))
 
 async function cancel() {
   cancelling.value = true
@@ -42,8 +40,7 @@ async function cancel() {
           <span class="details-card__copy">
             <strong class="details-card__name">{{ view.chat }}</strong>
             <!-- How far back the reading got; while connecting, waiting for Telegram or assembling — that instead. -->
-            <span v-if="view.reached" class="details-card__reached">{{ view.reached }}</span>
-            <span v-else-if="view.note || view.percent === null" class="details-card__reached">{{ view.status }}</span>
+            <span class="details-card__reached">{{ view.reached || view.status }}</span>
           </span>
           <span v-if="view.percent !== null" class="details-card__percent">{{ view.percent }}%</span>
         </div>
@@ -56,18 +53,13 @@ async function cancel() {
           :read="view.share"
           :label="t('analysis.progressLabel')"
         />
-        <p class="details-card__note">{{ view.read ? `${view.read}. ` : '' }}{{ t('analysis.banner.closeTab') }}</p>
+        <!-- Always there, one line: the card must not jump as the count grows or first appears. -->
+        <p class="details-card__note">
+          <template v-if="view.read">{{ view.read }}</template
+          ><template v-else>&nbsp;</template>
+        </p>
       </section>
-      <UiGroup v-if="botUrl">
-        <UiListRow :title="t('analysis.details.notify')" :subtitle="t('analysis.details.notifyHint')">
-          <template #leading><Send aria-hidden="true" /></template>
-          <template #trailing>
-            <UiButton :to="botUrl" variant="quiet" size="sm" target="_blank" rel="noopener">{{
-              t('analysis.details.notifyOn')
-            }}</UiButton>
-          </template>
-        </UiListRow>
-      </UiGroup>
+      <PushRow :title="t('analysis.details.notify')" :text="t('analysis.details.notifyHint')" offer-only />
     </template>
     <template #actions>
       <UiButton variant="secondary" block @click="confirming = true">{{ t('analysis.cancel') }}</UiButton>
@@ -115,7 +107,9 @@ async function cancel() {
   min-width: 0;
 }
 
-.details-card__name {
+.details-card__name,
+.details-card__reached,
+.details-card__note {
   overflow: hidden;
   font: var(--text-body);
   font-weight: 600;

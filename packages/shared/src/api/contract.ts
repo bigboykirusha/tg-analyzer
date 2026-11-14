@@ -8,6 +8,9 @@ import type {
   UserShareLinksResponse,
   NotificationsResponse,
   NotificationsUnreadResponse,
+  PushKeyResponse,
+  PushSubscribeBody,
+  PushUnsubscribeBody,
   AuthSuccessResponse,
   AvatarsBody,
   AvatarsResponse,
@@ -30,7 +33,6 @@ import type {
   UserResponse,
   VerifyCodeBody,
   VerifyCodeResponse,
-  TelegramLoginBody,
   VerifyPasswordBody,
   WsTicketResponse,
 } from './types'
@@ -74,12 +76,6 @@ export const verifyPasswordBodySchema = z.object({
   password: z.string().min(1).max(1024),
 }) satisfies z.ZodType<VerifyPasswordBody, unknown>
 
-export const telegramLoginBodySchema = z.object({
-  fields: z
-    .record(z.string().regex(/^[a-z_]{1,32}$/), z.string().max(512))
-    .refine((fields) => Object.keys(fields).length <= 16, 'Too many fields'),
-}) satisfies z.ZodType<TelegramLoginBody, unknown>
-
 export const updateProfileBodySchema = z
   .object({
     timezone: z.string().min(1).max(64).optional(),
@@ -87,6 +83,22 @@ export const updateProfileBodySchema = z
     botNotify: z.literal(false).optional(),
   })
   .refine((body) => Object.keys(body).length > 0, 'Nothing to update') satisfies z.ZodType<UpdateProfileBody, unknown>
+
+/** A push service address: https, as every browser's is. */
+const pushEndpointSchema = z.url({ protocol: /^https$/ }).max(1024)
+
+export const pushSubscribeBodySchema = z.object({
+  endpoint: pushEndpointSchema,
+  keys: z.object({
+    p256dh: z.string().regex(/^[\w-]{40,200}$/),
+    auth: z.string().regex(/^[\w-]{8,64}$/),
+  }),
+  locale: z.enum(['ru', 'en']),
+}) satisfies z.ZodType<PushSubscribeBody, unknown>
+
+export const pushUnsubscribeBodySchema = z.object({
+  endpoint: pushEndpointSchema,
+}) satisfies z.ZodType<PushUnsubscribeBody, unknown>
 
 export const startParseBodySchema = z.object({
   chatId: telegramIdSchema,
@@ -140,7 +152,6 @@ export interface ApiEndpointMap {
   'POST /api/v1/auth/verify-code': Endpoint<VerifyCodeBody, VerifyCodeResponse>
   'POST /api/v1/auth/verify-password': Endpoint<VerifyPasswordBody, AuthSuccessResponse>
   'POST /api/v1/auth/refresh': Endpoint<undefined, AuthSuccessResponse>
-  'POST /api/v1/auth/telegram-login': Endpoint<TelegramLoginBody, AuthSuccessResponse>
   'POST /api/v1/auth/logout': Endpoint<undefined, SuccessResponse>
   'POST /api/v1/auth/ws-ticket': Endpoint<undefined, WsTicketResponse>
   'GET /api/v1/auth/me': Endpoint<undefined, UserResponse>
@@ -169,6 +180,9 @@ export interface ApiEndpointMap {
   'GET /api/v1/notifications': Endpoint<undefined, NotificationsResponse>
   'GET /api/v1/notifications/unread': Endpoint<undefined, NotificationsUnreadResponse>
   'POST /api/v1/notifications/read': Endpoint<undefined, SuccessResponse>
+  'GET /api/v1/notifications/push': Endpoint<undefined, PushKeyResponse>
+  'POST /api/v1/notifications/push': Endpoint<PushSubscribeBody, SuccessResponse>
+  'POST /api/v1/notifications/push/remove': Endpoint<PushUnsubscribeBody, SuccessResponse>
 
   'GET /api/v1/public/:token': Endpoint<undefined, PublicShareDto>
   'POST /api/v1/public/:token/answer': Endpoint<AnswerQuizBody, PublicShareDto>

@@ -47,6 +47,7 @@ export function useAuth() {
   }
 
   async function logout() {
+    await forgetPushOnThisBrowser()
     try {
       await api('POST /api/v1/auth/logout')
     } finally {
@@ -56,6 +57,7 @@ export function useAuth() {
 
   /** Telegram ended the session: sign out and say so on the login page. */
   async function relogin() {
+    await forgetPushOnThisBrowser()
     try {
       await api('POST /api/v1/auth/logout')
     } finally {
@@ -68,7 +70,7 @@ export function useAuth() {
     auth.updateUser(user)
   }
 
-  /** Re-reads the account, e.g. after the user pressed Start in the bot. */
+  /** Re-reads the account, e.g. after the user pressed Start in the bot (its news). */
   async function refreshUser() {
     const { user } = await api('GET /api/v1/auth/me')
     auth.updateUser(user)

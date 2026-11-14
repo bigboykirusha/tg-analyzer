@@ -35,7 +35,7 @@ const envSchema = z.object({
   DATA_RETENTION_DAYS: z.coerce.number().int().positive().default(365),
   /** Free plan: analyses a user may start in 24 hours; 0 turns the limit off. */
   FREE_ANALYSES_PER_DAY: z.coerce.number().int().min(0).default(5),
-  /** Our own bot for «the report is ready» (from @BotFather); off when unset. */
+  /** Our own bot for news and announcements (from @BotFather); off when unset. Personal news goes by web push. */
   TELEGRAM_BOT_TOKEN: z
     .string()
     .regex(/^\d+:[\w-]{30,}$/, 'Expected a bot token from @BotFather')
@@ -46,6 +46,22 @@ const envSchema = z.object({
     .optional(),
   /** The web app's public address, for links in bot messages; defaults to the first CORS origin. */
   APP_URL: z.url().optional(),
+  /**
+   * Web push («Отчёт готов» on the phone or the computer): a VAPID key pair (`npx web-push generate-vapid-keys`) and a
+   * contact for the push services (`mailto:` or https). Off unless all three are set.
+   */
+  VAPID_PUBLIC_KEY: z
+    .string()
+    .regex(/^[\w-]{80,100}$/, 'Expected a base64url VAPID public key')
+    .optional(),
+  VAPID_PRIVATE_KEY: z
+    .string()
+    .regex(/^[\w-]{40,50}$/, 'Expected a base64url VAPID private key')
+    .optional(),
+  VAPID_SUBJECT: z
+    .string()
+    .regex(/^(mailto:|https:\/\/)\S+$/, 'Expected mailto: or https:')
+    .optional(),
   /** Alerts (worker silent, burst of 5xx or browser errors): a JSON webhook, or Telegram. Off when unset. */
   ALERT_WEBHOOK_URL: z.url().optional(),
   ALERT_TELEGRAM_BOT_TOKEN: z

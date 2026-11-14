@@ -11,7 +11,6 @@ import type {
 import {
   resendCodeBodySchema,
   sendCodeBodySchema,
-  telegramLoginBodySchema,
   updateProfileBodySchema,
   verifyCodeBodySchema,
   verifyPasswordBodySchema,
@@ -29,9 +28,7 @@ import {
   logOutTelegramSession,
   saveTelegramSession,
 } from '../account/telegram-sessions'
-import { findUser, findUserByTelegramId, toUserDto, updateUserSettings, upsertTelegramUser } from '../account/users'
-import { redis } from '../../lib/redis'
-import { TELEGRAM_LOGIN_MAX_AGE_SECONDS, verifyTelegramLogin } from './telegram-login'
+import { findUser, toUserDto, updateUserSettings, upsertTelegramUser } from '../account/users'
 import { requireAuth, userIdOf } from './guard'
 import { clearRefreshCookie, setRefreshCookie } from './cookies'
 import {
@@ -237,35 +234,6 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     }
   })
 
-  /**
-   * A tap on «Открыть» in a bot message (a «login_url» button): Telegram opens the site in its own browser, where the
-   * person has no cookie, and appends who pressed it, signed with our bot token. A valid, fresh, unused signature of
-   * someone who has already signed in on the site starts a session there — no code. Someone new still signs in with
-   * a code: an analysis needs their Telegram authorization, which a button cannot give (14.11).
-   */
-  app.post('/telegram-login', { config: SESSION_RATE_LIMIT }, async (request, reply): Promise<AuthSuccessResponse> => {
-    const refuse = (reason: string) => {
-      request.log.warn({ reason }, 'telegram button sign-in refused')
-      return unauthorized('AUTH_TELEGRAM_LOGIN_INVALID', 'This link has expired, sign in with your phone number')
-    }
-    const { fields } = parse(telegramLoginBodySchema, request.body)
-    if (!config.TELEGRAM_BOT_TOKEN) throw refuse('no_bot')
-    const tgUserId = verifyTelegramLogin(fields, config.TELEGRAM_BOT_TOKEN)
-    if (!tgUserId) throw refuse('bad_signature')
-    // One use per signature: a link that leaked (history, a screenshot) does not sign anyone in again.
-    const fresh = await redis.set(`tglogin:${fields.hash}`, '1', 'EX', TELEGRAM_LOGIN_MAX_AGE_SECONDS + 60, 'NX')
-    if (!fresh) throw refuse('reused')
-    const user = await findUserByTelegramId(tgUserId)
-    if (!user) throw refuse('unknown_user')
-
-    const refresh = await createRefreshSession(user.id)
-    setRefreshCookie(reply, refresh)
-    return {
-      accessToken: signToken('access', { sub: user.id, familyId: refresh.familyId }),
-      user: await toUserDto(user),
-    }
-  })
-
   app.post('/logout', { config: SESSION_RATE_LIMIT }, async (request, reply): Promise<SuccessResponse> => {
     const claims = readRefreshClaims(request)
     clearRefreshCookie(reply)
@@ -293,7 +261,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  // The account page re-reads this when the user comes back from the bot.
+  // The account page re-reads this when the user comes back from the bot (Start there subscribes to its news).
   app.get('/me', { preHandler: requireAuth }, async (request): Promise<UserResponse> => {
     const user = await findUser(userIdOf(request))
     if (!user) throw notFound()

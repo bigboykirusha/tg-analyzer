@@ -4,12 +4,13 @@ import { db, schema } from '../../db'
 import type { NotificationData, NotificationRow } from '../../db/schema'
 import { logger } from '../../lib/logger'
 import { addMs, DAY_MS } from '../../lib/time'
-import { sendNotificationToBot } from './bot'
+import { sendPush } from './push'
 
 /**
  * «Уведомления»: one row per thing that happened to a chat's report while its owner may not have been looking —
  * a report ready, an analysis failed, a quiz answered, the report link opened by someone else, a link about to
- * expire. The same events go to the bot when the user turned it on. Rows keep the chat's name and numbers only.
+ * expire. The same events arrive by web push on the browsers where the user allowed it. Rows keep the chat's name and
+ * numbers only.
  */
 
 /** How many the page shows; older ones are still counted until the nightly cleanup. */
@@ -19,7 +20,7 @@ export const NOTIFICATION_RETENTION_DAYS = 90
 /** A link is «about to expire» this long before its end. */
 const EXPIRING_WITHIN_MS = 3 * DAY_MS
 
-/** Records an event for the user (and tells the bot). Never throws: a notification must not fail its cause. */
+/** Records an event for the user (and pushes it). Never throws: a notification must not fail its cause. */
 export async function notify(userId: string, chat: { chatId: string; title: string }, event: NotificationEvent) {
   const data = { chatId: chat.chatId, title: chat.title, ...event } as NotificationData
   try {
@@ -31,7 +32,7 @@ export async function notify(userId: string, chat: { chatId: string; title: stri
   } catch (error) {
     logger.warn({ err: error, userId, kind: event.kind }, 'could not record a notification')
   }
-  await sendNotificationToBot(userId, data)
+  await sendPush(userId, data)
 }
 
 function toDto(row: NotificationRow): NotificationDto {

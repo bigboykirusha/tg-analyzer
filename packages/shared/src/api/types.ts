@@ -19,7 +19,6 @@ export type ApiErrorCode =
   // app session
   | 'AUTH_UNAUTHORIZED'
   | 'AUTH_REFRESH_INVALID'
-  | 'AUTH_TELEGRAM_LOGIN_INVALID'
   // telegram login
   | 'LOGIN_PHONE_INVALID'
   | 'LOGIN_PHONE_BANNED'
@@ -66,9 +65,9 @@ export interface UserDto {
   username: string | null
   firstName: string | null
   timezone: string
-  /** Pressed Start in our bot: «the report is ready» arrives there. */
+  /** Pressed Start in our bot: its news (announcements for everyone, never the person's own events) arrive there. */
   botNotify: boolean
-  /** The bot's Start link; null when the bot is not set up. */
+  /** The bot's link; null when the bot is not set up. */
   botUrl: string | null
   /** «Сообщить о проблеме» in the bot; null when the bot or a place to deliver it is not set up. */
   feedbackUrl: string | null
@@ -112,14 +111,6 @@ export interface VerifyCodeBody {
   phone: string
   code: string
   phoneCodeHash: string
-}
-
-/**
- * What Telegram appends to a «login_url» button's address (id, auth_date, hash, names…), passed on as it came: the
- * server checks Telegram's signature over exactly these fields.
- */
-export interface TelegramLoginBody {
-  fields: Record<string, string>
 }
 
 export interface VerifyPasswordBody {
@@ -862,6 +853,22 @@ export interface NotificationsResponse {
 
 export interface NotificationsUnreadResponse {
   unread: number
+}
+
+/** Web push: the server's VAPID public key, or null when push is not set up. */
+export interface PushKeyResponse {
+  publicKey: string | null
+}
+
+/** A browser's push subscription (`PushSubscription.toJSON()`), with the site's language for the text. */
+export interface PushSubscribeBody {
+  endpoint: string
+  keys: { p256dh: string; auth: string }
+  locale: 'ru' | 'en'
+}
+
+export interface PushUnsubscribeBody {
+  endpoint: string
 }
 
 /** What a report link shows besides the always-shown numbers. */

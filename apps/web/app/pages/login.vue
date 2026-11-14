@@ -32,8 +32,6 @@ const resendSeconds = computed(() => Math.max(0, Math.ceil((resendAvailableAt.va
 const route = useRoute()
 /** Came back after Telegram ended the session: say so above the phone step, without a banner. */
 const sessionEnded = computed(() => route.query.session === 'ended')
-/** Came from «Открыть» in a bot message whose signature did not hold (an old message): say why the code is asked. */
-const botLinkFailed = computed(() => route.query.from === 'bot')
 // Old links to the policy pointed here (#privacy); it is a page now.
 onMounted(() => {
   if (route.hash === '#privacy') void navigateTo('/privacy', { replace: true })
@@ -152,10 +150,6 @@ function changeNumber() {
             <p v-if="sessionEnded && step === 'phone'" class="login__notice" role="status">
               <Info class="login__notice-icon" aria-hidden="true" />
               {{ t('login.sessionEnded') }}
-            </p>
-            <p v-else-if="botLinkFailed && step === 'phone'" class="login__notice" role="status">
-              <Info class="login__notice-icon" aria-hidden="true" />
-              {{ t('login.botLinkFailed') }}
             </p>
             <h1 class="login__title">
               <template v-if="step === 'phone'">{{ t('login.phoneTitle') }}</template>
