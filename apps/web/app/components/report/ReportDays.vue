@@ -10,7 +10,7 @@ import { CalendarDays, Flame } from '../../lib/icons'
  * so the run and the count of days are told once, in one place.
  */
 const props = defineProps<{ data: ReportDto; streak?: boolean }>()
-const { t, tc, formatNumber, formatDay } = useI18n()
+const { t, tc, formatNumber } = useI18n()
 const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
 const weekday = computed(() => props.data.report.activity.weekday)
 
@@ -21,19 +21,10 @@ const activeDays = computed(() => {
     active: formatNumber(days.value.filter((day) => day.total > 0).length),
   })
 })
-const day = (value: string | null) => (value ? formatDay(value.slice(0, 10), { day: 'numeric', month: 'long' }) : '')
-const run = computed(() => {
-  const best = props.data.report.facts.maxStreak
-  if (!props.streak || !best || best.days < 7) return null
-  const all = best.days >= days.value.length
-  return {
-    figure: tc('report.habits.days', best.days, { count: formatNumber(best.days) }),
-    answer: all
-      ? t('report.main.streakAll')
-      : t('report.main.streakFrom', { from: day(best.startDate), to: day(best.endDate) }),
-    all,
-  }
-})
+const run = useStreak(
+  () => props.data,
+  () => Boolean(props.streak),
+)
 const busiestDay = computed(() => {
   let best = -1
   weekday.value.forEach((count, index) => {

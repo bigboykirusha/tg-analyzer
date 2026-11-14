@@ -38,12 +38,17 @@ const tick = (value: number, hour: number) => ({
         </div>
         <h2 class="frame__title frame__title--name">{{ frame.title }}</h2>
         <p class="frame__sub">{{ frame.sub }}</p>
-        <p v-if="frame.meta" class="frame__meta">{{ frame.meta }}</p>
       </template>
 
       <template v-else>
         <p class="frame__label">{{ frame.label }}</p>
-        <p v-if="frame.figure" class="frame__figure" :class="{ 'frame__figure--word': frame.kind === 'words' }">
+        <p
+          v-if="frame.figure"
+          class="frame__figure"
+          :class="{
+            'frame__figure--word': frame.kind === 'words' || frame.kind === 'streak' || frame.kind === 'record',
+          }"
+        >
           {{ frame.figure }}
         </p>
         <h2 class="frame__title">{{ frame.title }}</h2>
@@ -97,6 +102,22 @@ const tick = (value: number, hour: number) => ({
             </li>
           </ul>
         </div>
+
+        <div v-else-if="frame.kind === 'emoji'" class="visual visual--top">
+          <ul class="pills">
+            <li v-for="item in frame.emoji" :key="item.value" class="pill">
+              <span class="pill__emoji">{{ item.value }}</span
+              >{{ item.count }}
+            </li>
+          </ul>
+        </div>
+
+        <dl v-else-if="frame.kind === 'summary'" class="visual facts">
+          <div v-for="fact in frame.facts" :key="fact.key" class="facts__item">
+            <dt class="facts__label">{{ fact.label }}</dt>
+            <dd class="facts__value">{{ fact.value }}</dd>
+          </div>
+        </dl>
 
         <ul v-else-if="frame.kind === 'people'" class="visual cast">
           <li v-for="member in frame.members" :key="member.id" class="cast__person">
@@ -216,11 +237,6 @@ const tick = (value: number, hour: number) => ({
 .frame__sub {
   font: var(--f-title);
   letter-spacing: var(--tracking-h3);
-}
-
-.frame__meta {
-  color: var(--on-poster-muted);
-  font: var(--f-small);
 }
 
 /* The picture takes whatever height the frame has left, so a tall screen is never half empty. */
@@ -405,6 +421,32 @@ const tick = (value: number, hour: number) => ({
 
 .pill__emoji {
   font: var(--f-emoji);
+}
+
+/* Everything together: facts in two columns, each a value over its name. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: center;
+  gap: calc(var(--f-1) * 8) calc(var(--f-1) * 4);
+}
+
+.facts__item {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: calc(var(--f-1) * 1);
+  min-width: 0;
+}
+
+.facts__label {
+  color: var(--on-poster-muted);
+  font: var(--f-ui);
+}
+
+.facts__value {
+  font: var(--f-answer);
+  letter-spacing: var(--tracking-h2);
+  overflow-wrap: anywhere;
 }
 
 /* A class photo: four faces, each with a name, a share and a role. */

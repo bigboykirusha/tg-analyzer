@@ -15,19 +15,7 @@ const you = useYouLabel()
 const favourites = computed(() => props.data.derived.favourites)
 const name = computed(() => props.data.summary.title)
 
-const answer = computed(() => {
-  const { emoji, topEmoji } = favourites.value
-  const mine = emoji.mine?.value
-  const theirs = emoji.theirs?.value
-  if (mine && theirs)
-    return mine === theirs
-      ? t('report.favourites.same', { emoji: mine })
-      : t('report.favourites.both', { me: you.value, mine, name: name.value, theirs })
-  if (mine || theirs)
-    return t('report.favourites.one', { who: mine ? you.value : name.value, emoji: (mine ?? theirs)! })
-  const top = topEmoji[0]
-  return top ? t('report.favourites.top', { emoji: top.value }) : null
-})
+const { answer } = useFavouriteEmoji(() => props.data)
 
 const chips = computed(() => favourites.value.topEmoji.slice(0, 8))
 

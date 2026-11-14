@@ -26,7 +26,7 @@ interface FrameBase {
 }
 
 export type StoryFrameModel =
-  | (FrameBase & { kind: 'cover'; days: { sent: number; received: number }[]; meta: string })
+  | (FrameBase & { kind: 'cover'; days: { sent: number; received: number }[] })
   | (FrameBase & {
       kind: 'balance'
       /** Your share of the messages, 0–100; the rest is the other side's. */
@@ -45,6 +45,14 @@ export type StoryFrameModel =
       sides: { key: string; label: string | null; items: string[] }[]
       emoji: { value: string; count: string }[]
     })
+  | (FrameBase & { kind: 'streak' })
+  | (FrameBase & { kind: 'record' })
+  | (FrameBase & { kind: 'emoji'; emoji: { value: string; count: string }[] })
+  | (FrameBase & {
+      /** «Всё вместе»: the facts the earlier frames said, each a value under its name. */
+      kind: 'summary'
+      facts: { key: string; label: string; value: string }[]
+    })
   | (FrameBase & {
       kind: 'people'
       members: { id: string; name: string; share: string; role: string; self: boolean }[]
@@ -52,12 +60,13 @@ export type StoryFrameModel =
 
 /**
  * «Итоги» as data: the frames are the conclusions of the report's cards, with their words and numbers.
- * A private chat has four (the cover, «Баланс», «Время», «Слова»), a group four of its own (the cover,
- * «Люди», «Время», «Слова»). Each number comes from the same derived fields the card reads, the words
+ * A private chat has eight (the cover, «Баланс», «Дней подряд», «Время», the longest conversation, «Слова»,
+ * the favourite emoji, «Всё вместе»), a group six (the cover, «Люди», «Время», «Слова», the emoji, «Всё вместе»);
+ * a frame is left out when its card would not show. Each number comes from the same derived fields the card reads, the words
  * from `derived.words`, so a frame never says what the report does not.
  */
 export function useStoryFrames(data: () => ReportDto) {
-  const { t, tc, formatNumber, formatPercent, formatDay, quote } = useI18n()
+  const { t, tc, formatNumber, formatPercent, quote } = useI18n()
   const auth = useAuthStore()
   const nameOf = useParticipantName()
 
@@ -67,7 +76,10 @@ export function useStoryFrames(data: () => ReportDto) {
   const days = computed(() => fillDailyGaps(report.value.activity.daily))
   const balanceFacts = useBalance(data)
   const wordFacts = useWordsFacts(data, { limit: 4 })
-  const plain = (text: string) => text.replace(/\s?г\.$/u, '')
+  const span = useChatSpan()
+  const streakRun = useStreak(data, () => !isGroup.value)
+  const recordFacts = useRecords(data)
+  const emojiFacts = useFavouriteEmoji(data)
 
   const who = computed<StoryWho>(() => {
     const mine = auth.user?.firstName?.trim() || auth.user?.username || ''
@@ -80,24 +92,12 @@ export function useStoryFrames(data: () => ReportDto) {
   })
 
   function cover(): StoryFrameModel {
-    const first = days.value[0]?.date
-    const last = days.value.at(-1)?.date
     return {
       kind: 'cover',
       key: 'cover',
       label: t('story.label.cover'),
       title: name.value,
-      sub: t('share.coverMeta', {
-        messages: tc('common.messagesCount', report.value.totals.messages),
-        days: tc('insight.days', days.value.length),
-      }),
-      meta:
-        first && last
-          ? t('story.period', {
-              from: plain(formatDay(first, { day: 'numeric', month: 'long' })),
-              to: plain(formatDay(last, { day: 'numeric', month: 'long', year: 'numeric' })),
-            })
-          : '',
+      sub: span(data()),
       days: days.value,
     }
   }
@@ -138,21 +138,18 @@ export function useStoryFrames(data: () => ReportDto) {
   /** «Слова»: the word of the chat, then the words of each side. */
   function words(): StoryFrameModel | null {
     const clean = data().derived.words
-    const emoji = data()
-      .derived.favourites.topEmoji.slice(0, 5)
-      .map((item) => ({ value: item.value, count: formatNumber(item.count) }))
     if (isGroup.value) {
       const shared = clean.group?.shared ?? []
       const first = shared[0]
-      if (!first && !emoji.length) return null
+      if (!first) return null
       return {
         kind: 'words',
         key: 'words',
         label: t('group.wordsTitle'),
-        figure: first ? quote(first.value) : undefined,
-        title: first ? tc('report.words.word', first.count) : t('group.favouriteEmoji', { emoji: emoji[0]!.value }),
+        figure: quote(first.value),
+        title: tc('report.words.word', first.count),
         sides: [{ key: 'shared', label: null, items: shared.slice(1, 7).map((item) => item.value) }],
-        emoji,
+        emoji: [],
       }
     }
     const { mine, theirs, next, figure, answer, any } = wordFacts
@@ -170,6 +167,74 @@ export function useStoryFrames(data: () => ReportDto) {
       title: answer.value,
       sides,
       emoji: [],
+    }
+  }
+
+  /** «Дней подряд»: the calendar poster's run, the same function (`useStreak`). */
+  function streak(): StoryFrameModel | null {
+    const run = streakRun.value
+    if (!run) return null
+    return { kind: 'streak', key: 'streak', label: t('report.main.streakTitle'), figure: run.figure, title: run.answer }
+  }
+
+  /** The first record of «Ваши рекорды» — normally the longest conversation — with its date. */
+  function record(): StoryFrameModel | null {
+    const first = recordFacts.facts.value[0]
+    if (!first) return null
+    return {
+      kind: 'record',
+      key: 'record',
+      label: first.label,
+      figure: first.value,
+      title: first.sub || first.label,
+    }
+  }
+
+  /** The favourite emoji: the card's answer, the top emoji with their counts. */
+  function emoji(): StoryFrameModel | null {
+    const top = emojiFacts.top.value[0]
+    const answer = emojiFacts.answer.value
+    if (!top || !answer) return null
+    return {
+      kind: 'emoji',
+      key: 'emoji',
+      label: t('report.favourites.titleLean'),
+      figure: top.value,
+      title: answer,
+      emoji: emojiFacts.top.value.slice(0, 5).map((item) => ({ value: item.value, count: formatNumber(item.count) })),
+    }
+  }
+
+  /** «Всё вместе»: up to six facts the earlier frames said, only those whose frame exists. */
+  function summary(said: (StoryFrameModel | null)[]): StoryFrameModel | null {
+    const has = (kind: StoryFrameModel['kind']) => said.some((frame) => frame?.kind === kind)
+    const facts: { key: string; label: string; value: string }[] = []
+    facts.push({
+      key: 'messages',
+      label: t('story.summary.messages'),
+      value: formatNumber(report.value.totals.messages),
+    })
+    if (isGroup.value) {
+      const members = report.value.group?.participants.length
+      if (members) facts.push({ key: 'members', label: t('story.summary.members'), value: formatNumber(members) })
+    } else if (has('balance') && balanceFacts.figure.value)
+      facts.push({ key: 'balance', label: t('report.balance.title'), value: balanceFacts.figure.value })
+    const run = streakRun.value
+    if (has('streak') && run) facts.push({ key: 'streak', label: t('report.main.streakTitle'), value: run.figure })
+    const window = parseWindow(data().derived.availabilityProfile.peakWindow)
+    if (has('time') && window)
+      facts.push({ key: 'peak', label: t('story.summary.peak'), value: `${window.from}⁠–⁠${window.to}` })
+    const word = isGroup.value ? data().derived.words.group?.shared[0] : wordFacts.word.value
+    if (has('words') && word) facts.push({ key: 'word', label: t('story.summary.word'), value: quote(word.value) })
+    const top = emojiFacts.top.value[0]
+    if (has('emoji') && top) facts.push({ key: 'emoji', label: t('story.summary.emoji'), value: top.value })
+    if (facts.length < 2) return null
+    return {
+      kind: 'summary',
+      key: 'summary',
+      label: t('story.label.summary'),
+      title: who.value.label,
+      facts: facts.slice(0, 6),
     }
   }
 
@@ -195,11 +260,12 @@ export function useStoryFrames(data: () => ReportDto) {
     }
   }
 
-  const frames = computed(() =>
-    (isGroup.value ? [cover(), people(), time(), words()] : [cover(), balance(), time(), words()]).filter(
-      (frame): frame is StoryFrameModel => frame !== null,
-    ),
-  )
+  const frames = computed(() => {
+    const lead = isGroup.value
+      ? [cover(), people(), time(), words(), emoji()]
+      : [cover(), balance(), streak(), time(), record(), words(), emoji()]
+    return [...lead, summary(lead)].filter((frame): frame is StoryFrameModel => frame !== null)
+  })
 
   return { frames, who }
 }
