@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
 
 /*
  * In a phone sheet a menu item is a list row, as UiGroup's rows in a sheet: 56 tall, running to the sheet's edges, the
- * text at the gutter, the hairline from the text to the edge — so a press fills the whole row, never a box that
+ * text at the gutter, the hairline from the text to the gutter on the other side — so a press fills the whole row, never a box that
  * starts where the words start.
  */
 .popover-sheet {
@@ -189,7 +189,7 @@ onBeforeUnmount(() => {
 }
 
 .popover-sheet :deep(.menu-item__body) {
-  padding-right: var(--page-gutter);
+  margin-right: var(--page-gutter);
   box-shadow: var(--divider-bottom);
 }
 

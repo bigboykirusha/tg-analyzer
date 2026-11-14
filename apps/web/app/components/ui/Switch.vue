@@ -48,7 +48,8 @@ const model = defineModel<boolean>({ required: true })
   gap: var(--space-4);
   min-width: 0;
   min-height: var(--row-height);
-  padding: var(--space-1) var(--row-inset, 0px) var(--space-1) 0;
+  margin-right: var(--row-inset, 0px);
+  padding: var(--space-1) 0;
   box-shadow: var(--divider-bottom);
 }
 

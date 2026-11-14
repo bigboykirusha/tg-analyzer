@@ -130,7 +130,10 @@ const tagAttrs = computed(() => {
   gap: var(--space-3);
   min-width: 0;
   min-height: var(--row-height);
-  padding: var(--space-1) var(--row-inset, 0px) var(--space-1) 0;
+  /* The hairline runs from the text to the same inset on the other side (14.11, S2): a margin, not a padding, ends it
+     there; the trailing control stays where it was. */
+  margin-right: var(--row-inset, 0px);
+  padding: var(--space-1) 0;
   box-shadow: var(--divider-bottom);
 }
 
@@ -171,7 +174,7 @@ const tagAttrs = computed(() => {
 }
 
 .list-row--wrap > .list-row__body {
-  padding: var(--space-3) var(--row-inset, 0px) var(--space-3) 0;
+  padding: var(--space-3) 0;
 }
 
 .list-row--wrap .list-row__copy {

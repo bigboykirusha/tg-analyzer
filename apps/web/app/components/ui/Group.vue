@@ -4,7 +4,7 @@
  * under it. Rows are UiListRow or UiSwitch; anything else that sits in the card keeps the rows' inset itself.
  *
  * The card has no padding of its own: a row runs from edge to edge, its text starts `--row-inset` in (the card
- * padding), the hairline runs from the text to the card's edge, and a row's hover or press fills the whole row —
+ * padding), the hairline runs from the text to the same inset short of the card's edge (14.11), and a row's hover or press fills the whole row —
  * the first and last rows take the card's corners. So a card is exactly its rows: one row, one 56 strip, with
  * nothing uneven above or below it. Heading and note start where the rows' text does.
  *
