@@ -31,6 +31,14 @@ watch(analysis.finished, (job) => {
   if (ready.value) readyTimer = setTimeout(() => (ready.value = null), READY_MS)
 })
 onBeforeUnmount(() => clearTimeout(readyTimer))
+/**
+ * An analysis ordered from the open sheet folds it (14.11): the person's capsule takes the head at once, so what was
+ * ordered is seen; a failed start (a limit, a small chat) keeps the list open with its message.
+ */
+const actions = useReportActions()
+watch(actions.starting, (now, before) => {
+  if (before && !now && open.value && actions.busy(before)) closeSheet()
+})
 /** The head shows the analysis (or its result) instead of the search, at rest only. */
 const showPill = computed(() => !open.value && (Boolean(view.value?.chatId) || Boolean(ready.value)))
 

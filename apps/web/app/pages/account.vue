@@ -204,7 +204,9 @@ onMounted(() => void loadLinks())
             v-model="notify"
             :label="t('accountPage.notify')"
             :hint="t('accountPage.notifyHint')"
-          />
+          >
+            <template #leading><TelegramMark /></template>
+          </UiSwitch>
           <UiListRow
             v-if="auth.user?.feedbackUrl"
             as="a"

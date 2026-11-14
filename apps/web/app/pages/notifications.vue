@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { NotificationDto } from '@tg-analyzer/shared'
 import type { Component } from 'vue'
-import { AlertCircle, AlertTriangle, Bell, Check, Eye, Hourglass, Send, Sparkles } from '../lib/icons'
+import { AlertCircle, AlertTriangle, Bell, Check, Eye, Hourglass, Sparkles } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
@@ -117,14 +117,10 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
           :subtitle="t('notifications.tgOnText')"
           wrap
         >
-          <template #leading
-            ><span class="tg__mark" aria-hidden="true"><Check /></span
-          ></template>
+          <template #leading><TelegramMark /></template>
         </UiListRow>
         <UiListRow v-else :title="t('notifications.tgTitle')" :subtitle="t('notifications.tgText')" wrap>
-          <template #leading
-            ><span class="tg__mark" aria-hidden="true"><Send /></span
-          ></template>
+          <template #leading><TelegramMark /></template>
           <template #trailing>
             <UiButton :to="botUrl!" variant="quiet" size="sm" target="_blank" rel="noopener">{{
               t('notifications.tgConnect')
@@ -303,15 +299,4 @@ a.note:active {
 }
 
 /* The bot's mark: an ink circle, as the bot's own avatar in Telegram — the one row here that is not a chat. */
-.tg__mark {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: var(--avatar-md);
-  height: var(--avatar-md);
-  border-radius: var(--radius-pill);
-  background: var(--text);
-  color: var(--bg);
-  --icon-size: var(--icon-md);
-}
 </style>
