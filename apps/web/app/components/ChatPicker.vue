@@ -2,39 +2,22 @@
 import { AlertCircle, MessageSquare, Search, WifiOff, X } from '../lib/icons'
 
 /**
- * Every Telegram chat, to analyse one: a search well, «Все 128 · Личные 96 · Группы 32» as words (UiFilters), then rows (ChatRow) —
+ * Every Telegram chat, to analyse one: a search well, then rows (ChatRow) in Telegram's order — no filter (14.11) —
  * the same list as a page on desktop (`/new`), on a newcomer's home and as a sheet on a phone (`?pick`). The sheet on
  * home carries the search in its own head (`ownSearch: false`, `v-model:search`).
  */
 withDefaults(defineProps<{ sticky?: boolean; ownSearch?: boolean }>(), { sticky: false, ownSearch: true })
 
 const PAGE_SIZE = 30
-const { t, tc, formatNumber } = useI18n()
+const { t, tc } = useI18n()
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
 const errorMessage = useErrorMessage()
 const { relogin } = useAuth()
 
 const search = defineModel<string>('search', { default: '' })
-const filter = ref<'all' | 'private' | 'groups'>('all')
 const visibleCount = ref(PAGE_SIZE)
 const sentinel = ref<HTMLElement | null>(null)
-/** How many chats each word holds, of those the search finds: the filter tells it like Telegram's folders. */
-const counts = computed(() => {
-  const query = search.value.trim().toLocaleLowerCase()
-  const found = workspace.chats.filter((chat) => !query || chat.title.toLocaleLowerCase().includes(query))
-  const personal = found.filter((chat) => chat.type === 'private').length
-  return { all: found.length, private: personal, groups: found.length - personal }
-})
-const filterOptions = computed(() => {
-  const count = (value: number) => (workspace.chats.length ? formatNumber(value) : undefined)
-  return [
-    { value: 'all' as const, label: t('dashboard.filter.all'), count: count(counts.value.all) },
-    { value: 'private' as const, label: t('dashboard.filter.private'), count: count(counts.value.private) },
-    { value: 'groups' as const, label: t('dashboard.filter.groups'), count: count(counts.value.groups) },
-  ]
-})
-
 /** Telegram's own order: pinned chats first, then the latest message; chats known only from a report go last. */
 const ordered = computed(() =>
   [...workspace.chats].sort(
@@ -46,11 +29,7 @@ const ordered = computed(() =>
 )
 const filteredChats = computed(() => {
   const query = search.value.trim().toLocaleLowerCase()
-  return ordered.value.filter((chat) => {
-    if (filter.value === 'private' && chat.type !== 'private') return false
-    if (filter.value === 'groups' && chat.type === 'private') return false
-    return !query || chat.title.toLocaleLowerCase().includes(query)
-  })
+  return ordered.value.filter((chat) => !query || chat.title.toLocaleLowerCase().includes(query))
 })
 const visibleChats = computed(() => filteredChats.value.slice(0, visibleCount.value))
 const firstLoad = computed(
@@ -58,7 +37,7 @@ const firstLoad = computed(
 )
 const failed = computed(() => workspace.dialogsState === 'error' && !workspace.dialogs.length)
 
-watch([search, filter], () => {
+watch(search, () => {
   visibleCount.value = PAGE_SIZE
 })
 useIntersection(sentinel, () => {
@@ -87,7 +66,6 @@ onMounted(() => {
           <X class="icon-sm" aria-hidden="true" />
         </button>
       </label>
-      <UiFilters v-model="filter" :options="filterOptions" :label="t('dashboard.filter.label')" />
     </div>
 
     <p v-if="!auth.telegramSessionActive" class="picker__note" role="status">
@@ -126,9 +104,9 @@ onMounted(() => {
       <UiEmptyState
         v-else
         compact
-        :icon="search || filter !== 'all' ? Search : MessageSquare"
-        :title="search || filter !== 'all' ? t('dashboard.noMatchesTitle') : t('dashboard.emptyTitle')"
-        :description="search || filter !== 'all' ? t('dashboard.noMatchesText') : t('dashboard.emptyText')"
+        :icon="search ? Search : MessageSquare"
+        :title="search ? t('dashboard.noMatchesTitle') : t('dashboard.emptyTitle')"
+        :description="search ? t('dashboard.noMatchesText') : t('dashboard.emptyText')"
       >
         <template v-if="search" #action>
           <UiButton variant="secondary" @click="search = ''">{{ t('dashboard.clearSearch') }}</UiButton>

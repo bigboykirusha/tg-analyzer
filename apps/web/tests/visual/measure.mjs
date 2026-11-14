@@ -34,11 +34,10 @@ const collect = () => {
   for (const el of all) {
     const cs = getComputedStyle(el)
     const r = el.getBoundingClientRect()
-    // A control drawn as part of a text field (the country code before a phone number) is the field, not a button look;
-    // a list filter drawn as words (UiFilters, «Все 13 · Личные 9», 14.11) is a heading of the list, like a sidebar link.
+    // A control drawn as part of a text field (the country code before a phone number) is the field, not a button look.
     const isBtn =
       el.matches('button, a.btn, [role=button], a[class*="btn"], .chip, [role=tab], [role=switch]') &&
-      !el.matches('.select__addon, .tabs__item')
+      !el.matches('.select__addon')
     const bg = cs.backgroundColor
     const hasBg = bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent'
     const rad = px(cs.borderRadius)
