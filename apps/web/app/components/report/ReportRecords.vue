@@ -7,7 +7,7 @@ import type { ReportTile } from './ReportTiles.vue'
  * «Ваши рекорды» as big numbers, two to a row: the longest conversation, the busiest day, the longest pause
  * (who broke it), how many conversations there were and, when it is shorter than the whole chat, the longest
  * run of days. The answer names the day of records when the longest conversation and the busiest day fell on
- * one date.
+ * one date; otherwise it is the first record, which then leaves the grid.
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, tc, formatDuration, formatDay, formatNumber } = useI18n()
@@ -65,17 +65,26 @@ const facts = computed<ReportTile[]>(() => {
   return out
 })
 
-const answer = computed(() => {
+const sameDay = computed(() => {
   const session = report.value.sessions.highlights[0]?.startedAt?.slice(0, 10)
   const busiest = report.value.facts.mostActiveDate?.date?.slice(0, 10)
-  if (session && session === busiest) return t('report.records.sameDay', { date: day(session) })
-  const first = facts.value[0]
-  return first ? `${first.label} — ${first.value}` : null
+  return session && session === busiest ? session : null
 })
+/**
+ * The answer is the day of records, or else the first record itself with its date — and then that record leaves
+ * the grid below, so no number is said twice in one card.
+ */
+const answer = computed(() => {
+  if (sameDay.value) return t('report.records.sameDay', { date: day(sameDay.value) })
+  const first = facts.value[0]
+  if (!first) return null
+  return first.sub ? `${first.label} — ${first.value}, ${first.sub}` : `${first.label} — ${first.value}`
+})
+const tiles = computed(() => (sameDay.value ? facts.value : facts.value.slice(1)))
 </script>
 
 <template>
   <ReportSection v-if="facts.length" :icon="Trophy" :title="t('report.fmt.recordsTitle')" :answer="answer">
-    <ReportTiles :tiles="facts" />
+    <ReportTiles v-if="tiles.length" :tiles="tiles" />
   </ReportSection>
 </template>

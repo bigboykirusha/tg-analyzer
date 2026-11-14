@@ -49,7 +49,7 @@ const answer = computed(() => {
 <template>
   <div class="people report-section--wide" :class="{ 'people--solo': !selected }">
     <div class="people__main">
-      <ReportSection id="part-people" :icon="Users" :title="t('group.tabs.people')" :answer="answer">
+      <ReportSection id="part-people" :icon="Users" :title="t('group.people.title')" :answer="answer">
         <div class="people__list">
           <template v-for="person in visible" :key="person.id">
             <UiListRow v-if="person.isSelf" :title="nameOf(person)" :subtitle="roleLabel(person.role)">

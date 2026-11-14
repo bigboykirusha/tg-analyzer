@@ -4,14 +4,13 @@ import { Quote } from '../../lib/icons'
 
 /**
  * The word of the chat, the one tile of «О чём» in the person's poster colour: the word at the size of
- * the report's one big number, how many times it was written, who wrote it more, and places two to four
- * under a hairline. The same word as on the «Итоги» frame.
+ * the report's one big number, how many times it was written and who wrote it more. The places after it are
+ * «Чаще всего», right under this card (one number, one place). The same word as on the «Итоги» frame.
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, tc, formatNumber } = useI18n()
 
 const word = computed(() => props.data.derived.words.wordOfChat)
-const runners = computed(() => props.data.derived.words.topWords.slice(1, 4))
 /** How many times each side wrote it, when both sides' lists have it. */
 const sides = computed(() => {
   const value = word.value?.value
@@ -38,12 +37,6 @@ const sides = computed(() => {
       :left="formatNumber(sides.mine)"
       :right="formatNumber(sides.theirs)"
     />
-    <ol v-if="runners.length" class="runners" :aria-label="t('report.fmt.wordRunners')">
-      <li v-for="item in runners" :key="item.value">
-        <span class="runners__word">{{ item.value }}</span>
-        <span class="runners__count">{{ formatNumber(item.count) }}</span>
-      </li>
-    </ol>
   </ReportSection>
 </template>
 
@@ -51,6 +44,11 @@ const sides = computed(() => {
 /* The other side's name on the poster colour reads in the poster's ink: their own tone is too close to it in the dark theme. */
 .word__line :deep(.cmp__name--them) {
   color: var(--on-poster);
+}
+
+/* Beside a taller card in a row (a computer) the split rests at the bottom, the word at the top. */
+.word__line {
+  margin-top: auto;
 }
 
 .word {
@@ -68,32 +66,5 @@ const sides = computed(() => {
 .word__count {
   color: var(--text-muted);
   font: var(--text-label);
-}
-
-/* Places two to four under a hairline, three columns: the word and how often under it. */
-.runners {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
-  margin-top: auto;
-  padding-top: var(--space-3);
-  box-shadow: var(--poster-divider-top);
-}
-
-.runners li {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  font: var(--text-label);
-}
-
-.runners__word {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.runners__count {
-  color: var(--text-muted);
 }
 </style>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { fillDailyGaps, shouldShowYear, type ReportDto } from '@tg-analyzer/shared'
-import { nbsp } from '../../lib/nbsp'
+import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 import { Play, Share } from '../../lib/icons'
 
 /**
@@ -27,7 +26,7 @@ const props = withDefaults(
   { data: null, title: null, actions: false, heading: null, lede: null, h1: false },
 )
 const emit = defineEmits<{ story: []; share: [] }>()
-const { t, tc, formatNumber, formatDay } = useI18n()
+const { t, formatNumber, formatDay } = useI18n()
 const nameOf = useParticipantName()
 const wide = useMediaQuery('(min-width: 901px)')
 
@@ -35,40 +34,9 @@ const report = computed(() => props.data?.report ?? null)
 const isGroup = computed(() => Boolean(report.value?.group))
 const days = computed(() => (report.value ? fillDailyGaps(report.value.activity.daily) : []))
 
-/**
- * «4 800 сообщений · май — ноябрь 2026»: the months the chat covers, the year on both ends when it spans
- * more than one (`shouldShowYear`). A group adds its size.
- */
-const meta = computed(() => {
-  if (props.lede) return props.lede
-  const value = report.value
-  if (!value) return ''
-  const messages = nbsp(
-    tc('common.messagesCount', value.totals.messages, { count: formatNumber(value.totals.messages) }),
-  )
-  const first = days.value[0]?.date
-  const last = days.value.at(-1)?.date
-  const NBSP = '\u00a0'
-  const plain = (text: string) => text.replace(/\s?г\.$/u, '')
-  if (isGroup.value) {
-    const members = tc('report.poster.members', value.group?.participants.length ?? 0)
-    return first
-      ? t('report.poster.groupSince', {
-          messages,
-          members,
-          date: plain(formatDay(first, { day: 'numeric', month: 'long', year: 'numeric' })),
-        })
-      : `${messages}, ${members}`
-  }
-  if (!first || !last) return messages
-  const month = (day: string, year: boolean) =>
-    plain(formatDay(day, year ? { month: 'long', year: 'numeric' } : { month: 'long' }))
-  const span =
-    first.slice(0, 7) === last.slice(0, 7)
-      ? month(last, true)
-      : `${month(first, shouldShowYear(first, last))}${NBSP}— ${month(last, true)}`
-  return `${messages} · ${span}`
-})
+/** «4 800 сообщений · май — ноябрь 2026» (useChatSpan), or the guest's own line. */
+const chatSpan = useChatSpan()
+const meta = computed(() => props.lede || (props.data ? chatSpan(props.data) : ''))
 
 /** The two ends of the pulse: «апрель» and «ноябрь», with the year on wide screens. */
 const axis = computed(() => {

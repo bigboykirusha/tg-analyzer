@@ -33,16 +33,9 @@ const heading = computed(() =>
       })
     : t('share.link.pair', { me: t('share.author'), name: t('share.partner') }),
 )
-const meta = computed(() => {
-  const messages = tc('common.messagesCount', props.data.report.totals.messages)
-  const first = days.value[0]?.date
-  return first
-    ? t('share.link.since', {
-        messages,
-        date: formatDate(`${first}T12:00:00Z`, { day: 'numeric', month: 'long', timeZone: 'UTC' }),
-      })
-    : messages
-})
+/** The same line as on the guest's poster (useChatSpan). */
+const chatSpan = useChatSpan()
+const meta = computed(() => chatSpan(props.data))
 const changed = computed(
   () =>
     !props.link?.settings ||

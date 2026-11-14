@@ -19,7 +19,7 @@ const sides = computed(() => {
   const stats = props.data.report.reactions
   if (!stats) return []
   return [
-    { key: 'mine' as const, who: t('report.reactions.mine'), items: plain(stats.topBySender.mine) },
+    { key: 'mine' as const, who: t('report.you'), items: plain(stats.topBySender.mine) },
     { key: 'theirs' as const, who: name.value, items: plain(stats.topBySender.theirs) },
   ]
     .filter((side) => side.items.length)

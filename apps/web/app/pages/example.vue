@@ -25,8 +25,8 @@ useHead({ htmlAttrs: { 'data-hue': () => hueOf('example') } })
 
         <section class="tile example-invite">
           <h2 class="t-h2">{{ t('example.endTitle') }}</h2>
-          <p class="t-body example-invite__text">{{ t('example.endText') }}</p>
-          <UiButton variant="primary" to="/login">{{ t('example.cta') }}</UiButton>
+          <p class="t-body example-invite__text">{{ t('publicReport.endText') }}</p>
+          <UiButton variant="primary" to="/login">{{ t('publicReport.cta') }}</UiButton>
         </section>
       </div>
     </UiPageContainer>

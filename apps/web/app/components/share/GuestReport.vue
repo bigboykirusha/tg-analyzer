@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { fillDailyGaps, type PublicReportDto } from '@tg-analyzer/shared'
+import type { PublicReportDto } from '@tg-analyzer/shared'
 
 /**
  * A report opened by a shared link, without signing in: the same composition as the owner's report —
@@ -9,30 +9,20 @@ import { fillDailyGaps, type PublicReportDto } from '@tg-analyzer/shared'
  * on an invitation to one's own report, a card in the flow, so it never covers the text.
  */
 const props = defineProps<{ share: PublicReportDto }>()
-const { t, tc, formatDay } = useI18n()
+const { t } = useI18n()
 
 const data = computed(() => {
   const value = props.share.data
   return { ...value, summary: { ...value.summary, title: value.summary.title || t('share.partner') } }
 })
-const report = computed(() => data.value.report)
 const author = computed(() => (props.share.settings.showName ? props.share.author : t('share.author')))
 const partner = computed(() => data.value.summary.title)
 provideReportAuthor(() => author.value)
 
-const days = computed(() => fillDailyGaps(report.value.activity.daily))
 const heading = computed(() => t('publicReport.pair', { me: author.value, name: partner.value }))
-const lede = computed(() => {
-  const messages = tc('common.messagesCount', report.value.totals.messages)
-  const first = days.value[0]?.date
-  return first
-    ? t('publicReport.lede', {
-        name: author.value,
-        messages,
-        date: formatDay(first, { day: 'numeric', month: 'long', year: 'numeric' }).replace(/\s?г\.$/u, ''),
-      })
-    : messages
-})
+/** Who shared it, then the same line as the owner's poster (useChatSpan). */
+const chatSpan = useChatSpan()
+const lede = computed(() => t('publicReport.lede', { name: author.value, span: chatSpan(data.value) }))
 
 const allowed = computed(() => props.share.settings.words)
 </script>
