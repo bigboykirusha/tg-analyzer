@@ -88,7 +88,7 @@ export const STOP_LEMMAS: ReadonlySet<string> = new Set([
   'такой', 'какой', 'этот', 'тот', 'весь', 'сам', 'самый', 'один', 'первый', 'второй', 'другой', 'каждый',
 ])
 
-export const DEFAULT_STOP_WORDS: ReadonlySet<string> = new Set([...STOP_WORDS_RU, ...STOP_WORDS_EN])
+const DEFAULT_STOP_WORDS: ReadonlySet<string> = new Set([...STOP_WORDS_RU, ...STOP_WORDS_EN])
 
 export interface MessageTextAnalysis {
   /** Every word-like token, stop words included. Links and @mentions are not words. */
@@ -128,7 +128,7 @@ function count(word: string, letter: string) {
 }
 
 /** Laughter tokens are counted as laughs, never as top words. */
-export function isLaughter(word: string) {
+function isLaughter(word: string) {
   if (SHORT_LAUGHS.has(word)) return true
   if (word.length < 4) return false
   if (LAUGH_WORD.test(word)) return true
@@ -172,7 +172,7 @@ const STRETCHED_CONSONANT = /(\p{L})\1{2,}/gu
 
 const REPEATED_LETTER = /(\p{L})\1+/gu
 
-export function squeezeStretched(text: string) {
+function squeezeStretched(text: string) {
   return text.replace(STRETCHED_VOWEL, '$1').replace(STRETCHED_CONSONANT, '$1$1')
 }
 

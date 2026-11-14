@@ -49,7 +49,7 @@ export interface HabitsSummary {
 }
 
 /** Order of the habits in a line and the tie-breaker of the ranking. */
-export const HABIT_ORDER: readonly HabitId[] = [
+const HABIT_ORDER: readonly HabitId[] = [
   'starts',
   'firstMorning',
   'laughs',

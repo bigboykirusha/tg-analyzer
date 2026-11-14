@@ -54,7 +54,7 @@ const GROUP_SESSION_BOUNDARY_MS = 4 * 60 * 60 * 1000
 const IMPLIED_REPLY_WINDOW_MS = 10 * 60 * 1000
 const RESPONSE_COVERAGE_WINDOW_MS = 30 * 60 * 1000
 /** Retention is only meaningful for groups with at least this much history. */
-export const GROUP_RETENTION_MIN_DAYS = 180
+const GROUP_RETENTION_MIN_DAYS = 180
 
 /**
  * Maps participant metrics to a product role. Legacy roles stored by older

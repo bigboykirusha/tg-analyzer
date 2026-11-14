@@ -33,26 +33,6 @@ async function inspectPage(
       )
       for (const item of widths) expect(Math.abs(item.card - item.column)).toBeLessThan(1)
     }
-    if (['/account', '/new'].includes(path) && width <= 640) {
-      const controls = await page
-        .locator(path === '/account' ? '.row .segmented' : '.picker-tools .segmented')
-        .evaluateAll((elements) =>
-          elements.map((element) =>
-            Array.from(element.querySelectorAll('.segment')).map((segment) => segment.getBoundingClientRect().width),
-          ),
-        )
-      for (const sizes of controls) expect(Math.max(...sizes) - Math.min(...sizes)).toBeLessThan(1)
-    }
-    if (width > 640 && width <= 900) {
-      const pairs = await page.locator('.bento--split').evaluateAll((elements) =>
-        elements.flatMap((element) => {
-          const main = element.querySelector(':scope > .span-8')
-          const accent = element.querySelector(':scope > .span-4')
-          return main && accent ? [Math.abs(main.getBoundingClientRect().top - accent.getBoundingClientRect().top)] : []
-        }),
-      )
-      for (const difference of pairs) expect(difference).toBeLessThan(1)
-    }
     if (width === 390 || width === 1440)
       await page.screenshot({
         path: testInfo.outputPath(`${path.replaceAll('/', '-') || 'home'}-${locale}-${theme}.png`),

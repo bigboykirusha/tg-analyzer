@@ -8,7 +8,7 @@ export interface PhoneCountry {
 }
 
 /** Most of our people sign in from these four, so they lead the list. */
-export const PHONE_COUNTRIES: PhoneCountry[] = [
+const PHONE_COUNTRIES: PhoneCountry[] = [
   { code: 'RU', flag: '🇷🇺', dialCode: '+7', pattern: [3, 3, 2, 2], minDigits: 10, maxDigits: 10 },
   { code: 'UA', flag: '🇺🇦', dialCode: '+380', pattern: [2, 3, 2, 2], minDigits: 9, maxDigits: 9 },
   { code: 'BY', flag: '🇧🇾', dialCode: '+375', pattern: [2, 3, 2, 2], minDigits: 9, maxDigits: 9 },

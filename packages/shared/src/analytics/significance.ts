@@ -10,7 +10,7 @@
  * share keeps the bar rising with the chat (a long chat's «top word» needs a real lead over noise).
  */
 export const MIN_WORD_OF_CHAT_COUNT = 10
-export const MIN_WORD_OF_CHAT_SHARE = 0.005
+const MIN_WORD_OF_CHAT_SHARE = 0.005
 
 /**
  * A word that one side «owns», or both share, needs this many uses by that side (both together for

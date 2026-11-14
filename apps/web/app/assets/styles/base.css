@@ -128,10 +128,6 @@ svg.lucide {
   --icon-size: var(--icon-sm);
 }
 
-.icon-lg {
-  --icon-size: var(--icon-lg);
-}
-
 /*
  * ─── Type: eight roles (tokens.css): .t-display .t-figure .t-h1 .t-h2 .t-h3 .t-body .t-label .t-caption ──
  * The classes carry the tracking. There are no other text styles: the measure (tests/visual) counts them.
@@ -188,12 +184,6 @@ strong {
 
 .t-caption {
   font: var(--text-caption);
-}
-
-/* Emoji sit on their own line box so rows of them do not jump. */
-.t-emoji {
-  font-size: var(--emoji-size);
-  line-height: 1;
 }
 
 .t-muted {
@@ -363,8 +353,7 @@ main:focus {
   .input,
   .otp-input,
   .select,
-  .picker__search,
-  .segmented__item {
+  .picker__search {
     outline: 1px solid ButtonText;
     outline-offset: -1px;
   }

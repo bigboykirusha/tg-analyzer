@@ -44,8 +44,6 @@ function toClientError(error: unknown): ApiClientError {
   return new ApiClientError(error instanceof Error ? error.message : 'Network error', null, 'NETWORK_ERROR')
 }
 
-const SESSION_ENDED: ReadonlySet<string> = new Set(['AUTH_REFRESH_INVALID'])
-
 /** When this page last got a session: a sign-out report says how long it lasted. */
 let sessionSince = 0
 /** A sign-in or a refresh gave this page a session now. */
@@ -253,10 +251,6 @@ export async function api<K extends ApiOperation>(operation: K, ...args: Optiona
   } catch (rawError) {
     throw toClientError(rawError)
   }
-}
-
-export function isSessionEnded(error: unknown) {
-  return error instanceof ApiClientError && SESSION_ENDED.has(error.code)
 }
 
 async function redirectToLogin() {

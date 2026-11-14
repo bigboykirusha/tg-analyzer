@@ -20,7 +20,7 @@ export const OVERNIGHT_BOUNDARY_MS = 3 * 60 * 60 * 1000
 const LONG_SILENCE_MS = 30 * 24 * 60 * 60 * 1000
 const MAX_SILENCES = 8
 /** Writing again after this long without an answer counts as a double text. */
-export const DOUBLE_TEXT_MS = 30 * 60 * 1000
+const DOUBLE_TEXT_MS = 30 * 60 * 1000
 
 /** Decides whether the message at `next` starts a new session after `previous`. */
 export type SessionSplit = (previous: number, next: number) => boolean
@@ -40,7 +40,7 @@ export function sessionSplit(localDay?: (ts: number) => string): SessionSplit {
 const bySilence = sessionSplit()
 
 /** Returns the points in chronological order without invalid timestamps; sorts only when needed. */
-export function chronological<T extends TimelinePoint>(timeline: readonly T[]): readonly T[] {
+function chronological<T extends TimelinePoint>(timeline: readonly T[]): readonly T[] {
   let sorted = true
   let valid = true
   for (let index = 0; index < timeline.length; index += 1) {
@@ -295,7 +295,7 @@ export function computeHabits(
 }
 
 /** A question nobody answers for this long counts as left alone; a night's sleep does not. */
-export const QUESTION_PATIENCE_MS = 12 * 60 * 60 * 1000
+const QUESTION_PATIENCE_MS = 12 * 60 * 60 * 1000
 
 /**
  * Questions left without an answer. A run of questions from one side counts

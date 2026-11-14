@@ -655,10 +655,8 @@
   --text-body: 400 16px/24px var(--font-sans);
   --text-label: 500 14px/20px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
-  /* Bare sizes for what is not a line of text: avatar initials, emoji. */
-  --size-h2: 24px;
+  /* Bare sizes for what is not a line of text: avatar initials. */
   --size-label: 14px;
-  --emoji-size: var(--size-h2);
   --tracking-display: -0.05em;
   --tracking-figure: -0.045em;
   --tracking-h1: -0.035em;
@@ -733,7 +731,6 @@
     --text-h3: 500 20px/28px var(--font-sans);
     --brand-mark-size: 28px;
     --brand-word: 600 18px/24px var(--font-sans);
-    --size-h2: 28px;
     --page-top: var(--space-12);
     --page-gap: var(--space-10);
     --page-bottom: var(--space-16);

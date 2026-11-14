@@ -81,7 +81,7 @@ function regionAfterVowelThenConsonant(word: string, from: number) {
   return word.length
 }
 
-export function stemRussian(word: string): string {
+function stemRussian(word: string): string {
   let rv = word.length
   for (let index = 0; index < word.length; index += 1) {
     if (RU_VOWELS.has(word[index]!)) {
@@ -123,7 +123,7 @@ export function stemRussian(word: string): string {
 }
 
 /** Plural and possessive endings only: «friends» and «friend» meet, «news» stays. */
-export function stemEnglish(word: string): string {
+function stemEnglish(word: string): string {
   if (word.length <= 3) return word
   if (word.endsWith("'s")) return word.slice(0, -2)
   if (word.endsWith('ies') && word.length > 4) return `${word.slice(0, -3)}y`

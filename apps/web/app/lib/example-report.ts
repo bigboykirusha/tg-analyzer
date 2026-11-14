@@ -125,7 +125,7 @@ function createRandom(seed: number) {
   }
 }
 
-export const EXAMPLE_CHAT_ID = 'example'
+const EXAMPLE_CHAT_ID = 'example'
 
 export function buildExampleReport(partnerName: string, locale: 'ru' | 'en' = 'ru'): ReportDto {
   const random = createRandom(42)

@@ -44,7 +44,7 @@ const kindOf = (b) => {
   if (/btn--(primary|poster)(?![\w-])/.test(c)) return 'primary'
   if (/btn--(secondary|tinted|plain|poster-soft|danger)(?![\w-])/.test(c)) return 'secondary'
   if (/icon-btn/.test(c)) return 'icon'
-  if (/filters__item|segmented__item|select__addon/.test(c)) return 'segmented'
+  if (/filters__item|select__addon/.test(c)) return 'segmented'
   return `other(${c})`
 }
 // A top-only or bottom-only radius is the same radius.

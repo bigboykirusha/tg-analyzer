@@ -116,7 +116,7 @@ onMounted(() => {
     <div v-else class="page">
       <header class="home__hello">
         <h1 class="t-h1">{{ t('dashboard.reportsTitle') }}</h1>
-        <p class="t-lede">{{ t('home.greeting.lede') }}</p>
+        <p class="t-lede">{{ t('dashboard.lede') }}</p>
       </header>
 
       <HomeBotPrompt />
@@ -187,12 +187,6 @@ onMounted(() => {
 }
 
 @media (min-width: 641px) {
-  .home__reports {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 901px) {
   .home__reports {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

@@ -7,11 +7,11 @@
  */
 import { telegramHueIndex } from '@tg-analyzer/shared'
 
-export const HUES = ['yellow', 'orange', 'violet', 'green', 'teal', 'blue', 'pink'] as const
+const HUES = ['yellow', 'orange', 'violet', 'green', 'teal', 'blue', 'pink'] as const
 export type Hue = (typeof HUES)[number]
 
 /** 1–7, the index of `--avatar-N-bg`. Non-numeric seeds (a name, the example) fall back to a hash. */
-export function hueIndex(seed: string | number | null | undefined): number {
+function hueIndex(seed: string | number | null | undefined): number {
   return telegramHueIndex(seed)
 }
 
