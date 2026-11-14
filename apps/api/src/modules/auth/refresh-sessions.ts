@@ -29,8 +29,12 @@ export async function createRefreshSession(userId: string, familyId = randomUUID
   return created
 }
 
+/** Why a token was refused: logged, so a sign-out on someone's phone can be explained from the server's side. */
+export type RotationRefusal = 'unknown' | 'mismatch' | 'revoked' | 'expired' | 'successor_gone'
+
 export type RotationResult =
-  { status: 'rotated' | 'grace' | 'forked'; session: RefreshSessionRow } | { status: 'invalid' }
+  | { status: 'rotated' | 'grace' | 'forked'; session: RefreshSessionRow }
+  | { status: 'invalid'; reason: RotationRefusal }
 
 export function rotateRefreshSession(tokenId: string, userId: string, familyId: string): Promise<RotationResult> {
   return db.transaction(async (tx) => {
@@ -66,16 +70,11 @@ export function rotateRefreshSession(tokenId: string, userId: string, familyId: 
     }
 
     const current = await tx.query.refreshSessions.findFirst({ where: eq(schema.refreshSessions.tokenId, tokenId) })
-    if (
-      !current ||
-      current.userId !== userId ||
-      current.familyId !== familyId ||
-      current.revokedAt ||
-      current.expiresAt <= now ||
-      !current.replacedByTokenId
-    ) {
-      return { status: 'invalid' }
-    }
+    if (!current) return { status: 'invalid', reason: 'unknown' }
+    if (current.userId !== userId || current.familyId !== familyId) return { status: 'invalid', reason: 'mismatch' }
+    if (current.revokedAt) return { status: 'invalid', reason: 'revoked' }
+    // Not rotated, yet the update above missed it: only its expiry is left to explain it.
+    if (current.expiresAt <= now || !current.replacedByTokenId) return { status: 'invalid', reason: 'expired' }
 
     const successor = await tx.query.refreshSessions.findFirst({
       where: and(
@@ -84,7 +83,7 @@ export function rotateRefreshSession(tokenId: string, userId: string, familyId: 
         gt(schema.refreshSessions.expiresAt, now),
       ),
     })
-    if (!successor) return { status: 'invalid' }
+    if (!successor) return { status: 'invalid', reason: 'successor_gone' }
 
     // A concurrent request (two tabs) or a lost answer: the successor is this holder's own next token.
     const inGrace = Boolean(current.graceUntil && current.graceUntil >= now)

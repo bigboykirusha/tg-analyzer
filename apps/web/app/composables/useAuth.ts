@@ -1,5 +1,5 @@
 import type { AuthSuccessResponse, UpdateProfileBody, VerifyCodeResponse } from '@tg-analyzer/shared'
-import { api, refreshSession } from './useApi'
+import { api, markSessionStart, refreshSession } from './useApi'
 
 let restoring: Promise<boolean> | null = null
 
@@ -27,13 +27,17 @@ export function useAuth() {
 
   async function verifyCode(body: { phone: string; code: string; phoneCodeHash: string }): Promise<VerifyCodeResponse> {
     const result = await api('POST /api/v1/auth/verify-code', { body })
-    if ('accessToken' in result) auth.signIn(result)
+    if ('accessToken' in result) {
+      auth.signIn(result)
+      markSessionStart()
+    }
     return result
   }
 
   async function verifyPassword(body: { tempToken: string; password: string }): Promise<AuthSuccessResponse> {
     const result = await api('POST /api/v1/auth/verify-password', { body })
     auth.signIn(result)
+    markSessionStart()
     return result
   }
 

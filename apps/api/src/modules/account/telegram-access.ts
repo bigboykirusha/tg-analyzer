@@ -7,7 +7,14 @@ import {
   type TelegramAccountApi,
   type WithSessionOptions,
 } from '../../telegram'
+import { logger } from '../../lib/logger'
 import { deactivateTelegramSession, getTelegramSession } from './telegram-sessions'
+
+/** Telegram's error code behind a revoked session (AUTH_KEY_UNREGISTERED, SESSION_REVOKED…), never anything secret. */
+function telegramReason(error: TelegramSessionRevokedError) {
+  const cause = (error as { cause?: { errorMessage?: unknown; message?: unknown } }).cause
+  return String(cause?.errorMessage ?? cause?.message ?? error.message).slice(0, 80)
+}
 
 export const telegramReauthRequired = () =>
   new ApiError(401, 'TELEGRAM_REAUTH_REQUIRED', 'Telegram session expired, please sign in again')
@@ -28,6 +35,9 @@ export async function withUserTelegram<T>(
     return await telegram.withSession(userId, session, work, options)
   } catch (error) {
     if (error instanceof TelegramSessionRevokedError) {
+      // Telegram ended the authorization: the site then asks to sign in again. Said in the log with Telegram's own
+      // reason, so «it signed me out» can be told apart from a refused refresh cookie (14.11).
+      logger.warn({ userId, telegramError: telegramReason(error) }, 'telegram session lost')
       await deactivateTelegramSession(userId)
       throw telegramReauthRequired()
     }

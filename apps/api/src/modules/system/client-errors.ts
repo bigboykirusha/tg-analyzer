@@ -8,7 +8,8 @@ export const CLIENT_ERROR_BODY_LIMIT = 6 * 1024
 export const CLIENT_ERROR_RATE_LIMIT_MAX = 30
 
 const clientErrorBodySchema = z.object({
-  kind: z.enum(['vue', 'app', 'window', 'promise']),
+  /** `session`: not an error but the browser saying why it was signed out (useApi), to explain it from the log. */
+  kind: z.enum(['vue', 'app', 'window', 'promise', 'session']),
   route: z.string().max(120),
   message: z.string().min(1).max(300),
   stack: z.string().max(2000).default(''),
@@ -54,6 +55,10 @@ export const clientErrorRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const parsed = parse(clientErrorBodySchema, request.body)
       const report = { ...parsed, message: scrubClientText(parsed.message), stack: scrubClientText(parsed.stack) }
+      if (parsed.kind === 'session') {
+        request.log.warn({ event: 'session_ended', requestId: request.id, session: report }, 'session_ended')
+        return reply.status(204).send()
+      }
       request.log.error({ event: 'client_error', requestId: request.id, clientError: report }, 'client_error')
       recordError('client')
       return reply.status(204).send()

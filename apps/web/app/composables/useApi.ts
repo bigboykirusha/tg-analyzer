@@ -10,6 +10,7 @@ import {
   type AuthSuccessResponse,
 } from '@tg-analyzer/shared'
 import { FetchError, ofetch } from 'ofetch'
+import { SIGNED_IN_HINT } from '../stores/auth'
 
 /** A failed API call with the server's machine-readable error code. */
 export class ApiClientError extends Error {
@@ -44,6 +45,53 @@ function toClientError(error: unknown): ApiClientError {
 }
 
 const SESSION_ENDED: ReadonlySet<string> = new Set(['AUTH_REFRESH_INVALID'])
+
+/** When this page last got a session: a sign-out report says how long it lasted. */
+let sessionSince = 0
+/** A sign-in or a refresh gave this page a session now. */
+export function markSessionStart() {
+  sessionSince = Date.now()
+}
+
+/**
+ * The browser says in the server's log why it was signed out (POST /api/v1/client-errors, kind `session`): whether
+ * it happened while in use or at load, in Safari or the installed app, visible or in the background, how long the
+ * session had lasted. No cookies, no tokens, nothing personal. Only for a browser that was signed in (the session or
+ * the signed-in hint), so an anonymous visit to a cabinet page says nothing (14.11, Safari sign-outs).
+ */
+function reportSessionEnd(cause: string, wasSignedIn: boolean) {
+  if (!import.meta.client) return
+  const hint = document.cookie.includes(`${SIGNED_IN_HINT}=1`)
+  if (!wasSignedIn && !hint) return
+  const standalone =
+    window.matchMedia?.('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone
+  const message = [
+    cause,
+    `during=${wasSignedIn ? 'use' : 'load'}`,
+    `hint=${hint}`,
+    `standalone=${Boolean(standalone)}`,
+    `visible=${document.visibilityState}`,
+    `pageAge=${Math.round(performance.now() / 1000)}s`,
+    `session=${sessionSince ? Math.round((Date.now() - sessionSince) / 1000) : -1}s`,
+  ].join(' · ')
+  try {
+    void fetch('/api/v1/client-errors', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        kind: 'session',
+        // The path with ids cut out (`/chat/:id`): a report never names a chat.
+        route: location.pathname.replace(/\/-?\d+(?=\/|$)/g, '/:id').slice(0, 120),
+        message,
+        ua: navigator.userAgent.slice(0, 200),
+      }),
+      keepalive: true,
+      credentials: 'omit',
+    }).catch(() => undefined)
+  } catch {
+    // Never let a report break signing out.
+  }
+}
 
 // ─── Access token refresh ──────────────────────────────────────────────────
 
@@ -105,10 +153,22 @@ export function refreshSession(): Promise<AuthSuccessResponse | null> {
     if (auth.accessToken && auth.accessToken !== tokenBefore) {
       return { accessToken: auth.accessToken, user: auth.user! }
     }
-    const result = await requestRefresh()
+    const wasSignedIn = auth.status === 'authenticated'
+    let result: AuthSuccessResponse | null
+    try {
+      result = await requestRefresh()
+    } catch (error) {
+      reportSessionEnd(`refresh failed: ${(error as ApiClientError).code ?? 'unknown'}`, wasSignedIn)
+      throw error
+    }
     assertSession()
-    if (result) auth.signIn(result)
-    else auth.signOut()
+    if (result) {
+      auth.signIn(result)
+      sessionSince = Date.now()
+    } else {
+      reportSessionEnd('refresh refused (401)', wasSignedIn)
+      auth.signOut()
+    }
     return result
   }
 

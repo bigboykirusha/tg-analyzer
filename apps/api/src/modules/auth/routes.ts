@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken'
 import type {
   ApiErrorCode,
   AuthSuccessResponse,
@@ -114,6 +115,20 @@ function readRefreshClaims(request: FastifyRequest): TokenClaims | null {
   }
 }
 
+/** What a refresh came with, for the log: cookie names (never values) and the browser. */
+function refreshContext(request: FastifyRequest) {
+  return {
+    cookies: Object.keys(request.cookies ?? {}),
+    userAgent: String(request.headers['user-agent'] ?? '').slice(0, 160),
+  }
+}
+
+/** How old the presented refresh token is, in seconds (read without trusting it, only for the log). */
+function tokenAge(token: string) {
+  const iat = (jwt.decode(token) as { iat?: number } | null)?.iat
+  return typeof iat === 'number' ? Math.round(Date.now() / 1000 - iat) : null
+}
+
 function validTimeZone(value: string) {
   try {
     return Intl.DateTimeFormat('en-US', { timeZone: value }).resolvedOptions().timeZone
@@ -183,22 +198,34 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   })
 
   app.post('/refresh', { config: REFRESH_RATE_LIMIT }, async (request, reply): Promise<AuthSuccessResponse> => {
-    const fail = () => {
-      clearRefreshCookie(reply)
+    /**
+     * A refused refresh says why in the log (never the token): a sign-out on someone's phone is then a log line, not
+     * a guess. It does not wipe the cookie: on a phone a request with a stale or missing cookie can race one that
+     * already brought a fresh cookie, and a wipe would delete the fresh one (14.11). «Выйти» still clears it.
+     */
+    const fail = (reason: string, extra: Record<string, unknown> = {}) => {
+      request.log.warn({ reason, ...refreshContext(request), ...extra }, 'refresh refused')
       return unauthorized('AUTH_REFRESH_INVALID', 'Session expired, please sign in again')
     }
 
+    const token = request.cookies[REFRESH_COOKIE_NAME]
+    if (!token) throw fail('no_cookie')
     const claims = readRefreshClaims(request)
-    if (!claims?.sessionId) throw fail()
+    if (!claims?.sessionId) throw fail('bad_token')
 
     const rotation = await rotateRefreshSession(claims.sessionId, claims.sub, claims.familyId)
-    if (!('session' in rotation)) throw fail()
-    if (rotation.status === 'forked') {
-      request.log.info({ userId: claims.sub }, 'rotated refresh token came back from a second holder; branched')
+    if (!('session' in rotation)) throw fail(rotation.reason, { userId: claims.sub, tokenAgeSec: tokenAge(token) })
+    if (rotation.status !== 'rotated') {
+      request.log.info(
+        { userId: claims.sub, status: rotation.status, tokenAgeSec: tokenAge(token), ...refreshContext(request) },
+        rotation.status === 'forked'
+          ? 'rotated refresh token came back from a second holder; branched'
+          : 'rotated refresh token came back; its successor handed out again',
+      )
     }
 
     const user = await findUser(claims.sub)
-    if (!user) throw fail()
+    if (!user) throw fail('no_user', { userId: claims.sub })
 
     setRefreshCookie(reply, rotation.session)
     return {
