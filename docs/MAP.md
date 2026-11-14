@@ -1,6 +1,6 @@
 # Карта кода
 
-Где что лежит — чтобы менять интерфейс, не читая весь репозиторий. Срез на 14.11.2026 (main, 27afc86).
+Где что лежит — чтобы менять интерфейс, не читая весь репозиторий. Срез на 14.11.2026 (main, после мастер-прогона).
 
 ## Поиск по коду
 
@@ -23,7 +23,7 @@
 
 ## Экраны → компоненты
 
-Срез на 14.11.2026 (main, 27afc86).
+Срез на 14.11.2026 (main, после мастер-прогона).
 
 | Экран                   | Страница                                                           | Из чего собран                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ----------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -39,7 +39,7 @@
 | Отчёт                   | `pages/chat/[id].vue`                                              | `ReportHeader`, `ReportMenu`, `ReportPoster`, `ReportChange`, `PrivateReport` / `GroupReport`, `ReportEnding`, `ReportStory`, `ShareDialog`, `ReportSkeleton`                                                                                                                                                                                                                                                                                    |
 | Отчёт: части и карточки | `components/report/*`                                              | `ReportPart`, `ReportSection`, `ReportSplit`, `ReportTiles`, `ReportFacts`, `ReportLine`; личный — `ReportBalance`, `ReportRelationship`, `ReportMatch`, `ReportTime`, `ReportDays`, `ReportRecords`, `ReportMilestones`, `ReportFormats`, `ReportVoice`, `ReportPodium`, `duel/*`, `ReportWords`, `ReportWordOfChat`, `ReportTopWords`, `ReportVocabulary`, `WordChips`, `ReportFavourites`, `ReportSideGroups`, `charts/*`; группа — `group/*` |
 | «Поделиться»            | `report/ShareDialog.vue`, `ShareLinkStep.vue`, `ShareQuizStep.vue` | `UiModalDialog` (второй шаг — «назад» слева, крестик справа)                                                                                                                                                                                                                                                                                                                                                                                     |
-| «Итоги»                 | `report/ReportStory.vue`, `StoryFrame.vue`                         | `composables/useStoryFrames.ts`, `useStoryGestures.ts`, `useCardImage.ts`                                                                                                                                                                                                                                                                                                                                                                        |
+| «Итоги»                 | `report/ReportStory.vue`, `StoryFrame.vue`                         | `composables/useStoryFrames.ts` (кадры из `useBalance`, `useStreak`, `useRecords`, `useFavouriteEmoji`, `useWordsFacts`, `useChatSpan`), `useStoryGestures.ts`, `useCardImage.ts`                                                                                                                                                                                                                                                                |
 | Гость по ссылке         | `pages/s/[token].vue`                                              | `share/GuestReport`, `PublicQuiz`, `ShareFallback`                                                                                                                                                                                                                                                                                                                                                                                               |
 | Статусы                 | `pages/offline.vue`, `error.vue`                                   | `StatusPage`                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Идущий разбор           | везде                                                              | `useAnalysis` (сокет + опрос), `useAnalysisView` (одна выкладка: процент, «дошли до», пульс прочитанного); телефон — `AnalysisPill` в листе, линия в `AppHeader` вне главной; ПК — `AnalysisTile`, `AnalysisLive` в `AppSidebar`; подробности — `AnalysisDetails` в `ReportActionsHost`                                                                                                                                                          |
@@ -57,12 +57,9 @@
 - **Отчёт:** личный / группа / гость / пример; есть новые сообщения (кольцо); обновляется; блоки без данных скрыты (пороги в `packages/shared`).
 - **Темы и ширины:** светлая/тёмная; 360–430, 640, 900, 1200, 1440; установленное приложение (safe area, полоса «домой»).
 
-## Кандидаты в чистку (найдено 14.11, не трогалось)
+## Чистка 14.11 (мастер-прогон)
 
-- `components/ui/PageSection.vue` нигде не используется, хотя CLAUDE.md описывает страницы как `UiPageSection`: либо вернуть в страницы, либо удалить и поправить правило.
-- `isSessionEnded` в `composables/useApi.ts` больше никто не вызывает.
-- `tests/e2e/responsive.spec.ts` проверяет `.picker-tools .segmented` и `.segment` — таких классов нет, проверка пустая.
-- Подписи и тексты «TG Analyzer» — до решения о переименовании (TGDuet).
+Удалены `ui/PageSection.vue`, `isSessionEnded`, зависимость `@fastify/jwt`, мёртвые классы и токены (`.segmented__item`, `.icon-lg`, `.t-emoji`, `--emoji-size`, `--size-h2`), пустые проверки `responsive.spec.ts`; функции, нужные только своему файлу, больше не экспортируются. Одна строка «сколько и за какие месяцы» — `useChatSpan` (постер, превью ссылки, гость, обложка «Итогов»). Остался кандидат: подписи «TG Analyzer» — до решения о переименовании.
 
 Тексты — `apps/web/app/i18n/en.ts` (ключи) и `ru.ts`.
 
