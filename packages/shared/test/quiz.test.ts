@@ -110,3 +110,13 @@ test('numeric questions come before the who-it-was ones', () => {
   if (firstFact >= 0)
     assert.ok(ids.slice(firstFact).every((id) => ['firstMessage', 'pauseBreaker', 'longestVoice'].includes(id)))
 })
+
+test('a pause whose breaker is unknown (null) asks no question', () => {
+  const report = balancedChat({ firstOutgoing: true, breakerOutgoing: false, longestVoiceOutgoing: true })
+  assert.ok(report.facts.longestGap)
+  ;(report.facts.longestGap as { brokenByMe?: boolean | null }).brokenByMe = null
+  assert.equal(
+    deriveQuiz(report).some((question) => question.id === 'pauseBreaker'),
+    false,
+  )
+})

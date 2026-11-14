@@ -29,7 +29,8 @@ const answer = computed(() =>
 <template>
   <ReportSection v-if="words.length >= MIN" :icon="BarChart2" :title="t('report.topWords.title')" :answer="answer">
     <div class="podium">
-      <p v-for="word in podium" :key="word.value" class="podium__item">
+      <p v-for="(word, index) in podium" :key="word.value" class="podium__item">
+        <span class="t-label podium__place" aria-hidden="true">{{ index + 1 }}</span>
         <span class="t-h3 podium__word">{{ word.value }}</span>
         <span class="t-label podium__count">{{ formatNumber(word.count) }}</span>
       </p>
@@ -65,6 +66,31 @@ const answer = computed(() =>
   white-space: nowrap;
 }
 
+/* A phone's card has ~88px a word: the top three become full-width rows (place, the word, the count at the right). */
+@media (max-width: 640px) {
+  .podium {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+
+  .podium__item {
+    display: grid;
+    grid-template-columns: var(--space-5) minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  .podium__item .podium__place {
+    display: inline;
+  }
+}
+
+/* The place is only for the phone's rows; the columns keep their own order. */
+.podium__place {
+  display: none;
+}
+
+.podium__place,
 .podium__count,
 .rest__place,
 .rest__count {

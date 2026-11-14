@@ -33,6 +33,8 @@ onMounted(async () => {
   } catch {
     // Offline: the sign-in below says so too.
   }
+  // Only a refused signature is «the button is outdated»; a network failure or a rate limit is not.
+  let refused = false
   if (fields.hash) {
     try {
       const result = await api('POST /api/v1/auth/telegram-login', { body: { fields } })
@@ -41,10 +43,11 @@ onMounted(async () => {
       return await navigateTo(to, { replace: true })
     } catch (error) {
       if (!(error instanceof ApiClientError)) throw error
+      refused = error.code === 'AUTH_TELEGRAM_LOGIN_INVALID'
     }
   }
   // A signature that did not hold (an old message, a forwarded link): the sign-in by number says why.
-  await navigateTo(fields.hash ? '/login?from=bot' : '/login', { replace: true })
+  await navigateTo(refused ? '/login?from=bot' : '/login', { replace: true })
 })
 </script>
 

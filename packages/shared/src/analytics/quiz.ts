@@ -111,7 +111,7 @@ function deriveFacts(report: ChatReport): QuizQuestionDto[] {
   const first = report.milestones?.find((milestone) => milestone.index === 1)
   if (first) facts.push(fact('firstMessage', first.mine))
   const gap = report.facts.longestGap
-  if (gap && gap.brokenByMe !== undefined) facts.push(fact('pauseBreaker', gap.brokenByMe))
+  if (gap && gap.brokenByMe != null) facts.push(fact('pauseBreaker', gap.brokenByMe))
   const longest = report.voice?.voice.longest
   if (longest && report.voice!.voice.count.mine > 0 && report.voice!.voice.count.theirs > 0) {
     facts.push(fact('longestVoice', longest.mine))

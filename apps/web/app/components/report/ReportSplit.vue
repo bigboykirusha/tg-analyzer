@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isEven, type ReportDto } from '@tg-analyzer/shared'
+import type { ReportDto } from '@tg-analyzer/shared'
 import { Scale } from '../../lib/icons'
 
 /**
@@ -17,7 +17,7 @@ const split = computed(() => {
   const total = sent + received
   if (!total) return null
   const mine = Math.round((100 * sent) / total)
-  return { mine, theirs: 100 - mine, even: isEven(sent, received), sent, received }
+  return { mine, theirs: 100 - mine, sent, received }
 })
 
 const shown = computed(() => {

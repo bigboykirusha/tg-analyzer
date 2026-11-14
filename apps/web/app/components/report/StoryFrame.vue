@@ -17,6 +17,36 @@ const props = defineProps<{ frame: StoryFrameModel; who: StoryWho; still?: boole
  * The figure as lines, never cut inside a word: «190 дней» stands as «190» over «дней», a name as its words.
  * `chars` is the longest line's length, the size the figure is fitted by.
  */
+/**
+ * The width of a text in em of Onest 600 at the figure's tracking: digits and dashes are narrower than letters, capitals
+ * and emoji wider, quotes narrowest; the emoji's joiners and variation selectors take no room of their own.
+ */
+const widthOf = (text: string) =>
+  [...text].reduce((sum, char) => {
+    if (char === '‍' || char === '️') return sum
+    if (/\p{Extended_Pictographic}/u.test(char)) return sum + 1
+    if (/[\d–⁠]/u.test(char)) return sum + 0.5
+    if (/[«»"“”]/u.test(char)) return sum + 0.36
+    if (/\s/u.test(char)) return sum + 0.25
+    return sum + (/\p{Lu}/u.test(char) ? 0.7 : 0.6)
+  }, 0)
+
+/** A name as at most two lines of whole words, split where the wider of the two lines is the narrowest. */
+function balancedLines(words: string[]): string[] {
+  if (words.length < 2) return words
+  let best: string[] = [words.join(' ')]
+  let bestWidth = widthOf(best[0]!)
+  for (let at = 1; at < words.length; at++) {
+    const pair = [words.slice(0, at).join(' '), words.slice(at).join(' ')]
+    const width = Math.max(...pair.map(widthOf))
+    if (width < bestWidth) {
+      best = pair
+      bestWidth = width
+    }
+  }
+  return best
+}
+
 const figure = computed(() => {
   const frame = props.frame
   const text = frame.kind === 'cover' ? frame.title : (frame.figure ?? '')
@@ -26,7 +56,7 @@ const figure = computed(() => {
   const stacked = frame.kind === 'streak' || frame.kind === 'record' || frame.kind === 'balance'
   const lines =
     frame.kind === 'cover'
-      ? words
+      ? balancedLines(words)
       : stacked && words.length === 2
         ? words
         : frame.kind === 'balance' && words.length === 3
@@ -34,10 +64,7 @@ const figure = computed(() => {
           : stacked && words.length > 2 && words.length % 2 === 0
             ? Array.from({ length: words.length / 2 }, (_, index) => `${words[index * 2]} ${words[index * 2 + 1]}`)
             : [text]
-  // The width of a line in em of Onest 600 at the figure's tracking: digits, dashes and quotes are narrower than letters.
-  const em = (char: string) =>
-    /[\d–⁠]/u.test(char) ? 0.5 : /[«»"“”]/u.test(char) ? 0.36 : /\s/u.test(char) ? 0.25 : 0.6
-  const chars = Math.max(1, ...lines.map((line) => [...line].reduce((sum, char) => sum + em(char), 0)))
+  const chars = Math.max(1, ...lines.map(widthOf))
   return { lines, chars, max: lines.length > 1 ? '30cqw' : '44cqw' }
 })
 </script>
@@ -66,7 +93,7 @@ const figure = computed(() => {
         <dl v-if="frame.kind === 'summary'" class="visual facts">
           <div v-for="fact in frame.facts" :key="fact.key" class="facts__item">
             <dt class="facts__label">{{ fact.label }}</dt>
-            <dd class="facts__value">{{ fact.value }}</dd>
+            <dd class="facts__value" :style="{ '--chars': Math.max(1, widthOf(fact.value)) }">{{ fact.value }}</dd>
           </div>
         </dl>
       </template>
@@ -418,6 +445,9 @@ const figure = computed(() => {
 
 .facts__value {
   font: var(--f-fact);
+  /* Fitted to its column (about 42cqw of the 88cqw body) by its length, like the figure: a long word is smaller, not cut. */
+  --fit: min(9cqw, calc(42cqw / var(--chars, 1)));
+  font-size: var(--fit);
   letter-spacing: var(--tracking-display);
   white-space: nowrap;
 }

@@ -13,10 +13,11 @@ export function useFavouriteEmoji(data: () => ReportDto) {
   const top = computed(() => favourites.value.topEmoji)
   const answer = computed(() => {
     const { emoji, topEmoji } = favourites.value
+    // A group says it as its own card does (`GroupWords`): the chat's most frequent emoji, never «both of you».
+    if (data().report.group) return topEmoji[0] ? t('group.favouriteEmoji', { emoji: topEmoji[0].value }) : null
     const mine = emoji.mine?.value
     const theirs = emoji.theirs?.value
-    // In a group the other side is everyone else, not the group's name.
-    const name = data().report.group ? t('report.pulse.others') : data().summary.title
+    const name = data().summary.title
     if (mine && theirs)
       return mine === theirs
         ? t('report.favourites.same', { emoji: mine })

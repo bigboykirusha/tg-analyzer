@@ -25,6 +25,8 @@ interface Row {
   /** Each side's share of the bar, 0–100; for reply time the faster side gets the longer bar. */
   shareMine: number
   lead: 'mine' | 'theirs' | null
+  /** Whether a bigger value is a merit; «more unanswered questions» or «more double texts» score no point. */
+  scored: boolean
 }
 
 function row(
@@ -34,16 +36,19 @@ function row(
   theirs: number,
   format: typeof formatNumber = formatNumber,
   faster = false,
+  scored = true,
 ): Row | null {
   if (mine + theirs <= 0) return null
   const [a, b] = faster ? [theirs, mine] : [mine, theirs]
   const shareMine = Math.round((100 * a) / Math.max(1, a + b))
   const lead = isEven(a, b) ? null : a > b ? 'mine' : 'theirs'
-  return { key, label, mine: format(mine), theirs: format(theirs), shareMine, lead }
+  return { key, label, mine: format(mine), theirs: format(theirs), shareMine, lead, scored }
 }
 
-const counted = (key: string, label: string, count: { mine: number; theirs: number } | undefined) =>
-  count && count.mine + count.theirs >= MIN ? row(key, label, count.mine, count.theirs) : null
+const counted = (key: string, label: string, count: { mine: number; theirs: number } | undefined, scored = true) =>
+  count && count.mine + count.theirs >= MIN
+    ? row(key, label, count.mine, count.theirs, formatNumber, false, scored)
+    : null
 
 const groups = computed(() => {
   const { report } = props.data
@@ -64,7 +69,7 @@ const groups = computed(() => {
         lastWord === null
           ? null
           : row('lastWord', t('report.match.lastWord'), lastWord, 100 - lastWord, (value) => formatPercent(value)),
-        counted('double', t('report.match.doubleTexts'), habits?.doubleTexts),
+        counted('double', t('report.match.doubleTexts'), habits?.doubleTexts, false),
       ].filter((item): item is Row => item !== null),
     },
     {
@@ -75,7 +80,7 @@ const groups = computed(() => {
           ? row('speed', t('report.match.speed'), speed.mine.value, speed.theirs.value, formatDuration, true)
           : null,
         counted('questions', t('report.match.questions'), habits?.questionTurns),
-        counted('unanswered', t('report.match.unanswered'), habits?.unansweredQuestions),
+        counted('unanswered', t('report.match.unanswered'), habits?.unansweredQuestions, false),
       ].filter((item): item is Row => item !== null),
     },
     {
@@ -134,8 +139,8 @@ const decisive = computed(() =>
     .filter((group) => group.rows.length),
 )
 const tally = computed(() => ({
-  mine: rows.value.filter((item) => item.lead === 'mine').length,
-  theirs: rows.value.filter((item) => item.lead === 'theirs').length,
+  mine: rows.value.filter((item) => item.scored && item.lead === 'mine').length,
+  theirs: rows.value.filter((item) => item.scored && item.lead === 'theirs').length,
   even: rows.value.filter((item) => !item.lead).length,
 }))
 const evenNames = computed(() =>
@@ -144,15 +149,20 @@ const evenNames = computed(() =>
     .map((item) => item.label.toLocaleLowerCase())
     .join(', '),
 )
-/** The sheet's answer: who is ahead more often, or that it is even almost everywhere. */
+/**
+ * The sheet's answer, from the scoreboard's own counts: equal leads are «even»; «almost everywhere» only when
+ * the other side leads in at most one row and the leader in at least three; otherwise a plain «more often».
+ * Rows where more is no merit (unanswered questions, double texts) score nothing and are left out here.
+ */
 const answer = computed(() => {
-  const all = rows.value
-  if (all.length < 3) return null
-  const mine = all.filter((item) => item.lead === 'mine').length
-  const theirs = all.filter((item) => item.lead === 'theirs').length
-  const even = all.length - mine - theirs
-  if (even >= mine && even >= theirs) return t('report.match.answerEven')
-  return mine > theirs ? t('report.match.answerMine') : t('report.match.answerTheirs', { name: name.value })
+  if (rows.value.filter((item) => item.scored).length < 3) return null
+  const { mine, theirs } = tally.value
+  if (mine === theirs) return t('report.match.answerEven')
+  const mineLeads = mine > theirs
+  const [lead, other] = mineLeads ? [mine, theirs] : [theirs, mine]
+  const most = lead >= 3 && other <= 1
+  if (mineLeads) return t(most ? 'report.match.answerMostMine' : 'report.match.answerMine')
+  return t(most ? 'report.match.answerMostTheirs' : 'report.match.answerTheirs', { name: name.value })
 })
 </script>
 

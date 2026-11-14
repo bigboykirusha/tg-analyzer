@@ -58,6 +58,10 @@ export type StoryFrameModel =
       members: { id: string; name: string; share: string; role: string; self: boolean }[]
     })
 
+/** «22⁠–⁠01»: the window's two-digit hours, as the answer «с 22:00 до 01:00» says them, with no break at the dash. */
+const hourSpan = (window: { start: number; end: number }) =>
+  `${String(window.start).padStart(2, '0')}⁠–⁠${String(window.end).padStart(2, '0')}`
+
 /**
  * «Итоги» as data: the frames are the conclusions of the report's cards, with their words and numbers.
  * A private chat has eight (the cover, «Баланс», «Дней подряд», «Время», the longest conversation, «Слова»,
@@ -129,7 +133,7 @@ export function useStoryFrames(data: () => ReportDto) {
       kind: 'time',
       key: 'time',
       label: t('report.time.title'),
-      figure: `${window.start}⁠–⁠${window.end}`,
+      figure: hourSpan(window),
       title,
       hours: totals.map((value) => value / top),
       peak,
@@ -223,8 +227,7 @@ export function useStoryFrames(data: () => ReportDto) {
     const run = streakRun.value
     if (has('streak') && run) facts.push({ key: 'streak', label: t('report.main.streakTitle'), value: run.figure })
     const window = parseWindow(data().derived.availabilityProfile.peakWindow)
-    if (has('time') && window)
-      facts.push({ key: 'peak', label: t('story.summary.peak'), value: `${window.start}⁠–⁠${window.end}` })
+    if (has('time') && window) facts.push({ key: 'peak', label: t('story.summary.peak'), value: hourSpan(window) })
     const word = isGroup.value ? data().derived.words.group?.shared[0] : wordFacts.word.value
     if (has('words') && word) facts.push({ key: 'word', label: t('story.summary.word'), value: quote(word.value) })
     const top = emojiFacts.top.value[0]

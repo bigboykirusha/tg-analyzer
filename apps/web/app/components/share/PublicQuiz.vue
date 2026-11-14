@@ -151,6 +151,7 @@ const invitation = wave(4, 40)
               :right="value(current.unit, current.guest)"
               :left-name="quiz.author"
               :right-name="t('publicQuiz.me')"
+              :bar="current.id !== 'fastest'"
             />
           </div>
         </div>
