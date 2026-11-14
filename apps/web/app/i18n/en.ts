@@ -208,8 +208,6 @@ export const en = {
   'home.botLater': 'Not now',
   'home.firstTitle': 'Who shall we start with?',
   'home.firstLede': 'Analysis takes about a minute, longer for a long chat.',
-  'home.firstPickTitle': 'Best first report',
-  'home.firstPickWhy': 'Most messages this month',
   'dashboard.lede': 'What you have learned about your chats so far',
   'home.unanalysedAction': 'Analyse the chat “{name}”',
   'insight.days.few': '{count} days',

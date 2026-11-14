@@ -209,8 +209,6 @@ export const ru: Record<MessageKey, string> = {
   'home.botLater': 'Не сейчас',
   'home.firstTitle': 'С кого начнём?',
   'home.firstLede': 'Разбор занимает около минуты, для длинной переписки — дольше.',
-  'home.firstPickTitle': 'Лучший первый отчёт',
-  'home.firstPickWhy': 'Больше всего переписки в этом месяце',
   'dashboard.lede': 'Что вы уже узнали о своих переписках',
   'home.unanalysedAction': 'Разобрать чат «{name}»',
   'insight.days.few': '{count} дня',
