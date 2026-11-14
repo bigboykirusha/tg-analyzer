@@ -158,7 +158,7 @@ test('client-rendered pages give feedback before the app JavaScript loads', asyn
     const page = await context.newPage()
     for (const path of ['/example', '/dashboard']) {
       await page.goto(new URL(path, baseURL).toString())
-      await expect(page.getByRole('progressbar', { name: 'TG Analyzer', exact: true })).toBeVisible()
+      await expect(page.getByRole('progressbar', { name: 'TGDuet', exact: true })).toBeVisible()
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
       expect(await noHorizontalScroll(page)).toBe(true)
     }

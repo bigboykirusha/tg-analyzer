@@ -15,11 +15,11 @@ withDefaults(defineProps<{ to?: string; bare?: boolean; current?: boolean }>(), 
     :to="to"
     class="brand-link"
     :class="{ 'brand-link--bare': bare }"
-    aria-label="TG Analyzer"
+    aria-label="TGDuet"
     :aria-current="current ? 'page' : undefined"
   >
     <BrandMark class="brand-link__mark" />
-    <span v-if="!bare" class="brand-link__name brand-wordmark" aria-hidden="true">TG Analyzer</span>
+    <span v-if="!bare" class="brand-link__name brand-wordmark" aria-hidden="true">TGDuet</span>
   </NuxtLink>
 </template>
 

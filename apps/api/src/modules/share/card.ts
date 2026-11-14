@@ -179,7 +179,7 @@ function card(share: PublicShareDto, lang: Lang) {
     [
       el('div', { position: 'absolute', left: 64, top: 56, display: 'flex', alignItems: 'center', opacity: 0.8 }, [
         brandMark(),
-        el('div', { marginLeft: 14, fontSize: 28, fontWeight: 600, letterSpacing: -0.5 }, 'TG Analyzer'),
+        el('div', { marginLeft: 14, fontSize: 28, fontWeight: 600, letterSpacing: -0.5 }, 'TGDuet'),
       ]),
       el(
         'div',

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" role="img" aria-labelledby="title">
-  <title id="title">TG Analyzer</title>
+  <title id="title">TGDuet</title>
   <rect width="28" height="28" rx="8" fill="#1d1d1f"/>
   <g transform="translate(14 14) scale(0.82) translate(-14 -14)">
     <rect x="1.6" y="9.50" width="2.6" height="4.5" rx="1.3" fill="#ffffff"/>

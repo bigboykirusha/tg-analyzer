@@ -115,7 +115,7 @@ export class LiveTelegramGateway implements TelegramGateway {
     return new TelegramClient(new StringSession(session), this.credentials.apiId, this.credentials.apiHash, {
       connectionRetries: 3,
       baseLogger: new Logger(LogLevel.ERROR),
-      deviceModel: 'TG Analyzer',
+      deviceModel: 'TGDuet',
       appVersion: '1.0',
     })
   }

@@ -171,7 +171,7 @@ const figure = computed(() => {
         </ul>
       </template>
     </div>
-    <p v-if="still" class="frame__mark"><BrandMark />TG Analyzer</p>
+    <p v-if="still" class="frame__mark"><BrandMark />TGDuet</p>
   </div>
 </template>
 

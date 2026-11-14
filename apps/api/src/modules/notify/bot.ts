@@ -172,7 +172,7 @@ export async function handleBotUpdate(update: BotUpdate) {
         : 'Сначала войдите на сайте через Telegram, потом снова нажмите Start.',
       site
         ? known
-          ? { text: 'Открыть TG Analyzer', url: `${site}/dashboard`, signIn: true }
+          ? { text: 'Открыть TGDuet', url: `${site}/dashboard`, signIn: true }
           : { text: 'Войти', url: `${site}/login` }
         : undefined,
     )

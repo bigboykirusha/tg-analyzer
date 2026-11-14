@@ -1,6 +1,6 @@
 {
-  "name": "TG Analyzer",
-  "short_name": "TG Analyzer",
+  "name": "TGDuet",
+  "short_name": "TGDuet",
   "description": "Статистика переписки в Telegram: кто пишет первым, кто быстрее отвечает и когда вы ближе всего. Тексты сообщений не сохраняются.",
   "lang": "ru",
   "start_url": "/dashboard",

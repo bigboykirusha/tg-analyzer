@@ -41,7 +41,7 @@ useHead({
         JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'WebApplication',
-          name: 'TG Analyzer',
+          name: 'TGDuet',
           url: String(runtimeConfig.public.siteUrl ?? ''),
           description: t('seo.description'),
           applicationCategory: 'UtilitiesApplication',

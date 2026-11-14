@@ -80,7 +80,7 @@ export async function sendAlert(key: string, text: string) {
   try {
     if (!(await firstInWindow(key))) return false
     logger.error({ event: 'alert', alertKey: key }, text)
-    await deliver(`TG Analyzer: ${text}`)
+    await deliver(`TGDuet: ${text}`)
     return true
   } catch (error) {
     logger.warn({ err: error }, 'alert failed')

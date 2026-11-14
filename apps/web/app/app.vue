@@ -26,7 +26,7 @@ const pageUrl = computed(() => `${siteUrl.value}${route.path}`)
 
 useHead({
   htmlAttrs: { lang: () => locale.value },
-  titleTemplate: (title) => (title ? `${title} · TG Analyzer` : 'TG Analyzer'),
+  titleTemplate: (title) => (title ? `${title} · TGDuet` : 'TGDuet'),
   link: [
     { rel: 'canonical', href: () => pageUrl.value },
     { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' },
@@ -46,7 +46,7 @@ useHead({
 useSeoMeta({
   description: () => t('seo.description'),
   ogType: 'website',
-  ogSiteName: 'TG Analyzer',
+  ogSiteName: 'TGDuet',
   ogLocale: () => (locale.value === 'ru' ? 'ru_RU' : 'en_US'),
   ogUrl: () => pageUrl.value,
   ogImage: () => `${siteUrl.value}/og-image.png`,
