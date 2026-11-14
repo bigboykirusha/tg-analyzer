@@ -10,6 +10,9 @@
  * `grow`: the bars rise out of the middle line, left to right, when the pulse appears (and again whenever
  * `grow` turns on) — the product's one signature motion. The wave takes as long whatever the count. Still under
  * reduced motion.
+ * `read` (0–1): an analysis still reading. The data is what has been read so far; it takes that share of the columns
+ * at the right (the history is read from today back), the rest are dots of what is still to come. The bars ease
+ * into their new heights as the reading goes on.
  */
 const props = withDefaults(
   defineProps<{
@@ -20,8 +23,9 @@ const props = withDefaults(
     pitch?: number
     label?: string
     grow?: boolean
+    read?: number
   }>(),
-  { height: 32, bars: 40, pitch: 0, label: '', grow: false },
+  { height: 32, bars: 40, pitch: 0, label: '', grow: false, read: undefined },
 )
 
 const root = ref<HTMLElement>()
@@ -38,11 +42,12 @@ onMounted(() => {
 onBeforeUnmount(() => observer?.disconnect())
 const count = computed(() => fitted.value || props.bars)
 
-const columns = computed(() => {
-  const source = props.data.length ? props.data : [{ sent: 0, received: 0 }]
-  // Always `count` columns: a long history is folded, a short one is stretched, so every pulse has one texture.
-  const bars = count.value
+type Column = { sent: number; received: number }
+
+/** Always `bars` columns: a long history is folded, a short one is stretched, so every pulse has one texture. */
+function fold(source: readonly Column[], bars: number): Column[] {
   const out = Array.from({ length: bars }, () => ({ sent: 0, received: 0 }))
+  if (!bars) return out
   if (source.length >= bars)
     source.forEach((item, index) => {
       const slot = out[Math.min(bars - 1, Math.floor((index * bars) / source.length))]!
@@ -59,10 +64,20 @@ const columns = computed(() => {
       slot.sent = low.sent + (high.sent - low.sent) * mix
       slot.received = low.received + (high.received - low.received) * mix
     })
+  return out
+}
+
+const reading = computed(() => props.read !== undefined)
+const columns = computed(() => {
+  const source = props.data.length ? props.data : [{ sent: 0, received: 0 }]
+  const bars = count.value
+  const drawn = reading.value ? Math.min(bars, Math.max(props.read! > 0 ? 1 : 0, Math.round(bars * props.read!))) : bars
+  const out = fold(source, drawn)
   const peak = Math.max(1, ...out.map((item) => Math.max(item.sent, item.received)))
   // At least a dot, so an empty week reads as a quiet one rather than a gap.
   const scale = (value: number) => `${Math.max(8, Math.round(Math.sqrt(value / peak) * 100))}%`
-  return out.map((item) => ({ up: scale(item.sent), down: scale(item.received) }))
+  const ahead = Array.from({ length: bars - drawn }, () => ({ up: '8%', down: '8%', ahead: true }))
+  return [...ahead, ...out.map((item) => ({ up: scale(item.sent), down: scale(item.received), ahead: false }))]
 })
 </script>
 
@@ -70,17 +85,30 @@ const columns = computed(() => {
   <div
     ref="root"
     class="pulse"
-    :class="{ 'pulse--grow': grow }"
-    :role="label ? 'img' : undefined"
+    :class="{ 'pulse--grow': grow, 'pulse--reading': reading }"
+    :role="label ? (reading ? 'progressbar' : 'img') : undefined"
     :aria-label="label || undefined"
     :aria-hidden="label ? undefined : 'true'"
+    :aria-valuenow="label && reading ? Math.round(read! * 100) : undefined"
+    :aria-valuemin="label && reading ? 0 : undefined"
+    :aria-valuemax="label && reading ? 100 : undefined"
     :style="{ '--n': count, ...(height ? { '--pulse-half': `${height}px` } : {}) }"
   >
     <div class="pulse__half pulse__half--up">
-      <i v-for="(column, index) in columns" :key="index" :style="{ height: column.up, '--i': index }" />
+      <i
+        v-for="(column, index) in columns"
+        :key="index"
+        :class="{ 'is-ahead': column.ahead }"
+        :style="{ height: column.up, '--i': index }"
+      />
     </div>
     <div class="pulse__half pulse__half--down">
-      <i v-for="(column, index) in columns" :key="index" :style="{ height: column.down, '--i': index }" />
+      <i
+        v-for="(column, index) in columns"
+        :key="index"
+        :class="{ 'is-ahead': column.ahead }"
+        :style="{ height: column.down, '--i': index }"
+      />
     </div>
   </div>
 </template>
@@ -121,6 +149,18 @@ const columns = computed(() => {
   background: var(--pulse-them, var(--them));
 }
 
+/* Still to read: dots in the faint ink of the place (a poster's, or the page's border). */
+.pulse .pulse__half i.is-ahead {
+  background: var(--pulse-ahead, var(--border));
+}
+
+/* Reading: each bar eases into its height as more weeks arrive and the pulse is folded again. */
+.pulse--reading i {
+  transition:
+    height var(--duration-chart) var(--ease-standard),
+    background-color var(--duration-chart) var(--ease-standard);
+}
+
 /* Each bar grows out of the line between the two voices; a wave runs left to right. */
 .pulse--grow i {
   animation: pulse-grow var(--duration-sheet) var(--ease-standard) both;
@@ -146,6 +186,10 @@ const columns = computed(() => {
 @media (prefers-reduced-motion: reduce) {
   .pulse--grow i {
     animation: none;
+  }
+
+  .pulse--reading i {
+    transition-duration: var(--duration-none);
   }
 }
 </style>

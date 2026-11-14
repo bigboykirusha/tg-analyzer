@@ -31,6 +31,33 @@ export function weeklyPulse(daily: readonly DatedActivityDto[], weeks = 26): { s
   return buckets
 }
 
+/** The most columns a reading pulse sends: the finest a tile or the analysis sheet draws, a few kilobytes a tick. */
+export const READING_PULSE_COLUMNS = 120
+
+/**
+ * The pulse of an analysis while it reads: every week read so far (the history is read from today back), oldest
+ * first, folded into at most `columns` groups. Groups are counted from the newest week, so the end already drawn
+ * keeps its shape while older weeks arrive.
+ */
+export function readingPulse(
+  daily: readonly DatedActivityDto[],
+  columns = READING_PULSE_COLUMNS,
+): { sent: number; received: number }[] {
+  const weeks = weeklyPulse(daily, Number.POSITIVE_INFINITY)
+  const size = Math.max(1, Math.ceil(weeks.length / Math.max(1, columns)))
+  if (size === 1) return weeks
+  const out: { sent: number; received: number }[] = []
+  for (let end = weeks.length; end > 0; end -= size) {
+    const group = { sent: 0, received: 0 }
+    for (const week of weeks.slice(Math.max(0, end - size), end)) {
+      group.sent += week.sent
+      group.received += week.received
+    }
+    out.unshift(group)
+  }
+  return out
+}
+
 /** The few numbers an overview of many chats compares side by side. */
 export function reportHeadline(report: Pick<ChatReport, 'totals' | 'responses'>): ReportHeadlineDto {
   const { sent, messages } = report.totals

@@ -13,7 +13,7 @@ const props = withDefaults(
     /** Blocks closing while an action runs. */
     busy?: boolean
     role?: 'dialog' | 'alertdialog'
-    /** A second step: a back button beside the title (on a phone it takes the close button's place). */
+    /** A second step: a back button beside the title (on a phone at the start of the title row, close stays at its end). */
     back?: boolean
     /** Element to focus first; by default the dialog itself, so no button looks pre-selected. */
     initialFocus?: () => HTMLElement | null | undefined
@@ -127,7 +127,7 @@ watch(open, (value) => value && drag.reset())
  * Desktop: a dialog in the middle — 32 corners, 24 padding, the title in h3, actions at the end; an
  * `aside` (a picture) stands on the left at the dialog's full height.
  * Phones (≤ 640): the same content as a sheet — edge to edge, attached to the bottom, a grabber, the
- * close (or back) circle on the left and the title in the middle, actions stacked full width, the
+ * back circle (a second step) on the left, the title in the middle, close on the right, actions stacked full width, the
  * main one on top. A confirmation (alertdialog) has no close button and a left-aligned title.
  */
 .modal-backdrop {
@@ -321,17 +321,20 @@ watch(open, (value) => value && drag.reset())
     background: var(--border-strong);
   }
 
+  /* Close at the end of the title row, back (a second step) at its start: our sheets confirm at the bottom, so the
+     leading place a «Done» would push close into stays free (13.11). */
   .modal-close,
   .modal-back {
     position: absolute;
     top: calc(var(--space-2) + var(--space-1) + var(--space-1));
-    right: auto;
-    left: var(--page-gutter);
   }
 
-  /* A second step: back takes the place of close. */
-  .modal-panel--back .modal-close {
-    display: none;
+  .modal-close {
+    right: var(--page-gutter);
+  }
+
+  .modal-back {
+    left: var(--page-gutter);
   }
 
   .modal-header {

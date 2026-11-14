@@ -12,7 +12,10 @@ import type { ReportSummaryDto } from '@tg-analyzer/shared'
 const props = defineProps<{ report: ReportSummaryDto; hasAvatar?: boolean; fresh?: boolean; wide?: boolean }>()
 const { t, tc, formatNumber } = useI18n()
 const actions = useReportActions()
+const view = useAnalysisView()
 const updating = computed(() => actions.busy(props.report.chatId))
+/** Read again right now: the tile grows anew, its pulse drawn from what is read this time (as AnalysisTile). */
+const reading = computed(() => (view.value?.chatId === props.report.chatId ? view.value : null))
 /** Only how many messages: a tile does not say «Группа» (13.11) — the name and the avatar tell a group already. */
 const meta = computed(() =>
   tc('common.messagesCount', props.report.totalMessages, { count: formatNumber(props.report.totalMessages) }),
@@ -36,10 +39,14 @@ const pulse = computed(() =>
       <span v-if="fresh && !updating" class="report-card__badge t-caption">{{ t('dashboard.hasNews') }}</span>
     </template>
     <template #meta>
-      <template v-if="updating"><span class="spinner" aria-hidden="true" /> {{ t('dashboard.analysingNow') }}</template>
+      <template v-if="reading">{{ reading.short }}</template>
+      <template v-else-if="updating"
+        ><span class="spinner" aria-hidden="true" /> {{ t('dashboard.analysingNow') }}</template
+      >
       <template v-else>{{ meta }}</template>
     </template>
-    <Pulse v-if="pulse" :data="pulse" :height="0" :bars="48" :pitch="6" grow />
+    <Pulse v-if="reading" :data="reading.pulse" :height="0" :bars="48" :pitch="6" :read="reading.share" />
+    <Pulse v-else-if="pulse" :data="pulse" :height="0" :bars="48" :pitch="6" grow />
   </HomeCard>
 </template>
 

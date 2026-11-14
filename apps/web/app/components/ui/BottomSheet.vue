@@ -3,8 +3,9 @@ import { ArrowLeft, X } from '../../lib/icons'
 
 /**
  * The phone sheet (Select, PopoverMenu, «Новый анализ», «Поделиться»; ModalDialog shares its drag through
- * useSheetDrag): edge to edge, attached to the bottom, a grabber, then a 44 bar — close (or back) on the
- * left, the title in the middle, an optional action on the right. Closes on a flick, the scrim or Esc.
+ * useSheetDrag): edge to edge, attached to the bottom, a grabber, then a 44 bar — back (in a second step) on the
+ * left, the title in the middle, close on the right (13.11: a sheet without a «Done» keeps its close at the end,
+ * like Apple's share sheet). Closes on a flick, the scrim or Esc.
  */
 const props = withDefaults(
   defineProps<{
@@ -13,7 +14,7 @@ const props = withDefaults(
     /** Role of the panel; menus and listboxes put their own role on the body. */
     role?: 'dialog' | 'alertdialog'
     busy?: boolean
-    /** A second step: the left button goes back instead of closing. */
+    /** A second step: a back button on the left; close stays on the right. */
     back?: boolean
     /** The whole screen but a strip at the top, as iOS's large sheet: a long list (the chats). */
     full?: boolean
@@ -57,11 +58,11 @@ watch(open, (value) => value && drag.reset())
             <span class="sheet__grabber" aria-hidden="true" />
             <header v-if="title || $slots.header" class="sheet__head">
               <UiIconButton v-if="back" :label="t('common.back')" :icon="ArrowLeft" no-tooltip @click="emit('back')" />
-              <UiIconButton v-else :label="t('common.close')" :icon="X" no-tooltip @click="close" />
+              <span v-else aria-hidden="true" />
               <slot name="header">
                 <h2 :id="titleId" class="sheet__title">{{ title }}</h2>
               </slot>
-              <span class="sheet__end"><slot name="end" /></span>
+              <UiIconButton :label="t('common.close')" :icon="X" no-tooltip @click="close" />
             </header>
           </div>
           <div v-if="$slots.search" class="sheet__search">
@@ -148,11 +149,6 @@ watch(open, (value) => value && drag.reset())
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.sheet__end {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .sheet__search {

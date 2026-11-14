@@ -16,6 +16,7 @@ import {
 import { computeMaxStreak, computeTrend, countActiveWeeks } from './activity'
 import { computeGroupReport, type GroupParticipantInput, type GroupTimelineEntry } from './group-report'
 import { addDirectional, createDirectionalCount, increment, roundTo, topItems } from './primitives'
+import { readingPulse } from './overview'
 import { computeHealthScore, computeRelationshipScore } from './relationship'
 import { stemWord } from './stem'
 import { analyzeMessageText, normalizeEmoji, STOP_LEMMAS } from './text'
@@ -192,6 +193,11 @@ export class ChatReportBuilder {
 
   get messageCount() {
     return this.totals.messages
+  }
+
+  /** What has been read so far as a pulse (readingPulse): an analysis sends it with its progress. */
+  readingPulse() {
+    return readingPulse(mapEntries(this.daily, 'date'))
   }
 
   add(message: MessageInput) {

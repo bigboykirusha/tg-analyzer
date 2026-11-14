@@ -9,13 +9,12 @@ import { Search, X } from '../../lib/icons'
  * sheet, and only a tap on the open field brings the keyboard (raised while the sheet travels, it made iOS pan the
  * screen). Open, a close button stands to the right of the search; there is no title row.
  *
- * Open is a URL (`?pick`), so the browser's back closes it. While an analysis runs, the resting head shows it instead
- * of the search (AnalysisLive): a tap opens the details and cancel. The page keeps room for the head at its end.
+ * Open is a URL (`?pick`), so the browser's back closes it. The sheet only finds: a running analysis is its tile on
+ * home (AnalysisTile, 14.11), not a strip in this head. The page keeps room for the head at its end.
  */
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const view = useAnalysisView()
 
 const open = computed(() => route.query.pick !== undefined)
 const search = ref('')
@@ -139,7 +138,7 @@ function tap() {
     moved = false
     return
   }
-  if (!open.value && !view.value) openSheet()
+  if (!open.value) openSheet()
 }
 </script>
 
@@ -173,8 +172,7 @@ function tap() {
       >
         <span class="chats__handle" aria-hidden="true" />
         <span class="chats__veil" :style="{ opacity: veil }" aria-hidden="true" />
-        <AnalysisLive v-if="view && !open" />
-        <div v-else class="chats__bar">
+        <div class="chats__bar">
           <label class="chats__search">
             <Search aria-hidden="true" />
             <input
@@ -202,7 +200,7 @@ function tap() {
           />
         </div>
         <!-- Keyboard users reach the resting sheet through this; a pointer taps the head. -->
-        <button v-if="!open && !view" type="button" class="sr-only" @click.stop="openSheet">
+        <button v-if="!open" type="button" class="sr-only" @click.stop="openSheet">
           {{ t('home.peekSearch') }}
         </button>
       </div>
@@ -292,10 +290,6 @@ function tap() {
   height: var(--space-1);
   border-radius: var(--radius-pill);
   background: var(--border-strong);
-}
-
-.chats__head :deep(.live) {
-  width: 100%;
 }
 
 /* The search and, open, the close button beside it on one line. */

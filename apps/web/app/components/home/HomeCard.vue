@@ -87,6 +87,7 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   color: var(--on-poster);
   --pulse-you: var(--on-poster);
   --pulse-them: var(--on-them);
+  --pulse-ahead: var(--on-poster-faint);
   --btn-fill: var(--poster-button);
   --btn-fill-text: var(--on-poster);
   --btn-plain-text: var(--on-poster);

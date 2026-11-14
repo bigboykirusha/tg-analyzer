@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import type { ParseProgressDto } from '@tg-analyzer/shared'
 import { AlertCircle } from '../lib/icons'
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 /**
  * Home is what you have already learned: the reports, one poster tile each (two to a row on a phone, a long name
- * across the row), new messages in the chat as a badge on the tile. News about them (a quiz answered, a link opened)
+ * across the row), new messages in the chat as a badge on the tile. A running analysis is the tile its report will
+ * be, its pulse drawn as the history is read (AnalysisTile). News about them (a quiz answered, a link opened)
  * is in «Уведомления», behind the bell. What else to analyse: on a computer the row «Разобрать ещё» under the
  * reports; on a phone the chat list as a sheet resting at the bottom (HomeChatsSheet), pulled up to the whole screen.
  * A newcomer gets «С кого начнём?» instead.
@@ -22,11 +24,53 @@ const narrow = useMediaQuery('(max-width: 900px)')
 
 /** The reports in the order the sidebar shows them too: pinned in Telegram first, then the freshest. */
 const reports = computed(() => workspace.reportChats)
+const analysis = useAnalysis()
+/**
+ * A chat being analysed for the first time is on home already as the tile its report will be (AnalysisTile), where
+ * the report will land: first among the pinned when the chat is pinned, else first after them. A chat read again
+ * grows in its own tile (ReportCard).
+ */
+type Tile = { id: string; title: string; chat: (typeof reports.value)[number] | null; hasAvatar?: boolean }
+/** Done a moment ago, the report list not reloaded yet: the tile holds its place, so nothing blinks or jumps. */
+const landing = ref<ParseProgressDto | null>(null)
+let landingTimer: ReturnType<typeof setTimeout> | undefined
+watch(analysis.finished, (job) => {
+  clearTimeout(landingTimer)
+  landing.value = job?.status === 'completed' && job.chatId ? job : null
+  // A report list that never brings it back (a failed reload) does not keep the tile for ever.
+  if (landing.value) landingTimer = setTimeout(() => (landing.value = null), 15_000)
+})
+watch(reports, (list) => {
+  if (landing.value && list.some((chat) => chat.id === landing.value?.chatId)) landing.value = null
+})
+onBeforeUnmount(() => clearTimeout(landingTimer))
+const growing = computed<Tile | null>(() => {
+  const job = analysis.isActive.value ? analysis.progress.value : landing.value
+  const chatId = job?.chatId
+  const chatTitle = job?.chatTitle
+  if (!chatId || reports.value.some((chat) => chat.id === chatId)) return null
+  const dialog = workspace.chats.find((chat) => chat.id === chatId)
+  return {
+    id: chatId,
+    title: chatTitle ?? dialog?.title ?? '',
+    chat: null,
+    hasAvatar: dialog?.hasAvatar,
+  }
+})
+const items = computed<Tile[]>(() => {
+  const list: Tile[] = reports.value.map((chat) => ({ id: chat.id, title: chat.title, chat }))
+  const tile = growing.value
+  if (!tile) return list
+  const pinned = workspace.chats.find((chat) => chat.id === tile.id)?.pinned
+  const at = pinned ? 0 : list.findIndex((item) => !item.chat?.pinned)
+  list.splice(at === -1 ? list.length : at, 0, tile)
+  return list
+})
 const grid = ref<HTMLElement | null>(null)
 /** Which tiles take the whole row on a phone: a name too long for a half tile, or a tile without a neighbour. */
 const tiles = useTileRows(
-  () => reports.value,
-  (chat) => chat.title,
+  () => items.value,
+  (item) => item.title,
   grid,
 )
 
@@ -34,7 +78,8 @@ const loading = computed(
   () => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
 )
 const failed = computed(() => !reports.value.length && workspace.reportsState === 'error')
-const newcomer = computed(() => !reports.value.length && !loading.value && !failed.value)
+/** A newcomer's first analysis is already a tile on home: «С кого начнём?» gives way to it. */
+const newcomer = computed(() => !items.value.length && !loading.value && !failed.value)
 const reportsError = ref<unknown>(null)
 function loadReports() {
   reportsError.value = null
@@ -87,14 +132,16 @@ onMounted(() => {
           </template>
         </UiEmptyState>
         <div v-else ref="grid" class="home__reports">
-          <ReportCard
-            v-for="{ item: chat, wide } in tiles"
-            :key="chat.id"
-            :report="chat.report!"
-            :has-avatar="chat.hasAvatar"
-            :fresh="workspace.withNews[chat.id]"
-            :wide="wide"
-          />
+          <template v-for="{ item, wide } in tiles" :key="item.id">
+            <ReportCard
+              v-if="item.chat"
+              :report="item.chat.report!"
+              :has-avatar="item.chat.hasAvatar"
+              :fresh="workspace.withNews[item.id]"
+              :wide="wide"
+            />
+            <AnalysisTile v-else :has-avatar="item.hasAvatar" :wide="wide" :landing="landing" />
+          </template>
         </div>
       </section>
       <!-- A computer: who else to analyse comes after what you already know, a hint under the reports. -->

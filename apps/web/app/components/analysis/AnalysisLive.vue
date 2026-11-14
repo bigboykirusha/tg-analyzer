@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * The running analysis, folded: the chat's avatar inside a progress ring, «Разбираем «Дима»» and
- * «63%, ещё около минуты»: a card at the foot of the desktop sidebar (on a phone the running analysis is the
- * person's ring in «Разобрать ещё» on home). Tapping opens the details (AnalysisDetails).
+ * «63%, ещё около минуты»: a card at the foot of the desktop sidebar (on home the analysis is its growing tile,
+ * AnalysisTile). Tapping opens the details (AnalysisDetails).
  */
 withDefaults(defineProps<{ variant?: 'card' }>(), { variant: 'card' })
 const view = useAnalysisView()

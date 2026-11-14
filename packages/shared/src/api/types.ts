@@ -258,6 +258,8 @@ export interface ParseProgressDto {
   startedAt: number | null
   /** ISO time of the oldest message read so far: the history is read from today backwards. */
   reachedAt?: string | null
+  /** Weekly sent/received of what has been read so far, oldest first, at most 120 columns (readingPulse). */
+  pulse?: { sent: number; received: number }[] | null
   /** Seconds Telegram asked us to wait (phase `waiting`). */
   waitSeconds: number | null
   error: ParseErrorCode | null

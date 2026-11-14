@@ -213,6 +213,7 @@ async function scanChat(
     const oldest = page.messages[page.messages.length - 1]
     if (oldest) progress.reachedAt = oldest.date.toISOString()
     progress.totalMessages = page.total ?? progress.totalMessages
+    progress.pulse = builder.readingPulse()
     offsetId = page.nextOffsetId
     await publish()
   }

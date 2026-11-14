@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { reportHeadline, weeklyPulse } from '../src/analytics/overview'
+import { readingPulse, reportHeadline, weeklyPulse } from '../src/analytics/overview'
 
 const day = (date: string, sent: number, received: number) => ({ date, sent, received, total: sent + received })
 
@@ -29,6 +29,30 @@ test('weekly pulse keeps only the requested number of weeks', () => {
 
 test('weekly pulse of an empty chat is empty', () => {
   assert.deepEqual(weeklyPulse([], 26), [])
+})
+
+test('reading pulse keeps every week read while it fits', () => {
+  const pulse = readingPulse([day('2025-06-01', 1, 2), day('2026-01-15', 4, 4)], 120)
+  // 2025-06-01 is 32 weeks before 2026-01-15: all 33 weeks, quiet ones empty.
+  assert.equal(pulse.length, 33)
+  assert.deepEqual(pulse[0], { sent: 1, received: 2 })
+  assert.deepEqual(pulse.at(-1), { sent: 4, received: 4 })
+})
+
+test('reading pulse folds a long history from the newest week', () => {
+  const daily = Array.from({ length: 70 }, (_, index) => {
+    const date = new Date(Date.UTC(2026, 0, 1 + index)).toISOString().slice(0, 10)
+    return day(date, 1, 0)
+  })
+  const pulse = readingPulse(daily, 4)
+  // 10 weeks in groups of 3 counted from the newest: 1 + 3 + 3 + 3 weeks.
+  assert.deepEqual(
+    pulse.map((group) => group.sent),
+    [7, 21, 21, 21],
+  )
+  // Reading further back leaves the newest group as it was.
+  const longer = readingPulse([day('2025-12-25', 1, 0), ...daily], 4)
+  assert.deepEqual(longer.at(-1), pulse.at(-1))
 })
 
 test('headline numbers come from totals and responses', () => {

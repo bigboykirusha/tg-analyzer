@@ -263,7 +263,8 @@ test('the recap opens as stories with both names and saves a slide', async ({ pa
 
 test('a running analysis shows away from home and its button opens the details', async ({ page }, testInfo) => {
   await signIn(page)
-  await expect(page.locator('.home-card:not([aria-busy])').first()).toBeVisible()
+  // A newcomer's home is the list of chats («С кого начнём?»).
+  await expect(page.locator('.chat-row').first()).toBeVisible()
   // A long analysis, as the status endpoint tells it: «Дима (работа)» at 63 %.
   await page.route('**/api/v1/parse/status*', (route) =>
     route.fulfill({
@@ -288,6 +289,14 @@ test('a running analysis shows away from home and its button opens the details',
   await row.getByRole('button', { name: 'Разбираем чат «Дима (работа)», 63%' }).click()
   const details = page.getByRole('dialog', { name: 'Разбираем переписку' })
   await expect(details.getByRole('button', { name: 'Отменить разбор' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(details).toBeHidden()
+  // On home the analysis is already the tile its report will be; a tap opens the same details, its pulse the progress.
+  await gotoHydrated(page, '/dashboard')
+  const tile = page.locator('.analysis-tile')
+  await expect(tile).toContainText('Читаем · 63%')
+  await tile.getByRole('button', { name: 'Разбираем «Дима (работа)». 63%', exact: false }).click()
+  await expect(details.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '63')
   await page.keyboard.press('Escape')
   await expect(details).toBeHidden()
   // A phone has no sidebar card: away from home the analysis is the line along the top of the screen.

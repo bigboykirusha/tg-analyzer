@@ -4,7 +4,8 @@ import { hueOf } from '../../lib/hue'
 
 /**
  * The running analysis, unfolded: a card in the chat's colour (avatar, name, how far back the reading got,
- * the percentage and a bar), how much is read and that the app may be closed, the Telegram nudge, cancel.
+ * the percentage and the pulse read so far — drawn from today back, dots for what is ahead, as the growing tile on
+ * home), how much is read and that the app may be closed, the Telegram nudge, cancel.
  * A dialog on desktop, a sheet on a phone (UiModalDialog does both).
  */
 defineProps<{ open: boolean }>()
@@ -44,17 +45,15 @@ async function cancel() {
           </span>
           <span v-if="view.percent !== null" class="details-card__percent">{{ view.percent }}%</span>
         </div>
-        <div
-          v-if="view.percent !== null"
-          class="details-card__bar"
-          role="progressbar"
-          :aria-valuenow="view.percent"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          :aria-label="t('analysis.progressLabel')"
-        >
-          <i :style="{ transform: `scaleX(${view.percent / 100})` }" />
-        </div>
+        <Pulse
+          class="details-card__pulse"
+          :data="view.pulse"
+          :height="0"
+          :bars="64"
+          :pitch="6"
+          :read="view.share"
+          :label="t('analysis.progressLabel')"
+        />
         <p class="details-card__note">{{ view.read ? `${view.read}. ` : '' }}{{ t('analysis.banner.closeTab') }}</p>
       </section>
       <UiGroup v-if="botUrl">
@@ -85,7 +84,7 @@ async function cancel() {
 </template>
 
 <style scoped>
-/* The chat's poster in miniature: its colour, ink type, the person's deep tone for the bar. */
+/* The chat's poster in miniature: its colour, ink type, the pulse in its two inks. */
 .details-card {
   display: flex;
   flex-direction: column;
@@ -95,6 +94,10 @@ async function cancel() {
   background-color: var(--poster);
   background-image: var(--poster-image);
   color: var(--on-poster);
+  --pulse-half: var(--space-6);
+  --pulse-you: var(--on-poster);
+  --pulse-them: var(--on-them);
+  --pulse-ahead: var(--on-poster-faint);
 }
 
 .details-card__head {
@@ -127,21 +130,5 @@ async function cancel() {
 .details-card__percent {
   font: var(--text-h2);
   letter-spacing: var(--tracking-h2);
-}
-
-.details-card__bar {
-  height: var(--bar-height);
-  overflow: hidden;
-  border-radius: var(--radius-pill);
-  background: var(--on-poster-chip);
-}
-
-.details-card__bar i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--on-them);
-  transform-origin: left;
-  transition: transform var(--duration-chart) var(--ease-standard);
 }
 </style>
