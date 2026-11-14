@@ -10,7 +10,7 @@ import { Scale } from '../../lib/icons'
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatNumber } = useI18n()
-const { name, answer, figure } = useBalance(() => props.data)
+const { name, answer, headline } = useBalance(() => props.data)
 
 const split = computed(() => {
   const { sent, received } = props.data.report.totals
@@ -23,9 +23,7 @@ const split = computed(() => {
 const shown = computed(() => {
   if (!answer.value || !split.value) return null
   return {
-    figure: split.value.even
-      ? t('report.main.split', { mine: split.value.mine, theirs: split.value.theirs })
-      : figure.value,
+    figure: headline.value,
     answer: answer.value,
   }
 })

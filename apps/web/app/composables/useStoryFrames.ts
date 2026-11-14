@@ -109,7 +109,7 @@ export function useStoryFrames(data: () => ReportDto) {
       kind: 'balance',
       key: 'balance',
       label: t('report.balance.title'),
-      figure: balanceFacts.figure.value ?? undefined,
+      figure: balanceFacts.headline.value ?? undefined,
       title: balanceFacts.answer.value,
       share: balanceFacts.share.value,
       rows: balanceFacts.rows.value,
@@ -129,6 +129,7 @@ export function useStoryFrames(data: () => ReportDto) {
       kind: 'time',
       key: 'time',
       label: t('report.time.title'),
+      figure: `${window.start}⁠–⁠${window.end}`,
       title,
       hours: totals.map((value) => value / top),
       peak,
@@ -217,13 +218,13 @@ export function useStoryFrames(data: () => ReportDto) {
     if (isGroup.value) {
       const members = report.value.group?.participants.length
       if (members) facts.push({ key: 'members', label: t('story.summary.members'), value: formatNumber(members) })
-    } else if (has('balance') && balanceFacts.figure.value)
-      facts.push({ key: 'balance', label: t('report.balance.title'), value: balanceFacts.figure.value })
+    } else if (has('balance') && balanceFacts.headline.value)
+      facts.push({ key: 'balance', label: t('report.balance.title'), value: balanceFacts.headline.value })
     const run = streakRun.value
     if (has('streak') && run) facts.push({ key: 'streak', label: t('report.main.streakTitle'), value: run.figure })
     const window = parseWindow(data().derived.availabilityProfile.peakWindow)
     if (has('time') && window)
-      facts.push({ key: 'peak', label: t('story.summary.peak'), value: `${window.from}⁠–⁠${window.to}` })
+      facts.push({ key: 'peak', label: t('story.summary.peak'), value: `${window.start}⁠–⁠${window.end}` })
     const word = isGroup.value ? data().derived.words.group?.shared[0] : wordFacts.word.value
     if (has('words') && word) facts.push({ key: 'word', label: t('story.summary.word'), value: quote(word.value) })
     const top = emojiFacts.top.value[0]
@@ -249,6 +250,7 @@ export function useStoryFrames(data: () => ReportDto) {
       kind: 'people',
       key: 'people',
       label: t('group.tabs.people'),
+      figure: core ? String(core) : undefined,
       title: core ? tc('group.core', core) : t('group.coreNone'),
       members: ranked.slice(0, 4).map((person) => ({
         id: person.id,

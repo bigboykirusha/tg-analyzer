@@ -41,7 +41,9 @@ async function cancel() {
           <ChatAvatar v-if="view.chatId" :chat-id="view.chatId" :title="view.chat" size="md" on-poster />
           <span class="details-card__copy">
             <strong class="details-card__name">{{ view.chat }}</strong>
+            <!-- How far back the reading got; while connecting, waiting for Telegram or assembling — that instead. -->
             <span v-if="view.reached" class="details-card__reached">{{ view.reached }}</span>
+            <span v-else-if="view.note || view.percent === null" class="details-card__reached">{{ view.status }}</span>
           </span>
           <span v-if="view.percent !== null" class="details-card__percent">{{ view.percent }}%</span>
         </div>

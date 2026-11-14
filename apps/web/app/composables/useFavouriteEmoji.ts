@@ -15,7 +15,8 @@ export function useFavouriteEmoji(data: () => ReportDto) {
     const { emoji, topEmoji } = favourites.value
     const mine = emoji.mine?.value
     const theirs = emoji.theirs?.value
-    const name = data().summary.title
+    // In a group the other side is everyone else, not the group's name.
+    const name = data().report.group ? t('report.pulse.others') : data().summary.title
     if (mine && theirs)
       return mine === theirs
         ? t('report.favourites.same', { emoji: mine })

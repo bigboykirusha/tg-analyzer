@@ -49,6 +49,14 @@ export function useBalance(data: () => ReportDto, author: () => string | null = 
     return item.mine ? t('report.balance.mine') : t('report.balance.theirs', { name: other })
   })
   const figure = computed(() => (lead.value && !lead.value.even ? lead.value.figure : null))
+  /** The card's big figure: the ratio («×1,8»), or the split itself when about even («52 на 48»). */
+  const headline = computed(() => {
+    if (figure.value) return figure.value
+    const { sent, received } = totals.value
+    if (!sent && !received) return null
+    const mine = Math.round((100 * sent) / (sent + received))
+    return t('report.main.split', { mine, theirs: 100 - mine })
+  })
   /** Your share of the messages, 0–100. */
   const share = computed(() => (totals.value.sent / Math.max(1, totals.value.messages)) * 100)
 
@@ -87,5 +95,5 @@ export function useBalance(data: () => ReportDto, author: () => string | null = 
     return out
   })
 
-  return { name, me, answer, figure, share, rows }
+  return { name, me, answer, figure, headline, share, rows }
 }
