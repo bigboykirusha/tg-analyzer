@@ -345,14 +345,18 @@ const headerHandlers = {
 
   .modal-header {
     justify-content: center;
+    /* The row starts where the close circle does (the panel's gap sits under the grabber) and is as tall as it,
+       so the title is centred on the circles. */
     min-height: var(--control-md);
-    padding: 0 calc(var(--control-md) + var(--space-2)) var(--space-3);
+    margin: calc(-1 * var(--space-4)) 0 var(--space-3);
+    padding: 0 calc(var(--control-md) + var(--space-2));
     text-align: center;
     touch-action: none;
   }
 
   .modal-panel--alert .modal-header {
     justify-content: flex-start;
+    margin: 0;
     padding: var(--space-2) 0 0;
     text-align: left;
   }

@@ -275,11 +275,11 @@ function openReady() {
   transition: none;
 }
 
-/* The whole screen; at rest pushed down so only the head shows. Open, it is a page of its own (14.11): it reaches
-   under the status bar, its corners, edge and handle go, one surface from top to bottom. */
+/* The screen under a gap (the status bar and a step, as the other sheets leave); at rest pushed down so only the
+   head shows. Open, it is a sheet like theirs: round shoulders, their shadow, the scrim and the page behind it. */
 .chats__sheet {
   position: fixed;
-  top: 0;
+  top: calc(env(safe-area-inset-top, 0px) + var(--space-8));
   right: 0;
   bottom: 0;
   left: 0;
@@ -292,8 +292,6 @@ function openReady() {
   outline: none;
   transition:
     transform var(--duration-sheet) var(--ease-drawer),
-    padding-top var(--duration-sheet) var(--ease-drawer),
-    border-radius var(--duration-sheet) var(--ease-drawer),
     box-shadow var(--duration-sheet) var(--ease-drawer);
   --field-bg: var(--fill-raised);
   --group-bg: transparent;
@@ -308,9 +306,7 @@ function openReady() {
 }
 
 .chats.is-open .chats__sheet {
-  padding-top: env(safe-area-inset-top, 0px);
-  border-radius: 0;
-  box-shadow: none;
+  box-shadow: var(--shadow-overlay);
 }
 
 .chats__head {
@@ -351,11 +347,6 @@ function openReady() {
   border-radius: var(--radius-pill);
   background: var(--border-strong);
   transition: opacity var(--transition-fast);
-}
-
-/* Open, the sheet is a page: no handle (its place stays, so the head does not move under the finger). */
-.chats.is-open .chats__handle {
-  opacity: 0;
 }
 
 /* The search and, open, the close button beside it on one line. */
