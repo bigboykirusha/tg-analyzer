@@ -11,6 +11,10 @@ export interface ToastMessage {
   title: string
   description?: string
   action?: ToastAction
+  /** News about a person: the banner takes their colour and avatar (ToastProvider). */
+  chatId?: string
+  /** The name the avatar's initials come from, when the title is not the name. */
+  avatarTitle?: string
 }
 
 export interface ToastInput extends Omit<ToastMessage, 'id'> {
@@ -21,6 +25,8 @@ export interface ToastInput extends Omit<ToastMessage, 'id'> {
 const MAX_VISIBLE = 3
 const DEFAULT_DURATION_MS = 5000
 const ACTION_DURATION_MS = 8000
+/** An error waits longer to be read; a tap or a flick up puts it away sooner (there is no close button). */
+const ERROR_DURATION_MS = 10000
 
 interface Timer {
   handle: number | undefined
@@ -35,10 +41,10 @@ function createToastId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
-/** Errors stay until closed; toasts with an action stay longer. */
+/** Errors and toasts with an action stay longer. */
 function durationFor(input: ToastInput) {
   if (input.duration !== undefined) return input.duration
-  if (input.variant === 'error') return 0
+  if (input.variant === 'error') return ERROR_DURATION_MS
   return input.action ? ACTION_DURATION_MS : DEFAULT_DURATION_MS
 }
 
@@ -78,6 +84,8 @@ export function useToast() {
       title: input.title,
       description: input.description,
       action: input.action,
+      chatId: input.chatId,
+      avatarTitle: input.avatarTitle,
     }
     const next = [...toasts.value, toast]
     for (const dropped of next.slice(0, Math.max(0, next.length - MAX_VISIBLE))) remove(dropped.id)

@@ -15,8 +15,12 @@ const { t, tc, formatNumber } = useI18n()
 const actions = useReportActions()
 const view = useAnalysisView()
 const updating = computed(() => actions.busy(props.report.chatId))
-/** Read again right now: the tile grows anew, its pulse drawn from what is read this time (as AnalysisTile). */
-const reading = computed(() => (view.value?.chatId === props.report.chatId ? view.value : null))
+/**
+ * Read again right now, on a computer: the tile grows anew, its pulse drawn from what is read this time (as
+ * AnalysisTile). A phone shows it in the bottom panel (AnalysisPill), so the tile only says it is being analysed.
+ */
+const computer = useMediaQuery('(min-width: 901px)')
+const reading = computed(() => (computer.value && view.value?.chatId === props.report.chatId ? view.value : null))
 /** Only how many messages: a tile does not say «Группа» (13.11) — the name and the avatar tell a group already. */
 const meta = computed(() =>
   tc('common.messagesCount', props.report.totalMessages, { count: formatNumber(props.report.totalMessages) }),

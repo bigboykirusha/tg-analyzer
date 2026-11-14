@@ -24,10 +24,8 @@ test.beforeEach(async ({ baseURL, context }) => {
 test('sign in, analyse a private chat and read the report', async ({ page }, testInfo) => {
   await signIn(page)
   await analyseChat(page, 'Катя')
-  await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 30_000 })
-
-  // The very first report opens by itself.
-  await page.waitForURL('**/chat/1006')
+  // The very first report opens by itself (no banner: it is on screen).
+  await page.waitForURL('**/chat/1006', { timeout: 30_000 })
   await page.goto('/dashboard')
   // With a first report the home page turns into the summary: the report is a card.
   const card = page.locator('.home-card').filter({ hasText: 'Катя' })
@@ -83,8 +81,8 @@ test('a chat with too few messages has no «Разобрать» in the full lis
 test('group chats get the group report', async ({ page }, testInfo) => {
   await signIn(page)
   await analyseChat(page, 'Weekend plans')
-  await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 60_000 })
-
+  // A newcomer's first report opens by itself.
+  await page.waitForURL('**/chat/-1002004', { timeout: 60_000 })
   await page.goto('/chat/-1002004')
   for (const part of ['people', 'roles', 'pairs', 'time', 'words']) {
     await openCard(page, part)
@@ -233,7 +231,7 @@ test('a late dialog response cannot populate the next account', async ({ page })
 test('the recap opens as stories with both names and saves a slide', async ({ page }, testInfo) => {
   await signIn(page)
   await analyseChat(page, 'Катя')
-  await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 30_000 })
+  await page.waitForURL('**/chat/1006', { timeout: 30_000 })
   await page.goto('/chat/1006')
   await expect(page.getByRole('heading', { name: 'Катя', exact: true })).toBeVisible({ timeout: 15_000 })
 
@@ -291,14 +289,17 @@ test('a running analysis shows away from home and its button opens the details',
   await expect(details.getByRole('button', { name: 'Отменить разбор' })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(details).toBeHidden()
-  // On home the analysis is already the tile its report will be; a tap opens the same details, its pulse the progress.
-  await gotoHydrated(page, '/dashboard')
-  const tile = page.locator('.analysis-tile')
-  await expect(tile).toContainText('Читаем · 63%')
-  await tile.getByRole('button', { name: 'Разбираем «Дима (работа)». 63%', exact: false }).click()
-  await expect(details.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '63')
-  await page.keyboard.press('Escape')
-  await expect(details).toBeHidden()
+  // On a computer's home the analysis is already the tile its report will be; a tap opens the same details, its
+  // pulse the progress. (A phone shows it in the bottom panel, which a newcomer's home does not have yet.)
+  if (testInfo.project.name === 'desktop') {
+    await gotoHydrated(page, '/dashboard')
+    const tile = page.locator('.analysis-tile')
+    await expect(tile).toContainText('Читаем · 63%')
+    await tile.getByRole('button', { name: 'Разбираем «Дима (работа)». 63%', exact: false }).click()
+    await expect(details.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '63')
+    await page.keyboard.press('Escape')
+    await expect(details).toBeHidden()
+  }
   // A phone has no sidebar card: away from home the analysis is the line along the top of the screen.
   if (testInfo.project.name !== 'desktop') {
     await gotoHydrated(page, '/account')
@@ -312,8 +313,7 @@ test('a phone keeps the chat list at the bottom of home as a sheet that opens fu
   test.skip(testInfo.project.name === 'desktop', 'the list rests at the bottom of home only on phones and tablets')
   await signIn(page)
   await analyseChat(page, 'Катя')
-  await expect(page.locator('.toast').getByText('Отчёт готов', { exact: true })).toBeVisible({ timeout: 30_000 })
-  await page.waitForURL('**/chat/1006')
+  await page.waitForURL('**/chat/1006', { timeout: 30_000 })
   await gotoHydrated(page, '/dashboard')
   // Home shows the reports and the sheet resting at the bottom; no row of people on a phone.
   await expect(page.locator('.home-card').filter({ hasText: 'Катя' })).toBeVisible()

@@ -26,7 +26,7 @@ const narrow = useMediaQuery('(max-width: 900px)')
 const reports = computed(() => workspace.reportChats)
 const analysis = useAnalysis()
 /**
- * A chat being analysed for the first time is on home already as the tile its report will be (AnalysisTile), where
+ * On a computer, a chat being analysed for the first time is on home already as the tile its report will be (AnalysisTile), where
  * the report will land: first among the pinned when the chat is pinned, else first after them. A chat read again
  * grows in its own tile (ReportCard).
  */
@@ -45,6 +45,8 @@ watch(reports, (list) => {
 })
 onBeforeUnmount(() => clearTimeout(landingTimer))
 const growing = computed<Tile | null>(() => {
+  // A phone shows the analysis in the bottom panel instead (AnalysisPill, 14.11): the tile comes with the report.
+  if (narrow.value) return null
   const job = analysis.isActive.value ? analysis.progress.value : landing.value
   const chatId = job?.chatId
   const chatTitle = job?.chatTitle

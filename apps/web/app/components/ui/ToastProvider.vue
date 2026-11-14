@@ -1,8 +1,15 @@
 <script setup lang="ts">
+import { hueOf } from '../../lib/hue'
 import { useI18n } from '../../composables/useI18n'
 import { useToast, type ToastMessage, type ToastVariant } from '../../composables/useToast'
-import { AlertTriangle, CircleCheck, CircleX, Info, X } from '../../lib/icons'
+import { AlertTriangle, ChevronRight, CircleCheck, CircleX, Info } from '../../lib/icons'
 
+/**
+ * Notifications as banners at the top, the way iOS shows one (14.11): a rounded card with a picture, a title and a
+ * line, nothing else — no buttons, no close. News about a person (a report is ready) is a banner in that person's
+ * colour with their avatar; everything else (a link copied, an error, an analysis cancelled) is the same banner in
+ * grey with an icon. A tap does what the banner is about (opens the report) or puts it away; a flick up puts it away.
+ */
 const { toasts, remove, pause, resume } = useToast()
 const { t } = useI18n()
 
@@ -17,9 +24,42 @@ function variantLabel(variant: ToastVariant) {
 
 const variantIcon = { success: CircleCheck, error: CircleX, info: Info, warning: AlertTriangle }
 
-function runAction(toast: ToastMessage) {
+/** Moved up more than this, the banner goes; less, it was a tap. */
+const AWAY = 24
+const SLOP = 6
+const drag = reactive<Record<string, number>>({})
+let start: { id: string; y: number; moved: boolean } | null = null
+
+function down(toast: ToastMessage, event: PointerEvent) {
+  if (event.pointerType === 'mouse' && event.button !== 0) return
+  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  start = { id: toast.id, y: event.clientY, moved: false }
+  pause(toast.id)
+}
+function move(event: PointerEvent) {
+  if (!start) return
+  const delta = event.clientY - start.y
+  if (Math.abs(delta) > SLOP) start.moved = true
+  // Up follows the finger; down only gives a little.
+  drag[start.id] = delta < 0 ? delta : Math.sqrt(delta) * 2
+}
+function up(toast: ToastMessage) {
+  if (!start) return
+  const { moved } = start
+  const delta = drag[toast.id] ?? 0
+  start = null
+  delete drag[toast.id]
+  if (delta < -AWAY) remove(toast.id)
+  else if (!moved) activate(toast)
+  else resume(toast.id)
+}
+function activate(toast: ToastMessage) {
   toast.action?.onClick()
   remove(toast.id)
+}
+
+function label(toast: ToastMessage) {
+  return [toast.title, toast.description, toast.action?.label].filter(Boolean).join('. ')
 }
 </script>
 
@@ -31,25 +71,44 @@ function runAction(toast: ToastMessage) {
           v-for="toast in toasts"
           :key="toast.id"
           class="toast"
-          :class="`toast--${toast.variant}`"
+          :class="[`toast--${toast.variant}`, { 'toast--person': toast.chatId, 'is-dragging': drag[toast.id] }]"
+          :data-hue="toast.chatId ? hueOf(toast.chatId) : undefined"
           :role="toast.variant === 'error' ? 'alert' : 'status'"
+          :style="drag[toast.id] ? { transform: `translateY(${drag[toast.id]}px)` } : undefined"
           @pointerenter="pause(toast.id)"
           @pointerleave="resume(toast.id)"
-          @focusin="pause(toast.id)"
-          @focusout="resume(toast.id)"
         >
-          <component :is="variantIcon[toast.variant]" class="toast__icon" aria-hidden="true" />
+          <ChatAvatar
+            v-if="toast.chatId"
+            class="toast__picture"
+            :chat-id="toast.chatId"
+            :title="toast.avatarTitle ?? toast.description ?? toast.title"
+            on-poster
+          />
+          <span v-else class="toast__picture toast__icon" aria-hidden="true">
+            <component :is="variantIcon[toast.variant]" />
+          </span>
           <div class="toast__copy">
             <span class="sr-only">{{ variantLabel(toast.variant) }}</span>
             <strong class="toast__title">{{ toast.title }}</strong>
             <p v-if="toast.description" class="toast__text">{{ toast.description }}</p>
           </div>
-          <button v-if="toast.action" type="button" class="toast__action" @click="runAction(toast)">
-            {{ toast.action.label }}
-          </button>
-          <button type="button" class="toast__close" :aria-label="t('common.close')" @click="remove(toast.id)">
-            <X class="icon-sm" aria-hidden="true" />
-          </button>
+          <ChevronRight v-if="toast.action" class="toast__go" aria-hidden="true" />
+          <!-- The whole banner is the one control: a tap does its action or puts it away. -->
+          <button
+            type="button"
+            class="toast__hit"
+            :aria-label="label(toast)"
+            @pointerdown="down(toast, $event)"
+            @pointermove="move"
+            @pointerup="up(toast)"
+            @pointercancel="up(toast)"
+            @keydown.enter.prevent="activate(toast)"
+            @keydown.space.prevent="activate(toast)"
+            @keydown.esc.prevent="remove(toast.id)"
+            @focus="pause(toast.id)"
+            @blur="resume(toast.id)"
+          />
         </article>
       </TransitionGroup>
     </div>
@@ -57,12 +116,12 @@ function runAction(toast: ToastMessage) {
 </template>
 
 <style scoped>
-/* On top, out of the way: a sheet's buttons and the floating «Новый анализ» stay free. */
+/* On top, out of the way of the sheets and the bottom panel. */
 .toast-region {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + var(--space-4));
-  right: var(--page-gutter);
-  left: var(--page-gutter);
+  top: calc(env(safe-area-inset-top, 0px) + var(--space-2));
+  right: var(--space-3);
+  left: var(--space-3);
   z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
@@ -73,6 +132,7 @@ function runAction(toast: ToastMessage) {
 
 @media (min-width: 901px) {
   .toast-region {
+    top: var(--space-4);
     right: var(--space-6);
     left: auto;
     align-items: flex-end;
@@ -80,28 +140,52 @@ function runAction(toast: ToastMessage) {
   }
 }
 
-/* Ink, 16 corners, one line of title and an optional line under it; the action is an outlined pill. */
+/* A notification card: grey by default, the person's poster when it is about them. */
 .toast {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
   max-width: var(--dialog-sm);
-  min-height: var(--control-md);
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
   border-radius: var(--radius-card);
-  background: var(--inverse-surface);
-  color: var(--on-inverse);
+  background: var(--surface-raised);
+  color: var(--text);
   box-shadow: var(--shadow-overlay);
   pointer-events: auto;
+  touch-action: none;
+  transition: transform var(--duration-sheet) var(--ease-drawer);
 }
 
-.toast__icon {
+.toast.is-dragging {
+  transition: none;
+}
+
+.toast--person {
+  background-color: var(--poster);
+  background-image: var(--poster-image);
+  color: var(--on-poster);
+}
+
+.toast__picture {
   flex: none;
 }
 
-.toast--error .toast__icon {
-  color: var(--danger-on-inverse);
+.toast__icon {
+  display: grid;
+  place-items: center;
+  width: var(--avatar-md);
+  height: var(--avatar-md);
+  border-radius: var(--radius-pill);
+  background: var(--fill-raised);
+  color: var(--text);
+  --icon-size: var(--icon-md);
+}
+
+.toast--error .toast__icon,
+.toast--warning .toast__icon {
+  color: var(--danger);
 }
 
 .toast__copy {
@@ -112,47 +196,40 @@ function runAction(toast: ToastMessage) {
 }
 
 .toast__title {
-  font: var(--text-label);
+  font: var(--text-body);
 }
 
 .toast__text {
-  color: var(--on-inverse-muted);
+  overflow: hidden;
+  color: var(--text-muted);
   font: var(--text-label);
-}
-
-.toast__action {
-  flex: none;
-  height: var(--control-sm);
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-pill);
-  box-shadow: var(--ring-current);
-  font: var(--text-label);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.toast__close {
-  position: relative;
-  display: inline-flex;
+.toast--person .toast__text {
+  color: var(--on-poster-muted);
+}
+
+.toast__go {
   flex: none;
-  align-items: center;
-  justify-content: center;
-  width: var(--control-sm);
-  height: var(--control-sm);
-  border-radius: var(--radius-pill);
-  color: var(--on-inverse-muted);
+  color: var(--text-muted);
 }
 
-.toast__close::after {
-  content: '';
+.toast--person .toast__go {
+  color: var(--on-poster-muted);
+}
+
+.toast__hit {
   position: absolute;
-  inset: calc((var(--control-sm) - var(--hit-min)) / 2);
+  inset: 0;
+  border-radius: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .toast__action:hover,
-  .toast__close:hover {
-    background: var(--on-inverse-hover);
-  }
+.toast__hit:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
 }
 
 .toast-enter-active {
@@ -170,6 +247,14 @@ function runAction(toast: ToastMessage) {
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateY(calc(-1 * var(--space-4))) scale(0.98);
+  transform: translateY(calc(-1 * var(--space-8)));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast-enter-active,
+  .toast-leave-active {
+    transition-duration: var(--duration-none);
+  }
 }
 </style>

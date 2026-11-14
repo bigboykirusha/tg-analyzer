@@ -6,7 +6,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
 const analysis = useAnalysis()
 const workspace = useWorkspaceStore()
 const { syncTimeZone } = useAuth()
-const { t } = useI18n()
+const { t, tc, formatNumber } = useI18n()
 const toast = useToast()
 const route = useRoute()
 const notifications = useNotificationsStore()
@@ -41,14 +41,21 @@ watch(analysis.finished, (job) => {
   const opened =
     job.status === 'completed' && chatId && !workspace.reports.length && ['/dashboard', '/new'].includes(route.path)
   if (opened) void navigateTo(`/chat/${chatId}`)
-  if (job.status === 'completed')
-    toast.success(
-      t('analysis.done.title'),
-      t('analysis.done.text', { chat }),
-      chatId && !opened
+  // A finished report is news about a person: a banner in their colour, a tap opens it (14.11). Home needs none —
+  // the report lands there as a tile and the bottom panel says it (HomeChatsSheet); an opened report neither.
+  if (job.status === 'completed' && route.path !== '/dashboard' && !opened)
+    toast.push({
+      variant: 'success',
+      title: t('analysis.done.title'),
+      description: job.scannedMessages
+        ? `${chat} · ${tc('common.messagesCount', job.scannedMessages, { count: formatNumber(job.scannedMessages) })}`
+        : chat,
+      chatId: chatId ?? undefined,
+      avatarTitle: chat,
+      action: chatId
         ? { label: t('dashboard.openReport'), onClick: () => void navigateTo(`/chat/${chatId}`) }
         : undefined,
-    )
+    })
   else if (job.status === 'failed') {
     if (job.error === 'chat_too_small' && chatId) workspace.markTooSmall(chatId)
     toast.error(

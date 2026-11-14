@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ParseProgressDto } from '@tg-analyzer/shared'
 import { Search, X } from '../../lib/icons'
 
 /**
@@ -9,12 +10,29 @@ import { Search, X } from '../../lib/icons'
  * sheet, and only a tap on the open field brings the keyboard (raised while the sheet travels, it made iOS pan the
  * screen). Open, a close button stands to the right of the search; there is no title row.
  *
- * Open is a URL (`?pick`), so the browser's back closes it. The sheet only finds: a running analysis is its tile on
- * home (AnalysisTile, 14.11), not a strip in this head. The page keeps room for the head at its end.
+ * Open is a URL (`?pick`), so the browser's back closes it. While an analysis runs, the resting head shows it in
+ * place of the search (AnalysisPill, concept M1, 14.11): a tap opens «Разбираем переписку»; a pull still brings the
+ * list up, to queue the next one. Done, the head says «Отчёт готов · Открыть» for a few seconds while the report lands
+ * on home. The page keeps room for the head at its end.
  */
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const view = useAnalysisView()
+const analysis = useAnalysis()
+
+/** A report finished a moment ago: the head says so and opens it, then goes back to the search. */
+const READY_MS = 6000
+const ready = ref<ParseProgressDto | null>(null)
+let readyTimer: ReturnType<typeof setTimeout> | undefined
+watch(analysis.finished, (job) => {
+  clearTimeout(readyTimer)
+  ready.value = job?.status === 'completed' && job.chatId ? job : null
+  if (ready.value) readyTimer = setTimeout(() => (ready.value = null), READY_MS)
+})
+onBeforeUnmount(() => clearTimeout(readyTimer))
+/** The head shows the analysis (or its result) instead of the search, at rest only. */
+const showPill = computed(() => !open.value && (Boolean(view.value?.chatId) || Boolean(ready.value)))
 
 const open = computed(() => route.query.pick !== undefined)
 const search = ref('')
@@ -132,13 +150,24 @@ function up() {
   else if (open.value && (travelled > TRAVEL || velocity > FLICK)) closeSheet()
 }
 
-/** A tap on the resting head opens the sheet; the end of a drag is not a tap. */
+/**
+ * A tap on the resting head opens the sheet — or, while it shows the analysis, its details; done, the report. The end
+ * of a drag is not a tap.
+ */
 function tap() {
   if (moved) {
     moved = false
     return
   }
-  if (!open.value) openSheet()
+  if (open.value) return
+  if (view.value?.chatId) analysis.details.value = true
+  else if (ready.value?.chatId) openReady()
+  else openSheet()
+}
+function openReady() {
+  const chatId = ready.value?.chatId
+  ready.value = null
+  if (chatId) void navigateTo(`/chat/${chatId}`)
 }
 </script>
 
@@ -172,7 +201,8 @@ function tap() {
       >
         <span class="chats__handle" aria-hidden="true" />
         <span class="chats__veil" :style="{ opacity: veil }" aria-hidden="true" />
-        <div class="chats__bar">
+        <AnalysisPill v-if="showPill" :ready="view ? null : ready" />
+        <div v-else class="chats__bar">
           <label class="chats__search">
             <Search aria-hidden="true" />
             <input
@@ -200,7 +230,13 @@ function tap() {
           />
         </div>
         <!-- Keyboard users reach the resting sheet through this; a pointer taps the head. -->
-        <button v-if="!open" type="button" class="sr-only" @click.stop="openSheet">
+        <button v-if="!open && view?.chatId" type="button" class="sr-only" @click.stop="analysis.details.value = true">
+          {{ `${view.title}. ${view.status}` }}
+        </button>
+        <button v-else-if="!open && ready" type="button" class="sr-only" @click.stop="openReady">
+          {{ t('dashboard.openReport') }}
+        </button>
+        <button v-else-if="!open" type="button" class="sr-only" @click.stop="openSheet">
           {{ t('home.peekSearch') }}
         </button>
       </div>
@@ -294,6 +330,10 @@ function tap() {
 
 .chats__sheet.is-dragging .chats__veil {
   transition: none;
+}
+
+.chats__head :deep(.pill) {
+  width: 100%;
 }
 
 .chats__handle {

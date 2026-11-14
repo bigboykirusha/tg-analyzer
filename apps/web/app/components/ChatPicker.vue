@@ -2,14 +2,14 @@
 import { AlertCircle, MessageSquare, Search, WifiOff, X } from '../lib/icons'
 
 /**
- * Every Telegram chat, to analyse one: a search well, «Все / Личные / Группы», then rows (ChatRow) —
+ * Every Telegram chat, to analyse one: a search well, «Все 128 · Личные 96 · Группы 32» as words (UiFilters), then rows (ChatRow) —
  * the same list as a page on desktop (`/new`), on a newcomer's home and as a sheet on a phone (`?pick`). The sheet on
  * home carries the search in its own head (`ownSearch: false`, `v-model:search`).
  */
 withDefaults(defineProps<{ sticky?: boolean; ownSearch?: boolean }>(), { sticky: false, ownSearch: true })
 
 const PAGE_SIZE = 30
-const { t, tc } = useI18n()
+const { t, tc, formatNumber } = useI18n()
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
 const errorMessage = useErrorMessage()
@@ -19,11 +19,21 @@ const search = defineModel<string>('search', { default: '' })
 const filter = ref<'all' | 'private' | 'groups'>('all')
 const visibleCount = ref(PAGE_SIZE)
 const sentinel = ref<HTMLElement | null>(null)
-const filterOptions = computed(() => [
-  { value: 'all' as const, label: t('dashboard.filter.all') },
-  { value: 'private' as const, label: t('dashboard.filter.private') },
-  { value: 'groups' as const, label: t('dashboard.filter.groups') },
-])
+/** How many chats each word holds, of those the search finds: the filter tells it like Telegram's folders. */
+const counts = computed(() => {
+  const query = search.value.trim().toLocaleLowerCase()
+  const found = workspace.chats.filter((chat) => !query || chat.title.toLocaleLowerCase().includes(query))
+  const personal = found.filter((chat) => chat.type === 'private').length
+  return { all: found.length, private: personal, groups: found.length - personal }
+})
+const filterOptions = computed(() => {
+  const count = (value: number) => (workspace.chats.length ? formatNumber(value) : undefined)
+  return [
+    { value: 'all' as const, label: t('dashboard.filter.all'), count: count(counts.value.all) },
+    { value: 'private' as const, label: t('dashboard.filter.private'), count: count(counts.value.private) },
+    { value: 'groups' as const, label: t('dashboard.filter.groups'), count: count(counts.value.groups) },
+  ]
+})
 
 /** Telegram's own order: pinned chats first, then the latest message; chats known only from a report go last. */
 const ordered = computed(() =>
@@ -160,10 +170,9 @@ onMounted(() => {
 }
 
 @media (min-width: 901px) {
+  /* The words go under the search, the width of the list (14.11), as on a phone. */
   .picker--sticky .picker__tools {
     top: 0;
-    flex-direction: row;
-    align-items: center;
   }
 
   .picker__search::after {
@@ -171,10 +180,6 @@ onMounted(() => {
     position: absolute;
     z-index: -1;
     inset: calc((var(--control-sm) - var(--hit-min)) / 2) 0;
-  }
-
-  .picker--sticky .picker__search {
-    flex: 1;
   }
 }
 
@@ -187,7 +192,7 @@ onMounted(() => {
   gap: var(--space-2);
   height: var(--control-sm);
   padding: 0 var(--space-3);
-  /* A pill, as the filters beside it: one row, one shape. */
+  /* A pill, the shape of every control. */
   border-radius: var(--radius-pill);
   background: var(--field-bg, var(--surface-2));
   color: var(--text-muted);
