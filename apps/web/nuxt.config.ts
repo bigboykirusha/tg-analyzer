@@ -98,6 +98,8 @@ export default defineNuxtConfig({
     // The job log page was removed; old links land on the chats list.
     '/history': { redirect: '/dashboard' },
     '/chat/**': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
+    // The bot's «Открыть» lands here with a Telegram signature in the address: client only, never indexed.
+    '/auth/**': { ssr: false, headers: { 'x-robots-tag': 'noindex, nofollow' } },
     // Shared reports and quizzes: private by nature, fetched in the browser, never indexed. The shell renders on the
     // server so a messenger reads the link's preview (og:image — the person's poster from the API).
     '/s/**': { headers: { 'x-robots-tag': 'noindex, nofollow' } },

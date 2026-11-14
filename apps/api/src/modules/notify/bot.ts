@@ -62,13 +62,40 @@ async function call<T>(method: string, body: Record<string, unknown>, signal?: A
   return json.result as T
 }
 
-export async function sendBotMessage(chatId: number, text: string, button?: { text: string; url: string }) {
-  await call('sendMessage', {
-    chat_id: chatId,
-    text,
-    link_preview_options: { is_disabled: true },
-    ...(button ? { reply_markup: { inline_keyboard: [[button]] } } : {}),
-  })
+/**
+ * A button to a page of the site. `signIn`: a «login_url» button — Telegram opens the page in its own browser with the
+ * person's id signed by our bot, and /auth/telegram signs them in there without a code (14.11). It needs the site's
+ * domain set for the bot in @BotFather (/setdomain); until it is, Telegram refuses the message, and it goes again with
+ * a plain link.
+ */
+type BotButton = { text: string; url: string; signIn?: boolean }
+
+let loginUrlRefused = false
+
+export async function sendBotMessage(chatId: number, text: string, button?: BotButton) {
+  const send = (markup?: Record<string, unknown>) =>
+    call('sendMessage', {
+      chat_id: chatId,
+      text,
+      link_preview_options: { is_disabled: true },
+      ...(markup ? { reply_markup: { inline_keyboard: [[markup]] } } : {}),
+    })
+  if (!button) return send()
+  const plain = { text: button.text, url: button.url }
+  if (!button.signIn || loginUrlRefused) return send(plain)
+  const site = siteUrl()
+  const target = new URL(button.url)
+  const loginUrl = `${site}/auth/telegram?to=${encodeURIComponent(target.pathname)}`
+  try {
+    await send({ text: button.text, login_url: { url: loginUrl } })
+  } catch (error) {
+    // The bot has no domain yet (BOT_DOMAIN_INVALID): plain links from now on, said once in the log. Anything else
+    // (the person blocked the bot, the network) is not about the button.
+    if (!/DOMAIN|LOGIN_URL|BUTTON_URL/i.test(error instanceof Error ? error.message : String(error))) throw error
+    loginUrlRefused = true
+    logger.warn({ err: error }, 'login_url button refused; set the domain in @BotFather (/setdomain)')
+    await send(plain)
+  }
 }
 
 /** What the bot says for an event; only these three are worth a message, the rest wait on the page. */
@@ -100,7 +127,7 @@ export async function sendNotificationToBot(userId: string, event: NotificationD
     await sendBotMessage(
       user.tgUserId,
       text,
-      site ? { text: 'Открыть', url: `${site}/chat/${event.chatId}` } : undefined,
+      site ? { text: 'Открыть', url: `${site}/chat/${event.chatId}`, signIn: true } : undefined,
     )
   } catch (error) {
     logger.warn({ err: error, userId, kind: event.kind }, 'could not send a bot message')
@@ -144,7 +171,9 @@ export async function handleBotUpdate(update: BotUpdate) {
         ? 'Готово: напишу сюда, когда отчёт будет готов. Отключить — /stop.'
         : 'Сначала войдите на сайте через Telegram, потом снова нажмите Start.',
       site
-        ? { text: known ? 'Открыть TG Analyzer' : 'Войти', url: known ? `${site}/dashboard` : `${site}/login` }
+        ? known
+          ? { text: 'Открыть TG Analyzer', url: `${site}/dashboard`, signIn: true }
+          : { text: 'Войти', url: `${site}/login` }
         : undefined,
     )
   } else if (command === '/stop') {

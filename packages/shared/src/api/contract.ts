@@ -30,6 +30,7 @@ import type {
   UserResponse,
   VerifyCodeBody,
   VerifyCodeResponse,
+  TelegramLoginBody,
   VerifyPasswordBody,
   WsTicketResponse,
 } from './types'
@@ -72,6 +73,12 @@ export const verifyPasswordBodySchema = z.object({
   tempToken: z.uuid(),
   password: z.string().min(1).max(1024),
 }) satisfies z.ZodType<VerifyPasswordBody, unknown>
+
+export const telegramLoginBodySchema = z.object({
+  fields: z
+    .record(z.string().regex(/^[a-z_]{1,32}$/), z.string().max(512))
+    .refine((fields) => Object.keys(fields).length <= 16, 'Too many fields'),
+}) satisfies z.ZodType<TelegramLoginBody, unknown>
 
 export const updateProfileBodySchema = z
   .object({
@@ -133,6 +140,7 @@ export interface ApiEndpointMap {
   'POST /api/v1/auth/verify-code': Endpoint<VerifyCodeBody, VerifyCodeResponse>
   'POST /api/v1/auth/verify-password': Endpoint<VerifyPasswordBody, AuthSuccessResponse>
   'POST /api/v1/auth/refresh': Endpoint<undefined, AuthSuccessResponse>
+  'POST /api/v1/auth/telegram-login': Endpoint<TelegramLoginBody, AuthSuccessResponse>
   'POST /api/v1/auth/logout': Endpoint<undefined, SuccessResponse>
   'POST /api/v1/auth/ws-ticket': Endpoint<undefined, WsTicketResponse>
   'GET /api/v1/auth/me': Endpoint<undefined, UserResponse>

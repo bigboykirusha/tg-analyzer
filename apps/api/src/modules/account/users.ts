@@ -27,6 +27,11 @@ export function findUser(userId: string) {
   return db.query.users.findFirst({ where: eq(schema.users.id, userId) })
 }
 
+/** The account that signed in with this Telegram user id, if it ever did. */
+export function findUserByTelegramId(tgUserId: number) {
+  return db.query.users.findFirst({ where: eq(schema.users.tgUserId, tgUserId) })
+}
+
 export async function updateUserSettings(userId: string, settings: { timezone?: string; botNotify?: boolean }) {
   const [row] = await db.update(schema.users).set(settings).where(eq(schema.users.id, userId)).returning()
   return row ?? null

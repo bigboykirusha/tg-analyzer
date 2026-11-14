@@ -85,6 +85,8 @@ docker compose restart worker
 - Вход не доходит до кода — `docker compose logs api`, проверьте `TELEGRAM_API_ID/HASH` в `.env`.
 - Разбор висит — `docker compose logs worker`.
 
+Бот: `TELEGRAM_BOT_TOKEN` и `TELEGRAM_BOT_USERNAME` в `.env`, затем в @BotFather `/setdomain` → домен сайта (`SITE_HOST`). С доменом кнопка «Открыть» в сообщениях бота входит на сайт без кода (во встроенном браузере Telegram нет cookie Safari); без домена бот шлёт обычную ссылку.
+
 Алерты в Telegram: заполните `ALERT_TELEGRAM_BOT_TOKEN` и `ALERT_TELEGRAM_CHAT_ID` в `.env` и выполните `docker compose up -d`.
 
 ## После переезда

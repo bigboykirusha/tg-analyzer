@@ -19,6 +19,7 @@ export type ApiErrorCode =
   // app session
   | 'AUTH_UNAUTHORIZED'
   | 'AUTH_REFRESH_INVALID'
+  | 'AUTH_TELEGRAM_LOGIN_INVALID'
   // telegram login
   | 'LOGIN_PHONE_INVALID'
   | 'LOGIN_PHONE_BANNED'
@@ -111,6 +112,14 @@ export interface VerifyCodeBody {
   phone: string
   code: string
   phoneCodeHash: string
+}
+
+/**
+ * What Telegram appends to a «login_url» button's address (id, auth_date, hash, names…), passed on as it came: the
+ * server checks Telegram's signature over exactly these fields.
+ */
+export interface TelegramLoginBody {
+  fields: Record<string, string>
 }
 
 export interface VerifyPasswordBody {

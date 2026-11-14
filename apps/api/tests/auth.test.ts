@@ -360,3 +360,53 @@ test('send-code reports where the code went and resend switches channel on the s
   assert.equal(unknown.statusCode, 401)
   assert.equal(unknown.json<{ code: string }>().code, 'LOGIN_SESSION_EXPIRED')
 })
+
+test('a bot button signs in someone who has signed in before, once, while it is fresh', async () => {
+  const { config } = await import('../src/config')
+  const { createHash, createHmac } = await import('node:crypto')
+  const previous = config.TELEGRAM_BOT_TOKEN
+  ;(config as { TELEGRAM_BOT_TOKEN?: string }).TELEGRAM_BOT_TOKEN = '123456:test-bot-token'
+  try {
+    const session = await login('+79990000077')
+    const { rows } = await pool.query<{ tg_user_id: string }>('select tg_user_id from users where id = $1', [
+      session.userId,
+    ])
+    const sign = (fields: Record<string, string>, token = config.TELEGRAM_BOT_TOKEN!) => {
+      const check = Object.keys(fields)
+        .sort()
+        .map((key) => `${key}=${fields[key]}`)
+        .join('\n')
+      const secret = createHash('sha256').update(token).digest()
+      return { ...fields, hash: createHmac('sha256', secret).update(check).digest('hex') }
+    }
+    const press = (fields: Record<string, string>) =>
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/telegram-login',
+        payload: { fields },
+        headers: { origin: ORIGIN },
+        remoteAddress: nextIp(),
+      })
+    const now = String(Math.floor(Date.now() / 1000))
+    const fields = sign({ id: rows[0]!.tg_user_id, first_name: 'Demo', auth_date: now })
+
+    const first = await press(fields)
+    assert.equal(first.statusCode, 200)
+    assert.equal(first.json().user.id, session.userId)
+    assert.ok(first.cookies.find((cookie) => cookie.name === REFRESH_COOKIE_NAME))
+
+    // The same link again (history, a screenshot): refused.
+    assert.equal((await press(fields)).json().code, 'AUTH_TELEGRAM_LOGIN_INVALID')
+    // Signed with another bot's token, changed after signing, too old, or someone who never signed in: refused.
+    const forged = sign({ id: rows[0]!.tg_user_id, auth_date: now }, '999:other-bot')
+    assert.equal((await press(forged)).statusCode, 401)
+    const changed = { ...sign({ id: rows[0]!.tg_user_id, auth_date: now, first_name: 'A' }), first_name: 'B' }
+    assert.equal((await press(changed)).statusCode, 401)
+    const old = sign({ id: rows[0]!.tg_user_id, auth_date: String(Number(now) - 3600) })
+    assert.equal((await press(old)).statusCode, 401)
+    const stranger = sign({ id: '987654321012', auth_date: now })
+    assert.equal((await press(stranger)).statusCode, 401)
+  } finally {
+    ;(config as { TELEGRAM_BOT_TOKEN?: string }).TELEGRAM_BOT_TOKEN = previous
+  }
+})
