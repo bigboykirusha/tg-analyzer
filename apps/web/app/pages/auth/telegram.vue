@@ -43,7 +43,8 @@ onMounted(async () => {
       if (!(error instanceof ApiClientError)) throw error
     }
   }
-  await navigateTo('/login', { replace: true })
+  // A signature that did not hold (an old message, a forwarded link): the sign-in by number says why.
+  await navigateTo(fields.hash ? '/login?from=bot' : '/login', { replace: true })
 })
 </script>
 

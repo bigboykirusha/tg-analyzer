@@ -763,9 +763,14 @@ export type QuizQuestionId =
   | 'essays'
   | 'lastWord'
   | 'doubleTexts'
+  | 'reactions'
+  | 'goodMorning'
+  | 'firstMessage'
+  | 'pauseBreaker'
+  | 'longestVoice'
 
-/** How the two numbers of a question are written out. */
-export type QuizUnit = 'count' | 'percent' | 'seconds' | 'words'
+/** How the two numbers of a question are written out; a «fact» has none (1 for the one it was, 0 for the other). */
+export type QuizUnit = 'count' | 'percent' | 'seconds' | 'words' | 'fact'
 
 /** One «who more?» question of a private chat. The values are the answer shown afterwards. */
 export interface QuizQuestionDto {

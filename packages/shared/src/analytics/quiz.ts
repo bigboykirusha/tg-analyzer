@@ -33,7 +33,7 @@ interface Candidate {
  */
 export function deriveQuiz(report: ChatReport): QuizQuestionDto[] {
   if (report.group || report.totals.messages < MIN_MESSAGES) return []
-  const { responses, habits, vocabulary, voice, stickers } = report
+  const { responses, habits, vocabulary, voice, stickers, reactions, rituals } = report
   const enoughReplies = responses.mineSamples >= MIN_REPLIES && responses.theirsSamples >= MIN_REPLIES
   const writesFirst = responses.iWriteFirstPct
   const lastWord = habits?.lastWordMinePct
@@ -74,17 +74,47 @@ export function deriveQuiz(report: ChatReport): QuizQuestionDto[] {
     },
     { id: 'lastWord', unit: 'percent', mine: lastWord, theirs: lastWord == null ? null : 100 - lastWord, minTotal: 0 },
     { id: 'doubleTexts', unit: 'count', mine: habits?.doubleTexts.mine, theirs: habits?.doubleTexts.theirs },
+    { id: 'reactions', unit: 'count', mine: reactions?.given.mine, theirs: reactions?.given.theirs, minTotal: 10 },
+    {
+      id: 'goodMorning',
+      unit: 'count',
+      mine: rituals?.goodMorning.mine,
+      theirs: rituals?.goodMorning.theirs,
+      minTotal: 6,
+    },
   ]
 
-  return candidates
-    .flatMap((candidate): QuizQuestionDto[] => {
-      const { mine, theirs } = candidate
-      if (mine == null || theirs == null) return []
-      const high = Math.max(mine, theirs)
-      if (high <= 0 || mine === theirs || mine + theirs < (candidate.minTotal ?? 10)) return []
-      if (Math.abs(mine - theirs) / high < MIN_LEAD) return []
-      const mineWins = candidate.lowerWins ? mine < theirs : mine > theirs
-      return [{ id: candidate.id, unit: candidate.unit, mine, theirs, answer: mineWins ? 'mine' : 'theirs' }]
-    })
-    .slice(0, QUIZ_LENGTH)
+  const numeric = candidates.flatMap((candidate): QuizQuestionDto[] => {
+    const { mine, theirs } = candidate
+    if (mine == null || theirs == null) return []
+    const high = Math.max(mine, theirs)
+    if (high <= 0 || mine === theirs || mine + theirs < (candidate.minTotal ?? 10)) return []
+    if (Math.abs(mine - theirs) / high < MIN_LEAD) return []
+    const mineWins = candidate.lowerWins ? mine < theirs : mine > theirs
+    return [{ id: candidate.id, unit: candidate.unit, mine, theirs, answer: mineWins ? 'mine' : 'theirs' }]
+  })
+
+  return [...numeric, ...deriveFacts(report)].slice(0, QUIZ_LENGTH)
+}
+
+const fact = (id: QuizQuestionId, mine: boolean): QuizQuestionDto => ({
+  id,
+  unit: 'fact',
+  mine: mine ? 1 : 0,
+  theirs: mine ? 0 : 1,
+  answer: mine ? 'mine' : 'theirs',
+})
+
+/** Questions with one clear answer however even the chat is: who it was, not how much. */
+function deriveFacts(report: ChatReport): QuizQuestionDto[] {
+  const facts: QuizQuestionDto[] = []
+  const first = report.milestones?.find((milestone) => milestone.index === 1)
+  if (first) facts.push(fact('firstMessage', first.mine))
+  const gap = report.facts.longestGap
+  if (gap && gap.brokenByMe !== undefined) facts.push(fact('pauseBreaker', gap.brokenByMe))
+  const longest = report.voice?.voice.longest
+  if (longest && report.voice!.voice.count.mine > 0 && report.voice!.voice.count.theirs > 0) {
+    facts.push(fact('longestVoice', longest.mine))
+  }
+  return facts
 }

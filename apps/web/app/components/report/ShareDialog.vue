@@ -166,9 +166,9 @@ const title = computed(() =>
           <template #leading><Link aria-hidden="true" /></template>
         </UiListRow>
         <UiListRow
-          v-if="quizOpen"
           as="button"
-          chevron
+          :chevron="quizOpen"
+          :disabled="!quizOpen"
           :title="t('share.quiz.short')"
           :subtitle="quizStatus"
           @click="step = 'quiz'"

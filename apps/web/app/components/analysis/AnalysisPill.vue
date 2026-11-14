@@ -26,6 +26,7 @@ const pill = computed(() => {
     chat: live.chat,
     ready: false as const,
     percent: live.percent,
+    note: live.note,
     share: live.share,
     pulse: live.pulse,
   }
@@ -44,7 +45,8 @@ const pill = computed(() => {
     <span class="pill__name">{{ pill.chat }}</span>
     <template v-if="!pill.ready">
       <Pulse class="pill__pulse" :data="pill.pulse" :height="0" :bars="24" :pitch="5" :read="pill.share" />
-      <span v-if="pill.percent !== null" class="pill__percent">{{ pill.percent }}%</span>
+      <span v-if="pill.note" class="pill__percent">{{ pill.note }}</span>
+      <span v-else-if="pill.percent !== null" class="pill__percent">{{ pill.percent }}%</span>
     </template>
     <span v-else class="pill__open">{{ t('analysis.pill.open') }}</span>
   </div>

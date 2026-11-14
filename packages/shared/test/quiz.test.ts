@@ -56,3 +56,57 @@ test('the quiz skips ties, short chats and groups', () => {
   const ids = deriveQuiz(even.finish('private')).map((question) => question.id)
   assert.ok(!ids.includes('talker'))
 })
+
+/** Both sides write the same amount, answer alike and laugh alike: only «who it was» questions are left. */
+function balancedChat(options: { firstOutgoing: boolean; breakerOutgoing: boolean; longestVoiceOutgoing: boolean }) {
+  const builder = new ChatReportBuilder('UTC')
+  const start = Date.parse('2026-03-02T18:00:00Z')
+  const { firstOutgoing, breakerOutgoing, longestVoiceOutgoing } = options
+  for (let index = 0; index < 120; index += 1) {
+    const outgoing = (index % 2 === 0) === firstOutgoing
+    builder.add(message(start + index * MIN, outgoing))
+  }
+  // A silence of ten days, ended by one side.
+  const after = start + 120 * MIN + 10 * DAY
+  builder.add(message(after, breakerOutgoing))
+  const voice = (ts: number, outgoing: boolean, durationSec: number): MessageInput => ({
+    ...message(ts, outgoing, ''),
+    kind: 'voice',
+    durationSec,
+  })
+  builder.add(voice(after + MIN, longestVoiceOutgoing, 120))
+  builder.add(voice(after + 2 * MIN, !longestVoiceOutgoing, 20))
+  return builder.finish('private', new Date('2026-04-15T00:00:00Z'))
+}
+
+test('a balanced chat still has questions with one clear answer', () => {
+  const report = balancedChat({ firstOutgoing: true, breakerOutgoing: false, longestVoiceOutgoing: true })
+  const quiz = deriveQuiz(report)
+  assert.ok(quiz.length >= 3, `only ${quiz.map((question) => question.id)}`)
+  assert.ok(!quiz.some((question) => question.id === 'talker'))
+  const byId = new Map(quiz.map((question) => [question.id, question]))
+  assert.deepEqual(byId.get('firstMessage'), { id: 'firstMessage', unit: 'fact', mine: 1, theirs: 0, answer: 'mine' })
+  assert.deepEqual(byId.get('pauseBreaker'), {
+    id: 'pauseBreaker',
+    unit: 'fact',
+    mine: 0,
+    theirs: 1,
+    answer: 'theirs',
+  })
+  assert.equal(byId.get('longestVoice')?.answer, 'mine')
+})
+
+test('the who-it-was answers follow the chat', () => {
+  const report = balancedChat({ firstOutgoing: false, breakerOutgoing: true, longestVoiceOutgoing: false })
+  const answers = Object.fromEntries(deriveQuiz(report).map((question) => [question.id, question.answer]))
+  assert.equal(answers.firstMessage, 'theirs')
+  assert.equal(answers.pauseBreaker, 'mine')
+  assert.equal(answers.longestVoice, 'theirs')
+})
+
+test('numeric questions come before the who-it-was ones', () => {
+  const ids = deriveQuiz(chat()).map((question) => question.id)
+  const firstFact = ids.findIndex((id) => id === 'firstMessage' || id === 'pauseBreaker' || id === 'longestVoice')
+  if (firstFact >= 0)
+    assert.ok(ids.slice(firstFact).every((id) => ['firstMessage', 'pauseBreaker', 'longestVoice'].includes(id)))
+})

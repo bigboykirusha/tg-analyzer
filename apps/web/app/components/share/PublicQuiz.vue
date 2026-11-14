@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { buildApiPath, type PublicQuizDto } from '@tg-analyzer/shared'
 import { ofetch } from 'ofetch'
-import { Check } from '../../lib/icons'
+import { Check, X } from '../../lib/icons'
 import { wave } from '../../lib/wave'
 
 /**
@@ -36,11 +36,17 @@ const sides = computed(() => [
   { key: 'guest' as const, name: t('publicQuiz.me') },
 ])
 /** «Верно — это вы, 81 раз против 66.» */
+const who = (answer: Pick) => (answer === 'author' ? props.quiz.author : t('publicQuiz.youAre'))
 const reveal = computed(() => {
   const item = current.value
   const loser: Pick = item.answer === 'author' ? 'guest' : 'author'
+  if (item.unit === 'fact') {
+    return t(right(index.value) ? 'publicQuiz.revealFactRight' : 'publicQuiz.revealFactWrong', {
+      who: who(item.answer),
+    })
+  }
   return t(right(index.value) ? 'publicQuiz.revealRight' : 'publicQuiz.revealWrong', {
-    who: item.answer === 'author' ? props.quiz.author : t('publicQuiz.youAre'),
+    who: who(item.answer),
     winner: value(item.unit, item[item.answer]),
     loser: value(item.unit, item[loser]),
   })
@@ -127,12 +133,26 @@ const invitation = wave(4, 40)
               />
               <UiAvatar v-else :title="side.name" side="theirs" size="md" />
               <span class="choice__name">{{ side.name }}</span>
-              <span v-if="picked === side.key" class="choice__value">
-                <Check aria-hidden="true" />{{ value(current.unit, current[side.key]) }}
+              <span v-if="picked && (side.key === current.answer || side.key === picked)" class="choice__value">
+                <Check v-if="side.key === current.answer" aria-hidden="true" />
+                <X v-else aria-hidden="true" />
+                <template v-if="current.unit !== 'fact'">{{ value(current.unit, current[side.key]) }}</template>
               </span>
             </button>
           </div>
-          <p class="quiz__reveal" role="status">{{ picked ? reveal : '' }}</p>
+          <div class="quiz__reveal">
+            <p role="status">{{ picked ? reveal : '' }}</p>
+            <ReportLine
+              v-if="picked && current.unit !== 'fact'"
+              class="quiz__compare"
+              :mine="current.author"
+              :theirs="current.guest"
+              :left="value(current.unit, current.author)"
+              :right="value(current.unit, current.guest)"
+              :left-name="quiz.author"
+              :right-name="t('publicQuiz.me')"
+            />
+          </div>
         </div>
         <div class="quiz__foot">
           <UiButton variant="primary" block :disabled="!picked" :loading="sending" @click="next">
@@ -153,6 +173,26 @@ const invitation = wave(4, 40)
                 : t('publicQuiz.allRight', { name: quiz.author })
             }}
           </p>
+          <UiGroup class="quiz__answers" :header="t('publicQuiz.answers')">
+            <UiListRow
+              v-for="(item, at) in quiz.questions"
+              :key="item.id"
+              :title="question(item.id)"
+              :subtitle="t('publicQuiz.answerIs', { who: who(item.answer) })"
+            >
+              <template #leading>
+                <span
+                  class="mark"
+                  :class="{ 'is-right': right(at) }"
+                  role="img"
+                  :aria-label="right(at) ? t('publicQuiz.right') : t('publicQuiz.wrong')"
+                >
+                  <Check v-if="right(at)" aria-hidden="true" />
+                  <X v-else aria-hidden="true" />
+                </span>
+              </template>
+            </UiListRow>
+          </UiGroup>
         </div>
         <div class="quiz__foot">
           <UiButton variant="primary" block to="/login">{{ t('publicReport.cta') }}</UiButton>
@@ -304,10 +344,41 @@ const invitation = wave(4, 40)
   --icon-size: var(--icon-sm);
 }
 
-/* The line keeps its height before the answer, so nothing jumps when it arrives. */
+/* The block keeps its height before the answer, so nothing jumps when it arrives. */
 .quiz__reveal {
-  min-height: calc(var(--space-12));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: calc(var(--space-12) * 2);
   font: var(--text-label);
+}
+
+.quiz__compare {
+  color: var(--on-poster);
+}
+
+/* The list of answers is a white card on the poster, like the choices. */
+.quiz__answers {
+  --pulse-you: var(--text);
+  padding-top: var(--space-4);
+  color: var(--on-poster-muted);
+}
+
+.mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--avatar-xs);
+  height: var(--avatar-xs);
+  border-radius: var(--radius-pill);
+  background: var(--fill-raised);
+  color: var(--text-muted);
+  --icon-size: var(--icon-sm);
+}
+
+.mark.is-right {
+  background: var(--text);
+  color: var(--surface);
 }
 
 .quiz__foot {

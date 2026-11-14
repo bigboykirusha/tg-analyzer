@@ -40,12 +40,20 @@ export function useAnalysisView() {
     const reached =
       reachedAt && phase === 'scanning'
         ? t('analysis.banner.reached', {
-            date: formatDate(reachedAt, { day: 'numeric', month: 'long', year: 'numeric' }),
+            date: formatDate(reachedAt, { day: 'numeric', month: 'long', year: 'numeric' }).replace(/\s?г\.$/u, ''),
           })
         : null
+    /** The pill's short word in place of the percentage while Telegram makes us wait or the report is put together. */
+    const note =
+      phase === 'waiting' && waitSeconds
+        ? formatCountdown(waitSeconds)
+        : phase === 'saving'
+          ? t('analysis.pill.saving')
+          : null
     return {
       chat,
       chatId,
+      note,
       title: t('analysis.banner.title', { chat }),
       status,
       read,
