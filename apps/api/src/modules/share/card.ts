@@ -6,8 +6,8 @@ import satori from 'satori'
 
 /**
  * The picture a messenger shows under a shared link (og:image, 1200×630): the person's poster as the app draws it —
- * their colour lit from the top-left and deepening to the bottom-right, the pair's names, how many messages since
- * when, the mirrored pulse (you in ink above the line, them in their deep tone below). It shows exactly what the
+ * their colour lit from the top-left and deepening to the bottom-right, the pair's names, how many messages over which
+ * months, the mirrored pulse (you in ink above the line, them in their deep tone below). It shows exactly what the
  * guest page shows: no names when the author hid them. satori lays it out and turns the text into outlines,
  * resvg draws the PNG — no system fonts needed.
  */
@@ -30,6 +30,8 @@ const INK = '#17171a'
 
 type Lang = 'ru' | 'en'
 
+const NBSP = ' '
+
 const TEXT = {
   ru: {
     pair: (me: string, name: string) => `${me} и ${name}`,
@@ -46,7 +48,7 @@ const TEXT = {
             : 'сообщений'
       return `${count.toLocaleString('ru-RU')} ${word}`
     },
-    since: (messages: string, date: string) => `${messages} с ${date}`,
+    span: (messages: string, months: string) => `${messages} · ${months}`,
     quiz: (author: string) => `Угадайка от ${author}`,
     quizLede: 'Кто пишет первым, кто быстрее отвечает — угадаете?',
   },
@@ -55,7 +57,7 @@ const TEXT = {
     author: 'Author',
     partner: 'Their contact',
     messages: (count: number) => `${count.toLocaleString('en-US')} ${count === 1 ? 'message' : 'messages'}`,
-    since: (messages: string, date: string) => `${messages} since ${date}`,
+    span: (messages: string, months: string) => `${messages} · ${months}`,
     quiz: (author: string) => `A quiz from ${author}`,
     quizLede: 'Who writes first, who answers faster — can you guess?',
   },
@@ -117,20 +119,26 @@ function card(share: PublicShareDto, lang: Lang) {
     heading = text.pair(author, partner)
     const days = fillDailyGaps(share.data.report.activity.daily)
     const first = days[0]?.date
+    const last = days.at(-1)?.date
     const messages = text.messages(share.data.report.totals.messages)
-    lede = first
-      ? text.since(
-          messages,
-          new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-US', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-            timeZone: 'UTC',
-          })
-            .format(new Date(`${first.slice(0, 10)}T00:00:00Z`))
-            .replace(/\s?г\.$/u, ''),
-        )
-      : messages
+    // The same line as the report's poster and the guest page (useChatSpan): «4 800 сообщений · май — ноябрь 2026».
+    const month = (day: string, year: boolean) =>
+      new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-US', {
+        month: 'long',
+        ...(year ? { year: 'numeric' as const } : {}),
+        timeZone: 'UTC',
+      })
+        .format(new Date(`${day.slice(0, 10)}T00:00:00Z`))
+        .replace(/\s?г\.$/u, '')
+    lede =
+      first && last
+        ? text.span(
+            messages,
+            first.slice(0, 7) === last.slice(0, 7)
+              ? month(last, true)
+              : `${month(first, first.slice(0, 4) !== last.slice(0, 4))}${NBSP}— ${month(last, true)}`,
+          )
+        : messages
     bars = pulse(days)
   } else {
     heading = text.quiz(share.author)

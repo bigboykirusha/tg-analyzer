@@ -156,8 +156,9 @@ const evenNames = computed(() =>
  */
 const answer = computed(() => {
   if (rows.value.filter((item) => item.scored).length < 3) return null
-  const { mine, theirs } = tally.value
-  if (mine === theirs) return t('report.match.answerEven')
+  const { mine, theirs, even } = tally.value
+  // Even sides, or most comparisons even (2 : 1 with eleven even reads «почти везде поровну», not a win).
+  if (mine === theirs || even > mine + theirs) return t('report.match.answerEven')
   const mineLeads = mine > theirs
   const [lead, other] = mineLeads ? [mine, theirs] : [theirs, mine]
   const most = lead >= 3 && other <= 1
