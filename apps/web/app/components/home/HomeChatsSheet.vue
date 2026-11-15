@@ -141,6 +141,7 @@ const handlers = {
   },
 }
 useBodyScrollLock(open)
+useVisualViewportFit(wrap, open)
 useFocusTrap(sheet, open, { onEscape: closeSheet, initial: () => sheet.value })
 
 /**
@@ -255,11 +256,15 @@ function openReady() {
 .chats__sheet {
   position: fixed;
   right: 0;
-  bottom: 0;
+  bottom: var(--vv-bottom, 0px);
   left: 0;
   display: flex;
   flex-direction: column;
-  height: calc(100svh - env(safe-area-inset-top, 0px) - var(--space-8));
+  /* With the keyboard up the sheet is the visible band (useVisualViewportFit), so its search stays in view. */
+  height: min(
+    calc(100svh - env(safe-area-inset-top, 0px) - var(--space-8)),
+    calc(var(--vv-height, 100svh) - env(safe-area-inset-top, 0px) - var(--space-8))
+  );
   box-shadow: var(--shadow-peek);
   outline: none;
   --field-bg: var(--fill-raised);

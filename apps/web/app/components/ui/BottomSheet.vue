@@ -39,6 +39,7 @@ useBodyScrollLock(open)
 // The sheet itself takes focus: a search field first would pop the keyboard over the list on a phone.
 useFocusTrap(panelRef, open, { onEscape: close, initial: () => panelRef.value })
 const drag = useSheetDrag(panelRef, { root: layerRef, onRelease: (toRest) => !toRest || close() })
+useVisualViewportFit(layerRef, open)
 watch(open, (value) => value && drag.reset())
 </script>
 

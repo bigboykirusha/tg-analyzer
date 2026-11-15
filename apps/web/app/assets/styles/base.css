@@ -377,7 +377,8 @@ main:focus {
  */
 .sheet-layer {
   position: fixed;
-  inset: 0;
+  /* With the keyboard up the layer is the visible band, not the layout viewport (useVisualViewportFit). */
+  inset: var(--vv-top, 0px) 0 var(--vv-bottom, 0px);
   z-index: var(--z-modal);
   display: flex;
   align-items: flex-end;

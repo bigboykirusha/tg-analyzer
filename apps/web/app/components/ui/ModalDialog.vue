@@ -50,6 +50,10 @@ useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocu
 // Phones show the dialog as a sheet, and a sheet answers the finger: grab its top and pull it down.
 const isSheet = useMediaQuery('(max-width: 640px)')
 const drag = useSheetDrag(panelRef, { root: layerRef, onRelease: (toRest) => !toRest || close() })
+useVisualViewportFit(
+  layerRef,
+  computed(() => open.value && isSheet.value),
+)
 watch(open, (value) => value && drag.reset())
 const grab = computed(() => (isSheet.value ? drag.handlers : {}))
 </script>
