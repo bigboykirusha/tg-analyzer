@@ -59,7 +59,7 @@ export function useFocusTrap(
             (element) => element.getClientRects().length > 0 && !element.closest('[inert]'),
           ) ??
           panel.value
-        target?.focus()
+        target?.focus({ preventScroll: true })
       } else {
         document.removeEventListener('keydown', handleKeydown)
         // Returning focus must not scroll: an action in the dialog may have just started a scroll of its own.

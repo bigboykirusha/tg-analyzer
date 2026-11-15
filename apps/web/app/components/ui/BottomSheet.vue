@@ -42,8 +42,9 @@ watch(open, (value) => value && drag.reset())
 
 <template>
   <Teleport to="#teleports">
-    <Transition name="sheet">
+    <Transition name="sheet" appear>
       <div v-if="open" class="sheet-scrim" :class="{ 'sheet-scrim--full': full }" @click.self="close">
+        <div class="sheet-dim" aria-hidden="true" />
         <section
           ref="panelRef"
           tabindex="-1"
@@ -51,8 +52,6 @@ watch(open, (value) => value && drag.reset())
           :role="role"
           aria-modal="true"
           :aria-labelledby="title ? titleId : undefined"
-          :class="{ 'is-dragging': drag.dragging.value }"
-          :style="drag.style.value"
         >
           <div class="sheet__drag" v-on="drag.handlers">
             <span class="sheet__grabber" aria-hidden="true" />
@@ -89,9 +88,18 @@ watch(open, (value) => value && drag.reset())
   display: flex;
   align-items: flex-end;
   padding: var(--space-12) 0 0;
-  background: var(--scrim);
 }
 
+/* The scrim is its own layer that only fades (opacity), a little taller than the screen: nothing shows under the
+   edge while Safari's toolbar moves. */
+.sheet-dim {
+  position: absolute;
+  inset: 0 0 calc(-1 * var(--space-12));
+  background: var(--scrim);
+  pointer-events: none;
+}
+
+/* One box, always: the sheet is never resized, restyled or re-laid out while it travels, it only moves. */
 .sheet {
   --field-bg: var(--fill-raised);
   /* Lists in a sheet or a dialog sit straight on it: no card inside a card. */
@@ -100,21 +108,29 @@ watch(open, (value) => value && drag.reset())
   --group-radius: 0;
   --group-inset: var(--page-gutter);
   --group-bleed: var(--page-gutter);
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
   max-height: 100%;
-  overflow: hidden;
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   background: var(--surface-raised);
   box-shadow: var(--shadow-overlay);
-  transform: translateY(var(--sheet-drag, 0));
-  /* Let go, it settles back on the drawer curve. */
+  /* A finger writes --sheet-drag once a frame (useSheetDrag); let go, it settles back on the drawer curve. */
+  transform: translate3d(0, var(--sheet-drag, 0px), 0);
   transition: transform var(--duration-sheet) var(--ease-drawer);
 }
 
-.sheet.is-dragging {
-  transition: none;
+/* The sheet's surface goes on below its edge: whatever the toolbar does, no page shows under it. */
+.sheet::after {
+  content: '';
+  position: absolute;
+  top: calc(100% - 1px);
+  right: 0;
+  left: 0;
+  height: 100vh;
+  background: var(--surface-raised);
+  pointer-events: none;
 }
 
 .sheet__drag {
@@ -184,14 +200,20 @@ watch(open, (value) => value && drag.reset())
   padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
 }
 
-.sheet-enter-active,
-.sheet-leave-active {
-  /* Only the scrim fades: the sheet is solid material that slides, never a ghost. */
-  transition: background-color var(--duration-sheet) var(--ease-drawer);
+/* Vue reads the length of the animation off this root, so it carries a transition of its own (nothing changes on it:
+   the scrim is the fading child, the sheet the moving one). */
+.sheet-enter-active {
+  transition: opacity var(--duration-sheet);
 }
 
 .sheet-leave-active {
-  transition-duration: var(--duration-fast);
+  transition: opacity var(--duration-fast);
+  pointer-events: none;
+}
+
+.sheet-enter-active .sheet,
+.sheet-leave-active .sheet {
+  will-change: transform;
 }
 
 .sheet-enter-active .sheet {
@@ -202,14 +224,27 @@ watch(open, (value) => value && drag.reset())
   transition: transform var(--transition-exit);
 }
 
-.sheet-enter-from,
-.sheet-leave-to {
-  background-color: transparent;
+.sheet-enter-active .sheet-dim {
+  transition: opacity var(--duration-sheet) var(--ease-drawer);
+}
+
+.sheet-leave-active .sheet-dim {
+  transition: opacity var(--duration-fast) var(--ease-exit);
+}
+
+.sheet-enter-active .sheet-dim,
+.sheet-leave-active .sheet-dim {
+  will-change: opacity;
+}
+
+.sheet-enter-from .sheet-dim,
+.sheet-leave-to .sheet-dim {
+  opacity: 0;
 }
 
 .sheet-enter-from .sheet,
 .sheet-leave-to .sheet {
-  transform: translateY(calc(100% + var(--space-4)));
+  transform: translate3d(0, calc(100% + var(--space-4)), 0);
 }
 
 /* Full: the whole screen, one surface up to the status bar — no grabber, no corners, no edge (14.11). It still
@@ -234,7 +269,12 @@ watch(open, (value) => value && drag.reset())
   .sheet-enter-from .sheet,
   .sheet-leave-to .sheet {
     opacity: 0;
-    transform: translateY(var(--sheet-drag, 0));
+    transform: translate3d(0, var(--sheet-drag, 0px), 0);
+  }
+
+  .sheet-enter-active .sheet,
+  .sheet-leave-active .sheet {
+    transition-property: opacity;
   }
 }
 </style>

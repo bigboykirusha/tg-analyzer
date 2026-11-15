@@ -61,6 +61,7 @@ const headerHandlers = {
   <Teleport to="#teleports">
     <Transition name="modal" appear>
       <div v-if="open" class="modal-backdrop" @click.self="close">
+        <div class="modal-dim" aria-hidden="true" />
         <section
           ref="panelRef"
           tabindex="-1"
@@ -68,7 +69,6 @@ const headerHandlers = {
           :class="[
             `modal-panel--${size}`,
             {
-              'is-dragging': drag.dragging.value,
               'modal-panel--alert': role === 'alertdialog',
               'modal-panel--aside': $slots.aside,
               'modal-panel--back': back,
@@ -78,7 +78,6 @@ const headerHandlers = {
           aria-modal="true"
           :aria-labelledby="title || $slots.header ? titleId : undefined"
           :aria-describedby="description ? descriptionId : undefined"
-          :style="drag.style.value"
         >
           <div class="modal-grab" aria-hidden="true" v-on="drag.handlers">
             <span class="modal-grabber" />
@@ -145,6 +144,10 @@ const headerHandlers = {
   place-items: center;
   padding: var(--space-4);
   background: var(--scrim);
+}
+
+.modal-dim {
+  display: none;
 }
 
 .modal-panel {
@@ -292,9 +295,19 @@ const headerHandlers = {
 }
 
 @media (max-width: 640px) {
+  /* The phone sheet: one box that only moves (translate3d), a scrim of its own that only fades (opacity). */
   .modal-backdrop {
     align-items: end;
     padding: var(--space-12) 0 0;
+    background: none;
+  }
+
+  .modal-dim {
+    position: absolute;
+    inset: 0 0 calc(-1 * var(--space-12));
+    display: block;
+    background: var(--scrim);
+    pointer-events: none;
   }
 
   .modal-panel {
@@ -302,14 +315,24 @@ const headerHandlers = {
     --group-bleed: var(--page-gutter);
     max-width: none;
     max-height: 100%;
+    overflow: visible;
     padding: 0 var(--page-gutter) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
     border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
-    transform: translateY(var(--sheet-drag, 0));
+    /* A finger writes --sheet-drag once a frame (useSheetDrag); let go, it settles back on the drawer curve. */
+    transform: translate3d(0, var(--sheet-drag, 0px), 0);
     transition: transform var(--duration-sheet) var(--ease-drawer);
   }
 
-  .modal-panel.is-dragging {
-    transition: none;
+  /* The panel's surface goes on below its edge: whatever Safari's toolbar does, no page shows under it. */
+  .modal-panel::after {
+    content: '';
+    position: absolute;
+    top: calc(100% - 1px);
+    right: 0;
+    left: 0;
+    height: 100vh;
+    background: var(--surface-raised);
+    pointer-events: none;
   }
 
   .modal-grab {
@@ -385,15 +408,47 @@ const headerHandlers = {
     width: 100%;
   }
 
+  /* Only transform and opacity travel, on layers that never change size; the curve is a cubic-bezier, so it can run
+     off the main thread (a linear() spring cannot, in Safari). */
+  .modal-backdrop.modal-enter-active {
+    transition-duration: var(--duration-sheet);
+  }
+
+  .modal-leave-active {
+    pointer-events: none;
+  }
+
   .modal-enter-active .modal-panel,
   .modal-leave-active .modal-panel {
     opacity: 1;
+    will-change: transform;
+  }
+
+  .modal-enter-active .modal-panel {
+    transition: transform var(--duration-sheet) var(--ease-drawer);
+  }
+
+  .modal-leave-active .modal-panel {
+    transition: transform var(--transition-exit);
+  }
+
+  .modal-enter-active .modal-dim {
+    transition: opacity var(--duration-sheet) var(--ease-drawer);
+  }
+
+  .modal-leave-active .modal-dim {
+    transition: opacity var(--duration-fast) var(--ease-exit);
+  }
+
+  .modal-enter-from .modal-dim,
+  .modal-leave-to .modal-dim {
+    opacity: 0;
   }
 
   .modal-enter-from .modal-panel,
   .modal-leave-to .modal-panel {
     opacity: 1;
-    transform: translateY(calc(100% + var(--space-4)));
+    transform: translate3d(0, calc(100% + var(--space-4)), 0);
   }
 }
 
@@ -401,7 +456,12 @@ const headerHandlers = {
   .modal-enter-from .modal-panel,
   .modal-leave-to .modal-panel {
     opacity: 0;
-    transform: none;
+    transform: translate3d(0, var(--sheet-drag, 0px), 0);
+  }
+
+  .modal-enter-active .modal-panel,
+  .modal-leave-active .modal-panel {
+    transition-property: opacity;
   }
 }
 </style>
