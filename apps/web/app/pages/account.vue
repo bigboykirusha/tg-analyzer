@@ -57,25 +57,6 @@ const themeOpen = ref(false)
 
 /** Web push on this browser: the person's own news. On asks the browser; off forgets this browser. */
 const push = usePush()
-const pushOn = computed({
-  get: () => push.state.value === 'on',
-  set: (value: boolean) => void (value ? push.enable() : push.disable()).catch(() => toast.error(t('push.error'))),
-})
-const pushHint = computed(() => {
-  switch (push.state.value) {
-    case 'install':
-      return t('push.installText')
-    case 'safari':
-      return t('push.safariText')
-    case 'denied':
-      return t('push.deniedText')
-    case 'unsupported':
-      return t('push.unsupportedText')
-    default:
-      return t('push.offText')
-  }
-})
-
 /** The bot's news: subscribed by Start in the bot (a link), unsubscribed here. */
 const notify = computed({
   get: () => Boolean(auth.user?.botNotify),
@@ -220,20 +201,7 @@ onMounted(() => {
         </UiGroup>
 
         <!-- This device's notifications; where they cannot be turned on, the switch says why. -->
-        <UiGroup v-if="push.state.value !== 'hidden'" :header="t('accountPage.pushTitle')">
-          <UiSwitch
-            v-model="pushOn"
-            :label="t('push.title')"
-            :hint="pushHint"
-            :disabled="
-              push.busy.value ||
-              push.state.value === 'install' ||
-              push.state.value === 'safari' ||
-              push.state.value === 'denied' ||
-              push.state.value === 'unsupported'
-            "
-          />
-        </UiGroup>
+        <PushRow />
 
         <!-- The bot: its news, and problems reported through it — one place for one bot. -->
         <UiGroup

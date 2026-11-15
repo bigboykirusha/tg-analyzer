@@ -2,53 +2,56 @@
 import { Bell } from '../../lib/icons'
 
 /**
- * The offer of web push where it is wanted: on top of «Уведомления» and in the running analysis («Сообщить, когда
- * будет готов»). «Включить» while it can be turned on; on an iPhone outside the installed app — how to install it;
- * refused in the browser — where it can be allowed again. Nothing once it is on, or where the server has no push.
- * The account holds the switch itself.
+ * This device's web push, as one settings row (a bell, the label, a short line, a button): on «Уведомления», in the
+ * account and in the running analysis. The button is the real state: «Включить», or «Выключить» once subscribed here. Where it cannot be turned
+ * on (an old browser, an iPhone outside the Home Screen, refused in the browser) there is no button, and the line
+ * says why. Nothing where the server has no push.
  */
 const props = withDefaults(
   defineProps<{
     title?: string
     text?: string
-    /** Only the offer itself (the analysis sheet): no install or settings advice there. */
+    /** The offer inside the analysis sheet: shown only while it can be turned on, with no advice about settings. */
     offerOnly?: boolean
   }>(),
   { title: '', text: '', offerOnly: false },
 )
 const { t } = useI18n()
 const toast = useToast()
-const { state, busy, enable } = usePush()
+const { state, busy, enable, disable } = usePush()
 
-const shown = computed(() =>
-  props.offerOnly ? state.value === 'off' : ['off', 'install', 'safari', 'denied'].includes(state.value),
-)
-const subtitle = computed(() => {
-  if (state.value === 'install') return t('push.installText')
-  if (state.value === 'safari') return t('push.safariText')
-  if (state.value === 'denied') return t('push.deniedText')
-  return props.text || t('push.offText')
+/** In the offer, the row stays once it was shown, so the switch does not vanish under the finger. */
+const offered = ref(false)
+watchEffect(() => {
+  if (state.value === 'off') offered.value = true
 })
+const shown = computed(() => (props.offerOnly ? offered.value : state.value !== 'hidden'))
 
-async function turnOn() {
+const blocked = computed(() => ['install', 'safari', 'denied', 'unsupported'].includes(state.value))
+async function toggle() {
   try {
-    await enable()
+    await (state.value === 'on' ? disable() : enable())
   } catch {
     toast.error(t('push.error'))
   }
 }
+const subtitle = computed(() => {
+  if (state.value === 'install') return t('push.installText')
+  if (state.value === 'safari') return t('push.safariText')
+  if (state.value === 'denied') return t('push.deniedText')
+  if (state.value === 'unsupported') return t('push.unsupportedText')
+  return props.text || t('push.offText')
+})
 </script>
 
 <template>
   <UiGroup v-if="shown">
-    <UiListRow
-      :title="state === 'install' || state === 'safari' ? t('push.installTitle') : title || t('push.title')"
-      :subtitle="subtitle"
-      wrap
-    >
+    <UiListRow :title="title || t('push.title')" :subtitle="subtitle">
       <template #leading><Bell aria-hidden="true" /></template>
-      <template v-if="state === 'off'" #trailing>
-        <UiButton variant="quiet" size="sm" :loading="busy" @click="turnOn">{{ t('push.turnOn') }}</UiButton>
+      <template v-if="!blocked" #trailing>
+        <UiButton variant="quiet" size="sm" :loading="busy" @click="toggle">
+          {{ state === 'on' ? t('push.turnOff') : t('push.turnOn') }}
+        </UiButton>
       </template>
     </UiListRow>
   </UiGroup>

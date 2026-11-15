@@ -760,7 +760,7 @@ export const ru: Record<MessageKey, string> = {
   'report.change.queued': 'Обновим, когда дойдёт очередь',
   'home.peekSearch': 'Найти чат и разобрать',
   'push.title': 'Пуш-уведомления',
-  'push.offText': 'О готовых отчётах и угадайке',
+  'push.offText': 'Отчёты и угадайка',
   'push.installText': 'Добавьте на экран «Домой»',
   'push.deniedText': 'Разрешите в настройках браузера',
   'push.unsupportedText': 'Браузер не поддерживает уведомления',

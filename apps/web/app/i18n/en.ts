@@ -753,7 +753,7 @@ export const en = {
   'report.change.queued': 'Will refresh when its turn comes',
   'home.peekSearch': 'Find a chat to analyse',
   'push.title': 'Push notifications',
-  'push.offText': 'Ready reports and the quiz',
+  'push.offText': 'Reports and the quiz',
   'push.installText': 'Add to the Home Screen first',
   'push.deniedText': 'Allow in the browser settings',
   'push.unsupportedText': 'Browser does not support notifications',
