@@ -102,7 +102,7 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
     <div class="page">
       <UiPageBar :title="t('notifications.title')" back="/dashboard" />
 
-      <PushRow />
+      <PushRow hide-on />
 
       <div v-if="store.state === 'loading'" class="feed" aria-busy="true">
         <div class="feed__list">
@@ -199,7 +199,8 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  /* The groups' inset, so the text starts where the push row's (and every settings row's) does. */
+  padding: var(--space-3) var(--card-padding);
   border-radius: var(--radius-card);
   background: var(--surface);
   box-shadow: var(--ring-card);

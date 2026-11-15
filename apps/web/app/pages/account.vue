@@ -6,8 +6,8 @@ import type { ThemePreference } from '../composables/useTheme'
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 /**
- * The account as grouped settings: who you are, how the app looks, notifications on this device (web push), the
- * bot's news and «Сообщить о проблеме», the
+ * The account as grouped settings: who you are, how the app looks, notifications (web push on this device and the
+ * bot's news, in one group), «Сообщить о проблеме», the
  * links you shared (each with a switch — the list manages links; how a friend did in «Угадайка» is the report's
  * news, in its «Поделиться»), and signing out — the reports stay.
  */
@@ -200,14 +200,12 @@ onMounted(() => {
           </UiListRow>
         </UiGroup>
 
-        <!-- This device's notifications; where they cannot be turned on, the switch says why. -->
-        <PushRow />
-
-        <!-- The bot: its news, and problems reported through it — one place for one bot. -->
+        <!-- Notifications: this device's web push (the switch says why where it cannot be turned on) and the bot's news. -->
         <UiGroup
-          v-if="auth.user?.botUrl || auth.user?.botNotify || auth.user?.feedbackUrl"
-          :header="t('accountPage.botTitle')"
+          v-if="push.state.value !== 'hidden' || auth.user?.botUrl || auth.user?.botNotify"
+          :header="t('accountPage.notificationsTitle')"
         >
+          <PushRow variant="switch" />
           <UiSwitch
             v-if="auth.user?.botUrl || auth.user?.botNotify"
             v-model="notify"
@@ -216,8 +214,11 @@ onMounted(() => {
           >
             <template #leading><TelegramMark /></template>
           </UiSwitch>
+        </UiGroup>
+
+        <!-- Problems reported through the bot. -->
+        <UiGroup v-if="auth.user?.feedbackUrl">
           <UiListRow
-            v-if="auth.user?.feedbackUrl"
             as="a"
             :href="auth.user.feedbackUrl"
             target="_blank"
