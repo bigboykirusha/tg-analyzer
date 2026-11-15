@@ -5,8 +5,8 @@ import { AlertCircle } from '../lib/icons'
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 /**
- * Home is what you have already learned: the reports, one poster tile each (two to a row on a phone, a long name
- * across the row), new messages in the chat as a badge on the tile. A running analysis is the tile its report will
+ * Home is what you have already learned: the reports, one poster tile each (the whole row on a phone), new messages
+ * in the chat as a label in the tile's line. A running analysis is the tile its report will
  * be, its pulse drawn as the history is read (AnalysisTile). News about them (a quiz answered, a link opened)
  * is in «Уведомления», behind the bell. What else to analyse: on a phone the chat list as a sheet resting at the bottom (HomeChatsSheet), pulled
  * up to the whole screen; on a computer «Новый анализ» in the sidebar.
@@ -68,14 +68,6 @@ const items = computed<Tile[]>(() => {
   list.splice(at === -1 ? list.length : at, 0, tile)
   return list
 })
-const grid = ref<HTMLElement | null>(null)
-/** Which tiles take the whole row on a phone: a name too long for a half tile, or a tile without a neighbour. */
-const tiles = useTileRows(
-  () => items.value,
-  (item) => item.title,
-  grid,
-)
-
 /** Skeletons only while nothing is known: a growing tile stays put while a newcomer's report list reloads. */
 const loading = computed(
   () => !items.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
@@ -106,7 +98,7 @@ onMounted(() => {
       </div>
       <section class="home__section" aria-hidden="true">
         <div class="home__reports">
-          <HomeCard v-for="card in skeletonCards" :key="card" skeleton />
+          <HomeCard v-for="card in skeletonCards" :key="card" skeleton wide />
         </div>
       </section>
     </div>
@@ -134,16 +126,15 @@ onMounted(() => {
             <UiButton @click="loadReports">{{ t('common.retry') }}</UiButton>
           </template>
         </UiEmptyState>
-        <div v-else ref="grid" class="home__reports">
-          <template v-for="{ item, wide } in tiles" :key="item.id">
+        <div v-else class="home__reports">
+          <template v-for="item in items" :key="item.id">
             <ReportCard
               v-if="item.chat"
               :report="item.chat.report!"
               :has-avatar="item.chat.hasAvatar"
               :fresh="workspace.withNews[item.id]"
-              :wide="wide"
             />
-            <AnalysisTile v-else :has-avatar="item.hasAvatar" :wide="wide" :landing="landing" />
+            <AnalysisTile v-else :has-avatar="item.hasAvatar" :landing="landing" />
           </template>
         </div>
       </section>
@@ -190,11 +181,11 @@ onMounted(() => {
   gap: var(--space-3);
 }
 
-/* Reports: two tiles to a row on a phone (a long name takes the row — useTileRows), three on a tablet and beside the
-   sidebar on a laptop, four on wide screens — a tile never narrower than its name and its pulse need. */
+/* Reports: one tile to a row on a phone, three on a tablet and beside the sidebar on a laptop, four on wide screens —
+   a tile never narrower than its name and its pulse need. */
 .home__reports {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--card-gap);
 }
 

@@ -9,7 +9,6 @@
 import type { ParseProgressDto } from '@tg-analyzer/shared'
 
 const props = defineProps<{
-  wide?: boolean
   hasAvatar?: boolean
   /** Done, its report not on home yet: the tile stays whole («Собираем отчёт…») until the report takes its place. */
   landing?: ParseProgressDto | null
@@ -45,7 +44,7 @@ const tile = computed(() => {
     :has-avatar="hasAvatar"
     :meta="tile.short"
     poster
-    :wide="wide"
+    wide
   >
     <Pulse :data="tile.pulse" :height="0" :bars="48" :pitch="6" :read="tile.share" />
     <button

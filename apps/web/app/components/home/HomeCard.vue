@@ -73,7 +73,7 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   border-radius: var(--radius-card);
   background: var(--surface);
   box-shadow: var(--ring-card);
-  /* The pulse's half: 16 on a phone, where two tiles share a row and a taller one reads as a column, 24 wider. */
+  /* The pulse's half: 16 on a phone, 24 from 641 px. */
   --pulse-half: var(--space-4);
   color: var(--text);
   transition: transform var(--duration-fast) var(--ease-standard);
@@ -224,12 +224,12 @@ a.home-card__name:focus-visible::after {
 }
 
 /*
- * A phone: report tiles stand two to a row, small posters with a one-line name (a longer name makes the tile wide).
- * A wide tile takes the whole row: one line of avatar, name and badge, the pulse the full width under it.
+ * A phone: a report tile takes the whole row (`wide`): one line of avatar, name and badge, the pulse the full width
+ * under it; the quiet line wraps to a second line rather than being cut. Without `wide` (the landing deck) a poster
+ * stays a small square.
  */
 @media (max-width: 640px) {
-  /* A half tile is a square (13.11): a little tighter inside and a lower pulse, so a name and a count fit it; a
-     group's two-line count may make it taller rather than spill. A wide tile keeps its own lower height. */
+  /* A square poster (the landing deck, 13.11): a little tighter inside and a lower pulse, so a name and a count fit it. */
   .home-card--poster:not(.home-card--wide) {
     gap: var(--space-2);
     aspect-ratio: 1;
@@ -272,8 +272,7 @@ a.home-card__name:focus-visible::after {
     margin-top: 0;
   }
 
-  .home-card--wide .home-card__name,
-  .home-card--wide .home-card__meta {
+  .home-card--wide .home-card__name {
     -webkit-line-clamp: 1;
     line-clamp: 1;
   }

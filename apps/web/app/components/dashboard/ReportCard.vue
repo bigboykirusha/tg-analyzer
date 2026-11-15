@@ -3,14 +3,13 @@ import type { ReportSummaryDto } from '@tg-analyzer/shared'
 
 /**
  * A report on home: the card of every home screen — the avatar, the name, how many messages, the pulse in the
- * person's colour. A chat that has moved on since the report rings the person's avatar in the poster's ink, as
- * Telegram rings an unseen story (14.11; the exact count is on the report itself), for private chats and groups alike;
- * a screen reader hears «Есть новые» after the count. The whole card opens
- * the report; «Обновить», «Поделиться» and «Удалить» are the report's own (its bar), not the tile's. On a phone
- * tiles stand two to a row; `wide` (a name too long for a half tile, or a tile without a neighbour — useTileRows)
- * takes the whole row: the avatar, the name and the badge on one line, the pulse under them.
+ * person's colour. A chat that has moved on since the report says so in the quiet line, after the count, in the
+ * poster's ink at full strength («4 800 сообщений · есть новые»; the exact count is on the report itself), for
+ * private chats and groups alike. The whole card opens the report; «Обновить», «Поделиться» and «Удалить» are the
+ * report's own (its bar), not the tile's. On a phone the tile is the whole row (`wide`): the avatar and the
+ * name beside each other, the pulse under them.
  */
-const props = defineProps<{ report: ReportSummaryDto; hasAvatar?: boolean; fresh?: boolean; wide?: boolean }>()
+const props = defineProps<{ report: ReportSummaryDto; hasAvatar?: boolean; fresh?: boolean }>()
 const { t, tc, formatNumber } = useI18n()
 const actions = useReportActions()
 const view = useAnalysisView()
@@ -35,13 +34,12 @@ const pulse = computed(() =>
 <template>
   <HomeCard
     class="report-card"
-    :class="{ 'report-card--news': news }"
     :chat-id="report.chatId"
     :title="report.title"
     :has-avatar="hasAvatar"
     poster
     :to="`/chat/${report.chatId}`"
-    :wide="wide"
+    wide
   >
     <template #meta>
       <template v-if="reading">{{ reading.short }}</template>
@@ -49,7 +47,10 @@ const pulse = computed(() =>
         ><span class="spinner" aria-hidden="true" /> {{ t('dashboard.analysingNow') }}</template
       >
       <template v-else
-        >{{ meta }}<span v-if="news" class="sr-only">. {{ t('dashboard.hasNews') }}</span></template
+        >{{ meta
+        }}<template v-if="news">
+          · <span class="report-card__news">{{ t('dashboard.hasNews') }}</span></template
+        ></template
       >
     </template>
     <Pulse v-if="reading" :data="reading.pulse" :height="0" :bars="48" :pitch="6" :read="reading.share" />
@@ -58,7 +59,9 @@ const pulse = computed(() =>
 </template>
 
 <style scoped>
-.report-card--news :deep(.avatar) {
-  box-shadow: var(--ring-news);
+/* News reads as news: the poster's ink at full strength, a step heavier than the quiet line around it. */
+.report-card__news {
+  color: var(--on-poster);
+  font-weight: 600;
 }
 </style>
