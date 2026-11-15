@@ -111,7 +111,9 @@ export function useSheetDrag(panel: Ref<HTMLElement | null>, options: SheetDragO
 
   function onPointerDown(event: PointerEvent) {
     if (event.pointerType === 'mouse' && event.button !== 0) return
-    const keeps = options.ignore ?? ((e: PointerEvent) => !!(e.target as Element | null)?.closest('button, a, input, [role="button"]'))
+    const keeps =
+      options.ignore ??
+      ((e: PointerEvent) => !!(e.target as Element | null)?.closest('button, a, input, [role="button"]'))
     if (keeps(event) || event.clientX < EDGE) return
     // A release a moment ago has not handed the sheet back to its classes yet: now, so it cannot do it mid-drag.
     cancelAnimationFrame(clearFrame)

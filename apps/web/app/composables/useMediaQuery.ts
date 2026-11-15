@@ -1,15 +1,29 @@
-/** Reactive `matchMedia`; false during server rendering. */
+interface Shared {
+  matches: Ref<boolean>
+  users: number
+  media?: MediaQueryList
+  update: () => void
+}
+const queries = new Map<string, Shared>()
+
+/** Reactive `matchMedia`; false during server rendering. One listener per query however many components ask. */
 export function useMediaQuery(query: string) {
-  const matches = ref(false)
-  let media: MediaQueryList | undefined
-  const update = () => {
-    matches.value = media?.matches ?? false
+  let entry = queries.get(query)
+  if (!entry) {
+    const matches = ref(false)
+    const created: Shared = { matches, users: 0, update: () => (matches.value = !!created.media?.matches) }
+    queries.set(query, (entry = created))
   }
+  const shared = entry
   onMounted(() => {
-    media = window.matchMedia(query)
-    update()
-    media.addEventListener('change', update)
+    if (!shared.users++) {
+      shared.media = window.matchMedia(query)
+      shared.media.addEventListener('change', shared.update)
+    }
+    shared.update()
   })
-  onBeforeUnmount(() => media?.removeEventListener('change', update))
-  return matches
+  onBeforeUnmount(() => {
+    if (!--shared.users) shared.media?.removeEventListener('change', shared.update)
+  })
+  return shared.matches
 }

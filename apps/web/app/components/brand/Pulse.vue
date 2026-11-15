@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watchWidth } from '../../lib/watchWidth'
 /**
  * The mirrored pulse — the product's signature: one pill per period, your messages above the line in
  * ink, theirs below in the person's deep tone. Heights use a square-root scale so a quiet week still
@@ -29,18 +30,19 @@ const props = withDefaults(
 )
 
 const root = ref<HTMLElement>()
+/** With a pitch the count is the pulse's own width over it: nothing is drawn until the width is known, so it is built once. */
 const fitted = ref(0)
-let observer: ResizeObserver | undefined
+let stopWatching: (() => void) | undefined
 onMounted(() => {
   if (!props.pitch || !root.value || typeof ResizeObserver === 'undefined') return
-  observer = new ResizeObserver(([entry]) => {
-    const width = entry?.contentRect.width ?? 0
+  const fit = (width: number) => {
     if (width) fitted.value = Math.max(12, Math.round(width / props.pitch))
-  })
-  observer.observe(root.value)
+  }
+  fit(root.value.clientWidth)
+  stopWatching = watchWidth(root.value, fit)
 })
-onBeforeUnmount(() => observer?.disconnect())
-const count = computed(() => fitted.value || props.bars)
+onBeforeUnmount(() => stopWatching?.())
+const count = computed(() => (props.pitch ? fitted.value : props.bars))
 
 type Column = { sent: number; received: number }
 
@@ -75,10 +77,13 @@ const columns = computed(() => {
   const out = fold(source, drawn)
   const peak = Math.max(1, ...out.map((item) => Math.max(item.sent, item.received)))
   // At least a dot, so an empty week reads as a quiet one rather than a gap.
-  const scale = (value: number) => `${Math.max(8, Math.round(Math.sqrt(value / peak) * 100))}%`
-  const ahead = Array.from({ length: bars - drawn }, () => ({ up: '8%', down: '8%', ahead: true }))
+  const scale = (value: number) => Math.max(0.08, Math.round(Math.sqrt(value / peak) * 100) / 100)
+  const ahead = Array.from({ length: bars - drawn }, () => ({ up: 0.08, down: 0.08, ahead: true }))
   return [...ahead, ...out.map((item) => ({ up: scale(item.sent), down: scale(item.received), ahead: false }))]
 })
+/** A bar's height: a share of its half; while reading it is a scale of the full bar (a transform, not a layout). */
+const bar = (share: number, index: number) =>
+  reading.value ? { '--h': share, '--i': index } : { height: `${share * 100}%`, '--i': index }
 </script>
 
 <template>
@@ -99,7 +104,7 @@ const columns = computed(() => {
         v-for="(column, index) in columns"
         :key="index"
         :class="{ 'is-ahead': column.ahead }"
-        :style="{ height: column.up, '--i': index }"
+        :style="bar(column.up, index)"
       />
     </div>
     <div class="pulse__half pulse__half--down">
@@ -107,7 +112,7 @@ const columns = computed(() => {
         v-for="(column, index) in columns"
         :key="index"
         :class="{ 'is-ahead': column.ahead }"
-        :style="{ height: column.down, '--i': index }"
+        :style="bar(column.down, index)"
       />
     </div>
   </div>
@@ -154,11 +159,22 @@ const columns = computed(() => {
   background: var(--pulse-ahead, var(--border));
 }
 
-/* Reading: each bar eases into its height as more weeks arrive and the pulse is folded again. */
+/* Reading: each bar eases into its height as more weeks arrive and the pulse is folded again. It grows from the
+   line between the two voices, by a transform. */
 .pulse--reading i {
+  height: 100%;
+  transform: scaleY(var(--h));
   transition:
-    height var(--duration-chart) var(--ease-standard),
+    transform var(--duration-chart) var(--ease-standard),
     background-color var(--duration-chart) var(--ease-standard);
+}
+
+.pulse--reading .pulse__half--up i {
+  transform-origin: 50% 100%;
+}
+
+.pulse--reading .pulse__half--down i {
+  transform-origin: 50% 0;
 }
 
 /* Each bar grows out of the line between the two voices; a wave runs left to right. */

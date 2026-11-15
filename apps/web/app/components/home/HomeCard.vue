@@ -22,8 +22,8 @@ const props = defineProps<{
   to?: string
   skeleton?: boolean
   poster?: boolean
-  /** Phones: the tile takes the whole row — the avatar, the name and the end slot on one line, the foot under them. */
-  wide?: boolean
+  /** Phones: a small square (the landing deck) instead of the whole row — the avatar, the name and the end slot on one line, the foot under them. */
+  square?: boolean
 }>()
 
 const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
@@ -32,7 +32,7 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 <template>
   <article
     class="home-card"
-    :class="{ 'home-card--poster': poster && !skeleton, 'home-card--wide': wide }"
+    :class="{ 'home-card--poster': poster && !skeleton, 'home-card--square': square }"
     :data-hue="hue"
     :aria-busy="skeleton || undefined"
   >
@@ -224,26 +224,26 @@ a.home-card__name:focus-visible::after {
 }
 
 /*
- * A phone: a report tile takes the whole row (`wide`): one line of avatar, name and badge, the pulse the full width
- * under it; the quiet line wraps to a second line rather than being cut. Without `wide` (the landing deck) a poster
- * stays a small square.
+ * A phone: a report tile takes the whole row: one line of avatar, name and badge, the pulse the full width under it;
+ * the quiet line wraps to a second line rather than being cut. With `square` (the landing deck) a poster stays a
+ * small square.
  */
 @media (max-width: 640px) {
   /* A square poster (the landing deck, 13.11): a little tighter inside and a lower pulse, so a name and a count fit it. */
-  .home-card--poster:not(.home-card--wide) {
+  .home-card--square {
     gap: var(--space-2);
     aspect-ratio: 1;
     padding: var(--space-4);
     --pulse-half: var(--space-3);
   }
 
-  .home-card--poster:not(.home-card--wide) .home-card__name {
+  .home-card--square .home-card__name {
     -webkit-line-clamp: 1;
     line-clamp: 1;
     overflow-wrap: normal;
   }
 
-  .home-card--wide {
+  .home-card:not(.home-card--square) {
     display: grid;
     grid-column: 1 / -1;
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -255,29 +255,29 @@ a.home-card__name:focus-visible::after {
     row-gap: var(--space-4);
   }
 
-  .home-card--wide .home-card__top {
+  .home-card:not(.home-card--square) .home-card__top {
     display: contents;
   }
 
-  .home-card--wide .home-card__top > :first-child {
+  .home-card:not(.home-card--square) .home-card__top > :first-child {
     grid-area: avatar;
   }
 
-  .home-card--wide .home-card__end {
+  .home-card:not(.home-card--square) .home-card__end {
     grid-area: end;
   }
 
-  .home-card--wide .home-card__text {
+  .home-card:not(.home-card--square) .home-card__text {
     grid-area: text;
     margin-top: 0;
   }
 
-  .home-card--wide .home-card__name {
+  .home-card:not(.home-card--square) .home-card__name {
     -webkit-line-clamp: 1;
     line-clamp: 1;
   }
 
-  .home-card--wide .home-card__foot {
+  .home-card:not(.home-card--square) .home-card__foot {
     grid-area: foot;
     padding-top: 0;
   }

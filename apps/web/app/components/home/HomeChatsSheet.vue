@@ -4,14 +4,16 @@ import { Search, X } from '../../lib/icons'
 
 /**
  * Phones and tablets: the chat list is one real sheet that rests at the bottom of home — its handle and its search
- * showing, the way a sheet rests at the bottom of Apple Maps — and is pulled up to the whole screen. The list is in it
- * all the time, so a pull shows it under the finger; let go high enough (or flicked) it opens, otherwise it settles
- * back; open, its head pulls down to close. The search at rest is the same field as open: a tap opens the sheet, and
- * only a tap on the open field brings the keyboard (raised while the sheet travels, it made iOS pan the screen). Open,
- * a close button stands to the right of the search; there is no title row.
+ * showing, the way a sheet rests at the bottom of Apple Maps — and is pulled up to the whole screen. A pull shows the
+ * list under the finger; let go high enough (or flicked) it opens, otherwise it settles back; open, its head pulls
+ * down to close. The search at rest is the same field as open: a tap opens the sheet, and only a tap on the open
+ * field brings the keyboard (raised while the sheet travels, it made iOS pan the screen). Open, a close button stands
+ * to the right of the search; there is no title row.
  *
- * The motion is transform and opacity only, on layers that never change size: the sheet is one box (its open height)
- * that moves with `translateY`, the scrim and the veil fade. Nothing is laid out while it travels.
+ * The motion is the one every phone sheet has (base.css `.sheet-surface`, useSheetDrag): the sheet is one box of a
+ * fixed height anchored to the bottom edge that only moves with `translate3d`; the scrim and the veil fade. The list
+ * is not built until the first touch, and the scrim and the edge below the sheet exist only while it is open or
+ * settling: at rest it is just the head.
  *
  * Open is a URL (`?pick`), so the browser's back closes it. While an analysis runs, the resting head shows it in
  * place of the search (AnalysisPill, concept M1, 14.11): a tap opens «Разбираем переписку»; a pull still brings the
@@ -23,6 +25,21 @@ const route = useRoute()
 const router = useRouter()
 const view = useAnalysisView()
 const analysis = useAnalysis()
+
+/**
+ * Where the sheet goes is decided at once, not when the URL catches up: between the two the sheet would be sent back
+ * to rest for a frame. The route follows and confirms.
+ */
+const open = ref(route.query.pick !== undefined)
+watch(
+  () => route.query.pick !== undefined,
+  (value) => {
+    // The browser's back or forward moved it: the sheet travels, it does not jump.
+    if (value !== open.value) drag.settle()
+    open.value = value
+  },
+)
+const search = ref('')
 
 /** A report finished a moment ago: the head says so and opens it, then goes back to the search. */
 const READY_MS = 6000
@@ -45,11 +62,8 @@ watch(actions.starting, (now, before) => {
 /** The head shows the analysis (or its result) instead of the search, at rest only. */
 const showPill = computed(() => !open.value && (Boolean(view.value?.chatId) || Boolean(ready.value)))
 
-const open = computed(() => route.query.pick !== undefined)
-const search = ref('')
-
 const wrap = ref<HTMLElement | null>(null)
-const root = ref<HTMLElement | null>(null)
+const sheet = ref<HTMLElement | null>(null)
 const head = ref<HTMLElement | null>(null)
 const field = ref<HTMLInputElement | null>(null)
 const safe = ref<HTMLElement | null>(null)
@@ -57,180 +71,84 @@ const safe = ref<HTMLElement | null>(null)
 const height = ref(0)
 const resting = ref(0)
 function measure() {
-  height.value = root.value?.offsetHeight ?? 0
+  height.value = sheet.value?.offsetHeight ?? 0
   resting.value = (head.value?.offsetHeight ?? 0) + (safe.value?.offsetHeight ?? 0)
 }
 
-/** The list is built a moment after home, or at the first touch: the sheet never waits for it, a pull shows it. */
+/** The list is built at the first touch or the first opening: home itself never pays for it. */
 const listReady = ref(false)
+watch(open, (value) => {
+  if (value) listReady.value = true
+  else search.value = ''
+})
 let observer: ResizeObserver | null = null
-let frame = 0
-let settleTimer: ReturnType<typeof setTimeout> | undefined
 onMounted(() => {
   measure()
   observer = new ResizeObserver(measure)
-  if (root.value) observer.observe(root.value)
-  if (head.value) observer.observe(head.value)
-  if (safe.value) observer.observe(safe.value)
-  window.setTimeout(() => (listReady.value = true), 600)
+  for (const el of [sheet.value, head.value, safe.value]) if (el) observer.observe(el)
 })
-onBeforeUnmount(() => {
-  observer?.disconnect()
-  cancelAnimationFrame(frame)
-  clearTimeout(settleTimer)
-})
+onBeforeUnmount(() => observer?.disconnect())
 
 /**
- * Where the sheet goes is decided at once (`shown`), not when the URL catches up: between the two the sheet would be
- * sent back to rest for a frame. The route follows and confirms.
- */
-const shown = ref(open.value)
-watch(open, (value) => (shown.value = value))
-
-/**
- * Resting is `100% - the head`, worked out by the browser from the box itself, so when Safari's toolbar folds and the
- * viewport grows the sheet stays glued to the bottom edge: no script number can go stale. A finger writes `--sheet-y`
- * (and the scrim's and veil's numbers) straight on the wrapper, once a frame — no re-render per move; letting go
- * removes them and the classes carry the sheet from there.
+ * Resting is `100% - the head`, worked out by the browser from the box itself (`--sheet-rest` is the head's measured
+ * height), so the rest place does not depend on the viewport's height: when Safari's toolbar folds, the sheet stays
+ * glued to the bottom edge. A finger writes `--sheet-y` (and the scrim's and veil's numbers) on the wrapper, once a
+ * frame; letting go removes them and the classes carry the sheet from there.
  */
 const closed = computed(() => Math.max(0, height.value - resting.value))
-const dragging = ref(false)
-/** From a release until the sheet has landed: only then is its layer promoted. */
-const settling = ref(false)
-function settle() {
-  settling.value = true
-  clearTimeout(settleTimer)
-  settleTimer = setTimeout(() => (settling.value = false), 520)
-}
-
 /** The first stretch of a pull over which the veil melts. */
 const VEIL_PX = 48
+const clamp = (value: number) => Math.min(1, Math.max(0, value))
 function place(y: number) {
-  const el = wrap.value
-  if (!el) return
   const span = closed.value
-  el.style.setProperty('--sheet-y', `${y}px`)
-  el.style.setProperty('--sheet-p', String(span ? Math.min(1, Math.max(0, 1 - y / span)) : 0))
-  el.style.setProperty('--sheet-v', String(Math.min(1, Math.max(0, 1 - (span - y) / VEIL_PX))))
-}
-function unplace() {
-  const el = wrap.value
-  if (!el) return
-  for (const name of ['--sheet-y', '--sheet-p', '--sheet-v']) el.style.removeProperty(name)
-}
-/** Where the sheet is on screen right now, even in flight: a new touch picks it up from there. */
-function currentY() {
-  if (!root.value) return 0
-  return new DOMMatrixReadOnly(getComputedStyle(root.value).transform).m42
-}
-/** Past either end it gives a little, like rubber. */
-function rubber(raw: number) {
-  if (raw < 0) return -Math.sqrt(-raw) * 2
-  if (raw > closed.value) return closed.value + Math.sqrt(raw - closed.value) * 2
-  return raw
+  return {
+    '--sheet-y': `${y}px`,
+    '--sheet-p': String(span ? clamp(1 - y / span) : 0),
+    '--sheet-v': String(clamp(1 - (span - y) / VEIL_PX)),
+  }
 }
 
 function openSheet() {
   if (open.value) return
-  settle()
-  shown.value = true
+  drag.settle()
+  open.value = true
+  listReady.value = true
   void router.push({ query: { ...route.query, pick: '' } })
 }
 function closeSheet() {
   if (!open.value) return
-  settle()
-  shown.value = false
+  drag.settle()
+  open.value = false
   field.value?.blur()
   if (typeof window.history.state?.back === 'string') router.back()
   else void router.replace({ query: { ...route.query, pick: undefined } })
 }
 
-watch(open, (value) => {
-  if (!value) search.value = ''
-})
-useBodyScrollLock(open)
-useFocusTrap(root, open, { onEscape: closeSheet, initial: () => root.value })
-
-/** Moved less than this, it was a tap. */
-const SLOP = 6
-/** Let go further than this from where it started, it goes on. */
-const TRAVEL = 64
-/** A flick faster than this goes on however short (px per ms). */
-const FLICK = 0.3
-/** A touch this close to the left edge belongs to the browser's back swipe. */
-const EDGE = 20
-let start: number | null = null
-let origin = 0
-let delta = 0
-let trail: { y: number; t: number }[] = []
-let moved = false
-
-function down(event: PointerEvent) {
-  if (event.pointerType === 'mouse' && event.button !== 0) return
+const drag = useSheetDrag(sheet, {
+  root: wrap,
+  span: () => closed.value,
+  isOpen: () => open.value,
+  vars: place,
   // The close button keeps its own press; the open field its caret.
-  if (open.value && (event.target as Element | null)?.closest('button, input')) return
-  // Not from the screen's left edge: that swipe is Safari's «back».
-  if (event.clientX < EDGE) return
-  listReady.value = true
-  // The head keeps the pointer from the first touch, wherever the finger goes (a mouse too); a tap still clicks it.
-  head.value?.setPointerCapture(event.pointerId)
-  start = event.clientY
-  origin = currentY()
-  delta = 0
-  trail = [{ y: event.clientY, t: event.timeStamp }]
-  moved = false
+  ignore: (event) => open.value && !!(event.target as Element | null)?.closest('button, input'),
+  onRelease: (toRest) => (toRest ? closeSheet() : openSheet()),
+})
+const handlers = {
+  ...drag.handlers,
+  pointerdown(event: PointerEvent) {
+    listReady.value = true
+    drag.handlers.pointerdown(event)
+  },
 }
-
-function move(event: PointerEvent) {
-  if (start === null) return
-  const next = event.clientY - start
-  if (!dragging.value) {
-    if (Math.abs(next) < SLOP) return
-    // Picked up from wherever it is, in flight or not: its place is written as the transition goes off.
-    place(origin)
-    dragging.value = true
-    moved = true
-  }
-  delta = next
-  trail = [...trail.filter((point) => event.timeStamp - point.t < 100), { y: event.clientY, t: event.timeStamp }]
-  if (!frame) {
-    frame = requestAnimationFrame(() => {
-      frame = 0
-      if (dragging.value) place(rubber(origin + delta))
-    })
-  }
-}
-
-function up() {
-  if (start === null) return
-  start = null
-  cancelAnimationFrame(frame)
-  frame = 0
-  if (!dragging.value) return
-  const first = trail[0]
-  const last = trail.at(-1)
-  const velocity = first && last && last.t > first.t ? (last.y - first.y) / (last.t - first.t) : 0
-  const goesOpen = shown.value ? !(delta > TRAVEL || velocity > FLICK) : delta < -TRAVEL || velocity < -FLICK
-  // The finger's last place is written once more, so the flight starts exactly there; then the classes carry it.
-  place(rubber(origin + delta))
-  dragging.value = false
-  settle()
-  shown.value = goesOpen
-  requestAnimationFrame(unplace)
-  if (goesOpen && !open.value) openSheet()
-  else if (!goesOpen && open.value) closeSheet()
-}
+useBodyScrollLock(open)
+useFocusTrap(sheet, open, { onEscape: closeSheet, initial: () => sheet.value })
 
 /**
  * A tap on the resting head opens the sheet — or, while it shows the analysis, its details; done, the report. The end
  * of a drag is not a tap.
  */
 function tap() {
-  if (moved) {
-    moved = false
-    return
-  }
-  if (open.value) return
+  if (drag.wasDrag() || open.value) return
   if (view.value?.chatId) analysis.details.value = true
   else if (ready.value?.chatId) openReady()
   else openSheet()
@@ -243,30 +161,18 @@ function openReady() {
 </script>
 
 <template>
-  <div
-    ref="wrap"
-    class="chats"
-    :class="{ 'is-open': shown, 'is-dragging': dragging, 'is-settling': settling }"
-    :style="{ '--sheet-rest': `${resting}px` }"
-  >
-    <div class="chats__scrim" :class="{ 'is-live': open }" aria-hidden="true" @click="closeSheet" />
+  <div ref="wrap" class="chats" :class="{ 'is-open': open }" :style="{ '--sheet-rest': `${resting}px` }">
+    <div class="sheet-dim chats__scrim" :class="{ 'is-live': open }" aria-hidden="true" @click="closeSheet" />
+    <div class="sheet-under" aria-hidden="true" />
     <section
-      ref="root"
-      class="chats__sheet peek"
+      ref="sheet"
+      class="sheet-surface chats__sheet peek"
       :role="open ? 'dialog' : undefined"
       :aria-modal="open ? 'true' : undefined"
       :aria-label="t('newAnalysis.sheetTitle')"
       tabindex="-1"
     >
-      <div
-        ref="head"
-        class="chats__head"
-        @pointerdown="down"
-        @pointermove="move"
-        @pointerup="up"
-        @pointercancel="up"
-        @click="tap"
-      >
+      <div ref="head" class="chats__head" v-on="handlers" @click="tap">
         <span class="chats__handle" aria-hidden="true" />
         <span class="chats__veil" aria-hidden="true" />
         <AnalysisPill v-if="showPill" :ready="view ? null : ready" />
@@ -289,12 +195,10 @@ function openReady() {
           </label>
           <UiIconButton
             class="chats__close"
-            :class="{ 'is-shown': open }"
             :label="t('common.close')"
             :icon="X"
             no-tooltip
-            :tabindex="open ? 0 : -1"
-            :aria-hidden="open ? undefined : 'true'"
+            :inert="!open || undefined"
             @click="closeSheet"
           />
         </div>
@@ -332,48 +236,32 @@ function openReady() {
   --sheet-v: 0;
 }
 
-/* A little taller than the screen below: nothing can show under the edge while Safari's toolbar moves. */
+/* At rest there is only the head: no scrim and no edge below it are drawn. They come with the first touch, the
+   opening and the settling. */
+.chats:not(.is-open, [data-sheet]) :is(.chats__scrim, .sheet-under) {
+  visibility: hidden;
+}
+
 .chats__scrim {
-  position: fixed;
-  inset: 0 0 calc(-1 * var(--space-12));
-  z-index: var(--z-modal);
-  background: var(--scrim);
   opacity: var(--sheet-p);
-  pointer-events: none;
-  transition: opacity var(--duration-sheet) var(--ease-drawer);
 }
 
 .chats__scrim.is-live {
   pointer-events: auto;
 }
 
-.chats.is-dragging .chats__scrim,
-.chats.is-dragging .chats__veil {
-  transition: none;
-}
-
-.chats.is-settling .chats__scrim {
-  will-change: opacity;
-}
-
 /* The screen under a gap (the status bar and a step, as the other sheets leave); at rest pushed down so only the
-   head shows. Open, it is a sheet like theirs: round shoulders, their shadow, the scrim and the page behind it.
-   One box, always: it only moves. */
+   head shows, with a light shadow. A box of a fixed height, glued to the bottom edge only. */
 .chats__sheet {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + var(--space-8));
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
-  background: var(--surface-raised);
+  height: calc(100svh - env(safe-area-inset-top, 0px) - var(--space-8));
   box-shadow: var(--shadow-peek);
   outline: none;
-  transform: translate3d(0, var(--sheet-y), 0);
-  transition: transform var(--duration-sheet) var(--ease-drawer);
   --field-bg: var(--fill-raised);
   --group-bg: transparent;
   --group-ring: none;
@@ -382,29 +270,17 @@ function openReady() {
   --group-bleed: var(--page-gutter);
 }
 
-/* The sheet's surface goes on below its edge: whatever the toolbar does, no page shows under it. */
-.chats__sheet::after {
-  content: '';
-  position: absolute;
-  top: calc(100% - 1px);
-  right: 0;
-  left: 0;
-  height: 100vh;
-  background: var(--surface-raised);
-  pointer-events: none;
+.chats.is-open .chats__sheet {
+  box-shadow: var(--shadow-overlay);
 }
 
-.chats.is-dragging .chats__sheet {
+/* The transition runs only while the sheet opens, closes or springs back (useSheetDrag marks that). */
+.chats:not([data-sheet]) :is(.chats__sheet, .chats__scrim, .sheet-under, .chats__veil) {
   transition: none;
 }
 
-.chats.is-dragging .chats__sheet,
-.chats.is-settling .chats__sheet {
-  will-change: transform;
-}
-
-.chats.is-open .chats__sheet {
-  box-shadow: var(--shadow-overlay);
+.chats[data-sheet='drag'] .chats__veil {
+  transition: none;
 }
 
 .chats__head {
@@ -446,11 +322,18 @@ function openReady() {
   background: var(--border-strong);
 }
 
-/* The search and, open, the close button beside it on one line. */
+/* The search and, open, the close button at its right end. The bar's room for the button grows as the sheet opens
+   (shortcut: one small row is laid out while the sheet travels; move it to a transform if it ever shows). */
 .chats__bar {
+  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
+  transition: padding-right var(--duration-sheet) var(--ease-drawer);
+}
+
+.chats.is-open .chats__bar {
+  padding-right: calc(var(--control-md) + var(--space-2));
 }
 
 /* One field at rest and open: the grey of controls on a sheet, a size a thumb finds. */
@@ -496,21 +379,22 @@ function openReady() {
   display: none;
 }
 
-/* The close button appears beside the search as the sheet opens: its room is taken at once (nothing is laid out while
-   the sheet travels), only its opacity moves. */
+/* The close button waits in the bar's room (out of the layout) and fades in as the sheet opens. */
 .chats__close {
-  flex: none;
-  max-width: 0;
-  margin-left: 0;
-  overflow: hidden;
+  position: absolute;
+  top: 0;
+  right: 0;
+  visibility: hidden;
   opacity: 0;
-  transition: opacity var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    visibility 0s linear var(--duration-fast);
 }
 
-.chats__close.is-shown {
-  max-width: var(--control-md);
-  margin-left: var(--space-2);
+.chats.is-open .chats__close {
+  visibility: visible;
   opacity: 1;
+  transition-delay: 0s;
 }
 
 .chats__body {
@@ -546,6 +430,7 @@ function openReady() {
   .chats__sheet,
   .chats__scrim,
   .chats__veil,
+  .chats__bar,
   .chats__close {
     transition-duration: var(--duration-none);
   }

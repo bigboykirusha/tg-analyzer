@@ -760,6 +760,7 @@ export const en = {
   'push.turnOn': 'Turn on',
   'push.turnOff': 'Turn off',
   'push.error': 'Could not turn on notifications',
+  'push.errorOff': 'Could not turn off notifications',
   'push.safariText': 'Open the site in Safari first',
   'analysis.details.reading': 'Reading the history',
 } as const

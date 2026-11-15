@@ -38,10 +38,11 @@ const shown = computed(() => {
 
 const blocked = computed(() => ['install', 'safari', 'denied', 'unsupported'].includes(state.value))
 async function toggle() {
+  const turningOff = state.value === 'on'
   try {
-    await (state.value === 'on' ? disable() : enable())
+    await (turningOff ? disable() : enable())
   } catch {
-    toast.error(t('push.error'))
+    toast.error(t(turningOff ? 'push.errorOff' : 'push.error'))
   }
 }
 const checked = computed({

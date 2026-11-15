@@ -23,8 +23,9 @@ const displayName = computed(() => auth.user?.firstName || auth.user?.username |
 const { scrolled, overPoster, progress, hasPoster } = usePosterHeader()
 const notifications = useNotificationsStore()
 const analysisView = useAnalysisView()
+const isHome = computed(() => route.path === '/dashboard')
 /** The line shows wherever the ring of «Разобрать ещё» does not: every signed-in screen but home. */
-const running = computed(() => (route.path === '/dashboard' ? null : analysisView.value))
+const running = computed(() => (isHome.value ? null : analysisView.value))
 const bellLabel = computed(() =>
   notifications.unread ? t('notifications.unreadLabel', { count: notifications.unread }) : t('nav.notifications'),
 )
@@ -34,7 +35,12 @@ const bellLabel = computed(() =>
   <header
     class="app-bar"
     data-toolbar
-    :class="{ 'is-scrolled': scrolled && !overPoster, 'is-over-poster': overPoster, 'has-poster': hasPoster }"
+    :class="{
+      'is-scrolled': scrolled && !overPoster,
+      'is-over-poster': overPoster,
+      'has-poster': hasPoster,
+      'is-home': isHome,
+    }"
     :style="hasPoster ? { '--poster-progress': progress } : undefined"
   >
     <div class="app-bar__inner">
@@ -189,6 +195,16 @@ const bellLabel = computed(() =>
   box-shadow: var(--divider-bottom);
   -webkit-backdrop-filter: var(--glass-filter);
   backdrop-filter: var(--glass-filter);
+}
+
+/* Home on a phone: the poster tiles carry grain and a large shadow, and a blur over them is the costliest thing on iOS, so
+   the bar is the page paper (design-system.md, «Шапка на главной»). */
+@media (max-width: 900px) {
+  .app-bar.is-scrolled.is-home {
+    background: var(--bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 /*

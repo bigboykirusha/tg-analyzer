@@ -89,7 +89,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiPageContainer class="home">
+  <UiPageContainer class="home" :class="{ 'home--peek': narrow }">
     <!-- Loading: the same title and cards, so nothing moves when the content arrives. -->
     <div v-if="loading" class="page" aria-busy="true">
       <div class="home__hello" aria-hidden="true">
@@ -98,7 +98,7 @@ onMounted(() => {
       </div>
       <section class="home__section" aria-hidden="true">
         <div class="home__reports">
-          <HomeCard v-for="card in skeletonCards" :key="card" skeleton wide />
+          <HomeCard v-for="card in skeletonCards" :key="card" skeleton />
         </div>
       </section>
     </div>
@@ -171,7 +171,7 @@ onMounted(() => {
 }
 
 /* Room at the end for the chat list's edge resting over the bottom of the screen. */
-.home:has(.peek) {
+.home--peek {
   padding-bottom: calc(var(--peek-height) + env(safe-area-inset-bottom, 0px));
 }
 

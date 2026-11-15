@@ -390,7 +390,6 @@ main:focus {
   inset: 0 0 calc(-1 * var(--space-12));
   z-index: var(--z-modal);
   background: var(--scrim);
-  opacity: var(--sheet-dim, 1);
   pointer-events: none;
   transition: opacity var(--duration-sheet) var(--ease-drawer);
 }

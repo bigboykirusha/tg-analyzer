@@ -194,6 +194,7 @@ watch(reduced, schedule)
           :meta="card.meta"
           :has-avatar="false"
           poster
+          square
         >
           <Pulse
             :key="slotOf(index) === 0 && leaving === null ? `front-${round}` : 'still'"

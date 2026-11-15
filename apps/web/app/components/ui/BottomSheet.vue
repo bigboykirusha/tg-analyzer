@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ArrowLeft, X } from '../../lib/icons'
+import { tokenMs } from '../../lib/sheetMotion'
 
 /**
  * The phone sheet (Select, PopoverMenu, «Новый анализ», «Поделиться»; ModalDialog shares its drag through
@@ -25,6 +26,7 @@ const props = withDefaults(
 const emit = defineEmits<{ close: []; back: [] }>()
 const { t } = useI18n()
 const panelRef = ref<HTMLElement | null>(null)
+const layerRef = ref<HTMLElement | null>(null)
 const titleId = useId()
 const open = toRef(props, 'open')
 function close() {
@@ -36,19 +38,24 @@ function close() {
 useBodyScrollLock(open)
 // The sheet itself takes focus: a search field first would pop the keyboard over the list on a phone.
 useFocusTrap(panelRef, open, { onEscape: close, initial: () => panelRef.value })
-const drag = useSheetDrag(panelRef, close)
+const drag = useSheetDrag(panelRef, { root: layerRef, onRelease: (toRest) => !toRest || close() })
 watch(open, (value) => value && drag.reset())
 </script>
 
 <template>
   <Teleport to="#teleports">
-    <Transition name="sheet" appear>
-      <div v-if="open" class="sheet-scrim" :class="{ 'sheet-scrim--full': full }" @click.self="close">
+    <Transition
+      name="sheet"
+      appear
+      :duration="{ enter: tokenMs('--duration-sheet'), leave: tokenMs('--duration-fast') }"
+    >
+      <div v-if="open" ref="layerRef" class="sheet-layer" :class="{ 'sheet-layer--full': full }" @click.self="close">
         <div class="sheet-dim" aria-hidden="true" />
+        <div class="sheet-under" aria-hidden="true" />
         <section
           ref="panelRef"
           tabindex="-1"
-          class="sheet"
+          class="sheet sheet-surface"
           :role="role"
           aria-modal="true"
           :aria-labelledby="title ? titleId : undefined"
@@ -80,25 +87,6 @@ watch(open, (value) => value && drag.reset())
 </template>
 
 <style scoped>
-/* The same sheet as a dialog on a phone (ModalDialog): edge to edge, attached to the bottom, top corners round. */
-.sheet-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-modal);
-  display: flex;
-  align-items: flex-end;
-  padding: var(--space-12) 0 0;
-}
-
-/* The scrim is its own layer that only fades (opacity), a little taller than the screen: nothing shows under the
-   edge while Safari's toolbar moves. */
-.sheet-dim {
-  position: absolute;
-  inset: 0 0 calc(-1 * var(--space-12));
-  background: var(--scrim);
-  pointer-events: none;
-}
-
 /* One box, always: the sheet is never resized, restyled or re-laid out while it travels, it only moves. */
 .sheet {
   --field-bg: var(--fill-raised);
@@ -113,24 +101,6 @@ watch(open, (value) => value && drag.reset())
   flex-direction: column;
   width: 100%;
   max-height: 100%;
-  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-overlay);
-  /* A finger writes --sheet-drag once a frame (useSheetDrag); let go, it settles back on the drawer curve. */
-  transform: translate3d(0, var(--sheet-drag, 0px), 0);
-  transition: transform var(--duration-sheet) var(--ease-drawer);
-}
-
-/* The sheet's surface goes on below its edge: whatever the toolbar does, no page shows under it. */
-.sheet::after {
-  content: '';
-  position: absolute;
-  top: calc(100% - 1px);
-  right: 0;
-  left: 0;
-  height: 100vh;
-  background: var(--surface-raised);
-  pointer-events: none;
 }
 
 .sheet__drag {
@@ -200,81 +170,20 @@ watch(open, (value) => value && drag.reset())
   padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
 }
 
-/* Vue reads the length of the animation off this root, so it carries a transition of its own (nothing changes on it:
-   the scrim is the fading child, the sheet the moving one). */
-.sheet-enter-active {
-  transition: opacity var(--duration-sheet);
-}
-
-.sheet-leave-active {
-  transition: opacity var(--duration-fast);
-  pointer-events: none;
-}
-
-.sheet-enter-active .sheet,
-.sheet-leave-active .sheet {
-  will-change: transform;
-}
-
-.sheet-enter-active .sheet {
-  transition: transform var(--duration-sheet) var(--ease-drawer);
-}
-
-.sheet-leave-active .sheet {
-  transition: transform var(--transition-exit);
-}
-
-.sheet-enter-active .sheet-dim {
-  transition: opacity var(--duration-sheet) var(--ease-drawer);
-}
-
-.sheet-leave-active .sheet-dim {
-  transition: opacity var(--duration-fast) var(--ease-exit);
-}
-
-.sheet-enter-active .sheet-dim,
-.sheet-leave-active .sheet-dim {
-  will-change: opacity;
-}
-
-.sheet-enter-from .sheet-dim,
-.sheet-leave-to .sheet-dim {
-  opacity: 0;
-}
-
-.sheet-enter-from .sheet,
-.sheet-leave-to .sheet {
-  transform: translate3d(0, calc(100% + var(--space-4)), 0);
-}
-
 /* Full: the whole screen, one surface up to the status bar — no grabber, no corners, no edge (14.11). It still
    closes by a pull of its head. */
-.sheet-scrim--full {
+.sheet-layer--full {
   padding-top: 0;
 }
 
-.sheet-scrim--full .sheet {
+.sheet-layer--full .sheet {
   height: 100%;
   padding-top: env(safe-area-inset-top, 0px);
   border-radius: 0;
   box-shadow: none;
 }
 
-.sheet-scrim--full .sheet__grabber {
+.sheet-layer--full .sheet__grabber {
   visibility: hidden;
-}
-
-/* Reduced motion: no travel, the sheet fades in place. */
-@media (prefers-reduced-motion: reduce) {
-  .sheet-enter-from .sheet,
-  .sheet-leave-to .sheet {
-    opacity: 0;
-    transform: translate3d(0, var(--sheet-drag, 0px), 0);
-  }
-
-  .sheet-enter-active .sheet,
-  .sheet-leave-active .sheet {
-    transition-property: opacity;
-  }
 }
 </style>

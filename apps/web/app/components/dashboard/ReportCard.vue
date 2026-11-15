@@ -6,7 +6,7 @@ import type { ReportSummaryDto } from '@tg-analyzer/shared'
  * person's colour. A chat that has moved on since the report says so in the quiet line, after the count, in the
  * poster's ink at full strength («4 800 сообщений · есть новые»; the exact count is on the report itself), for
  * private chats and groups alike. The whole card opens the report; «Обновить», «Поделиться» and «Удалить» are the
- * report's own (its bar), not the tile's. On a phone the tile is the whole row (`wide`): the avatar and the
+ * report's own (its bar), not the tile's. On a phone the tile is the whole row: the avatar and the
  * name beside each other, the pulse under them.
  */
 const props = defineProps<{ report: ReportSummaryDto; hasAvatar?: boolean; fresh?: boolean }>()
@@ -39,7 +39,6 @@ const pulse = computed(() =>
     :has-avatar="hasAvatar"
     poster
     :to="`/chat/${report.chatId}`"
-    wide
   >
     <template #meta>
       <template v-if="reading">{{ reading.short }}</template>
@@ -53,8 +52,8 @@ const pulse = computed(() =>
         ></template
       >
     </template>
-    <Pulse v-if="reading" :data="reading.pulse" :height="0" :bars="48" :pitch="6" :read="reading.share" />
-    <Pulse v-else-if="pulse" :data="pulse" :height="0" :bars="48" :pitch="6" grow />
+    <Pulse v-if="reading" :data="reading.pulse" :height="0" :bars="48" :pitch="10" :read="reading.share" />
+    <Pulse v-else-if="pulse" :data="pulse" :height="0" :bars="48" :pitch="10" grow />
   </HomeCard>
 </template>
 

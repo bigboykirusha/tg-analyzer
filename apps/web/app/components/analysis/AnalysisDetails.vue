@@ -113,10 +113,13 @@ async function cancel() {
 .details-card__reached,
 .details-card__note {
   overflow: hidden;
-  font: var(--text-body);
-  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.details-card__name {
+  font: var(--text-body);
+  font-weight: 600;
 }
 
 .details-card__reached,

@@ -5,13 +5,20 @@
  */
 const MIN_ETA_SHARE = 0.05
 const MIN_ETA_MS = 5_000
+const NO_PULSE: never[] = []
 
 export function useAnalysisView() {
   const { t, tc, formatNumber, formatCountdown, formatDate } = useI18n()
   const analysis = useAnalysis()
   const now = useNow()
 
-  return computed(() => {
+  // The same object while nothing a person can see has changed: the one-second tick must not redraw every tile.
+  return computed<ReturnType<typeof build>>((previous) => {
+    const next = build()
+    return previous && next && sameView(previous, next) ? previous : next
+  })
+
+  function build() {
     if (!analysis.isActive.value) return null
     const { scannedMessages, totalMessages, phase, chatTitle, chatId, startedAt, waitSeconds, reachedAt, pulse } =
       analysis.progress.value
@@ -62,8 +69,13 @@ export function useAnalysisView() {
       percent: share === null ? null : Math.round(share * 100),
       /** 0–1 of the history read; the pulse of what is read so far (the tile and the sheet draw it). */
       share: share ?? 0,
-      pulse: pulse ?? [],
+      pulse: pulse ?? NO_PULSE,
       queued: analysis.queued.value.length,
     }
-  })
+  }
+}
+
+function sameView<T extends object>(a: T, b: T) {
+  const keys = Object.keys(a) as (keyof T)[]
+  return keys.every((key) => a[key] === b[key])
 }

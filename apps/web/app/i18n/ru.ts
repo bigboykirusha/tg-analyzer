@@ -767,6 +767,7 @@ export const ru: Record<MessageKey, string> = {
   'push.turnOn': 'Включить',
   'push.turnOff': 'Выключить',
   'push.error': 'Не получилось включить уведомления',
+  'push.errorOff': 'Не получилось выключить уведомления',
   'push.safariText': 'Сначала откройте сайт в Safari',
   'analysis.details.reading': 'Читаем историю',
 }
