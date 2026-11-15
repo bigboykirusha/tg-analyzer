@@ -6,8 +6,6 @@ import Tooltip from './Tooltip.vue'
  * The round icon button (docs/design-system.md, «Компоненты кита»): a grey circle, a neutral fill. A
  * coloured context (a poster) re-points the fill through tokens; the look does not change.
  * Sizes follow the buttons: sm 36 · md 44 on a phone, 36 on desktop.
- * `plain` — no fill, a quiet icon: only for a card's own «⋯» menu, where a filled circle would outweigh the
- * card's name (docs/design-system.md, «Кит»). Its hover and press are the same fill as everywhere.
  * `bare` — no fill, the ink of the text: only the bell, a status rather than an action (13.11: every other icon in
  * a header, a sheet or a dialog stands on a grey circle — «назад», «поделиться», «⋯», «закрыть»).
  */
@@ -23,10 +21,9 @@ const props = withDefaults(
     loading?: boolean
     disabled?: boolean
     noTooltip?: boolean
-    plain?: boolean
     bare?: boolean
   }>(),
-  { size: 'md', to: '', loading: false, disabled: false, noTooltip: false, plain: false, bare: false },
+  { size: 'md', to: '', loading: false, disabled: false, noTooltip: false, bare: false },
 )
 
 const attrs = useAttrs()
@@ -34,11 +31,7 @@ const attrs = useAttrs()
 function buttonAttrs() {
   return Object.fromEntries(Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style'))
 }
-const classes = computed(() => [
-  'icon-btn',
-  `icon-btn--${props.size}`,
-  { 'icon-btn--plain': props.plain, 'icon-btn--bare': props.bare },
-])
+const classes = computed(() => ['icon-btn', `icon-btn--${props.size}`, { 'icon-btn--bare': props.bare }])
 </script>
 
 <template>
@@ -93,17 +86,6 @@ const classes = computed(() => [
     width: var(--control-sm);
     height: var(--control-sm);
   }
-}
-
-/* On a poster (a report tile) the glyph is the poster's ink: --btn-plain-text. */
-.icon-btn--plain {
-  background: transparent;
-  color: var(--btn-plain-text, var(--text-muted));
-}
-
-.icon-btn--plain[aria-expanded='true'] {
-  background: var(--pressed);
-  color: var(--btn-plain-text, var(--text));
 }
 
 .icon-btn--bare {

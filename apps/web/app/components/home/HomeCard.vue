@@ -90,7 +90,6 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   --pulse-ahead: var(--on-poster-faint);
   --btn-fill: var(--poster-button);
   --btn-fill-text: var(--on-poster);
-  --btn-plain-text: var(--on-poster);
 }
 
 /* On a colour the 4 % step of a white card is lost: a poster steps by its own chip tint. */

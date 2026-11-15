@@ -19,9 +19,8 @@ const props = withDefaults(
     /** Keep the title in the bar on desktop as well (the report). */
     bar?: boolean
     /** Phones: no title in the bar (it is on the page, e.g. a profile). */
-    hideTitle?: boolean
   }>(),
-  { lede: '', back: '', bar: false, hideTitle: false },
+  { lede: '', back: '', bar: false },
 )
 const { t } = useI18n()
 const router = useRouter()
@@ -51,7 +50,7 @@ const titleId = useId()
         />
         <slot name="leading" />
       </div>
-      <div class="page-bar__copy" :class="{ 'page-bar__copy--hidden': hideTitle }">
+      <div class="page-bar__copy">
         <slot name="title">
           <h1 :id="titleId" class="page-bar__title">{{ title }}</h1>
           <p v-if="lede" class="page-bar__lede">{{ lede }}</p>
@@ -98,10 +97,6 @@ const titleId = useId()
   align-items: center;
   min-width: 0;
   text-align: center;
-}
-
-.page-bar__copy--hidden {
-  visibility: hidden;
 }
 
 .page-bar__title {

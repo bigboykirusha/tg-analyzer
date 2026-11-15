@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Component } from 'vue'
 import Button from './Button.vue'
 
 /**
@@ -14,15 +13,11 @@ const props = withDefaults(
     title: string
     description: string
     confirmLabel: string
-    cancelLabel?: string
     variant?: 'default' | 'danger'
-    confirmIcon?: Component | null
     loading?: boolean
   }>(),
   {
-    cancelLabel: '',
     variant: 'default',
-    confirmIcon: null,
     loading: false,
   },
 )
@@ -52,9 +47,9 @@ const isDanger = computed(() => props.variant === 'danger')
     </template>
     <template #actions>
       <Button variant="secondary" :disabled="loading" @click="emit('close')">
-        {{ cancelLabel || t('common.cancel') }}
+        {{ t('common.cancel') }}
       </Button>
-      <Button variant="primary" :icon="confirmIcon" :loading="loading" @click="emit('confirm')">
+      <Button variant="primary" :loading="loading" @click="emit('confirm')">
         {{ confirmLabel }}
       </Button>
     </template>

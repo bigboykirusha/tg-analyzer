@@ -22,7 +22,6 @@ const props = withDefaults(
     chevron?: boolean
     /** The second line wraps instead of being cut (privacy). */
     wrap?: boolean
-    interactive?: boolean
     danger?: boolean
     disabled?: boolean
     /** The row whose details are open beside the list: it keeps the fill. */
@@ -36,7 +35,6 @@ const props = withDefaults(
     href: '',
     chevron: false,
     wrap: false,
-    interactive: undefined,
     danger: false,
     disabled: false,
     selected: false,
@@ -46,7 +44,7 @@ const props = withDefaults(
 const NuxtLink = resolveComponent('NuxtLink')
 const tag = computed(() => (props.to ? NuxtLink : props.href ? 'a' : props.as))
 const isButton = computed(() => !props.to && !props.href && props.as === 'button')
-const isInteractive = computed(() => props.interactive ?? Boolean(props.to || props.href || isButton.value))
+const isInteractive = computed(() => Boolean(props.to || props.href || isButton.value))
 const tagAttrs = computed(() => {
   if (props.to) return { to: props.to, 'aria-disabled': props.disabled || undefined }
   if (props.href) return { href: props.href, 'aria-disabled': props.disabled || undefined }

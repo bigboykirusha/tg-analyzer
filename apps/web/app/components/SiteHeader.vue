@@ -79,7 +79,6 @@ const { scrolled, overPoster, hasPoster } = usePosterHeader()
   .site-header.is-over-poster {
     --btn-fill: initial;
     --btn-fill-text: initial;
-    --btn-plain-text: initial;
     --btn-ring: initial;
     --btn-blur: initial;
     --btn-ink: initial;
