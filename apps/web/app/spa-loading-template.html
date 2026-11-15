@@ -52,7 +52,7 @@
     background: var(--bg, #0e0e10);
     color: var(--text, #f2f2f3);
   }
-  /* Nine bars, each a pill above the line and its mirror below in a quieter ink. */
+  /* Nine bars, each two pills: above the line and its mirror below. */
   .startup__pulse {
     display: flex;
     align-items: center;
@@ -61,17 +61,25 @@
   }
   .startup__pulse span {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     width: 5px;
     height: calc(56px * var(--h));
-    border-radius: 999px;
-    background: linear-gradient(
-      currentColor 0 calc(50% - 1px),
-      transparent calc(50% - 1px) calc(50% + 1px),
-      var(--text-muted, #8b8b93) calc(50% + 1px)
-    );
     transform-origin: 50% 50%;
     animation: startup-wave 1200ms cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
     animation-delay: calc(var(--i) * 90ms);
+  }
+  /* Two pills, as in the mark: you above the line in ink, them below in a quieter ink. */
+  .startup__pulse span::before,
+  .startup__pulse span::after {
+    content: '';
+    flex: 1;
+    border-radius: 999px;
+    background: currentColor;
+  }
+  .startup__pulse span::after {
+    background: var(--text-muted, #8b8b93);
   }
   @keyframes startup-wave {
     from {

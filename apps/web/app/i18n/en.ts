@@ -78,7 +78,7 @@ export const en = {
   'common.retry': 'Retry',
   'common.skipToContent': 'Skip to content',
   'common.search': 'Search',
-  'dashboard.hasNews': 'new messages',
+  'dashboard.hasNews': 'new',
   'dashboard.analysed': 'Updated {time}',
   'dashboard.reportReady': 'Report is ready',
   'dashboard.analysingNow': 'Analysing now',

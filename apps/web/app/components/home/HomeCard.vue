@@ -24,7 +24,10 @@ const props = defineProps<{
   poster?: boolean
   /** Phones: a small square (the landing deck) instead of the whole row — the avatar, the name and the end slot on one line, the foot under them. */
   square?: boolean
+  /** The chat has moved on since the report: «новые» beside the name. */
+  news?: boolean
 }>()
+const { t } = useI18n()
 
 const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 </script>
@@ -54,8 +57,11 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
         <UiSkeleton class="home-card__line home-card__line--meta" width="50%" />
       </template>
       <template v-else>
-        <NuxtLink v-if="to" :to="to" class="home-card__name">{{ title }}</NuxtLink>
-        <h3 v-else class="home-card__name">{{ title }}</h3>
+        <div class="home-card__title">
+          <NuxtLink v-if="to" :to="to" class="home-card__name">{{ title }}</NuxtLink>
+          <h3 v-else class="home-card__name">{{ title }}</h3>
+          <span v-if="news" class="home-card__news t-caption">{{ t('dashboard.hasNews') }}</span>
+        </div>
         <p class="home-card__meta t-label">
           <slot name="meta">{{ meta }}</slot>
         </p>
@@ -181,6 +187,31 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   -webkit-line-clamp: 2;
   line-clamp: 2;
   overflow-wrap: anywhere;
+}
+
+/* The name and the news capsule share a line; the name gives way (ellipsis, wrap), the capsule stays whole. */
+.home-card__title {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.home-card__name {
+  min-width: 0;
+}
+
+/* Quiet, as the avatar's well: poster ink at 600 on the same light translucent fill, centred on the name's first line. */
+.home-card__news {
+  flex: none;
+  margin-top: calc((1lh - var(--space-6)) / 2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--avatar-on-poster);
+  color: var(--on-poster);
+  font-weight: 600;
+  line-height: var(--space-6);
+  pointer-events: none;
 }
 
 a.home-card__name::after {

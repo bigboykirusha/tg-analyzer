@@ -3,9 +3,8 @@ import type { ReportSummaryDto } from '@tg-analyzer/shared'
 
 /**
  * A report on home: the card of every home screen — the avatar, the name, how many messages, the pulse in the
- * person's colour. A chat that has moved on since the report says so in the quiet line, after the count, in the
- * poster's ink at full strength («4 800 сообщений · есть новые»; the exact count is on the report itself), for
- * private chats and groups alike. The whole card opens the report; «Обновить», «Поделиться» and «Удалить» are the
+ * person's colour. A chat that has moved on since the report says so with a small capsule «новые» right after the name
+ * (HomeCard), for private chats and groups alike; the exact count is on the report itself. The whole card opens the report; «Обновить», «Поделиться» and «Удалить» are the
  * report's own (its bar), not the tile's. On a phone the tile is the whole row: the avatar and the
  * name beside each other, the pulse under them.
  */
@@ -38,6 +37,7 @@ const pulse = computed(() =>
     :title="report.title"
     :has-avatar="hasAvatar"
     poster
+    :news="news"
     :to="`/chat/${report.chatId}`"
   >
     <template #meta>
@@ -45,22 +45,9 @@ const pulse = computed(() =>
       <template v-else-if="updating"
         ><span class="spinner" aria-hidden="true" /> {{ t('dashboard.analysingNow') }}</template
       >
-      <template v-else
-        >{{ meta
-        }}<template v-if="news">
-          · <span class="report-card__news">{{ t('dashboard.hasNews') }}</span></template
-        ></template
-      >
+      <template v-else>{{ meta }}</template>
     </template>
     <Pulse v-if="reading" :data="reading.pulse" :height="0" :bars="48" :pitch="6" :read="reading.share" />
     <Pulse v-else-if="pulse" :data="pulse" :height="0" :bars="48" :pitch="6" grow />
   </HomeCard>
 </template>
-
-<style scoped>
-/* News reads as news: the poster's ink at full strength, a step heavier than the quiet line around it. */
-.report-card__news {
-  color: var(--on-poster);
-  font-weight: 600;
-}
-</style>

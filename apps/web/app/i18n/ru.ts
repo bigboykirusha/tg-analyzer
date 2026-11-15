@@ -80,7 +80,7 @@ export const ru: Record<MessageKey, string> = {
   'common.skipToContent': 'К содержимому',
   'common.retry': 'Повторить',
   'common.search': 'Поиск',
-  'dashboard.hasNews': 'есть новые',
+  'dashboard.hasNews': 'новые',
   'dashboard.analysed': 'Обновлён {time}',
   'dashboard.reportReady': 'Отчёт готов',
   'dashboard.analysingNow': 'Разбираем…',
