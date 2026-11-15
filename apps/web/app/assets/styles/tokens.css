@@ -563,7 +563,10 @@
   --flag-size: 20px;
   --avatar-xs: 24px;
   --avatar-sm: 32px;
-  --avatar-md: 40px;
+  /* The circle beside a two-line row (a body line over a label line: 24 + 20 = 44) and a toast. */
+  --avatar-md: 44px;
+  /* The circle on a report tile: beside its name and quiet line (h3 line 28 + label line 20 = 48). */
+  --avatar-tile: 48px;
   --avatar-lg: 64px;
   --switch-width: 40px;
   --switch-height: 24px;

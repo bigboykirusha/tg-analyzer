@@ -247,7 +247,6 @@ a.note:active {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-0-5);
   min-width: 0;
 }
 

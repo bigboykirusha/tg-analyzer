@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { hueOf } from '../../lib/hue'
 
-export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg'
+export type AvatarSize = 'xs' | 'sm' | 'md' | 'tile' | 'lg'
 export type AvatarSide = 'mine' | 'theirs'
 
 /**
  * A person: their poster colour, flat, ink initials — the same colour their report tile and poster carry.
- * 24 / 32 / 40 / 64 (--avatar-*). `side` draws one side of a two-person report: `mine` is an ink circle,
+ * 24 / 32 / 44 / 48 / 64 (--avatar-*): 44 is a two-line row, 48 a report tile. `side` draws one side of a two-person report: `mine` is an ink circle,
  * `theirs` takes the colour of the report around it. On a person's own poster pass `on-poster`.
  */
 const props = withDefaults(
@@ -103,6 +103,10 @@ const tooltip = computed(() => {
 .avatar--sm {
   --avatar-size: var(--avatar-sm);
   font: var(--text-label);
+}
+
+.avatar--tile {
+  --avatar-size: var(--avatar-tile);
 }
 
 .avatar--lg {

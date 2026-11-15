@@ -50,8 +50,8 @@ onMounted(() => {
 
 <template>
   <div class="picker" :class="{ 'picker--sticky': sticky }">
-    <div class="picker__tools">
-      <label v-if="ownSearch" class="picker__search">
+    <div v-if="ownSearch" class="picker__tools">
+      <label class="picker__search">
         <Search class="icon-sm" aria-hidden="true" />
         <input
           v-model="search"

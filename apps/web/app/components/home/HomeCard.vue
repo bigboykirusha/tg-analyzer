@@ -37,8 +37,15 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
     :aria-busy="skeleton || undefined"
   >
     <div class="home-card__top">
-      <UiSkeleton v-if="skeleton" width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-pill)" />
-      <ChatAvatar v-else :chat-id="chatId!" :title="avatarTitle ?? title" :has-avatar="hasAvatar" :on-poster="poster" />
+      <UiSkeleton v-if="skeleton" width="var(--avatar-tile)" height="var(--avatar-tile)" radius="var(--radius-pill)" />
+      <ChatAvatar
+        v-else
+        :chat-id="chatId!"
+        :title="avatarTitle ?? title"
+        :has-avatar="hasAvatar"
+        :on-poster="poster"
+        size="tile"
+      />
       <div v-if="!skeleton" class="home-card__end"><slot name="end" /></div>
     </div>
     <div class="home-card__text">
@@ -157,7 +164,6 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 .home-card__text {
   display: flex;
   flex-direction: column;
-  gap: var(--space-0-5);
   min-width: 0;
   margin-top: var(--space-1);
 }

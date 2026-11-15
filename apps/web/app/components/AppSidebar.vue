@@ -72,7 +72,7 @@ function updating(report: ReportSummaryDto) {
         class="sidebar__row sidebar__person"
         :aria-current="activeId === chat.id ? 'page' : undefined"
       >
-        <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" size="sm" />
+        <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" size="md" />
         <span class="sidebar__copy">
           <span class="sidebar__name">{{ chat.title }}</span>
           <span class="sidebar__meta">{{ meta(chat.report!) }}</span>
@@ -82,7 +82,7 @@ function updating(report: ReportSummaryDto) {
       <!-- The list on its way: rows of the same height, so nothing jumps when it arrives. -->
       <template v-if="loading">
         <div v-for="row in skeletonRows" :key="row" class="sidebar__row sidebar__person" aria-hidden="true">
-          <UiSkeleton width="var(--avatar-sm)" height="var(--avatar-sm)" radius="var(--radius-pill)" />
+          <UiSkeleton width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-pill)" />
           <span class="sidebar__copy">
             <UiSkeleton class="sidebar__line sidebar__line--name" :width="`${76 - row * 8}%`" />
             <UiSkeleton class="sidebar__line sidebar__line--meta" width="40%" />
@@ -103,7 +103,7 @@ function updating(report: ReportSummaryDto) {
         class="sidebar__row sidebar__person"
         :aria-current="route.path === '/account' ? 'page' : undefined"
       >
-        <ProfileAvatar :title="displayName" size="sm" />
+        <ProfileAvatar :title="displayName" size="md" />
         <span class="sidebar__copy">
           <span class="sidebar__name">{{ displayName }}</span>
           <span class="sidebar__meta">{{ t('account.settings') }}</span>
@@ -186,7 +186,7 @@ function updating(report: ReportSummaryDto) {
 }
 
 .sidebar__icon {
-  width: var(--avatar-sm);
+  width: var(--avatar-md);
   --icon-size: var(--icon-md);
 }
 
@@ -212,10 +212,10 @@ function updating(report: ReportSummaryDto) {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-0-5);
   min-width: 0;
 }
 
+/* Name over quiet line is a two-line row: a body line and a label line, 44, the height of its avatar. */
 .sidebar__name,
 .sidebar__meta {
   overflow: hidden;
@@ -223,10 +223,18 @@ function updating(report: ReportSummaryDto) {
   white-space: nowrap;
 }
 
+.sidebar__name {
+  font: var(--text-body);
+}
+
 /* The skeleton's lines are one line box of the name and of the meta. */
 .sidebar__line {
   height: 1lh;
   font: var(--text-label);
+}
+
+.sidebar__line--name {
+  font: var(--text-body);
 }
 
 .sidebar__meta {
