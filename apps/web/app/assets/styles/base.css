@@ -14,7 +14,7 @@ html {
   -webkit-text-size-adjust: 100%;
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
-  /* Anchors land below the sticky header and its capsule. */
+  /* Anchors land below the sticky header. */
   scroll-padding-top: calc(var(--topbar-height) + var(--space-4));
   scrollbar-gutter: stable;
   touch-action: manipulation;

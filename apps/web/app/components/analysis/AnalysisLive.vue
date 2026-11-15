@@ -4,7 +4,6 @@
  * «63%, ещё около минуты»: a card at the foot of the desktop sidebar (on home the analysis is its growing tile,
  * AnalysisTile). Tapping opens the details (AnalysisDetails).
  */
-withDefaults(defineProps<{ variant?: 'card' }>(), { variant: 'card' })
 const view = useAnalysisView()
 const analysis = useAnalysis()
 const { t } = useI18n()
@@ -17,7 +16,6 @@ const C = 2 * Math.PI * R
     <button
       type="button"
       class="live"
-      :class="`live--${variant}`"
       aria-haspopup="dialog"
       :aria-label="`${view.title}. ${view.status}`"
       @click="analysis.details.value = true"
@@ -52,7 +50,11 @@ const C = 2 * Math.PI * R
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  width: 100%;
   min-width: 0;
+  padding: var(--space-2);
+  border-radius: var(--radius-well);
+  background: var(--surface-2);
   text-align: left;
   -webkit-tap-highlight-color: transparent;
   transition: transform var(--duration-press) var(--ease-standard);
@@ -60,14 +62,6 @@ const C = 2 * Math.PI * R
 
 .live:active {
   transform: scale(var(--press-scale));
-}
-
-/* A floating control: the same family as «Новый анализ» — a raised pill, a ring and one soft shadow. */
-.live--card {
-  width: 100%;
-  padding: var(--space-2);
-  border-radius: var(--radius-well);
-  background: var(--surface-2);
 }
 
 .live__ring {

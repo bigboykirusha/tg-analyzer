@@ -17,13 +17,9 @@ const props = withDefaults(
 )
 const emit = defineEmits<{ submit: []; resend: [] }>()
 
-const { t } = useI18n()
+const { t, formatCountdown } = useI18n()
 const size = computed(() => Math.min(Math.max(props.length, 3), 10))
 const otpRef = ref<InstanceType<typeof OtpInput> | null>(null)
-
-function formatCountdown(seconds: number) {
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
-}
 
 // The cells take focus as soon as the step shows, so a typed or pasted code is never lost.
 onMounted(() => nextTick(() => otpRef.value?.focus()))

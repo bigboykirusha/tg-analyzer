@@ -97,7 +97,7 @@ function updating(report: ReportSummaryDto) {
     </nav>
 
     <div class="sidebar__foot">
-      <AnalysisLive variant="card" />
+      <AnalysisLive />
       <NuxtLink
         to="/account"
         class="sidebar__row sidebar__person"
