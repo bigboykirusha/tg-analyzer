@@ -157,7 +157,6 @@ export type ChatType = 'private' | 'group' | 'channel' | 'bot' | 'unknown'
 
 /** Chat types that can be analysed. Channels and bots are not conversations. */
 export const ANALYZABLE_CHAT_TYPES = ['private', 'group'] as const satisfies readonly ChatType[]
-export type AnalyzableChatType = (typeof ANALYZABLE_CHAT_TYPES)[number]
 
 export interface DialogDto {
   id: string

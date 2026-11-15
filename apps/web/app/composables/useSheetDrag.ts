@@ -1,109 +1,195 @@
 import type { Ref } from 'vue'
+import { tokenMs } from '../lib/sheetMotion'
 
-/** A flick faster than this closes the sheet however short it was (px per ms). */
-const FLICK_VELOCITY = 0.11
-/** Dragged further than this share of its height, the sheet closes on release. */
-const CLOSE_SHARE = 0.3
+/** Moved less than this, it was a tap and nothing is touched. */
+const SLOP = 6
+/** Let go further than this from where the drag began, the sheet goes on to the other end. */
+const TRAVEL = 64
+/** A flick faster than this goes on however short (px per ms). */
+const FLICK = 0.3
 /** A touch this close to the left edge belongs to the browser's back swipe. */
 const EDGE = 20
-/** How long the layer stays promoted after a release, while the sheet settles. */
-const SETTLE_MS = 520
+/** How long the finger's last stretch counts for the flick, ms. */
+const TRAIL_MS = 100
+/** A transition that never reports its end still lets the layer go this long after its duration, ms. */
+const SETTLE_SLACK = 100
+
+interface SheetDragOptions {
+  /** Release: `true` when the sheet goes to its rest (closes). Return false when it can't (busy): it settles back. */
+  onRelease: (toRest: boolean) => boolean | void
+  /** The element that carries the sheet's variables and `data-sheet` (its scrim and edge read them); default the panel. */
+  root?: Ref<HTMLElement | null>
+  /** A sheet that rests on screen (the chat sheet) gives the distance between open and rest; one that only closes omits it. */
+  span?: () => number
+  /** Resting sheets: is it open now (else at rest). */
+  isOpen?: () => boolean
+  /** The variables to write for a place (the chat sheet adds its scrim's and veil's numbers). */
+  vars?: (y: number) => Record<string, string>
+  /** A press that keeps its own behaviour (buttons, a field); default buttons, links and inputs. */
+  ignore?: (event: PointerEvent) => boolean
+}
 
 /**
- * Drag-to-dismiss for every sheet on a phone (`UiBottomSheet`, and `UiModalDialog` below 640px). One mechanic, the
- * one the chat sheet of home uses: the panel is a box that never changes size and only moves, by
- * `translate3d(0, var(--sheet-drag), 0)`. A finger writes `--sheet-drag` straight on the panel once a frame (no
- * re-render per pointer move); the panel's own `transition: transform` carries it from there.
+ * The one drag for every phone sheet (`UiBottomSheet`, `UiModalDialog` below 640px, the chat sheet of home). The panel
+ * is a box that never changes size and only moves, by `translate3d(0, var(--sheet-y), 0)` (base.css `.sheet-surface`).
+ * A finger writes `--sheet-y` once a frame (no re-render per move). `data-sheet` on the root says `drag` (every
+ * transition off) or `settle` (the layer is promoted until the panel's transform transition ends).
  *
- * - A new touch picks the sheet up from where it is on screen right now, in flight or not.
- * - The transition is switched off inline, synchronously, for the length of a drag, and back on at release in the same
- *   task, so there is no frame at the wrong place.
- * - Let go past the threshold, the offset stays and the leave transition carries on down from there; otherwise the
- *   offset goes back to 0 and the base transition springs the sheet home. `close` returns false when the sheet can't
- *   close right now (busy): it then settles back.
- * - The layer is promoted (`will-change`) only for the drag and the settling after it.
- * - A touch that starts within 20px of the left edge is Safari's back swipe and is left alone.
+ * - Nothing is touched until the finger passes the slop; then the sheet is picked up from where it is on screen
+ *   right now, in flight or not.
+ * - Let go past the distance or the flick, it goes to its rest (a sheet that only closes: the offset stays and the
+ *   leave transition carries on from there); otherwise it springs back.
+ * - A touch within 20px of the left edge is Safari's back swipe and is left alone.
  *
- * Bind `handlers` to the grabber area; the panel's CSS reads `--sheet-drag`.
+ * Bind `handlers` to the grabber area.
  */
-export function useSheetDrag(panel: Ref<HTMLElement | null>, close: () => boolean) {
-  const dragging = ref(false)
-  let start: number | null = null
+export function useSheetDrag(panel: Ref<HTMLElement | null>, options: SheetDragOptions) {
+  const root = options.root ?? panel
+  const resting = options.span !== undefined
+  const vars = options.vars ?? ((y: number) => ({ '--sheet-y': `${y}px` }))
+  const written = new Set<string>()
+  let touching = false
+  let dragging = false
+  let moved = false
+  let startY = 0
   let origin = 0
   let offset = 0
   let frame = 0
+  let clearFrame = 0
   let settleTimer: ReturnType<typeof setTimeout> | undefined
+  let stopListening: (() => void) | undefined
   let trail: { y: number; t: number }[] = []
 
   function write(y: number) {
-    panel.value?.style.setProperty('--sheet-drag', `${y}px`)
+    for (const [name, value] of Object.entries(vars(y))) {
+      root.value?.style.setProperty(name, value)
+      written.add(name)
+    }
   }
+  function clearVars() {
+    for (const name of written) root.value?.style.removeProperty(name)
+    written.clear()
+  }
+  function setState(state: 'drag' | 'settle' | null) {
+    const el = root.value
+    if (!el) return
+    if (state) el.dataset.sheet = state
+    else delete el.dataset.sheet
+  }
+  function endSettle() {
+    clearTimeout(settleTimer)
+    stopListening?.()
+    stopListening = undefined
+  }
+  /** Until the panel has landed its layer is promoted; then it is given back. */
+  function settle() {
+    endSettle()
+    setState('settle')
+    const el = panel.value
+    const done = () => {
+      endSettle()
+      setState(null)
+    }
+    const onEnd = (event: TransitionEvent) => {
+      if (event.target === el && event.propertyName === 'transform') done()
+    }
+    el?.addEventListener('transitionend', onEnd)
+    stopListening = () => el?.removeEventListener('transitionend', onEnd)
+    settleTimer = setTimeout(done, tokenMs('--duration-sheet') + SETTLE_SLACK)
+  }
+
   /** Where the panel is on screen now, even in the middle of a transition. */
   function currentY() {
-    if (!panel.value) return 0
-    return new DOMMatrixReadOnly(getComputedStyle(panel.value).transform).m42
+    return panel.value ? new DOMMatrixReadOnly(getComputedStyle(panel.value).transform).m42 : 0
   }
-  /** Past the top it gives a little, like rubber. */
+  /** Past an end it gives a little, like rubber. */
   function rubber(raw: number) {
-    return raw >= 0 ? raw : -Math.sqrt(-raw) * 2
+    const far = options.span?.() ?? Infinity
+    if (raw < 0) return -Math.sqrt(-raw) * 2
+    return raw > far ? far + Math.sqrt(raw - far) * 2 : raw
   }
 
   function onPointerDown(event: PointerEvent) {
     if (event.pointerType === 'mouse' && event.button !== 0) return
-    // Buttons in the sheet's header (close, back) keep their own press: a drag starts elsewhere.
-    if ((event.target as Element | null)?.closest('button, a, input, [role="button"]')) return
-    if (event.clientX < EDGE) return
-    const el = panel.value
-    if (!el) return
-    clearTimeout(settleTimer)
-    // Picked up from wherever it is: its place is written as the transition goes off, in the same task.
-    origin = Math.max(0, currentY())
-    offset = origin
-    el.style.transition = 'none'
-    el.style.willChange = 'transform'
-    write(origin)
-    start = event.clientY
+    const keeps = options.ignore ?? ((e: PointerEvent) => !!(e.target as Element | null)?.closest('button, a, input, [role="button"]'))
+    if (keeps(event) || event.clientX < EDGE) return
+    // A release a moment ago has not handed the sheet back to its classes yet: now, so it cannot do it mid-drag.
+    cancelAnimationFrame(clearFrame)
+    if (!dragging) clearVars()
+    touching = true
+    moved = false
+    startY = event.clientY
     trail = [{ y: event.clientY, t: event.timeStamp }]
-    dragging.value = true
     ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
   }
 
   function onPointerMove(event: PointerEvent) {
-    if (start === null) return
-    offset = rubber(origin + event.clientY - start)
-    trail = [...trail.filter((point) => event.timeStamp - point.t < 100), { y: event.clientY, t: event.timeStamp }]
+    if (!touching) return
+    if (!dragging) {
+      if (Math.abs(event.clientY - startY) < SLOP) return
+      // The slop is spent: only now is the sheet picked up, from its place on screen, its transitions switched off.
+      origin = resting ? currentY() : Math.max(0, currentY())
+      startY = event.clientY
+      trail = []
+      endSettle()
+      setState('drag')
+      write(origin)
+      dragging = true
+      moved = true
+    }
+    offset = rubber(origin + event.clientY - startY)
+    trail = [...trail.filter((point) => event.timeStamp - point.t < TRAIL_MS), { y: event.clientY, t: event.timeStamp }]
     if (!frame) {
       frame = requestAnimationFrame(() => {
         frame = 0
-        if (start !== null) write(offset)
+        if (dragging) write(offset)
       })
     }
   }
 
   function onPointerUp() {
-    if (start === null) return
-    start = null
+    if (!touching) return
+    touching = false
     cancelAnimationFrame(frame)
     frame = 0
-    const el = panel.value
-    const height = el?.offsetHeight ?? 0
+    if (!dragging) return
+    dragging = false
     const first = trail[0]
     const last = trail.at(-1)
     const velocity = first && last && last.t > first.t ? (last.y - first.y) / (last.t - first.t) : 0
-    const closing = offset > 0 && (velocity > FLICK_VELOCITY || (height > 0 && offset > height * CLOSE_SHARE))
-    dragging.value = false
-    // The finger's last place is written once more, then the transition is given back to the classes.
+    const delta = offset - origin
+    const open = options.isOpen?.() ?? true
+    const toRest = open ? delta > TRAVEL || velocity > FLICK : !(delta < -TRAVEL || velocity < -FLICK)
+    // The finger's last place is written once more, then the transitions are given back to the classes.
     write(offset)
-    if (el) el.style.transition = ''
-    if (closing && close()) {
-      // The offset stays: the leave transition starts from here and carries on down.
-      return
-    }
-    write(0)
-    settleTimer = setTimeout(() => {
-      if (panel.value) panel.value.style.willChange = ''
-    }, SETTLE_MS)
+    settle()
+    const accepted = options.onRelease(toRest) !== false
+    if (resting) clearFrame = requestAnimationFrame(clearVars)
+    else if (!(toRest && accepted)) write(0)
+    // A sheet that closes keeps the offset: the leave transition starts from here and carries on down.
   }
+
+  /** The end of a drag is not a tap: true once after one. */
+  function wasDrag() {
+    const value = moved
+    moved = false
+    return value
+  }
+  /** A sheet that opens again starts in place. */
+  function reset() {
+    cancelAnimationFrame(frame)
+    cancelAnimationFrame(clearFrame)
+    frame = clearFrame = 0
+    endSettle()
+    touching = dragging = false
+    clearVars()
+    setState(null)
+  }
+  onBeforeUnmount(() => {
+    cancelAnimationFrame(frame)
+    cancelAnimationFrame(clearFrame)
+    endSettle()
+  })
 
   const handlers = {
     pointerdown: onPointerDown,
@@ -111,23 +197,5 @@ export function useSheetDrag(panel: Ref<HTMLElement | null>, close: () => boolea
     pointerup: onPointerUp,
     pointercancel: onPointerUp,
   }
-  /** A sheet that opens again starts in place. */
-  function reset() {
-    cancelAnimationFrame(frame)
-    frame = 0
-    clearTimeout(settleTimer)
-    start = null
-    dragging.value = false
-    const el = panel.value
-    if (el) {
-      el.style.removeProperty('--sheet-drag')
-      el.style.transition = ''
-      el.style.willChange = ''
-    }
-  }
-  onBeforeUnmount(() => {
-    cancelAnimationFrame(frame)
-    clearTimeout(settleTimer)
-  })
-  return { dragging, handlers, reset }
+  return { handlers, reset, settle, wasDrag }
 }

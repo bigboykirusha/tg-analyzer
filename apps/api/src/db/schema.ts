@@ -148,7 +148,6 @@ export const refreshSessions = pgTable(
 )
 
 export type UserRow = typeof users.$inferSelect
-export type TelegramSessionRow = typeof telegramSessions.$inferSelect
 export type ParseJobRow = typeof parseJobs.$inferSelect
 export type ChatReportRow = typeof chatReports.$inferSelect
 export type RefreshSessionRow = typeof refreshSessions.$inferSelect

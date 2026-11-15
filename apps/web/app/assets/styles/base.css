@@ -369,3 +369,114 @@ main:focus {
     display: none !important;
   }
 }
+
+/*
+ * Phone sheets (UiBottomSheet, UiModalDialog below 640px, the chat sheet of home): one box that never changes size
+ * and only moves. --sheet-y is its place (a finger writes it, useSheetDrag); data-sheet on the layer says drag (all
+ * transitions off) or settle (promoted until it lands).
+ */
+.sheet-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-12) 0 0;
+}
+
+/* A little taller than the screen below: nothing shows under the edge while the Safari toolbar moves. */
+.sheet-dim {
+  position: fixed;
+  inset: 0 0 calc(-1 * var(--space-12));
+  z-index: var(--z-modal);
+  background: var(--scrim);
+  opacity: var(--sheet-dim, 1);
+  pointer-events: none;
+  transition: opacity var(--duration-sheet) var(--ease-drawer);
+}
+
+.sheet-surface {
+  z-index: var(--z-modal);
+  overflow: hidden;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-overlay);
+  transform: translate3d(0, var(--sheet-y, 0px), 0);
+  transition: transform var(--duration-sheet) var(--ease-drawer);
+}
+
+/* The surface goes on below the screen edge. A sibling, so the sheet itself clips its content to its corners. */
+.sheet-under {
+  position: fixed;
+  top: calc(100% - 1px);
+  right: 0;
+  left: 0;
+  z-index: var(--z-modal);
+  height: 100vh;
+  background: var(--surface-raised);
+  transform: translate3d(0, var(--sheet-y, 0px), 0);
+  transition: transform var(--duration-sheet) var(--ease-drawer);
+  pointer-events: none;
+}
+
+.sheet-enter-active .sheet-surface {
+  transition: transform var(--duration-sheet) var(--ease-drawer);
+}
+
+.sheet-leave-active .sheet-surface {
+  transition: transform var(--transition-exit);
+}
+
+.sheet-enter-active .sheet-dim {
+  transition: opacity var(--duration-sheet) var(--ease-drawer);
+}
+
+.sheet-leave-active .sheet-dim {
+  transition: opacity var(--duration-fast) var(--ease-exit);
+}
+
+.sheet-enter-active .sheet-surface,
+.sheet-leave-active .sheet-surface,
+[data-sheet] .sheet-surface,
+[data-sheet] .sheet-under {
+  will-change: transform;
+}
+
+.sheet-enter-active .sheet-dim,
+.sheet-leave-active .sheet-dim,
+[data-sheet] .sheet-dim {
+  will-change: opacity;
+}
+
+.sheet-leave-active {
+  pointer-events: none;
+}
+
+.sheet-enter-from .sheet-dim,
+.sheet-leave-to .sheet-dim {
+  opacity: 0;
+}
+
+.sheet-enter-from .sheet-surface,
+.sheet-leave-to .sheet-surface {
+  transform: translate3d(0, calc(100% + var(--space-4)), 0);
+}
+
+/* Last, so a finger picking the sheet up in the middle of its entrance still stops it. */
+[data-sheet='drag'] :is(.sheet-dim, .sheet-surface, .sheet-under) {
+  transition: none;
+}
+
+/* Reduced motion: no travel, the sheet fades in place. */
+@media (prefers-reduced-motion: reduce) {
+  .sheet-enter-from .sheet-surface,
+  .sheet-leave-to .sheet-surface {
+    opacity: 0;
+    transform: translate3d(0, var(--sheet-y, 0px), 0);
+  }
+
+  .sheet-enter-active .sheet-surface,
+  .sheet-leave-active .sheet-surface {
+    transition-property: opacity;
+  }
+}

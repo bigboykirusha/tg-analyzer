@@ -4,8 +4,6 @@
  * the link write them the same way.
  */
 
-export type TextLocale = 'ru' | 'en'
-
 const isRussian = (locale: string) => locale.toLowerCase().startsWith('ru')
 
 // prettier-ignore
