@@ -162,15 +162,15 @@ onMounted(() => {
   }
 }
 
-/* The search well: 36, grey, no ring — as in iOS; a finger still gets 44 (the band above and below focuses it). */
+/* The search well: as tall as every field (44), grey, no ring — as in iOS. */
 .picker__search {
   position: relative;
   isolation: isolate;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  height: var(--control-sm);
-  padding: 0 var(--space-3);
+  height: var(--control-md);
+  padding: 0 var(--space-4);
   /* A pill, the shape of every control. */
   border-radius: var(--radius-pill);
   background: var(--field-bg, var(--surface-2));

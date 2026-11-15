@@ -45,7 +45,7 @@ const tile = computed(() => {
     :meta="tile.short"
     poster
   >
-    <Pulse :data="tile.pulse" :height="0" :bars="48" :pitch="10" :read="tile.share" />
+    <Pulse :data="tile.pulse" :height="0" :bars="48" :pitch="6" :read="tile.share" />
     <button
       v-if="view"
       type="button"

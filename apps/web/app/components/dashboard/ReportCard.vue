@@ -52,8 +52,8 @@ const pulse = computed(() =>
         ></template
       >
     </template>
-    <Pulse v-if="reading" :data="reading.pulse" :height="0" :bars="48" :pitch="10" :read="reading.share" />
-    <Pulse v-else-if="pulse" :data="pulse" :height="0" :bars="48" :pitch="10" grow />
+    <Pulse v-if="reading" :data="reading.pulse" :height="0" :bars="48" :pitch="6" :read="reading.share" />
+    <Pulse v-else-if="pulse" :data="pulse" :height="0" :bars="48" :pitch="6" grow />
   </HomeCard>
 </template>
 
