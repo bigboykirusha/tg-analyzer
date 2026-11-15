@@ -248,8 +248,8 @@ const bellLabel = computed(() =>
     display: block;
   }
 
-  .app-bar__home {
-    display: none !important;
+  .app-bar:not(:has(.page-bar)) .app-bar__home {
+    display: none;
   }
 
   /* The sidebar's card tells it here. */
