@@ -38,6 +38,7 @@ export type ApiErrorCode =
   | 'LINK_EXPIRED'
   | 'QUIZ_UNAVAILABLE'
   | 'QUIZ_ANSWERED'
+  | 'QUIZ_CHANGED'
   | 'PARSE_ALREADY_RUNNING'
   | 'PARSE_ALREADY_QUEUED'
   | 'PARSE_QUEUE_FULL'
@@ -893,6 +894,12 @@ export interface CreateShareLinkBody {
    * exists. They are fixed with the link and shown to the guest only after the guest has answered.
    */
   authorPicks?: ('mine' | 'theirs')[]
+  /**
+   * With `authorPicks`: the questions they answer, in order. The server makes the questions again from the stored
+   * report; if those differ (the report was read again meanwhile), the link is refused rather than the answers laid
+   * on other questions.
+   */
+  questionIds?: QuizQuestionId[]
 }
 
 /** The guest's answers, as the owner sees them; only when the guest agreed to share them. */

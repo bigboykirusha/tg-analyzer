@@ -475,6 +475,7 @@ export const ru: Record<MessageKey, string> = {
   'publicReport.writesMore': '{name} пишет больше',
   'publicReport.even': '{me} и {name} пишут на равных',
   'errors.linkNotFound': 'Ссылка не найдена или больше не работает.',
+  'errors.quizChanged': 'Вопросы изменились: отчёт обновился. Проверьте свои ответы ещё раз.',
   'common.showPassword': 'Показать пароль',
   'common.hidePassword': 'Скрыть пароль',
   'common.otpDigit': 'Цифра {index} из {count}',

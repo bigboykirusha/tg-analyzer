@@ -183,6 +183,10 @@ export async function createLink(userId: string, chatId: string, body: CreateSha
     const authorPicks = body.authorPicks
     if (authorPicks && authorPicks.length !== questions.length)
       throw new ApiError(400, 'INVALID_REQUEST', 'One answer per question')
+    // The answers belong to the questions the author saw: if the report was read again since, they would land on
+    // other questions — refuse instead.
+    if (authorPicks && (body.questionIds ?? []).join() !== questions.map((question) => question.id).join())
+      throw new ApiError(409, 'QUIZ_CHANGED', 'The questions have changed')
     payload = { kind: 'quiz', author, questions, ...(authorPicks ? { authorPicks } : {}) }
   } else payload = { kind: 'report', author, data: publicReport(dto, settings!, token) }
 
@@ -236,12 +240,14 @@ function toPublic(row: Row, hue: number): PublicShareDto {
   const { payload } = row
   const expiresAt = row.expiresAt?.toISOString() ?? null
   if (payload.kind === 'report') {
+    const settings = row.settings ?? DEFAULT_REPORT_SETTINGS
     return {
       kind: 'report',
-      author: payload.author,
+      // Names off: the owner's own name does not leave either — the guest's page says «Автор».
+      author: settings.showName ? payload.author : '',
       hue,
       expiresAt,
-      settings: row.settings ?? DEFAULT_REPORT_SETTINGS,
+      settings,
       data: payload.data,
     }
   }

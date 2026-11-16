@@ -128,7 +128,20 @@ test("the author's own answers are fixed with the link and reach the guest only 
   const authorPicks = questions.map((question, index) =>
     index % 2 === 0 ? question.answer : question.answer === 'mine' ? 'theirs' : 'mine',
   )
-  const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'quiz', days: 7, authorPicks })
+  // Answers to questions the server no longer asks are refused, not laid on other questions.
+  const stale = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, {
+    kind: 'quiz',
+    days: 7,
+    authorPicks,
+    questionIds: [...questions.map((question) => question.id)].reverse(),
+  })
+  assert.equal(stale.statusCode, 409, stale.body)
+  const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, {
+    kind: 'quiz',
+    days: 7,
+    authorPicks,
+    questionIds: questions.map((question) => question.id),
+  })
   assert.equal(made.statusCode, 200, made.body)
   const link = made.json<ShareLinkDto>()
   assert.deepEqual(link.authorPicks, authorPicks)
@@ -216,6 +229,7 @@ test("a group report link hides the members' Telegram ids always, names and pair
   assert.deepEqual(group.sharedVocabulary, [])
   assert.ok(group.participants.every((member) => member.topWords.length === 0 && member.topEmoji.length === 0))
   assert.equal(page.data.summary.title, '')
+  assert.equal(page.author, '', "the owner's own name does not leave with names off")
   for (const id of realIds) assert.ok(!hidden.body.includes(`"${id}"`), `real id ${id} must not leave`)
 
   // Names and words on: the names and the pairs come, the ids stay hidden and consistent.

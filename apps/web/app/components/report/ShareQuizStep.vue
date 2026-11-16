@@ -88,7 +88,13 @@ async function create(): Promise<ShareLinkDto | null> {
   try {
     const link = await api('POST /api/v1/reports/:chatId/links', {
       params: { chatId: props.chatId },
-      body: { kind: 'quiz', days: 30, ...(authorPicks.value ? { authorPicks: authorPicks.value } : {}) },
+      body: {
+        kind: 'quiz',
+        days: 30,
+        ...(authorPicks.value
+          ? { authorPicks: authorPicks.value, questionIds: list.value.map((question) => question.id) }
+          : {}),
+      },
     })
     fresh.value = false
     skipBets()

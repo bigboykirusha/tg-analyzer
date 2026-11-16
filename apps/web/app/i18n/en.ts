@@ -473,6 +473,7 @@ export const en = {
   'publicReport.writesMore': '{name} writes more',
   'publicReport.even': '{me} and {name} write evenly',
   'errors.linkNotFound': 'The link is not found or no longer works.',
+  'errors.quizChanged': 'The questions changed: the report was updated. Check your answers again.',
   'common.showPassword': 'Show password',
   'common.hidePassword': 'Hide password',
   'common.otpDigit': 'Digit {index} of {count}',

@@ -3,6 +3,7 @@ import type {
   AnswerQuizBody,
   CreateShareLinkBody,
   PublicShareDto,
+  QuizQuestionId,
   ShareLinkDto,
   ShareLinksResponse,
   UserShareLinksResponse,
@@ -138,6 +139,23 @@ export const shareReportSettingsSchema = z.object({
   words: z.boolean(),
   stickers: z.boolean(),
 })
+export const quizQuestionIdSchema = z.enum([
+  'starts',
+  'fastest',
+  'talker',
+  'laughs',
+  'questions',
+  'voice',
+  'stickers',
+  'essays',
+  'lastWord',
+  'doubleTexts',
+  'reactions',
+  'goodMorning',
+  'firstMessage',
+  'pauseBreaker',
+  'longestVoice',
+]) satisfies z.ZodType<QuizQuestionId, unknown>
 export const createShareLinkBodySchema = z.object({
   kind: shareLinkKindSchema,
   days: z.union([z.literal(7), z.literal(30), z.null()]),
@@ -147,6 +165,7 @@ export const createShareLinkBodySchema = z.object({
     .min(1)
     .max(10)
     .optional(),
+  questionIds: z.array(quizQuestionIdSchema).min(1).max(10).optional(),
 }) satisfies z.ZodType<CreateShareLinkBody, unknown>
 export const answerQuizBodySchema = z.object({
   picks: z

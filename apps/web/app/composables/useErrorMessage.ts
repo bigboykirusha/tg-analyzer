@@ -18,6 +18,7 @@ const MESSAGES: Partial<Record<ApiClientError['code'], MessageKey>> = {
   CHAT_NOT_FOUND: 'errors.chatNotFound',
   CHAT_TOO_SMALL: 'errors.chatTooSmall',
   LINK_NOT_FOUND: 'errors.linkNotFound',
+  QUIZ_CHANGED: 'errors.quizChanged',
   PARSE_ALREADY_RUNNING: 'errors.parseRunning',
   PARSE_ALREADY_QUEUED: 'errors.parseQueued',
   PARSE_QUEUE_FULL: 'errors.parseQueueFull',
