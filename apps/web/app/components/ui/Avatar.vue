@@ -86,10 +86,10 @@ const tooltip = computed(() => {
   background: var(--poster);
   color: var(--on-poster);
   /*
-   * Initials are one of the text roles, never a fraction of the circle: 24 caption, 32 and 40 label, 64 h2. Only a
-   * circle resized from outside (the «Итоги» frames, in cqw) scales its initials with it.
+   * Initials are one of the text roles, never a fraction of the circle: 24 caption, 32 · 44 · 48 label, 64 h2. Only a
+   * circle resized from outside (the «Итоги» frames, in cqw) re-points --avatar-initials to scale with it.
    */
-  --avatar-initials: max(var(--size-label), calc(var(--avatar-size) * 0.35));
+  --avatar-initials: var(--size-label);
   font: var(--text-label);
   font-size: var(--avatar-initials);
   user-select: none;

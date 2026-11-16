@@ -231,6 +231,7 @@ const figure = computed(() => {
 
 .who__faces :deep(.avatar) {
   --avatar-size: 6.2cqw;
+  --avatar-initials: max(var(--size-label), calc(var(--avatar-size) * 0.35));
 }
 
 .who__faces > :nth-child(2) {
@@ -459,6 +460,7 @@ const figure = computed(() => {
 
 .cast :deep(.avatar) {
   --avatar-size: 12cqw;
+  --avatar-initials: max(var(--size-label), calc(var(--avatar-size) * 0.35));
 }
 
 .cast__person {
