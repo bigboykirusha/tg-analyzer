@@ -218,6 +218,12 @@ export const ru: Record<MessageKey, string> = {
   'landing.seoTitle': 'Статистика переписки в Telegram: кто пишет первым',
   'landing.title': 'Зеркало',
   'landing.titleSoft': 'ваших переписок',
+  'landing.ex1.title': 'Мила, 190 дней',
+  'landing.ex1.text': 'Ни дня без сообщений с 8 мая по 14 ноября',
+  'landing.ex2.title': 'Артём, за 2 минуты',
+  'landing.ex2.text': 'Отвечает вам за 2 минуты, а вы ему — за 40',
+  'landing.ex3.title': 'Мама, «концерт»',
+  'landing.ex3.text': 'Слово переписки, 251 раз',
   'landing.examplesLabel': 'Примеры',
   'login.changeNumber': 'Изменить номер',
   'login.codeDescription':

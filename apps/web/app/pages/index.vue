@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { MessageKey } from '../composables/useI18n'
 import { wave } from '../lib/wave'
 definePageMeta({
   middleware: ['guest'],
@@ -12,20 +11,21 @@ const { t } = useI18n()
 
 /** Three people as the cards of home, the way reports look; the pulses are a drawn example, not anyone's data. */
 const examples = [
-  { key: 'ex1', chatId: '1011', pulse: wave(1, 36) },
-  { key: 'ex2', chatId: '1002', pulse: wave(2, 36) },
-  { key: 'ex3', chatId: '1003', pulse: wave(3, 36) },
-]
+  // Keys spelled out, not built from a template: a deleted text is then a type error, not a raw key on the landing.
+  { key: 'ex1', chatId: '1011', title: 'landing.ex1.title', text: 'landing.ex1.text', pulse: wave(1, 36) },
+  { key: 'ex2', chatId: '1002', title: 'landing.ex2.title', text: 'landing.ex2.text', pulse: wave(2, 36) },
+  { key: 'ex3', chatId: '1003', title: 'landing.ex3.title', text: 'landing.ex3.text', pulse: wave(3, 36) },
+] as const
 /** The landing deck: the three examples as report posters, in the order they are dealt. */
 const deck = computed(() =>
   examples.map((example) => {
-    const title = t(`landing.${example.key}.title` as MessageKey)
+    const title = t(example.title)
     return {
       key: example.key,
       chatId: example.chatId,
       title,
       avatarTitle: title.split(',')[0]!,
-      meta: t(`landing.${example.key}.text` as MessageKey),
+      meta: t(example.text),
       pulse: example.pulse,
     }
   }),
