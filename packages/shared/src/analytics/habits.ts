@@ -22,6 +22,21 @@ export function isEven(mine: number, theirs: number) {
 export type HabitId =
   'starts' | 'firstMorning' | 'laughs' | 'goodNight' | 'questions' | 'voice' | 'stickers' | 'reactions'
 
+/** How far one side leads, as a step of words: «чуть» under 1.5×, then «заметно», «вдвое», «в два с половиной раза»,
+ * «втрое», «вчетверо», «намного» from 4.6× up. One ladder for every «who more» said in words (16.11, «Утро и ночь»). */
+export type RatioStep = 'slight' | 'clear' | 'twice' | 'twoHalf' | 'thrice' | 'fourfold' | 'far'
+const RATIO_STEPS: [number, RatioStep][] = [
+  [1.5, 'slight'],
+  [1.9, 'clear'],
+  [2.3, 'twice'],
+  [2.8, 'twoHalf'],
+  [3.6, 'thrice'],
+  [4.6, 'fourfold'],
+]
+export function ratioStep(ratio: number): RatioStep {
+  return RATIO_STEPS.find(([below]) => ratio < below)?.[1] ?? 'far'
+}
+
 /** One «who does it more» line: only produced when a side leads by {@link LEAD_RATIO} or more. */
 export interface HabitRow {
   id: HabitId

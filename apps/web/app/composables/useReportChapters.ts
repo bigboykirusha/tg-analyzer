@@ -100,6 +100,8 @@ export function useReportChapters(summary: () => ReportSummaryDto) {
     if (!element) return
     holdUntil = performance.now() + (reduced.value ? 100 : 900)
     element.scrollIntoView({ behavior: reduced.value ? 'auto' : 'smooth', block: 'start' })
+    // The part takes the focus too, so Tab and a screen reader go on from the chapter, not from the strip.
+    element.focus({ preventScroll: true })
     active.value = id
     // Once the page has settled, look again: it may have stopped short of the part (the page's end).
     setTimeout(schedule, reduced.value ? 150 : 1000)

@@ -280,7 +280,9 @@ const bellLabel = computed(() =>
     opacity: 0;
   }
 
-  .app-bar.is-over-poster :deep(.page-bar__end) {
+  /* The actions and the chapters leave the tree too: an invisible pill must not take the keyboard's focus. */
+  .app-bar.is-over-poster :deep(.page-bar__end),
+  .app-bar.is-over-poster :deep(.page-bar__center) {
     visibility: hidden;
   }
 

@@ -11,6 +11,7 @@ import {
   isEven,
   isSignificantWordOfChat,
   monthPrepositional,
+  ratioStep,
   sessionSplit,
   shouldShowYear,
   wordOfChatThreshold,
@@ -340,4 +341,15 @@ test('a recording is written with its units', () => {
   assert.equal(formatVoiceDuration(7500, 'ru'), `2${nb}ч 5${nb}мин`)
   assert.equal(formatVoiceDuration(629, 'en'), `10${nb}min 29${nb}s`)
   assert.equal(formatVoiceDuration(null, 'ru'), '')
+})
+
+test('ratio steps: every lead lands on one word, the edges belong to the step above', () => {
+  assert.equal(ratioStep(1.25), 'slight')
+  assert.equal(ratioStep(1.5), 'clear')
+  assert.equal(ratioStep(2), 'twice')
+  assert.equal(ratioStep(2.3), 'twoHalf')
+  assert.equal(ratioStep(3), 'thrice')
+  assert.equal(ratioStep(4), 'fourfold')
+  assert.equal(ratioStep(4.6), 'far')
+  assert.equal(ratioStep(50), 'far')
 })

@@ -7,7 +7,7 @@ defineProps<{ id: string; title: string }>()
 </script>
 
 <template>
-  <section :id="`chapter-${id}`" class="report-part" :aria-labelledby="`chapter-${id}-title`">
+  <section :id="`chapter-${id}`" class="report-part" :aria-labelledby="`chapter-${id}-title`" tabindex="-1">
     <h2 :id="`chapter-${id}-title`" class="t-h1 report-part__title">{{ title }}</h2>
     <div class="report-cards"><slot /></div>
   </section>

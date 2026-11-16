@@ -24,7 +24,11 @@ watch(
     const row = list.value
     const pill = row?.querySelector<HTMLElement>('[aria-current="true"]')
     if (!row || !pill) return
-    row.scrollTo({ left: pill.offsetLeft - (row.clientWidth - pill.offsetWidth) / 2, behavior: 'smooth' })
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    row.scrollTo({
+      left: pill.offsetLeft - (row.clientWidth - pill.offsetWidth) / 2,
+      behavior: reduced ? 'auto' : 'smooth',
+    })
   },
   { flush: 'post' },
 )
@@ -36,7 +40,11 @@ function measure() {
   frame = 0
   const strip = root.value
   const bar = document.querySelector<HTMLElement>('[data-toolbar]')
-  if (!strip || !bar || strip.offsetParent === null) return
+  // Hidden (a tablet turned into a computer's width): not stuck, or the bar would keep its hairline off.
+  if (!strip || !bar || strip.offsetParent === null) {
+    stuck.value = false
+    return
+  }
   stuck.value = strip.getBoundingClientRect().top <= bar.getBoundingClientRect().bottom + 1
 }
 function schedule() {

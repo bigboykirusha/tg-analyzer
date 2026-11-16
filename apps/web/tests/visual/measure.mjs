@@ -147,9 +147,17 @@ for (const [title, id] of [
   if (await b.count()) {
     await b.first().click()
     await p
-      .waitForFunction((cid) => location.pathname.endsWith(`/chat/${cid}`) || document.querySelector('.toast'), id, {
-        timeout: 90000,
-      })
+      .waitForFunction(
+        (cid) =>
+          location.pathname.endsWith(`/chat/${cid}`) ||
+          document.querySelector('.toast') ||
+          // A phone goes back home to watch it (16.11): done when its tile is there.
+          document.querySelector(`.home-card a[href="/chat/${cid}"]`),
+        id,
+        {
+          timeout: 90000,
+        },
+      )
       .catch(() => {})
     await p.waitForTimeout(1500)
   }

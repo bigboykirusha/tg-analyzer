@@ -5,8 +5,8 @@ import { AlertCircle } from '../lib/icons'
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 /**
- * Home is what you have already learned: the reports, one poster tile each (the whole row on a phone), new messages
- * in the chat as a label in the tile's line. A running analysis is the tile its report will
+ * Home is what you have already learned: the reports, one poster tile each (the whole row on a phone, compact rows
+ * from five); new messages since a report are told on the report itself (16.11). A running analysis is the tile its report will
  * be, its pulse drawn as the history is read (AnalysisTile). News about them (a quiz answered, a link opened)
  * is in «Уведомления», behind the bell. What else to analyse: on a phone «Разобрать чат» in a bar along the bottom
  * (HomeActionBar), which opens «Новый анализ» as a page; on a computer «Новый анализ» in the sidebar.
@@ -26,6 +26,8 @@ const narrow = useMediaQuery('(max-width: 900px)')
 const reports = computed(() => workspace.reportChats)
 /** A phone with five reports and more lists them as compact rows (16.11): up to four, a tile each still fits a screen. */
 const compact = computed(() => narrow.value && reports.value.length >= 5)
+/** The skeleton takes the shape the list had last time, so nothing jumps when it arrives. */
+const compactHint = computed(() => narrow.value && workspace.reportsHint >= 5)
 const analysis = useAnalysis()
 /**
  * On a computer, a chat being analysed for the first time is on home already as the tile its report will be (AnalysisTile), where
@@ -100,7 +102,7 @@ onMounted(() => {
       </div>
       <section class="home__section" aria-hidden="true">
         <div class="home__reports">
-          <HomeCard v-for="card in skeletonCards" :key="card" skeleton />
+          <HomeCard v-for="card in skeletonCards" :key="card" skeleton :compact="compactHint" />
         </div>
       </section>
     </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isEven, MIN_GOOD_NIGHTS, MIN_MORNINGS, type ReportDto } from '@tg-analyzer/shared'
+import { isEven, MIN_GOOD_NIGHTS, MIN_MORNINGS, ratioStep, type ReportDto } from '@tg-analyzer/shared'
 import { Sun } from '../../lib/icons'
 
 /**
@@ -27,16 +27,8 @@ interface Line {
   of?: string
 }
 
-/** The ratio, in words: from «чуть» (under 1.5×) to «намного» (4.6× and up). */
-function ratioWords(ratio: number) {
-  if (ratio < 1.5) return t('report.rituals.ratio.slight')
-  if (ratio < 1.9) return t('report.rituals.ratio.clear')
-  if (ratio < 2.3) return t('report.rituals.ratio.twice')
-  if (ratio < 2.8) return t('report.rituals.ratio.twoHalf')
-  if (ratio < 3.6) return t('report.rituals.ratio.thrice')
-  if (ratio < 4.6) return t('report.rituals.ratio.fourfold')
-  return t('report.rituals.ratio.far')
-}
+/** The ratio, in words: the steps live in shared (`ratioStep`), with their tests. */
+const ratioWords = (ratio: number) => t(`report.rituals.ratio.${ratioStep(ratio)}`)
 
 function line(key: string, label: string, mine: number, theirs: number, of?: string): Line {
   const lead: Side | null = isEven(mine, theirs) ? null : mine > theirs ? 'mine' : 'theirs'
@@ -92,10 +84,13 @@ const evening = computed(() => {
   return lines.length ? { title: t('report.rituals.evening'), lines } : null
 })
 
-/** Who leads a section: the first line that has a leader says it. */
+/**
+ * Who leads a section: its first line says it (who writes first in the morning, who has the last word at night) —
+ * the very line under the answer, so the answer never says «вы» over a line that says «поровну».
+ */
 const leader = (lines: Line[] | undefined): Side | 'even' | null => {
   if (!lines?.length) return null
-  return lines.find((item) => item.lead)?.lead ?? 'even'
+  return lines[0]!.lead ?? 'even'
 }
 
 const answer = computed(() => {
@@ -104,7 +99,9 @@ const answer = computed(() => {
   if (first) parts.push(t(`report.rituals.morningAnswer.${first}`, { name: name.value }))
   const second = leader(evening.value?.lines)
   if (second) parts.push(t(`report.rituals.eveningAnswer.${second}`, { name: name.value }))
-  return parts.join(', ')
+  const text = parts.join(', ')
+  // The evening alone opens the answer: it starts with a capital in the tree too, not only on screen.
+  return text.charAt(0).toLocaleUpperCase() + text.slice(1)
 })
 
 const sections = computed(() => [morning.value, evening.value].filter((item) => item !== null))
@@ -124,7 +121,10 @@ const sections = computed(() => [morning.value, evening.value].filter((item) => 
       <div v-for="item in section.lines" :key="item.key" class="ritual">
         <p class="ritual__label t-body">
           <span
-            >{{ item.label }}<span v-if="item.of" class="t-label ritual__of"> {{ item.of }}</span></span
+            >{{ item.label
+            }}<template v-if="item.of"
+              >{{ ' ' }}<span class="t-label ritual__of">{{ item.of }}</span></template
+            ></span
           >
           <b
             class="t-label"
@@ -137,7 +137,7 @@ const sections = computed(() => [morning.value, evening.value].filter((item) => 
           </b>
         </p>
         <div class="ritual__bar" aria-hidden="true">
-          <i class="ritual__mine" :style="{ flexGrow: item.mine }" />
+          <i v-if="item.mine" class="ritual__mine" :style="{ flexGrow: item.mine }" />
           <i v-if="item.theirs" class="ritual__theirs" :style="{ flexGrow: item.theirs }" />
         </div>
         <p class="ritual__counts t-label">
@@ -181,7 +181,6 @@ const sections = computed(() => [morning.value, evening.value].filter((item) => 
 }
 
 .ritual__of {
-  margin-left: var(--space-2);
   color: var(--text-muted);
 }
 

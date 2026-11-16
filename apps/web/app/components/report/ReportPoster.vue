@@ -46,7 +46,13 @@ const countLine = computed(() => {
   if (props.lede || !props.data) return null
   const total = formatNumber(props.data.report.totals.messages)
   const line = meta.value
-  return line.startsWith(total) ? { count: total, rest: line.slice(total.length).trim() } : null
+  if (!line.startsWith(total)) return null
+  // The number and its unit never part (CLAUDE.md, «Числа»): «5 078 сообщений» is one unit, the span after «·» wraps.
+  const rest = line.slice(total.length).trim()
+  const cut = rest.indexOf(' · ')
+  return cut === -1
+    ? { count: total, unit: rest, tail: '' }
+    : { count: total, unit: rest.slice(0, cut), tail: rest.slice(cut + 1) }
 })
 
 /** The two ends of the pulse: «апрель» and «ноябрь», with the year on wide screens. */
@@ -98,8 +104,10 @@ const cast = computed(() => {
           </p>
           <UiSkeleton v-else class="poster__name-skeleton" width="55%" radius="var(--radius-well)" />
           <p v-if="countLine" class="poster__meta poster__meta--count">
-            <b class="poster__count">{{ countLine.count }}</b>
-            <span>{{ countLine.rest }}</span>
+            <span class="nowrap"
+              ><b class="poster__count">{{ countLine.count }}</b> <span>{{ countLine.unit }}</span></span
+            >
+            <span v-if="countLine.tail">{{ countLine.tail }}</span>
           </p>
           <p v-else-if="meta" class="poster__meta">{{ meta }}</p>
           <UiSkeleton v-else class="poster__meta-skeleton" width="62%" />

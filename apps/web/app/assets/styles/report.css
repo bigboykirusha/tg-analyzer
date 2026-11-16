@@ -52,3 +52,20 @@
 :root[data-theme='dark'] .tile--ink {
   --them-ink: var(--on-poster);
 }
+
+/* A card reached from «Главное» stops under the bar (the page's `scroll-padding-top`) and the chapter strip stuck
+   under it on a phone; a computer keeps the strip in the bar's own row. */
+.report-section {
+  scroll-margin-top: calc(var(--control-sm) + var(--space-4));
+}
+
+@media (min-width: 901px) {
+  .report-section {
+    scroll-margin-top: 0;
+  }
+}
+
+/* A part takes the focus when its chapter is tapped (tabindex -1): no ring for a pointer, the usual one for keys. */
+.report-part:focus:not(:focus-visible) {
+  outline: none;
+}

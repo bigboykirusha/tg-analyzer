@@ -25,9 +25,25 @@ watch(analysis.finished, (job) => {
 onBeforeUnmount(() => clearTimeout(readyTimer))
 
 const running = computed(() => Boolean(view.value?.chatId))
+const readyName = computed(() => ready.value?.chatTitle || t('analysis.untitledChat'))
 const label = computed(() => {
   if (running.value && view.value) return `${view.value.title}. ${view.value.status}`
-  return t('dashboard.openReport')
+  return `${t('dashboard.openReport')}: ${readyName.value}`
+})
+/** Said once when a report lands, for a screen reader: the capsule's change alone is silent. */
+const announce = computed(() =>
+  ready.value && !running.value ? `${t('dashboard.reportReady')}: ${readyName.value}` : '',
+)
+
+/**
+ * The capsule and the button take turns in one place: if the focus was on the one that leaves, it moves to the one
+ * that comes, instead of falling to the page's start.
+ */
+const root = ref<HTMLElement | null>(null)
+watch([running, ready], async () => {
+  const had = root.value?.contains(document.activeElement)
+  await nextTick()
+  if (had) root.value?.querySelector<HTMLElement>('a, button')?.focus()
 })
 
 function tapPill() {
@@ -42,7 +58,8 @@ function tapPill() {
 </script>
 
 <template>
-  <div class="action-bar">
+  <div ref="root" class="action-bar">
+    <p class="sr-only" aria-live="polite">{{ announce }}</p>
     <button v-if="running || ready" type="button" class="action-bar__pill" :aria-label="label" @click="tapPill">
       <AnalysisPill :ready="running ? null : ready" />
     </button>
