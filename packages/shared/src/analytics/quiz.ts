@@ -63,7 +63,14 @@ export function deriveQuiz(report: ChatReport): QuizQuestionDto[] {
       theirs: voice ? voice.voice.seconds.theirs + voice.round.seconds.theirs : null,
       minTotal: 60,
     },
-    { id: 'questions', unit: 'count', mine: habits?.questions.mine, theirs: habits?.questions.theirs, minTotal: 20 },
+    // By turn, as the report counts them (useMatch, useVersus): one chat, one answer to «who asks more».
+    {
+      id: 'questions',
+      unit: 'count',
+      mine: habits?.questionTurns?.mine,
+      theirs: habits?.questionTurns?.theirs,
+      minTotal: 20,
+    },
     { id: 'stickers', unit: 'count', mine: stickers?.count.mine, theirs: stickers?.count.theirs },
     {
       id: 'essays',

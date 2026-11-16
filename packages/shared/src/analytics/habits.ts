@@ -133,7 +133,9 @@ function measure(report: ChatReport): Partial<Record<HabitId, Measure>> {
   }
   if (habits) {
     result.laughs = { ...habits.laughs, min: MIN_LAUGH_EVENTS }
-    result.questions = { ...habits.questions, min: MIN_QUESTION_EVENTS }
+    // Questions are counted by turn everywhere — the report's «Кто кого», the quiz and these rows — so one chat never
+    // gives two answers to «who asks more» (16.11). Reports made before turns were counted leave the row out.
+    if (habits.questionTurns) result.questions = { ...habits.questionTurns, min: MIN_QUESTION_EVENTS }
   }
   if (voice) {
     result.voice = {

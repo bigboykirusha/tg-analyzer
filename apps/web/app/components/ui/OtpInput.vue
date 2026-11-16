@@ -125,7 +125,7 @@ defineExpose({ focus: focusFirstEmpty })
       :key="index"
       :ref="setInputRef(index)"
       :value="digits[index]"
-      class="otp-input"
+      class="otp-input tnum"
       type="text"
       name="one-time-code"
       inputmode="numeric"

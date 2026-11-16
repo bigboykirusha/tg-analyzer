@@ -55,7 +55,7 @@ const answer = computed(() => {
             <UiListRow v-if="person.isSelf" :title="nameOf(person)" :subtitle="roleLabel(person.role)">
               <template #leading><UiAvatar :title="nameOf(person)" side="mine" size="md" /></template>
               <template #trailing>
-                <span class="people__share people__share--self">{{ formatPercent(person.messageShare) }}</span>
+                <span class="people__share people__share--self tnum">{{ formatPercent(person.messageShare) }}</span>
               </template>
             </UiListRow>
             <UiListRow
@@ -71,7 +71,7 @@ const answer = computed(() => {
             >
               <template #leading><UiAvatar :title="nameOf(person)" :seed="person.id" size="md" /></template>
               <template #trailing>
-                <span class="people__share">{{ formatPercent(person.messageShare) }}</span>
+                <span class="people__share tnum">{{ formatPercent(person.messageShare) }}</span>
               </template>
             </UiListRow>
           </template>

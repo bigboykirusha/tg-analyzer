@@ -53,7 +53,7 @@ function submit() {
     <Field :label="t('login.codeLabel')" :error="error || null" group hide-label>
       <OtpInput ref="otpRef" v-model="code" :length="size" @complete="complete" />
     </Field>
-    <Button variant="link" class="resend" :disabled="resendSeconds > 0 || loading" @click="emit('resend')">
+    <Button variant="link" class="resend tnum" :disabled="resendSeconds > 0 || loading" @click="emit('resend')">
       {{
         resendSeconds > 0
           ? t('login.resendIn', { time: formatCountdown(resendSeconds) })

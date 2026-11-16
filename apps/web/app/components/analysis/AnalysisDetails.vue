@@ -44,7 +44,7 @@ async function cancel() {
               view.reached || (view.note || view.percent === null ? view.status : t('analysis.details.reading'))
             }}</span>
           </span>
-          <span v-if="view.percent !== null" class="details-card__percent">{{ view.percent }}%</span>
+          <span v-if="view.percent !== null" class="details-card__percent tnum">{{ view.percent }}%</span>
         </div>
         <Pulse
           class="details-card__pulse"

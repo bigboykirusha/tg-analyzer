@@ -53,7 +53,7 @@ const percent = computed(() => view.value?.percent ?? null)
     @click.prevent="analysis.details.value = true"
   >
     <template #icon><span class="spinner" aria-hidden="true" /></template>
-    <span class="analyse-button__label">{{ percent === null ? t('dashboard.analysingNow') : `${percent}%` }}</span>
+    <span class="analyse-button__label tnum">{{ percent === null ? t('dashboard.analysingNow') : `${percent}%` }}</span>
   </UiButton>
   <UiButton
     v-else

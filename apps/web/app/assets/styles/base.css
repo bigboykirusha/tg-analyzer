@@ -31,13 +31,15 @@ body {
 }
 
 /*
- * Every figure is tabular. The «font:» shorthand in a component resets font-variant-numeric, so the
- * rule sits on the app root id: it outranks every class rule and does not depend on order.
+ * Figures are proportional: tabular ones give a «1» the width of a «0», and «190 дней» or «13:00» read with a hole
+ * after the one (16.11). Tabular only where digits change in place or line up in a column — mark the element .tnum
+ * (live percents, the resend countdown, the code field, a column of shares). The «font:» shorthand in a component
+ * resets font-variant-numeric, so the rule sits on the app root id: it outranks every class rule.
  */
-#__nuxt,
-#__nuxt *,
-#teleports,
-#teleports * {
+#__nuxt .tnum,
+#__nuxt .tnum *,
+#teleports .tnum,
+#teleports .tnum * {
   font-variant-numeric: tabular-nums;
 }
 

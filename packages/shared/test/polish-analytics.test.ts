@@ -168,7 +168,8 @@ function habitsReport(): ChatReport {
     habits: {
       doubleTexts: side(1, 1),
       lastWordMinePct: 50,
-      questions: side(60, 20), // 3x: leads
+      questions: side(60, 20),
+      questionTurns: side(60, 20), // 3x: leads (rows count questions by turn, as the report does)
       laughs: side(30, 28), // even
     },
     voice: {
@@ -210,7 +211,7 @@ test('habits: leaders ranked by lead, one list of «поровну», thin ones 
 test('habits: nobody leads gives no brightest; groups and missing data give nothing', () => {
   const even = habitsReport()
   even.rituals!.morningFirst = { mine: 10, theirs: 9 }
-  even.habits!.questions = { mine: 21, theirs: 20 }
+  even.habits!.questionTurns = { mine: 21, theirs: 20 }
   even.voice!.voice.count = { mine: 4, theirs: 4 }
   even.reactions!.given = { mine: 10, theirs: 10 }
   const summary = deriveHabits(even)
@@ -227,7 +228,7 @@ test('habits: nobody leads gives no brightest; groups and missing data give noth
 
 test('habits: too few events are never a lead, however lopsided', () => {
   const thin = habitsReport()
-  thin.habits!.questions = { mine: 9, theirs: 1 } // 10 total, below the floor of 20
+  thin.habits!.questionTurns = { mine: 9, theirs: 1 } // 10 total, below the floor of 20
   const summary = deriveHabits(thin)
   assert.ok(summary.skipped.includes('questions'))
   assert.ok(!summary.leads.some((row) => row.id === 'questions'))

@@ -72,7 +72,7 @@ const stickerAnswer = computed(() => {
           <UiAvatar :title="nameOf(person)" :seed="person.id" :side="person.isSelf ? 'mine' : null" size="xs" />
         </template>
         <template #trailing
-          ><span class="rows__value">{{ formatPercent(person.starterShare) }}</span></template
+          ><span class="rows__value tnum">{{ formatPercent(person.starterShare) }}</span></template
         >
       </UiListRow>
     </div>
