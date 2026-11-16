@@ -372,7 +372,7 @@ main:focus {
 }
 
 /*
- * Phone sheets (UiBottomSheet, UiModalDialog below 640px, the chat sheet of home): one box that never changes size
+ * Phone sheets (UiBottomSheet, UiModalDialog below 640px): one box that never changes size
  * and only moves. --sheet-y is its place (a finger writes it, useSheetDrag); data-sheet on the layer says drag (all
  * transitions off) or settle (promoted until it lands).
  */

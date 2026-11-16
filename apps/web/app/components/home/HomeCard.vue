@@ -24,10 +24,9 @@ const props = defineProps<{
   poster?: boolean
   /** Phones: a small square (the landing deck) instead of the whole row — the avatar, the name and the end slot on one line, the foot under them. */
   square?: boolean
-  /** The chat has moved on since the report: «новые» beside the name. */
-  news?: boolean
+  /** Phones with many reports (16.11): one row — the avatar, the name over the count, a short pulse at the end. */
+  compact?: boolean
 }>()
-const { t } = useI18n()
 
 const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 </script>
@@ -35,7 +34,7 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 <template>
   <article
     class="home-card"
-    :class="{ 'home-card--poster': poster && !skeleton, 'home-card--square': square }"
+    :class="{ 'home-card--poster': poster && !skeleton, 'home-card--square': square, 'home-card--compact': compact }"
     :data-hue="hue"
     :aria-busy="skeleton || undefined"
   >
@@ -47,7 +46,7 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
         :title="avatarTitle ?? title"
         :has-avatar="hasAvatar"
         :on-poster="poster"
-        size="tile"
+        :size="compact ? 'md' : 'tile'"
       />
       <div v-if="!skeleton" class="home-card__end"><slot name="end" /></div>
     </div>
@@ -60,7 +59,6 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
         <div class="home-card__title">
           <NuxtLink v-if="to" :to="to" class="home-card__name">{{ title }}</NuxtLink>
           <h3 v-else class="home-card__name">{{ title }}</h3>
-          <span v-if="news" class="home-card__news t-caption">{{ t('dashboard.hasNews') }}</span>
         </div>
         <p class="home-card__meta t-label">
           <slot name="meta">{{ meta }}</slot>
@@ -189,7 +187,7 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   overflow-wrap: anywhere;
 }
 
-/* The name and the news capsule share a line; the name gives way (ellipsis, wrap), the capsule stays whole. */
+/* The name's line; it gives way (ellipsis, wrap) to nothing else since «новые» left the tile (16.11). */
 .home-card__title {
   display: flex;
   align-items: flex-start;
@@ -199,19 +197,6 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 
 .home-card__name {
   min-width: 0;
-}
-
-/* Quiet, as the avatar's well: poster ink at 600 on the same light translucent fill, centred on the name's first line. */
-.home-card__news {
-  flex: none;
-  margin-top: calc((1lh - var(--space-6)) / 2);
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-pill);
-  background: var(--avatar-on-poster);
-  color: var(--on-poster);
-  font-weight: 600;
-  line-height: var(--space-6);
-  pointer-events: none;
 }
 
 a.home-card__name::after {
@@ -316,6 +301,30 @@ a.home-card__name:focus-visible::after {
   .home-card:not(.home-card--square) .home-card__foot {
     grid-area: foot;
     padding-top: 0;
+  }
+
+  /* Compact (five reports and more): one row of a two-line text, so the circle is 44 (the rule of the circle beside
+     text, 15.11); the pulse is a short strip at the end instead of the full width under it. */
+  .home-card--compact:not(.home-card--square) {
+    grid-template-areas: 'avatar text foot';
+    padding: var(--space-3);
+    --pulse-half: var(--space-2);
+  }
+
+  .home-card--compact .home-card__name {
+    font: var(--text-body);
+    font-weight: 500;
+    letter-spacing: normal;
+  }
+
+  .home-card--compact:not(.home-card--square) .home-card__foot {
+    width: var(--space-16);
+    margin-top: 0;
+  }
+
+  /* A report has nothing at the end: an empty slot would take a second grid row of its own. */
+  .home-card--compact .home-card__end:empty {
+    display: none;
   }
 }
 </style>

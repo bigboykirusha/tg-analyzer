@@ -42,7 +42,7 @@ watch(analysis.finished, (job) => {
     job.status === 'completed' && chatId && !workspace.reports.length && ['/dashboard', '/new'].includes(route.path)
   if (opened) void navigateTo(`/chat/${chatId}`)
   // A finished report is news about a person: a banner in their colour, a tap opens it (14.11). Home needs none —
-  // the report lands there as a tile and the bottom panel says it (HomeChatsSheet); an opened report neither.
+  // the report lands there as a tile and the bottom bar says it (HomeActionBar); an opened report neither.
   if (job.status === 'completed' && route.path !== '/dashboard' && !opened)
     toast.push({
       variant: 'success',
@@ -80,7 +80,6 @@ watch(analysis.finished, (job) => {
         <slot />
       </main>
     </div>
-    <ChatPickerSheet />
     <ReportActionsHost />
   </div>
 </template>

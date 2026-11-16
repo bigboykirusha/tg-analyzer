@@ -8,7 +8,7 @@ const KEYBOARD_MIN = 120
  * keyboard opens: it pans the visual viewport to show the field and the sheet's top (its search) goes off the screen.
  * While the keyboard is up this writes the visible band on the sheet's root — `--vv-top` and `--vv-bottom` (the
  * distance from the layout viewport's edges to it), `--vv-height` — so the sheet can sit inside it. Without a keyboard
- * nothing is written and the sheet is as it was. Read in base.css (`.sheet-layer`) and the chat sheet of home.
+ * nothing is written and the sheet is as it was. Read in base.css (`.sheet-layer`).
  */
 export function useVisualViewportFit(root: Ref<HTMLElement | null>, active: Ref<boolean>) {
   const names = ['--vv-top', '--vv-bottom', '--vv-height']

@@ -73,7 +73,7 @@ function submit() {
 
 <template>
   <form class="auth-form" @submit.prevent="submit">
-    <Field :label="t('login.phoneLabel')" :error="error || null">
+    <Field :label="t('login.phoneLabel')" :error="error || null" hide-label>
       <Input
         :model-value="phoneDisplay"
         addon

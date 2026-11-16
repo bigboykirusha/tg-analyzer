@@ -8,8 +8,8 @@ definePageMeta({ layout: 'workspace', middleware: ['auth'] })
  * Home is what you have already learned: the reports, one poster tile each (the whole row on a phone), new messages
  * in the chat as a label in the tile's line. A running analysis is the tile its report will
  * be, its pulse drawn as the history is read (AnalysisTile). News about them (a quiz answered, a link opened)
- * is in «Уведомления», behind the bell. What else to analyse: on a phone the chat list as a sheet resting at the bottom (HomeChatsSheet), pulled
- * up to the whole screen; on a computer «Новый анализ» in the sidebar.
+ * is in «Уведомления», behind the bell. What else to analyse: on a phone «Разобрать чат» in a bar along the bottom
+ * (HomeActionBar), which opens «Новый анализ» as a page; on a computer «Новый анализ» in the sidebar.
  * A newcomer gets «С кого начнём?» instead.
  */
 const { t } = useI18n()
@@ -19,11 +19,13 @@ const workspace = useWorkspaceStore()
 /** As many skeleton tiles as there were reports last time (two when unknown). */
 const skeletonCards = computed(() => Math.min(8, workspace.reportsHint || 2))
 const errorMessage = useErrorMessage()
-/** Phones and tablets: the chat list is a sheet resting at the bottom (HomeChatsSheet). */
+/** Phones and tablets: «Разобрать чат» and a running analysis live in the bar along the bottom (HomeActionBar). */
 const narrow = useMediaQuery('(max-width: 900px)')
 
 /** The reports in the order the sidebar shows them too: pinned in Telegram first, then the freshest. */
 const reports = computed(() => workspace.reportChats)
+/** A phone with five reports and more lists them as compact rows (16.11): up to four, a tile each still fits a screen. */
+const compact = computed(() => narrow.value && reports.value.length >= 5)
 const analysis = useAnalysis()
 /**
  * On a computer, a chat being analysed for the first time is on home already as the tile its report will be (AnalysisTile), where
@@ -45,7 +47,7 @@ watch(reports, (list) => {
 })
 onBeforeUnmount(() => clearTimeout(landingTimer))
 const growing = computed<Tile | null>(() => {
-  // A phone shows the analysis in the bottom panel instead (AnalysisPill, 14.11): the tile comes with the report.
+  // A phone shows the analysis in the bottom bar instead (AnalysisPill, 14.11): the tile comes with the report.
   if (narrow.value) return null
   const job = analysis.isActive.value ? analysis.progress.value : landing.value
   const chatId = job?.chatId
@@ -89,7 +91,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiPageContainer class="home" :class="{ 'home--peek': narrow }">
+  <UiPageContainer class="home" :class="{ 'home--bar': narrow }">
     <!-- Loading: the same title and cards, so nothing moves when the content arrives. -->
     <div v-if="loading" class="page" aria-busy="true">
       <div class="home__hello" aria-hidden="true">
@@ -132,13 +134,13 @@ onMounted(() => {
               v-if="item.chat"
               :report="item.chat.report!"
               :has-avatar="item.chat.hasAvatar"
-              :fresh="workspace.withNews[item.id]"
+              :compact="compact"
             />
             <AnalysisTile v-else :has-avatar="item.hasAvatar" :landing="landing" />
           </template>
         </div>
       </section>
-      <HomeChatsSheet v-if="narrow" />
+      <HomeActionBar v-if="narrow" />
     </div>
   </UiPageContainer>
 </template>
@@ -170,9 +172,9 @@ onMounted(() => {
   font: var(--text-body);
 }
 
-/* Room at the end for the chat list's edge resting over the bottom of the screen. */
-.home--peek {
-  padding-bottom: calc(var(--peek-height) + env(safe-area-inset-bottom, 0px));
+/* Room at the end for the bar along the bottom of the screen. */
+.home--bar {
+  padding-bottom: calc(var(--action-bar-height) + env(safe-area-inset-bottom, 0px));
 }
 
 .home__section {

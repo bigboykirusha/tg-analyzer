@@ -7,7 +7,7 @@ import { hueOf } from '../../lib/hue'
  * the person's colour as tall as the search it replaces — avatar, name, a small pulse filling from today back, the
  * percentage; one line (how far back the reading got is in «Разбираем переписку»). Done, «Открыть» takes the
  * percentage's place for a few seconds (M5) while the report lands on home as a tile — the button itself says it is
- * ready. A picture only: the panel's head takes the tap (HomeChatsSheet).
+ * ready. A picture only: the bar's button around it takes the tap (HomeActionBar).
  */
 const props = defineProps<{ ready?: ParseProgressDto | null }>()
 const { t } = useI18n()

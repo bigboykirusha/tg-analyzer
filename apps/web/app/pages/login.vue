@@ -156,9 +156,9 @@ function changeNumber() {
               <template v-else-if="step === 'code'">{{ t('login.codeTitle') }}</template>
               <template v-else>{{ t('login.passwordTitle') }}</template>
             </h1>
-            <p class="login__lede">
-              <template v-if="step === 'phone'">{{ t('login.phoneDescription') }}</template>
-              <template v-else-if="step === 'code'">
+            <!-- The phone step is its heading, the field and one button: the heading already names the field (16.11). -->
+            <p v-if="step !== 'phone'" class="login__lede">
+              <template v-if="step === 'code'">
                 {{ codeDescription }}
                 <button type="button" class="link" :disabled="loading" @click="changeNumber">
                   {{ t('login.changeNumber') }}

@@ -13,6 +13,7 @@ const { t } = useI18n()
   <form class="auth-form" @submit.prevent="emit('submit')">
     <Field
       :label="t('login.passwordLabel')"
+      hide-label
       :error="error ? (hint ? `${error} ${t('login.passwordHint', { hint })}` : error) : null"
       :hint="hint ? t('login.passwordHint', { hint }) : ''"
     >

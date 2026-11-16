@@ -307,20 +307,18 @@ test('a running analysis shows away from home and its button opens the details',
   }
 })
 
-test('a phone keeps the chat list at the bottom of home as a sheet that opens full screen', async ({
+test('a phone keeps «Разобрать чат» in a bar along the bottom of home, opening «Новый анализ» as a page', async ({
   page,
 }, testInfo) => {
-  test.skip(testInfo.project.name === 'desktop', 'the list rests at the bottom of home only on phones and tablets')
+  test.skip(testInfo.project.name === 'desktop', 'the bar is at the bottom of home only on phones and tablets')
   await signIn(page)
   await analyseChat(page, 'Катя')
   await page.waitForURL('**/chat/1006', { timeout: 30_000 })
   await gotoHydrated(page, '/dashboard')
-  // Home shows the reports and the sheet resting at the bottom; no row of people on a phone.
+  // Home shows the reports and the bar at the bottom; no row of people on a phone.
   await expect(page.locator('.home-card').filter({ hasText: 'Катя' })).toBeVisible()
   await expect(page.locator('.more')).toHaveCount(0)
-  await page.locator('.chats__head').click()
-  const sheet = page.getByRole('dialog', { name: 'Новый анализ' })
-  await expect(sheet.locator('.chat-row').first()).toBeVisible()
-  await sheet.getByRole('button', { name: 'Закрыть' }).click()
-  await expect(page.getByRole('dialog', { name: 'Новый анализ' })).toHaveCount(0)
+  await page.locator('.action-bar').getByRole('link', { name: 'Разобрать чат' }).click()
+  await page.waitForURL('**/new')
+  await expect(page.locator('.chat-row').first()).toBeVisible()
 })

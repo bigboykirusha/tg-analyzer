@@ -3,10 +3,10 @@ import { AlertCircle, MessageSquare, Search, WifiOff, X } from '../lib/icons'
 
 /**
  * Every Telegram chat, to analyse one: a search well, then rows (ChatRow) in Telegram's order — no filter (14.11) —
- * the same list as a page on desktop (`/new`), on a newcomer's home and as a sheet on a phone (`?pick`). The sheet on
- * home carries the search in its own head (`ownSearch: false`, `v-model:search`).
+ * the same list on «Новый анализ» (`/new`, on a phone opened by «Разобрать чат» at the bottom of home) and on a
+ * newcomer's home.
  */
-withDefaults(defineProps<{ sticky?: boolean; ownSearch?: boolean }>(), { sticky: false, ownSearch: true })
+withDefaults(defineProps<{ sticky?: boolean }>(), { sticky: false })
 
 const PAGE_SIZE = 30
 const { t, tc } = useI18n()
@@ -15,7 +15,7 @@ const workspace = useWorkspaceStore()
 const errorMessage = useErrorMessage()
 const { relogin } = useAuth()
 
-const search = defineModel<string>('search', { default: '' })
+const search = ref('')
 const visibleCount = ref(PAGE_SIZE)
 const sentinel = ref<HTMLElement | null>(null)
 /** Telegram's own order: pinned chats first, then the latest message; chats known only from a report go last. */
@@ -50,7 +50,7 @@ onMounted(() => {
 
 <template>
   <div class="picker" :class="{ 'picker--sticky': sticky }">
-    <div v-if="ownSearch" class="picker__tools">
+    <div class="picker__tools">
       <label class="picker__search">
         <Search class="icon-sm" aria-hidden="true" />
         <input

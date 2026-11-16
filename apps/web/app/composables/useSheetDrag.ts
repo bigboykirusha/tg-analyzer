@@ -30,7 +30,7 @@ interface SheetDragOptions {
 }
 
 /**
- * The one drag for every phone sheet (`UiBottomSheet`, `UiModalDialog` below 640px, the chat sheet of home). The panel
+ * The one drag for every phone sheet (`UiBottomSheet`, `UiModalDialog` below 640px). The panel
  * is a box that never changes size and only moves, by `translate3d(0, var(--sheet-y), 0)` (base.css `.sheet-surface`).
  * A finger writes `--sheet-y` once a frame (no re-render per move). `data-sheet` on the root says `drag` (every
  * transition off) or `settle` (the layer is promoted until the panel's transform transition ends).
