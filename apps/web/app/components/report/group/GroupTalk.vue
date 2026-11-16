@@ -98,14 +98,4 @@ const stickerAnswer = computed(() => {
   color: var(--text);
   font: var(--text-label);
 }
-
-/* Two small avatars, the second overlapping the first. */
-.duo {
-  display: inline-flex;
-}
-
-.duo > :last-child {
-  margin-left: calc(-1 * var(--space-2));
-  box-shadow: var(--ring-cutout);
-}
 </style>

@@ -342,8 +342,7 @@ main:focus {
   .account__me,
   .login__card,
   .status__card,
-  .sidebar__row,
-  .more__circle--all {
+  .sidebar__row {
     outline: 1px solid CanvasText;
     outline-offset: -1px;
   }

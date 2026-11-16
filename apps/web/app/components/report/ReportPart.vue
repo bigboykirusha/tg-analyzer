@@ -54,8 +54,7 @@ defineProps<{ id: string; title: string }>()
     min-width: 0;
   }
 
-  .report-cards > :deep(.report-section--wide),
-  .report-cards > :deep(.report-note) {
+  .report-cards > :deep(.report-section--wide) {
     flex-basis: 100%;
   }
 }
