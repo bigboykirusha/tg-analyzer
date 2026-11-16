@@ -7,7 +7,9 @@ import { wave } from '../../lib/wave'
 /**
  * The quiz as the other side plays it, without signing in: one poster-coloured screen at a time — the
  * invitation, the questions «кто из вас чаще» with the answer right after each pick, then the score.
- * The author sees the score (the invitation says so). «Вы» is always the one who opened the link.
+ * The author sees the score (the invitation says so). «Вы» is always the one who opened the link. When the
+ * author made their own picks with the link, the last screen sets the two scores side by side: they come with
+ * the answer, never before it.
  */
 const props = defineProps<{ quiz: PublicQuizDto; token: string }>()
 const { t, tc } = useI18n()
@@ -19,17 +21,44 @@ const index = ref(0)
 const picks = ref<Pick[]>(props.quiz.answered?.picks ?? [])
 const sending = ref(false)
 const answered = ref(props.quiz.answered)
+/** The author's own answers; the server sends them only once this guest has answered. */
+const authorPicks = ref(props.quiz.authorPicks)
 
 const total = computed(() => props.quiz.questions.length)
 const current = computed(() => props.quiz.questions[index.value]!)
 const picked = computed(() => picks.value[index.value] ?? null)
 const right = (at: number) => picks.value[at] === props.quiz.questions[at]?.answer
 const score = computed(() => answered.value?.score ?? picks.value.filter((_, at) => right(at)).length)
+const authorRight = (at: number) => authorPicks.value?.[at] === props.quiz.questions[at]?.answer
+const authorScore = computed(() =>
+  authorPicks.value ? props.quiz.questions.filter((_, at) => authorRight(at)).length : null,
+)
+/** Both sides picked, and the scores compare: ahead, behind or level. */
+const versus = computed(() => {
+  if (authorScore.value === null) return null
+  return score.value > authorScore.value ? 'better' : score.value < authorScore.value ? 'worse' : 'tie'
+})
 const verdict = computed(() => {
+  if (versus.value) return t(`publicQuiz.verdict.${versus.value}`, { name: props.quiz.author })
   const share = score.value / Math.max(1, total.value)
   return t(
     share >= 0.8 ? 'publicQuiz.verdict.high' : share >= 0.4 ? 'publicQuiz.verdict.mid' : 'publicQuiz.verdict.low',
   )
+})
+/** The first question both sides missed: the same wrong answer, which is the news. */
+const bothMissed = computed(() => {
+  const at = props.quiz.questions.findIndex((_, index) => !right(index) && authorPicks.value && !authorRight(index))
+  const item = props.quiz.questions[at]
+  if (!item) return null
+  const loser: Pick = item.answer === 'author' ? 'guest' : 'author'
+  const base = { question: question(item.id), who: who(item.answer) }
+  return item.unit === 'fact'
+    ? t('publicQuiz.bothMissed', base)
+    : t('publicQuiz.bothMissedValues', {
+        ...base,
+        winner: value(item.unit, item[item.answer]),
+        loser: value(item.unit, item[loser]),
+      })
 })
 const sides = computed(() => [
   { key: 'author' as const, name: props.quiz.author },
@@ -71,6 +100,7 @@ async function next() {
       body: { picks: picks.value, share: true },
     })
     answered.value = result.answered
+    authorPicks.value = result.authorPicks
   } catch {
     // Answered from another tab, or the link went away: the score on screen stays the guest's own.
   } finally {
@@ -165,19 +195,41 @@ const invitation = wave(4, 40)
       <template v-else>
         <div class="quiz__body">
           <p class="quiz__note quiz__note--start">{{ t('publicQuiz.from', { name: quiz.author }) }}</p>
-          <p class="quiz__score">{{ t('publicQuiz.score', { score, total }) }}</p>
+          <p class="quiz__score" :class="{ 'quiz__score--tie': versus === 'tie' }">
+            {{ versus === 'tie' ? t('publicQuiz.tie', { score, total }) : t('publicQuiz.score', { score, total }) }}
+          </p>
           <h1 class="quiz__verdict">{{ verdict }}</h1>
+          <dl v-if="authorScore !== null" class="quiz__versus">
+            <div>
+              <dt>{{ t('publicQuiz.versusYou') }}</dt>
+              <dd>{{ t('publicQuiz.score', { score, total }) }}</dd>
+            </div>
+            <div>
+              <dt>{{ quiz.author }}</dt>
+              <dd>{{ t('publicQuiz.score', { score: authorScore, total }) }}</dd>
+            </div>
+          </dl>
           <p class="quiz__text">
             {{
-              missed
+              bothMissed ??
+              (missed
                 ? tc('publicQuiz.missed', missed, { name: quiz.author })
-                : t('publicQuiz.allRight', { name: quiz.author })
+                : t('publicQuiz.allRight', { name: quiz.author }))
             }}
           </p>
-          <UiGroup class="quiz__answers" :header="t('publicQuiz.answers')">
+          <p v-if="authorScore !== null" class="quiz__note quiz__note--start">
+            {{ t('publicQuiz.legend', { name: quiz.author }) }}
+          </p>
+          <UiGroup
+            class="quiz__answers"
+            :header="
+              authorScore === null ? t('publicQuiz.answers') : t('publicQuiz.answersAndBets', { name: quiz.author })
+            "
+          >
             <UiListRow
               v-for="(item, at) in quiz.questions"
               :key="item.id"
+              wrap
               :title="question(item.id)"
               :subtitle="t('publicQuiz.answerIs', { who: who(item.answer) })"
             >
@@ -189,6 +241,19 @@ const invitation = wave(4, 40)
                   :aria-label="right(at) ? t('publicQuiz.right') : t('publicQuiz.wrong')"
                 >
                   <Check v-if="right(at)" aria-hidden="true" />
+                  <X v-else aria-hidden="true" />
+                </span>
+              </template>
+              <template v-if="authorScore !== null" #trailing>
+                <span
+                  class="mark"
+                  :class="{ 'is-right': authorRight(at) }"
+                  role="img"
+                  :aria-label="
+                    t(authorRight(at) ? 'publicQuiz.betRight' : 'publicQuiz.betWrong', { name: quiz.author })
+                  "
+                >
+                  <Check v-if="authorRight(at)" aria-hidden="true" />
                   <X v-else aria-hidden="true" />
                 </span>
               </template>
@@ -272,6 +337,36 @@ const invitation = wave(4, 40)
 .quiz__score {
   font: var(--text-display);
   letter-spacing: var(--tracking-display);
+}
+
+.quiz__score--tie {
+  font: var(--text-figure);
+  letter-spacing: var(--tracking-figure);
+}
+
+.quiz__versus {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.quiz__versus > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-well);
+  background: var(--on-poster-chip);
+}
+
+.quiz__versus dt {
+  color: var(--on-poster-muted);
+  font: var(--text-caption);
+}
+
+.quiz__versus dd {
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
 }
 
 .quiz__verdict {
@@ -362,6 +457,10 @@ const invitation = wave(4, 40)
 .quiz__answers {
   --pulse-you: var(--text);
   padding-top: var(--space-4);
+  color: var(--on-poster-muted);
+}
+
+.quiz__answers :deep(.group__header) {
   color: var(--on-poster-muted);
 }
 

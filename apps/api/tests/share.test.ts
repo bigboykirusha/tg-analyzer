@@ -109,3 +109,134 @@ test('a link has a preview picture that counts no view', async () => {
   const list = await app.inject({ url: `/api/v1/reports/${CHAT}/links`, headers: session.headers })
   assert.equal(list.json<ShareLinksResponse>().links[0]?.views, 0)
 })
+
+test("the author's own answers are fixed with the link and reach the guest only after the guest has answered", async () => {
+  const session = await analysed()
+  const first = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'quiz', days: 7 })
+  const questions = first.json<ShareLinkDto>().questions!
+  assert.equal(first.json<ShareLinkDto>().authorPicks, null)
+
+  // One answer per question, or the link is not made.
+  const short = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, {
+    kind: 'quiz',
+    days: 7,
+    authorPicks: ['mine'],
+  })
+  assert.equal(short.statusCode, 400)
+
+  // Every other answer wrong: the author scores about half.
+  const authorPicks = questions.map((question, index) =>
+    index % 2 === 0 ? question.answer : question.answer === 'mine' ? 'theirs' : 'mine',
+  )
+  const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'quiz', days: 7, authorPicks })
+  assert.equal(made.statusCode, 200, made.body)
+  const link = made.json<ShareLinkDto>()
+  assert.deepEqual(link.authorPicks, authorPicks)
+
+  // Before the guest answers the page has no trace of the bets.
+  const before = await app.inject({ url: `/api/v1/public/${link.token}` })
+  assert.equal(before.json<PublicQuizDto>().authorPicks, null)
+  assert.ok(!before.body.includes('authorPicks":["'))
+
+  const quiz = before.json<PublicQuizDto>()
+  const picks = quiz.questions.map((question) => question.answer)
+  const answered = (
+    await send(null, 'POST', `/api/v1/public/${link.token}/answer`, { picks, share: true })
+  ).json<PublicQuizDto>()
+  // «mine» is the author, «theirs» is the guest.
+  assert.deepEqual(
+    answered.authorPicks,
+    authorPicks.map((pick) => (pick === 'mine' ? 'author' : 'guest')),
+  )
+  assert.deepEqual(
+    (await app.inject({ url: `/api/v1/public/${link.token}` })).json<PublicQuizDto>().authorPicks,
+    answered.authorPicks,
+  )
+
+  // The author's score is counted when read.
+  const owner = (
+    await app.inject({ url: `/api/v1/reports/${CHAT}/links`, headers: session.headers })
+  ).json<ShareLinksResponse>()
+  const result = owner.links.find((item) => item.kind === 'quiz')?.result
+  assert.deepEqual(
+    result?.authorCorrect,
+    questions.map((_, index) => index % 2 === 0),
+  )
+  assert.equal(result?.score, questions.length)
+})
+
+test('a quiz made without bets has none to show', async () => {
+  const session = await analysed()
+  const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'quiz', days: 7 })
+  const { token } = made.json<ShareLinkDto>()
+  const quiz = (await app.inject({ url: `/api/v1/public/${token}` })).json<PublicQuizDto>()
+  const answered = await send(null, 'POST', `/api/v1/public/${token}/answer`, {
+    picks: quiz.questions.map((question) => question.answer),
+    share: true,
+  })
+  assert.equal(answered.json<PublicQuizDto>().authorPicks, null)
+  const owner = (
+    await app.inject({ url: `/api/v1/reports/${CHAT}/links`, headers: session.headers })
+  ).json<ShareLinksResponse>()
+  assert.equal(owner.links.find((item) => item.kind === 'quiz')?.result?.authorCorrect, null)
+})
+
+const GROUP = '-1002001' // «Продуктовая команда»: a demo group
+
+async function analysedGroup() {
+  const session = await login('+79990000078')
+  const started = await send(session, 'POST', '/api/v1/parse/start', { chatId: GROUP })
+  assert.equal(started.statusCode, 200, started.body)
+  await processJob(session.userId, started.json<{ jobId: string }>().jobId)
+  return session
+}
+
+test("a group report link hides the members' Telegram ids always, names and pairs by default, words on request", async () => {
+  const session = await analysedGroup()
+  const own = (await app.inject({ url: `/api/v1/reports/${GROUP}`, headers: session.headers })).json<{
+    report: { group: { participants: { id: string; name: string }[] } }
+  }>()
+  const realIds = own.report.group.participants.map((member) => member.id)
+
+  const made = await send(session, 'POST', `/api/v1/reports/${GROUP}/links`, { kind: 'report', days: 7 })
+  assert.equal(made.statusCode, 200, made.body)
+  const hidden = await app.inject({ url: `/api/v1/public/${made.json<ShareLinkDto>().token}` })
+  const page = hidden.json<PublicReportDto>()
+  const group = page.data.report.group!
+  assert.ok(group.participants.length > 2)
+  assert.ok(
+    group.participants.every((member) => /^p\d+$/.test(member.id)),
+    'ids are p1, p2, …',
+  )
+  assert.ok(
+    group.participants.every((member) => member.name === ''),
+    'no names by default',
+  )
+  assert.deepEqual(group.topPairs, [])
+  assert.deepEqual(group.sharedVocabulary, [])
+  assert.ok(group.participants.every((member) => member.topWords.length === 0 && member.topEmoji.length === 0))
+  assert.equal(page.data.summary.title, '')
+  for (const id of realIds) assert.ok(!hidden.body.includes(`"${id}"`), `real id ${id} must not leave`)
+
+  // Names and words on: the names and the pairs come, the ids stay hidden and consistent.
+  const shown = await send(session, 'POST', `/api/v1/reports/${GROUP}/links`, {
+    kind: 'report',
+    days: 7,
+    settings: { showName: true, words: true, stickers: true },
+  })
+  const open = await app.inject({ url: `/api/v1/public/${shown.json<ShareLinkDto>().token}` })
+  const full = open.json<PublicReportDto>().data.report.group!
+  assert.ok(full.participants.some((member) => member.name !== ''))
+  assert.ok(full.participants.every((member) => /^p\d+$/.test(member.id)))
+  const ids = new Set(full.participants.map((member) => member.id))
+  assert.equal(ids.size, full.participants.length, 'one alias per member')
+  assert.ok(full.topPairs.every((pair) => ids.has(pair.leftParticipantId) && ids.has(pair.rightParticipantId)))
+  for (const id of realIds) assert.ok(!open.body.includes(`"${id}"`), `real id ${id} must not leave`)
+  assert.ok(full.participants.some((member) => member.topWords.length > 0))
+})
+
+test('a group has no quiz', async () => {
+  const session = await analysedGroup()
+  const made = await send(session, 'POST', `/api/v1/reports/${GROUP}/links`, { kind: 'quiz', days: 7 })
+  assert.equal(made.statusCode, 422)
+})

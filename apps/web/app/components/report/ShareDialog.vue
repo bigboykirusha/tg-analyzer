@@ -38,8 +38,7 @@ watch(
     if (!open) return
     canShare.value = image.canShareFiles()
     step.value = 'main'
-    // Links are for two-person reports: a group report would show other people's names.
-    if (!isGroup.value) void loadLinks()
+    void loadLinks()
   },
   // The dialog is loaded lazily and mounts already open: the first open must load its links too.
   { immediate: true },
@@ -54,6 +53,8 @@ const linkOf = (kind: ShareLinkDto['kind']) => links.value?.links.find((link) =>
 const reportLink = computed(() => linkOf('report'))
 const quizLink = computed(() => linkOf('quiz'))
 const quizOpen = computed(() => Boolean(links.value?.quizAvailable || quizLink.value))
+/** A group has no quiz (nobody to ask «кто из вас»): its «По ссылке» is the report link alone. */
+const hasQuiz = computed(() => !isGroup.value)
 const reportStatus = computed(() => {
   const link = reportLink.value
   if (!link) return t('share.link.off')
@@ -161,11 +162,12 @@ const title = computed(() =>
         </UiListRow>
       </UiGroup>
 
-      <UiGroup v-if="!isGroup && links" :header="t('share.byLink')">
+      <UiGroup v-if="links" :header="t('share.byLink')">
         <UiListRow as="button" chevron :title="t('share.link.title')" :subtitle="reportStatus" @click="step = 'link'">
           <template #leading><Link aria-hidden="true" /></template>
         </UiListRow>
         <UiListRow
+          v-if="hasQuiz"
           as="button"
           :chevron="quizOpen"
           :disabled="!quizOpen"

@@ -5,7 +5,8 @@ import { Copy } from '../../lib/icons'
 /**
  * «Ссылка на отчёт», the second step of «Поделиться»: how the other side will see the page, two
  * choices — names, and words with emoji (names are on, words are off until you say so) — and one row that copies the
- * address. Changing a choice makes a new address: whoever had the old one sees «Ссылка больше не
+ * address. A group's link is the same page for the whole group: its members are named only on request (off
+ * by default: they have not agreed, and a sent link cannot be taken back). Changing a choice makes a new address: whoever had the old one sees «Ссылка больше не
  * работает». A link lives 30 days and is turned off in the account.
  */
 const props = defineProps<{ data: ReportDto; link: ShareLinkDto | null }>()
@@ -16,8 +17,9 @@ const toast = useToast()
 const copyLink = useCopyLink()
 const errorMessage = useErrorMessage()
 
+const isGroup = computed(() => Boolean(props.data.report.group))
 const settings = reactive({
-  showName: props.link?.settings?.showName ?? true,
+  showName: props.link?.settings?.showName ?? !props.data.report.group,
   words: props.link?.settings?.words ?? false,
 })
 const busy = ref(false)
@@ -26,12 +28,16 @@ const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
 
 /** The page's title as the guest reads it, with or without names. */
 const heading = computed(() =>
-  settings.showName
-    ? t('share.link.pair', {
-        me: auth.user?.firstName?.trim() || auth.user?.username || t('share.author'),
-        name: name.value,
-      })
-    : t('share.link.pair', { me: t('share.author'), name: t('share.partner') }),
+  isGroup.value
+    ? settings.showName
+      ? name.value
+      : t('share.group')
+    : settings.showName
+      ? t('share.link.pair', {
+          me: auth.user?.firstName?.trim() || auth.user?.username || t('share.author'),
+          name: name.value,
+        })
+      : t('share.link.pair', { me: t('share.author'), name: t('share.partner') }),
 )
 /** The same line as on the guest's poster (useChatSpan). */
 const chatSpan = useChatSpan()
@@ -77,7 +83,9 @@ async function copy() {
 <template>
   <div class="link-step">
     <div class="link-step__preview">
-      <p class="link-step__label">{{ t('share.link.preview', { name }) }}</p>
+      <p class="link-step__label">
+        {{ isGroup ? t('share.link.previewGroup') : t('share.link.preview', { name }) }}
+      </p>
       <div class="link-step__poster" aria-hidden="true">
         <b class="link-step__title">{{ heading }}</b>
         <span class="link-step__meta">{{ meta }}</span>
@@ -85,7 +93,11 @@ async function copy() {
       </div>
     </div>
     <UiGroup>
-      <UiSwitch v-model="settings.showName" :label="t('share.link.name')" :hint="t('share.link.nameHint')" />
+      <UiSwitch
+        v-model="settings.showName"
+        :label="t(isGroup ? 'share.link.nameGroup' : 'share.link.name')"
+        :hint="t(isGroup ? 'share.link.nameGroupHint' : 'share.link.nameHint')"
+      />
       <UiSwitch v-model="settings.words" :label="t('share.link.words')" :hint="t('share.link.wordsHint')" />
     </UiGroup>
     <div class="link-step__actions">

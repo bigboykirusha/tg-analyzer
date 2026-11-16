@@ -37,6 +37,7 @@ const TEXT = {
     pair: (me: string, name: string) => `${me} и ${name}`,
     author: 'Автор',
     partner: 'Собеседник',
+    group: 'Группа',
     messages: (count: number) => {
       const mod10 = count % 10
       const mod100 = count % 100
@@ -56,6 +57,7 @@ const TEXT = {
     pair: (me: string, name: string) => `${me} and ${name}`,
     author: 'Author',
     partner: 'Their contact',
+    group: 'Group',
     messages: (count: number) => `${count.toLocaleString('en-US')} ${count === 1 ? 'message' : 'messages'}`,
     span: (messages: string, months: string) => `${messages} · ${months}`,
     quiz: (author: string) => `A quiz from ${author}`,
@@ -115,8 +117,10 @@ function card(share: PublicShareDto, lang: Lang) {
   let bars: { up: number; down: number }[] = []
   if (share.kind === 'report') {
     const author = share.settings.showName ? share.author : text.author
-    const partner = share.data.summary.title || text.partner
-    heading = text.pair(author, partner)
+    // A group is named by its title, or just «Группа» when names are off: no pair, no member's name.
+    heading = share.data.report.group
+      ? share.data.summary.title || text.group
+      : text.pair(author, share.data.summary.title || text.partner)
     const days = fillDailyGaps(share.data.report.activity.daily)
     const first = days[0]?.date
     const last = days.at(-1)?.date

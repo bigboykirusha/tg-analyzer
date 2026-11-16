@@ -48,6 +48,7 @@ const TEXT = {
     failed: 'Попробуйте ещё раз',
     hidden: 'Счёт скрыт',
     score: (score: number, total: number) => `${score} из ${total}`,
+    versus: (score: number, total: number, mine: number) => `${score} из ${total}, вы — ${mine} из ${total}`,
     until: 'До',
     messages: (count: number) => {
       const n = Math.abs(count) % 100
@@ -67,6 +68,7 @@ const TEXT = {
     failed: 'Try again',
     hidden: 'Score hidden',
     score: (score: number, total: number) => `${score} of ${total}`,
+    versus: (score: number, total: number, mine: number) => `${score} of ${total}, you — ${mine} of ${total}`,
     until: 'Until',
     messages: (count: number) => `${count.toLocaleString('en-US')} ${count === 1 ? 'message' : 'messages'}`,
   },
@@ -83,7 +85,14 @@ export function pushPayload(event: NotificationData, locale: PushLocale): PushPa
       case 'analysis_failed':
         return [text.analysis_failed, text.failed]
       case 'quiz_answered':
-        return [text.quiz_answered, event.score === null ? text.hidden : text.score(event.score, event.total)]
+        return [
+          text.quiz_answered,
+          event.score === null
+            ? text.hidden
+            : event.authorScore == null
+              ? text.score(event.score, event.total)
+              : text.versus(event.score, event.total, event.authorScore),
+        ]
       case 'link_opened':
         return [text.link_opened, '']
       case 'link_expiring':

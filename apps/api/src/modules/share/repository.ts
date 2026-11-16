@@ -4,6 +4,7 @@ import {
   deriveReportMetrics,
   telegramHueIndex,
   type CreateShareLinkBody,
+  type GroupReportDto,
   type PublicShareDto,
   type QuizQuestionDto,
   type ReportDto,
@@ -42,6 +43,42 @@ async function reportRow(userId: string, chatId: string) {
 }
 
 /**
+ * A group as a stranger may see it. The members' Telegram ids never leave: every member gets «p1», «p2» … by
+ * activity (the page calls them «Участник 1», «Участник 2»), and the numbers stay. Names, and with them the pairs
+ * («who answers whom» is a list of names), only when the owner allowed it. Words and emoji only when switched on;
+ * reactions and stickers follow the `stickers` switch.
+ */
+export function publicGroup(group: GroupReportDto, settings: ShareReportSettings): GroupReportDto {
+  const ranked = [...group.participants].sort((left, right) => right.messageCount - left.messageCount)
+  const alias = new Map(ranked.map((member, index) => [member.id, `p${index + 1}`]))
+  const idOf = (id: string) => alias.get(id) ?? 'p0'
+  return {
+    ...group,
+    participants: group.participants.map((member) => {
+      const { stickerCount, reactionsReceived, ...rest } = member
+      return {
+        ...rest,
+        id: idOf(member.id),
+        name: settings.showName ? member.name : '',
+        ...(settings.stickers ? { stickerCount, reactionsReceived } : {}),
+        topWords: settings.words ? member.topWords : [],
+        topEmoji: settings.words ? member.topEmoji : [],
+        topicSignature: settings.words ? member.topicSignature : [],
+      }
+    }),
+    topPairs: settings.showName
+      ? group.topPairs.map((pair) => ({
+          ...pair,
+          leftParticipantId: idOf(pair.leftParticipantId),
+          rightParticipantId: idOf(pair.rightParticipantId),
+        }))
+      : [],
+    sharedVocabulary: settings.words ? group.sharedVocabulary : [],
+    uniqueGroupWords: settings.words ? group.uniqueGroupWords : [],
+  }
+}
+
+/**
  * The report as a stranger may see it: no Telegram ids, no message ids, the other side's name only
  * when the owner allowed it, and words, stickers and reactions only when switched on.
  */
@@ -62,6 +99,7 @@ export function publicReport(dto: ReportDto, settings: ShareReportSettings, toke
     report.stickers = null
     report.reactions = null
   }
+  if (report.group) report.group = publicGroup(report.group, settings)
   report.milestones = report.milestones?.map(({ messageId: _id, ...rest }) => ({ ...rest, senderId: null })) ?? null
   if (report.voice) {
     for (const kind of ['voice', 'round'] as const) {
@@ -80,6 +118,13 @@ export function publicReport(dto: ReportDto, settings: ShareReportSettings, toke
 
 const expected = (question: QuizQuestionDto) => (question.answer === 'mine' ? 'author' : 'guest')
 
+/** Whether each of the author's own answers was right; null when they made none. Counted when read. */
+function authorCorrect(payload: ShareLinkPayload): boolean[] | null {
+  if (payload.kind !== 'quiz' || !payload.authorPicks) return null
+  const { authorPicks } = payload
+  return payload.questions.map((question, index) => authorPicks[index] === question.answer)
+}
+
 function toResult(row: Row): ShareLinkDto['result'] {
   const { result, payload } = row
   if (!result || payload.kind !== 'quiz') return null
@@ -90,6 +135,7 @@ function toResult(row: Row): ShareLinkDto['result'] {
     correct: result.share
       ? payload.questions.map((question, index) => result.picks[index] === expected(question))
       : null,
+    authorCorrect: authorCorrect(payload),
   }
 }
 
@@ -102,6 +148,7 @@ function toDto(row: Row): ShareLinkDto {
     views: row.views,
     settings: row.kind === 'report' ? (row.settings ?? DEFAULT_REPORT_SETTINGS) : null,
     questions: row.payload.kind === 'quiz' ? row.payload.questions : null,
+    authorPicks: row.payload.kind === 'quiz' ? (row.payload.authorPicks ?? null) : null,
     result: toResult(row),
   }
 }
@@ -124,7 +171,6 @@ export async function createLink(userId: string, chatId: string, body: CreateSha
   const report = await reportRow(userId, chatId)
   const dto = await getReport(userId, chatId)
   if (!dto) throw notFound('CHAT_NOT_FOUND', 'Report not found')
-  if (dto.report.group) throw new ApiError(422, 'QUIZ_UNAVAILABLE', 'Group reports cannot be shared by link')
   const user = await db.query.users.findFirst({ columns: { firstName: true }, where: eq(schema.users.id, userId) })
   const author = user?.firstName?.trim() || 'Telegram'
   const token = newToken()
@@ -134,7 +180,10 @@ export async function createLink(userId: string, chatId: string, body: CreateSha
   if (body.kind === 'quiz') {
     const questions = quizQuestions(dto)
     if (questions.length < MIN_QUIZ_QUESTIONS) throw new ApiError(422, 'QUIZ_UNAVAILABLE', 'Too few clear answers')
-    payload = { kind: 'quiz', author, questions }
+    const authorPicks = body.authorPicks
+    if (authorPicks && authorPicks.length !== questions.length)
+      throw new ApiError(400, 'INVALID_REQUEST', 'One answer per question')
+    payload = { kind: 'quiz', author, questions, ...(authorPicks ? { authorPicks } : {}) }
   } else payload = { kind: 'report', author, data: publicReport(dto, settings!, token) }
 
   const values = {
@@ -212,6 +261,9 @@ function toPublic(row: Row, hue: number): PublicShareDto {
     answered: result
       ? { score: result.score, total: result.total, picks: result.picks, answeredAt: result.answeredAt }
       : null,
+    // The author's own answers are a secret until the guest has given theirs: no peeking at the page's data.
+    authorPicks:
+      result && payload.authorPicks ? payload.authorPicks.map((pick) => (pick === 'mine' ? 'author' : 'guest')) : null,
   }
 }
 
@@ -266,8 +318,15 @@ export async function answerQuiz(
     .returning()
   // The author learns the score in Telegram (if they turned the bot on) and in the report's «Поделиться».
   const chat = await chatOf(row.reportId)
-  if (chat)
-    void notify(row.userId, chat, { kind: 'quiz_answered', score: share ? score : null, total: questions.length })
+  if (chat) {
+    const mine = authorCorrect(row.payload)?.filter(Boolean).length ?? null
+    void notify(row.userId, chat, {
+      kind: 'quiz_answered',
+      score: share ? score : null,
+      total: questions.length,
+      ...(mine === null ? {} : { authorScore: mine }),
+    })
+  }
   return toPublic(updated!, await hueOf(updated!))
 }
 

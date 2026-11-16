@@ -142,6 +142,11 @@ export const createShareLinkBodySchema = z.object({
   kind: shareLinkKindSchema,
   days: z.union([z.literal(7), z.literal(30), z.null()]),
   settings: shareReportSettingsSchema.optional(),
+  authorPicks: z
+    .array(z.enum(['mine', 'theirs']))
+    .min(1)
+    .max(10)
+    .optional(),
 }) satisfies z.ZodType<CreateShareLinkBody, unknown>
 export const answerQuizBodySchema = z.object({
   picks: z
