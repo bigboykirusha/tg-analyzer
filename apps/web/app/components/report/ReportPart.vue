@@ -19,12 +19,18 @@ defineProps<{ id: string; title: string }>()
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
-  padding-top: var(--space-8);
-  scroll-margin-top: var(--space-4);
+  /* A hairline above each part, so the parts do not run into one ribbon of cards; the title stands below it. */
+  margin-top: var(--space-4);
+  padding-top: var(--space-6);
+  box-shadow: var(--divider-top);
+  /* A tap in the chapter strip stops the part under the bar (the page's `scroll-padding-top`) and the strip. */
+  scroll-margin-top: calc(var(--control-sm) + var(--space-4));
 }
 
 .report-part:first-child {
+  margin-top: 0;
   padding-top: 0;
+  box-shadow: none;
 }
 
 .report-cards {
@@ -37,7 +43,15 @@ defineProps<{ id: string; title: string }>()
 @media (min-width: 901px) {
   .report-part {
     gap: var(--space-4);
-    padding-top: var(--space-10);
+    margin-top: var(--space-6);
+    padding-top: var(--space-8);
+    /* A computer: the strip is in the bar's own row, so the bar's height is all there is to clear. */
+    scroll-margin-top: 0;
+  }
+
+  .report-part:first-child {
+    margin-top: 0;
+    padding-top: 0;
   }
 
   /*

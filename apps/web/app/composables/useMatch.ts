@@ -49,7 +49,6 @@ export function useMatch(data: () => ReportDto) {
   const groups = computed(() => {
     const { report } = data()
     const habits = report.habits
-    const rituals = report.rituals
     const voice = report.voice
     const starts = report.responses.iWriteFirstPct
     const speed = versus.value.speed?.pairs[0]
@@ -86,15 +85,6 @@ export function useMatch(data: () => ReportDto) {
           counted('laughs', t('report.match.laughs'), habits?.laughs),
           counted('reactions', t('report.match.reactions'), report.reactions?.given),
           counted('stickers', t('report.talk.stickersTitle'), report.stickers?.count),
-        ].filter((item): item is Row => item !== null),
-      },
-      {
-        key: 'day',
-        title: t('report.match.group.day'),
-        rows: [
-          counted('goodMorning', t('report.match.goodMorning'), rituals?.goodMorning),
-          counted('morningFirst', t('report.habits.morning'), rituals?.morningFirst),
-          counted('goodNight', t('report.match.goodNight'), rituals?.goodNight),
         ].filter((item): item is Row => item !== null),
       },
       {

@@ -27,7 +27,7 @@ const dayParts = computed(() => {
 })
 
 const report = computed(() => props.data.report)
-const { window, hours: peakHours, answer } = usePeakWindow(() => props.data)
+const { window, hours: peakHours, second: secondHours, answer } = usePeakWindow(() => props.data)
 
 const days = computed(() => fillDailyGaps(report.value.activity.daily))
 const facts = computed(() => {
@@ -74,7 +74,7 @@ const facts = computed(() => {
     :title="t('report.time.title')"
     :answer="answer"
   >
-    <HourlyChart :hourly="report.activity.hourly" :peak="peakHours" />
+    <HourlyChart :hourly="report.activity.hourly" :peak="peakHours" :second="secondHours" />
     <ol v-if="parts && dayParts.length" class="day-parts">
       <li v-for="part in dayParts" :key="part.key">
         <b class="t-h3">{{ formatPercent(part.share) }}</b>

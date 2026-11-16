@@ -6,7 +6,7 @@ import { Info } from '../../lib/icons'
  * A private chat's report under its poster: long on purpose, every finding at the size of a finding.
  *   «Главное» — the few things this chat stands out with (the run of days, the balance, the busiest day);
  *   «Вы и {имя}» — the relationship score and the match sheet of everything the two sides compare in;
- *   «Время» — the hours and parts of the day, the calendar and weekdays, the records, the milestones;
+ *   «Время» — the hours and parts of the day, mornings and nights, the calendar and weekdays, the records, the milestones;
  *   «Как говорите» — what the chat is made of, voice, reactions, stickers;
  *   «О чём» — the word of the chat, the top words, each side's own words, the favourite emoji.
  * A card the chat is too small for is not drawn at all (the floors live in `@tg-analyzer/shared`), so a
@@ -36,6 +36,7 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">
       <ReportTime :data="data" parts />
+      <ReportRituals :data="data" />
       <ReportDays :data="data" streak />
       <ReportRecords :data="data" />
       <ReportMilestones :data="data" />

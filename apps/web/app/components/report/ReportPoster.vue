@@ -37,6 +37,17 @@ const days = computed(() => (report.value ? fillDailyGaps(report.value.activity.
 /** «4 800 сообщений · май — ноябрь 2026» (useChatSpan), or the guest's own line. */
 const chatSpan = useChatSpan()
 const meta = computed(() => props.lede || (props.data ? chatSpan(props.data) : ''))
+/**
+ * The owner's poster says how much was written as a figure of its own («5 078», the h1 role) and the rest of the
+ * line small beside it. The line is `useChatSpan`'s, so it is the same fact the link's preview says; if it does not
+ * begin with the number as formatted here, the whole line is shown plainly.
+ */
+const countLine = computed(() => {
+  if (props.lede || !props.data) return null
+  const total = formatNumber(props.data.report.totals.messages)
+  const line = meta.value
+  return line.startsWith(total) ? { count: total, rest: line.slice(total.length).trim() } : null
+})
 
 /** The two ends of the pulse: «апрель» and «ноябрь», with the year on wide screens. */
 const axis = computed(() => {
@@ -86,7 +97,11 @@ const cast = computed(() => {
             {{ data?.summary.title ?? title }}
           </p>
           <UiSkeleton v-else class="poster__name-skeleton" width="55%" radius="var(--radius-well)" />
-          <p v-if="meta" class="poster__meta">{{ meta }}</p>
+          <p v-if="countLine" class="poster__meta poster__meta--count">
+            <b class="poster__count">{{ countLine.count }}</b>
+            <span>{{ countLine.rest }}</span>
+          </p>
+          <p v-else-if="meta" class="poster__meta">{{ meta }}</p>
           <UiSkeleton v-else class="poster__meta-skeleton" width="62%" />
           <slot name="badge" />
         </div>
@@ -260,12 +275,26 @@ const cast = computed(() => {
 }
 
 .poster .poster__meta-skeleton {
-  height: calc(var(--space-4) + var(--space-1));
+  height: calc(var(--space-8) + var(--space-1));
 }
 
 .poster__meta {
   color: var(--on-poster-muted);
   font: var(--text-label);
+}
+
+.poster__meta--count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+}
+
+/* How much was written is a figure, not a caption: the h1 role, in ink. */
+.poster__count {
+  color: var(--on-poster);
+  font: var(--text-h1);
+  letter-spacing: var(--tracking-h1);
 }
 
 .poster__actions {
@@ -406,6 +435,10 @@ const cast = computed(() => {
   .poster__year {
     display: inline;
     margin-left: var(--space-1);
+  }
+
+  .poster .poster__meta-skeleton {
+    height: calc(var(--space-10) + var(--space-1));
   }
 }
 </style>

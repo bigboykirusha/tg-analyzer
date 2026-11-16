@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ReportDto } from '@tg-analyzer/shared'
-import { parseWindow } from '../../../lib/persona'
 import { Clock } from '../../../lib/icons'
 
 /**
@@ -12,19 +11,11 @@ const props = defineProps<{ data: ReportDto }>()
 const { t } = useI18n()
 const activity = computed(() => props.data.report.activity)
 
-const window = computed(() => parseWindow(props.data.derived.availabilityProfile.peakWindow))
-const peakHours = computed(() => {
-  const peak = window.value
-  return peak ? Array.from({ length: peak.length }, (_, index) => (peak.start + index) % 24) : []
-})
-/** «Пик — с 11:00 до 14:00», the dash held to its numbers. */
-const answer = computed(() =>
-  window.value ? t('report.time.peak', { from: window.value.from, to: window.value.to }).replace(/–/gu, '⁠–⁠') : null,
-)
+const { hours: peakHours, second: secondHours, answer } = usePeakWindow(() => props.data)
 </script>
 
 <template>
   <ReportSection v-if="answer" id="part-time" :icon="Clock" :title="t('report.time.title')" :answer="answer">
-    <HourlyChart :hourly="activity.hourly" :peak="peakHours" />
+    <HourlyChart :hourly="activity.hourly" :peak="peakHours" :second="secondHours" />
   </ReportSection>
 </template>

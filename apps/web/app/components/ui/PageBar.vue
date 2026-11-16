@@ -8,7 +8,8 @@ import { ArrowLeft } from '../../lib/icons'
  * second line) in the middle, the actions on the right; floating controls, one material.
  * Desktop: the same title is the page's large title (h1, a lede, actions at the end) at the top of the
  * column — unless `bar` keeps it in the bar (the report, over and after its poster).
- * Only one of the two is ever displayed, so there is one h1.
+ * Only one of the two is ever displayed, so there is one h1. A `center` slot (desktop, with `bar`) stands between the
+ * title and the actions.
  */
 const props = withDefaults(
   defineProps<{
@@ -37,7 +38,7 @@ const titleId = useId()
 
 <template>
   <Teleport to="#header-page" defer>
-    <div class="page-bar" :class="{ 'page-bar--wide': props.bar }">
+    <div class="page-bar" :class="{ 'page-bar--wide': props.bar, 'page-bar--center': $slots.center }">
       <div class="page-bar__start">
         <UiIconButton
           v-if="back"
@@ -56,6 +57,7 @@ const titleId = useId()
           <p v-if="lede" class="page-bar__lede">{{ lede }}</p>
         </slot>
       </div>
+      <div v-if="$slots.center" class="page-bar__center no-print"><slot name="center" /></div>
       <div class="page-bar__end no-print"><slot name="actions" /></div>
     </div>
   </Teleport>
@@ -116,6 +118,10 @@ const titleId = useId()
   white-space: nowrap;
 }
 
+.page-bar__center {
+  display: none;
+}
+
 .page-title {
   display: none;
 }
@@ -132,6 +138,17 @@ const titleId = useId()
 
   .page-bar--wide .page-bar__start {
     display: none;
+  }
+
+  /* A screen may put its own strip between the name and the actions (the report's chapters): one line. */
+  .page-bar--wide.page-bar--center {
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+    gap: var(--space-6);
+  }
+
+  .page-bar--center .page-bar__center {
+    display: block;
+    min-width: 0;
   }
 
   .page-bar--wide .page-bar__copy {

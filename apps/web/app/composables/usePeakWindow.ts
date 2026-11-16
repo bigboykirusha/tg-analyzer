@@ -8,13 +8,17 @@ import { parseWindow } from '../lib/persona'
 export function usePeakWindow(data: () => ReportDto) {
   const { t } = useI18n()
   const window = computed(() => parseWindow(data().derived.availabilityProfile.peakWindow))
-  const hours = computed(() => {
-    const peak = window.value
-    return peak ? Array.from({ length: peak.length }, (_, index) => (peak.start + index) % 24) : []
+  const spread = (span: NonNullable<typeof window.value>) =>
+    Array.from({ length: span.length }, (_, index) => (span.start + index) % 24)
+  const hours = computed(() => (window.value ? spread(window.value) : []))
+  /** The second window of the day (`availabilityProfile.secondaryWindow`), a step lighter on the dial. */
+  const second = computed(() => {
+    const span = parseWindow(data().derived.availabilityProfile.secondaryWindow)
+    return span ? spread(span) : []
   })
   /** The dash held to its numbers. */
   const answer = computed(() =>
     window.value ? t('report.time.peak', { from: window.value.from, to: window.value.to }).replace(/–/gu, '⁠–⁠') : null,
   )
-  return { window, hours, answer }
+  return { window, hours, second, answer }
 }
