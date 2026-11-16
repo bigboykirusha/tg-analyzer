@@ -27,6 +27,8 @@ const knownTitle = computed(
     workspace.chats.find((chat) => chat.id === chatId.value)?.title ??
     null,
 )
+/** The tile's pulse from home's list: the poster draws it at once, so the tile's pulse can fly into it. */
+const knownPulse = computed(() => workspace.reports.find((report) => report.chatId === chatId.value)?.pulse ?? null)
 useSeoMeta({ title: () => data.value?.summary.title ?? t('report.title') })
 // The page takes the person's colour: poster, room, their marks in charts and the toolbar over the poster.
 useHead({ htmlAttrs: { 'data-hue': () => hueOf(chatId.value) } })
@@ -92,6 +94,7 @@ onMounted(load)
       v-if="data || (!notFound && !loadError)"
       :data="data"
       :title="knownTitle"
+      :seed="knownPulse"
       actions
       @story="openStory('view')"
       @share="openShare"

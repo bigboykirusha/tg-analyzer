@@ -6,6 +6,7 @@ import {
   type RecentActivityResponse,
   type ReportDto,
   type ReportSummaryDto,
+  type ReportsResponse,
 } from '@tg-analyzer/shared'
 import { api, ApiClientError } from '../composables/useApi'
 
@@ -179,15 +180,27 @@ export const useWorkspaceStore = defineStore('workspace', {
       try {
         const result = await api('GET /api/v1/reports')
         if (auth.sessionVersion !== version) return
-        this.reports = result.reports
-        this.reportsHint = result.reports.length
-        saveReportsHint(result.reports.length)
-        this.reportsState = 'ready'
+        this.applyReports(result)
       } catch (error) {
         if (auth.sessionVersion !== version) return
         this.reportsState = 'error'
         throw error
       }
+    },
+
+    /** The report list, fetched and not yet shown: a transition fetches first and applies inside it (useSharedTransition). */
+    async fetchReports() {
+      const auth = useAuthStore()
+      const version = auth.sessionVersion
+      const result = await api('GET /api/v1/reports')
+      return auth.sessionVersion === version ? result : null
+    },
+
+    applyReports(result: ReportsResponse) {
+      this.reports = result.reports
+      this.reportsHint = result.reports.length
+      saveReportsHint(result.reports.length)
+      this.reportsState = 'ready'
     },
 
     async loadReport(chatId: string) {
