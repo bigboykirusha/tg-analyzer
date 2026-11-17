@@ -5,92 +5,101 @@ import { Check, X } from '../../lib/icons'
 import { wave } from '../../lib/wave'
 
 /**
- * The quiz as the other side plays it, without signing in: one poster-coloured screen at a time — the
- * invitation, the questions «кто из вас чаще» with the answer right after each pick, then the score.
- * The author sees the score (the invitation says so). «Вы» is always the one who opened the link. When the
- * author made their own picks with the link, the last screen sets the two scores side by side: they come with
- * the answer, never before it.
+ * The quiz, one poster-coloured screen at a time: the questions «кто из вас» with the answer right after each pick,
+ * then the score. Two ways to play it, one game (17.11: the author's bets before the link are gone):
+ * - a guest by link (`token`): an invitation first, the score goes to the author, «Вы» is the one who opened it;
+ * - the author alone (`self`): straight to the questions, nothing is sent or stored, `quiz.author` is the other side.
  */
-const props = defineProps<{ quiz: PublicQuizDto; token: string }>()
+const props = defineProps<{
+  quiz: PublicQuizDto
+  token?: string
+  /** The author plays their own report; the last screen leads back to it. */
+  self?: boolean
+  back?: string
+}>()
 const { t, tc } = useI18n()
 const { question, value } = useQuizText()
 
 type Pick = 'author' | 'guest'
-const stage = ref<'intro' | 'question' | 'done'>(props.quiz.answered ? 'done' : 'intro')
+const stage = ref<'intro' | 'question' | 'done'>(props.quiz.answered ? 'done' : props.self ? 'question' : 'intro')
 const index = ref(0)
 const picks = ref<Pick[]>(props.quiz.answered?.picks ?? [])
 const sending = ref(false)
 const answered = ref(props.quiz.answered)
-/** The author's own answers; the server sends them only once this guest has answered. */
-const authorPicks = ref(props.quiz.authorPicks)
+/** The page has its own title in the bar when the author plays: the quiz's big lines are not the h1 then. */
+const heading = computed(() => (props.self ? 'h2' : 'h1'))
 
 const total = computed(() => props.quiz.questions.length)
 const current = computed(() => props.quiz.questions[index.value]!)
 const picked = computed(() => picks.value[index.value] ?? null)
 const right = (at: number) => picks.value[at] === props.quiz.questions[at]?.answer
 const score = computed(() => answered.value?.score ?? picks.value.filter((_, at) => right(at)).length)
-const authorRight = (at: number) => authorPicks.value?.[at] === props.quiz.questions[at]?.answer
-const authorScore = computed(() =>
-  authorPicks.value ? props.quiz.questions.filter((_, at) => authorRight(at)).length : null,
-)
-/** Both sides picked, and the scores compare: ahead, behind or level. */
-const versus = computed(() => {
-  if (authorScore.value === null) return null
-  return score.value > authorScore.value ? 'better' : score.value < authorScore.value ? 'worse' : 'tie'
-})
 const verdict = computed(() => {
-  if (versus.value) return t(`publicQuiz.verdict.${versus.value}`, { name: props.quiz.author })
   const share = score.value / Math.max(1, total.value)
   return t(
     share >= 0.8 ? 'publicQuiz.verdict.high' : share >= 0.4 ? 'publicQuiz.verdict.mid' : 'publicQuiz.verdict.low',
   )
 })
-/** The first question both sides missed: the same wrong answer, which is the news. */
-const bothMissed = computed(() => {
-  const at = props.quiz.questions.findIndex((_, index) => !right(index) && authorPicks.value && !authorRight(index))
-  const item = props.quiz.questions[at]
-  if (!item) return null
-  const loser: Pick = item.answer === 'author' ? 'guest' : 'author'
-  const base = { question: question(item.id), who: who(item.answer) }
-  return item.unit === 'fact'
-    ? t('publicQuiz.bothMissed', base)
-    : t('publicQuiz.bothMissedValues', {
-        ...base,
-        winner: value(item.unit, item[item.answer]),
-        loser: value(item.unit, item[loser]),
-      })
+/** The player's side is ink and comes first; the other side wears the person's colour. */
+const sides = computed(() => {
+  const author = { key: 'author' as const, name: props.quiz.author }
+  const me = { key: 'guest' as const, name: t('publicQuiz.me') }
+  return props.self ? [me, author] : [author, me]
 })
-const sides = computed(() => [
-  { key: 'author' as const, name: props.quiz.author },
-  { key: 'guest' as const, name: t('publicQuiz.me') },
-])
 /** «Верно — это вы, 81 раз против 66.» */
 const who = (answer: Pick) => (answer === 'author' ? props.quiz.author : t('publicQuiz.youAre'))
+/** Under 1.25× the report calls it «поровну» (useVersus): the quiz still has an answer, and says it was close. */
+const close = (a: number, b: number) => Math.max(a, b) < 1.25 * Math.min(a, b)
 const reveal = computed(() => {
   const item = current.value
   const loser: Pick = item.answer === 'author' ? 'guest' : 'author'
-  if (item.unit === 'fact') {
-    return t(right(index.value) ? 'publicQuiz.revealFactRight' : 'publicQuiz.revealFactWrong', {
-      who: who(item.answer),
-    })
-  }
-  return t(right(index.value) ? 'publicQuiz.revealRight' : 'publicQuiz.revealWrong', {
-    who: who(item.answer),
-    winner: value(item.unit, item[item.answer]),
-    loser: value(item.unit, item[loser]),
-  })
+  const ok = right(index.value)
+  if (item.unit === 'fact')
+    return t(ok ? 'publicQuiz.revealFactRight' : 'publicQuiz.revealFactWrong', { who: who(item.answer) })
+  const near = close(item.author, item.guest)
+  return t(
+    near
+      ? ok
+        ? 'publicQuiz.revealCloseRight'
+        : 'publicQuiz.revealCloseWrong'
+      : ok
+        ? 'publicQuiz.revealRight'
+        : 'publicQuiz.revealWrong',
+    { who: who(item.answer), winner: value(item.unit, item[item.answer]), loser: value(item.unit, item[loser]) },
+  )
 })
-/** The questions the guest missed, for the last screen. */
+/** The questions the player missed, for the last screen. */
 const missed = computed(() => props.quiz.questions.filter((_, at) => !right(at)).length)
+const outcome = computed(() => {
+  if (props.self) return missed.value ? tc('quizSelf.missed', missed.value) : t('quizSelf.allRight')
+  return missed.value
+    ? tc('publicQuiz.missed', missed.value, { name: props.quiz.author })
+    : t('publicQuiz.allRight', { name: props.quiz.author })
+})
 
 function pick(side: Pick) {
   if (picked.value) return
   picks.value[index.value] = side
 }
 
+/** A new screen of the game starts at its top, not where the last button was pressed. */
+const toTop = () => nextTick(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+
+function restart() {
+  picks.value = []
+  index.value = 0
+  stage.value = 'question'
+  toTop()
+}
+
 async function next() {
   if (index.value + 1 < total.value) {
     index.value += 1
+    return
+  }
+  if (props.self || !props.token) {
+    stage.value = 'done'
+    toTop()
     return
   }
   sending.value = true
@@ -100,7 +109,6 @@ async function next() {
       body: { picks: picks.value, share: true },
     })
     answered.value = result.answered
-    authorPicks.value = result.authorPicks
   } catch {
     // Answered first from another tab: the stored answer is the one the author sees, so this screen shows it too.
     const stored = await ofetch<PublicQuizDto>(buildApiPath('/api/v1/public/:token', { token: props.token })).catch(
@@ -109,18 +117,18 @@ async function next() {
     if (stored?.answered) {
       picks.value = stored.answered.picks
       answered.value = stored.answered
-      authorPicks.value = stored.authorPicks
     }
   } finally {
     sending.value = false
     stage.value = 'done'
+    toTop()
   }
 }
 const invitation = wave(4, 40)
 </script>
 
 <template>
-  <section class="quiz" data-poster>
+  <section class="quiz" :class="{ 'quiz--self': self }" data-poster>
     <div class="quiz__in">
       <template v-if="stage === 'intro'">
         <div class="quiz__body">
@@ -149,7 +157,7 @@ const invitation = wave(4, 40)
           <p class="quiz__note quiz__note--start">{{ t('publicQuiz.step', { n: index + 1, total }) }}</p>
         </div>
         <div class="quiz__body">
-          <h1 class="quiz__figure">{{ question(current.id) }}</h1>
+          <component :is="heading" class="quiz__figure">{{ question(current.id) }}</component>
           <div class="quiz__choices" role="radiogroup" :aria-label="t('publicQuiz.answer')">
             <button
               v-for="side in sides"
@@ -163,13 +171,11 @@ const invitation = wave(4, 40)
               @click="pick(side.key)"
             >
               <UiAvatar
-                v-if="side.key === 'author'"
-                :title="quiz.author"
-                side="mine"
-                :initial="quiz.author.trim().charAt(0).toLocaleUpperCase()"
+                :title="side.name"
+                :side="side.key === sides[0]!.key ? 'mine' : 'theirs'"
+                :initial="side.name.trim().charAt(0).toLocaleUpperCase()"
                 size="md"
               />
-              <UiAvatar v-else :title="side.name" side="theirs" size="md" />
               <span class="choice__name">{{ side.name }}</span>
               <span v-if="picked && (side.key === current.answer || side.key === picked)" class="choice__value">
                 <Check v-if="side.key === current.answer" aria-hidden="true" />
@@ -183,12 +189,12 @@ const invitation = wave(4, 40)
             <ReportLine
               v-if="picked && current.unit !== 'fact'"
               class="quiz__compare"
-              :mine="current.author"
-              :theirs="current.guest"
-              :left="value(current.unit, current.author)"
-              :right="value(current.unit, current.guest)"
-              :left-name="quiz.author"
-              :right-name="t('publicQuiz.me')"
+              :mine="current[sides[0]!.key]"
+              :theirs="current[sides[1]!.key]"
+              :left="value(current.unit, current[sides[0]!.key])"
+              :right="value(current.unit, current[sides[1]!.key])"
+              :left-name="sides[0]!.name"
+              :right-name="sides[1]!.name"
               :bar="current.id !== 'fastest'"
             />
           </div>
@@ -202,38 +208,11 @@ const invitation = wave(4, 40)
 
       <template v-else>
         <div class="quiz__body">
-          <p class="quiz__note quiz__note--start">{{ t('publicQuiz.from', { name: quiz.author }) }}</p>
-          <p class="quiz__score" :class="{ 'quiz__score--tie': versus === 'tie' }">
-            {{ versus === 'tie' ? t('publicQuiz.tie', { score, total }) : t('publicQuiz.score', { score, total }) }}
-          </p>
-          <h1 class="quiz__verdict">{{ verdict }}</h1>
-          <dl v-if="authorScore !== null" class="quiz__versus">
-            <div>
-              <dt>{{ t('publicQuiz.versusYou') }}</dt>
-              <dd>{{ t('publicQuiz.score', { score, total }) }}</dd>
-            </div>
-            <div>
-              <dt>{{ quiz.author }}</dt>
-              <dd>{{ t('publicQuiz.score', { score: authorScore, total }) }}</dd>
-            </div>
-          </dl>
-          <p class="quiz__text">
-            {{
-              bothMissed ??
-              (missed
-                ? tc('publicQuiz.missed', missed, { name: quiz.author })
-                : t('publicQuiz.allRight', { name: quiz.author }))
-            }}
-          </p>
-          <p v-if="authorScore !== null" class="quiz__note quiz__note--start">
-            {{ t('publicQuiz.legend', { name: quiz.author }) }}
-          </p>
-          <UiGroup
-            class="quiz__answers"
-            :header="
-              authorScore === null ? t('publicQuiz.answers') : t('publicQuiz.answersAndBets', { name: quiz.author })
-            "
-          >
+          <p v-if="!self" class="quiz__note quiz__note--start">{{ t('publicQuiz.from', { name: quiz.author }) }}</p>
+          <p class="quiz__score">{{ t('publicQuiz.score', { score, total }) }}</p>
+          <component :is="heading" class="quiz__verdict">{{ verdict }}</component>
+          <p class="quiz__text">{{ outcome }}</p>
+          <UiGroup class="quiz__answers" :header="t('publicQuiz.answers')">
             <UiListRow
               v-for="(item, at) in quiz.questions"
               :key="item.id"
@@ -252,23 +231,14 @@ const invitation = wave(4, 40)
                   <X v-else aria-hidden="true" />
                 </span>
               </template>
-              <template v-if="authorScore !== null" #trailing>
-                <span
-                  class="mark"
-                  :class="{ 'is-right': authorRight(at) }"
-                  role="img"
-                  :aria-label="
-                    t(authorRight(at) ? 'publicQuiz.betRight' : 'publicQuiz.betWrong', { name: quiz.author })
-                  "
-                >
-                  <Check v-if="authorRight(at)" aria-hidden="true" />
-                  <X v-else aria-hidden="true" />
-                </span>
-              </template>
             </UiListRow>
           </UiGroup>
         </div>
-        <div class="quiz__foot">
+        <div v-if="self" class="quiz__foot">
+          <UiButton variant="primary" block :to="back">{{ t('quizSelf.back') }}</UiButton>
+          <UiButton variant="secondary" block @click="restart">{{ t('quizSelf.again') }}</UiButton>
+        </div>
+        <div v-else class="quiz__foot">
           <UiButton variant="primary" block to="/login">{{ t('publicReport.cta') }}</UiButton>
           <UiButton variant="secondary" block to="/">{{ t('publicShare.about') }}</UiButton>
         </div>
@@ -283,7 +253,17 @@ const invitation = wave(4, 40)
   --pulse-you: var(--on-poster);
   --pulse-them: var(--on-them);
   --you: var(--on-poster);
+  --on-you: var(--btn-ink-text);
   --them: var(--on-them);
+  --them-ink: var(--on-them);
+  /*
+   * The poster is one in both themes (17.11), so what stands on it — the answers, the list — takes its light tone and
+   * its ink, as the light tiles of «Главное» do, not the page's surface (dark rows on a bright poster at night).
+   */
+  --surface: var(--poster-light);
+  --text: var(--on-poster);
+  --text-muted: var(--on-poster-muted);
+  --fill-raised: var(--on-poster-chip);
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -303,6 +283,21 @@ const invitation = wave(4, 40)
   min-height: calc(100dvh - var(--topbar-height));
   margin: 0 auto;
   padding: var(--space-3) var(--page-gutter) calc(var(--space-8) + env(safe-area-inset-bottom, 0px));
+}
+
+/*
+ * In the cabinet the bar floats over the poster on a phone and is gone on a computer: the game is the whole screen
+ * either way (the guest's page grows to fill its own layout instead).
+ */
+.quiz--self .quiz__in {
+  min-height: 100dvh;
+}
+
+/* On a phone the cabinet's bar floats over the top of the poster: the game starts below it, as the report does. */
+@media (max-width: 900px) {
+  .quiz--self .quiz__in {
+    padding-top: calc(var(--topbar-height) + env(safe-area-inset-top, 0px) + var(--space-3));
+  }
 }
 
 .quiz__top {
@@ -345,36 +340,6 @@ const invitation = wave(4, 40)
 .quiz__score {
   font: var(--text-display);
   letter-spacing: var(--tracking-display);
-}
-
-.quiz__score--tie {
-  font: var(--text-figure);
-  letter-spacing: var(--tracking-figure);
-}
-
-.quiz__versus {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);
-}
-
-.quiz__versus > div {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-well);
-  background: var(--on-poster-chip);
-}
-
-.quiz__versus dt {
-  color: var(--on-poster-muted);
-  font: var(--text-caption);
-}
-
-.quiz__versus dd {
-  font: var(--text-h2);
-  letter-spacing: var(--tracking-h2);
 }
 
 .quiz__verdict {

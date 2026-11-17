@@ -115,6 +115,7 @@ export function usePosterHeader() {
   const hasPoster = ref(false)
   const overPoster = computed(() => hasPoster.value && progress.value < 0.15)
   let observer: ResizeObserver | null = null
+  let mutations: MutationObserver | null = null
   let frame = 0
   let poster: HTMLElement | null = null
   let bar: HTMLElement | null = null
@@ -159,11 +160,19 @@ export function usePosterHeader() {
       schedule()
     })
     observer.observe(document.body)
+    // A poster can also come without the page changing size (the quiz fills one screen whatever it holds): look
+    // again whenever the content's elements change.
+    mutations = new MutationObserver(() => {
+      find()
+      schedule()
+    })
+    mutations.observe(document.getElementById('main') ?? document.body, { childList: true, subtree: true })
   })
   onBeforeUnmount(() => {
     cancelAnimationFrame(frame)
     window.removeEventListener('scroll', schedule)
     observer?.disconnect()
+    mutations?.disconnect()
   })
   const route = useRoute()
   watch(

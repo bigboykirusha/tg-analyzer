@@ -155,13 +155,8 @@ export type RefreshSessionRow = typeof refreshSessions.$inferSelect
 /** What a share link shows, fixed when the link is made: the guest never reads the live report. */
 export type ShareLinkPayload =
   | { kind: 'report'; author: string; data: ReportDto }
-  | {
-      kind: 'quiz'
-      author: string
-      questions: QuizQuestionDto[]
-      /** The author's own answers, fixed when the link is made; absent when they skipped them. */
-      authorPicks?: ('mine' | 'theirs')[]
-    }
+  /** Links made before 17.11 may still carry the author's old bets (`authorPicks`): nothing reads them. */
+  | { kind: 'quiz'; author: string; questions: QuizQuestionDto[] }
 
 export interface ShareLinkResult {
   picks: ('author' | 'guest')[]

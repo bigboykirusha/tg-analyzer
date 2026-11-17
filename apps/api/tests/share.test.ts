@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  QUIZ_LENGTH,
   telegramHueIndex,
   type ApiErrorResponse,
   type PublicQuizDto,
@@ -148,88 +149,32 @@ test('a link has a preview picture that counts no view', async () => {
   assert.equal(list.json<ShareLinksResponse>().links[0]?.views, 0)
 })
 
-test("the author's own answers are fixed with the link and reach the guest only after the guest has answered", async () => {
-  const session = await analysed()
-  const first = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'quiz', days: 7 })
-  const questions = first.json<ShareLinkDto>().questions!
-  assert.equal(first.json<ShareLinkDto>().authorPicks, null)
-
-  // One answer per question, or the link is not made.
-  const short = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, {
-    kind: 'quiz',
-    days: 7,
-    authorPicks: ['mine'],
-  })
-  assert.equal(short.statusCode, 400)
-
-  // Every other answer wrong: the author scores about half.
-  const authorPicks = questions.map((question, index) =>
-    index % 2 === 0 ? question.answer : question.answer === 'mine' ? 'theirs' : 'mine',
-  )
-  // Answers to questions the server no longer asks are refused, not laid on other questions.
-  const stale = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, {
-    kind: 'quiz',
-    days: 7,
-    authorPicks,
-    questionIds: [...questions.map((question) => question.id)].reverse(),
-  })
-  assert.equal(stale.statusCode, 409, stale.body)
-  const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, {
-    kind: 'quiz',
-    days: 7,
-    authorPicks,
-    questionIds: questions.map((question) => question.id),
-  })
-  assert.equal(made.statusCode, 200, made.body)
-  const link = made.json<ShareLinkDto>()
-  assert.deepEqual(link.authorPicks, authorPicks)
-
-  // Before the guest answers the page has no trace of the bets.
-  const before = await app.inject({ url: `/api/v1/public/${link.token}` })
-  assert.equal(before.json<PublicQuizDto>().authorPicks, null)
-  assert.ok(!before.body.includes('authorPicks":["'))
-
-  const quiz = before.json<PublicQuizDto>()
-  const picks = quiz.questions.map((question) => question.answer)
-  const answered = (
-    await send(null, 'POST', `/api/v1/public/${link.token}/answer`, { picks, share: true })
-  ).json<PublicQuizDto>()
-  // «mine» is the author, «theirs» is the guest.
-  assert.deepEqual(
-    answered.authorPicks,
-    authorPicks.map((pick) => (pick === 'mine' ? 'author' : 'guest')),
-  )
-  assert.deepEqual(
-    (await app.inject({ url: `/api/v1/public/${link.token}` })).json<PublicQuizDto>().authorPicks,
-    answered.authorPicks,
-  )
-
-  // The author's score is counted when read.
-  const owner = (
-    await app.inject({ url: `/api/v1/reports/${CHAT}/links`, headers: session.headers })
-  ).json<ShareLinksResponse>()
-  const result = owner.links.find((item) => item.kind === 'quiz')?.result
-  assert.deepEqual(
-    result?.authorCorrect,
-    questions.map((_, index) => index % 2 === 0),
-  )
-  assert.equal(result?.score, questions.length)
-})
-
-test('a quiz made without bets has none to show', async () => {
+test('a quiz asks up to ten questions, and a link made with the old bets still opens and counts', async () => {
   const session = await analysed()
   const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'quiz', days: 7 })
-  const { token } = made.json<ShareLinkDto>()
-  const quiz = (await app.inject({ url: `/api/v1/public/${token}` })).json<PublicQuizDto>()
-  const answered = await send(null, 'POST', `/api/v1/public/${token}/answer`, {
-    picks: quiz.questions.map((question) => question.answer),
-    share: true,
-  })
-  assert.equal(answered.json<PublicQuizDto>().authorPicks, null)
+  assert.equal(made.statusCode, 200, made.body)
+  const link = made.json<ShareLinkDto>()
+  assert.ok(link.questions!.length > 5 && link.questions!.length <= QUIZ_LENGTH)
+  // Before 17.11 the author could bet first; such payloads stay in the database and are ignored.
+  const [row] = await db.select().from(schema.shareLinks).where(eq(schema.shareLinks.token, link.token))
+  await db
+    .update(schema.shareLinks)
+    .set({
+      payload: {
+        ...row!.payload,
+        authorPicks: link.questions!.map(() => 'mine'),
+      } as unknown as schema.ShareLinkPayload,
+    })
+    .where(eq(schema.shareLinks.token, link.token))
+  const opened = await app.inject({ url: `/api/v1/public/${link.token}` })
+  assert.equal(opened.statusCode, 200)
+  assert.ok(!opened.body.includes('authorPicks'))
+  const picks = opened.json<PublicQuizDto>().questions.map((question) => question.answer)
+  await send(null, 'POST', `/api/v1/public/${link.token}/answer`, { picks, share: true })
   const owner = (
     await app.inject({ url: `/api/v1/reports/${CHAT}/links`, headers: session.headers })
   ).json<ShareLinksResponse>()
-  assert.equal(owner.links.find((item) => item.kind === 'quiz')?.result?.authorCorrect, null)
+  assert.equal(owner.links.find((item) => item.kind === 'quiz')?.result?.score, picks.length)
 })
 
 const GROUP = '-1002001' // «Продуктовая команда»: a demo group

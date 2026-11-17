@@ -104,11 +104,39 @@ test('the who-it-was answers follow the chat', () => {
   assert.equal(answers.longestVoice, 'theirs')
 })
 
-test('numeric questions come before the who-it-was ones', () => {
-  const ids = deriveQuiz(chat()).map((question) => question.id)
-  const firstFact = ids.findIndex((id) => id === 'firstMessage' || id === 'pauseBreaker' || id === 'longestVoice')
-  if (firstFact >= 0)
-    assert.ok(ids.slice(firstFact).every((id) => ['firstMessage', 'pauseBreaker', 'longestVoice'].includes(id)))
+test('a close call is still a question; only all but equal sides are a tie', () => {
+  const ids = (sent: number, received: number) => {
+    const report = chat()
+    report.totals.sent = sent
+    report.totals.received = received
+    return deriveQuiz(report).map((question) => question.id)
+  }
+  // 5 % ahead: the old 15 % rule dropped it, now it is asked.
+  assert.ok(ids(1050, 1000).includes('talker'))
+  assert.ok(!ids(1005, 1000).includes('talker'))
+})
+
+test('two times that read the same on screen are a tie', () => {
+  const fastest = (mine: number, theirs: number) => {
+    const report = chat()
+    report.responses.medianMineSec = mine
+    report.responses.medianTheirsSec = theirs
+    return deriveQuiz(report).find((question) => question.id === 'fastest')
+  }
+  // 2 min 5 s and 2 min both print «2 мин».
+  assert.equal(fastest(125, 120), undefined)
+  assert.equal(fastest(125, 185)?.answer, 'mine')
+})
+
+test('the who-it-was questions always get their places, spread among the numbers', () => {
+  const report = balancedChat({ firstOutgoing: true, breakerOutgoing: false, longestVoiceOutgoing: true })
+  report.totals.sent = 2000
+  report.totals.received = 1000
+  const ids = deriveQuiz(report).map((question) => question.id)
+  const facts = ['firstMessage', 'pauseBreaker', 'longestVoice']
+  assert.ok(ids.length <= QUIZ_LENGTH)
+  assert.ok(facts.every((id) => ids.includes(id as never)))
+  assert.ok(!facts.includes(ids[0]!), 'a number opens the game')
 })
 
 test('a pause whose breaker is unknown (null) asks no question', () => {

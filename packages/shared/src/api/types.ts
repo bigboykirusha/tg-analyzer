@@ -38,7 +38,6 @@ export type ApiErrorCode =
   | 'LINK_EXPIRED'
   | 'QUIZ_UNAVAILABLE'
   | 'QUIZ_ANSWERED'
-  | 'QUIZ_CHANGED'
   | 'PARSE_ALREADY_RUNNING'
   | 'PARSE_ALREADY_QUEUED'
   | 'PARSE_QUEUE_FULL'
@@ -839,7 +838,7 @@ export type NotificationEvent =
   | { kind: 'report_ready'; messages: number }
   | { kind: 'analysis_failed'; error: ParseErrorCode }
   /** score is null when the guest kept it to themselves. */
-  | { kind: 'quiz_answered'; score: number | null; total: number; authorScore?: number | null }
+  | { kind: 'quiz_answered'; score: number | null; total: number }
   /** Someone other than the owner opened the report link for the first time. */
   | { kind: 'link_opened' }
   | { kind: 'link_expiring'; link: ShareLinkKind; expiresAt: string }
@@ -889,17 +888,6 @@ export interface CreateShareLinkBody {
   days: ShareLinkDays
   /** Report links only. */
   settings?: ShareReportSettings
-  /**
-   * Quiz links only: the author's own answers, one per question in the order of `questions`, made before the link
-   * exists. They are fixed with the link and shown to the guest only after the guest has answered.
-   */
-  authorPicks?: ('mine' | 'theirs')[]
-  /**
-   * With `authorPicks`: the questions they answer, in order. The server makes the questions again from the stored
-   * report; if those differ (the report was read again meanwhile), the link is refused rather than the answers laid
-   * on other questions.
-   */
-  questionIds?: QuizQuestionId[]
 }
 
 /** The guest's answers, as the owner sees them; only when the guest agreed to share them. */
@@ -910,8 +898,6 @@ export interface QuizResultDto {
   total: number
   /** Per question, in order: whether the guest was right. Null without consent. */
   correct: boolean[] | null
-  /** How many of the author's own answers were right, per question in order; null when the author made none. */
-  authorCorrect: boolean[] | null
 }
 
 export interface ShareLinkDto {
@@ -924,8 +910,6 @@ export interface ShareLinkDto {
   settings: ShareReportSettings | null
   /** Quiz links: the questions asked, in the owner's terms. */
   questions: QuizQuestionDto[] | null
-  /** Quiz links: the author's own answers made with the link, or null (skipped, or not a quiz). */
-  authorPicks: ('mine' | 'theirs')[] | null
   result: QuizResultDto | null
 }
 
@@ -954,8 +938,6 @@ export interface PublicQuizDto {
   questions: PublicQuizQuestionDto[]
   /** Set once the guest has answered. */
   answered: { score: number; total: number; picks: ('author' | 'guest')[]; answeredAt: string } | null
-  /** The author's own answers («author» is the author, «guest» is you): only after the guest has answered, else null. */
-  authorPicks: ('author' | 'guest')[] | null
 }
 
 export interface PublicReportDto {

@@ -20,76 +20,75 @@ async function makeLink(page: Page, button: string) {
   return ((await (await made).json()) as { token: string }).token
 }
 
-test('the author guesses first, the guest answers and both scores come together', async ({ page, browser }) => {
+/** Answers every question with the first choice and returns how many there were. */
+async function playThrough(page: Page) {
+  let asked = 0
+  for (let last = false; !last;) {
+    await page.getByRole('radio').first().click()
+    asked += 1
+    const next = page.getByRole('button', { name: /Следующий вопрос|Узнать счёт/ })
+    last = ((await next.textContent()) ?? '').includes('Узнать')
+    await next.click()
+  }
+  return asked
+}
+
+test('the quiz is sent by link: the guest plays, the author sees the score', async ({ page, browser }) => {
   await signIn(page)
   await analyseChat(page, 'Мила')
   await page.waitForURL('**/chat/1011', { timeout: 30_000 })
   await openShare(page)
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: /Угадайка/ }).click()
-
-  // Picks are optional: a row opens them, «Не ставить» gives them up, and a half-made set holds the link back.
-  await dialog.getByRole('button', { name: /Поставить свои ответы/ }).click()
-  const groups = dialog.getByRole('radiogroup')
-  const count = await groups.count()
-  expect(count).toBeGreaterThanOrEqual(3)
-  await groups.first().getByRole('radio').first().click()
-  await expect(dialog.getByText('Отметьте все вопросы или откажитесь от ставок')).toBeVisible()
-  await expect(dialog.getByRole('button', { name: /Скопировать ссылку/ })).toBeDisabled()
-  for (let index = 1; index < count; index += 1) await groups.nth(index).getByRole('radio').first().click()
-  await expect(dialog.getByText('Из отчёта уходят только эти вопросы, счёт и ваши ставки.')).toBeVisible()
+  // Two ways and nothing else: send it, or play it yourself.
+  await expect(dialog.getByText('Из отчёта уходят только эти вопросы и счёт.')).toBeVisible()
+  await expect(dialog.getByRole('link', { name: /Пройти самостоятельно/ })).toBeVisible()
+  await expect(dialog.getByRole('radiogroup')).toHaveCount(0)
   const token = await makeLink(page, 'Скопировать ссылку')
 
-  // The guest: no sign-in, the picks are not on the page before the answers.
   const guest = await browser.newContext({ locale: 'ru-RU' })
   await usePreferences(guest, 'light')
   const guestPage = await guest.newPage()
   await gotoHydrated(guestPage, `/s/${token}`)
   await guestPage.getByRole('button', { name: 'Начать' }).click()
-  for (let step = 0; step < count; step += 1) {
-    await guestPage.getByRole('radio').first().click()
-    await guestPage.getByRole('button', { name: step + 1 < count ? 'Следующий вопрос' : 'Узнать счёт' }).click()
-  }
-  await expect(guestPage.getByText(/^Ваши ответы и ставки/)).toBeVisible()
-  await expect(guestPage.getByText(/^Слева — вы, справа — /)).toBeVisible()
-  await expect(guestPage.getByRole('term').first()).toBeVisible()
+  // More than the old five: a close call is still a question.
+  expect(await playThrough(guestPage)).toBeGreaterThan(5)
+  await expect(guestPage.getByText('Ваши ответы', { exact: true })).toBeVisible()
   await guest.close()
 
-  // The author: both scores, and the legend of the two marks.
   await page.reload()
   await openShare(page)
   await page
     .getByRole('dialog')
     .getByRole('button', { name: /Угадайка/ })
     .click()
-  await expect(page.getByRole('dialog').getByText('Слева — вы, справа — Мила')).toBeVisible()
-  await expect(page.getByRole('dialog').getByText(/из \d/).first()).toBeVisible()
+  await expect(page.getByRole('dialog').getByText(/^\d+ из \d+$/)).toBeVisible()
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Новая угадайка' })).toBeVisible()
 })
 
-test('a quiz without picks is as it was: no versus on the guest screen', async ({ page, browser }) => {
+test('the author plays the quiz alone: answers at once, nothing sent', async ({ page }) => {
   await signIn(page)
   await analyseChat(page, 'Мила')
   await page.waitForURL('**/chat/1011', { timeout: 30_000 })
   await openShare(page)
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: /Угадайка/ }).click()
-  await expect(dialog.getByText('Из отчёта уходят только эти вопросы и счёт.')).toBeVisible()
-  const token = await makeLink(page, 'Скопировать ссылку')
-
-  const guest = await browser.newContext({ locale: 'ru-RU' })
-  await usePreferences(guest, 'light')
-  const guestPage = await guest.newPage()
-  await gotoHydrated(guestPage, `/s/${token}`)
-  await guestPage.getByRole('button', { name: 'Начать' }).click()
-  for (let last = false; !last;) {
-    await guestPage.getByRole('radio').first().click()
-    const next = guestPage.getByRole('button', { name: /Следующий вопрос|Узнать счёт/ })
-    last = ((await next.textContent()) ?? '').includes('Узнать')
-    await next.click()
-  }
-  await expect(guestPage.getByText('Ваши ответы', { exact: true })).toBeVisible()
-  await expect(guestPage.getByText(/^Слева — вы/)).toHaveCount(0)
-  await guest.close()
+  const posted = { links: 0 }
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && /\/(links|answer)$/.test(request.url())) posted.links += 1
+  })
+  await dialog.getByRole('link', { name: /Пройти самостоятельно/ }).click()
+  await page.waitForURL('**/quiz/1011')
+  // Straight to the questions: «Я» first, then the other side.
+  await expect(page.getByRole('radio').first()).toContainText('Я')
+  await page.getByRole('radio').first().click()
+  await expect(page.getByRole('status')).toHaveText(/^(Верно|Мимо) — это /)
+  await page.getByRole('button', { name: 'Следующий вопрос' }).click()
+  await playThrough(page)
+  await expect(page.getByText('Ваши ответы', { exact: true })).toBeVisible()
+  expect(posted.links).toBe(0)
+  await page.getByRole('link', { name: 'К отчёту' }).click()
+  await page.waitForURL('**/chat/1011')
 })
 
 test('a group report link names nobody by default and gives no ids', async ({ page, browser }) => {

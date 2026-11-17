@@ -118,13 +118,6 @@ export function publicReport(dto: ReportDto, settings: ShareReportSettings, toke
 
 const expected = (question: QuizQuestionDto) => (question.answer === 'mine' ? 'author' : 'guest')
 
-/** Whether each of the author's own answers was right; null when they made none. Counted when read. */
-function authorCorrect(payload: ShareLinkPayload): boolean[] | null {
-  if (payload.kind !== 'quiz' || !payload.authorPicks) return null
-  const { authorPicks } = payload
-  return payload.questions.map((question, index) => authorPicks[index] === question.answer)
-}
-
 function toResult(row: Row): ShareLinkDto['result'] {
   const { result, payload } = row
   if (!result || payload.kind !== 'quiz') return null
@@ -135,7 +128,6 @@ function toResult(row: Row): ShareLinkDto['result'] {
     correct: result.share
       ? payload.questions.map((question, index) => result.picks[index] === expected(question))
       : null,
-    authorCorrect: authorCorrect(payload),
   }
 }
 
@@ -148,7 +140,6 @@ function toDto(row: Row): ShareLinkDto {
     views: row.views,
     settings: row.kind === 'report' ? (row.settings ?? DEFAULT_REPORT_SETTINGS) : null,
     questions: row.payload.kind === 'quiz' ? row.payload.questions : null,
-    authorPicks: row.payload.kind === 'quiz' ? (row.payload.authorPicks ?? null) : null,
     result: toResult(row),
   }
 }
@@ -180,14 +171,7 @@ export async function createLink(userId: string, chatId: string, body: CreateSha
   if (body.kind === 'quiz') {
     const questions = quizQuestions(dto)
     if (questions.length < MIN_QUIZ_QUESTIONS) throw new ApiError(422, 'QUIZ_UNAVAILABLE', 'Too few clear answers')
-    const authorPicks = body.authorPicks
-    if (authorPicks && authorPicks.length !== questions.length)
-      throw new ApiError(400, 'INVALID_REQUEST', 'One answer per question')
-    // The answers belong to the questions the author saw: if the report was read again since, they would land on
-    // other questions — refuse instead.
-    if (authorPicks && (body.questionIds ?? []).join() !== questions.map((question) => question.id).join())
-      throw new ApiError(409, 'QUIZ_CHANGED', 'The questions have changed')
-    payload = { kind: 'quiz', author, questions, ...(authorPicks ? { authorPicks } : {}) }
+    payload = { kind: 'quiz', author, questions }
   } else payload = { kind: 'report', author, data: publicReport(dto, settings!, token) }
 
   const values = {
@@ -267,9 +251,6 @@ function toPublic(row: Row, hue: number): PublicShareDto {
     answered: result
       ? { score: result.score, total: result.total, picks: result.picks, answeredAt: result.answeredAt }
       : null,
-    // The author's own answers are a secret until the guest has given theirs: no peeking at the page's data.
-    authorPicks:
-      result && payload.authorPicks ? payload.authorPicks.map((pick) => (pick === 'mine' ? 'author' : 'guest')) : null,
   }
 }
 
@@ -334,17 +315,10 @@ export async function answerQuiz(
     .where(and(eq(schema.shareLinks.id, row.id), eq(schema.shareLinks.token, token), isNull(schema.shareLinks.result)))
     .returning()
   if (!updated) throw conflict('QUIZ_ANSWERED', 'The quiz has been answered')
-  // The author learns the score in Telegram (if they turned the bot on) and in the report's «Поделиться».
+  // The author learns the score by push and in the report's «Поделиться».
   const chat = await chatOf(row.reportId)
-  if (chat) {
-    const mine = authorCorrect(row.payload)?.filter(Boolean).length ?? null
-    void notify(row.userId, chat, {
-      kind: 'quiz_answered',
-      score: share ? score : null,
-      total: questions.length,
-      ...(mine === null ? {} : { authorScore: mine }),
-    })
-  }
+  if (chat)
+    void notify(row.userId, chat, { kind: 'quiz_answered', score: share ? score : null, total: questions.length })
   return toPublic(updated!, await hueOf(updated!))
 }
 

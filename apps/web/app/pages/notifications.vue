@@ -47,9 +47,7 @@ function detail(item: NotificationDto) {
       case 'quiz_answered':
         return item.score === null
           ? t('notifications.detail.hidden')
-          : item.authorScore == null
-            ? t('notifications.detail.score', { score: item.score, total: item.total })
-            : t('notifications.detail.versus', { score: item.score, total: item.total, mine: item.authorScore })
+          : t('notifications.detail.score', { score: item.score, total: item.total })
       case 'link_opened':
         return ''
       case 'link_expiring':
