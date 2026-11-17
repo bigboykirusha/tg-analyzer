@@ -7,8 +7,7 @@ import { Plus } from '../../lib/icons'
  * top — with the screen's one action, «Разобрать чат», which opens «Новый анализ» as its own page (16.11: the chat
  * list as a sheet pulled up from below felt out of place in a browser). While an analysis runs the bar shows it
  * instead, in the person's colour (AnalysisPill, 14.11): a tap opens «Разбираем переписку». Done, the capsule says
- * «Открыть» for a few seconds while the report lands on home as a tile, then the button comes back. Where View
- * Transitions work the capsule does not wait: it flies into the tile at once and the button is back (layouts/workspace).
+ * «Открыть» for a few seconds while the report lands on home as a tile, then the button comes back.
  */
 const { t } = useI18n()
 const view = useAnalysisView()
@@ -16,17 +15,14 @@ const analysis = useAnalysis()
 
 /** A report finished a moment ago: the bar opens it, then goes back to the button. */
 const READY_MS = 6000
-const ready = useState<ParseProgressDto | null>('action-bar-ready', () => null)
+const ready = ref<ParseProgressDto | null>(null)
 let readyTimer: ReturnType<typeof setTimeout> | undefined
 watch(analysis.finished, (job) => {
   clearTimeout(readyTimer)
   ready.value = job?.status === 'completed' && job.chatId ? job : null
   if (ready.value) readyTimer = setTimeout(() => (ready.value = null), READY_MS)
 })
-onBeforeUnmount(() => {
-  clearTimeout(readyTimer)
-  ready.value = null
-})
+onBeforeUnmount(() => clearTimeout(readyTimer))
 
 const running = computed(() => Boolean(view.value?.chatId))
 const readyName = computed(() => ready.value?.chatTitle || t('analysis.untitledChat'))
@@ -64,14 +60,7 @@ function tapPill() {
 <template>
   <div ref="root" class="action-bar">
     <p class="sr-only" aria-live="polite">{{ announce }}</p>
-    <button
-      v-if="running || ready"
-      type="button"
-      class="action-bar__pill"
-      data-shared-pill
-      :aria-label="label"
-      @click="tapPill"
-    >
+    <button v-if="running || ready" type="button" class="action-bar__pill" :aria-label="label" @click="tapPill">
       <AnalysisPill :ready="running ? null : ready" />
     </button>
     <UiButton v-else to="/new" variant="primary" size="lg" block :icon="Plus">{{ t('home.analyseChat') }}</UiButton>

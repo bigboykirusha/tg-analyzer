@@ -24,14 +24,11 @@ const props = withDefaults(
 )
 const { t } = useI18n()
 const router = useRouter()
-const shared = useSharedTransition()
 
 /** Back means pop, as on iPhone; a deep link has nothing to pop and goes to `back`. */
 function goBack(event: MouseEvent) {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
   if (typeof window.history.state?.back !== 'string') return
-  // A report's pulse flies back into its tile on home (useSharedTransition); anywhere else a plain pop.
-  if (shared.backFromReport(router, event)) return
   event.preventDefault()
   router.back()
 }

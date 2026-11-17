@@ -14,7 +14,7 @@ import {
   type ShareReportSettings,
   type UserShareLinkDto,
 } from '@tg-analyzer/shared'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, isNull, lt, sql } from 'drizzle-orm'
 import { db, schema } from '../../db'
 import type { ShareLinkPayload, ShareLinkResult } from '../../db/schema'
 import { ApiError, conflict, notFound } from '../../lib/errors'
@@ -282,15 +282,24 @@ async function chatOf(reportId: string) {
   return report ? { chatId: String(report.tgChatId), title: report.title } : null
 }
 
+/** A week after a link runs out it is gone with its snapshot; until then the guest is told it expired (410). */
+const EXPIRED_KEEP_MS = 7 * DAY_MS
+
+export async function deleteExpiredLinks() {
+  await db.delete(schema.shareLinks).where(lt(schema.shareLinks.expiresAt, new Date(Date.now() - EXPIRED_KEEP_MS)))
+}
+
 /** Opens a link for a guest. The owner looking at their own link (viewerId) is not a view. */
 export async function openLink(token: string, viewerId: string | null = null): Promise<PublicShareDto> {
   const row = await openRow(token)
   if (viewerId !== row.userId) {
-    await db
+    // Counted in the database: two guests opening at once both count, and only the first tells the author.
+    const [counted] = await db
       .update(schema.shareLinks)
-      .set({ views: row.views + 1 })
+      .set({ views: sql`${schema.shareLinks.views} + 1` })
       .where(eq(schema.shareLinks.id, row.id))
-    if (row.kind === 'report' && row.views === 0) {
+      .returning({ views: schema.shareLinks.views })
+    if (row.kind === 'report' && counted?.views === 1) {
       const chat = await chatOf(row.reportId)
       if (chat) void notify(row.userId, chat, { kind: 'link_opened' })
     }
@@ -320,8 +329,10 @@ export async function answerQuiz(
   const [updated] = await db
     .update(schema.shareLinks)
     .set({ result })
-    .where(eq(schema.shareLinks.id, row.id))
+    // Only the first answer lands: a second tab answering at the same moment gets the conflict, not a rewrite.
+    .where(and(eq(schema.shareLinks.id, row.id), isNull(schema.shareLinks.result)))
     .returning()
+  if (!updated) throw conflict('QUIZ_ANSWERED', 'The quiz has been answered')
   // The author learns the score in Telegram (if they turned the bot on) and in the report's «Поделиться».
   const chat = await chatOf(row.reportId)
   if (chat) {

@@ -31,7 +31,6 @@ const pulse = computed(() =>
 <template>
   <HomeCard
     class="report-card"
-    :data-report-tile="report.chatId"
     :chat-id="report.chatId"
     :title="report.title"
     :has-avatar="hasAvatar"

@@ -81,6 +81,8 @@ export async function notifyExpiringLinks(now = new Date()) {
     .where(
       and(
         isNotNull(schema.shareLinks.expiresAt),
+        // A quiz the guest has answered is finished: its end date means nothing to the author any more.
+        isNull(schema.shareLinks.result),
         gt(schema.shareLinks.expiresAt, now),
         lt(schema.shareLinks.expiresAt, addMs(now, EXPIRING_WITHIN_MS)),
       ),

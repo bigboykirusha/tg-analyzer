@@ -39,10 +39,11 @@ const until = computed(() =>
 /** The author's own picks, made before the link exists. */
 const betting = ref(false)
 const picks = ref<(Pick | null)[]>([])
+// Reset only when the questions themselves change: the report read again with the same ones keeps the picks.
 watch(
-  list,
-  (items) => {
-    picks.value = items.map(() => null)
+  () => list.value.map((question) => question.id).join(),
+  () => {
+    picks.value = list.value.map(() => null)
   },
   { immediate: true },
 )

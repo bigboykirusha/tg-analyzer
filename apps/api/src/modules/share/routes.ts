@@ -64,7 +64,7 @@ export const publicShareRoutes: FastifyPluginAsync = async (app) => {
     const share = await previewLink(token)
     const settings = share.kind === 'report' ? `${share.settings.showName}` : 'quiz'
     const png = await renderShareCard(share, lang, `${token}:${lang}:${settings}`)
-    return reply.header('content-type', 'image/png').header('cache-control', 'public, max-age=3600').send(png)
+    return reply.header('content-type', 'image/png').header('cache-control', 'public, max-age=300').send(png)
   })
 
   app.post('/:token/answer', { config: publicLimit }, async (request): Promise<PublicShareDto> => {

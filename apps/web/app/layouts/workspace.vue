@@ -32,39 +32,6 @@ onMounted(() => {
   void syncTimeZone().catch(() => undefined)
 })
 
-/**
- * A finished analysis brings its report into the list. On a phone's home the capsule that said «Открыть» flies into
- * the tile (useSharedTransition): the list is fetched first and applied inside the transition, so the page is never
- * held still waiting for the network. Anywhere else, or without the transition, the list is simply updated.
- */
-const shared = useSharedTransition()
-const narrow = useMediaQuery('(max-width: 900px)')
-const barReady = useState<unknown>('action-bar-ready', () => null)
-async function refreshReports(job: { status: string; chatId: string | null }) {
-  const chatId = job.chatId
-  const fresh = await workspace.fetchReports().catch(() => undefined)
-  if (fresh === undefined) {
-    void workspace.loadReports().catch(() => undefined)
-    return
-  }
-  if (!fresh) return
-  const capsule = job.status === 'completed' && chatId && narrow.value && route.path === '/dashboard'
-  const pill = capsule ? document.querySelector('[data-shared-pill]') : null
-  if (!pill || !chatId || !fresh.reports.some((report) => report.chatId === chatId)) {
-    workspace.applyReports(fresh)
-    return
-  }
-  const list = fresh
-  await shared.run(
-    [[pill, SHARED_PLATE]],
-    () => {
-      workspace.applyReports(list)
-      barReady.value = null
-    },
-    () => [[document.querySelector(`[data-report-tile="${CSS.escape(chatId)}"]`), SHARED_PLATE]],
-  )
-}
-
 // Announce finished analyses wherever the user is, and refresh the report list.
 watch(analysis.finished, (job) => {
   if (!job) return
@@ -96,7 +63,7 @@ watch(analysis.finished, (job) => {
       t(`analysis.error.${job.error ?? 'internal'}`, { min: MIN_REPORT_MESSAGES }),
     )
   } else if (job.status === 'cancelled') toast.info(t('analysis.cancelled'))
-  void refreshReports(job)
+  void workspace.loadReports().catch(() => undefined)
   // While Telegram was busy reading, the chat list came from the cache (quietly, 14.11): fetch it fresh now.
   if (workspace.dialogsStale) void workspace.loadDialogs()
   void notifications.loadUnread()

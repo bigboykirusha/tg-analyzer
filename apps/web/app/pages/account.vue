@@ -57,14 +57,17 @@ const themeOpen = ref(false)
 
 /** Web push on this browser: the person's own news. On asks the browser; off forgets this browser. */
 const push = usePush()
+const backFromBot = () => void refreshUser().catch(() => undefined)
+onBeforeUnmount(() => window.removeEventListener('focus', backFromBot))
 /** The bot's news: subscribed by Start in the bot (a link), unsubscribed here. */
 const notify = computed({
   get: () => Boolean(auth.user?.botNotify),
   set: (value: boolean) => {
     if (value && auth.user?.botUrl) {
       window.open(auth.user.botUrl, '_blank', 'noopener')
-      // Back from the bot: read the account again to see «Start» pressed.
-      window.addEventListener('focus', () => void refreshUser().catch(() => undefined), { once: true })
+      // Back from the bot: read the account again to see «Start» pressed (one listener however often it is turned on).
+      window.removeEventListener('focus', backFromBot)
+      window.addEventListener('focus', backFromBot, { once: true })
     } else if (!value)
       void updateSettings({ botNotify: false }).catch((error) =>
         toast.error(t('accountPage.notifyError'), errorMessage(error)),

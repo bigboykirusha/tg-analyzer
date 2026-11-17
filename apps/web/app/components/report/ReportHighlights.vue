@@ -9,7 +9,7 @@ import { Clock, Flame, Quote, Scale, Users } from '../../lib/icons'
  * (`useStreak`, `useWordsFacts`, `usePeakWindow`, `useMatch`, `useBalance`), so the verdict and the report never say
  * two things. The three strongest the chat has, in a fixed order: the run of days, the word of the chat, the usual
  * window, who leads the head to head, a balance. A finding its card would not draw is skipped; each tile scrolls to
- * its card. Carries `#chapter-highlights`.
+ * its card. Carries `#chapter-highlights` (a part's anchor, as `#chapter-*`).
  */
 const props = defineProps<{ data: ReportDto; noWords?: boolean }>()
 const { t, tc, formatNumber } = useI18n()

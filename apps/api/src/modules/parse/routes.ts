@@ -35,7 +35,7 @@ import {
   toJobDto,
   listUserActiveJobs,
 } from './jobs'
-import { admitAnalysis } from './admission'
+import { admitAnalysis, releaseAnalysis } from './admission'
 import { enqueueAnalysis, removeQueuedAnalysis } from './queue'
 import {
   cacheAvatar,
@@ -284,6 +284,8 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
     } catch (error) {
       request.log.error({ err: error, jobId: job.id }, 'could not queue analysis')
       await failJob(job.id, 'internal')
+      // The analysis never started: it does not count against the day's free ones.
+      await releaseAnalysis(userId, job.createdAt).catch(() => undefined)
       await publishProgress(userId, idleProgress()).catch(() => undefined)
       throw new ApiError(503, 'QUEUE_UNAVAILABLE', 'Analysis queue is unavailable, try again later')
     }

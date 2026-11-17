@@ -58,6 +58,13 @@ export function admitAnalysis(
   })
 }
 
+/** Gives back the quota of an analysis that never reached the queue (it was stamped with the job's createdAt). */
+export async function releaseAnalysis(userId: string, createdAt: Date) {
+  await db
+    .delete(schema.analysisUsage)
+    .where(and(eq(schema.analysisUsage.userId, userId), eq(schema.analysisUsage.createdAt, createdAt)))
+}
+
 /** Quota contains no chat data and is needed only for the rolling 24-hour window. */
 export async function deleteExpiredAnalysisUsage() {
   await db.delete(schema.analysisUsage).where(lt(schema.analysisUsage.createdAt, new Date(Date.now() - DAY_MS)))

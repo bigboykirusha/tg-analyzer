@@ -49,15 +49,17 @@ export function useTheme() {
           preference.value !== 'system' ? preference.value : import.meta.client ? resolved.value : undefined,
       },
     })
-    onMounted(() => {
-      const media = window.matchMedia('(prefers-color-scheme: dark)')
-      systemDark.value = media.matches
-      media.addEventListener('change', (event) => {
-        withoutTransitions(() => {
-          systemDark.value = event.matches
-        })
+    let media: MediaQueryList | undefined
+    const follow = (event: MediaQueryListEvent) =>
+      withoutTransitions(() => {
+        systemDark.value = event.matches
       })
+    onMounted(() => {
+      media = window.matchMedia('(prefers-color-scheme: dark)')
+      systemDark.value = media.matches
+      media.addEventListener('change', follow)
     })
+    onBeforeUnmount(() => media?.removeEventListener('change', follow))
   }
 
   return { preference, resolved, setPreference, install }

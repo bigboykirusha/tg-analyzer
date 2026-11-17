@@ -21,7 +21,7 @@ export const en = {
   'accountPage.linkQuiz': 'Quiz “{chat}”',
   'accountPage.linkOn': 'Opens until {date}',
   'accountPage.linkForever': 'Opens without a time limit',
-  'accountPage.linkOff': 'Off',
+  'accountPage.linkOff': 'Off · turns on with a new address',
   'accountPage.linkError': 'Could not change the link',
   'accountPage.logout': 'Log out',
   'analysis.banner.connecting': 'Connecting to Telegram…',
@@ -285,6 +285,9 @@ export const en = {
   'offline.text':
     'Check your connection and try again. Your existing reports will remain available after reconnecting.',
   'offline.title': 'You are offline',
+  'offline.serverTitle': 'The service is not answering',
+  'offline.serverText':
+    'Your internet is fine — the trouble is on our side. Try again in a minute; your reports are safe.',
   'report.delete': 'Delete report',
   'report.deleteError': 'Could not delete the report',
   'report.deleteText':
@@ -439,7 +442,7 @@ export const en = {
   'share.quiz.answered': 'Answered {date}',
   'share.quiz.privacy': 'Only these questions and the score leave the report.',
   'share.quiz.short': 'Guessing game',
-  'share.quiz.lead': '{name} guesses which of you does it more',
+  'share.quiz.lead': '{name} guesses which of you it is',
   'share.coverMeta': '{messages} in {days}',
   'publicQuiz.seoTitle': 'Quiz',
   'publicQuiz.from': 'A quiz from {name}',

@@ -96,6 +96,44 @@ test('the quiz is answered once, and the owner sees the score only with consent'
   assert.equal(result?.correct, null)
 })
 
+test('two answers at the same moment: one lands, the other is told the quiz is answered', async () => {
+  const session = await analysed()
+  const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'quiz', days: 7 })
+  const { token } = made.json<ShareLinkDto>()
+  const quiz = (await app.inject({ url: `/api/v1/public/${token}` })).json<PublicQuizDto>()
+  const right = quiz.questions.map((question) => question.answer)
+  const wrong = right.map((pick) => (pick === 'author' ? 'guest' : 'author'))
+  const answers = await Promise.all([
+    send(null, 'POST', `/api/v1/public/${token}/answer`, { picks: right, share: true }),
+    send(null, 'POST', `/api/v1/public/${token}/answer`, { picks: wrong, share: true }),
+  ])
+  assert.deepEqual(answers.map((answer) => answer.statusCode).sort(), [200, 409])
+  const kept = answers.find((answer) => answer.statusCode === 200)!.json<PublicQuizDto>().answered?.score
+  const owner = (
+    await app.inject({ url: `/api/v1/reports/${CHAT}/links`, headers: session.headers })
+  ).json<ShareLinksResponse>()
+  assert.equal(owner.links.find((link) => link.kind === 'quiz')?.result?.score, kept)
+})
+
+test('a week after it runs out a link is deleted with its snapshot; a fresh one stays', async () => {
+  const { deleteExpiredLinks } = await import('../src/modules/share/repository')
+  const session = await analysed()
+  const old = (
+    await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'report', days: 7 })
+  ).json<ShareLinkDto>()
+  const live = (
+    await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'quiz', days: 7 })
+  ).json<ShareLinkDto>()
+  await db
+    .update(schema.shareLinks)
+    .set({ expiresAt: new Date(Date.now() - 8 * 86_400_000) })
+    .where(eq(schema.shareLinks.token, old.token))
+  await deleteExpiredLinks()
+  const left = await db.select({ token: schema.shareLinks.token }).from(schema.shareLinks)
+  assert.ok(!left.some((row) => row.token === old.token))
+  assert.ok(left.some((row) => row.token === live.token))
+})
+
 test('a link has a preview picture that counts no view', async () => {
   const session = await analysed()
   const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'report', days: 30 })

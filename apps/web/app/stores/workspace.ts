@@ -6,7 +6,6 @@ import {
   type RecentActivityResponse,
   type ReportDto,
   type ReportSummaryDto,
-  type ReportsResponse,
 } from '@tg-analyzer/shared'
 import { api, ApiClientError } from '../composables/useApi'
 
@@ -50,6 +49,9 @@ function saveReportsHint(count: number) {
     // A private window may refuse storage: the hint is only a convenience.
   }
 }
+
+/** The latest report-list request; an answer to an older one is dropped. */
+let reportsRequest = 0
 
 function readCachedDialogs(userId: string): DialogDto[] {
   try {
@@ -146,7 +148,11 @@ export const useWorkspaceStore = defineStore('workspace', {
         this.dialogsTruncated = result.truncated
         this.dialogsState = 'ready'
         if (auth.user)
-          localStorage.setItem(DIALOG_CACHE_KEY, JSON.stringify({ userId: auth.user.id, dialogs: result.dialogs }))
+          try {
+            localStorage.setItem(DIALOG_CACHE_KEY, JSON.stringify({ userId: auth.user.id, dialogs: result.dialogs }))
+          } catch {
+            // A private window or a full storage refuses the cache: the fresh list is already here.
+          }
       } catch (error) {
         if (auth.sessionVersion !== version) return
         this.dialogsError = error instanceof ApiClientError ? error : null
@@ -176,31 +182,21 @@ export const useWorkspaceStore = defineStore('workspace', {
     async loadReports() {
       const auth = useAuthStore()
       const version = auth.sessionVersion
+      // Two analyses finishing close together ask twice: only the latest answer is shown, never an older one over it.
+      const request = ++reportsRequest
       this.reportsState = this.reports.length ? 'ready' : 'loading'
       try {
         const result = await api('GET /api/v1/reports')
-        if (auth.sessionVersion !== version) return
-        this.applyReports(result)
+        if (auth.sessionVersion !== version || request !== reportsRequest) return
+        this.reports = result.reports
+        this.reportsHint = result.reports.length
+        saveReportsHint(result.reports.length)
+        this.reportsState = 'ready'
       } catch (error) {
-        if (auth.sessionVersion !== version) return
+        if (auth.sessionVersion !== version || request !== reportsRequest) return
         this.reportsState = 'error'
         throw error
       }
-    },
-
-    /** The report list, fetched and not yet shown: a transition fetches first and applies inside it (useSharedTransition). */
-    async fetchReports() {
-      const auth = useAuthStore()
-      const version = auth.sessionVersion
-      const result = await api('GET /api/v1/reports')
-      return auth.sessionVersion === version ? result : null
-    },
-
-    applyReports(result: ReportsResponse) {
-      this.reports = result.reports
-      this.reportsHint = result.reports.length
-      saveReportsHint(result.reports.length)
-      this.reportsState = 'ready'
     },
 
     async loadReport(chatId: string) {

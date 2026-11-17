@@ -15,8 +15,6 @@ const props = withDefaults(
     data?: ReportDto | null
     /** The name while the report loads (from the lists already on hand). */
     title?: string | null
-    /** The pulse the report's tile on home already drew: the poster shows it while the report loads, so the tile's pulse has one to fly into. */
-    seed?: readonly { sent: number; received: number }[] | null
     /** «Смотреть итоги» (and, on desktop, «Поделиться») on the poster. */
     actions?: boolean
     /** A guest's poster: «Дима и Мила» and who shared it, no legend, no actions. */
@@ -25,7 +23,7 @@ const props = withDefaults(
     /** The name is the page's h1 (the example: its header carries no name). */
     h1?: boolean
   }>(),
-  { data: null, title: null, seed: null, actions: false, heading: null, lede: null, h1: false },
+  { data: null, title: null, actions: false, heading: null, lede: null, h1: false },
 )
 const emit = defineEmits<{ story: []; share: [] }>()
 const { t, formatNumber, formatDay } = useI18n()
@@ -66,10 +64,7 @@ const axis = computed(() => {
   const year = (day: string) => day.slice(0, 4)
   return { from: month(first), fromYear: year(first), to: month(last), toYear: year(last) }
 })
-/** The report's own days once it is here, else the tile's weeks (a short wait, one pulse the whole time). */
-const pulseData = computed(() =>
-  props.data && days.value.length > 1 ? days.value : props.seed?.length ? props.seed : null,
-)
+const pulseData = computed(() => (props.data && days.value.length > 1 ? days.value : null))
 const partner = computed(() => (isGroup.value ? t('report.pulse.others') : (props.data?.summary.title ?? '')))
 const pulseLabel = computed(() =>
   isGroup.value ? t('report.pulse.labelGroup') : t('report.pulse.label', { name: partner.value }),

@@ -8,6 +8,7 @@ import { deleteJobsOlderThan } from '../parse/jobs'
 import { deleteExpiredAnalysisUsage } from '../parse/admission'
 import { deleteOldNotifications, notifyExpiringLinks } from '../notify/notifications'
 import { endIdleTelegramSessions } from '../account/telegram-sessions'
+import { deleteExpiredLinks } from '../share/repository'
 
 const MAINTENANCE_QUEUE = 'maintenance'
 
@@ -17,6 +18,7 @@ async function runMaintenance() {
   await deleteJobsOlderThan(addMs(new Date(), -config.DATA_RETENTION_DAYS * DAY_MS))
   await deleteOldNotifications()
   await notifyExpiringLinks()
+  await deleteExpiredLinks()
   await endIdleTelegramSessions()
 }
 

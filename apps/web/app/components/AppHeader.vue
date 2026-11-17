@@ -264,7 +264,7 @@ const bellLabel = computed(() =>
 
   /*
    * Over a report's poster the bar takes no room and shows nothing: the poster carries the name and its
-   * actions. It arrives as the poster leaves, the name and chapter in the material.
+   * actions. It arrives as the poster leaves, the name in the material.
    */
   .app-bar.is-over-poster {
     pointer-events: none;

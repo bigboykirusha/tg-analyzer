@@ -29,39 +29,14 @@ const props = defineProps<{
 }>()
 
 const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
-
-/**
- * A tap on the card that opens a report flies its pulse into the poster's (useSharedTransition). A modified click
- * (a new tab), a browser without View Transitions and reduced motion all take the link as it is.
- */
-const root = ref<HTMLElement>()
-const shared = useSharedTransition()
-function open(event: MouseEvent) {
-  const to = props.to
-  if (!to || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-  if (!(event.target as Element).closest('a.home-card__name')) return
-  const pulse = root.value?.querySelector('.pulse')
-  if (!pulse || !shared.supported()) return
-  event.preventDefault()
-  event.stopPropagation()
-  void shared.run(
-    [[pulse, SHARED_PULSE]],
-    async () => {
-      await navigateTo(to)
-    },
-    () => [[shared.posterPulse(), SHARED_PULSE]],
-  )
-}
 </script>
 
 <template>
   <article
-    ref="root"
     class="home-card"
     :class="{ 'home-card--poster': poster && !skeleton, 'home-card--square': square, 'home-card--compact': compact }"
     :data-hue="hue"
     :aria-busy="skeleton || undefined"
-    @click.capture="open"
   >
     <div class="home-card__top">
       <UiSkeleton

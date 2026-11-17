@@ -135,18 +135,13 @@ test('the example report opens without signing in', async ({ page, context }, te
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
 })
 
-test('report navigation survives resizing between phone, tablet and desktop', async ({ page, context }) => {
+test('the report fits and its parts can be reached between phone, tablet and desktop', async ({ page, context }) => {
   await usePreferences(context, 'dark')
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await gotoHydrated(page, '/example')
   for (const width of [320, 390, 650, 768, 1024, 1440, 430]) {
     await page.setViewportSize({ width, height: width === 430 ? 932 : 844 })
     await expect.poll(() => noHorizontalScroll(page)).toBe(true)
-    // Wide screens keep the name quiet, so there is no line to fit.
-    if (width < 901 && (await page.locator('.page-bar__lede').count()))
-      await expect
-        .poll(() => page.locator('.page-bar__lede').evaluate((element) => element.scrollWidth <= element.clientWidth))
-        .toBe(true)
     await openCard(page, 'time')
     await expect(page.locator('#part-time')).toBeInViewport()
     await openCard(page, 'balance')
