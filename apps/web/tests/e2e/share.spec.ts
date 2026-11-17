@@ -143,6 +143,8 @@ test('a group report link names nobody by default and gives no ids', async ({ pa
   expect(body).not.toMatch(/"id":"(?!p\d+")/)
   await expect(guestPage.getByRole('heading', { name: 'Группа', exact: true })).toBeVisible()
   await expect(guestPage.getByText('Участник 1').first()).toBeVisible()
+  await expect(guestPage.locator('#part-people .avatar--mine')).toHaveText('А')
   await expect(guestPage.getByText('Отвечают друг другу чаще всех')).toHaveCount(0)
+  await expect(guestPage.locator('#chapter-words')).toHaveCount(0)
   await guest.close()
 })

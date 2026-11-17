@@ -84,6 +84,7 @@ test('group chats get the group report', async ({ page }, testInfo) => {
   // A newcomer's first report opens by itself.
   await page.waitForURL('**/chat/-1002004', { timeout: 60_000 })
   await page.goto('/chat/-1002004')
+  await expect(page.locator('#part-people')).toContainText('Пишут почти поровну')
   for (const part of ['people', 'roles', 'pairs', 'time', 'words']) {
     await openCard(page, part)
     await expect(page.locator(`#part-${part}`)).toBeInViewport()

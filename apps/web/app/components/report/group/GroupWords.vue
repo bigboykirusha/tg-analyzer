@@ -18,25 +18,26 @@ const emoji = computed(() => props.data.derived.favourites.topEmoji.slice(0, 8))
 </script>
 
 <template>
-  <ReportSection
-    v-if="top || emoji.length"
-    id="part-words"
-    :icon="BarChart2"
-    :title="t('group.wordsTitle')"
-    :answer="
-      top
-        ? t('group.sharedVocabularyAnswer', { word: top.value })
-        : t('group.favouriteEmoji', { emoji: emoji[0]!.value })
-    "
-  >
-    <WordChips v-if="chips.length" :items="chips" :counts="false" tone="shared" />
-    <ul v-if="emoji.length" class="emoji">
-      <li v-for="item in emoji" :key="item.value" class="emoji__chip t-label">
-        <span class="t-h2">{{ item.value }}</span>
-        {{ formatNumber(item.count) }}
-      </li>
-    </ul>
-  </ReportSection>
+  <ReportPart v-if="top || emoji.length" id="words" :title="t('report.tabs.words')">
+    <ReportSection
+      id="part-words"
+      :icon="BarChart2"
+      :title="t('group.wordsTitle')"
+      :answer="
+        top
+          ? t('group.sharedVocabularyAnswer', { word: top.value })
+          : t('group.favouriteEmoji', { emoji: emoji[0]!.value })
+      "
+    >
+      <WordChips v-if="chips.length" :items="chips" :counts="false" tone="shared" />
+      <ul v-if="emoji.length" class="emoji">
+        <li v-for="item in emoji" :key="item.value" class="emoji__chip t-label">
+          <span class="t-h2">{{ item.value }}</span>
+          {{ formatNumber(item.count) }}
+        </li>
+      </ul>
+    </ReportSection>
+  </ReportPart>
 </template>
 
 <style scoped>

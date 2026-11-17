@@ -28,6 +28,7 @@ const props = withDefaults(
 )
 
 const { t } = useI18n()
+const reportAuthor = useReportAuthor()
 
 const failed = ref(false)
 watch(
@@ -45,7 +46,7 @@ function firstLetter(word: string) {
 
 const initials = computed(() => {
   if (props.initial) return props.initial
-  if (props.side === 'mine') return t('report.youInitial')
+  if (props.side === 'mine' && !reportAuthor.value) return t('report.youInitial')
   const words = (props.title ?? '').trim().split(/\s+/u)
   if (props.side === 'theirs') return (firstLetter(words[0] ?? '') || '?').toLocaleUpperCase()
   return words.map(firstLetter).filter(Boolean).slice(0, 2).join('').toLocaleUpperCase()
@@ -55,7 +56,7 @@ const initials = computed(() => {
 const hue = computed(() => (props.side || props.self ? undefined : hueOf(props.seed ?? props.title ?? '')))
 const showImage = computed(() => !props.side && props.src && !failed.value)
 const tooltip = computed(() => {
-  if (props.side === 'mine') return t('report.you')
+  if (props.side === 'mine') return reportAuthor.value ?? t('report.you')
   if (props.side === 'theirs') return props.title ?? undefined
   return undefined
 })

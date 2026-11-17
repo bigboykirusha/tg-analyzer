@@ -21,10 +21,12 @@ const props = withDefaults(
     /** A guest's poster: «Дима и Мила» and who shared it, no legend, no actions. */
     heading?: string | null
     lede?: string | null
+    /** Anonymous guest avatars already carry their participant number. */
+    anonymousCast?: boolean
     /** The name is the page's h1 (the example: its header carries no name). */
     h1?: boolean
   }>(),
-  { data: null, title: null, actions: false, caption: '', heading: null, lede: null, h1: false },
+  { data: null, title: null, actions: false, caption: '', heading: null, lede: null, anonymousCast: false, h1: false },
 )
 const emit = defineEmits<{ story: []; share: [] }>()
 const { t, formatNumber, formatDay } = useI18n()
@@ -141,13 +143,13 @@ const cast = computed(() => {
         <li v-for="person in cast.shown" :key="person.id">
           <a class="cast__person" href="#part-people">
             <UiAvatar :title="nameOf(person)" :seed="person.id" size="md" on-poster />
-            <span class="cast__name">{{ nameOf(person) }}</span>
+            <span :class="anonymousCast ? 'sr-only' : 'cast__name'">{{ nameOf(person) }}</span>
           </a>
         </li>
         <li v-if="cast.more">
           <a class="cast__person" href="#part-people">
             <span class="cast__more">+{{ formatNumber(cast.more) }}</span>
-            <span class="cast__name">{{ t('group.castMore') }}</span>
+            <span :class="anonymousCast ? 'sr-only' : 'cast__name'">{{ t('group.castMore') }}</span>
           </a>
         </li>
       </ul>

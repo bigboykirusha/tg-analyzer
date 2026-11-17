@@ -32,14 +32,25 @@ onMounted(() => {
   void syncTimeZone().catch(() => undefined)
 })
 
+// Remember the first job before the report list can pick up its result during navigation.
+const firstJob = ref<string | null>(null)
+watch(
+  () => analysis.progress.value.jobId,
+  (id) => {
+    if (id && workspace.reportsState === 'ready' && !workspace.reports.length) firstJob.value = id
+  },
+  { flush: 'sync' },
+)
+
 // Announce finished analyses wherever the user is, and refresh the report list.
 watch(analysis.finished, (job) => {
   if (!job) return
   const chat = job.chatTitle || t('analysis.untitledChat')
   const chatId = job.chatId
   // The very first report opens by itself: that is what the newcomer was waiting for.
-  const opened =
-    job.status === 'completed' && chatId && !workspace.reports.length && ['/dashboard', '/new'].includes(route.path)
+  const first = !workspace.reports.length || (firstJob.value !== null && job.jobId === firstJob.value)
+  if (job.jobId === firstJob.value) firstJob.value = null
+  const opened = job.status === 'completed' && chatId && first && ['/dashboard', '/new'].includes(route.path)
   if (opened) void navigateTo(`/chat/${chatId}`)
   // A finished report is news about a person: a banner in their colour, a tap opens it (14.11). Home needs none —
   // the report lands there as a tile and the bottom bar says it (HomeActionBar); an opened report neither.

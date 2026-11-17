@@ -37,7 +37,7 @@ const allowed = computed(() => props.share.settings.words)
 
 <template>
   <div class="guest">
-    <ReportPoster :data="data" :heading="heading" :lede="lede" />
+    <ReportPoster :data="data" :heading="heading" :lede="lede" :anonymous-cast="!share.settings.showName" />
     <UiPageContainer>
       <div class="guest__flow">
         <h2 class="sr-only">{{ t('publicReport.mainTitle') }}</h2>

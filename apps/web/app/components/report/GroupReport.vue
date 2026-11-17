@@ -21,7 +21,7 @@ const { t } = useI18n()
 
   <div v-else class="report-flow">
     <ReportPart id="people" :title="t('group.tabs.people')">
-      <GroupPeople :group="data.report.group" :words="data.derived.words.group" />
+      <GroupPeople :group="data.report.group" :words="data.derived.words.group" :total="data.report.totals.messages" />
       <GroupRoles :group="data.report.group" />
       <GroupPairs :group="data.report.group" />
     </ReportPart>
@@ -33,9 +33,7 @@ const { t } = useI18n()
       <ReportDays :data="data" week-beside />
       <GroupTime :data="data" />
     </ReportPart>
-    <ReportPart id="words" :title="t('report.tabs.words')">
-      <GroupWords :data="data" :group="data.report.group" />
-    </ReportPart>
+    <GroupWords :data="data" :group="data.report.group" />
   </div>
 </template>
 

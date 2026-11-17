@@ -36,7 +36,7 @@
 | `ink`             | его имя как текст на белом ≥ 5:1                                                                                                        |
 | `deep`            | человек на своём постере ≥ 5:1 (`--on-them`)                                                                                            |
 
-Материал постера: `--poster-image` = зерно `--grain` (тёмные крупинки 1–4 %, без blend-mode, чтобы html2canvas рисовал его тоже) + радиальный свет `--poster-light` + линейный градиент 165° от `--poster` (30 %) к `--poster-shade`. Читается `background-color: var(--poster); background-image: var(--poster-image)`; объявлен на `:root` и на каждом `[data-hue]`, поэтому считается с цветами своего человека.
+Материал постера: `--poster-image` = зерно `--grain` (прозрачный PNG с тёмными крупинками 1–4 %, доступный для экспорта кадра в WebKit) + радиальный свет `--poster-light` + линейный градиент 165° от `--poster` (30 %) к `--poster-shade`. Читается `background-color: var(--poster); background-image: var(--poster-image)`; объявлен на `:root` и на каждом `[data-hue]`, поэтому считается с цветами своего человека.
 
 ### 2.2 Семантические цвета
 
