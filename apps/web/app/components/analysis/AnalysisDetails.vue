@@ -16,6 +16,13 @@ const analysis = useAnalysis()
 const toast = useToast()
 const confirming = ref(false)
 const cancelling = ref(false)
+// The analysis finished (or stopped) while «Отменить разбор?» was asking: there is nothing left to cancel.
+watch(
+  () => view.value?.chatId,
+  (chatId) => {
+    if (!chatId) confirming.value = false
+  },
+)
 
 async function cancel() {
   cancelling.value = true
