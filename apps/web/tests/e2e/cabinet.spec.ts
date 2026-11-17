@@ -40,7 +40,11 @@ test('signed-in pages render without accessibility violations or hydration error
     for (const path of ['/dashboard', '/new', '/notifications', '/account', '/chat/1006', '/chat/-1002004']) {
       await gotoHydrated(page, path)
       await expect(page.getByRole('heading', { level: 1 }).first()).toBeAttached()
-      const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa'])
+        // Contrast is checked by APCA on the tokens (scripts/check-contrast.mjs, 17.11), not by WCAG 2's ratio.
+        .disableRules(['color-contrast'])
+        .analyze()
       for (const violation of results.violations) problems.push(`${theme} ${path}: ${violation.id}`)
     }
   }

@@ -28,7 +28,11 @@ for (const path of ['/', '/login', '/privacy', '/example'])
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
       await expect.poll(() => noHorizontalScroll(page)).toBe(true)
 
-      const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa'])
+        // Contrast is checked by APCA on the tokens (scripts/check-contrast.mjs, 17.11), not by WCAG 2's ratio.
+        .disableRules(['color-contrast'])
+        .analyze()
       expect(results.violations.map((violation) => violation.id)).toEqual([])
       expect(renderingErrors).toEqual([])
     })

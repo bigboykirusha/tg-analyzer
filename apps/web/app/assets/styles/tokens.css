@@ -23,15 +23,17 @@
   --gray-4: #e4e4e7;
   --gray-5: #d4d4d8;
   --gray-6: #c4c4ca;
+  /* Glyphs only (chevrons): APCA Lc 40 on white, 30 on a well — a mark, never words (17.11). */
+  --gray-7: #b5b5bd;
   --gray-8: #8b8b93;
-  --gray-9: #6c6c74;
+  /* Quiet text: APCA Lc 64 on the page, 70 on a card, 61 in a well (17.11; was #6c6c74, Lc 69/76/66). */
+  --gray-9: #787880;
   --gray-11: #3f3f46;
   --gray-12: #17171a;
   --gray-a1: rgba(23, 23, 26, 0.04);
   --gray-a3: rgba(23, 23, 26, 0.08);
   --gray-a4: rgba(23, 23, 26, 0.14);
   --gray-a6: rgba(23, 23, 26, 0.3);
-  --gray-a8: rgba(23, 23, 26, 0.7);
   --gray-a9: rgba(23, 23, 26, 0.86);
   /* A calendar on a poster: ink at three even steps under full ink, so every level of a day reads apart. */
   --gray-heat-a1: rgba(23, 23, 26, 0.18);
@@ -50,7 +52,10 @@
   --night-4: #2c2c31;
   --night-5: #333338;
   --night-7: #6f6f78;
-  --night-9: #9b9ba3;
+  /* Glyphs in the dark: APCA Lc 37 on a card (17.11). */
+  --night-8: #87878f;
+  /* Quiet text in the dark: APCA Lc 62–67 on every dark surface (17.11; night-9 gave 43–48). */
+  --night-10: #bebec6;
   --night-11: #d4d4d8;
   --night-12: #f2f2f3;
   --night-a1: rgba(255, 255, 255, 0.05);
@@ -68,93 +73,64 @@
    * our yellow, then orange, violet, green, teal, blue, pink; lib/hue.ts). One OKLCH ladder for all seven:
    *   poster .82–.85 (yellow .88: lower it reads as mustard) — the report's top, ink type on it ≥ 9:1
    *   tint .92 — chips and avatar tops · them .62 — their bar on white ≥ 3:1 · ink .52 — their name ≥ 5:1
-   *   deep .41 — the person on their own poster ≥ 5:1 · poster-d — the dark theme poster, dimmed ·
-   *   deep-d — the person on that dimmed poster: deep mixed 30 % with ink, ≥ 3.6:1 even in its darkest corner.
+   *   deep .41 — the person on their own poster. One poster in both themes (17.11): the dimmed dark one is gone —
+   *   by APCA it put the ink under Lc 60.
    */
   --hue-yellow-poster: #fbd530;
   --hue-yellow-tint: #fcebae;
   --hue-yellow-them: #a68003;
   --hue-yellow-ink: #826401;
   --hue-yellow-deep: #5d4703;
-  --hue-yellow-poster-d: #e9b60b;
-  --hue-yellow-deep-d: #473814;
   --hue-orange-poster: #ffbb69;
   --hue-orange-tint: #fedfb8;
   --hue-orange-them: #c66b01;
   --hue-orange-ink: #9f5104;
   --hue-orange-deep: #6f3c02;
-  --hue-orange-poster-d: #d69546;
-  --hue-orange-deep-d: #533113;
   --hue-violet-poster: #c6b9fe;
   --hue-violet-tint: #e7dfff;
   --hue-violet-them: #846cef;
   --hue-violet-ink: #634ad6;
   --hue-violet-deep: #45339e;
-  --hue-violet-poster-d: #a191df;
-  --hue-violet-deep-d: #352d74;
   --hue-green-poster: #b8df5e;
   --hue-green-tint: #ddeeac;
   --hue-green-them: #649820;
   --hue-green-ink: #4a7812;
   --hue-green-deep: #365502;
-  --hue-green-poster-d: #93b745;
-  --hue-green-deep-d: #2d4214;
   --hue-teal-poster: #6ce6d2;
   --hue-teal-tint: #bef1e8;
   --hue-teal-them: #149b8c;
   --hue-teal-ink: #147a6a;
   --hue-teal-deep: #0a574c;
-  --hue-teal-poster-d: #50bdab;
-  --hue-teal-deep-d: #17433c;
   --hue-blue-poster: #92cafe;
   --hue-blue-tint: #d1e7ff;
   --hue-blue-them: #2a89e1;
   --hue-blue-ink: #1869bd;
   --hue-blue-deep: #104a88;
-  --hue-blue-poster-d: #6ea4d4;
-  --hue-blue-deep-d: #183b65;
   --hue-pink-poster: #ffa4da;
   --hue-pink-tint: #ffd7ef;
   --hue-pink-them: #d544a4;
   --hue-pink-ink: #ae297f;
   --hue-pink-deep: #7c1f5a;
-  --hue-pink-poster-d: #d580b3;
-  --hue-pink-deep-d: #5d2046;
   /*
    * The poster's material: light pooling at the top-left corner (the poster mixed with white) and the colour deepening
    * towards the bottom-right (mixed with the person's own deeper tone) — a printed, lit object, not a flat fill.
-   * OKLab mixes, precomputed: light 55 % poster, shade 80 % poster + 20 % them; dark: 82 % poster-d, and a shade of
-   * 87 % poster-d + 13 % deep — shallower than in the light, so ink type keeps ≥ 5.5:1 and the muted line ≥ 4.5:1 down to
-   * the poster's darkest corner (with 30 % deep they fell to 4.5:1 and 3.6:1).
+   * OKLab mixes, precomputed: light 55 % poster, shade 80 % poster + 20 % them. Ink keeps APCA Lc ≥ 61 down to the
+   * darkest corner of every poster.
    */
   --hue-yellow-light: #fde9a1;
   --hue-yellow-shade: #eac328;
-  --hue-yellow-light-d: #edc459;
-  --hue-yellow-shade-d: #d6a70a;
   --hue-orange-light: #ffdab0;
   --hue-orange-shade: #f4ab59;
-  --hue-orange-light-d: #dea86b;
-  --hue-orange-shade-d: #c8893e;
   --hue-violet-light: #dfd9ff;
   --hue-violet-shade: #b8aafc;
-  --hue-violet-light-d: #b1a5e6;
-  --hue-violet-shade-d: #9485d7;
   --hue-green-light: #d7eead;
   --hue-green-shade: #a7d052;
-  --hue-green-light-d: #a6c46c;
-  --hue-green-shade-d: #86aa3d;
   --hue-teal-light: #b6f2e6;
   --hue-teal-shade: #5dd7c4;
-  --hue-teal-light-d: #76c9ba;
-  --hue-teal-shade-d: #47af9e;
   --hue-blue-light: #c4e2ff;
   --hue-blue-shade: #7fbdf9;
-  --hue-blue-light-d: #88b4dc;
-  --hue-blue-shade-d: #6298ca;
   --hue-pink-light: #ffceeb;
   --hue-pink-shade: #f792cf;
-  --hue-pink-light-d: #de97c0;
-  --hue-pink-shade-d: #c973a7;
   /* Fine paper grain over a poster, almost invisible (12.11): dark specks at 1–4 %, no blend mode, so html2canvas draws
      it too. At 4–11 % it read as dirt on a phone's screen (13.11). */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.06 0.04'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
@@ -163,7 +139,8 @@
   --red-1: #fdecea;
   --red-6: #d1241b;
   --red-d1: #3a1a18;
-  --red-d6: #ff6961;
+  /* Danger in the dark: APCA Lc 60 on a card (17.11; was #ff6961, Lc 47). */
+  --red-d6: #ff958f;
 }
 
 /* ─── 2. Semantic, light ────────────────────────────────────────────────── */
@@ -194,8 +171,8 @@
   --pressed: var(--gray-a3);
   --text: var(--gray-12);
   --text-muted: var(--gray-9);
-  /* Glyphs only (chevrons): 3.4:1 is enough for a mark, never for words. */
-  --text-faint: var(--gray-8);
+  /* Glyphs only (chevrons): APCA Lc 40, enough for a mark, never for words (17.11). */
+  --text-faint: var(--gray-7);
   /* Actions are ink: monochrome, so colour can mean a person. */
   --accent: var(--gray-12);
   --accent-hover: var(--gray-11);
@@ -216,7 +193,8 @@
   --poster-light: var(--gray-3);
   --poster-shade: var(--gray-5);
   --on-poster: var(--gray-12);
-  --on-poster-muted: var(--gray-a8);
+  /* The quiet line on a poster: ink at 86 %, APCA Lc 64–76 on every person's poster in both themes (17.11). */
+  --on-poster-muted: var(--gray-a9);
   --on-poster-line: var(--gray-a4);
   --on-poster-chip: var(--gray-a3);
   /* A secondary button or a round icon on a poster: a translucent light chip over the colour. */
@@ -296,8 +274,10 @@
   --hover: var(--night-a1);
   --pressed: var(--night-a3);
   --text: var(--night-12);
-  --text-muted: var(--night-9);
-  --text-faint: var(--night-7);
+  --text-muted: var(--night-10);
+  --text-faint: var(--night-8);
+  /* The other side's ink with no person set (outside a report): the quiet ink of the dark, not the day's grey. */
+  --them-ink: var(--night-10);
   --accent: var(--night-12);
   --accent-hover: var(--gray-0);
   --on-accent: var(--gray-12);
@@ -306,10 +286,6 @@
   --switch-off-ring: none;
   --you: var(--night-12);
   --on-you: var(--gray-12);
-  /* Posters stay light enough for ink: the muted line is denser (86 % ink) to keep 4.5:1 over the whole poster. */
-  --on-poster-muted: var(--gray-a9);
-  /* A light chip here too: a darker one under the same ink type fell to 3.4:1 on a dimmed poster (now ≥ 7:1). */
-  --poster-button: var(--white-a3);
   --danger: var(--red-d6);
   --danger-subtle: var(--red-d1);
   --inverse-surface: var(--night-12);
@@ -404,73 +380,46 @@
   --on-them: var(--hue-pink-deep);
 }
 
-/* Dark: a dimmer poster that does not glare, the person's light poster as their mark. */
+/* Dark: the poster is the day's own (17.11, APCA: the dimmed one put ink under Lc 60); only the person's mark on the
+   dark page takes their light poster colour. */
 :root[data-theme='dark'][data-hue='yellow'],
 :root[data-theme='dark'] [data-hue='yellow'] {
-  --poster: var(--hue-yellow-poster-d);
-  --poster-light: var(--hue-yellow-light-d);
-  --poster-shade: var(--hue-yellow-shade-d);
-  --on-them: var(--hue-yellow-deep-d);
   --them: var(--hue-yellow-poster);
   --them-ink: var(--hue-yellow-poster);
 }
 
 :root[data-theme='dark'][data-hue='orange'],
 :root[data-theme='dark'] [data-hue='orange'] {
-  --poster: var(--hue-orange-poster-d);
-  --poster-light: var(--hue-orange-light-d);
-  --poster-shade: var(--hue-orange-shade-d);
-  --on-them: var(--hue-orange-deep-d);
   --them: var(--hue-orange-poster);
   --them-ink: var(--hue-orange-poster);
 }
 
 :root[data-theme='dark'][data-hue='violet'],
 :root[data-theme='dark'] [data-hue='violet'] {
-  --poster: var(--hue-violet-poster-d);
-  --poster-light: var(--hue-violet-light-d);
-  --poster-shade: var(--hue-violet-shade-d);
-  --on-them: var(--hue-violet-deep-d);
   --them: var(--hue-violet-poster);
   --them-ink: var(--hue-violet-poster);
 }
 
 :root[data-theme='dark'][data-hue='green'],
 :root[data-theme='dark'] [data-hue='green'] {
-  --poster: var(--hue-green-poster-d);
-  --poster-light: var(--hue-green-light-d);
-  --poster-shade: var(--hue-green-shade-d);
-  --on-them: var(--hue-green-deep-d);
   --them: var(--hue-green-poster);
   --them-ink: var(--hue-green-poster);
 }
 
 :root[data-theme='dark'][data-hue='teal'],
 :root[data-theme='dark'] [data-hue='teal'] {
-  --poster: var(--hue-teal-poster-d);
-  --poster-light: var(--hue-teal-light-d);
-  --poster-shade: var(--hue-teal-shade-d);
-  --on-them: var(--hue-teal-deep-d);
   --them: var(--hue-teal-poster);
   --them-ink: var(--hue-teal-poster);
 }
 
 :root[data-theme='dark'][data-hue='blue'],
 :root[data-theme='dark'] [data-hue='blue'] {
-  --poster: var(--hue-blue-poster-d);
-  --poster-light: var(--hue-blue-light-d);
-  --poster-shade: var(--hue-blue-shade-d);
-  --on-them: var(--hue-blue-deep-d);
   --them: var(--hue-blue-poster);
   --them-ink: var(--hue-blue-poster);
 }
 
 :root[data-theme='dark'][data-hue='pink'],
 :root[data-theme='dark'] [data-hue='pink'] {
-  --poster: var(--hue-pink-poster-d);
-  --poster-light: var(--hue-pink-light-d);
-  --poster-shade: var(--hue-pink-shade-d);
-  --on-them: var(--hue-pink-deep-d);
   --them: var(--hue-pink-poster);
   --them-ink: var(--hue-pink-poster);
 }
