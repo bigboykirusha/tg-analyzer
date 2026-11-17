@@ -52,7 +52,7 @@ const countLine = computed(() => {
   const cut = rest.indexOf(' · ')
   return cut === -1
     ? { count: total, unit: rest, tail: '' }
-    : { count: total, unit: rest.slice(0, cut), tail: rest.slice(cut + 1) }
+    : { count: total, unit: rest.slice(0, cut), tail: rest.slice(cut + 3) }
 })
 
 /** The two ends of the pulse: «апрель» and «ноябрь», with the year on wide screens. */
@@ -108,7 +108,10 @@ const cast = computed(() => {
             <span class="nowrap"
               ><b class="poster__count">{{ countLine.count }}</b> <span>{{ countLine.unit }}</span></span
             >
-            <span v-if="countLine.tail">{{ countLine.tail }}</span>
+            <template v-if="countLine.tail">
+              <span class="poster__sep" aria-hidden="true">·</span>
+              <span class="poster__tail">{{ countLine.tail }}</span>
+            </template>
           </p>
           <p v-else-if="meta" class="poster__meta">{{ meta }}</p>
           <UiSkeleton v-else class="poster__meta-skeleton" width="62%" />
@@ -297,6 +300,20 @@ const cast = computed(() => {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0 var(--space-2);
+}
+
+/*
+ * On a phone the big count leaves no room for the rest: it takes a line of its own, with no «·» left hanging at either
+ * end of a line. A computer keeps the one line «4 800 сообщений · май — ноябрь 2026».
+ */
+@media (max-width: 900px) {
+  .poster__sep {
+    display: none;
+  }
+
+  .poster__tail {
+    flex-basis: 100%;
+  }
 }
 
 /* How much was written is a figure, not a caption: the h1 role, in ink. */

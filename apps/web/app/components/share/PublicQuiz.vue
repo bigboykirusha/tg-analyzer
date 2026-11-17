@@ -102,7 +102,15 @@ async function next() {
     answered.value = result.answered
     authorPicks.value = result.authorPicks
   } catch {
-    // Answered from another tab, or the link went away: the score on screen stays the guest's own.
+    // Answered first from another tab: the stored answer is the one the author sees, so this screen shows it too.
+    const stored = await ofetch<PublicQuizDto>(buildApiPath('/api/v1/public/:token', { token: props.token })).catch(
+      () => null,
+    )
+    if (stored?.answered) {
+      picks.value = stored.answered.picks
+      answered.value = stored.answered
+      authorPicks.value = stored.authorPicks
+    }
   } finally {
     sending.value = false
     stage.value = 'done'

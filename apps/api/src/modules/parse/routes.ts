@@ -263,7 +263,7 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
     if (total !== null && total < MIN_REPORT_MESSAGES)
       throw new ApiError(422, 'CHAT_TOO_SMALL', `The chat has ${total} messages; a report needs ${MIN_REPORT_MESSAGES}`)
 
-    const { job, first } = await admitAnalysis(
+    const { job, usageId, first } = await admitAnalysis(
       { userId, chatId, chatTitle: dialog?.title ?? null },
       { daily: config.FREE_ANALYSES_PER_DAY, queued: MAX_QUEUED_ANALYSES },
     )
@@ -285,7 +285,7 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
       request.log.error({ err: error, jobId: job.id }, 'could not queue analysis')
       await failJob(job.id, 'internal')
       // The analysis never started: it does not count against the day's free ones.
-      await releaseAnalysis(userId, job.createdAt).catch(() => undefined)
+      await releaseAnalysis(usageId).catch(() => undefined)
       await publishProgress(userId, idleProgress()).catch(() => undefined)
       throw new ApiError(503, 'QUEUE_UNAVAILABLE', 'Analysis queue is unavailable, try again later')
     }

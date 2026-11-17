@@ -3,8 +3,8 @@ const { t } = useI18n()
 const route = useRoute()
 
 /** The browser is online, yet the service did not answer: the problem is ours, not the person's internet. */
-// The page is reached by a client-side redirect, so the browser's answer is there from the first frame.
-const online = ref(import.meta.client ? navigator.onLine : false)
+// The server cannot know: both render «no connection» first, the browser's answer follows on mount.
+const online = ref(false)
 const update = () => (online.value = navigator.onLine)
 onMounted(() => {
   update()

@@ -287,7 +287,7 @@ export const en = {
   'offline.title': 'You are offline',
   'offline.serverTitle': 'The service is not answering',
   'offline.serverText':
-    'Your internet is fine — the trouble is on our side. Try again in a minute; your reports are safe.',
+    'We cannot reach the service. If your internet works, the trouble is on our side: try again in a minute; your reports are safe.',
   'report.delete': 'Delete report',
   'report.deleteError': 'Could not delete the report',
   'report.deleteText':
@@ -442,7 +442,7 @@ export const en = {
   'share.quiz.answered': 'Answered {date}',
   'share.quiz.privacy': 'Only these questions and the score leave the report.',
   'share.quiz.short': 'Guessing game',
-  'share.quiz.lead': '{name} guesses which of you it is',
+  'share.quiz.lead': '{name} guesses which of you each question is about',
   'share.coverMeta': '{messages} in {days}',
   'publicQuiz.seoTitle': 'Quiz',
   'publicQuiz.from': 'A quiz from {name}',
@@ -488,7 +488,7 @@ export const en = {
   'report.poster.members.few': '{count} members',
   'report.poster.members.many': '{count} members',
   'report.poster.members.other': '{count} members',
-  'report.time.peak': 'Peak — {from} to {to}',
+  'report.time.peak': 'Peak — {from} to {to}',
   'group.core.one': 'The core is one person',
   'group.core.few': 'The core is {count} people',
   'group.core.many': 'The core is {count} people',

@@ -313,7 +313,7 @@ export async function previewLink(token: string): Promise<PublicShareDto> {
   return toPublic(row, await hueOf(row))
 }
 
-/** Stores the guest's answers once; a second answer gets the first result back. */
+/** Stores the guest's answers once; a second answer is refused (409) and the page reads the first one. */
 export async function answerQuiz(
   token: string,
   picks: ('author' | 'guest')[],
@@ -329,8 +329,9 @@ export async function answerQuiz(
   const [updated] = await db
     .update(schema.shareLinks)
     .set({ result })
-    // Only the first answer lands: a second tab answering at the same moment gets the conflict, not a rewrite.
-    .where(and(eq(schema.shareLinks.id, row.id), isNull(schema.shareLinks.result)))
+    // Only the first answer lands: a second tab answering at the same moment gets the conflict, not a rewrite. The token
+    // too: «Новая угадайка» reuses the row with a new token and questions, and old answers must not land in it.
+    .where(and(eq(schema.shareLinks.id, row.id), eq(schema.shareLinks.token, token), isNull(schema.shareLinks.result)))
     .returning()
   if (!updated) throw conflict('QUIZ_ANSWERED', 'The quiz has been answered')
   // The author learns the score in Telegram (if they turned the bot on) and in the report's «Поделиться».

@@ -288,7 +288,8 @@ export const ru: Record<MessageKey, string> = {
   'offline.text': 'Проверьте интернет и попробуйте ещё раз. Существующие отчёты останутся доступны после подключения.',
   'offline.title': 'Нет подключения',
   'offline.serverTitle': 'Сервис не отвечает',
-  'offline.serverText': 'Интернет есть, это у нас сбой. Попробуйте через минуту — отчёты никуда не делись.',
+  'offline.serverText':
+    'Не получается связаться с сервисом. Если интернет работает, сбой у нас: попробуйте через минуту — отчёты никуда не делись.',
   'report.delete': 'Удалить отчёт',
   'report.deleteError': 'Не удалось удалить отчёт',
   'report.deleteText':
@@ -443,7 +444,7 @@ export const ru: Record<MessageKey, string> = {
   'share.quiz.answered': 'Ответ получен {date}',
   'share.quiz.privacy': 'Из отчёта уходят только эти вопросы и счёт.',
   'share.quiz.short': 'Угадайка',
-  'share.quiz.lead': '{name} угадывает, кто из вас это',
+  'share.quiz.lead': '{name} угадывает, про кого из вас каждый вопрос',
   'share.coverMeta': '{messages} за {days}',
   'publicQuiz.seoTitle': 'Угадайка',
   'publicQuiz.from': 'Угадайка от {name}',
@@ -489,7 +490,7 @@ export const ru: Record<MessageKey, string> = {
   'report.poster.members.few': '{count} участника',
   'report.poster.members.many': '{count} участников',
   'report.poster.members.other': '{count} участника',
-  'report.time.peak': 'Пик — с {from} до {to}',
+  'report.time.peak': 'Пик — с {from} до {to}',
   'group.core.one': 'Ядро — один человек',
   'group.core.few': 'Ядро — {count} человека',
   'group.core.many': 'Ядро — {count} человек',

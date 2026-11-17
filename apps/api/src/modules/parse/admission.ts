@@ -53,16 +53,17 @@ export function admitAnalysis(
       .onConflictDoNothing()
       .returning()
     if (!job) throw conflict('PARSE_ALREADY_QUEUED', 'This chat is already being analysed or waiting')
-    await tx.insert(schema.analysisUsage).values({ userId: input.userId, createdAt: job.createdAt })
-    return { job, first: waiting.length === 0 }
+    const [usage] = await tx
+      .insert(schema.analysisUsage)
+      .values({ userId: input.userId, createdAt: job.createdAt })
+      .returning({ id: schema.analysisUsage.id })
+    return { job, usageId: usage!.id, first: waiting.length === 0 }
   })
 }
 
-/** Gives back the quota of an analysis that never reached the queue (it was stamped with the job's createdAt). */
-export async function releaseAnalysis(userId: string, createdAt: Date) {
-  await db
-    .delete(schema.analysisUsage)
-    .where(and(eq(schema.analysisUsage.userId, userId), eq(schema.analysisUsage.createdAt, createdAt)))
+/** Gives back the quota of an analysis that never reached the queue: exactly the row its admission took. */
+export async function releaseAnalysis(usageId: string) {
+  await db.delete(schema.analysisUsage).where(eq(schema.analysisUsage.id, usageId))
 }
 
 /** Quota contains no chat data and is needed only for the rolling 24-hour window. */

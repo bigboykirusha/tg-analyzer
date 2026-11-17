@@ -111,8 +111,9 @@ function go(event: MouseEvent, target: string) {
 </template>
 
 <style scoped>
+/* On the page's left edge, as every part's heading: not half-way into the tiles. */
 .highlights__title {
-  padding: 0 var(--space-2) var(--space-2);
+  padding-bottom: var(--space-2);
   color: var(--text-muted);
 }
 
