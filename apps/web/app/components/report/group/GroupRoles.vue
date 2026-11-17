@@ -93,6 +93,7 @@ const answer = computed(() => {
     :icon="Trophy"
     :title="t('group.awards.title')"
     :answer="answer"
+    wide
   >
     <div class="roles">
       <UiListRow
@@ -117,5 +118,21 @@ const answer = computed(() => {
 <style scoped>
 .roles > :deep(:last-child .list-row__body) {
   box-shadow: none;
+}
+
+/*
+ * A computer: the roles take the whole row in two columns (17.11). Beside the three pairs a list of six left the pairs'
+ * card half empty; the pairs now have their own row.
+ */
+@media (min-width: 901px) {
+  .roles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-6);
+  }
+
+  .roles > :deep(:nth-last-child(2):nth-child(odd) .list-row__body) {
+    box-shadow: none;
+  }
 }
 </style>

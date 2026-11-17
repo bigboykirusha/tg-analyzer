@@ -520,8 +520,6 @@ export const en = {
   'story.savedAll': 'The pictures are saved',
   'story.opened': 'Press and hold the picture to save it',
   'report.balance.title': 'Balance',
-  'report.balance.countMine': 'You — {count}',
-  'report.balance.countTheirs': '{name} — {count}',
   'report.balance.even': 'You write evenly',
   'report.balance.mine': 'You write more',
   'report.balance.theirs': '{name} writes more',

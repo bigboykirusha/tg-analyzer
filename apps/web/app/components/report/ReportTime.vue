@@ -74,23 +74,54 @@ const facts = computed(() => {
     :title="t('report.time.title')"
     :answer="answer"
   >
-    <HourlyChart :hourly="report.activity.hourly" :peak="peakHours" :second="secondHours" />
-    <ol v-if="parts && dayParts.length" class="day-parts">
-      <li v-for="part in dayParts" :key="part.key">
-        <b class="t-h3">{{ formatPercent(part.share) }}</b>
-        <span class="t-label">{{ t(part.label) }}</span>
-      </li>
-    </ol>
-    <dl v-else-if="!parts && facts.length" class="facts">
-      <div v-for="fact in facts" :key="fact.key" class="facts__item">
-        <dt class="t-label">{{ fact.label }}</dt>
-        <dd class="t-body">{{ fact.value }}</dd>
-      </div>
-    </dl>
+    <div class="time-layout">
+      <HourlyChart :hourly="report.activity.hourly" :peak="peakHours" :second="secondHours" />
+      <ol v-if="parts && dayParts.length" class="day-parts">
+        <li v-for="part in dayParts" :key="part.key">
+          <b class="t-h3">{{ formatPercent(part.share) }}</b>
+          <span class="t-label">{{ t(part.label) }}</span>
+        </li>
+      </ol>
+      <dl v-else-if="!parts && facts.length" class="facts">
+        <div v-for="fact in facts" :key="fact.key" class="facts__item">
+          <dt class="t-label">{{ fact.label }}</dt>
+          <dd class="t-body">{{ fact.value }}</dd>
+        </div>
+      </dl>
+    </div>
   </ReportSection>
 </template>
 
 <style scoped>
+.time-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/*
+ * A computer: the dial on the left at its own size, what it adds on the right (17.11: a 320 px dial in the middle
+ * of a 1000 px card left two empty fields).
+ */
+@media (min-width: 901px) {
+  .time-layout {
+    display: grid;
+    grid-template-columns: calc(var(--space-16) * 5) minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--space-10);
+  }
+
+  .time-layout .day-parts,
+  .time-layout .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    row-gap: var(--space-6);
+    padding-top: 0;
+    box-shadow: none;
+    text-align: left;
+  }
+}
+
 .day-parts {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

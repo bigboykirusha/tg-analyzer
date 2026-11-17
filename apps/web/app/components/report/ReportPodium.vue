@@ -45,6 +45,9 @@ const steps = computed(() => props.items.slice(0, 3).map((item, index) => ({ ...
   justify-content: center;
   gap: var(--space-1);
   width: 100%;
+  /* Wide enough to read as a podium in a whole card, not three thin posts in the middle of it (17.11). */
+  max-width: calc(var(--space-16) * 4);
+  margin: 0 auto;
 }
 
 .podium__step {
@@ -54,7 +57,6 @@ const steps = computed(() => props.items.slice(0, 3).map((item, index) => ({ ...
   align-items: center;
   gap: var(--space-1);
   min-width: 0;
-  max-width: var(--space-16);
 }
 
 /* A real podium: second, first, third — only on screen; the list keeps the places in order. */

@@ -9,7 +9,12 @@ import { CalendarDays, Flame } from '../../lib/icons'
  * part's poster — «Дней подряд», the run as its figure, the days you wrote to each other under the calendar —
  * so the run and the count of days are told once, in one place.
  */
-const props = defineProps<{ data: ReportDto; streak?: boolean }>()
+const props = defineProps<{
+  data: ReportDto
+  streak?: boolean
+  /** The week as a half card, beside the next one (a group's dial): not a whole row of its own. */
+  weekBeside?: boolean
+}>()
 const { t, tc, formatNumber } = useI18n()
 const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
 const weekday = computed(() => props.data.report.activity.weekday)
@@ -59,7 +64,7 @@ const busiestDay = computed(() => {
   </ReportSection>
   <ReportSection
     v-if="busiestDay"
-    wide
+    :wide="!weekBeside"
     :icon="CalendarDays"
     :title="t('report.rhythm.weekdaysTitle')"
     :answer="busiestDay"

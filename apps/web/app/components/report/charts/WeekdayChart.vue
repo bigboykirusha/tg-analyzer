@@ -40,8 +40,10 @@ const total = computed(() => props.weekday.reduce((sum, day) => sum + (day?.tota
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--space-2);
   /* The whole card's width, as the hours above it: a week of seven bars is a chart, not a corner of one. */
+  flex: 1;
   width: 100%;
-  height: calc(var(--chart-h) + var(--space-6));
+  /* At least the chart's height; beside a taller card in the row the bars grow with it instead of leaving a hole. */
+  min-height: calc(var(--chart-h) + var(--space-6));
   margin: 0;
   padding: 0;
   list-style: none;

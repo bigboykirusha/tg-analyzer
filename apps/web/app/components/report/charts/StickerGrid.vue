@@ -3,7 +3,7 @@ import type { StickerDto } from '@tg-analyzer/shared'
 
 /**
  * Favourite stickers: the preview from Telegram, or the sticker's emoji when there is none. With
- * `side`, the count is that side's and the grid is one row of four.
+ * `side`, the count is that side's. Rows of four.
  */
 const props = defineProps<{ stickers: StickerDto[]; side?: 'mine' | 'theirs' }>()
 const count = (sticker: StickerDto) => (props.side ? sticker[props.side] : sticker.mine + sticker.theirs)
@@ -11,7 +11,7 @@ const { t, formatNumber } = useI18n()
 </script>
 
 <template>
-  <ul class="stickers" :class="{ 'stickers--row': side }">
+  <ul class="stickers">
     <li v-for="sticker in stickers" :key="sticker.id" class="sticker">
       <span class="sticker__art">
         <img v-if="sticker.thumb" :src="sticker.thumb" :alt="sticker.emoji ?? t('report.talk.sticker')" />
@@ -23,15 +23,12 @@ const { t, formatNumber } = useI18n()
 </template>
 
 <style scoped>
+/* Rows of four everywhere: the card shows whole rows, never one sticker alone on the last line (17.11). */
 .stickers {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-2);
   list-style: none;
-}
-
-.stickers--row {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .sticker {

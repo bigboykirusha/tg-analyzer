@@ -39,16 +39,21 @@ const shown = computed(() => {
     :figure="shown.figure"
     :answer="shown.answer"
   >
+    <!-- The two counts as numbers of their own over the ends of the bar: the card has no empty middle (17.11). -->
+    <div class="split__sides">
+      <p class="split__side">
+        <b class="split__count">{{ formatNumber(split.sent) }}</b>
+        <span class="split__key">{{ t('report.you') }}</span>
+      </p>
+      <p class="split__side split__side--theirs">
+        <b class="split__count">{{ formatNumber(split.received) }}</b>
+        <span class="split__key split__key--theirs">{{ name }}</span>
+      </p>
+    </div>
     <div class="split" aria-hidden="true">
       <i class="split__mine" :style="{ flexGrow: split.mine }" />
       <i class="split__theirs" :style="{ flexGrow: split.theirs }" />
     </div>
-    <p class="split__counts t-label">
-      <span class="split__key">{{ t('report.balance.countMine', { count: formatNumber(split.sent) }) }}</span>
-      <span class="split__key split__key--theirs">{{
-        t('report.balance.countTheirs', { name, count: formatNumber(split.received) })
-      }}</span>
-    </p>
   </ReportSection>
 </template>
 
@@ -58,7 +63,6 @@ const shown = computed(() => {
  * card: beside a taller card in the same row the figure stays at the top and the split at the bottom, no hole.
  */
 .split {
-  margin-top: auto;
   display: flex;
   gap: var(--space-0-5);
   height: var(--space-3);
@@ -82,6 +86,8 @@ const shown = computed(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  color: var(--text-muted);
+  font: var(--text-label);
 }
 
 .split__key::before {
@@ -96,10 +102,28 @@ const shown = computed(() => {
   background: var(--them);
 }
 
-.split__counts {
+/* The counts and the bar sit at the foot of the card; beside a taller card the figure keeps the top. */
+.split__sides {
   display: flex;
   justify-content: space-between;
   gap: var(--space-3);
-  color: var(--text-muted);
+  margin-top: auto;
+}
+
+.split__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.split__side--theirs {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.split__count {
+  font: var(--text-h2);
+  letter-spacing: var(--tracking-h2);
 }
 </style>

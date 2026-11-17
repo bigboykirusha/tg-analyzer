@@ -85,7 +85,7 @@ const stickerAnswer = computed(() => {
   </ReportSection>
 
   <ReportSection v-if="stickers.length" :icon="Sticker" :title="t('report.talk.stickersTitle')" :answer="stickerAnswer">
-    <StickerGrid :stickers="stickers.slice(0, 8)" />
+    <StickerGrid :stickers="stickers.slice(0, stickers.length >= 8 ? 8 : Math.min(4, stickers.length))" />
   </ReportSection>
 </template>
 

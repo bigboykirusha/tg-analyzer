@@ -522,8 +522,6 @@ export const ru: Record<MessageKey, string> = {
   'story.savedAll': 'Картинки сохранены',
   'story.opened': 'Удерживайте картинку, чтобы сохранить',
   'report.balance.title': 'Баланс',
-  'report.balance.countMine': 'Вы — {count}',
-  'report.balance.countTheirs': '{name} — {count}',
   'report.balance.even': 'Пишете на равных',
   'report.balance.mine': 'Вы пишете больше',
   'report.balance.theirs': '{name} пишет больше',
