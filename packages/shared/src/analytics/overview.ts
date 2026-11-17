@@ -2,6 +2,32 @@ import type { ChatReport, DatedActivityDto, ReportHeadlineDto } from '../api/typ
 import { roundTo } from './primitives'
 
 const DAY_MS = 24 * 60 * 60 * 1000
+export const SHARE_PREVIEW_PULSE_COLUMNS = 48
+
+type PulseColumn = { sent: number; received: number }
+
+/** Fit a pulse to its width: sum long histories into columns and interpolate short ones. */
+export function foldPulse(source: readonly PulseColumn[], bars: number): PulseColumn[] {
+  if (!source.length || bars <= 0) return []
+  const out = Array.from({ length: bars }, () => ({ sent: 0, received: 0 }))
+  if (source.length >= bars) {
+    source.forEach((item, index) => {
+      const slot = out[Math.min(bars - 1, Math.floor((index * bars) / source.length))]!
+      slot.sent += item.sent
+      slot.received += item.received
+    })
+  } else {
+    out.forEach((slot, index) => {
+      const at = (index * (source.length - 1)) / Math.max(1, bars - 1)
+      const low = source[Math.floor(at)]!
+      const high = source[Math.ceil(at)]!
+      const mix = at - Math.floor(at)
+      slot.sent = low.sent + (high.sent - low.sent) * mix
+      slot.received = low.received + (high.received - low.received) * mix
+    })
+  }
+  return out
+}
 
 function dayNumber(date: string) {
   return Math.floor(Date.parse(`${date}T00:00:00Z`) / DAY_MS)

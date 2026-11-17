@@ -1,6 +1,5 @@
 <script setup lang="ts">
-/** «Новый анализ»: the whole Telegram list with search on its own page (the sidebar's button, «Разобрать чат» on a phone), in the same
- * reading column as the other lists (account, notifications): a name and its «Разобрать» stay within one glance. */
+/** The stand-alone chat picker shares the reading column with account and notifications. */
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
 const { t } = useI18n()
@@ -21,8 +20,8 @@ watch(actions.starting, (now, before) => {
 <template>
   <UiPageContainer size="narrow">
     <div class="new">
-      <UiPageBar :title="t('newAnalysis.title')" :lede="t('newAnalysis.lede')" back="/dashboard" />
-      <ChatPicker sticky />
+      <UiPageBar :title="t('newAnalysis.title')" back="/dashboard" />
+      <ChatPicker standalone />
     </div>
   </UiPageContainer>
 </template>

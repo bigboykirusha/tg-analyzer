@@ -145,7 +145,7 @@ for (const delayMs of [0, 250]) {
     offline = false
     await page.getByRole('button', { name: 'Попробовать снова' }).click()
     await page.waitForURL('**/new')
-    await expect(page.getByRole('heading', { name: 'Новый анализ' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Выберите чат' })).toBeVisible()
   })
 }
 
@@ -290,11 +290,13 @@ test('a running analysis shows away from home and its button opens the details',
   await expect(details.getByRole('button', { name: 'Отменить разбор' })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(details).toBeHidden()
-  // The desktop tile and the phone's bottom panel open the same details, even before the first report.
+  // The same chat list stays visible until the first report is ready.
   const desktop = testInfo.project.name === 'desktop'
   await gotoHydrated(page, '/dashboard')
-  const progress = page.locator(desktop ? '.analysis-tile' : '.action-bar')
-  await expect(progress).toContainText(desktop ? 'Читаем · 63%' : '63%')
+  await expect(page.getByRole('heading', { name: 'Первый отчёт' })).toBeVisible()
+  await expect(row).toBeVisible()
+  const progress = page.locator(desktop ? '.sidebar__foot' : '.action-bar')
+  await expect(progress).toContainText('63%')
   await progress.getByRole('button', { name: 'Разбираем «Дима (работа)». 63%', exact: false }).click()
   await expect(details.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '63')
   await page.keyboard.press('Escape')
@@ -306,7 +308,7 @@ test('a running analysis shows away from home and its button opens the details',
   }
 })
 
-test('a phone keeps «Разобрать чат» in a bar along the bottom of home, opening «Новый анализ» as a page', async ({
+test('a phone keeps «Разобрать чат» in a bar along the bottom of home, opening the chat picker', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name === 'desktop', 'the bar is at the bottom of home only on phones and tablets')
@@ -319,5 +321,17 @@ test('a phone keeps «Разобрать чат» in a bar along the bottom of h
   await expect(page.locator('.more')).toHaveCount(0)
   await page.locator('.action-bar').getByRole('link', { name: 'Разобрать чат' }).click()
   await page.waitForURL('**/new')
+  await expect(page.getByRole('heading', { name: 'Выберите чат' })).toBeVisible()
+  await expect(page.locator('.picker').getByRole('heading', { level: 2 })).toHaveText(['Без отчёта', 'Отчёты'])
+  await expect(
+    page
+      .locator('.chat-row')
+      .first()
+      .getByRole('button', { name: /^Разобрать чат/ }),
+  ).toBeVisible()
+  const search = page.getByRole('searchbox')
+  await search.fill('абракадабра')
+  await page.getByRole('button', { name: 'Сбросить поиск' }).click()
+  await expect(search).toBeFocused()
   await expect(page.locator('.chat-row').first()).toBeVisible()
 })

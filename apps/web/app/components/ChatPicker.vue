@@ -2,11 +2,10 @@
 import { AlertCircle, MessageSquare, Search, WifiOff, X } from '../lib/icons'
 
 /**
- * Every Telegram chat, to analyse one: a search well, then rows (ChatRow) in Telegram's order — no filter (14.11) —
- * the same list on «Новый анализ» (`/new`, on a phone opened by «Разобрать чат» at the bottom of home) and on a
- * newcomer's home.
+ * A searchable list of Telegram chats. The dedicated picker puts chats ready for a new report first and keeps
+ * reports already made in their own group. Each group follows Telegram's order.
  */
-withDefaults(defineProps<{ sticky?: boolean }>(), { sticky: false })
+const props = defineProps<{ standalone?: boolean }>()
 
 const PAGE_SIZE = 30
 const { t, tc } = useI18n()
@@ -16,30 +15,46 @@ const errorMessage = useErrorMessage()
 const { relogin } = useAuth()
 
 const search = ref('')
+const query = computed(() => search.value.trim().toLocaleLowerCase())
+const searchInput = useTemplateRef<HTMLInputElement>('searchInput')
 const visibleCount = ref(PAGE_SIZE)
 const sentinel = ref<HTMLElement | null>(null)
-/** Telegram's own order: pinned chats first, then the latest message; chats known only from a report go last. */
-const ordered = computed(() =>
-  [...workspace.chats].sort(
-    (left, right) =>
-      Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)) ||
-      (right.lastMessageAt ? Date.parse(right.lastMessageAt) : 0) -
-        (left.lastMessageAt ? Date.parse(left.lastMessageAt) : 0),
-  ),
+const matching = computed(() =>
+  workspace.chats
+    .filter((chat) => !query.value || chat.title.toLocaleLowerCase().includes(query.value))
+    .sort(
+      (left, right) =>
+        Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)) ||
+        (right.lastMessageAt ? Date.parse(right.lastMessageAt) : 0) -
+          (left.lastMessageAt ? Date.parse(left.lastMessageAt) : 0),
+    ),
 )
-const filteredChats = computed(() => {
-  const query = search.value.trim().toLocaleLowerCase()
-  return ordered.value.filter((chat) => !query || chat.title.toLocaleLowerCase().includes(query))
-})
+const separateReports = computed(() => props.standalone && workspace.chats.some((chat) => chat.report))
+const filteredChats = computed(() =>
+  separateReports.value
+    ? [...matching.value].sort((left, right) => Number(Boolean(left.report)) - Number(Boolean(right.report)))
+    : matching.value,
+)
 const visibleChats = computed(() => filteredChats.value.slice(0, visibleCount.value))
+const groups = computed(() => {
+  if (!separateReports.value) return [{ key: 'all', chats: visibleChats.value, title: undefined }]
+  return [
+    { key: 'new', chats: visibleChats.value.filter((chat) => !chat.report), title: t('newAnalysis.unanalysed') },
+    { key: 'ready', chats: visibleChats.value.filter((chat) => chat.report), title: t('dashboard.reportsTitle') },
+  ].filter((group) => group.chats.length)
+})
 const firstLoad = computed(
   () => !workspace.chats.length && (workspace.dialogsState === 'loading' || workspace.dialogsState === 'idle'),
 )
 const failed = computed(() => workspace.dialogsState === 'error' && !workspace.dialogs.length)
 
-watch(search, () => {
+watch(query, () => {
   visibleCount.value = PAGE_SIZE
 })
+function clearSearch() {
+  search.value = ''
+  searchInput.value?.focus()
+}
 useIntersection(sentinel, () => {
   if (visibleCount.value < filteredChats.value.length) visibleCount.value += PAGE_SIZE
 })
@@ -49,11 +64,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="picker" :class="{ 'picker--sticky': sticky }">
+  <div class="picker" :class="{ 'picker--sticky': standalone }">
     <div class="picker__tools">
-      <label class="picker__search">
+      <div class="picker__search">
         <Search class="icon-sm" aria-hidden="true" />
         <input
+          ref="searchInput"
           v-model="search"
           type="search"
           name="chat-search"
@@ -63,10 +79,10 @@ onMounted(() => {
           :placeholder="t('newAnalysis.searchPlaceholder')"
           :aria-label="t('dashboard.search')"
         />
-        <button v-if="search" type="button" class="picker__clear" :aria-label="t('common.clear')" @click="search = ''">
+        <button v-if="search" type="button" class="picker__clear" :aria-label="t('common.clear')" @click="clearSearch">
           <X class="icon-sm" aria-hidden="true" />
         </button>
-      </label>
+      </div>
     </div>
 
     <p v-if="!auth.telegramSessionActive" class="picker__note" role="status">
@@ -99,18 +115,20 @@ onMounted(() => {
     </UiEmptyState>
 
     <template v-else>
-      <UiGroup v-if="visibleChats.length">
-        <ChatRow v-for="chat in visibleChats" :key="chat.id" :chat="chat" />
-      </UiGroup>
+      <template v-if="visibleChats.length">
+        <UiGroup v-for="group in groups" :key="group.key" :header="group.title">
+          <ChatRow v-for="chat in group.chats" :key="chat.id" :chat="chat" />
+        </UiGroup>
+      </template>
       <UiEmptyState
         v-else
         compact
-        :icon="search ? Search : MessageSquare"
-        :title="search ? t('dashboard.noMatchesTitle') : t('dashboard.emptyTitle')"
-        :description="search ? t('dashboard.noMatchesText') : t('dashboard.emptyText')"
+        :icon="query ? Search : MessageSquare"
+        :title="query ? t('dashboard.noMatchesTitle') : t('dashboard.emptyTitle')"
+        :description="query ? t('dashboard.noMatchesText') : t('dashboard.emptyText')"
       >
-        <template v-if="search" #action>
-          <UiButton variant="secondary" @click="search = ''">{{ t('dashboard.clearSearch') }}</UiButton>
+        <template v-if="query" #action>
+          <UiButton variant="secondary" @click="clearSearch">{{ t('dashboard.clearSearch') }}</UiButton>
         </template>
       </UiEmptyState>
       <p v-if="visibleChats.length < filteredChats.length" :key="visibleCount" ref="sentinel" class="picker__foot">
@@ -162,7 +180,7 @@ onMounted(() => {
   }
 }
 
-/* The search well: as tall as every field (44), grey, no ring — as in iOS. */
+/* The search field uses the list's surface in both entry points. */
 .picker__search {
   position: relative;
   isolation: isolate;
@@ -173,14 +191,10 @@ onMounted(() => {
   padding: 0 var(--space-4);
   /* A pill, the shape of every control. */
   border-radius: var(--radius-pill);
-  background: var(--field-bg, var(--surface-2));
-  color: var(--text-muted);
-  font: var(--text-body);
-}
-
-.picker--sticky .picker__search {
   background: var(--surface);
   box-shadow: var(--ring-card);
+  color: var(--text-muted);
+  font: var(--text-body);
 }
 
 .picker__search:focus-within {

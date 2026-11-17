@@ -154,6 +154,7 @@ const summary = computed(() => {
   width: min(100%, calc(var(--space-16) * 5));
   aspect-ratio: 1;
   margin: 0 auto;
+  container-type: inline-size;
 }
 
 .dial__svg {
@@ -223,6 +224,21 @@ const summary = computed(() => {
   color: var(--text);
   font: var(--text-h1);
   letter-spacing: var(--tracking-h1);
+}
+
+@container (width <= 16rem) {
+  .dial__middle {
+    max-width: 40%;
+  }
+
+  .dial__share {
+    font: var(--text-h2);
+    letter-spacing: var(--tracking-h2);
+  }
+
+  .dial__middle .t-label {
+    font: var(--text-caption);
+  }
 }
 
 .dial__key {

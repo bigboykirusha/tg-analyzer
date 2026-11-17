@@ -6,6 +6,7 @@ import {
   type ApiErrorResponse,
   type PublicQuizDto,
   type PublicReportDto,
+  type ReportDto,
   type ShareLinkDto,
   type ShareLinksResponse,
 } from '@tg-analyzer/shared'
@@ -34,6 +35,8 @@ test('a report link shows only what the owner allowed, to anyone, until it is tu
   const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'report', days: 7 })
   assert.equal(made.statusCode, 200, made.body)
   const link = made.json<ShareLinkDto>()
+  assert.equal(link.reportPreview?.author, '')
+  assert.equal(link.reportPreview?.title, '')
 
   const opened = await app.inject({ url: `/api/v1/public/${link.token}` })
   assert.equal(opened.statusCode, 200)
@@ -57,6 +60,51 @@ test('a report link shows only what the owner allowed, to anyone, until it is tu
 
   assert.equal((await send(session, 'DELETE', `/api/v1/reports/${CHAT}/links/report`)).statusCode, 200)
   assert.equal((await app.inject({ url: `/api/v1/public/${link.token}` })).statusCode, 404)
+})
+
+test('the link preview keeps the cover of the published report after the original changes', async () => {
+  const session = await analysed()
+  const path = `/api/v1/reports/${CHAT}`
+  const made = await send(session, 'POST', `${path}/links`, {
+    kind: 'report',
+    days: 30,
+    settings: { showName: true, words: false, stickers: false },
+  })
+  assert.equal(made.statusCode, 200, made.body)
+  const link = made.json<ShareLinkDto>()
+  const preview = link.reportPreview!
+  assert.equal(preview.title, 'Мама')
+  assert.equal(preview.pulse.length, 48)
+
+  const [row] = await db.select().from(schema.chatReports).where(eq(schema.chatReports.userId, session.userId))
+  const messages = 240
+  await db
+    .update(schema.chatReports)
+    .set({
+      title: 'Обновлённый чат',
+      totalMessages: messages,
+      report: {
+        ...row!.report,
+        totals: { ...row!.report.totals, messages },
+        activity: {
+          ...row!.report.activity,
+          daily: [{ date: '2026-11-17', sent: 120, received: 120, total: messages }],
+        },
+      },
+    })
+    .where(eq(schema.chatReports.id, row!.id))
+  await db.update(schema.users).set({ firstName: 'Новое имя' }).where(eq(schema.users.id, session.userId))
+
+  const current = (await app.inject({ url: path, headers: session.headers })).json<ReportDto>()
+  assert.equal(current.summary.title, 'Обновлённый чат')
+  assert.equal(current.report.totals.messages, messages)
+
+  const saved = (await app.inject({ url: `${path}/links`, headers: session.headers })).json<ShareLinksResponse>()
+  assert.deepEqual(saved.links[0]?.reportPreview, preview)
+  const guest = (await app.inject({ url: `/api/v1/public/${link.token}` })).json<PublicReportDto>()
+  assert.equal(guest.author, preview.author)
+  assert.equal(guest.data.summary.title, preview.title)
+  assert.equal(guest.data.report.totals.messages, preview.messages)
 })
 
 test('an expired link says so (410), a deleted one is not found (404)', async () => {

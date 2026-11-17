@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { buildApiPath, type PublicQuizDto } from '@tg-analyzer/shared'
 import { ofetch } from 'ofetch'
-import { Check, X } from '../../lib/icons'
+import { Check, ChevronDown, X } from '../../lib/icons'
 import { wave } from '../../lib/wave'
 
 /**
@@ -37,9 +37,10 @@ const right = (at: number) => picks.value[at] === props.quiz.questions[at]?.answ
 const score = computed(() => answered.value?.score ?? picks.value.filter((_, at) => right(at)).length)
 const verdict = computed(() => {
   const share = score.value / Math.max(1, total.value)
-  return t(
-    share >= 0.8 ? 'publicQuiz.verdict.high' : share >= 0.5 ? 'publicQuiz.verdict.mid' : 'publicQuiz.verdict.low',
-  )
+  if (share >= 0.8) return t('publicQuiz.verdict.high')
+  if (share > 0.5) return t('publicQuiz.verdict.mid')
+  if (share === 0.5) return t('publicQuiz.verdict.half')
+  return t('publicQuiz.verdict.low')
 })
 /** The player's side is ink and comes first; the other side wears the person's colour. */
 const sides = computed(() => {
@@ -89,6 +90,7 @@ async function next() {
   if (sending.value) return
   if (index.value + 1 < total.value) {
     index.value += 1
+    toTop()
     return
   }
   if (props.self || !props.token) {
@@ -134,7 +136,7 @@ const invitation = wave(4, 40)
         </div>
         <div class="quiz__foot">
           <p class="quiz__note">{{ t('publicQuiz.note', { name: quiz.author }) }}</p>
-          <UiButton variant="primary" block @click="stage = 'question'">{{ t('publicQuiz.start') }}</UiButton>
+          <UiButton variant="primary" block @click="restart">{{ t('publicQuiz.start') }}</UiButton>
         </div>
       </template>
 
@@ -209,24 +211,29 @@ const invitation = wave(4, 40)
           <p class="quiz__score">{{ t('publicQuiz.score', { score, total }) }}</p>
           <component :is="heading" class="quiz__verdict">{{ verdict }}</component>
           <p v-if="!self && answered" class="quiz__note quiz__note--start">
-            {{ t('publicQuiz.seen', { name: quiz.author }) }}
+            {{ t('publicQuiz.resultSaved') }}
           </p>
-          <!-- One line a question, the answer at the end: ten of them and the score fit one screen (17.11). -->
-          <ol class="quiz__answers" :aria-label="t('publicQuiz.answers')">
-            <li v-for="(item, at) in quiz.questions" :key="item.id">
-              <span
-                class="mark"
-                :class="{ 'is-right': right(at) }"
-                role="img"
-                :aria-label="right(at) ? t('publicQuiz.right') : t('publicQuiz.wrong')"
-              >
-                <Check v-if="right(at)" aria-hidden="true" />
-                <X v-else aria-hidden="true" />
-              </span>
-              <span class="quiz__question">{{ question(item.id) }}</span>
-              <span class="quiz__who">{{ who(item.answer) }}</span>
-            </li>
-          </ol>
+          <details class="quiz__review">
+            <summary class="quiz__summary">
+              {{ t('publicQuiz.answers') }}
+              <ChevronDown aria-hidden="true" />
+            </summary>
+            <ol class="quiz__answers" :aria-label="t('publicQuiz.answers')">
+              <li v-for="(item, at) in quiz.questions" :key="item.id">
+                <span
+                  class="mark"
+                  :class="{ 'is-right': right(at) }"
+                  role="img"
+                  :aria-label="right(at) ? t('publicQuiz.right') : t('publicQuiz.wrong')"
+                >
+                  <Check v-if="right(at)" aria-hidden="true" />
+                  <X v-else aria-hidden="true" />
+                </span>
+                <span class="quiz__question">{{ question(item.id) }}</span>
+                <span class="quiz__who">{{ item.answer === 'author' ? quiz.author : t('report.you') }}</span>
+              </li>
+            </ol>
+          </details>
         </div>
         <div v-if="self" class="quiz__foot">
           <UiButton variant="primary" block :to="back">{{ t('quizSelf.back') }}</UiButton>
@@ -287,9 +294,10 @@ const invitation = wave(4, 40)
   min-height: 100dvh;
 }
 
-/* On a phone the cabinet's bar floats over the top of the poster: the game starts below it, as the report does. */
+/* Both public and workspace headers float over the poster on phones. */
 @media (max-width: 900px) {
-  .quiz--self .quiz__in {
+  .quiz__in {
+    min-height: 100dvh;
     padding-top: calc(var(--topbar-height) + env(safe-area-inset-top, 0px) + var(--space-3));
   }
 }
@@ -420,12 +428,41 @@ const invitation = wave(4, 40)
   color: var(--on-poster);
 }
 
-/* The answers: a card in the poster's light tone, one compact line a question with who it was at the end. */
-.quiz__answers {
-  padding: var(--space-1) var(--space-4);
+.quiz__review {
   border-radius: var(--radius-card);
   background: var(--surface);
   color: var(--text);
+}
+
+.quiz__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--control-md);
+  padding: var(--space-2) var(--space-4);
+  border-radius: inherit;
+  font: var(--text-label);
+  list-style: none;
+  cursor: pointer;
+}
+
+.quiz__summary::-webkit-details-marker {
+  display: none;
+}
+
+.quiz__summary svg {
+  --icon-size: var(--icon-sm);
+}
+
+.quiz__review[open] .quiz__summary svg {
+  transform: rotate(180deg);
+}
+
+.quiz__answers {
+  margin: 0 var(--space-4);
+  padding: 0 0 var(--space-1);
+  box-shadow: var(--divider-top);
 }
 
 .quiz__answers li {
@@ -448,8 +485,12 @@ const invitation = wave(4, 40)
 }
 
 .quiz__who {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 40%;
   color: var(--text-muted);
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .mark {

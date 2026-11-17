@@ -47,14 +47,48 @@ test('a public report link matches the share settings and waits for account chan
   expect(visibleLink.settings).toEqual({ showName: true, words: true, stickers: true })
   const manualAddress = dialog.getByText(`${baseURL}/s/${visibleLink.token}`, { exact: true })
   await expect(manualAddress).toBeVisible()
+  const title = dialog.locator('.link-step__title')
+  const caption = dialog.getByText(/^Автор отчёта — /)
+  const publishedCover = await dialog.locator('.link-step__poster').innerText()
+  const guest = await context.newPage()
+  await gotoHydrated(guest, `/s/${visibleLink.token}`)
+  await expect(guest.getByRole('heading', { name: await title.innerText(), exact: true })).toBeVisible()
+  await expect(guest.getByText(await caption.innerText(), { exact: true })).toBeVisible()
+  await guest.close()
 
   await names.uncheck()
   await expect(manualAddress).toBeHidden()
+  await expect(title).toHaveText('Личная переписка')
+  await expect(caption).toHaveCount(0)
+  await expect(dialog.getByText('При копировании появится новая ссылка. Прежняя перестанет работать.')).toBeVisible()
+  expect((await page.request.get(`/api/v1/public/${visibleLink.token}`)).status()).toBe(200)
+
+  // The owner has refreshed the report, but the link still points at the published snapshot.
+  await page.route(
+    '**/api/v1/reports/1006',
+    async (route) => {
+      const response = await route.fetch()
+      const current = await response.json()
+      current.summary.title = 'Катя после обновления'
+      current.report.totals.messages = 240
+      await route.fulfill({ response, json: current })
+    },
+    { times: 1 },
+  )
+  await gotoHydrated(page, '/chat/1006')
+  await expect(page.getByRole('heading', { name: 'Катя после обновления', exact: true })).toBeAttached()
+  await page.getByRole('button', { name: 'Поделиться', exact: true }).first().click()
+  await dialog.getByRole('button', { name: /Ссылка на отчёт/ }).click()
+  await expect(dialog.locator('.link-step__poster')).toHaveText(publishedCover, { useInnerText: true })
+
+  await names.uncheck()
+  await expect(dialog.locator('.link-step__poster')).toContainText('240 сообщений')
   await words.uncheck()
   const secondResponse = page.waitForResponse(linksPath)
   await copy.click()
   const privateLink = await (await secondResponse).json()
   expect(privateLink.settings).toEqual({ showName: false, words: false, stickers: false })
+  expect((await page.request.get(`/api/v1/public/${visibleLink.token}`)).status()).toBe(404)
   await expect(dialog.getByText(`${baseURL}/s/${privateLink.token}`, { exact: true })).toBeVisible()
 
   await gotoHydrated(page, `/s/${privateLink.token}`)

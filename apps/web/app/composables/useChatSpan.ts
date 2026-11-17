@@ -1,4 +1,4 @@
-import { fillDailyGaps, shouldShowYear, type ReportDto } from '@tg-analyzer/shared'
+import { reportChatSpan, shouldShowYear, type ChatSpanDto, type ReportDto } from '@tg-analyzer/shared'
 import { nbsp } from '../lib/nbsp'
 
 const NBSP = ' '
@@ -8,19 +8,11 @@ const NBSP = ' '
  * which months, with the year on both ends when the chat spans more than one (`shouldShowYear`). One line for the
  * poster, the link's preview and the guest's poster, so the same fact reads the same everywhere.
  */
-export function useChatSpan() {
+export function useFormatChatSpan() {
   const { tc, formatNumber, formatDay } = useI18n()
-  return (data: ReportDto) => {
-    const report = data.report
-    const messages = nbsp(
-      tc('common.messagesCount', report.totals.messages, { count: formatNumber(report.totals.messages) }),
-    )
-    const head = report.group
-      ? `${messages} · ${nbsp(tc('report.poster.members', report.group.participants.length))}`
-      : messages
-    const days = fillDailyGaps(report.activity.daily)
-    const first = days[0]?.date
-    const last = days.at(-1)?.date
+  return ({ messages: count, participants, firstDay: first, lastDay: last }: ChatSpanDto) => {
+    const messages = nbsp(tc('common.messagesCount', count, { count: formatNumber(count) }))
+    const head = participants === null ? messages : `${messages} · ${nbsp(tc('report.poster.members', participants))}`
     if (!first || !last) return head
     const month = (day: string, year: boolean) =>
       formatDay(day, year ? { month: 'long', year: 'numeric' } : { month: 'long' }).replace(/\s?г\.$/u, '')
@@ -30,4 +22,9 @@ export function useChatSpan() {
         : `${month(first, shouldShowYear(first, last))}${NBSP}— ${month(last, true)}`
     return `${head} · ${span}`
   }
+}
+
+export function useChatSpan() {
+  const format = useFormatChatSpan()
+  return (data: ReportDto) => format(reportChatSpan(data.report))
 }

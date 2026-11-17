@@ -14,49 +14,53 @@ const props = defineProps<{ share: PublicReportDto }>()
 const { t } = useI18n()
 
 const isGroup = computed(() => Boolean(props.share.data.report.group))
+const reportHeading = useSharedReportHeading()
+const cover = computed(() =>
+  reportHeading(props.share.data.summary.title, props.share.author, isGroup.value, props.share.settings.showName),
+)
 const data = computed(() => {
   const value = props.share.data
   return {
     ...value,
-    summary: { ...value.summary, title: value.summary.title || t(isGroup.value ? 'share.group' : 'share.partner') },
+    summary: { ...value.summary, title: cover.value.partner },
   }
 })
-const author = computed(() => (props.share.settings.showName ? props.share.author : t('share.author')))
-const partner = computed(() => data.value.summary.title)
-provideReportAuthor(() => author.value)
-
-const heading = computed(() => {
-  if (isGroup.value) return data.value.summary.title
-  return props.share.settings.showName
-    ? t('publicReport.pair', { me: author.value, name: partner.value })
-    : t('publicReport.anonymousTitle')
-})
-const caption = computed(() =>
-  props.share.settings.showName ? t('publicReport.sharedBy', { name: author.value }) : '',
-)
+provideReportAuthor(() => cover.value.author)
 
 const allowed = computed(() => props.share.settings.words)
 </script>
 
 <template>
   <div class="guest">
-    <ReportPoster :data="data" :heading="heading" :caption="caption" :anonymous-cast="!share.settings.showName" />
+    <ReportPoster
+      :data="data"
+      :heading="cover.heading"
+      :caption="cover.caption"
+      :anonymous-cast="!share.settings.showName"
+    />
     <UiPageContainer>
       <div class="guest__flow">
         <h2 class="sr-only">{{ t('publicReport.mainTitle') }}</h2>
         <GroupReport v-if="isGroup" :data="data" />
         <template v-else>
-          <ReportBalance :data="data" :author="author" :anonymous="!share.settings.showName" />
+          <ReportBalance
+            class="guest__balance"
+            :data="data"
+            :author="cover.author"
+            :anonymous="!share.settings.showName"
+          />
 
-          <ReportTime :data="data" />
+          <ReportTime :data="data" compact />
 
-          <ReportWords v-if="allowed" :data="data" :author="author" />
+          <ReportWords v-if="allowed" :data="data" :author="cover.author" />
           <ReportFavourites v-if="allowed" :data="data" />
         </template>
 
         <section class="tile guest__invite">
-          <h2 class="t-h3">{{ t('publicReport.endTitle') }}</h2>
-          <p class="t-label guest__invite-text">{{ t('publicReport.endText') }}</p>
+          <div class="guest__invite-copy">
+            <h2 class="t-h3">{{ t('publicReport.endTitle') }}</h2>
+            <p class="t-label guest__invite-text">{{ t('publicReport.endText') }}</p>
+          </div>
           <UiButton class="guest__cta" variant="primary" to="/login">{{ t('publicReport.cta') }}</UiButton>
         </section>
       </div>
@@ -74,11 +78,17 @@ const allowed = computed(() => props.share.settings.words)
 }
 
 .guest__invite {
+  margin-top: var(--space-2);
+  gap: var(--space-4);
+}
+
+.guest__invite-copy {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
 }
 
 .guest__invite-text {
-  margin-bottom: var(--space-2);
   color: var(--text-muted);
 }
 
@@ -88,8 +98,7 @@ const allowed = computed(() => props.share.settings.words)
 }
 
 /*
- * Desktop: the report's own rule (ReportPart) — two cards to a row of one height, a card left alone takes the
- * whole row; the invitation's button is as wide as its words.
+ * Balance and time can be read side by side. Other cards keep their own layout and full-width cards span the row.
  */
 @media (min-width: 901px) {
   .guest__flow {
@@ -108,8 +117,19 @@ const allowed = computed(() => props.share.settings.words)
     flex-basis: 100%;
   }
 
+  .guest__balance :deep(.balance) {
+    margin-block: auto;
+  }
+
+  .guest__invite {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
   .guest__cta {
-    align-self: flex-start;
+    flex: none;
+    align-self: center;
   }
 }
 </style>

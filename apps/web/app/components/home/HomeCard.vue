@@ -298,7 +298,7 @@ a.home-card__name:focus-visible::after {
     margin-top: 0;
   }
 
-  .home-card:not(.home-card--square) .home-card__name {
+  .home-card:not(.home-card--square, .home-card--compact) .home-card__name {
     -webkit-line-clamp: 1;
     line-clamp: 1;
   }
@@ -311,8 +311,8 @@ a.home-card__name:focus-visible::after {
   /* Compact (five reports and more): one row of a two-line text, so the circle is 44 (the rule of the circle beside
      text, 15.11); the pulse is a short strip at the end instead of the full width under it. */
   .home-card--compact:not(.home-card--square) {
-    /* The pulse keeps a good part of the row (17.11: a 64 px strip read as a stub); the name gives way first. */
-    grid-template-columns: auto minmax(0, 1fr) 38%;
+    /* Give the avatar, title and gaps room before expanding the pulse on wider phones. */
+    grid-template-columns: auto minmax(0, 1fr) clamp(25%, 100% - var(--space-16) * 3.5, 38%);
     grid-template-areas: 'avatar text foot';
     padding: var(--space-3);
     --pulse-half: var(--space-2);
@@ -322,6 +322,8 @@ a.home-card__name:focus-visible::after {
     font: var(--text-body);
     font-weight: 500;
     letter-spacing: normal;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .home-card--compact:not(.home-card--square) .home-card__foot {

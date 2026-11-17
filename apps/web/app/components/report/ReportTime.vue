@@ -9,7 +9,7 @@ import { Clock } from '../../lib/icons'
  * busiest day, the longest run of days, the days you were in touch. No calendar and no parts of the day:
  * the pulse on the poster already shows the rhythm in time.
  */
-const props = defineProps<{ data: ReportDto; parts?: boolean }>()
+const props = defineProps<{ data: ReportDto; parts?: boolean; compact?: boolean }>()
 const { t, tc, formatDay, formatNumber, formatPercent } = useI18n()
 
 /** `parts`: the owner's report says the share of the four parts of the day under the hours instead. */
@@ -68,13 +68,13 @@ const facts = computed(() => {
   <ReportSection
     v-if="window && answer"
     id="part-time"
-    wide
     hero
+    :wide="!compact"
     :icon="Clock"
     :title="t('report.time.title')"
     :answer="answer"
   >
-    <div class="time-layout">
+    <div class="time-layout" :class="{ 'time-layout--compact': compact }">
       <HourlyChart :hourly="report.activity.hourly" :peak="peakHours" :second="secondHours" />
       <ol v-if="parts && dayParts.length" class="day-parts">
         <li v-for="part in dayParts" :key="part.key">
@@ -119,6 +119,16 @@ const facts = computed(() => {
     padding-top: 0;
     box-shadow: none;
     text-align: left;
+  }
+
+  .time-layout--compact {
+    grid-template-columns: min(62%, calc(var(--space-16) * 4)) minmax(0, 1fr);
+    column-gap: var(--space-6);
+  }
+
+  .time-layout--compact .facts {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-3);
   }
 }
 

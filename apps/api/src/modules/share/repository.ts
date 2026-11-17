@@ -2,6 +2,10 @@ import { randomBytes } from 'node:crypto'
 import {
   deriveQuiz,
   deriveReportMetrics,
+  fillDailyGaps,
+  foldPulse,
+  reportChatSpan,
+  SHARE_PREVIEW_PULSE_COLUMNS,
   telegramHueIndex,
   type CreateShareLinkBody,
   type GroupReportDto,
@@ -132,14 +136,28 @@ function toResult(row: Row): ShareLinkDto['result'] {
 }
 
 function toDto(row: Row): ShareLinkDto {
+  const { payload } = row
+  const settings = payload.kind === 'report' ? (row.settings ?? DEFAULT_REPORT_SETTINGS) : null
+  let reportPreview: ShareLinkDto['reportPreview'] = null
+  if (payload.kind === 'report') {
+    const report = payload.data.report
+    const days = fillDailyGaps(report.activity.daily)
+    reportPreview = {
+      title: settings?.showName ? payload.data.summary.title : '',
+      author: settings?.showName ? payload.author : '',
+      ...reportChatSpan(report, days),
+      pulse: foldPulse(days, SHARE_PREVIEW_PULSE_COLUMNS),
+    }
+  }
   return {
     kind: row.kind,
     token: row.token,
     createdAt: row.createdAt.toISOString(),
     expiresAt: row.expiresAt?.toISOString() ?? null,
     views: row.views,
-    settings: row.kind === 'report' ? (row.settings ?? DEFAULT_REPORT_SETTINGS) : null,
-    questions: row.payload.kind === 'quiz' ? row.payload.questions : null,
+    settings,
+    reportPreview,
+    questions: payload.kind === 'quiz' ? payload.questions : null,
     result: toResult(row),
   }
 }

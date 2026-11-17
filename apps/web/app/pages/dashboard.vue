@@ -9,8 +9,8 @@ definePageMeta({ layout: 'workspace', middleware: ['auth'] })
  * from five); new messages since a report are told on the report itself (16.11). A running analysis is the tile its report will
  * be, its pulse drawn as the history is read (AnalysisTile). News about them (a quiz answered, a link opened)
  * is in «Уведомления», behind the bell. What else to analyse: on a phone «Разобрать чат» in a bar along the bottom
- * (HomeActionBar), which opens «Новый анализ» as a page; on a computer «Новый анализ» in the sidebar.
- * A newcomer gets «С кого начнём?» instead.
+ * (HomeActionBar), which opens the chat picker; on a computer the sidebar offers the same action.
+ * A newcomer keeps the chat picker open through the first analysis.
  */
 const { t } = useI18n()
 useSeoMeta({ title: () => t('dashboard.title') })
@@ -21,13 +21,14 @@ const skeletonCards = computed(() => Math.min(8, workspace.reportsHint || 2))
 const errorMessage = useErrorMessage()
 /** Phones and tablets: «Разобрать чат» and a running analysis live in the bar along the bottom (HomeActionBar). */
 const narrow = useMediaQuery('(max-width: 900px)')
+const phoneCards = useMediaQuery('(max-width: 640px)')
 
 /** The reports in the order the sidebar shows them too: pinned in Telegram first, then the freshest. */
 const reports = computed(() => workspace.reportChats)
 /** A phone with five reports and more lists them as compact rows (16.11): up to four, a tile each still fits a screen. */
-const compact = computed(() => narrow.value && reports.value.length >= 5)
+const compact = computed(() => phoneCards.value && reports.value.length >= 5)
 /** The skeleton takes the shape the list had last time, so nothing jumps when it arrives. */
-const compactHint = computed(() => narrow.value && workspace.reportsHint >= 5)
+const compactHint = computed(() => phoneCards.value && workspace.reportsHint >= 5)
 const analysis = useAnalysis()
 /**
  * On a computer, a chat being analysed for the first time is on home already as the tile its report will be (AnalysisTile), where
@@ -72,13 +73,12 @@ const items = computed<Tile[]>(() => {
   list.splice(at === -1 ? list.length : at, 0, tile)
   return list
 })
-/** Skeletons only while nothing is known: a growing tile stays put while a newcomer's report list reloads. */
+/** A tile in progress is not yet part of the library. */
 const loading = computed(
-  () => !items.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
+  () => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
 )
 const failed = computed(() => !reports.value.length && workspace.reportsState === 'error')
-/** A newcomer's first analysis is already a tile on home: «С кого начнём?» gives way to it. */
-const newcomer = computed(() => !items.value.length && !loading.value && !failed.value)
+const newcomer = computed(() => !reports.value.length && !loading.value && !failed.value)
 const showActionBar = computed(() => narrow.value && !loading.value && (!newcomer.value || analysis.isActive.value))
 const reportsError = ref<unknown>(null)
 function loadReports() {
@@ -97,10 +97,7 @@ onMounted(() => {
   <UiPageContainer class="home" :class="{ 'home--bar': showActionBar }">
     <!-- Loading: the same title and cards, so nothing moves when the content arrives. -->
     <div v-if="loading" class="page" aria-busy="true">
-      <div class="home__hello" aria-hidden="true">
-        <UiSkeleton class="home__hello-title" width="min(70%, 360px)" />
-        <UiSkeleton class="home__hello-lede" width="min(50%, 260px)" />
-      </div>
+      <UiSkeleton class="home__title-skeleton" width="min(70%, 360px)" aria-hidden="true" />
       <section class="home__section" aria-hidden="true">
         <div class="home__reports">
           <HomeCard v-for="card in skeletonCards" :key="card" skeleton :compact="compactHint" />
@@ -111,10 +108,7 @@ onMounted(() => {
     <div v-else-if="newcomer" class="page"><HomeFirstRun /></div>
 
     <div v-else class="page">
-      <header class="home__hello">
-        <h1 class="t-h1">{{ t('dashboard.reportsTitle') }}</h1>
-        <p class="t-lede">{{ t('dashboard.lede') }}</p>
-      </header>
+      <h1 class="t-h1">{{ t('dashboard.reportsTitle') }}</h1>
 
       <HomeBotPrompt />
 
@@ -155,24 +149,9 @@ onMounted(() => {
   gap: var(--page-gap);
 }
 
-.home__hello {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-/* The skeleton's lines are the real title's and lede's boxes. */
-.home__hello-title,
-.home__hello-lede {
+.home__title-skeleton {
   height: 1lh;
-}
-
-.home__hello-title {
   font: var(--text-h1);
-}
-
-.home__hello-lede {
-  font: var(--text-body);
 }
 
 /* Room at the end for the bar along the bottom of the screen. */
@@ -186,8 +165,7 @@ onMounted(() => {
   gap: var(--space-3);
 }
 
-/* Reports: one tile to a row on a phone, three on a tablet and beside the sidebar on a laptop, four on wide screens —
-   a tile never narrower than its name and its pulse need. */
+/* The number of tiles follows the available width, including the space taken by the sidebar. */
 .home__reports {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -196,13 +174,7 @@ onMounted(() => {
 
 @media (min-width: 641px) {
   .home__reports {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1200px) {
-  .home__reports {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--space-16) * 3.5)), 1fr));
   }
 }
 </style>

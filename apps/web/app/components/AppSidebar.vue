@@ -21,6 +21,7 @@ const displayName = computed(() => auth.user?.firstName || auth.user?.username |
 const loading = computed(
   () => !workspace.reports.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
 )
+const firstRun = computed(() => workspace.reportsState === 'ready' && !workspace.reports.length)
 
 function meta(report: ReportSummaryDto) {
   const count = tc('common.messagesCount', report.totalMessages, { count: formatNumber(report.totalMessages) })
@@ -37,8 +38,15 @@ function updating(report: ReportSummaryDto) {
 <template>
   <aside class="sidebar" :aria-label="t('sidebar.label')">
     <BrandLink class="sidebar__brand" to="/dashboard" />
-    <UiButton to="/new" variant="primary" block :icon="Plus" :aria-current="route.path === '/new' ? 'page' : undefined">
-      {{ t('sidebar.newAnalysis') }}
+    <UiButton
+      v-if="route.path !== '/dashboard' || !firstRun"
+      to="/new"
+      variant="primary"
+      block
+      :icon="Plus"
+      :aria-current="route.path === '/new' ? 'page' : undefined"
+    >
+      {{ t('home.analyseChat') }}
     </UiButton>
     <div class="sidebar__navs">
       <NuxtLink
@@ -63,7 +71,7 @@ function updating(report: ReportSummaryDto) {
       </NuxtLink>
     </div>
 
-    <nav class="sidebar__list" :aria-label="t('sidebar.reports')">
+    <nav v-if="!firstRun" class="sidebar__list" :aria-label="t('sidebar.reports')">
       <p class="sidebar__heading">{{ t('sidebar.reports') }}</p>
       <NuxtLink
         v-for="chat in workspace.reportChats"
@@ -89,11 +97,9 @@ function updating(report: ReportSummaryDto) {
           </span>
         </div>
       </template>
-      <!-- A failed list is not an empty one: say it failed (home shows «Повторить»), never «здесь появятся…». -->
       <p v-else-if="!workspace.reports.length && workspace.reportsState === 'error'" class="sidebar__empty">
         {{ t('dashboard.reportsError') }}
       </p>
-      <p v-else-if="!workspace.reports.length" class="sidebar__empty">{{ t('sidebar.empty') }}</p>
     </nav>
 
     <div class="sidebar__foot">
@@ -125,7 +131,6 @@ function updating(report: ReportSummaryDto) {
   overflow-y: auto;
   background: var(--sidebar-glass);
   box-shadow: var(--divider-right);
-  scrollbar-width: thin;
 }
 
 .sidebar__row {
@@ -195,7 +200,12 @@ function updating(report: ReportSummaryDto) {
   flex: 1;
   flex-direction: column;
   gap: var(--space-0-5);
+  min-height: 0;
+  margin-inline: calc(-1 * var(--space-1));
   margin-top: var(--space-4);
+  padding: var(--space-1);
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .sidebar__heading {
@@ -250,7 +260,9 @@ function updating(report: ReportSummaryDto) {
 
 .sidebar__foot {
   display: flex;
+  flex: none;
   flex-direction: column;
   gap: var(--space-2);
+  margin-top: auto;
 }
 </style>

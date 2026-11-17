@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { fillDailyGaps, type ReportDto, type ShareLinkDto, type ShareReportSettings } from '@tg-analyzer/shared'
+import {
+  fillDailyGaps,
+  reportChatSpan,
+  SHARE_PREVIEW_PULSE_COLUMNS,
+  type ReportDto,
+  type ShareLinkDto,
+  type ShareReportSettings,
+} from '@tg-analyzer/shared'
 import { Copy } from '../../lib/icons'
 
 /**
@@ -27,33 +34,34 @@ watch(settings, () => {
 })
 const busy = ref(false)
 const name = computed(() => props.data.summary.title)
-const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
-
-/** The page's title as the guest reads it, with or without names. */
-const heading = computed(() =>
-  isGroup.value
-    ? settings.showName
-      ? name.value
-      : t('share.group')
-    : settings.showName
-      ? t('share.link.pair', {
-          me: auth.user?.firstName?.trim() || auth.user?.username || t('share.author'),
-          name: name.value,
-        })
-      : t('share.link.pair', { me: t('share.author'), name: t('share.partner') }),
-)
-/** The same line as on the guest's poster (useChatSpan). */
-const chatSpan = useChatSpan()
-const meta = computed(() => chatSpan(props.data))
 const changed = computed(
   () =>
     !props.link?.settings ||
     props.link.settings.showName !== settings.showName ||
     props.link.settings.words !== settings.words,
 )
+const preview = computed(() => {
+  /** An existing link keeps its own report, even after the owner refreshes theirs. */
+  if (!changed.value && props.link?.reportPreview) return props.link.reportPreview
+  const report = props.data.report
+  const days = fillDailyGaps(report.activity.daily)
+  return {
+    title: name.value,
+    author: auth.user?.firstName?.trim() || 'Telegram',
+    ...reportChatSpan(report, days),
+    pulse: days,
+  }
+})
+const reportHeading = useSharedReportHeading()
+const cover = computed(() =>
+  reportHeading(preview.value.title, preview.value.author, preview.value.participants !== null, settings.showName),
+)
+const formatChatSpan = useFormatChatSpan()
+const meta = computed(() => formatChatSpan(preview.value))
 const status = computed(() => {
   const link = props.link
   if (!link) return t('share.link.hint')
+  if (changed.value) return t('share.link.replaceHint')
   const until = link.expiresAt
     ? t('share.link.onUntil', { date: formatDate(link.expiresAt, { day: 'numeric', month: 'long' }) })
     : t('share.link.on')
@@ -89,10 +97,11 @@ async function copy() {
       <p class="link-step__label">
         {{ isGroup ? t('share.link.previewGroup') : t('share.link.preview', { name }) }}
       </p>
-      <div class="link-step__poster" aria-hidden="true">
-        <b class="link-step__title">{{ heading }}</b>
+      <div class="link-step__poster">
+        <span v-if="cover.caption" class="link-step__meta">{{ cover.caption }}</span>
+        <b class="link-step__title">{{ cover.heading }}</b>
         <span class="link-step__meta">{{ meta }}</span>
-        <Pulse class="link-step__pulse" :data="days" :bars="48" :height="16" />
+        <Pulse class="link-step__pulse" :data="preview.pulse" :bars="SHARE_PREVIEW_PULSE_COLUMNS" :height="16" />
       </div>
     </div>
     <UiGroup>
@@ -167,11 +176,9 @@ async function copy() {
 }
 
 .link-step__title {
-  overflow: hidden;
   font: var(--text-h3);
   letter-spacing: var(--tracking-h3);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .link-step__meta {

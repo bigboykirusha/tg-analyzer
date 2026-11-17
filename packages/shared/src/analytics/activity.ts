@@ -1,6 +1,8 @@
 import type {
   ActivityDistributionDto,
   AvailabilityProfileDto,
+  ChatReport,
+  ChatSpanDto,
   CompositionStatsDto,
   DatedActivityDto,
   DirectionalCountDto,
@@ -39,6 +41,15 @@ export function fillDailyGaps(items: readonly DatedActivityDto[]): DatedActivity
     filled.push(byDate.get(date) ?? { date, sent: 0, received: 0, total: 0 })
   }
   return filled
+}
+
+export function reportChatSpan(report: ChatReport, days = fillDailyGaps(report.activity.daily)): ChatSpanDto {
+  return {
+    messages: report.totals.messages,
+    participants: report.group?.participants.length ?? null,
+    firstDay: days[0]?.date ?? null,
+    lastDay: days.at(-1)?.date ?? null,
+  }
 }
 
 export function computeMaxStreak(days: Iterable<string>): StreakDto {

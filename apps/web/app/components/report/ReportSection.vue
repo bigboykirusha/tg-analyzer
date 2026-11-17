@@ -23,7 +23,11 @@ defineProps<{
 </script>
 
 <template>
-  <article class="report-section tile" :class="{ 'report-section--wide': wide, 'tile--ink': tone === 'ink' }">
+  <article
+    tabindex="-1"
+    class="report-section tile"
+    :class="{ 'report-section--wide': wide, 'tile--ink': tone === 'ink' }"
+  >
     <header v-if="title || answer || figure" class="report-section__head">
       <h3 v-if="title" class="t-label report-section__title" :class="{ 'report-section__title--topic': icon }">
         <span v-if="icon" class="report-section__icon" aria-hidden="true"><component :is="icon" /></span>

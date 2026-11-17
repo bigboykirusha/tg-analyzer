@@ -900,6 +900,20 @@ export interface QuizResultDto {
   correct: boolean[] | null
 }
 
+export interface ChatSpanDto {
+  messages: number
+  participants: number | null
+  firstDay: string | null
+  lastDay: string | null
+}
+
+/** The cover of the published report, formatted by the owner in their locale. */
+export interface ShareReportPreviewDto extends ChatSpanDto {
+  title: string
+  author: string
+  pulse: { sent: number; received: number }[]
+}
+
 export interface ShareLinkDto {
   kind: ShareLinkKind
   token: string
@@ -908,6 +922,7 @@ export interface ShareLinkDto {
   expiresAt: string | null
   views: number
   settings: ShareReportSettings | null
+  reportPreview: ShareReportPreviewDto | null
   /** Quiz links: the questions asked, in the owner's terms. */
   questions: QuizQuestionDto[] | null
   result: QuizResultDto | null

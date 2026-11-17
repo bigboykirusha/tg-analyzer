@@ -9,7 +9,6 @@ import { ChevronRight, Clock, Flame, Quote, Scale, Users } from '../../lib/icons
  */
 const props = defineProps<{ data: ReportDto; noWords?: boolean }>()
 const { t, tc, formatNumber } = useI18n()
-const reduced = useMediaQuery('(prefers-reduced-motion: reduce)')
 
 const streak = useStreak(() => props.data)
 const words = useWordsFacts(() => props.data)
@@ -80,21 +79,13 @@ const findings = computed(() => {
 })
 const lead = computed(() => findings.value[0])
 const details = computed(() => findings.value.slice(1))
-
-function go(event: MouseEvent, target: string) {
-  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-  const card = document.getElementById(target)
-  if (!card) return
-  event.preventDefault()
-  card.scrollIntoView({ behavior: reduced.value ? 'auto' : 'smooth', block: 'start' })
-}
 </script>
 
 <template>
   <section v-if="lead" id="chapter-highlights" class="highlights" aria-labelledby="highlights-title">
     <h2 id="highlights-title" class="t-label highlights__title">{{ t('report.highlights.title') }}</h2>
     <div class="highlights__grid" :class="{ 'highlights__grid--paired': details.length > 0 }">
-      <a :href="`#${lead.target}`" class="find" data-on-poster @click="go($event, lead.target)">
+      <a :href="`#${lead.target}`" class="find" data-on-poster>
         <span class="find__icons" aria-hidden="true">
           <component :is="lead.icon" />
           <ChevronRight class="find__arrow" />
@@ -116,7 +107,6 @@ function go(event: MouseEvent, target: string) {
           :subtitle="item.sub"
           chevron
           wrap
-          @click="go($event, item.target)"
         >
           <template #leading><component :is="item.icon" class="highlights__icon" aria-hidden="true" /></template>
         </UiListRow>

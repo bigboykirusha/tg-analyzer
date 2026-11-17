@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { foldPulse } from '@tg-analyzer/shared'
 import { watchWidth } from '../../lib/watchWidth'
 /**
  * The mirrored pulse — the product's signature: one pill per period, your messages above the line in
@@ -44,37 +45,12 @@ onMounted(() => {
 onBeforeUnmount(() => stopWatching?.())
 const count = computed(() => (props.pitch ? fitted.value : props.bars))
 
-type Column = { sent: number; received: number }
-
-/** Always `bars` columns: a long history is folded, a short one is stretched, so every pulse has one texture. */
-function fold(source: readonly Column[], bars: number): Column[] {
-  const out = Array.from({ length: bars }, () => ({ sent: 0, received: 0 }))
-  if (!bars) return out
-  if (source.length >= bars)
-    source.forEach((item, index) => {
-      const slot = out[Math.min(bars - 1, Math.floor((index * bars) / source.length))]!
-      slot.sent += item.sent
-      slot.received += item.received
-    })
-  else
-    // A short history is drawn smoothly between its points, not as steps of equal bars.
-    out.forEach((slot, index) => {
-      const at = (index * (source.length - 1)) / Math.max(1, bars - 1)
-      const low = source[Math.floor(at)]!
-      const high = source[Math.ceil(at)]!
-      const mix = at - Math.floor(at)
-      slot.sent = low.sent + (high.sent - low.sent) * mix
-      slot.received = low.received + (high.received - low.received) * mix
-    })
-  return out
-}
-
 const reading = computed(() => props.read !== undefined)
 const columns = computed(() => {
   const source = props.data.length ? props.data : [{ sent: 0, received: 0 }]
   const bars = count.value
   const drawn = reading.value ? Math.min(bars, Math.max(props.read! > 0 ? 1 : 0, Math.round(bars * props.read!))) : bars
-  const out = fold(source, drawn)
+  const out = foldPulse(source, drawn)
   const peak = Math.max(1, ...out.map((item) => Math.max(item.sent, item.received)))
   // At least a dot, so an empty week reads as a quiet one rather than a gap.
   const scale = (value: number) => Math.max(0.08, Math.round(Math.sqrt(value / peak) * 100) / 100)
