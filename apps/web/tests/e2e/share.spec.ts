@@ -53,7 +53,7 @@ test('the quiz is sent by link: the guest plays, the author sees the score', asy
   await guestPage.getByRole('button', { name: 'Начать' }).click()
   // More than the old five: a close call is still a question.
   expect(await playThrough(guestPage)).toBeGreaterThan(5)
-  await expect(guestPage.getByText('Ваши ответы', { exact: true })).toBeVisible()
+  await expect(guestPage.getByRole('list', { name: 'Ваши ответы' })).toBeVisible()
   await guest.close()
 
   await page.reload()
@@ -85,7 +85,7 @@ test('the author plays the quiz alone: answers at once, nothing sent', async ({ 
   await expect(page.getByRole('status')).toHaveText(/^(Верно|Мимо) — это /)
   await page.getByRole('button', { name: 'Следующий вопрос' }).click()
   await playThrough(page)
-  await expect(page.getByText('Ваши ответы', { exact: true })).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Ваши ответы' })).toBeVisible()
   expect(posted.links).toBe(0)
   await page.getByRole('link', { name: 'К отчёту' }).click()
   await page.waitForURL('**/chat/1011')

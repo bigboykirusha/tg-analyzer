@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type {
   AnswerQuizBody,
   CreateShareLinkBody,
+  SetShareLinkBody,
   PublicShareDto,
   ShareLinkDto,
   ShareLinksResponse,
@@ -143,6 +144,7 @@ export const createShareLinkBodySchema = z.object({
   days: z.union([z.literal(7), z.literal(30), z.null()]),
   settings: shareReportSettingsSchema.optional(),
 }) satisfies z.ZodType<CreateShareLinkBody, unknown>
+export const setShareLinkBodySchema = z.object({ on: z.boolean() }) satisfies z.ZodType<SetShareLinkBody, unknown>
 export const answerQuizBodySchema = z.object({
   // One answer per question: at most QUIZ_LENGTH (10).
   picks: z
@@ -192,6 +194,7 @@ export interface ApiEndpointMap {
   'DELETE /api/v1/reports/:chatId': Endpoint<undefined, SuccessResponse>
   'GET /api/v1/reports/:chatId/links': Endpoint<undefined, ShareLinksResponse>
   'POST /api/v1/reports/:chatId/links': Endpoint<CreateShareLinkBody, ShareLinkDto>
+  'PATCH /api/v1/reports/:chatId/links/:kind': Endpoint<SetShareLinkBody, SuccessResponse>
   'DELETE /api/v1/reports/:chatId/links/:kind': Endpoint<undefined, SuccessResponse>
 
   'GET /api/v1/links': Endpoint<undefined, UserShareLinksResponse>

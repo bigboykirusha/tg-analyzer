@@ -35,6 +35,11 @@ defineProps<{ tiles: ReportTile[] }>()
   box-shadow: var(--divider-top);
 }
 
+/* An odd last tile takes the whole row instead of standing alone beside a hole. */
+.tiles__item:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 .tiles__item {
   display: flex;
   flex-direction: column;

@@ -68,15 +68,18 @@ function tapPill() {
 </template>
 
 <style scoped>
+/*
+ * The top of a sheet (17.11: the glass bar melted into the page): the sheet's material, its rounded shoulders and its
+ * shadow, so the bar reads as a surface of its own over the tiles.
+ */
 .action-bar {
   position: fixed;
   inset: auto 0 0;
   z-index: var(--z-header);
-  padding: var(--space-3) var(--page-gutter) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
-  background: var(--header-glass);
-  box-shadow: var(--divider-top);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
+  padding: var(--space-4) var(--page-gutter) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-overlay);
 }
 
 .action-bar__pill {

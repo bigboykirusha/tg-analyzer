@@ -183,6 +183,8 @@ export const shareLinks = pgTable(
     payload: jsonb('payload').$type<ShareLinkPayload>().notNull(),
     result: jsonb('result').$type<ShareLinkResult>(),
     views: integer('views').default(0).notNull(),
+    /** Turned off by its author: the guest is told it no longer works; on again, the same address works again. */
+    disabled: boolean('disabled').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }),
   },

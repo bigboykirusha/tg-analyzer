@@ -129,7 +129,8 @@ function go(event: MouseEvent, target: string) {
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
-  aspect-ratio: 1;
+  /* As tall as its content needs, not a square with a hole in the middle (17.11). */
+  min-height: calc(var(--space-16) * 2);
   padding: var(--space-4);
   border-radius: var(--radius-card);
   /* Ink on the person's light tone, as on their poster. */

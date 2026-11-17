@@ -152,7 +152,7 @@ export async function listLinks(userId: string, chatId: string): Promise<ShareLi
   const rows = await db.query.shareLinks.findMany({ where: eq(schema.shareLinks.reportId, report.id) })
   const now = Date.now()
   return {
-    links: rows.filter((row) => !row.expiresAt || row.expiresAt.getTime() > now).map(toDto),
+    links: rows.filter((row) => !row.disabled && (!row.expiresAt || row.expiresAt.getTime() > now)).map(toDto),
     quizAvailable: dto ? quizQuestions(dto).length >= MIN_QUIZ_QUESTIONS : false,
   }
 }
@@ -183,6 +183,7 @@ export async function createLink(userId: string, chatId: string, body: CreateSha
     payload,
     result: null,
     views: 0,
+    disabled: false,
     createdAt: new Date(),
     expiresAt: body.days ? new Date(Date.now() + body.days * DAY_MS) : null,
   }
@@ -192,6 +193,20 @@ export async function createLink(userId: string, chatId: string, body: CreateSha
     .onConflictDoUpdate({ target: [schema.shareLinks.reportId, schema.shareLinks.kind], set: values })
     .returning()
   return toDto(row!)
+}
+
+/**
+ * Turns a link off or on again from the account: the same address, the same snapshot. Off, the guest is told the link
+ * no longer works (404); on again, it opens as before until its end date.
+ */
+export async function setLinkOn(userId: string, chatId: string, kind: ShareLinkKind, on: boolean) {
+  const report = await reportRow(userId, chatId)
+  const updated = await db
+    .update(schema.shareLinks)
+    .set({ disabled: !on })
+    .where(and(eq(schema.shareLinks.reportId, report.id), eq(schema.shareLinks.kind, kind)))
+    .returning({ id: schema.shareLinks.id })
+  return updated.length > 0
 }
 
 export async function deleteLink(userId: string, chatId: string, kind: ShareLinkKind) {
@@ -205,7 +220,7 @@ export async function deleteLink(userId: string, chatId: string, kind: ShareLink
 
 async function openRow(token: string): Promise<Row> {
   const row = await db.query.shareLinks.findFirst({ where: eq(schema.shareLinks.token, token) })
-  if (!row) throw linkNotFound()
+  if (!row || row.disabled) throw linkNotFound()
   if (row.expiresAt && row.expiresAt.getTime() <= Date.now()) throw linkExpired()
   return row
 }
@@ -337,6 +352,7 @@ export async function listUserLinks(userId: string): Promise<UserShareLinkDto[]>
       chatId: String(chatId),
       title,
       kind: link.kind,
+      on: !link.disabled,
       expiresAt: link.expiresAt?.toISOString() ?? null,
       settings: link.kind === 'report' ? (link.settings ?? DEFAULT_REPORT_SETTINGS) : null,
       result: toResult(link),

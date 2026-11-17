@@ -963,10 +963,16 @@ export interface UserShareLinkDto {
   chatId: string
   title: string
   kind: ShareLinkKind
+  /** Off in the account: the same address works again when turned on. */
+  on: boolean
   expiresAt: string | null
   /** What a report link shows (names, words): turning the link on again keeps the author's choice. Null for a quiz. */
   settings: ShareReportSettings | null
   result: QuizResultDto | null
+}
+
+export interface SetShareLinkBody {
+  on: boolean
 }
 
 export interface UserShareLinksResponse {

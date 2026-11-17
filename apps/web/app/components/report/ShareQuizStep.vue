@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { QuizQuestionDto, ShareLinkDto } from '@tg-analyzer/shared'
 import { Check, Copy, Play, RotateCw, Send, X } from '../../lib/icons'
+import { wave } from '../../lib/wave'
 
 /**
  * «Угадайка», the second step of «Поделиться» (17.11: simple, two ways and nothing else). Send it — the other side
@@ -27,13 +28,23 @@ const fresh = ref(false)
 const live = computed(() => (fresh.value ? null : props.link))
 const list = computed(() => live.value?.questions ?? props.questions)
 const result = computed(() => live.value?.result ?? null)
-const lede = computed(() => {
-  if (!live.value) return t('share.quiz.choose')
+const auth = useAuthStore()
+/** The author's name as the guest's invitation says it. */
+const me = computed(() => auth.user?.firstName?.trim() || auth.user?.username || t('share.author'))
+const label = computed(() =>
+  result.value
+    ? t('share.quiz.answered', { date: formatDate(result.value.answeredAt, { day: 'numeric', month: 'long' }) })
+    : t('share.link.preview', { name: props.name }),
+)
+/** Under the actions: waiting for the answer and until when, or what leaves the report. */
+const note = computed(() => {
+  if (!live.value || result.value) return t('share.quiz.privacy')
   const until = live.value.expiresAt
     ? t('share.until', { date: formatDate(live.value.expiresAt, { day: 'numeric', month: 'long' }) })
     : ''
   return [t('share.quiz.waiting'), until].filter(Boolean).join(', ')
 })
+const invitation = wave(4, 48)
 
 async function create(): Promise<ShareLinkDto | null> {
   busy.value = true
@@ -74,79 +85,67 @@ async function copy() {
 
 <template>
   <div class="quiz-step">
-    <div class="quiz-step__head">
-      <template v-if="result">
-        <p v-if="result.score !== null" class="quiz-step__figure">
-          {{ t('publicQuiz.score', { score: result.score, total: result.total }) }}
-        </p>
-        <p v-else class="quiz-step__title">{{ t('share.quiz.hidden') }}</p>
-        <p class="quiz-step__text">
+    <div class="quiz-step__preview">
+      <p class="quiz-step__label">{{ label }}</p>
+      <div class="quiz-step__poster">
+        <b class="quiz-step__title">
           {{
-            t('share.quiz.answered', {
-              name,
-              date: formatDate(result.answeredAt, { day: 'numeric', month: 'long' }),
-            })
+            result && result.score !== null
+              ? t('publicQuiz.score', { score: result.score, total: result.total })
+              : result
+                ? t('share.quiz.hidden')
+                : t('publicQuiz.title', { name: me })
           }}
-        </p>
-      </template>
-      <template v-else>
-        <p class="quiz-step__figure">{{ tc('share.quiz.count', list.length) }}</p>
-        <p class="quiz-step__text">{{ lede }}</p>
-      </template>
+        </b>
+        <span class="quiz-step__meta">{{
+          result ? t('share.quiz.guessed') : tc('share.quiz.count', list.length)
+        }}</span>
+        <Pulse class="quiz-step__pulse" :data="invitation" :bars="48" :height="16" aria-hidden="true" />
+      </div>
     </div>
 
-    <ol v-if="result?.correct" class="quiz-step__list">
-      <li v-for="(item, index) in list" :key="item.id">
-        <span
-          class="quiz-step__mark"
-          :class="{ 'is-right': result.correct[index] }"
-          role="img"
-          :aria-label="result.correct[index] ? t('publicQuiz.right') : t('publicQuiz.wrong')"
-        >
-          <Check v-if="result.correct[index]" aria-hidden="true" />
-          <X v-else aria-hidden="true" />
-        </span>
-        <span class="quiz-step__question">{{ question(item.id) }}</span>
-      </li>
-    </ol>
+    <UiGroup v-if="result?.correct">
+      <UiListRow v-for="(item, index) in list" :key="item.id" :title="question(item.id)">
+        <template #leading>
+          <span
+            class="quiz-step__mark"
+            :class="{ 'is-right': result.correct[index] }"
+            role="img"
+            :aria-label="result.correct[index] ? t('publicQuiz.right') : t('publicQuiz.wrong')"
+          >
+            <Check v-if="result.correct[index]" aria-hidden="true" />
+            <X v-else aria-hidden="true" />
+          </span>
+        </template>
+      </UiListRow>
+    </UiGroup>
 
     <div class="quiz-step__actions">
-      <UiGroup>
-        <UiListRow v-if="result" as="button" :title="t('share.quiz.again')" :disabled="busy" @click="fresh = true">
-          <template #leading><RotateCw aria-hidden="true" /></template>
-        </UiListRow>
-        <template v-else>
-          <UiListRow
-            as="button"
-            :title="t('share.quiz.send')"
-            :subtitle="t('share.quiz.sendHint', { name })"
-            :disabled="busy"
-            @click="send"
-          >
-            <template #leading><Send aria-hidden="true" /></template>
-          </UiListRow>
-          <UiListRow as="button" :title="t('share.quiz.copy')" :disabled="busy" @click="copy">
-            <template #leading><Copy aria-hidden="true" /></template>
-          </UiListRow>
-        </template>
-      </UiGroup>
-      <UiGroup>
-        <UiListRow :to="`/quiz/${chatId}`" :title="t('share.quiz.self')" :subtitle="t('share.quiz.selfHint')">
-          <template #leading><Play aria-hidden="true" /></template>
-        </UiListRow>
-      </UiGroup>
+      <UiButton v-if="result" variant="primary" block :icon="RotateCw" :disabled="busy" @click="fresh = true">
+        {{ t('share.quiz.again') }}
+      </UiButton>
+      <template v-else>
+        <UiButton variant="primary" block :icon="Send" :loading="busy" @click="send">{{
+          t('share.quiz.send')
+        }}</UiButton>
+        <UiButton variant="secondary" block :icon="Copy" :disabled="busy" @click="copy">
+          {{ t('share.quiz.copy') }}
+        </UiButton>
+      </template>
+      <UiButton variant="secondary" block :icon="Play" :to="`/quiz/${chatId}`">{{ t('share.quiz.self') }}</UiButton>
       <ShareFallback
         v-if="copyLink.fallback.value"
         :url="copyLink.fallback.value"
         :can-share="copyLink.canShare.value"
         @share="copyLink.share"
       />
-      <p class="quiz-step__note">{{ t('share.quiz.privacy') }}</p>
+      <p v-else class="quiz-step__note" role="status">{{ note }}</p>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* The same build as «Ссылка на отчёт»: a quiet line, the poster as the guest sees it, the actions, a quiet status. */
 .quiz-step {
   display: flex;
   flex-direction: column;
@@ -154,50 +153,56 @@ async function copy() {
   min-width: 0;
 }
 
-.quiz-step__head {
+.quiz-step__preview {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 
-.quiz-step__figure {
-  font: var(--text-figure);
-  letter-spacing: var(--tracking-figure);
+.quiz-step__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
-.quiz-step__title {
-  font: var(--text-body);
-}
-
-.quiz-step__text,
+.quiz-step__label,
 .quiz-step__note {
   color: var(--text-muted);
   font: var(--text-label);
 }
 
 .quiz-step__note {
-  padding-top: var(--space-1);
   text-align: center;
 }
 
-/* After the answer: the questions as rows with hairlines, right or wrong for each. */
-.quiz-step__list li {
+.quiz-step__poster {
+  --pulse-you: var(--on-poster);
+  --pulse-them: var(--on-them);
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: var(--control-md);
-  padding: var(--space-2) 0;
-  box-shadow: var(--divider-bottom);
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background-color: var(--poster);
+  background-image: var(--poster-image);
+  color: var(--on-poster);
+}
+
+.quiz-step__title {
+  overflow: hidden;
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quiz-step__meta {
+  color: var(--on-poster-muted);
   font: var(--text-label);
 }
 
-.quiz-step__list li:last-child {
-  box-shadow: none;
-}
-
-.quiz-step__question {
-  flex: 1;
-  min-width: 0;
+.quiz-step__pulse {
+  margin-top: var(--space-3);
 }
 
 .quiz-step__mark {
@@ -215,11 +220,5 @@ async function copy() {
 .quiz-step__mark.is-right {
   background: var(--you);
   color: var(--on-you);
-}
-
-.quiz-step__actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
 }
 </style>

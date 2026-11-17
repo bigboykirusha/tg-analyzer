@@ -135,6 +135,26 @@ test('a week after it runs out a link is deleted with its snapshot; a fresh one 
   assert.ok(left.some((row) => row.token === live.token))
 })
 
+test('a link turned off and on again keeps its address', async () => {
+  const session = await analysed()
+  const { token } = (
+    await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'report', days: 7 })
+  ).json<ShareLinkDto>()
+  const toggle = (on: boolean) =>
+    app.inject({
+      method: 'PATCH',
+      url: `/api/v1/reports/${CHAT}/links/report`,
+      headers: { ...session.headers, origin: ORIGIN },
+      payload: { on },
+    })
+  assert.equal((await toggle(false)).statusCode, 200)
+  assert.equal((await app.inject({ url: `/api/v1/public/${token}` })).statusCode, 404)
+  const mine = await app.inject({ url: '/api/v1/links', headers: session.headers })
+  assert.equal(mine.json<{ links: { on: boolean }[] }>().links[0]?.on, false)
+  assert.equal((await toggle(true)).statusCode, 200)
+  assert.equal((await app.inject({ url: `/api/v1/public/${token}` })).statusCode, 200)
+})
+
 test('a link has a preview picture that counts no view', async () => {
   const session = await analysed()
   const made = await send(session, 'POST', `/api/v1/reports/${CHAT}/links`, { kind: 'report', days: 30 })

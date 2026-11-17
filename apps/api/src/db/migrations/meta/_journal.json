@@ -162,6 +162,13 @@
       "when": 1795910400000,
       "tag": "0022_push_and_bot_news",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795996800000,
+      "tag": "0023_share_link_disabled",
+      "breakpoints": true
     }
   ]
 }

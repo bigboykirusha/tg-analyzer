@@ -219,12 +219,17 @@ const grab = computed(() => (isSheet.value ? drag.handlers : {}))
 }
 
 /* A picture pane on the left, the dialog's own column on the right. */
+/*
+ * One height for every step (17.11: «Поделиться» jumped as its steps changed): the picture sets it, the column
+ * scrolls inside.
+ */
 .modal-panel--aside {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   grid-template-columns: auto minmax(0, 1fr);
-  grid-auto-rows: min-content;
-  align-content: start;
+  align-content: stretch;
   column-gap: var(--space-6);
+  height: min(84dvh, calc(var(--space-12) * 12));
 }
 
 .modal-aside {

@@ -2,6 +2,7 @@ import {
   answerQuizBodySchema,
   chatIdParamsSchema,
   createShareLinkBodySchema,
+  setShareLinkBodySchema,
   shareLinkParamsSchema,
   shareTokenParamsSchema,
   type PublicShareDto,
@@ -15,7 +16,16 @@ import { parse } from '../../http/validation'
 import { notFound } from '../../lib/errors'
 import { optionalUserId, requireAuth, userIdOf } from '../auth/guard'
 import { renderShareCard } from './card'
-import { answerQuiz, createLink, deleteLink, listLinks, listUserLinks, openLink, previewLink } from './repository'
+import {
+  answerQuiz,
+  createLink,
+  deleteLink,
+  listLinks,
+  listUserLinks,
+  openLink,
+  previewLink,
+  setLinkOn,
+} from './repository'
 
 /** The owner's links of one report: list, make (or replace), delete. */
 export const shareLinkRoutes: FastifyPluginAsync = async (app) => {
@@ -29,6 +39,13 @@ export const shareLinkRoutes: FastifyPluginAsync = async (app) => {
   app.post('/:chatId/links', async (request): Promise<ShareLinkDto> => {
     const { chatId } = parse(chatIdParamsSchema, request.params)
     return createLink(userIdOf(request), chatId, parse(createShareLinkBodySchema, request.body))
+  })
+
+  app.patch('/:chatId/links/:kind', async (request): Promise<SuccessResponse> => {
+    const { chatId, kind } = parse(shareLinkParamsSchema, request.params)
+    const { on } = parse(setShareLinkBodySchema, request.body)
+    if (!(await setLinkOn(userIdOf(request), chatId, kind, on))) throw notFound('LINK_NOT_FOUND', 'Link not found')
+    return { success: true }
   })
 
   app.delete('/:chatId/links/:kind', async (request): Promise<SuccessResponse> => {

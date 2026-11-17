@@ -75,34 +75,28 @@ const notify = computed({
   },
 })
 
-/** Shared links: on while they exist; off deletes, on again makes a new one. */
-const links = ref<(UserShareLinkDto & { on: boolean })[]>([])
+/** Shared links: off and on again keep the address; the end date stays the one the link was made with. */
+const links = ref<UserShareLinkDto[]>([])
 async function loadLinks() {
   try {
-    links.value = (await api('GET /api/v1/links')).links.map((link) => ({ ...link, on: true }))
+    links.value = (await api('GET /api/v1/links')).links
   } catch {
     links.value = []
   }
 }
-async function toggleLink(link: UserShareLinkDto & { on: boolean }, on: boolean) {
+async function toggleLink(link: UserShareLinkDto, on: boolean) {
   const previous = link.on
   link.on = on
   try {
     const params = { chatId: link.chatId, kind: link.kind as ShareLinkKind }
-    if (on) {
-      // A new link with a new address, but showing what the old one showed: the author's choice of names and words.
-      const made = await api('POST /api/v1/reports/:chatId/links', {
-        params: { chatId: link.chatId },
-        body: { kind: link.kind, days: 30, ...(link.settings ? { settings: link.settings } : {}) },
-      })
-      link.expiresAt = made.expiresAt
-    } else await api('DELETE /api/v1/reports/:chatId/links/:kind', { params })
+    // Off and on again is the same link: the same address and what it showed (17.11).
+    await api('PATCH /api/v1/reports/:chatId/links/:kind', { params, body: { on } })
   } catch (error) {
     link.on = previous
     toast.error(t('accountPage.linkError'), errorMessage(error))
   }
 }
-function linkHint(link: UserShareLinkDto & { on: boolean }) {
+function linkHint(link: UserShareLinkDto) {
   if (!link.on) return t('accountPage.linkOff')
   return link.expiresAt
     ? t('accountPage.linkOn', { date: formatDate(link.expiresAt, { day: 'numeric', month: 'long' }) })

@@ -37,7 +37,7 @@ const score = computed(() => answered.value?.score ?? picks.value.filter((_, at)
 const verdict = computed(() => {
   const share = score.value / Math.max(1, total.value)
   return t(
-    share >= 0.8 ? 'publicQuiz.verdict.high' : share >= 0.4 ? 'publicQuiz.verdict.mid' : 'publicQuiz.verdict.low',
+    share >= 0.8 ? 'publicQuiz.verdict.high' : share >= 0.5 ? 'publicQuiz.verdict.mid' : 'publicQuiz.verdict.low',
   )
 })
 /** The player's side is ink and comes first; the other side wears the person's colour. */
@@ -67,14 +67,6 @@ const reveal = computed(() => {
         : 'publicQuiz.revealWrong',
     { who: who(item.answer), winner: value(item.unit, item[item.answer]), loser: value(item.unit, item[loser]) },
   )
-})
-/** The questions the player missed, for the last screen. */
-const missed = computed(() => props.quiz.questions.filter((_, at) => !right(at)).length)
-const outcome = computed(() => {
-  if (props.self) return missed.value ? tc('quizSelf.missed', missed.value) : t('quizSelf.allRight')
-  return missed.value
-    ? tc('publicQuiz.missed', missed.value, { name: props.quiz.author })
-    : t('publicQuiz.allRight', { name: props.quiz.author })
 })
 
 function pick(side: Pick) {
@@ -211,28 +203,23 @@ const invitation = wave(4, 40)
           <p v-if="!self" class="quiz__note quiz__note--start">{{ t('publicQuiz.from', { name: quiz.author }) }}</p>
           <p class="quiz__score">{{ t('publicQuiz.score', { score, total }) }}</p>
           <component :is="heading" class="quiz__verdict">{{ verdict }}</component>
-          <p class="quiz__text">{{ outcome }}</p>
-          <UiGroup class="quiz__answers" :header="t('publicQuiz.answers')">
-            <UiListRow
-              v-for="(item, at) in quiz.questions"
-              :key="item.id"
-              wrap
-              :title="question(item.id)"
-              :subtitle="t('publicQuiz.answerIs', { who: who(item.answer) })"
-            >
-              <template #leading>
-                <span
-                  class="mark"
-                  :class="{ 'is-right': right(at) }"
-                  role="img"
-                  :aria-label="right(at) ? t('publicQuiz.right') : t('publicQuiz.wrong')"
-                >
-                  <Check v-if="right(at)" aria-hidden="true" />
-                  <X v-else aria-hidden="true" />
-                </span>
-              </template>
-            </UiListRow>
-          </UiGroup>
+          <p v-if="!self" class="quiz__note quiz__note--start">{{ t('publicQuiz.seen', { name: quiz.author }) }}</p>
+          <!-- One line a question, the answer at the end: ten of them and the score fit one screen (17.11). -->
+          <ol class="quiz__answers" :aria-label="t('publicQuiz.answers')">
+            <li v-for="(item, at) in quiz.questions" :key="item.id">
+              <span
+                class="mark"
+                :class="{ 'is-right': right(at) }"
+                role="img"
+                :aria-label="right(at) ? t('publicQuiz.right') : t('publicQuiz.wrong')"
+              >
+                <Check v-if="right(at)" aria-hidden="true" />
+                <X v-else aria-hidden="true" />
+              </span>
+              <span class="quiz__question">{{ question(item.id) }}</span>
+              <span class="quiz__who">{{ who(item.answer) }}</span>
+            </li>
+          </ol>
         </div>
         <div v-if="self" class="quiz__foot">
           <UiButton variant="primary" block :to="back">{{ t('quizSelf.back') }}</UiButton>
@@ -426,15 +413,36 @@ const invitation = wave(4, 40)
   color: var(--on-poster);
 }
 
-/* The list of answers is a white card on the poster, like the choices. */
+/* The answers: a card in the poster's light tone, one compact line a question with who it was at the end. */
 .quiz__answers {
-  --pulse-you: var(--text);
-  padding-top: var(--space-4);
-  color: var(--on-poster-muted);
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--text);
 }
 
-.quiz__answers :deep(.group__header) {
-  color: var(--on-poster-muted);
+.quiz__answers li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-md);
+  padding: var(--space-1) 0;
+  box-shadow: var(--divider-bottom);
+  font: var(--text-label);
+}
+
+.quiz__answers li:last-child {
+  box-shadow: none;
+}
+
+.quiz__question {
+  flex: 1;
+  min-width: 0;
+}
+
+.quiz__who {
+  flex: none;
+  color: var(--text-muted);
 }
 
 .mark {

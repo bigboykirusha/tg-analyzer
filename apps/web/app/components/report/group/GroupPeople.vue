@@ -133,7 +133,8 @@ const answer = computed(() => {
 @media (min-width: 901px) {
   .people:not(.people--solo) {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, var(--inspector-width));
+    /* Halves, as every other row of the report: the column line does not jump between parts (17.11). */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
   }
 
