@@ -79,6 +79,7 @@ const loading = computed(
 const failed = computed(() => !reports.value.length && workspace.reportsState === 'error')
 /** A newcomer's first analysis is already a tile on home: «С кого начнём?» gives way to it. */
 const newcomer = computed(() => !items.value.length && !loading.value && !failed.value)
+const showActionBar = computed(() => narrow.value && !loading.value && (!newcomer.value || analysis.isActive.value))
 const reportsError = ref<unknown>(null)
 function loadReports() {
   reportsError.value = null
@@ -93,7 +94,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiPageContainer class="home" :class="{ 'home--bar': narrow }">
+  <UiPageContainer class="home" :class="{ 'home--bar': showActionBar }">
     <!-- Loading: the same title and cards, so nothing moves when the content arrives. -->
     <div v-if="loading" class="page" aria-busy="true">
       <div class="home__hello" aria-hidden="true">
@@ -142,8 +143,8 @@ onMounted(() => {
           </template>
         </div>
       </section>
-      <HomeActionBar v-if="narrow" />
     </div>
+    <HomeActionBar v-if="showActionBar" />
   </UiPageContainer>
 </template>
 

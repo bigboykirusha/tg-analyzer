@@ -3,6 +3,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import { parse } from '../../http/validation'
 import { notFound } from '../../lib/errors'
 import { requireAuth, userIdOf } from '../auth/guard'
+import { announceCancellation } from '../parse/cancellation'
 import { deleteReport, getReport, listReportSummaries } from './repository'
 
 export const reportRoutes: FastifyPluginAsync = async (app) => {
@@ -21,7 +22,9 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
 
   app.delete('/:chatId', async (request): Promise<SuccessResponse> => {
     const { chatId } = parse(chatIdParamsSchema, request.params)
-    if (!(await deleteReport(userIdOf(request), chatId))) throw notFound('CHAT_NOT_FOUND', 'Report not found')
+    const deleted = await deleteReport(userIdOf(request), chatId)
+    if (!deleted) throw notFound('CHAT_NOT_FOUND', 'Report not found')
+    if (deleted.cancelledJob) void announceCancellation(deleted.cancelledJob)
     return { success: true }
   })
 }

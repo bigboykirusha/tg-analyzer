@@ -66,6 +66,36 @@ test('the quiz is sent by link: the guest plays, the author sees the score', asy
   await expect(page.getByRole('dialog').getByRole('button', { name: 'Новая угадайка' })).toBeVisible()
 })
 
+test('the guest can retry submitting the quiz without answering again', async ({ page, browser, baseURL }) => {
+  await signIn(page)
+  await analyseChat(page, 'Мила')
+  await page.waitForURL('**/chat/1011', { timeout: 30_000 })
+  await openShare(page)
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /Угадайка/ })
+    .click()
+  const token = await makeLink(page, 'Скопировать ссылку')
+
+  const guest = await browser.newContext({ locale: 'ru-RU' })
+  await usePreferences(guest, 'light')
+  const guestPage = await guest.newPage()
+  const answerPath = `**/api/v1/public/${token}/answer`
+  await guestPage.route(answerPath, (route) => route.abort(), { times: 1 })
+
+  await gotoHydrated(guestPage, `${baseURL}/s/${token}`)
+  await guestPage.getByRole('button', { name: 'Начать' }).click()
+  await playThrough(guestPage)
+  await expect(guestPage.getByRole('list', { name: 'Ваши ответы' })).toHaveCount(0)
+  await expect(guestPage.getByRole('alert')).toHaveText('Не удалось отправить результат.')
+  await expect(guestPage.getByRole('radio').first()).toBeChecked()
+
+  await guestPage.getByRole('button', { name: 'Повторить' }).click()
+  await expect(guestPage.getByRole('list', { name: 'Ваши ответы' })).toBeVisible()
+  await expect(guestPage.getByText(/уже видит результат/)).toBeVisible()
+  await guest.close()
+})
+
 test('the author plays the quiz alone: answers at once, nothing sent', async ({ page }) => {
   await signIn(page)
   await analyseChat(page, 'Мила')

@@ -28,6 +28,8 @@ export async function notify(userId: string, chat: { chatId: string; title: stri
       columns: { id: true },
       where: and(eq(schema.chatReports.userId, userId), eq(schema.chatReports.tgChatId, Number(chat.chatId))),
     })
+    // A failed first analysis has no report. Other events belong to a report that may have just been deleted.
+    if (!report && event.kind !== 'analysis_failed') return
     await db.insert(schema.notifications).values({ userId, reportId: report?.id ?? null, kind: event.kind, data })
   } catch (error) {
     logger.warn({ err: error, userId, kind: event.kind }, 'could not record a notification')

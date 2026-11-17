@@ -36,7 +36,8 @@ import {
   listUserActiveJobs,
 } from './jobs'
 import { admitAnalysis, releaseAnalysis } from './admission'
-import { enqueueAnalysis, removeQueuedAnalysis } from './queue'
+import { announceCancellation } from './cancellation'
+import { enqueueAnalysis } from './queue'
 import {
   cacheAvatar,
   cacheDialogs,
@@ -299,17 +300,7 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
     const job = await cancelActiveJob(userId, jobId)
     if (!job) throw notFound('PARSE_NOT_ACTIVE', 'No active analysis')
 
-    // A running job notices the cancellation on its next page and stops.
-    await removeQueuedAnalysis(job.id)
-    // Cancelling a waiting job leaves the running one's progress alone.
-    if (job.startedAt)
-      await publishProgress(userId, {
-        ...idleProgress(),
-        jobId: job.id,
-        status: 'cancelled',
-        chatId: job.chatId === null ? null : String(job.chatId),
-        chatTitle: job.chatTitle,
-      })
+    await announceCancellation(job)
     return { success: true }
   })
 

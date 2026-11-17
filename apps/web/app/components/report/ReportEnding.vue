@@ -9,10 +9,11 @@ import { Play, Share } from '../../lib/icons'
  */
 const props = defineProps<{ data: ReportDto }>()
 const emit = defineEmits<{ story: []; share: [] }>()
-const { t } = useI18n()
+const { t, tc } = useI18n()
 const titleId = useId()
 const wide = useMediaQuery('(min-width: 901px)')
 const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
+const { frames } = useStoryFrames(() => props.data)
 </script>
 
 <template>
@@ -30,7 +31,9 @@ const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
           <h2 :id="titleId" class="ending__title">
             {{ t('report.ending.title', { name: data.summary.title }) }}
           </h2>
-          <p class="ending__lede">{{ t('report.ending.lede') }}</p>
+          <p class="ending__lede">
+            {{ tc(data.report.group ? 'share.ledeGroup' : 'share.lede', frames.length) }}
+          </p>
           <div class="ending__actions">
             <UiButton variant="primary" :icon="Play" @click="emit('story')">{{ t('share.watch') }}</UiButton>
             <UiButton variant="secondary" :icon="Share" aria-haspopup="dialog" @click="emit('share')">

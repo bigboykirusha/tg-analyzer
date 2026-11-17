@@ -47,6 +47,7 @@ const pill = computed(() => {
       <Pulse class="pill__pulse" :data="pill.pulse" :height="0" :bars="24" :pitch="5" :read="pill.share" />
       <span v-if="pill.note" class="pill__percent tnum">{{ pill.note }}</span>
       <span v-else-if="pill.percent !== null" class="pill__percent tnum">{{ pill.percent }}%</span>
+      <span v-else class="pill__percent">{{ t('analysis.pill.starting') }}</span>
     </template>
     <span v-else class="pill__open">{{ t('analysis.pill.open') }}</span>
   </div>

@@ -22,6 +22,9 @@ const settings = reactive({
   showName: props.link?.settings?.showName ?? !props.data.report.group,
   words: props.link?.settings?.words ?? false,
 })
+watch(settings, () => {
+  copyLink.fallback.value = ''
+})
 const busy = ref(false)
 const name = computed(() => props.data.summary.title)
 const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
@@ -95,10 +98,16 @@ async function copy() {
     <UiGroup>
       <UiSwitch
         v-model="settings.showName"
+        :disabled="busy"
         :label="t(isGroup ? 'share.link.nameGroup' : 'share.link.name')"
         :hint="t(isGroup ? 'share.link.nameGroupHint' : 'share.link.nameHint')"
       />
-      <UiSwitch v-model="settings.words" :label="t('share.link.words')" :hint="t('share.link.wordsHint')" />
+      <UiSwitch
+        v-model="settings.words"
+        :disabled="busy"
+        :label="t('share.link.words')"
+        :hint="t('share.link.wordsHint')"
+      />
     </UiGroup>
     <div class="link-step__actions">
       <UiButton variant="primary" block :icon="Copy" :loading="busy" @click="copy">

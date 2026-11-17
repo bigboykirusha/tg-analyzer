@@ -102,6 +102,9 @@ services:
     image: tganalyzer-api
     restart: unless-stopped
     command: ['node', 'dist/worker.js']
+    # The shared image probes the API's HTTP port. The worker reports its heartbeat through API /ready.
+    healthcheck:
+      disable: true
     environment: *api-env
     depends_on: *api-deps
     logging: *logging

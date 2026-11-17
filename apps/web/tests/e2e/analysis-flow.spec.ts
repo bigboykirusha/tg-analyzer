@@ -289,19 +289,17 @@ test('a running analysis shows away from home and its button opens the details',
   await expect(details.getByRole('button', { name: 'Отменить разбор' })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(details).toBeHidden()
-  // On a computer's home the analysis is already the tile its report will be; a tap opens the same details, its
-  // pulse the progress. (A phone shows it in the bottom panel, which a newcomer's home does not have yet.)
-  if (testInfo.project.name === 'desktop') {
-    await gotoHydrated(page, '/dashboard')
-    const tile = page.locator('.analysis-tile')
-    await expect(tile).toContainText('Читаем · 63%')
-    await tile.getByRole('button', { name: 'Разбираем «Дима (работа)». 63%', exact: false }).click()
-    await expect(details.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '63')
-    await page.keyboard.press('Escape')
-    await expect(details).toBeHidden()
-  }
+  // The desktop tile and the phone's bottom panel open the same details, even before the first report.
+  const desktop = testInfo.project.name === 'desktop'
+  await gotoHydrated(page, '/dashboard')
+  const progress = page.locator(desktop ? '.analysis-tile' : '.action-bar')
+  await expect(progress).toContainText(desktop ? 'Читаем · 63%' : '63%')
+  await progress.getByRole('button', { name: 'Разбираем «Дима (работа)». 63%', exact: false }).click()
+  await expect(details.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '63')
+  await page.keyboard.press('Escape')
+  await expect(details).toBeHidden()
   // A phone has no sidebar card: away from home the analysis is the line along the top of the screen.
-  if (testInfo.project.name !== 'desktop') {
+  if (!desktop) {
     await gotoHydrated(page, '/account')
     await expect(page.locator('.app-bar__progress')).toHaveAttribute('aria-valuenow', '63')
   }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShareLinkKind, UserShareLinkDto } from '@tg-analyzer/shared'
+import type { UserShareLinkDto } from '@tg-analyzer/shared'
 import type { Locale } from '../composables/useI18n'
 import type { ThemePreference } from '../composables/useTheme'
 
@@ -77,6 +77,8 @@ const notify = computed({
 
 /** Shared links: off and on again keep the address; the end date stays the one the link was made with. */
 const links = ref<UserShareLinkDto[]>([])
+const pendingLinks = reactive(new Set<string>())
+const linkKey = (link: UserShareLinkDto) => `${link.chatId}:${link.kind}`
 async function loadLinks() {
   try {
     links.value = (await api('GET /api/v1/links')).links
@@ -85,15 +87,20 @@ async function loadLinks() {
   }
 }
 async function toggleLink(link: UserShareLinkDto, on: boolean) {
+  const key = linkKey(link)
+  if (pendingLinks.has(key)) return
+  pendingLinks.add(key)
   const previous = link.on
   link.on = on
   try {
-    const params = { chatId: link.chatId, kind: link.kind as ShareLinkKind }
+    const params = { chatId: link.chatId, kind: link.kind }
     // Off and on again is the same link: the same address and what it showed (17.11).
     await api('PATCH /api/v1/reports/:chatId/links/:kind', { params, body: { on } })
   } catch (error) {
     link.on = previous
     toast.error(t('accountPage.linkError'), errorMessage(error))
+  } finally {
+    pendingLinks.delete(key)
   }
 }
 function linkHint(link: UserShareLinkDto) {
@@ -229,8 +236,9 @@ onMounted(() => {
         <UiGroup v-if="links.length" :header="t('accountPage.linksTitle')">
           <UiSwitch
             v-for="link in links"
-            :key="`${link.chatId}-${link.kind}`"
+            :key="linkKey(link)"
             :model-value="link.on"
+            :disabled="pendingLinks.has(linkKey(link))"
             :label="t(link.kind === 'quiz' ? 'accountPage.linkQuiz' : 'accountPage.linkReport', { chat: link.title })"
             :hint="linkHint(link)"
             @update:model-value="toggleLink(link, $event)"

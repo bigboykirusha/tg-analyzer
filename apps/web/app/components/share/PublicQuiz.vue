@@ -25,6 +25,7 @@ const stage = ref<'intro' | 'question' | 'done'>(props.quiz.answered ? 'done' : 
 const index = ref(0)
 const picks = ref<Pick[]>(props.quiz.answered?.picks ?? [])
 const sending = ref(false)
+const sendFailed = ref(false)
 const answered = ref(props.quiz.answered)
 /** The page has its own title in the bar when the author plays: the quiz's big lines are not the h1 then. */
 const heading = computed(() => (props.self ? 'h2' : 'h1'))
@@ -85,6 +86,7 @@ function restart() {
 }
 
 async function next() {
+  if (sending.value) return
   if (index.value + 1 < total.value) {
     index.value += 1
     return
@@ -95,26 +97,28 @@ async function next() {
     return
   }
   sending.value = true
+  let result: PublicQuizDto | null
   try {
-    const result = await ofetch<PublicQuizDto>(buildApiPath('/api/v1/public/:token/answer', { token: props.token }), {
+    result = await ofetch<PublicQuizDto>(buildApiPath('/api/v1/public/:token/answer', { token: props.token }), {
       method: 'POST',
       body: { picks: picks.value, share: true },
     })
-    answered.value = result.answered
   } catch {
-    // Answered first from another tab: the stored answer is the one the author sees, so this screen shows it too.
-    const stored = await ofetch<PublicQuizDto>(buildApiPath('/api/v1/public/:token', { token: props.token })).catch(
+    // The server may have saved an answer even if the response was lost or another tab answered first.
+    result = await ofetch<PublicQuizDto>(buildApiPath('/api/v1/public/:token', { token: props.token })).catch(
       () => null,
     )
-    if (stored?.answered) {
-      picks.value = stored.answered.picks
-      answered.value = stored.answered
-    }
   } finally {
     sending.value = false
-    stage.value = 'done'
-    toTop()
   }
+  if (!result?.answered) {
+    sendFailed.value = true
+    return
+  }
+  picks.value = result.answered.picks
+  answered.value = result.answered
+  stage.value = 'done'
+  toTop()
 }
 const invitation = wave(4, 40)
 </script>
@@ -192,8 +196,9 @@ const invitation = wave(4, 40)
           </div>
         </div>
         <div class="quiz__foot">
+          <p v-if="sendFailed" class="quiz__note" role="alert">{{ t('publicQuiz.sendFailed') }}</p>
           <UiButton variant="primary" block :disabled="!picked" :loading="sending" @click="next">
-            {{ index + 1 < total ? t('publicQuiz.next') : t('publicQuiz.finish') }}
+            {{ t(sendFailed ? 'common.retry' : index + 1 < total ? 'publicQuiz.next' : 'publicQuiz.finish') }}
           </UiButton>
         </div>
       </template>
@@ -203,7 +208,9 @@ const invitation = wave(4, 40)
           <p v-if="!self" class="quiz__note quiz__note--start">{{ t('publicQuiz.from', { name: quiz.author }) }}</p>
           <p class="quiz__score">{{ t('publicQuiz.score', { score, total }) }}</p>
           <component :is="heading" class="quiz__verdict">{{ verdict }}</component>
-          <p v-if="!self" class="quiz__note quiz__note--start">{{ t('publicQuiz.seen', { name: quiz.author }) }}</p>
+          <p v-if="!self && answered" class="quiz__note quiz__note--start">
+            {{ t('publicQuiz.seen', { name: quiz.author }) }}
+          </p>
           <!-- One line a question, the answer at the end: ten of them and the score fit one screen (17.11). -->
           <ol class="quiz__answers" :aria-label="t('publicQuiz.answers')">
             <li v-for="(item, at) in quiz.questions" :key="item.id">

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 import type { ReportDto } from '@tg-analyzer/shared'
-import { Clock, Flame, Quote, Scale, Users } from '../../lib/icons'
+import { ChevronRight, Clock, Flame, Quote, Scale, Users } from '../../lib/icons'
 
 /**
  * «Главное»: the verdict right under the poster — up to three findings as tiles, the first one wide on the poster's
@@ -62,7 +62,13 @@ const findings = computed(() => {
       text: true,
     })
   if (peak.answer.value && peakFigure.value)
-    out.push({ key: 'time', target: 'part-time', icon: Clock, figure: peakFigure.value, sub: peak.answer.value })
+    out.push({
+      key: 'time',
+      target: 'part-time',
+      icon: Clock,
+      figure: peakFigure.value,
+      sub: t('report.highlights.peak'),
+    })
   // Head to head: only when someone leads; «almost even everywhere» is the weakest thing it can say.
   if (match.answer.value && !match.mostlyEven.value && match.tally.value.mine !== match.tally.value.theirs)
     out.push({ key: 'match', target: 'part-match', icon: Users, figure: match.answer.value, text: true })
@@ -97,7 +103,10 @@ function go(event: MouseEvent, target: string) {
         :class="{ 'find--wide': index === 0 || findings.length === 2 }"
         @click="go($event, item.target)"
       >
-        <component :is="item.icon" class="find__icon" aria-hidden="true" />
+        <span class="find__icons" aria-hidden="true">
+          <component :is="item.icon" class="find__icon" />
+          <ChevronRight class="find__arrow" />
+        </span>
         <span class="find__body">
           <span class="find__main">
             <b class="find__figure" :class="{ 'find__figure--text': item.text }">{{ item.figure }}</b>
@@ -153,9 +162,16 @@ function go(event: MouseEvent, target: string) {
   box-shadow: var(--edge-light);
 }
 
-.find__icon {
-  flex: none;
+.find__icons {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   --icon-size: var(--icon-md);
+}
+
+.find__arrow {
+  color: var(--on-poster-muted);
+  --icon-size: var(--icon-sm);
 }
 
 .find__body {

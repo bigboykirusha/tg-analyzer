@@ -151,6 +151,7 @@ function isTechnicalToken(value: string) {
 }
 
 /** Links, e-mail addresses, @mentions and /commands carry no words of the conversation. */
+const ADDRESS_PUNCTUATION = /[.@:/]/u
 const NOT_WORDS =
   /(?:https?:\/\/|www\.)\S+|\b[\w.+-]+@[\w-]+\.[\w.-]+|(?:^|\s)[@/][\w@]+|\b[\w-]+\.(?:com|ru|org|net|io|me|app|рф|be|ly|tv|gg)(?:\/\S*)?/giu
 
@@ -167,13 +168,13 @@ const BARE_QUESTION =
   /^(?:а\s+)?(?:(?:ты|вы)\s+(?:где|тут|здесь|дома|спишь|занят[аы]?|свободн[аы]?|можешь|придешь|будешь|едешь)|где\s+(?:ты|вы)|как\s+(?:дела|ты|вы|сам[аи]?|настроение|прошло|оно|там|себя\s+чувствуешь)|(?:что|чем|че|чо|шо)\s+(?:делаешь|делаете|занят[аы]?|нового)|(?:не\s+)?спишь|how\s+are\s+you|how\s+r\s+u|where\s+are\s+you|what'?s\s+up|wyd|you\s+there)(?![\p{L}])/iu
 
 /** «спасибоооо» → «спасибо», «класссс» → «класс», «дааа» → «да». */
-const STRETCHED_VOWEL = /([аеиоуыэюяaeiouy])\1{2,}/giu
-const STRETCHED_CONSONANT = /(\p{L})\1{2,}/gu
+const STRETCHED_LETTER = /(\p{L})\1{2,}/gu
+const VOWEL = /[аеиоуыэюяaeiouy]/iu
 
 const REPEATED_LETTER = /(\p{L})\1+/gu
 
 function squeezeStretched(text: string) {
-  return text.replace(STRETCHED_VOWEL, '$1').replace(STRETCHED_CONSONANT, '$1$1')
+  return text.replace(STRETCHED_LETTER, (_match, letter: string) => (VOWEL.test(letter) ? letter : letter.repeat(2)))
 }
 
 export function analyzeMessageText(
@@ -182,8 +183,7 @@ export function analyzeMessageText(
 ): MessageTextAnalysis {
   if (!text) return { ...EMPTY_ANALYSIS, keywords: [], emojis: [] }
 
-  const prose = NOT_WORDS.test(text) ? text.replace(NOT_WORDS, ' ') : text
-  NOT_WORDS.lastIndex = 0
+  const prose = ADDRESS_PUNCTUATION.test(text) ? text.replace(NOT_WORDS, ' ') : text
   const words = (prose.match(WORD_PATTERN) ?? []).filter((word) => HAS_LETTER_OR_DIGIT.test(word))
   const keywords: string[] = []
   let laughs = false
@@ -245,7 +245,8 @@ function extractEmojis(text: string): string[] {
   if (!EMOJI_CANDIDATE.test(text)) return []
 
   const emojis: string[] = []
-  for (const match of text.matchAll(EMOJI_SEQUENCE)) {
+  let match: RegExpExecArray | null
+  while ((match = EMOJI_SEQUENCE.exec(text)) !== null) {
     const sequence = match[0]
     const next = text[match.index + sequence.length]
     // Pictographs such as ♥ or ☆ are plain symbols unless rendered as emoji.

@@ -118,6 +118,7 @@ export async function runAnalysis(job: Job<AnalysisJobData>, token?: string) {
       { waitMs: 60_000 },
     )
 
+    await ensureActive(true)
     progress.phase = 'saving'
     await publish(true)
     const report = result.builder.finish(result.dialog.type)
@@ -262,7 +263,7 @@ async function handleFailure(job: Job<AnalysisJobData>, error: unknown, progress
   const { userId, jobId } = job.data
 
   // Cancellation is published by the API; nothing else to do.
-  if (error instanceof AnalysisStoppedError) return
+  if (error instanceof AnalysisStoppedError || !(await isJobActive(jobId))) return
 
   const code = failureCode(error)
   if (code === 'telegram_session_expired') await deactivateTelegramSession(userId)
@@ -275,8 +276,8 @@ async function handleFailure(job: Job<AnalysisJobData>, error: unknown, progress
     throw error
   }
 
+  if (!(await failJob(jobId, code))) return
   logger.error({ err: error, jobId, code }, 'analysis failed')
-  await failJob(jobId, code)
   await publishProgress(userId, { ...progress, status: 'failed', phase: null, waitSeconds: null, error: code })
   if (progress.chatId)
     await notify(

@@ -15,15 +15,16 @@ const props = withDefaults(
     data?: ReportDto | null
     /** The name while the report loads (from the lists already on hand). */
     title?: string | null
-    /** «Смотреть итоги» (and, on desktop, «Поделиться») on the poster. */
+    /** Quick report actions on desktop. */
     actions?: boolean
+    caption?: string
     /** A guest's poster: «Дима и Мила» and who shared it, no legend, no actions. */
     heading?: string | null
     lede?: string | null
     /** The name is the page's h1 (the example: its header carries no name). */
     h1?: boolean
   }>(),
-  { data: null, title: null, actions: false, heading: null, lede: null, h1: false },
+  { data: null, title: null, actions: false, caption: '', heading: null, lede: null, h1: false },
 )
 const emit = defineEmits<{ story: []; share: [] }>()
 const { t, formatNumber, formatDay } = useI18n()
@@ -95,6 +96,7 @@ const cast = computed(() => {
     <UiPageContainer class="poster__in">
       <div class="poster__top">
         <div class="poster__head">
+          <p v-if="caption" class="poster__caption t-label">{{ caption }}</p>
           <!-- A guest's heading is the page's h1; the owner's name is the h1 in the bar, here its picture. -->
           <h1 v-if="heading" class="poster__name poster__name--pair">{{ heading }}</h1>
           <h1 v-else-if="h1 && data" class="poster__name" :style="{ '--name-chars': nameChars }">
@@ -118,7 +120,7 @@ const cast = computed(() => {
           <slot name="badge" />
         </div>
         <div v-if="actions" class="poster__actions no-print">
-          <UiButton variant="primary" :icon="Play" :disabled="!data" @click="emit('story')">{{
+          <UiButton variant="secondary" :icon="Play" :disabled="!data" @click="emit('story')">{{
             t('share.watch')
           }}</UiButton>
           <UiButton
@@ -174,12 +176,6 @@ const cast = computed(() => {
           </template>
         </div>
       </figure>
-
-      <div v-if="actions" class="poster__watch no-print">
-        <UiButton variant="primary" :icon="Play" :disabled="!data" @click="emit('story')">{{
-          t('share.watch')
-        }}</UiButton>
-      </div>
     </UiPageContainer>
   </section>
 </template>
@@ -378,8 +374,8 @@ const cast = computed(() => {
   display: none;
 }
 
-.poster__watch {
-  padding-top: var(--space-2);
+.poster__caption {
+  color: var(--on-poster-muted);
 }
 
 .cast {
@@ -447,10 +443,6 @@ const cast = computed(() => {
     flex: none;
     gap: var(--space-2);
     padding-top: var(--space-2);
-  }
-
-  .poster__watch {
-    display: none;
   }
 
   .poster__name--pair {

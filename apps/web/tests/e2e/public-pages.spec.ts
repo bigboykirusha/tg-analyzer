@@ -93,7 +93,7 @@ test('protected pages redirect to login', async ({ page }) => {
 test('signed-in pages render only in the browser and stay out of search', async ({ request }) => {
   // The session is restored in the browser, so a server render shows an anonymous account and the page
   // then fails hydration: every signed-in page is `ssr: false` with a noindex header (nuxt.config.ts).
-  for (const path of ['/dashboard', '/new', '/notifications', '/account', '/chat/1011']) {
+  for (const path of ['/dashboard', '/new', '/notifications', '/account', '/chat/1011', '/quiz/1011']) {
     const response = await request.get(path)
     expect(response.status(), path).toBe(200)
     expect(response.headers()['x-robots-tag'], path).toBe('noindex, nofollow')
@@ -123,9 +123,19 @@ test('a shared link that fails to load offers a retry, and only a missing link i
 
 test('the example report opens without signing in', async ({ page, context }, testInfo) => {
   await usePreferences(context, 'light')
-  await gotoHydrated(page, '/example')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await gotoHydrated(page, '/')
+  const heading = page.getByRole('heading', { level: 1 })
+  await expect(heading).toHaveCSS('animation-name', 'none')
+  const preview = page.locator('.deck__card[data-slot="0"]')
+  await expect(preview).toContainText('Аня, 40 дней подряд')
+  const finding = await preview.getByText(/^Ни дня без сообщений/).innerText()
+  await page.getByRole('link', { name: 'Пример отчёта' }).click()
+  await page.waitForURL('**/example')
   // The name is the poster's h1; the public header is the logo and one «Войти», with no back circle.
   await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeVisible()
+  await expect(page.getByText('Пример отчёта', { exact: true })).toBeVisible()
+  await expect(page.locator('#chapter-highlights').getByRole('link', { name: /40 дней подряд/ })).toContainText(finding)
   await expect(page.locator('.site-header').getByRole('link', { name: 'Войти' })).toBeVisible()
   await expect(page.locator('.site-header').getByRole('link', { name: 'Назад' })).toHaveCount(0)
   // The example is the same report as an owner's: three parts, «Вы двое», «Время» and «О чём».

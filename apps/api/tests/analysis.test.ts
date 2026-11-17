@@ -266,6 +266,60 @@ test('a re-analysis keeps the previous headline numbers for «what changed»', a
   assert.equal(second.previous.analyzedAt, first.summary.analyzedAt)
 })
 
+test('deleting a report cancels its running re-analysis and removes its public link', async () => {
+  const session = await login()
+  await analyse(session, PRIVATE_CHAT)
+  const url = `/api/v1/reports/${PRIVATE_CHAT}`
+  const reportResponse = await app.inject({ url, headers: session.headers })
+  const { report, summary } = reportResponse.json<ReportDto>()
+  const share = await post(session, `${url}/links`, { kind: 'report', days: 30 })
+  assert.equal(share.statusCode, 200)
+  const { token } = share.json<{ token: string }>()
+
+  await redis.del(`parse:cooldown:${session.userId}:${PRIVATE_CHAT}`)
+  const refresh = await post(session, '/api/v1/parse/start', { chatId: PRIVATE_CHAT })
+  assert.equal(refresh.statusCode, 200)
+  const { jobId } = refresh.json<{ jobId: string }>()
+  const { markJobRunning } = await import('../src/modules/parse/jobs')
+  const running = await markJobRunning(jobId)
+  assert.ok(running && running !== 'busy')
+  assert.equal(running.status, 'running')
+  const other = await post(session, '/api/v1/parse/start', { chatId: GROUP_CHAT })
+  assert.equal(other.statusCode, 200)
+
+  const deleted = await app.inject({ method: 'DELETE', url, headers: session.headers })
+  assert.equal(deleted.statusCode, 200)
+
+  // A worker that already finished reading the chat cannot save it after deletion.
+  const { saveReportAndCompleteJob } = await import('../src/modules/reports/repository')
+  const saved = await saveReportAndCompleteJob({
+    userId: session.userId,
+    jobId,
+    chatId: PRIVATE_CHAT,
+    title: summary.title,
+    chatType: summary.type,
+    report,
+  })
+  assert.equal(saved, false)
+  assert.equal((await app.inject({ url, headers: session.headers })).statusCode, 404)
+  assert.equal((await app.inject({ url: `/api/v1/public/${token}` })).statusCode, 404)
+
+  const statusUrl = `/api/v1/parse/status?jobId=${jobId}`
+  const status = (await app.inject({ url: statusUrl, headers: session.headers })).json<ParseProgressDto>()
+  assert.equal(status.status, 'cancelled')
+  const next = other.json<{ jobId: string }>()
+  assert.deepEqual(
+    status.queued?.map(({ jobId }) => jobId),
+    [next.jobId],
+  )
+
+  const { idleProgress, publishProgress, readProgress } = await import('../src/modules/parse/state')
+  assert.equal(await readProgress(session.userId), null)
+  await publishProgress(session.userId, { ...idleProgress(), jobId: next.jobId, status: 'running' })
+  await publishProgress(session.userId, { ...idleProgress(), jobId, status: 'running', phase: 'saving' })
+  assert.equal((await readProgress(session.userId))?.jobId, next.jobId)
+})
+
 test('the free plan stops new analyses after the daily limit', async () => {
   const { config } = await import('../src/config')
   const previous = config.FREE_ANALYSES_PER_DAY

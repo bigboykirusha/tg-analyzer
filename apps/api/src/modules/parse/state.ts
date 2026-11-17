@@ -9,6 +9,7 @@ const PROGRESS_TTL_SECONDS = 60 * 60
 const DIALOG_CACHE_TTL_SECONDS = 6 * 60 * 60
 
 const progressKey = (userId: string) => `parse:progress:${userId}`
+const cancelledJobKey = (jobId: string) => `parse:cancelled:${jobId}`
 const cooldownKey = (userId: string, chatId: string) => `parse:cooldown:${userId}:${chatId}`
 const dialogsKey = (userId: string) => `telegram:dialogs:${userId}`
 
@@ -37,9 +38,45 @@ export interface ProgressMessage {
 /** Stores the latest snapshot for active jobs and broadcasts it to the user's open sockets. */
 export async function publishProgress(userId: string, progress: ParseProgressDto) {
   const active = progress.status === 'pending' || progress.status === 'running'
-  if (active) await redis.set(progressKey(userId), JSON.stringify(progress), 'EX', PROGRESS_TTL_SECONDS)
-  else await redis.del(progressKey(userId))
-  await redis.publish(PROGRESS_CHANNEL, JSON.stringify({ userId, progress } satisfies ProgressMessage))
+  const message = JSON.stringify({ userId, progress } satisfies ProgressMessage)
+  if (active && progress.jobId) {
+    // A worker or enqueue request can be between its database check and this write when deletion commits.
+    await redis.eval(
+      `if redis.call('exists', KEYS[2]) == 0 then
+         redis.call('set', KEYS[1], ARGV[1], 'EX', ARGV[2])
+         redis.call('publish', ARGV[3], ARGV[4])
+       end`,
+      2,
+      progressKey(userId),
+      cancelledJobKey(progress.jobId),
+      JSON.stringify(progress),
+      PROGRESS_TTL_SECONDS,
+      PROGRESS_CHANNEL,
+      message,
+    )
+    return
+  }
+  await redis.del(progressKey(userId))
+  await redis.publish(PROGRESS_CHANNEL, message)
+}
+
+/** Clear and announce a cancellation only while that job owns the user's progress snapshot. */
+export async function publishCancellation(userId: string, progress: ParseProgressDto & { jobId: string }) {
+  await redis.eval(
+    `redis.call('set', KEYS[2], '1', 'EX', ARGV[4])
+     local snapshot = redis.call('get', KEYS[1])
+     if snapshot and cjson.decode(snapshot).jobId == ARGV[1] then
+       redis.call('del', KEYS[1])
+       redis.call('publish', ARGV[2], ARGV[3])
+     end`,
+    2,
+    progressKey(userId),
+    cancelledJobKey(progress.jobId),
+    progress.jobId,
+    PROGRESS_CHANNEL,
+    JSON.stringify({ userId, progress } satisfies ProgressMessage),
+    PROGRESS_TTL_SECONDS,
+  )
 }
 
 export async function readProgress(userId: string): Promise<ParseProgressDto | null> {

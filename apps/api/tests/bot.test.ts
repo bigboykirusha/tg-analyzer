@@ -108,9 +108,14 @@ test('a push service that forgot the browser removes its subscription; signing o
     return 201
   })
   try {
-    await notify(session.userId, { chatId: '1011', title: 'Mila' }, { kind: 'quiz_answered', score: 3, total: 5 })
+    await notify(session.userId, { chatId: '1011', title: 'Mila' }, { kind: 'analysis_failed', error: 'internal' })
     assert.deepEqual(pushed, [
-      { title: 'Quiz answered', body: 'Mila · 3 of 5', url: '/chat/1011?share', tag: 'quiz_answered:1011' },
+      {
+        title: 'The analysis did not go through',
+        body: 'Mila · Try again',
+        url: '/chat/1011',
+        tag: 'analysis_failed:1011',
+      },
     ])
     const count = async () =>
       (await pool.query('SELECT endpoint FROM push_subscriptions WHERE user_id = $1', [session.userId])).rows.map(

@@ -1,5 +1,5 @@
 import type { JobStatus, ParseErrorCode, ParseJobDto } from '@tg-analyzer/shared'
-import { and, asc, count, desc, eq, inArray, lt, notInArray, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, lt, notInArray, sql, type SQL } from 'drizzle-orm'
 import { db, schema } from '../../db'
 import type { ParseJobRow } from '../../db/schema'
 
@@ -70,26 +70,31 @@ export async function isJobActive(jobId: string) {
 }
 
 export async function failJob(jobId: string, errorCode: ParseErrorCode) {
-  await db
+  const [failed] = await db
     .update(schema.parseJobs)
     .set({ status: 'failed', errorCode, completedAt: new Date() })
     .where(and(eq(schema.parseJobs.id, jobId), inArray(schema.parseJobs.status, ACTIVE)))
+    .returning({ id: schema.parseJobs.id })
+  return Boolean(failed)
 }
 
 /** Cancels one queued or running job; without `jobId`, the one that runs now. */
 export async function cancelActiveJob(userId: string, jobId?: string) {
   const targetId = jobId ?? (await findActiveJob(userId))?.id
   if (!targetId) return null
-  const [job] = await db
+  return cancelJob(db, userId, eq(schema.parseJobs.id, targetId))
+}
+
+/** Runs inside report deletion's transaction so a worker cannot restore a deleted report. */
+export function cancelChatJob(writer: Pick<typeof db, 'update'>, userId: string, chatId: number) {
+  return cancelJob(writer, userId, eq(schema.parseJobs.chatId, chatId))
+}
+
+async function cancelJob(writer: Pick<typeof db, 'update'>, userId: string, target: SQL) {
+  const [job] = await writer
     .update(schema.parseJobs)
     .set({ status: 'cancelled', completedAt: new Date() })
-    .where(
-      and(
-        eq(schema.parseJobs.id, targetId),
-        eq(schema.parseJobs.userId, userId),
-        inArray(schema.parseJobs.status, ACTIVE),
-      ),
-    )
+    .where(and(target, eq(schema.parseJobs.userId, userId), inArray(schema.parseJobs.status, ACTIVE)))
     .returning()
   return job ?? null
 }

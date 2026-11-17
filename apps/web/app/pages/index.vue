@@ -9,17 +9,17 @@ definePageMeta({
 
 const { t } = useI18n()
 
-/** Three people as the cards of home, the way reports look; the pulses are a drawn example, not anyone's data. */
+/** The first card opens out into `/example`. The pulses in the deck are drawn illustrations. */
 const examples = [
   // Keys spelled out, not built from a template: a deleted text is then a type error, not a raw key on the landing.
-  { key: 'ex1', chatId: '1011', title: 'landing.ex1.title', text: 'landing.ex1.text', pulse: wave(1, 36) },
+  { key: 'ex1', chatId: 'example', title: 'landing.ex1.title', text: 'landing.ex1.text', pulse: wave(1, 36) },
   { key: 'ex2', chatId: '1002', title: 'landing.ex2.title', text: 'landing.ex2.text', pulse: wave(2, 36) },
   { key: 'ex3', chatId: '1003', title: 'landing.ex3.title', text: 'landing.ex3.text', pulse: wave(3, 36) },
 ] as const
 /** The landing deck: the three examples as report posters, in the order they are dealt. */
 const deck = computed(() =>
   examples.map((example) => {
-    const title = t(example.title)
+    const title = t(example.title, { name: t('example.partner') })
     return {
       key: example.key,
       chatId: example.chatId,
@@ -187,7 +187,7 @@ useHead({
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing__first > * {
+  .landing__first > :not(.landing__deck) {
     animation: none;
   }
 }

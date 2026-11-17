@@ -19,6 +19,7 @@ import {
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db, schema } from '../../db'
 import type { ChatReportRow } from '../../db/schema'
+import { cancelChatJob } from '../parse/jobs'
 
 const EMPTY_RESPONSES: ResponseStatsDto = {
   medianMineSec: null,
@@ -99,12 +100,21 @@ export async function getReport(userId: string, chatId: string): Promise<ReportD
   }
 }
 
-export async function deleteReport(userId: string, chatId: string) {
-  const deleted = await db
-    .delete(schema.chatReports)
-    .where(and(eq(schema.chatReports.userId, userId), eq(schema.chatReports.tgChatId, Number(chatId))))
-    .returning({ id: schema.chatReports.id })
-  return deleted.length > 0
+export function deleteReport(userId: string, chatId: string) {
+  return db.transaction(async (tx) => {
+    // Serialize with analysis admission while allowing the worker's foreign-key checks.
+    await tx.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.id, userId)).for('no key update')
+    const report = await tx.query.chatReports.findFirst({
+      columns: { id: true },
+      where: and(eq(schema.chatReports.userId, userId), eq(schema.chatReports.tgChatId, Number(chatId))),
+    })
+    if (!report) return null
+
+    // Match the worker's lock order: both transactions update the job before changing the report.
+    const cancelledJob = await cancelChatJob(tx, userId, Number(chatId))
+    await tx.delete(schema.chatReports).where(eq(schema.chatReports.id, report.id))
+    return { cancelledJob }
+  })
 }
 
 /**
