@@ -9,7 +9,7 @@ import { Clock, Flame, Quote, Scale, Users } from '../../lib/icons'
  * (`useStreak`, `useWordsFacts`, `usePeakWindow`, `useMatch`, `useBalance`), so the verdict and the report never say
  * two things. The three strongest the chat has, in a fixed order: the run of days, the word of the chat, the usual
  * window, who leads the head to head, a balance. A finding its card would not draw is skipped; each tile scrolls to
- * its card. Carries `#chapter-highlights`, the first stop of the chapter strip.
+ * its card. Carries `#chapter-highlights`.
  */
 const props = defineProps<{ data: ReportDto; noWords?: boolean }>()
 const { t, tc, formatNumber } = useI18n()
@@ -111,17 +111,6 @@ function go(event: MouseEvent, target: string) {
 </template>
 
 <style scoped>
-.highlights {
-  /* A tap on the chapter strip stops it under the bar (the page's `scroll-padding-top`) and the strip. */
-  scroll-margin-top: calc(var(--control-sm) + var(--space-4));
-}
-
-@media (min-width: 901px) {
-  .highlights {
-    scroll-margin-top: 0;
-  }
-}
-
 .highlights__title {
   padding: 0 var(--space-2) var(--space-2);
   color: var(--text-muted);

@@ -727,7 +727,6 @@ export const ru: Record<MessageKey, string> = {
   'report.highlights.streakUnit.few': 'дня подряд',
   'report.highlights.streakUnit.many': 'дней подряд',
   'report.highlights.streakUnit.other': 'дня подряд',
-  'report.chapters.label': 'Части отчёта',
   'report.match.evenList': 'Поровну: {names}',
   'report.milestones.title': 'Вехи',
   'report.milestones.first': 'Первое сообщение',

@@ -721,7 +721,6 @@ export const en = {
   'report.highlights.streakUnit.few': 'days in a row',
   'report.highlights.streakUnit.many': 'days in a row',
   'report.highlights.streakUnit.other': 'days in a row',
-  'report.chapters.label': 'Report sections',
   'report.match.evenList': 'Even: {names}',
   'report.milestones.title': 'Milestones',
   'report.milestones.first': 'First message',

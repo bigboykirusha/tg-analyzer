@@ -103,7 +103,6 @@ onMounted(load)
       <template v-if="data" #menu><ReportMenu :summary="data.summary" /></template>
     </ReportPoster>
     <!-- A phone's chapter strip: under the poster, then under the bar (a computer has it in the bar). -->
-    <ReportChapters v-if="data" :summary="data.summary" placement="flow" />
     <UiPageContainer>
       <div v-if="data" class="page report-page">
         <ReportHeader :summary="data.summary" @share="openShare" />

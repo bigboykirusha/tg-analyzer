@@ -17,7 +17,6 @@ const { t } = useI18n()
 
 <template>
   <UiPageBar :title="summary.title" back="/dashboard" bar>
-    <template #center><ReportChapters :summary="summary" placement="bar" /></template>
     <template #actions>
       <UiIconButton
         class="report-bar__narrow"

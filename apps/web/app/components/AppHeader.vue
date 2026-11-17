@@ -197,11 +197,6 @@ const bellLabel = computed(() =>
   backdrop-filter: var(--glass-filter);
 }
 
-/* The report's chapter strip sticks under the bar on the same glass: one material, so one hairline — the strip's. */
-:global(html[data-chapters-stuck] .app-bar.is-scrolled) {
-  box-shadow: none;
-}
-
 /* Home on a phone: the poster tiles carry grain and a large shadow, and a blur over them is the costliest thing on iOS, so
    the bar is the page paper (design-system.md, «Шапка на главной»). */
 @media (max-width: 900px) {
@@ -280,9 +275,8 @@ const bellLabel = computed(() =>
     opacity: 0;
   }
 
-  /* The actions and the chapters leave the tree too: an invisible pill must not take the keyboard's focus. */
-  .app-bar.is-over-poster :deep(.page-bar__end),
-  .app-bar.is-over-poster :deep(.page-bar__center) {
+  /* The actions leave the tree too: an invisible button must not take the keyboard's focus. */
+  .app-bar.is-over-poster :deep(.page-bar__end) {
     visibility: hidden;
   }
 

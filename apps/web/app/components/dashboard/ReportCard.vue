@@ -47,7 +47,7 @@ const pulse = computed(() =>
       <template v-else>{{ meta }}</template>
     </template>
     <Pulse v-if="reading" :data="reading.pulse" :height="0" :bars="48" :pitch="6" :read="reading.share" />
-    <Pulse v-else-if="pulse && compact" :data="pulse" :height="0" :bars="10" :pitch="6" />
+    <Pulse v-else-if="pulse && compact" :data="pulse" :height="0" :bars="24" :pitch="6" />
     <Pulse v-else-if="pulse" :data="pulse" :height="0" :bars="48" :pitch="6" grow />
   </HomeCard>
 </template>
