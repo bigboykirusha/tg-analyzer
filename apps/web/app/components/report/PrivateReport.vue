@@ -31,8 +31,8 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
     <ReportHighlights :data="data" :no-words="noWords" />
     <ReportPart id="together" :title="t('report.tabs.withName', { name: data.summary.title })">
       <ReportSplit :data="data" />
-      <ReportRelationship :data="data" />
       <ReportMatch :data="data" />
+      <ReportRelationship :data="data" />
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">
       <ReportTime :data="data" parts />

@@ -143,6 +143,11 @@ test('the example report opens without signing in', async ({ page, context }, te
   await expect(page.locator('.report-section')).not.toHaveCount(0)
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
+  await page
+    .locator('#chapter-highlights')
+    .getByRole('link', { name: /Самые активные часы/ })
+    .click()
+  await expect(page.locator('#part-time')).toBeInViewport()
 })
 
 test('the report fits and its parts can be reached between phone, tablet and desktop', async ({ page, context }) => {

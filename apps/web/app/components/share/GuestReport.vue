@@ -25,25 +25,28 @@ const author = computed(() => (props.share.settings.showName ? props.share.autho
 const partner = computed(() => data.value.summary.title)
 provideReportAuthor(() => author.value)
 
-const heading = computed(() =>
-  isGroup.value ? data.value.summary.title : t('publicReport.pair', { me: author.value, name: partner.value }),
+const heading = computed(() => {
+  if (isGroup.value) return data.value.summary.title
+  return props.share.settings.showName
+    ? t('publicReport.pair', { me: author.value, name: partner.value })
+    : t('publicReport.anonymousTitle')
+})
+const caption = computed(() =>
+  props.share.settings.showName ? t('publicReport.sharedBy', { name: author.value }) : '',
 )
-/** Who shared it, then the same line as the owner's poster (useChatSpan). */
-const chatSpan = useChatSpan()
-const lede = computed(() => t('publicReport.lede', { name: author.value, span: chatSpan(data.value) }))
 
 const allowed = computed(() => props.share.settings.words)
 </script>
 
 <template>
   <div class="guest">
-    <ReportPoster :data="data" :heading="heading" :lede="lede" :anonymous-cast="!share.settings.showName" />
+    <ReportPoster :data="data" :heading="heading" :caption="caption" :anonymous-cast="!share.settings.showName" />
     <UiPageContainer>
       <div class="guest__flow">
         <h2 class="sr-only">{{ t('publicReport.mainTitle') }}</h2>
         <GroupReport v-if="isGroup" :data="data" />
         <template v-else>
-          <ReportBalance :data="data" :author="author" />
+          <ReportBalance :data="data" :author="author" :anonymous="!share.settings.showName" />
 
           <ReportTime :data="data" />
 

@@ -9,7 +9,7 @@ import { Scale } from '../../lib/icons'
  * `useBalance`, shared with the guest's page and the «Итоги». With an `author` the card speaks in the third
  * person, for a reader who opened the report by a link.
  */
-const props = defineProps<{ data: ReportDto; author?: string | null }>()
+const props = defineProps<{ data: ReportDto; author?: string | null; anonymous?: boolean }>()
 const { t } = useI18n()
 const { name, me, answer, figure, rows } = useBalance(
   () => props.data,
@@ -21,14 +21,14 @@ const { name, me, answer, figure, rows } = useBalance(
   <ReportSection
     v-if="answer"
     id="part-balance"
-    tone="ink"
+    hero
     :icon="Scale"
     :title="t('report.balance.title')"
     :figure="figure"
-    :answer="answer"
+    :answer="anonymous && !figure ? t('publicReport.evenAnonymous') : answer"
   >
     <div class="balance">
-      <p v-if="!author" class="balance__sides t-label" aria-hidden="true">
+      <p class="balance__sides t-label" aria-hidden="true">
         <span>{{ me }}</span>
         <span class="balance__them">{{ name }}</span>
       </p>

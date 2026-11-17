@@ -18,35 +18,35 @@ const props = withDefaults(
     /** Quick report actions on desktop. */
     actions?: boolean
     caption?: string
-    /** A guest's poster: «Дима и Мила» and who shared it, no legend, no actions. */
+    /** The heading on a shared report. */
     heading?: string | null
-    lede?: string | null
     /** Anonymous guest avatars already carry their participant number. */
     anonymousCast?: boolean
     /** The name is the page's h1 (the example: its header carries no name). */
     h1?: boolean
   }>(),
-  { data: null, title: null, actions: false, caption: '', heading: null, lede: null, anonymousCast: false, h1: false },
+  { data: null, title: null, actions: false, caption: '', heading: null, anonymousCast: false, h1: false },
 )
 const emit = defineEmits<{ story: []; share: [] }>()
 const { t, formatNumber, formatDay } = useI18n()
 const nameOf = useParticipantName()
+const you = useYouLabel()
 const wide = useMediaQuery('(min-width: 901px)')
 
 const report = computed(() => props.data?.report ?? null)
 const isGroup = computed(() => Boolean(report.value?.group))
 const days = computed(() => (report.value ? fillDailyGaps(report.value.activity.daily) : []))
 
-/** «4 800 сообщений · май — ноябрь 2026» (useChatSpan), or the guest's own line. */
+/** «4 800 сообщений · май — ноябрь 2026» (useChatSpan). */
 const chatSpan = useChatSpan()
-const meta = computed(() => props.lede || (props.data ? chatSpan(props.data) : ''))
+const meta = computed(() => (props.data ? chatSpan(props.data) : ''))
 /**
  * The owner's poster says how much was written as a figure of its own («5 078», the h1 role) and the rest of the
  * line small beside it. The line is `useChatSpan`'s, so it is the same fact the link's preview says; if it does not
  * begin with the number as formatted here, the whole line is shown plainly.
  */
 const countLine = computed(() => {
-  if (props.lede || !props.data) return null
+  if (!props.data) return null
   const total = formatNumber(props.data.report.totals.messages)
   const line = meta.value
   if (!line.startsWith(total)) return null
@@ -69,9 +69,7 @@ const axis = computed(() => {
 })
 const pulseData = computed(() => (props.data && days.value.length > 1 ? days.value : null))
 const partner = computed(() => (isGroup.value ? t('report.pulse.others') : (props.data?.summary.title ?? '')))
-const pulseLabel = computed(() =>
-  isGroup.value ? t('report.pulse.labelGroup') : t('report.pulse.label', { name: partner.value }),
-)
+const pulseLabel = computed(() => t('report.pulse.label', { above: you.value, below: partner.value }))
 
 /**
  * The name is the display role fitted to the poster: its longest word sets the size, so «Продуктовая команда»
@@ -155,9 +153,13 @@ const cast = computed(() => {
       </ul>
 
       <figure class="poster__pulse">
-        <figcaption v-if="!heading" class="legend" :class="{ 'legend--loading': !data }" aria-hidden="true">
-          <span class="legend__key"><i class="legend__dot" />{{ t('report.pulse.you') }}</span>
-          <span class="legend__key"><i class="legend__dot legend__dot--them" />{{ partner }}</span>
+        <figcaption class="legend" :class="{ 'legend--loading': !data }" aria-hidden="true">
+          <span class="legend__key">
+            <i class="legend__dot" /><span class="legend__label">{{ you }}</span>
+          </span>
+          <span class="legend__key">
+            <i class="legend__dot legend__dot--them" /><span class="legend__label">{{ partner }}</span>
+          </span>
         </figcaption>
         <Pulse
           v-if="pulseData"
@@ -353,7 +355,14 @@ const cast = computed(() => {
   min-width: 0;
 }
 
+.legend__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .legend__dot {
+  flex: none;
   width: var(--space-2);
   height: var(--space-2);
   border-radius: var(--radius-pill);

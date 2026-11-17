@@ -57,6 +57,13 @@ test('a public report link matches the share settings and waits for account chan
   expect(privateLink.settings).toEqual({ showName: false, words: false, stickers: false })
   await expect(dialog.getByText(`${baseURL}/s/${privateLink.token}`, { exact: true })).toBeVisible()
 
+  await gotoHydrated(page, `/s/${privateLink.token}`)
+  await expect(page.getByRole('heading', { name: 'Личная переписка' })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Сообщения по дням. Сверху Автор, снизу Собеседник' })).toBeVisible()
+  const sides = page.locator('.balance__sides')
+  await expect(sides.getByText('Автор', { exact: true })).toBeVisible()
+  await expect(sides.getByText('Собеседник', { exact: true })).toBeVisible()
+
   await gotoHydrated(page, '/account')
   const link = page.getByRole('switch', { name: /^Отчёт «Катя»/ })
   await expect(link).toBeChecked()

@@ -3,13 +3,10 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { HeartHandshake } from '../../lib/icons'
 
 /**
- * «Оценка отношений»: the word is the finding («Тёплые», «В одну сторону») and stands as the card's figure; the
- * score out of 100 backs it as one quiet line; the four parts it is made of — how evenly you write, how quickly you
- * answer, how regularly you are in touch, who starts — are four numbers, each with a short bar. The note says what
- * it is counted from (numbers, never the texts), so the score reads as a measure, not a verdict.
+ * The combined score follows the direct comparisons. Its four parts show what goes into the score.
  */
 const props = defineProps<{ data: ReportDto }>()
-const { t } = useI18n()
+const { t, formatNumber } = useI18n()
 
 const score = computed(() => props.data.report.relationship)
 const parts = computed(() => {
@@ -34,14 +31,12 @@ const parts = computed(() => {
     id="part-relation"
     :icon="HeartHandshake"
     :title="t('report.relation.title')"
-    :figure="t(`report.relation.label.${score.label}`)"
+    :answer="t('report.relation.score', { score: formatNumber(score.score) })"
+    wide
   >
-    <p class="score t-body">
-      <strong class="score__value">{{ score.score }}</strong> {{ t('report.relation.outOf') }}
-    </p>
     <ul class="parts">
       <li v-for="part in parts" :key="part.key" class="part">
-        <span class="t-h2 part__value">{{ part.value }}</span>
+        <span class="t-h3">{{ part.value }}</span>
         <span class="t-label part__label">{{ part.label }}</span>
         <span class="part__track" aria-hidden="true"><i :style="{ width: `${part.value}%` }" /></span>
       </li>
@@ -51,17 +46,7 @@ const parts = computed(() => {
 </template>
 
 <style scoped>
-.score {
-  margin-top: calc(-1 * var(--space-2));
-  color: var(--text-muted);
-}
-
-.score__value {
-  color: var(--text);
-  font-weight: 600;
-}
-
-/* Two by two under a hairline: each part a number, its name, a short bar. */
+/* Each part is a number, its name and a short bar. */
 .parts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -94,5 +79,11 @@ const parts = computed(() => {
   height: 100%;
   border-radius: inherit;
   background: var(--them);
+}
+
+@media (min-width: 901px) {
+  .parts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 </style>
