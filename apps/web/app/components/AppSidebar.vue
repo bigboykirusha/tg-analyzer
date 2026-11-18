@@ -3,9 +3,8 @@ import type { ReportSummaryDto } from '@tg-analyzer/shared'
 import { Bell, House, Plus } from '../lib/icons'
 
 /**
- * The desktop sidebar (280): the logo, the one primary action, «Главная», every report (avatar, name, one
- * quiet line) in the order home shows them, and at the foot the running analysis and your account. The logo
- * leads home too, but it is a logo: the place you are is marked on «Главная», never on the brand.
+ * The desktop workspace navigation. The library shows its own reports; shortcuts to them appear elsewhere.
+ * The running analysis and the account stay at the foot across pages.
  */
 const workspace = useWorkspaceStore()
 /** As many skeleton rows as there were reports last time (two when unknown), so the list does not jump. */
@@ -16,6 +15,7 @@ const { t, tc, formatNumber } = useI18n()
 const analysis = useAnalysis()
 
 const activeId = computed(() => (route.path.startsWith('/chat/') ? String(route.params.id) : null))
+const onHome = computed(() => route.path === '/dashboard')
 const notifications = useNotificationsStore()
 const displayName = computed(() => auth.user?.firstName || auth.user?.username || t('account.anonymous'))
 const loading = computed(
@@ -39,7 +39,7 @@ function updating(report: ReportSummaryDto) {
   <aside class="sidebar" :aria-label="t('sidebar.label')">
     <BrandLink class="sidebar__brand" to="/dashboard" />
     <UiButton
-      v-if="route.path !== '/dashboard' || !firstRun"
+      v-if="!onHome || !firstRun"
       to="/new"
       variant="primary"
       block
@@ -49,11 +49,7 @@ function updating(report: ReportSummaryDto) {
       {{ t('home.analyseChat') }}
     </UiButton>
     <div class="sidebar__navs">
-      <NuxtLink
-        to="/dashboard"
-        class="sidebar__row sidebar__nav"
-        :aria-current="route.path === '/dashboard' ? 'page' : undefined"
-      >
+      <NuxtLink to="/dashboard" class="sidebar__row sidebar__nav" :aria-current="onHome ? 'page' : undefined">
         <House class="sidebar__icon" aria-hidden="true" />
         {{ t('nav.home') }}
       </NuxtLink>
@@ -71,7 +67,7 @@ function updating(report: ReportSummaryDto) {
       </NuxtLink>
     </div>
 
-    <nav v-if="!firstRun" class="sidebar__list" :aria-label="t('sidebar.reports')">
+    <nav v-if="!onHome && !firstRun" class="sidebar__list" :aria-label="t('sidebar.reports')">
       <p class="sidebar__heading">{{ t('sidebar.reports') }}</p>
       <NuxtLink
         v-for="chat in workspace.reportChats"
@@ -145,15 +141,14 @@ function updating(report: ReportSummaryDto) {
   transition: background-color var(--transition-fast);
 }
 
-/* The open screen: a raised white row with a hairline edge — the same object as a card on the page. */
 .sidebar__row[aria-current='page'] {
-  background: var(--sidebar-selection);
+  background: var(--selection);
   box-shadow: var(--ring-card);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .sidebar__row:not([aria-current='page']):hover {
-    background: var(--hover);
+    background: var(--selection);
   }
 }
 
@@ -187,6 +182,7 @@ function updating(report: ReportSummaryDto) {
   border-radius: var(--radius-pill);
   background: var(--text);
   color: var(--bg);
+  font-variant-numeric: tabular-nums;
   text-align: center;
 }
 

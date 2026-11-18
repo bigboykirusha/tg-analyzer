@@ -97,7 +97,7 @@ const model = defineModel<boolean>({ required: true })
   height: calc(var(--switch-height) - var(--switch-inset) * 2);
   border-radius: var(--radius-pill);
   background: var(--switch-knob);
-  box-shadow: var(--shadow-float);
+  box-shadow: var(--ring-card);
   transition: transform var(--duration-fast) var(--spring-snappy);
 }
 

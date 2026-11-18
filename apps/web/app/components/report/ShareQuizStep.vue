@@ -182,18 +182,16 @@ async function copy() {
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-4);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-poster);
   background-color: var(--poster);
   background-image: var(--poster-image);
   color: var(--on-poster);
 }
 
 .quiz-step__title {
-  overflow: hidden;
   font: var(--text-h3);
   letter-spacing: var(--tracking-h3);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .quiz-step__meta {

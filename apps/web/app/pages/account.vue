@@ -129,11 +129,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiPageContainer>
+  <UiPageContainer size="narrow">
     <div class="account">
       <UiPageBar :title="t('accountPage.title')" back="/dashboard" />
       <div class="account__list">
-        <!-- Who you are: one calm card, as at the top of iOS settings. -->
         <section class="account__me" :aria-label="displayName">
           <ProfileAvatar :title="displayName" size="lg" />
           <div class="account__who">
@@ -279,12 +278,7 @@ onMounted(() => {
   align-items: center;
   gap: var(--space-4);
   min-width: 0;
-  /* The groups' inset: the avatar stands on the same line as every row's text below it; above and below, the 16 of
-     a row, so the card reads as one more group of the same list. */
-  padding: var(--space-4) var(--card-padding);
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  box-shadow: var(--ring-card);
+  padding: var(--space-2) var(--card-padding);
 }
 
 .account__who {
@@ -292,9 +286,7 @@ onMounted(() => {
 }
 
 .account__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .account__handle {
@@ -309,7 +301,6 @@ onMounted(() => {
   flex-direction: column;
   gap: var(--space-6);
   min-width: 0;
-  max-width: var(--page-max-narrow);
 }
 
 @media (min-width: 901px) {

@@ -12,7 +12,14 @@ const { t } = useI18n()
 /** The first card opens out into `/example`. The pulses in the deck are drawn illustrations. */
 const examples = [
   // Keys spelled out, not built from a template: a deleted text is then a type error, not a raw key on the landing.
-  { key: 'ex1', chatId: 'example', title: 'landing.ex1.title', text: 'landing.ex1.text', pulse: wave(1, 36) },
+  {
+    key: 'ex1',
+    chatId: 'example',
+    title: 'landing.ex1.title',
+    text: 'landing.ex1.text',
+    pulse: wave(1, 36),
+    to: '/example',
+  },
   { key: 'ex2', chatId: '1002', title: 'landing.ex2.title', text: 'landing.ex2.text', pulse: wave(2, 36) },
   { key: 'ex3', chatId: '1003', title: 'landing.ex3.title', text: 'landing.ex3.text', pulse: wave(3, 36) },
 ] as const
@@ -27,6 +34,7 @@ const deck = computed(() =>
       avatarTitle: title.split(',')[0]!,
       meta: t(example.text),
       pulse: example.pulse,
+      to: 'to' in example ? example.to : undefined,
     }
   }),
 )
@@ -80,9 +88,9 @@ useHead({
 <style scoped>
 /*
  * One screen, phone or desktop. A phone reads top to bottom in two groups: the story (the title and the lead,
- * whose last phrase is the privacy link) on top, the action («Войти через Telegram», «Пример отчёта» under it)
- * under the thumb, and the deck in the middle of the height between them, scaling itself into it — larger on a
- * taller phone, so it fills the middle instead of floating in it.
+ * whose last phrase is the privacy link) on top, the action («Разобрать чат», «Пример отчёта» under it)
+ * under the thumb, and the deck in the middle. It grows into the available space on taller screens. The
+ * shortest screens can scroll so the examples keep their readable size.
  */
 .landing {
   display: flex;
@@ -125,8 +133,7 @@ useHead({
 .landing__deck {
   flex: 1 1 0;
   align-self: stretch;
-  min-height: 0;
-  margin-block: var(--space-6);
+  margin-block: var(--space-3);
 }
 
 /* A phone: the one call to action is the width of the column, under the thumb. */
@@ -157,38 +164,14 @@ useHead({
   }
 }
 
-/* A phone: two lines, not three. */
 @media (max-width: 900px) {
+  .landing {
+    overflow-y: auto;
+  }
+
   .landing__title {
     font-size: var(--display-fit);
     line-height: 1;
-  }
-}
-
-/* The one entrance of the page: the copy rises in, line by line, as the deck is dealt. */
-.landing__first > :not(.landing__deck) {
-  animation: hero-in var(--duration-sheet) var(--ease-standard) both;
-}
-
-.landing__lede {
-  animation-delay: var(--stagger-card);
-}
-
-.landing__cta,
-.landing__more {
-  animation-delay: calc(var(--stagger-card) * 2);
-}
-
-@keyframes hero-in {
-  from {
-    opacity: 0;
-    translate: 0 var(--space-3);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing__first > :not(.landing__deck) {
-    animation: none;
   }
 }
 

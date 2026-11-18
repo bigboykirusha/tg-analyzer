@@ -521,7 +521,7 @@ const figure = computed(() => {
 /* The frame arrives: the title first, the picture after it. */
 @media (prefers-reduced-motion: no-preference) {
   .frame:not(.frame--still) .frame__body > * {
-    animation: frame-in var(--duration-sheet) var(--ease-standard) both;
+    animation: frame-in var(--duration-story) var(--ease-standard) both;
   }
 
   .frame:not(.frame--still) .frame__body > :nth-child(n + 4) {

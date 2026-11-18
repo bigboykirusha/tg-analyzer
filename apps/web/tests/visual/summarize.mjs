@@ -8,8 +8,8 @@ const check = process.argv.includes('--check')
 
 // Thresholds (docs/design-system.md §1, POLISH.md §6).
 // Four looks: ink, neutral fill, round neutral icon, and the plain glyph (bars, sheets, a card's «⋯»), 11.11.
-// Five radii: mark 8 (chart bars), well 12 (controls), card 16, sheet 24, pill.
-const LIMITS = { buttonLooks: 5, buttonSizes: 2, textStylesPerScreen: 8, textStylesTotal: 8, radii: 5 }
+const LIMITS = { buttonLooks: 5, buttonSizes: 2, textStylesPerScreen: 8, textStylesTotal: 8 }
+const ALLOWED_RADII = new Set([8, 12, 16, 24, 32, 999])
 
 // Rows (list rows, sidebar links) and data chips are tappable but are not buttons: they are objects of a list. A
 // switch is a control of its own (a track and a knob), not a look of a button.
@@ -47,8 +47,6 @@ const kindOf = (b) => {
   if (/filters__item|select__addon/.test(c)) return 'segmented'
   return `other(${c})`
 }
-// A top-only or bottom-only radius is the same radius.
-const radiusFamily = (r) => String(Math.max(...r.split('/').map(Number)))
 const EMOJI_ONLY = /^[\p{Extended_Pictographic}\p{Emoji_Component}\s]+$/u
 
 let failed = false
@@ -72,7 +70,7 @@ for (const mode of ['desktop', 'mobile']) {
         buttons: v.buttons.filter((b) => !NOT_BUTTONS.test(b.cls)),
         // Emoji are pictures, not a text style.
         text: v.text.filter((t) => !EMOJI_ONLY.test(t.sample)),
-        radii: v.radii.filter((r) => r !== '0').map(radiusFamily),
+        radii: v.radii.flatMap((r) => uniq(r.split('/').map(Number))).filter((r) => r !== 0),
       },
     ]),
   )
@@ -137,7 +135,8 @@ for (const mode of ['desktop', 'mobile']) {
     )
   }
   if (sizes.length > LIMITS.buttonSizes) fail(`${sizes.length} button heights (limit ${LIMITS.buttonSizes})`)
-  if (Object.keys(radii).length > LIMITS.radii) fail(`${Object.keys(radii).length} radii (limit ${LIMITS.radii})`)
+  const unexpectedRadii = uniq(all('radii')).filter((radius) => !ALLOWED_RADII.has(radius))
+  if (unexpectedRadii.length) fail(`Unexpected radii: ${unexpectedRadii.join(', ')} px`)
   if (mode === 'mobile')
     console.log(`report height ${d.blocks.height}, words ${d.blocks.words}; group height ${d.gblocks.height}`)
 }

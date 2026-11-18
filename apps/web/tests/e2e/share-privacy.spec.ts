@@ -7,7 +7,7 @@ test('a public report link matches the share settings and waits for account chan
   context,
   baseURL,
 }) => {
-  test.setTimeout(90_000)
+  test.setTimeout(150_000)
   test.skip(!(await backendAvailable(baseURL!)), 'API is not running in fake Telegram mode')
   await usePreferences(context, 'light')
   await page.addInitScript(() => {

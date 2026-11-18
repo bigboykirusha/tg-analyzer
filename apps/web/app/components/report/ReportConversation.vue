@@ -57,6 +57,8 @@ const answer = computed(() => {
   <ReportSection
     v-if="rows.length"
     id="part-match"
+    class="conversation-section"
+    appearance="inline"
     :icon="MessageSquare"
     :title="t('report.conversation.title')"
     :answer="answer"
@@ -74,8 +76,8 @@ const answer = computed(() => {
       <tbody>
         <tr v-for="row in rows" :key="row.key">
           <th scope="row">{{ row.label }}</th>
-          <td>{{ row.left }}</td>
-          <td class="conversation__them">{{ row.right }}</td>
+          <td class="tnum">{{ row.left }}</td>
+          <td class="conversation__them tnum">{{ row.right }}</td>
         </tr>
       </tbody>
     </table>
@@ -83,6 +85,10 @@ const answer = computed(() => {
 </template>
 
 <style scoped>
+.conversation-section {
+  padding-block-start: var(--space-3);
+}
+
 .conversation {
   width: 100%;
   border-collapse: collapse;

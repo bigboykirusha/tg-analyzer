@@ -70,48 +70,53 @@ const finding = computed(() => {
 </script>
 
 <template>
-  <div class="people report-section--wide" :class="{ 'people--solo': !selected }">
-    <div class="people__main">
-      <ReportSection id="part-people" :icon="Users" :title="t('group.people.title')" :answer="finding?.answer" hero>
-        <p v-if="finding?.detail" class="people__detail t-label">{{ finding.detail }}</p>
-        <div class="people__list">
-          <template v-for="person in visible" :key="person.id">
-            <UiListRow v-if="person.isSelf" :title="nameOf(person)" :subtitle="roleLabel(person.role)">
-              <template #leading><UiAvatar :title="nameOf(person)" side="mine" size="md" /></template>
-              <template #trailing>
-                <span class="people__share people__share--self tnum">{{ formatPercent(person.messageShare) }}</span>
-              </template>
-            </UiListRow>
-            <UiListRow
-              v-else
-              as="button"
-              chevron
-              :title="nameOf(person)"
-              :subtitle="roleLabel(person.role)"
-              :selected="wide && person.id === selected?.id"
-              :aria-pressed="wide ? person.id === selected?.id : undefined"
-              :aria-haspopup="wide ? undefined : 'dialog'"
-              @click="open(person.id)"
-            >
-              <template #leading><UiAvatar :title="nameOf(person)" :seed="person.id" size="md" /></template>
-              <template #trailing>
-                <span class="people__share tnum">{{ formatPercent(person.messageShare) }}</span>
-              </template>
-            </UiListRow>
-          </template>
+  <div class="tile people report-section--wide" :class="{ 'people--solo': !selected }">
+    <ReportSection
+      id="part-people"
+      appearance="inline"
+      :icon="Users"
+      :title="t('group.people.title')"
+      :answer="finding?.answer"
+      hero
+    >
+      <p v-if="finding?.detail" class="people__detail t-label">{{ finding.detail }}</p>
+      <div class="people__list">
+        <template v-for="person in visible" :key="person.id">
+          <UiListRow v-if="person.isSelf" :title="nameOf(person)" :subtitle="roleLabel(person.role)">
+            <template #leading><UiAvatar :title="nameOf(person)" side="mine" size="md" /></template>
+            <template #trailing>
+              <span class="people__share people__share--self tnum">{{ formatPercent(person.messageShare) }}</span>
+            </template>
+          </UiListRow>
           <UiListRow
-            v-if="ranked.length > PREVIEW"
+            v-else
             as="button"
             chevron
-            :title="showAll ? t('group.membersCollapse') : t('group.membersShowAll', { count: ranked.length })"
-            :aria-expanded="showAll"
-            @click="showAll = !showAll"
-          />
-        </div>
-      </ReportSection>
-    </div>
+            :title="nameOf(person)"
+            :subtitle="roleLabel(person.role)"
+            :selected="wide && person.id === selected?.id"
+            :aria-pressed="wide ? person.id === selected?.id : undefined"
+            :aria-haspopup="wide ? undefined : 'dialog'"
+            @click="open(person.id)"
+          >
+            <template #leading><UiAvatar :title="nameOf(person)" :seed="person.id" size="md" /></template>
+            <template #trailing>
+              <span class="people__share tnum">{{ formatPercent(person.messageShare) }}</span>
+            </template>
+          </UiListRow>
+        </template>
+        <UiListRow
+          v-if="ranked.length > PREVIEW"
+          as="button"
+          chevron
+          :title="showAll ? t('group.membersCollapse') : t('group.membersShowAll', { count: ranked.length })"
+          :aria-expanded="showAll"
+          @click="showAll = !showAll"
+        />
+      </div>
+    </ReportSection>
 
-    <aside v-if="selected && wide" class="tile people__panel">
+    <aside v-if="selected && wide" class="people__panel">
       <GroupMemberDetails
         :participant="selected"
         :group="group"
@@ -130,14 +135,6 @@ const finding = computed(() => {
 </template>
 
 <style scoped>
-.people,
-.people__main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--card-gap);
-  min-width: 0;
-}
-
 /* Rows reach the tile's text edge; the last one has no hairline. */
 .people__list > :deep(:last-child .list-row__body) {
   box-shadow: none;
@@ -161,15 +158,17 @@ const finding = computed(() => {
 @media (min-width: 901px) {
   .people:not(.people--solo) {
     display: grid;
-    /* Halves, as every other row of the report: the column line does not jump between parts (17.11). */
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
+    gap: var(--space-6);
   }
 
   .people__panel {
     position: sticky;
     top: calc(var(--topbar-height) + var(--space-4));
-    gap: var(--space-6);
+    min-width: 0;
+    padding-inline-start: var(--space-6);
+    border-inline-start: 1px solid var(--border);
   }
 }
 </style>

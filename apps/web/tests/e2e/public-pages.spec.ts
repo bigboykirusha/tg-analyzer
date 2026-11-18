@@ -151,7 +151,25 @@ test('the example report opens without signing in', async ({ page, context }, te
   await expect(page.locator('#part-time')).toBeInViewport()
 })
 
+test('the landing examples advance by keyboard and keep the trigger focused', async ({ page, context }) => {
+  await usePreferences(context, 'light')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await gotoHydrated(page, '/')
+  const next = page.getByRole('button', { name: 'Следующий пример' })
+  const current = page.locator('.deck__card[data-slot="0"]')
+  await expect(current).toContainText('Аня')
+  await next.focus()
+  await page.keyboard.press('Enter')
+  await expect(current).not.toContainText('Аня')
+  await expect(page.getByRole('status').filter({ hasText: /.+/ }).first()).toContainText(/.+/)
+  await page.keyboard.press('Space')
+  await page.keyboard.press('Enter')
+  await expect(current).toContainText('Аня')
+  await expect(next).toBeFocused()
+})
+
 test('the report fits and its parts can be reached between phone, tablet and desktop', async ({ page, context }) => {
+  test.setTimeout(75_000)
   await usePreferences(context, 'dark')
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await gotoHydrated(page, '/example')

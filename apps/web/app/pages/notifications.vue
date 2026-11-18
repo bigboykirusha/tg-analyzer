@@ -5,14 +5,6 @@ import { AlertCircle, AlertTriangle, Bell, Check, Eye, Hourglass, Sparkles } fro
 
 definePageMeta({ layout: 'workspace', middleware: ['auth'] })
 
-/**
- * «Уведомления»: what happened to your reports while you were away — a report ready, an analysis that failed,
- * a quiz answered, your report link opened by someone, a link about to end. They look like the notifications
- * people already know, iPhone's: one card each, the chat's avatar with the kind of news as a small badge on it,
- * what happened in bold with the time at its end, then the chat and the detail. Grouped by day; a card opens where
- * to act. Opening the page reads them all (the bell's dot is the «new»). The same news arrives by web push where it
- * is on: the offer to turn it on sits on top of the feed.
- */
 const { t, tc, formatDate, formatNumber } = useI18n()
 useSeoMeta({ title: () => t('notifications.title') })
 const store = useNotificationsStore()
@@ -20,7 +12,6 @@ const workspace = useWorkspaceStore()
 
 onMounted(() => void store.open())
 
-/** What happened: the card's bold line. */
 function headline(item: NotificationDto) {
   switch (item.kind) {
     case 'report_ready':
@@ -76,7 +67,8 @@ const dayKey = (value: string) => new Date(value).toDateString()
 function dayTitle(value: string) {
   const day = new Date(value)
   const today = new Date()
-  const yesterday = new Date(today.getTime() - 86_400_000)
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
   if (day.toDateString() === today.toDateString()) return t('notifications.today')
   if (day.toDateString() === yesterday.toDateString()) return t('notifications.yesterday')
   return formatDate(value, { day: 'numeric', month: 'long' })
@@ -105,15 +97,15 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
       <PushRow hide-on />
 
       <div v-if="store.state === 'loading'" class="feed" aria-busy="true">
-        <div class="feed__list">
-          <div v-for="row in 3" :key="row" class="note note--skeleton">
-            <UiSkeleton width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-pill)" />
-            <div class="note__copy">
-              <UiSkeleton width="60%" height="var(--space-4)" />
-              <UiSkeleton width="40%" height="var(--space-3)" />
-            </div>
-          </div>
-        </div>
+        <UiGroup>
+          <UiListRow v-for="row in 3" :key="row" aria-hidden="true">
+            <template #leading>
+              <UiSkeleton width="var(--avatar-md)" height="var(--avatar-md)" radius="var(--radius-pill)" />
+            </template>
+            <UiSkeleton width="60%" height="var(--space-4)" />
+            <template #subtitle><UiSkeleton width="40%" height="var(--space-3)" /></template>
+          </UiListRow>
+        </UiGroup>
       </div>
 
       <UiEmptyState
@@ -136,26 +128,23 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
       />
 
       <div v-else class="feed">
-        <section v-for="day in groups" :key="day.key" class="feed__day" :aria-label="day.title">
-          <h2 class="feed__label t-label">{{ day.title }}</h2>
+        <UiGroup v-for="day in groups" :key="day.key" :header="day.title">
           <ul class="feed__list">
             <li v-for="item in day.items" :key="item.id">
-              <NuxtLink class="note" :to="target(item)">
-                <span class="note__avatar">
-                  <ChatAvatar :chat-id="item.chatId" :title="item.title" :has-avatar="hasAvatar(item.chatId)" />
-                  <span class="note__kind" aria-hidden="true"><component :is="KIND_ICON[item.kind]" /></span>
-                </span>
-                <span class="note__copy">
-                  <span class="note__head">
-                    <span class="note__title">{{ headline(item) }}</span>
-                    <time class="note__time" :datetime="item.createdAt">{{ time(item.createdAt) }}</time>
+              <UiListRow :title="headline(item)" :subtitle="detail(item)" :to="target(item)" wrap>
+                <template #leading>
+                  <span class="note__avatar">
+                    <ChatAvatar :chat-id="item.chatId" :title="item.title" :has-avatar="hasAvatar(item.chatId)" />
+                    <span class="note__kind" aria-hidden="true"><component :is="KIND_ICON[item.kind]" /></span>
                   </span>
-                  <span class="note__detail">{{ detail(item) }}</span>
-                </span>
-              </NuxtLink>
+                </template>
+                <template #trailing>
+                  <time class="note__time tnum" :datetime="item.createdAt">{{ time(item.createdAt) }}</time>
+                </template>
+              </UiListRow>
             </li>
           </ul>
-        </section>
+        </UiGroup>
       </div>
     </div>
   </UiPageContainer>
@@ -168,57 +157,35 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
   gap: var(--page-gap);
 }
 
-/* A feed on the page itself: days a step apart, each a quiet label over its lines. */
 .feed {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
 }
 
-.feed__day {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+.feed__list > li {
+  --row-fill-radius: 0;
 }
 
-.feed__label {
-  color: var(--text-muted);
+.feed__list > li:first-child {
+  --row-fill-radius: var(--radius-card) var(--radius-card) 0 0;
 }
 
-.feed__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+.feed__list > li:last-child {
+  --row-fill-radius: 0 0 var(--radius-card) var(--radius-card);
 }
 
-/*
- * One notification, as on an iPhone's lock screen: its own card, the avatar with the kind of news on it, what
- * happened in bold with the time at its end, then the chat and the detail.
- */
-.note {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  /* The groups' inset, so the text starts where the push row's (and every settings row's) does. */
-  padding: var(--space-3) var(--card-padding);
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  box-shadow: var(--ring-card);
-  color: var(--text);
-  -webkit-tap-highlight-color: transparent;
-  transition:
-    background-color var(--transition-fast),
-    transform var(--duration-press) var(--ease-standard);
+.feed__list > li:only-child {
+  --row-fill-radius: var(--radius-card);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  a.note:hover {
-    background-image: linear-gradient(var(--hover), var(--hover));
-  }
+.feed__list > li:not(:last-child) :deep(.list-row__body) {
+  box-shadow: var(--divider-bottom);
 }
 
-a.note:active {
-  transform: scale(var(--press-scale-lg));
+.feed__list :deep(.list-row__body) {
+  align-items: baseline;
+  overflow-wrap: anywhere;
 }
 
 .note__avatar {
@@ -243,33 +210,8 @@ a.note:active {
   --icon-size: var(--icon-sm);
 }
 
-.note__copy {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.note__head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-}
-
-.note__title {
-  flex: 1;
-  min-width: 0;
-  color: var(--text);
-  font: var(--text-body);
-}
-
-.note__time,
-.note__detail {
-  color: var(--text-muted);
-  font: var(--text-label);
-}
-
 .note__time {
-  flex: none;
+  font: var(--text-label);
+  white-space: nowrap;
 }
 </style>

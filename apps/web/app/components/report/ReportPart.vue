@@ -1,13 +1,18 @@
 <script setup lang="ts">
 /**
- * One part of the long report page: its title and the cards under it (two columns on desktop, one on a
- * phone). A card marked `wide` spans the row; a card left alone in its row takes the whole row, no hole.
+ * One chapter in the report. A block marked `wide` spans both desktop columns.
+ * The comparison gives the table more room beside the lead finding.
  */
-defineProps<{ id: string; title: string }>()
+defineProps<{ id: string; title: string; comparison?: boolean }>()
 </script>
 
 <template>
-  <section :id="`chapter-${id}`" class="report-part" :aria-labelledby="`chapter-${id}-title`">
+  <section
+    :id="`chapter-${id}`"
+    class="report-part"
+    :class="{ 'report-part--comparison': comparison }"
+    :aria-labelledby="`chapter-${id}-title`"
+  >
     <h2 :id="`chapter-${id}-title`" class="t-h1 report-part__title">{{ title }}</h2>
     <div class="report-cards"><slot /></div>
   </section>
@@ -15,43 +20,27 @@ defineProps<{ id: string; title: string }>()
 
 <style scoped>
 .report-part {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
-  /* A hairline above each part, so the parts do not run into one ribbon of cards; the title stands below it. */
-  margin-top: var(--space-4);
-  padding-top: var(--space-6);
-  box-shadow: var(--divider-top);
 }
 
 .report-part:not(:has(.report-cards > *)) {
   display: none;
 }
 
-.report-part:first-child {
-  margin-top: 0;
-  padding-top: 0;
-  box-shadow: none;
-}
-
 .report-cards {
   display: flex;
   flex-direction: column;
-  gap: var(--card-gap);
+  gap: var(--space-4);
   min-width: 0;
 }
 
 @media (min-width: 901px) {
   .report-part {
     gap: var(--space-4);
-    margin-top: var(--space-6);
-    padding-top: var(--space-8);
-  }
-
-  .report-part:first-child {
-    margin-top: 0;
-    padding-top: 0;
   }
 
   /*
@@ -61,6 +50,7 @@ defineProps<{ id: string; title: string }>()
   .report-cards {
     flex-flow: row wrap;
     align-items: stretch;
+    row-gap: var(--space-6);
   }
 
   .report-cards > :deep(*) {
@@ -70,6 +60,19 @@ defineProps<{ id: string; title: string }>()
 
   .report-cards > :deep(.report-section--wide) {
     flex-basis: 100%;
+  }
+
+  .report-part--comparison .report-cards {
+    align-items: flex-start;
+    gap: var(--space-6);
+  }
+
+  .report-part--comparison .report-cards > :deep(.report-section:not(.report-section--wide)) {
+    flex: 5 1 0;
+  }
+
+  .report-part--comparison .report-cards > :deep(.tile:not(.report-section--wide)) {
+    flex-grow: 4;
   }
 }
 </style>

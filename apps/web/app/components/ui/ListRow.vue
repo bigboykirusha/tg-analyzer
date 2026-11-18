@@ -42,12 +42,16 @@ const props = withDefaults(
 )
 
 const NuxtLink = resolveComponent('NuxtLink')
-const tag = computed(() => (props.to ? NuxtLink : props.href ? 'a' : props.as))
+const tag = computed(() => {
+  if (props.disabled && (props.to || props.href)) return 'span'
+  return props.to ? NuxtLink : props.href ? 'a' : props.as
+})
 const isButton = computed(() => !props.to && !props.href && props.as === 'button')
 const isInteractive = computed(() => Boolean(props.to || props.href || isButton.value))
 const tagAttrs = computed(() => {
-  if (props.to) return { to: props.to, 'aria-disabled': props.disabled || undefined }
-  if (props.href) return { href: props.href, 'aria-disabled': props.disabled || undefined }
+  if (props.to && !props.disabled) return { to: props.to }
+  if (props.href && !props.disabled) return { href: props.href }
+  if (props.disabled && (props.to || props.href)) return { role: 'link', 'aria-disabled': true }
   if (isButton.value) return { type: 'button', disabled: props.disabled }
   return {}
 })
@@ -212,13 +216,16 @@ const tagAttrs = computed(() => {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .list-row--interactive:hover::before {
+  .list-row--interactive:hover:not(.list-row--disabled, .list-row--selected)::before {
     background: var(--hover);
   }
 }
 
-.list-row--interactive:active::before,
 .list-row--selected::before {
+  background: var(--selection);
+}
+
+.list-row--interactive:active:not(.list-row--disabled)::before {
   background: var(--pressed);
 }
 

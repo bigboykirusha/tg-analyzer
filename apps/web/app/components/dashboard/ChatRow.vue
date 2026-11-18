@@ -3,12 +3,8 @@ import type { WorkspaceChat } from '../../stores/workspace'
 import { RotateCw, Share, Trash2 } from '../../lib/icons'
 
 /**
- * One Telegram chat in «Новый анализ»: avatar, name, one quiet line, one action. A chat with a report is
- * a link to it (chevron); without one, «Разобрать» (AnalyseButton: the same button reads the percentage while
- * the chat is read and «В очереди» while it waits, as on home); a report
- * finished a moment ago says «Отчёт готов» in the row itself, not only in a toast that goes away. A chat Telegram
- * says is too small for a report has no button: «Мало сообщений».
- * As in Telegram, a long press (450 ms) or a right click opens the row's menu.
+ * The row starts an analysis or opens an existing report. While the chat is being read or queued,
+ * its progress control is separate from the report link. Long press or right click opens the report menu.
  */
 const props = defineProps<{ chat: WorkspaceChat }>()
 const { t, formatRelative } = useI18n()
@@ -17,11 +13,18 @@ const analysis = useAnalysis()
 const menuOpen = ref(false)
 const now = useNow(30_000)
 
-const analysing = computed(() => analysis.isActive.value && analysis.progress.value.chatId === props.chat.id)
-const queuedJob = computed(() => analysis.queued.value.find((item) => item.chatId === props.chat.id)?.jobId ?? null)
+const root = useTemplateRef<HTMLElement>('root')
+const progress = useTemplateRef<HTMLElement>('progress')
+const progressState = computed(() => {
+  if (analysis.queued.value.some((item) => item.chatId === props.chat.id)) return 'queued'
+  if (analysis.isActive.value && analysis.progress.value.chatId === props.chat.id) return 'reading'
+  return null
+})
+const starting = computed(() => actions.starting.value === props.chat.id)
 const READY_MS = 3 * 60_000
 const justReady = computed(() => !!props.chat.report && now.value - Date.parse(props.chat.report.analyzedAt) < READY_MS)
 const tooSmall = computed(() => !!props.chat.tooSmall && !props.chat.report)
+const canStart = computed(() => !props.chat.report && !tooSmall.value && !progressState.value)
 const meta = computed(() => {
   const group = props.chat.type !== 'private'
   if (justReady.value) return t('dashboard.reportReady')
@@ -34,6 +37,16 @@ const meta = computed(() => {
   // A group's line already starts with «Группа»: the time alone keeps it whole beside the button («Группа, 6 ч назад»).
   if (group) return time ? t('sidebar.groupMeta', { count: time }) : t('chatType.group')
   return time ? t('newAnalysis.wrote', { time }) : ''
+})
+
+watch(progressState, async (state) => {
+  const focused = document.activeElement
+  const hadFocus = focused === root.value?.querySelector('button.chat-row__entry') || progress.value?.contains(focused)
+  if (!hadFocus) return
+  await nextTick()
+  if (document.activeElement !== document.body) return
+  if (state) progress.value?.querySelector('button')?.focus()
+  else root.value?.querySelector<HTMLElement>('button.chat-row__entry, a.chat-row__entry')?.focus()
 })
 
 const PRESS_MS = 450
@@ -55,10 +68,13 @@ function pressCancel() {
   clearTimeout(pressTimer)
   pressStart = null
 }
-function onClick(event: MouseEvent) {
-  if (!swallow) return
-  swallow = false
-  event.preventDefault()
+function activate(event: MouseEvent) {
+  if (swallow) {
+    swallow = false
+    event.preventDefault()
+    return
+  }
+  if (canStart.value) void actions.analyse(props.chat.id, props.chat.title)
 }
 function openMenu(event: MouseEvent) {
   if (!props.chat.report) return
@@ -75,30 +91,42 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
 </script>
 
 <template>
-  <UiPopoverMenu v-model:open="menuOpen" class="chat-row-menu" align="end" :aria-label="chat.title" :title="chat.title">
+  <UiPopoverMenu v-model:open="menuOpen" class="chat-row" align="end" :aria-label="chat.title" :title="chat.title">
     <template #trigger>
-      <UiListRow
-        class="chat-row"
-        :to="chat.report ? `/chat/${chat.id}` : undefined"
-        :title="chat.title"
-        :subtitle="meta"
-        wrap
-        :class="{ 'chat-row--ready': justReady && !analysing && !queuedJob }"
-        :chevron="!!chat.report && !analysing && !queuedJob"
-        @contextmenu="openMenu"
-        @pointerdown="pressDown"
-        @pointermove="pressMove"
-        @pointerup="pressCancel"
-        @pointercancel="pressCancel"
-        @click.capture="onClick"
-      >
-        <template #leading>
-          <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" />
-        </template>
-        <template v-if="queuedJob || analysing || (!chat.report && !tooSmall)" #trailing>
+      <div ref="root" class="chat-row__line" :class="{ 'chat-row__line--working': progressState }">
+        <UiListRow
+          class="chat-row__entry"
+          :class="{ 'chat-row--ready': justReady && !progressState }"
+          :as="canStart ? 'button' : 'div'"
+          :to="chat.report ? `/chat/${chat.id}` : undefined"
+          :title="chat.title"
+          :subtitle="meta"
+          :aria-label="canStart ? t('home.unanalysedAction', { name: chat.title }) : undefined"
+          :aria-disabled="starting && canStart ? true : undefined"
+          :aria-busy="starting && canStart ? true : undefined"
+          :chevron="!!chat.report && !progressState"
+          wrap
+          @contextmenu="openMenu"
+          @pointerdown="pressDown"
+          @pointermove="pressMove"
+          @pointerup="pressCancel"
+          @pointercancel="pressCancel"
+          @click.capture="activate"
+        >
+          <template #leading>
+            <ChatAvatar :chat-id="chat.id" :title="chat.title" :has-avatar="chat.hasAvatar" />
+          </template>
+          <template v-if="canStart" #trailing>
+            <span class="chat-row__action t-label">
+              <span class="chat-row__action-label">{{ t('month.analyse') }}</span>
+              <span v-if="starting" class="spinner" aria-hidden="true" />
+            </span>
+          </template>
+        </UiListRow>
+        <div v-if="progressState" ref="progress" class="chat-row__progress">
           <AnalyseButton :chat-id="chat.id" :title="chat.title" />
-        </template>
-      </UiListRow>
+        </div>
+      </div>
     </template>
     <UiMenuItem role="menuitem" :icon="RotateCw" @click="run('refresh')">{{ t('dashboard.refreshReport') }}</UiMenuItem>
     <UiMenuItem v-if="chat.type === 'private'" role="menuitem" :icon="Share" @click="run('share')">
@@ -109,16 +137,52 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
 </template>
 
 <style scoped>
-.chat-row-menu {
-  display: block;
+.chat-row__line {
+  display: flex;
+}
+
+.chat-row__entry {
+  flex: 1;
+}
+
+.chat-row__line--working :deep(.list-row__body) {
+  margin-right: 0;
+}
+
+.chat-row__progress {
+  display: flex;
+  align-items: center;
+  margin-right: var(--row-inset);
+  padding-left: var(--space-2);
+}
+
+.chat-row:not(:last-child) .chat-row__progress {
+  box-shadow: var(--divider-bottom);
+}
+
+.chat-row__entry[aria-busy='true'] {
+  cursor: progress;
+}
+
+.chat-row__action {
+  display: grid;
+  place-items: center;
+}
+
+.chat-row__action > span {
+  grid-area: 1 / 1;
+}
+
+.chat-row__entry[aria-busy='true'] .chat-row__action-label {
+  visibility: hidden;
 }
 
 /* The long press belongs to the row's menu, not to the browser's link preview. */
-.chat-row {
+.chat-row__entry {
   -webkit-touch-callout: none;
 }
 
-.chat-row :deep(.list-row__title) {
+.chat-row__entry :deep(.list-row__title) {
   overflow-wrap: anywhere;
 }
 

@@ -26,6 +26,7 @@ const pairs = computed(() =>
   <ReportSection
     v-if="pairs.length"
     id="part-pairs"
+    appearance="inline"
     :icon="HeartHandshake"
     :title="t('group.pairs.title')"
     :answer="t('group.pairs.lead')"
@@ -70,17 +71,5 @@ const pairs = computed(() =>
 .duo {
   display: inline-flex;
   gap: var(--space-1);
-}
-
-@media (min-width: 901px) {
-  .pairs {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-16) * 4)), 1fr));
-    gap: var(--space-2) var(--space-6);
-  }
-
-  .pairs > :deep(.list-row .list-row__body) {
-    box-shadow: none;
-  }
 }
 </style>

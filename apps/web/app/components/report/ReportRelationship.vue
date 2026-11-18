@@ -40,6 +40,8 @@ const parts = computed(() => {
   <ReportSection
     v-if="score"
     id="part-relation"
+    class="relationship"
+    appearance="inline"
     :icon="HeartHandshake"
     :title="t('report.relation.title')"
     :answer="t('report.relation.score', { score: formatNumber(score.score) })"
@@ -47,7 +49,7 @@ const parts = computed(() => {
   >
     <ul class="parts">
       <li v-for="part in parts" :key="part.key" class="part">
-        <span class="t-h3">{{ part.value }}</span>
+        <span class="t-h3 tnum">{{ formatNumber(part.value) }}</span>
         <span class="t-label part__label">{{ part.label }}</span>
         <span class="part__track" aria-hidden="true"><i :style="{ width: `${part.value}%` }" /></span>
       </li>
@@ -57,13 +59,17 @@ const parts = computed(() => {
 </template>
 
 <style scoped>
+.relationship {
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--border);
+}
+
 /* Each part is a number, its name and a short bar. */
 .parts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4) var(--space-4);
-  padding-top: var(--space-4);
-  box-shadow: var(--divider-top);
+  gap: var(--space-4);
+  padding-block-start: var(--space-2);
 }
 
 .part {

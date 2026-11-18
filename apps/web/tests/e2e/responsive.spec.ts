@@ -52,7 +52,7 @@ for (const locale of ['ru', 'en'] as const)
     test(`public pages fit viewport widths in ${locale}, ${theme}`, async ({ context }, testInfo) => {
       test.setTimeout(240_000)
       await usePreferences(context, theme, locale)
-      const widths = testInfo.project.name === 'desktop' ? [1440] : [320, 360, 390, 430, 768, 844]
+      const widths = testInfo.project.name === 'desktop' ? [901, 1440] : [320, 360, 390, 430, 768, 844]
       for (const width of widths) {
         for (const path of ['/', '/login', '/privacy', '/example', '/offline', '/not-found']) {
           await inspectPage(context, width, path, locale, theme, testInfo)
@@ -86,7 +86,7 @@ for (const locale of ['ru', 'en'] as const)
         )
         .toBe(2)
 
-      const widths = testInfo.project.name === 'desktop' ? [1440] : [320, 360, 390, 430, 768, 844]
+      const widths = testInfo.project.name === 'desktop' ? [901, 1440] : [320, 360, 390, 430, 768, 844]
       for (const width of widths) {
         for (const path of ['/dashboard', '/new', '/account', '/notifications', '/chat/1006', '/chat/-1002004']) {
           await inspectPage(context, width, path, locale, theme, testInfo)

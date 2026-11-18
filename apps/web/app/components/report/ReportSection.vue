@@ -2,31 +2,33 @@
 import type { Component } from 'vue'
 
 /**
- * A report card — the one anatomy of the report (docs/design-system.md): the question in a quiet label,
- * the answer (a few words in h2, or one big figure with a few words under it), one picture (the default
- * slot) and an optional footnote (`note`). Nothing else: no second size, no second weight.
- * `tone="ink"` paints the card in the person's poster colour (the guest page's word of the chat).
- * `icon` makes the question a topic label, as in Apple's Health: the icon in a small circle of the person's
- * colour and the topic in their ink — so a long report reads as topics at a glance.
+ * A report finding with a topic, an answer, supporting content and an optional note.
+ * Lead findings and charts sit on cards. Tables and lists can sit directly in the chapter.
+ * `tone="ink"` gives a framed finding the person's poster material.
  */
-defineProps<{
-  title?: string
-  answer?: string | null
-  /** One big number («×3,2»): the answer then says in a few words what it is the number of. */
-  figure?: string | null
-  wide?: boolean
-  /** The first finding of a part: its answer in the larger h2; every other card answers in h3. */
-  hero?: boolean
-  tone?: 'ink'
-  icon?: Component | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    title?: string
+    answer?: string | null
+    /** One big number («×3,2»): the answer then says in a few words what it is the number of. */
+    figure?: string | null
+    wide?: boolean
+    /** The first finding of a part: its answer in the larger h2; other findings answer in h3. */
+    hero?: boolean
+    appearance?: 'card' | 'inline'
+    tone?: 'ink'
+    icon?: Component | null
+  }>(),
+  { title: '', answer: null, figure: null, appearance: 'card', tone: undefined, icon: null },
+)
+const framed = computed(() => props.appearance === 'card')
 </script>
 
 <template>
   <article
     tabindex="-1"
-    class="report-section tile"
-    :class="{ 'report-section--wide': wide, 'tile--ink': tone === 'ink' }"
+    class="report-section"
+    :class="{ 'report-section--wide': wide, tile: framed, 'tile--ink': framed && tone === 'ink' }"
   >
     <header v-if="title || answer || figure" class="report-section__head">
       <h3 v-if="title" class="t-label report-section__title" :class="{ 'report-section__title--topic': icon }">
@@ -44,10 +46,6 @@ defineProps<{
 </template>
 
 <style scoped>
-.report-section {
-  min-width: 0;
-}
-
 .report-section__head {
   display: flex;
   flex-direction: column;

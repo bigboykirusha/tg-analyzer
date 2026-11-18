@@ -169,7 +169,7 @@ async function copy() {
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-4);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-poster);
   background-color: var(--poster);
   background-image: var(--poster-image);
   color: var(--on-poster);

@@ -23,8 +23,8 @@ defineEmits<{ action: [] }>()
       <h1 id="status-title" class="status__title">{{ title }}</h1>
       <p class="status__text">{{ text }}</p>
       <div class="status__actions">
-        <UiButton variant="primary" block :to="to" @click="!to && $emit('action')">{{ action }}</UiButton>
-        <UiButton v-if="secondary" variant="secondary" block :to="secondaryTo">{{ secondary }}</UiButton>
+        <UiButton variant="primary" size="lg" block :to="to" @click="!to && $emit('action')">{{ action }}</UiButton>
+        <UiButton v-if="secondary" variant="secondary" size="lg" block :to="secondaryTo">{{ secondary }}</UiButton>
       </div>
     </section>
   </div>
@@ -53,6 +53,7 @@ defineEmits<{ action: [] }>()
 }
 
 .status__text {
+  max-width: var(--measure);
   color: var(--text-muted);
   font: var(--text-body);
 }

@@ -5,9 +5,8 @@ import { Scale } from '../../lib/icons'
 /**
  * «Баланс» — the first card of «Вы и {имя}», the first thing the report says after its own poster: who writes more,
  * as one figure («52 на 48» when it is about even, «×1,8» otherwise — `useBalance`), the split as one bar (you
- * in ink, them in their colour) and the two message counts under its ends. A white card like the others: the
- * person's colour is only in their side of the bar, so the poster above is the page's one lit surface. The counts live here and nowhere
- * else: the conversation table starts with who opens the conversation. Carries `#part-balance`.
+ * in ink, them in their colour) and the two message counts by its ends. The balance is the section's
+ * lead finding. The conversation table starts with who opens the conversation. Carries `#part-balance`.
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatNumber } = useI18n()
@@ -33,6 +32,7 @@ const shown = computed(() => {
   <ReportSection
     v-if="shown && split"
     id="part-balance"
+    class="split-section"
     :icon="Scale"
     :title="t('report.balance.title')"
     :figure="shown.figure"
@@ -41,11 +41,11 @@ const shown = computed(() => {
     <div class="split__details">
       <div class="split__sides">
         <p class="split__side">
-          <b class="split__count">{{ formatNumber(split.sent) }}</b>
+          <b class="split__count tnum">{{ formatNumber(split.sent) }}</b>
           <span class="split__key">{{ t('report.you') }}</span>
         </p>
         <p class="split__side split__side--theirs">
-          <b class="split__count">{{ formatNumber(split.received) }}</b>
+          <b class="split__count tnum">{{ formatNumber(split.received) }}</b>
           <span class="split__key split__key--theirs">{{ name }}</span>
         </p>
       </div>
@@ -63,6 +63,16 @@ const shown = computed(() => {
   flex-direction: column;
   gap: var(--space-3);
   margin-block: auto;
+}
+
+@media (min-width: 901px) {
+  .split-section {
+    min-block-size: calc(var(--space-16) * 4 + var(--space-6));
+  }
+
+  .split__details {
+    margin-block: auto 0;
+  }
 }
 
 .split {

@@ -210,7 +210,7 @@ const title = computed(() =>
   width: calc(var(--space-12) * 5);
   min-height: calc(var(--space-12) * 8);
   padding: var(--space-4);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-sheet);
   background-color: var(--poster);
   background-image: var(--poster-image);
   color: var(--on-poster);
@@ -264,8 +264,8 @@ const title = computed(() =>
     display: flex;
     align-items: stretch;
     gap: var(--space-4);
-    padding: var(--space-4);
-    border-radius: var(--radius-card);
+    padding: var(--card-padding);
+    border-radius: var(--radius-poster);
     background-color: var(--poster);
     background-image: var(--poster-image);
     color: var(--on-poster);
@@ -307,6 +307,7 @@ const title = computed(() =>
   .feature__title {
     font: var(--text-h3);
     letter-spacing: var(--tracking-h3);
+    overflow-wrap: anywhere;
   }
 
   .feature__text {

@@ -54,7 +54,13 @@ const answer = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="answer && items.length > 1" :icon="Flag" :title="t('report.milestones.title')" :answer="answer">
+  <ReportSection
+    v-if="answer && items.length > 1"
+    appearance="inline"
+    :icon="Flag"
+    :title="t('report.milestones.title')"
+    :answer="answer"
+  >
     <ol class="steps">
       <li v-for="item in items" :key="item.key" class="step" :class="{ 'step--mine': item.mine }">
         <span class="step__dot" aria-hidden="true" />

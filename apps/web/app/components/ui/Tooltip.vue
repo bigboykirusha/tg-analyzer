@@ -120,7 +120,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-well);
   background: var(--inverse-surface);
-  box-shadow: var(--shadow-overlay);
+  box-shadow: var(--ring-card), var(--shadow-float);
   color: var(--on-inverse);
   font: var(--text-caption);
   pointer-events: none;

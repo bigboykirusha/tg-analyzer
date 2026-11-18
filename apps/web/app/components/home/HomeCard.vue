@@ -9,7 +9,7 @@ import { hueOf } from '../../lib/hue'
  * `poster`: a report is its poster in miniature — the person's colour, their avatar as a light well, the name
  * and the pulse in poster ink — the same object the report opens with, the landing deck shows and «Итоги» end
  * on. A chat without a report (the newcomer's suggestions) stays a white card: colour means there is a report.
- * The name and the line are one line each, so tiles in a row are the same height.
+ * Titles can wrap; the grid keeps tiles in a row aligned.
  */
 const props = defineProps<{
   chatId?: string
@@ -97,9 +97,10 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 
 /* A report is its poster: the person's colour, ink type, the pulse in their two inks. */
 .home-card--poster {
+  border-radius: var(--radius-poster);
   background-color: var(--poster);
   background-image: var(--poster-image);
-  box-shadow: var(--shadow-lift);
+  box-shadow: var(--edge-light), var(--ring-card);
   color: var(--on-poster);
   --pulse-you: var(--on-poster);
   --pulse-them: var(--on-them);
@@ -128,11 +129,6 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 @media (hover: hover) and (pointer: fine) {
   .home-card:has(a.home-card__name):hover::before {
     opacity: 1;
-  }
-
-  /* A poster is an object: under the pointer it rises a little, as a card picked up from the table. */
-  .home-card--poster:has(a.home-card__name):hover {
-    transform: translateY(calc(-1 * var(--space-0-5)));
   }
 }
 
@@ -208,7 +204,11 @@ a.home-card__name::after {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: inherit;
+  border-radius: var(--radius-card);
+}
+
+.home-card--poster a.home-card__name::after {
+  border-radius: var(--radius-poster);
 }
 
 a.home-card__name:focus-visible {
@@ -246,6 +246,13 @@ a.home-card__name:focus-visible::after {
 @media (min-width: 641px) {
   .home-card {
     --pulse-half: var(--space-6);
+  }
+}
+
+@media (min-width: 901px) {
+  .home-card:not(.home-card--square) {
+    min-height: 208px;
+    padding: var(--space-5);
   }
 }
 

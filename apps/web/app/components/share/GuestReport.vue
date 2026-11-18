@@ -2,13 +2,8 @@
 import type { PublicReportDto } from '@tg-analyzer/shared'
 
 /**
- * A report opened by a shared link, without signing in: the same composition as the owner's report —
- * the poster, then the cards of one anatomy («Баланс», «Время», «Слова», «Эмодзи и реакции») — told in
- * the third person: the author's name stands where the owner reads «вы» («Мила и Аня пишут на равных»),
- * because the reader is the other side. Words and emoji come only when the author allowed them. A group's link
- * opens the group's own cards (people, roles, pairs, talk, time, words), its members as «Участник N» unless the
- * author named them. It ends
- * on an invitation to one's own report, a card in the flow, so it never covers the text.
+ * The public report uses the same surfaces and chapter rhythm. It names the author's side and
+ * renders the words and names allowed by the link settings.
  */
 const props = defineProps<{ share: PublicReportDto }>()
 const { t } = useI18n()
@@ -39,21 +34,24 @@ const allowed = computed(() => props.share.settings.words)
       :anonymous-cast="!share.settings.showName"
     />
     <UiPageContainer>
-      <div class="guest__flow">
-        <h2 class="sr-only">{{ t('publicReport.mainTitle') }}</h2>
+      <h2 class="sr-only">{{ t('publicReport.mainTitle') }}</h2>
+      <div class="report-flow guest__flow">
         <GroupReport v-if="isGroup" :data="data" />
         <template v-else>
-          <ReportBalance
-            class="guest__balance"
-            :data="data"
-            :author="cover.author"
-            :anonymous="!share.settings.showName"
-          />
+          <div class="guest__overview">
+            <ReportBalance
+              class="guest__balance"
+              :data="data"
+              :author="cover.author"
+              :anonymous="!share.settings.showName"
+            />
+            <ReportTime :data="data" compact />
+          </div>
 
-          <ReportTime :data="data" compact />
-
-          <ReportWords v-if="allowed" :data="data" :author="cover.author" />
-          <ReportFavourites v-if="allowed" :data="data" />
+          <ReportPart v-if="allowed" id="words" :title="t('report.tabs.words')">
+            <ReportWords :data="data" :author="cover.author" />
+            <ReportFavourites :data="data" />
+          </ReportPart>
         </template>
 
         <section class="tile guest__invite">
@@ -70,15 +68,20 @@ const allowed = computed(() => props.share.settings.words)
 
 <style scoped>
 .guest__flow {
-  display: flex;
-  flex-direction: column;
-  gap: var(--card-gap);
-  min-width: 0;
   padding: var(--space-4) 0 var(--space-6);
 }
 
+.guest__overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+}
+
+.guest__overview:empty {
+  display: none;
+}
+
 .guest__invite {
-  margin-top: var(--space-2);
   gap: var(--space-4);
 }
 
@@ -97,24 +100,21 @@ const allowed = computed(() => props.share.settings.words)
   align-self: stretch;
 }
 
-/*
- * Balance and time can be read side by side. Other cards keep their own layout and full-width cards span the row.
- */
 @media (min-width: 901px) {
   .guest__flow {
-    flex-flow: row wrap;
-    align-items: stretch;
     padding-top: var(--space-8);
   }
 
-  .guest__flow > :deep(*) {
-    flex: 1 1 40%;
-    min-width: 0;
+  .guest__overview {
+    flex-direction: row;
   }
 
-  .guest__flow > :deep(.report-section--wide),
-  .guest__flow > .guest__invite {
-    flex-basis: 100%;
+  .guest__overview > :deep(.report-section) {
+    flex: 5 1 0;
+  }
+
+  .guest__overview > .guest__balance {
+    flex-grow: 4;
   }
 
   .guest__balance :deep(.balance) {

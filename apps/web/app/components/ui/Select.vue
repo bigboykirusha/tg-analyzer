@@ -536,7 +536,11 @@ defineExpose({ focus: () => triggerRef.value?.focus() })
 }
 
 .option[aria-selected='true'] {
-  background: var(--sidebar-selection);
+  background: var(--selection);
+}
+
+.option.is-active[aria-selected='true'] {
+  box-shadow: var(--ring-strong);
 }
 
 .option.is-disabled {

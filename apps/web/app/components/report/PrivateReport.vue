@@ -29,7 +29,7 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
       {{ t('report.lowData') }}
     </p>
     <ReportHighlights :data="data" :no-words="noWords" />
-    <ReportPart id="together" :title="t('report.tabs.withName', { name: data.summary.title })">
+    <ReportPart id="together" :title="t('report.tabs.withName', { name: data.summary.title })" comparison>
       <ReportSplit :data="data" />
       <ReportConversation :data="data" />
       <ReportRelationship :data="data" />
@@ -62,13 +62,6 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
 </template>
 
 <style scoped>
-.report-flow {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
 .report-note {
   display: flex;
   align-items: flex-start;

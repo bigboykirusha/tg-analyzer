@@ -49,6 +49,7 @@ useBodyScrollLock(open)
 useFocusTrap(panelRef, open, { onEscape: close, initial: () => props.initialFocus?.() ?? panelRef.value })
 // Phones show the dialog as a sheet, and a sheet answers the finger: grab its top and pull it down.
 const isSheet = useMediaQuery('(max-width: 640px)')
+const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
 const drag = useSheetDrag(panelRef, { root: layerRef, onRelease: (toRest) => !toRest || close() })
 useVisualViewportFit(
   layerRef,
@@ -63,7 +64,7 @@ const grab = computed(() => (isSheet.value ? drag.handlers : {}))
     <Transition
       :name="isSheet ? 'sheet' : 'modal'"
       appear
-      :duration="isSheet ? { enter: tokenMs('--duration-sheet'), leave: tokenMs('--duration-fast') } : undefined"
+      :duration="reducedMotion ? 0 : { enter: tokenMs('--duration-sheet'), leave: tokenMs('--duration-fast', 150) }"
     >
       <div v-if="open" ref="layerRef" :class="isSheet ? 'sheet-layer' : 'modal-backdrop'" @click.self="close">
         <template v-if="isSheet">
@@ -299,6 +300,13 @@ const grab = computed(() => (isSheet.value ? drag.handlers : {}))
 .modal-leave-to .modal-panel {
   opacity: 0;
   transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-enter-from .modal-panel,
+  .modal-leave-to .modal-panel {
+    transform: none;
+  }
 }
 
 .modal-panel:focus {

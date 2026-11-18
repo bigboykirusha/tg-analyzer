@@ -67,6 +67,8 @@ const PAIRS = [
   ['--text-muted', '--surface', 60],
   ['--text-muted', '--surface-raised', 60],
   ['--text-muted', '--fill-raised', 60],
+  ['--text', '--selection', 75],
+  ['--text-muted', '--selection', 60],
   ['--text-faint', '--surface', 30],
   ['--text-faint', '--surface-raised', 30],
   ['--on-accent', '--accent', 75],

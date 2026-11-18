@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertCircle, MessageSquare, Search, WifiOff, X } from '../lib/icons'
+import { AlertCircle, MessageSquare, Search, WifiOff } from '../lib/icons'
 
 /**
  * A searchable list of Telegram chats. The dedicated picker puts chats ready for a new report first and keeps
@@ -16,7 +16,7 @@ const { relogin } = useAuth()
 
 const search = ref('')
 const query = computed(() => search.value.trim().toLocaleLowerCase())
-const searchInput = useTemplateRef<HTMLInputElement>('searchInput')
+const searchInput = useTemplateRef<{ focus: () => void }>('searchInput')
 const visibleCount = ref(PAGE_SIZE)
 const sentinel = ref<HTMLElement | null>(null)
 const matching = computed(() =>
@@ -66,23 +66,19 @@ onMounted(() => {
 <template>
   <div class="picker" :class="{ 'picker--sticky': standalone }">
     <div class="picker__tools">
-      <div class="picker__search">
-        <Search class="icon-sm" aria-hidden="true" />
-        <input
-          ref="searchInput"
-          v-model="search"
-          type="search"
-          name="chat-search"
-          autocomplete="off"
-          enterkeyhint="search"
-          spellcheck="false"
-          :placeholder="t('newAnalysis.searchPlaceholder')"
-          :aria-label="t('dashboard.search')"
-        />
-        <button v-if="search" type="button" class="picker__clear" :aria-label="t('common.clear')" @click="clearSearch">
-          <X class="icon-sm" aria-hidden="true" />
-        </button>
-      </div>
+      <UiInput
+        ref="searchInput"
+        v-model="search"
+        type="search"
+        name="chat-search"
+        autocomplete="off"
+        enterkeyhint="search"
+        spellcheck="false"
+        :icon="Search"
+        :placeholder="t('newAnalysis.searchPlaceholder')"
+        :aria-label="t('dashboard.search')"
+        clearable
+      />
     </div>
 
     <p v-if="!auth.telegramSessionActive" class="picker__note" role="status">
@@ -150,12 +146,6 @@ onMounted(() => {
   min-width: 0;
 }
 
-.picker__tools {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
 /* On its own page the search stays in reach while the list scrolls. */
 .picker--sticky .picker__tools {
   position: sticky;
@@ -167,63 +157,9 @@ onMounted(() => {
 }
 
 @media (min-width: 901px) {
-  /* The words go under the search, the width of the list (14.11), as on a phone. */
   .picker--sticky .picker__tools {
     top: 0;
   }
-
-  .picker__search::after {
-    content: '';
-    position: absolute;
-    z-index: var(--z-under);
-    inset: calc((var(--control-sm) - var(--hit-min)) / 2) 0;
-  }
-}
-
-/* The search field uses the list's surface in both entry points. */
-.picker__search {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: var(--control-md);
-  padding: 0 var(--space-4);
-  /* A pill, the shape of every control. */
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  box-shadow: var(--ring-card);
-  color: var(--text-muted);
-  font: var(--text-body);
-}
-
-.picker__search:focus-within {
-  box-shadow: var(--ring-field-focus);
-}
-
-.picker__search input {
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  color: var(--text);
-  outline: none;
-}
-
-.picker__search input::placeholder {
-  color: var(--text-muted);
-}
-
-.picker__search input::-webkit-search-cancel-button {
-  display: none;
-}
-
-.picker__clear {
-  display: inline-grid;
-  place-items: center;
-  width: var(--control-sm);
-  height: var(--control-sm);
-  margin-right: calc(-1 * var(--space-3));
-  color: var(--text-muted);
 }
 
 .picker__note {

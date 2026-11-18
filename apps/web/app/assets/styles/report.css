@@ -1,15 +1,35 @@
-/*
- * The report's shared pieces: the tile and the one poster-coloured tile. Every report card (ReportSection)
- * is built from these — one anatomy: label, answer, one picture, a footnote.
- */
+/* Chapter rhythm shared by private, group and public reports. */
+.report-flow {
+  --report-chapter-gap: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--report-chapter-gap);
+  min-width: 0;
+}
 
-/* A tile: a white card on the page — the question, the answer, the picture, a note. */
+.report-flow > * + .report-part::before {
+  position: absolute;
+  inset: calc(var(--report-chapter-gap) / -2) 0 auto;
+  border-block-start: 1px solid var(--border);
+  content: '';
+}
+
+@media (min-width: 901px) {
+  .report-flow {
+    --report-chapter-gap: var(--space-10);
+  }
+}
+
+.report-section,
 .tile {
-  --btn-secondary-bg: transparent;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
+}
+
+.tile {
+  --btn-secondary-bg: transparent;
   padding: var(--card-padding);
   border-radius: var(--radius-card);
   background: var(--surface);
@@ -39,6 +59,7 @@
   --heat-3: var(--gray-heat-a3);
   --heat-4: var(--on-poster);
   --focus-ring-color: var(--on-poster);
+  border-radius: var(--radius-poster);
   background-color: var(--poster);
   background-image: var(--poster-image);
   box-shadow: var(--edge-light);

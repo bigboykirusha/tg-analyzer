@@ -177,4 +177,10 @@ onMounted(() => {
     grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--space-16) * 3.5)), 1fr));
   }
 }
+
+@media (min-width: 901px) {
+  .home__reports {
+    gap: var(--space-4);
+  }
+}
 </style>

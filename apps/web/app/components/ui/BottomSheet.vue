@@ -23,6 +23,7 @@ const props = withDefaults(
   { title: '', role: 'dialog', busy: false, back: false, full: false },
 )
 
+const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
 const emit = defineEmits<{ close: []; back: [] }>()
 const { t } = useI18n()
 const panelRef = ref<HTMLElement | null>(null)
@@ -48,7 +49,7 @@ watch(open, (value) => value && drag.reset())
     <Transition
       name="sheet"
       appear
-      :duration="{ enter: tokenMs('--duration-sheet'), leave: tokenMs('--duration-fast') }"
+      :duration="reducedMotion ? 0 : { enter: tokenMs('--duration-sheet'), leave: tokenMs('--duration-fast', 150) }"
     >
       <div v-if="open" ref="layerRef" class="sheet-layer" :class="{ 'sheet-layer--full': full }" @click.self="close">
         <div class="sheet-dim" aria-hidden="true" />

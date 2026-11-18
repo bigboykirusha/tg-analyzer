@@ -15,7 +15,13 @@ const { facts, answer, tiles } = useRecords(() => props.data)
 </script>
 
 <template>
-  <ReportSection v-if="facts.length" :icon="Trophy" :title="t('report.fmt.recordsTitle')" :answer="answer">
+  <ReportSection
+    v-if="facts.length"
+    appearance="inline"
+    :icon="Trophy"
+    :title="t('report.fmt.recordsTitle')"
+    :answer="answer"
+  >
     <ReportTiles v-if="tiles.length" :tiles="tiles" />
   </ReportSection>
 </template>

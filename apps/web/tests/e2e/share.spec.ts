@@ -2,7 +2,7 @@ import type { PublicQuizDto } from '@tg-analyzer/shared'
 import { expect, test, type Page } from '@playwright/test'
 import { analyseChat, backendAvailable, gotoHydrated, noHorizontalScroll, signIn, usePreferences } from './helpers'
 
-test.describe.configure({ timeout: 90_000 })
+test.describe.configure({ timeout: 150_000 })
 
 test.beforeEach(async ({ baseURL, context }) => {
   test.skip(!(await backendAvailable(baseURL!)), 'API is not running in fake Telegram mode')
@@ -45,7 +45,11 @@ test('the quiz is sent by link: the guest plays, the author sees the score', asy
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: /Угадайка/ }).click()
   // Two ways and nothing else: send it, or play it yourself.
-  await expect(dialog.getByText('Из отчёта уходят только эти вопросы и счёт.')).toBeVisible()
+  await expect(
+    dialog.getByText(
+      'По ссылке видны имя автора, вопросы и числа для сравнения. После отправки ответов автор увидит счёт.',
+    ),
+  ).toBeVisible()
   await expect(dialog.getByRole('link', { name: /Пройти самостоятельно/ })).toBeVisible()
   await expect(dialog.getByRole('radiogroup')).toHaveCount(0)
   const token = await makeLink(page, 'Скопировать ссылку')

@@ -151,8 +151,7 @@ for (const [title, id] of [
         (cid) =>
           location.pathname.endsWith(`/chat/${cid}`) ||
           document.querySelector('.toast') ||
-          // A phone goes back home to watch it (16.11): done when its tile is there.
-          document.querySelector(`.home-card a[href="/chat/${cid}"]`),
+          document.querySelector(`.chat-row a[href="/chat/${cid}"], .home-card a[href="/chat/${cid}"]`),
         id,
         {
           timeout: 90000,
@@ -206,5 +205,11 @@ await p.keyboard.press('Escape')
 await p.goto(BASE + '/account')
 await ready()
 await grab('account')
+await p.goto(BASE + '/notifications')
+await ready()
+await grab('notifications')
+await p.goto(BASE + '/offline')
+await ready()
+await grab('offline')
 await writeFile(`${OUT}/audit-${mode}.json`, JSON.stringify({ screens, blocks, gblocks }, null, 1))
 await b.close()

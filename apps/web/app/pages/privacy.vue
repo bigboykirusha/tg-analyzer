@@ -18,7 +18,7 @@ const questions = computed(() =>
 </script>
 
 <template>
-  <div class="doc">
+  <UiPageContainer as="article" size="narrow" class="doc">
     <header class="doc__head">
       <h1 class="t-h1">{{ t('privacy.pageTitle') }}</h1>
       <p class="t-lede">{{ t('privacy.pageLede') }}</p>
@@ -35,7 +35,7 @@ const questions = computed(() =>
         </details>
       </UiGroup>
     </section>
-  </div>
+  </UiPageContainer>
 </template>
 
 <style scoped>
@@ -44,14 +44,7 @@ const questions = computed(() =>
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
-  width: 100%;
-  max-width: calc(var(--page-max) + var(--page-gutter) * 2);
-  margin: 0 auto;
-  padding: var(--space-4) var(--page-gutter) var(--page-bottom);
-}
-
-.doc > * {
-  max-width: var(--page-max-narrow);
+  padding-block: var(--space-4) var(--page-bottom);
 }
 
 .doc__head,
@@ -77,7 +70,7 @@ const questions = computed(() =>
 .faq:not(:last-child)::after {
   content: '';
   position: absolute;
-  inset: auto 0 0 var(--row-inset);
+  inset: auto var(--row-inset) 0;
   height: 1px;
   background: var(--border);
 }

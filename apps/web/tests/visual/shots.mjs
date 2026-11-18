@@ -71,6 +71,7 @@ for (const mode of modes) {
       ['/example', '02-example'],
       ['/nope', '03-404'],
       ['/privacy', '04-privacy'],
+      ['/offline', '04-offline'],
     ]) {
       await page.goto(BASE + path)
       await ready()
@@ -121,8 +122,7 @@ for (const mode of modes) {
             (cid) =>
               location.pathname.endsWith(`/chat/${cid}`) ||
               document.querySelector('.toast') ||
-              // A phone goes back home to watch it (16.11): done when its tile is there.
-              document.querySelector(`.home-card a[href="/chat/${cid}"]`),
+              document.querySelector(`.chat-row a[href="/chat/${cid}"], .home-card a[href="/chat/${cid}"]`),
             id,
             { timeout: 90000 },
           )
@@ -228,6 +228,11 @@ for (const mode of modes) {
     await page.goto(BASE + '/account')
     await ready()
     await shot('21-account')
+  })
+  await step('notifications', async () => {
+    await page.goto(BASE + '/notifications')
+    await ready()
+    await shot('22-notifications')
   })
   log(mode.name, `console errors: ${JSON.stringify([...new Set(errors)].slice(0, 6))}`)
   await browser.close()

@@ -104,7 +104,7 @@ defineExpose({ focus: () => inputRef.value?.focus(), el: inputRef })
       :class="inputClass"
       :disabled="disabled"
       :aria-invalid="isInvalid || undefined"
-      :aria-describedby="field?.describedby.value"
+      :aria-describedby="[field?.describedby.value, attrs['aria-describedby']].filter(Boolean).join(' ') || undefined"
       @input="onInput"
     />
     <button
@@ -192,18 +192,22 @@ defineExpose({ focus: () => inputRef.value?.focus(), el: inputRef })
   flex: none;
   align-items: center;
   justify-content: center;
-  margin-right: calc(-1 * var(--space-2));
-  width: var(--control-sm);
-  height: var(--control-sm);
+  width: var(--control-md);
+  height: var(--control-md);
+  margin-right: calc(-1 * var(--space-3));
   border-radius: var(--radius-pill);
   color: var(--text-muted);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .input__clear:hover {
+  .input__clear:hover:not(:disabled) {
     background: var(--hover);
     color: var(--text);
   }
+}
+
+.input__clear:focus-visible {
+  outline-offset: calc(-1 * var(--space-1));
 }
 
 .ui-input--disabled {

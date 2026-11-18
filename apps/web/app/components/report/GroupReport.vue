@@ -3,7 +3,7 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { LayoutGrid } from '../../lib/icons'
 
 /**
- * A group's report under its poster (the poster has «В ролях»), four parts of cards of one anatomy:
+ * A group's report under its poster (the poster has «В ролях»), in four chapters:
  * «Люди» (the people, the roles, the pairs), «Общение» (reactions, who starts, own words, stickers),
  * «Время» (the hours, the calendar, the weekdays) and «О чём» (the shared words and the emoji).
  */
@@ -36,12 +36,3 @@ const { t } = useI18n()
     <GroupWords :data="data" :group="data.report.group" />
   </div>
 </template>
-
-<style scoped>
-.report-flow {
-  display: flex;
-  flex-direction: column;
-  gap: var(--card-gap);
-  min-width: 0;
-}
-</style>

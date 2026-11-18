@@ -246,7 +246,7 @@ watch(
   background-color: var(--poster);
   background-image: var(--poster-image);
   color: var(--on-poster);
-  transition: transform var(--duration-sheet) var(--ease-drawer);
+  transition: transform var(--duration-story) var(--ease-drawer);
 }
 
 .stories__frame:focus {

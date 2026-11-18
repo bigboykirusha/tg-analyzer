@@ -131,7 +131,7 @@ const details = computed(() => findings.value.slice(1))
   min-width: 0;
   min-height: calc(var(--space-16) * 2);
   padding: var(--space-4);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-poster);
   background-color: var(--poster);
   background-image: var(--poster-image);
   box-shadow: var(--edge-light);

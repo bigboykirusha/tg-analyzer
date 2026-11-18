@@ -175,7 +175,7 @@ const invitation = wave(4, 40)
                 size="md"
               />
               <span class="choice__name">{{ side.name }}</span>
-              <span v-if="picked && (side.key === current.answer || side.key === picked)" class="choice__value">
+              <span v-if="picked && (side.key === current.answer || side.key === picked)" class="choice__value tnum">
                 <Check v-if="side.key === current.answer" aria-hidden="true" />
                 <X v-else aria-hidden="true" />
                 <template v-if="current.unit !== 'fact'">{{ value(current.unit, current[side.key]) }}</template>
@@ -208,7 +208,7 @@ const invitation = wave(4, 40)
       <template v-else>
         <div class="quiz__body">
           <p v-if="!self" class="quiz__note quiz__note--start">{{ t('publicQuiz.from', { name: quiz.author }) }}</p>
-          <p class="quiz__score">{{ t('publicQuiz.score', { score, total }) }}</p>
+          <p class="quiz__score tnum">{{ t('publicQuiz.score', { score, total }) }}</p>
           <component :is="heading" class="quiz__verdict">{{ verdict }}</component>
           <p v-if="!self && answered" class="quiz__note quiz__note--start">
             {{ t('publicQuiz.resultSaved') }}
@@ -265,6 +265,8 @@ const invitation = wave(4, 40)
   --text: var(--on-poster);
   --text-muted: var(--on-poster-muted);
   --fill-raised: var(--on-poster-chip);
+  --ring-card: var(--ring-on-poster);
+  --focus-ring-color: var(--on-poster);
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -385,7 +387,9 @@ const invitation = wave(4, 40)
   box-shadow: var(--ring-card);
   color: var(--text);
   text-align: left;
-  transition: transform var(--duration-press) var(--ease-standard);
+  transition:
+    box-shadow var(--transition-fast),
+    transform var(--duration-press) var(--ease-standard);
 }
 
 .choice:not(:disabled):active {
@@ -431,6 +435,7 @@ const invitation = wave(4, 40)
 .quiz__review {
   border-radius: var(--radius-card);
   background: var(--surface);
+  box-shadow: var(--ring-card);
   color: var(--text);
 }
 
@@ -453,6 +458,7 @@ const invitation = wave(4, 40)
 
 .quiz__summary svg {
   --icon-size: var(--icon-sm);
+  transition: transform var(--transition-fast);
 }
 
 .quiz__review[open] .quiz__summary svg {

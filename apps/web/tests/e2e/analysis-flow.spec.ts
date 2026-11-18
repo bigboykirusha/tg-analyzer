@@ -31,6 +31,7 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   // With a first report the home page turns into the summary: the report is a card.
   const card = page.locator('.home-card').filter({ hasText: 'Катя' })
   await expect(card).toBeVisible()
+  if (testInfo.project.name === 'desktop') await expect(page.locator('.sidebar__list')).toHaveCount(0)
   expect(await card.locator('.home-card__name').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
     true,
   )
@@ -38,6 +39,9 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   await card.getByRole('link', { name: 'Катя' }).click()
   await page.waitForURL('**/chat/1006')
   await expect(page.getByRole('heading', { name: 'Катя', exact: true })).toBeVisible()
+  if (testInfo.project.name === 'desktop') {
+    await expect(page.locator('.sidebar__list a[aria-current="page"]')).toHaveAttribute('href', '/chat/1006')
+  }
 
   // One short page of cards: the balance is always there; a card the chat is too small for is not drawn.
   await expect(page.locator('.report-section')).not.toHaveCount(0)
@@ -47,7 +51,7 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   await expect(page.locator('.page-bar__lede')).toHaveCount(0)
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.goto('/new')
-  await expect(page.locator('a.chat-row[href="/chat/1006"]')).toBeVisible()
+  await expect(page.locator('.chat-row a[href="/chat/1006"]')).toBeVisible()
 })
 
 test('the report explains a one-sided chat and shows all tied weekdays', async ({ page }) => {
@@ -113,6 +117,79 @@ test('a chat with too few messages has no «Разобрать» in the full lis
   const courier = page.locator('.chat-row').filter({ hasText: 'Курьер Игорь' })
   await expect(courier.getByText('Мало сообщений')).toBeVisible()
   await expect(courier.getByRole('button')).toHaveCount(0)
+})
+
+test('a keyboard start preserves focus through progress and the queue', async ({ page }) => {
+  await signIn(page)
+  const jobId = '00000000-0000-4000-8000-000000000001'
+  const queuedJob = { jobId: '00000000-0000-4000-8000-000000000002', chatId: '1006', chatTitle: 'Катя' }
+  const requests: string[] = []
+  let reading = false
+  let inQueue = false
+  let cancelled: string | undefined
+  let releaseStart = () => {}
+  const startPending = new Promise<void>((resolve) => (releaseStart = resolve))
+  await page.route('**/api/v1/parse/start', async (route) => {
+    const { chatId } = route.request().postDataJSON()
+    requests.push(chatId)
+    if (chatId === queuedJob.chatId) {
+      inQueue = true
+      await route.fulfill({ status: 202, json: { jobId: queuedJob.jobId } })
+    } else {
+      await startPending
+      reading = true
+      await route.fulfill({ status: 202, json: { jobId } })
+    }
+  })
+  await page.route('**/api/v1/parse/cancel', async (route) => {
+    cancelled = route.request().postDataJSON().jobId
+    inQueue = false
+    await route.fulfill({ json: { success: true } })
+  })
+  await page.route('**/api/v1/parse/status*', (route) =>
+    route.fulfill({
+      json: {
+        jobId: reading ? jobId : null,
+        status: reading ? 'running' : 'idle',
+        phase: reading ? 'scanning' : null,
+        chatId: reading ? '1005' : null,
+        chatTitle: reading ? 'Дима (работа)' : null,
+        scannedMessages: 1638,
+        totalMessages: 2600,
+        startedAt: reading ? Date.now() - 20_000 : null,
+        waitSeconds: null,
+        error: null,
+        queued: inQueue ? [queuedJob] : [],
+      },
+    }),
+  )
+  await page.routeWebSocket('**/ws/parse-progress**', (socket) => socket.close())
+  await gotoHydrated(page, '/new')
+  const row = page.locator('.chat-row').filter({ hasText: 'Дима (работа)' })
+  const start = row.getByRole('button', { name: 'Разобрать чат «Дима (работа)»' })
+  await start.focus()
+  try {
+    await page.keyboard.press('Enter')
+    await expect(start).toHaveAttribute('aria-busy', 'true')
+    await expect(start.locator('.spinner')).toBeVisible()
+    await page.keyboard.press('Enter')
+  } finally {
+    releaseStart()
+  }
+  await expect(row.getByRole('button', { name: 'Разбираем чат «Дима (работа)», 63%' })).toBeFocused()
+  await expect(page).toHaveURL(/\/new$/)
+  expect(requests).toEqual(['1005'])
+
+  const secondRow = page.locator('.chat-row').filter({ hasText: queuedJob.chatTitle })
+  const secondStart = secondRow.getByRole('button', { name: 'Разобрать чат «Катя»' })
+  await secondStart.focus()
+  await page.keyboard.press('Enter')
+  const cancelQueued = secondRow.getByRole('button', { name: 'Убрать «Катя» из очереди' })
+  await expect(cancelQueued).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(secondStart).toBeFocused()
+  expect(cancelled).toBe(queuedJob.jobId)
+  expect(requests).toEqual(['1005', queuedJob.chatId])
 })
 
 test('group chats get the group report', async ({ page }, testInfo) => {
@@ -334,13 +411,33 @@ test('a running analysis shows away from home and its button opens the details',
   await gotoHydrated(page, '/new')
   // The chat's own button reads the percentage and opens the running analysis, where it can be cancelled.
   const row = page.locator('.chat-row').filter({ hasText: 'Дима (работа)' })
-  await row.getByRole('button', { name: 'Разбираем чат «Дима (работа)», 63%' }).click()
+  const rowProgress = row.getByRole('button', { name: 'Разбираем чат «Дима (работа)», 63%' })
+  await rowProgress.focus()
+  await page.keyboard.press('Enter')
   const details = page.getByRole('dialog', { name: 'Разбираем переписку' })
   await expect(details.getByRole('button', { name: 'Отменить разбор' })).toBeVisible()
+  await expect(details).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(details).toBeHidden()
-  // The same chat list stays visible until the first report is ready.
+  await expect(rowProgress).toBeFocused()
   const desktop = testInfo.project.name === 'desktop'
+  if (!desktop) {
+    await page.keyboard.press('Enter')
+    const grab = details.locator('.modal-grab')
+    await expect(grab).toBeVisible()
+    await expect(page.locator('.sheet-layer.sheet-enter-active')).toHaveCount(0)
+    const handle = (await grab.boundingBox())!
+    const x = handle.x + handle.width / 2
+    const y = handle.y + handle.height / 2
+    await page.mouse.move(x, y)
+    await page.mouse.down()
+    await page.mouse.move(x, y + 120, { steps: 8 })
+    await expect(page.locator('.sheet-layer[data-sheet="drag"]')).toBeVisible()
+    await page.mouse.up()
+    await expect(details).toBeHidden()
+    await expect(rowProgress).toBeFocused()
+  }
+  // The same chat list stays visible until the first report is ready.
   await gotoHydrated(page, '/dashboard')
   await expect(page.getByRole('heading', { name: 'Первый отчёт' })).toBeVisible()
   await expect(row).toBeVisible()

@@ -106,7 +106,7 @@ const { frames } = useStoryFrames(() => props.data)
     align-items: center;
     gap: var(--space-10);
     padding: var(--space-8);
-    border-radius: var(--radius-card);
+    border-radius: var(--radius-poster);
     background-color: var(--poster);
     background-image: var(--poster-image);
   }

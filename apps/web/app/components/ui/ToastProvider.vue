@@ -177,7 +177,7 @@ const lives = computed(() => [
   border-radius: var(--radius-card);
   background: var(--surface-raised);
   color: var(--text);
-  box-shadow: var(--shadow-overlay);
+  box-shadow: var(--ring-card), var(--shadow-float);
   pointer-events: auto;
   touch-action: none;
   transition: transform var(--duration-sheet) var(--ease-drawer);
