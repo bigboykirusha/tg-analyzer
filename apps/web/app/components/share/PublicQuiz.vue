@@ -296,6 +296,22 @@ const invitation = wave(4, 40)
   min-height: 100dvh;
 }
 
+/*
+ * A computer (18.11): in the cabinet the poster is a rounded card in the column, as the report's poster is there —
+ * not a fill to the window's edges with the progress glued to the top. The guest's page keeps its own full width.
+ */
+@media (min-width: 901px) {
+  .quiz--self {
+    margin: 0 var(--page-gutter);
+    border-radius: var(--radius-poster);
+  }
+
+  .quiz--self .quiz__in {
+    min-height: calc(100dvh - var(--page-top) - var(--page-bottom));
+    padding-top: var(--space-6);
+  }
+}
+
 /* Both public and workspace headers float over the poster on phones. */
 @media (max-width: 900px) {
   .quiz__in {
