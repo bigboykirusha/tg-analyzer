@@ -122,7 +122,9 @@ test('a chat with too few messages has no «Разобрать» in the full lis
   await expect(courier.getByRole('button')).toHaveCount(0)
 })
 
-test('a keyboard start preserves focus through progress and the queue', async ({ page }) => {
+test('a keyboard start preserves focus through progress and the queue', async ({ page }, testInfo) => {
+  // A phone goes back home to watch a started analysis (16.11): the list keeps the focus on a computer.
+  test.skip(testInfo.project.name !== 'desktop', 'a phone returns home after a start')
   await signIn(page)
   const jobId = '00000000-0000-4000-8000-000000000001'
   const queuedJob = { jobId: '00000000-0000-4000-8000-000000000002', chatId: '1006', chatTitle: 'Катя' }

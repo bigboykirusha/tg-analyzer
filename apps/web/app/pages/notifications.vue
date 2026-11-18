@@ -27,7 +27,7 @@ function headline(item: NotificationDto) {
   }
 }
 
-/** The chat and the detail: «Мама · 5 из 5». */
+/** The event and its detail: «Отчёт готов · 1 200 сообщений». */
 function detail(item: NotificationDto) {
   const more = (() => {
     switch (item.kind) {
@@ -45,7 +45,8 @@ function detail(item: NotificationDto) {
         return t('notifications.detail.until', { date: formatDate(item.expiresAt, { day: 'numeric', month: 'long' }) })
     }
   })()
-  return more ? `${item.title} · ${more}` : item.title
+  // The person leads the row, as in any notification list (18.11); the event and its number are the line under it.
+  return more ? `${headline(item)} · ${more}` : headline(item)
 }
 
 /** The kind of news, as the badge on the avatar. */
@@ -131,15 +132,17 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
         <UiGroup v-for="day in groups" :key="day.key" :header="day.title">
           <ul class="feed__list">
             <li v-for="item in day.items" :key="item.id">
-              <UiListRow :title="headline(item)" :subtitle="detail(item)" :to="target(item)" wrap>
+              <UiListRow :title="item.title" :subtitle="detail(item)" :to="target(item)">
+                <!-- The time stands in the name's line, as in iOS notifications: the line under it keeps the full width. -->
+                <span class="note__head">
+                  <span class="note__name">{{ item.title }}</span>
+                  <time class="note__time tnum" :datetime="item.createdAt">{{ time(item.createdAt) }}</time>
+                </span>
                 <template #leading>
                   <span class="note__avatar">
                     <ChatAvatar :chat-id="item.chatId" :title="item.title" :has-avatar="hasAvatar(item.chatId)" />
                     <span class="note__kind" aria-hidden="true"><component :is="KIND_ICON[item.kind]" /></span>
                   </span>
-                </template>
-                <template #trailing>
-                  <time class="note__time tnum" :datetime="item.createdAt">{{ time(item.createdAt) }}</time>
                 </template>
               </UiListRow>
             </li>
@@ -201,16 +204,33 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
   bottom: calc(-1 * var(--space-1));
   display: inline-grid;
   place-items: center;
-  width: var(--icon-md);
-  height: var(--icon-md);
+  /* 16 with its ring on a 44 avatar (18.11): a mark of the kind, not a second picture. */
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   border: var(--space-0-5) solid var(--surface);
   border-radius: var(--radius-pill);
   background: var(--text);
   color: var(--bg);
-  --icon-size: var(--icon-sm);
+  --icon-size: var(--icon-xs);
+}
+
+.note__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.note__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .note__time {
+  flex: none;
+  color: var(--text-muted);
   font: var(--text-label);
   white-space: nowrap;
 }

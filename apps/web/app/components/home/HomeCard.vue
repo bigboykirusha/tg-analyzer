@@ -318,18 +318,19 @@ a.home-card__name:focus-visible::after {
   /* Compact (five reports and more): one row of a two-line text, so the circle is 44 (the rule of the circle beside
      text, 15.11); the pulse is a short strip at the end instead of the full width under it. */
   .home-card--compact:not(.home-card--square) {
-    /* Give the avatar, title and gaps room before expanding the pulse on wider phones. */
-    grid-template-columns: auto minmax(0, 1fr) clamp(25%, 100% - var(--space-16) * 3.5, 38%);
+    /* The name comes first (18.11): one line, so the pulse keeps to a quarter of the row. */
+    grid-template-columns: auto minmax(0, 1fr) 25%;
     grid-template-areas: 'avatar text foot';
     padding: var(--space-3);
     --pulse-half: var(--space-2);
   }
 
+  /* One line in a compact row (18.11): every row keeps one height, as in a chat list; the full name is in the report. */
   .home-card--compact .home-card__name {
     font: var(--text-body);
     letter-spacing: normal;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
   }
 
   .home-card--compact:not(.home-card--square) .home-card__foot {

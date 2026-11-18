@@ -500,6 +500,8 @@
   --control-md: 44px;
   --row-height: 56px;
   --hit-min: 44px;
+  /* A badge's glyph on an avatar's shoulder (notifications). */
+  --icon-xs: 10px;
   --icon-sm: 16px;
   --icon-md: 20px;
   --icon-lg: 24px;

@@ -38,7 +38,13 @@ export async function signIn(page: Page, options: { navigate?: boolean } = {}) {
   // A fresh number per test keeps analysis cooldowns from leaking between runs.
   const phone = `900${String(Math.floor(Math.random() * 1e7)).padStart(7, '0')}`.replace(/9$/, '1')
   if (options.navigate !== false) await gotoHydrated(page, '/login')
-  await page.locator('.phone-input').fill(phone)
+  // Hydration can still reset the field after it is first typed in: type until the number stays.
+  const input = page.locator('.phone-input')
+  await expect(async () => {
+    await input.fill(phone)
+    await expect(input).not.toHaveValue('', { timeout: 500 })
+    await expect(page.getByRole('button', { name: 'Получить код' })).toBeEnabled({ timeout: 500 })
+  }).toPass({ timeout: 10_000 })
   await page.getByRole('button', { name: 'Получить код' }).click()
   // The first cell has focus on its own and the fifth digit signs in.
   await expect(page.locator('.otp-input').first()).toBeFocused()

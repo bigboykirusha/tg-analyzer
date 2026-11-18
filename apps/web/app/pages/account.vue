@@ -273,12 +273,16 @@ onMounted(() => {
   padding-bottom: var(--page-bottom);
 }
 
+/* The profile is the first card, as on iOS settings (18.11): not a heading floating on the paper above the groups. */
 .account__me {
   display: flex;
   align-items: center;
   gap: var(--space-4);
   min-width: 0;
-  padding: var(--space-2) var(--card-padding);
+  padding: var(--space-4) var(--card-padding);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--ring-card);
 }
 
 .account__who {

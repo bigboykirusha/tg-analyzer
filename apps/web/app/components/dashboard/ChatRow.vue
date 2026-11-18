@@ -105,7 +105,6 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
           :aria-disabled="starting && canStart ? true : undefined"
           :aria-busy="starting && canStart ? true : undefined"
           :chevron="!!chat.report && !progressState"
-          wrap
           @contextmenu="openMenu"
           @pointerdown="pressDown"
           @pointermove="pressMove"
@@ -187,10 +186,6 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
 /* The long press belongs to the row's menu, not to the browser's link preview. */
 .chat-row__entry {
   -webkit-touch-callout: none;
-}
-
-.chat-row__entry :deep(.list-row__title) {
-  overflow-wrap: anywhere;
 }
 
 /* Just analysed: the line in full ink — colour, not a heavier weight, as everywhere else. */

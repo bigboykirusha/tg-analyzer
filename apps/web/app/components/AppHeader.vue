@@ -126,8 +126,8 @@ const bellLabel = computed(() =>
 }
 
 /*
- * The dot sits on the glyph's shoulder, not on the corner of the 44 px tap area (there it hung apart from the bell).
- * The glyph is 20 in a 44 circle: 8 from the top and the right puts the dot's centre on its upper right edge; the
+ * The dot sits on the glyph's shoulder, not on the corner of the tap area (there it hung apart from the bell).
+ * The glyph is 24 in a 44 box: 8 from the top and the right puts the dot's centre on its upper right edge; the
  * paper-coloured ring cuts the bell's line, as a badge on an iOS icon.
  */
 .app-bar__dot {
@@ -142,12 +142,33 @@ const bellLabel = computed(() =>
   pointer-events: none;
 }
 
+/*
+ * The usual mobile bar (18.11): plain 24 px glyphs with a 44 tap and no plates — back, share, ⋯ and the bell alike;
+ * your avatar 32 beside them. Only over a poster the controls keep their translucent chips (a glyph alone would not
+ * read on the person's colour), 36 to see and 44 to tap.
+ */
+.app-bar:not(.is-over-poster) :deep(.icon-btn) {
+  background: transparent;
+  --icon-size: var(--icon-lg);
+}
+
+.app-bar.is-over-poster :deep(.icon-btn--md) {
+  width: var(--control-sm);
+  height: var(--control-sm);
+}
+
+.app-bar__account :deep(.avatar) {
+  width: var(--avatar-sm);
+  height: var(--avatar-sm);
+}
+
 /* Your avatar stands alone, 44 to tap: no ring, no plate around it. */
 .app-bar__account {
   display: inline-grid;
   place-items: center;
   width: var(--control-md);
   height: var(--control-md);
+  margin: calc((var(--avatar-sm) - var(--control-md)) / 2);
   border-radius: var(--radius-pill);
   transition: transform var(--duration-press) var(--ease-standard);
 }

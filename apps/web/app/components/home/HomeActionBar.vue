@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import type { ParseProgressDto } from '@tg-analyzer/shared'
-import { Plus } from '../../lib/icons'
 
 /**
- * Phones and tablets: the bottom of home is one bar to the screen's edge — the material of the header, a hairline on
- * top — with the screen's one action, «Разобрать чат», which opens «Новый анализ» as its own page (16.11: the chat
+ * Phones and tablets: the bottom of home is one bar to the screen's edge — the top of a sheet: its material, rounded
+ * shoulders and shadow — with the screen's one action, «Разобрать чат», which opens «Новый анализ» as its own page (16.11: the chat
  * list as a sheet pulled up from below felt out of place in a browser). While an analysis runs the bar shows it
  * instead, in the person's colour (AnalysisPill, 14.11): a tap opens «Разбираем переписку». Done, the capsule says
  * «Открыть» for a few seconds while the report lands on home as a tile, then the button comes back.
@@ -63,7 +62,7 @@ function tapPill() {
     <button v-if="running || ready" type="button" class="action-bar__pill" :aria-label="label" @click="tapPill">
       <AnalysisPill :ready="running ? null : ready" />
     </button>
-    <UiButton v-else to="/new" variant="primary" size="lg" block :icon="Plus">{{ t('home.analyseChat') }}</UiButton>
+    <UiButton v-else to="/new" variant="primary" size="lg" block>{{ t('home.analyseChat') }}</UiButton>
   </div>
 </template>
 
@@ -73,8 +72,10 @@ function tapPill() {
   inset: auto 0 0;
   z-index: var(--z-header);
   padding: var(--space-4) var(--page-gutter) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  /* The top of a sheet (17.11, drawn 18.11): its material, its rounded shoulders and its shadow. */
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   background: var(--surface-raised);
-  box-shadow: var(--divider-top);
+  box-shadow: var(--shadow-overlay);
 }
 
 .action-bar__pill {
