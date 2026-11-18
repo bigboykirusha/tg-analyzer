@@ -112,7 +112,6 @@ const C = 2 * Math.PI * R
 .live__status {
   color: var(--text-muted);
   font: var(--text-caption);
-  font-weight: 400;
 }
 
 .live__queued {

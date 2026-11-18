@@ -125,8 +125,8 @@ async function cancel() {
 }
 
 .details-card__name {
-  font: var(--text-body);
-  font-weight: 600;
+  font: var(--text-h3);
+  letter-spacing: var(--tracking-h3);
 }
 
 .details-card__reached,

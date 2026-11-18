@@ -230,7 +230,8 @@ const grab = computed(() => (isSheet.value ? drag.handlers : {}))
   grid-template-columns: auto minmax(0, 1fr);
   align-content: stretch;
   column-gap: var(--space-6);
-  height: min(84dvh, calc(var(--space-12) * 12));
+  /* 13 steps: the link step (preview, two switches, copy and its note) fits without a hidden scroll. */
+  height: min(84dvh, calc(var(--space-12) * 13));
 }
 
 .modal-aside {

@@ -327,7 +327,6 @@ a.home-card__name:focus-visible::after {
 
   .home-card--compact .home-card__name {
     font: var(--text-body);
-    font-weight: 500;
     letter-spacing: normal;
     -webkit-line-clamp: 2;
     line-clamp: 2;
