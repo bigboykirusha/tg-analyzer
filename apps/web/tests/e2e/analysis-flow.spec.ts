@@ -31,7 +31,10 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   // With a first report the home page turns into the summary: the report is a card.
   const card = page.locator('.home-card').filter({ hasText: 'Катя' })
   await expect(card).toBeVisible()
-  if (testInfo.project.name === 'desktop') await expect(page.locator('.sidebar__list')).toHaveCount(0)
+  // The desktop column is the same on every page: the library keeps the reports list too.
+  if (testInfo.project.name === 'desktop') {
+    await expect(page.locator('.sidebar__list a[href="/chat/1006"]')).toBeVisible()
+  }
   expect(await card.locator('.home-card__name').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
     true,
   )

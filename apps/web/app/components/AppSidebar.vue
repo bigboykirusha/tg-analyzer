@@ -3,8 +3,9 @@ import type { ReportSummaryDto } from '@tg-analyzer/shared'
 import { Bell, House, Plus } from '../lib/icons'
 
 /**
- * The desktop workspace navigation. The library shows its own reports; shortcuts to them appear elsewhere.
- * The running analysis and the account stay at the foot across pages.
+ * The desktop workspace navigation: the same column on every page (18.11), so the eye has one fixed place —
+ * the reports list included, on the library too. Only a newcomer's home, which is the chat list itself, has neither
+ * the list nor «Разобрать чат» (17.11). The running analysis and the account stay at the foot across pages.
  */
 const workspace = useWorkspaceStore()
 /** As many skeleton rows as there were reports last time (two when unknown), so the list does not jump. */
@@ -60,14 +61,14 @@ function updating(report: ReportSummaryDto) {
       >
         <Bell class="sidebar__icon" aria-hidden="true" />
         <span class="sidebar__nav-label">{{ t('nav.notifications') }}</span>
-        <span v-if="notifications.unread" class="sidebar__count t-caption">
+        <span v-if="notifications.unread" class="sidebar__count t-caption tnum">
           <span class="sr-only">{{ t('notifications.unreadLabel', { count: notifications.unread }) }}</span>
           <span aria-hidden="true">{{ notifications.unread }}</span>
         </span>
       </NuxtLink>
     </div>
 
-    <nav v-if="!onHome && !firstRun" class="sidebar__list" :aria-label="t('sidebar.reports')">
+    <nav v-if="!firstRun" class="sidebar__list" :aria-label="t('sidebar.reports')">
       <p class="sidebar__heading">{{ t('sidebar.reports') }}</p>
       <NuxtLink
         v-for="chat in workspace.reportChats"
@@ -182,7 +183,6 @@ function updating(report: ReportSummaryDto) {
   border-radius: var(--radius-pill);
   background: var(--text);
   color: var(--bg);
-  font-variant-numeric: tabular-nums;
   text-align: center;
 }
 
