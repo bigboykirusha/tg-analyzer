@@ -277,6 +277,8 @@
   --accent-hover: var(--gray-0);
   --on-accent: var(--gray-12);
   --switch-off: var(--night-7);
+  /* White ink at half strength was the brightest thing on a dark screen and read as pressable (18.11). */
+  --opacity-disabled: 0.4;
   /* The dark off track is already 3.6:1 on its own. */
   --switch-off-ring: none;
   --you: var(--night-12);

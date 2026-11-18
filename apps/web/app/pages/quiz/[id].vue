@@ -51,9 +51,13 @@ const back = computed(() => `/chat/${chatId.value}`)
 </script>
 
 <template>
-  <UiPageBar :title="t('share.quiz.short')" :back="back" bar />
-  <PublicQuiz v-if="quiz" :key="chatId" :quiz="quiz" self :back="back" />
+  <!-- Over the game the title stays in the bar; a page with nothing to play titles itself like any other. -->
+  <template v-if="quiz">
+    <UiPageBar :title="t('share.quiz.short')" :back="back" bar />
+    <PublicQuiz :key="chatId" :quiz="quiz" self :back="back" />
+  </template>
   <UiPageContainer v-else-if="loadError || (data && !quiz)" size="narrow">
+    <UiPageBar :title="t('share.quiz.short')" :back="back" />
     <UiEmptyState
       :icon="loadError ? AlertCircle : Users"
       :tone="loadError ? 'danger' : 'neutral'"
@@ -65,4 +69,6 @@ const back = computed(() => `/chat/${chatId.value}`)
       </template>
     </UiEmptyState>
   </UiPageContainer>
+  <!-- Still loading: the phone's bar keeps its title and back. -->
+  <UiPageBar v-else :title="t('share.quiz.short')" :back="back" bar />
 </template>

@@ -31,8 +31,13 @@ const model = defineModel<boolean>({ required: true })
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Only the control fades (18.11): the label and the hint say why it cannot be switched, so they stay readable —
+   a whole faded row was grey on grey at night. */
 .switch-row.is-disabled {
   cursor: not-allowed;
+}
+
+.switch-row.is-disabled .switch {
   opacity: var(--opacity-disabled);
 }
 
