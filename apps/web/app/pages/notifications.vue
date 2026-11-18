@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { NotificationDto } from '@tg-analyzer/shared'
+import { MIN_REPORT_MESSAGES, type NotificationDto } from '@tg-analyzer/shared'
 import type { Component } from 'vue'
 import { AlertCircle, AlertTriangle, Bell, Check, Eye, Hourglass, Sparkles } from '../lib/icons'
 
@@ -27,14 +27,15 @@ function headline(item: NotificationDto) {
   }
 }
 
-/** The event and its detail: «Отчёт готов · 1 200 сообщений». */
+/** The event and its detail: «Отчёт готов · 1 200 сообщений», «Разбор не получился. В этом чате меньше…». */
 function detail(item: NotificationDto) {
   const more = (() => {
     switch (item.kind) {
       case 'report_ready':
         return tc('common.messagesCount', item.messages, { count: formatNumber(item.messages) })
       case 'analysis_failed':
-        return t('notifications.detail.failed')
+        // The real reason, not «try again»: a chat too small for a report will not get bigger by trying.
+        return t(`analysis.error.${item.error}`, { min: MIN_REPORT_MESSAGES })
       case 'quiz_answered':
         return item.score === null
           ? t('notifications.detail.hidden')
@@ -46,7 +47,10 @@ function detail(item: NotificationDto) {
     }
   })()
   // The person leads the row, as in any notification list (18.11); the event and its number are the line under it.
-  return more ? `${headline(item)} · ${more}` : headline(item)
+  if (!more) return headline(item)
+  // A reason is a sentence of its own, as written («Telegram был занят…» keeps its capital).
+  if (item.kind === 'analysis_failed') return `${headline(item)}. ${more}`
+  return `${headline(item)} · ${more}`
 }
 
 /** The kind of news, as the badge on the avatar. */
@@ -166,29 +170,30 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
   gap: var(--space-6);
 }
 
+/*
+ * A feed, not a settings card (18.11): the days are headings and the rows stand on the page itself, as an activity
+ * list in Telegram or Instagram — the person and the time on top, what happened under it in up to two lines.
+ */
+.feed {
+  --group-bg: transparent;
+  --group-ring: none;
+  --group-inset: 0px;
+}
+
 .feed__list > li {
-  --row-fill-radius: 0;
-}
-
-.feed__list > li:first-child {
-  --row-fill-radius: var(--radius-card) var(--radius-card) 0 0;
-}
-
-.feed__list > li:last-child {
-  --row-fill-radius: 0 0 var(--radius-card) var(--radius-card);
-}
-
-.feed__list > li:only-child {
-  --row-fill-radius: var(--radius-card);
+  --row-fill-radius: var(--radius-well);
 }
 
 .feed__list > li:not(:last-child) :deep(.list-row__body) {
   box-shadow: var(--divider-bottom);
 }
 
-.feed__list :deep(.list-row__body) {
-  align-items: baseline;
-  overflow-wrap: anywhere;
+.feed__list :deep(.list-row__subtitle) {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .note__avatar {
@@ -204,9 +209,9 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
   bottom: calc(-1 * var(--space-1));
   display: inline-grid;
   place-items: center;
-  /* 16 with its ring on a 44 avatar (18.11): a mark of the kind, not a second picture. */
-  width: var(--icon-sm);
-  height: var(--icon-sm);
+  /* The circle as before (20 with its ring); only the glyph in it is small (18.11): a mark, not a second picture. */
+  width: var(--icon-md);
+  height: var(--icon-md);
   border: var(--space-0-5) solid var(--surface);
   border-radius: var(--radius-pill);
   background: var(--text);

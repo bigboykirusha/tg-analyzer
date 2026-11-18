@@ -151,21 +151,20 @@ test('the example report opens without signing in', async ({ page, context }, te
   await expect(page.locator('#part-time')).toBeInViewport()
 })
 
-test('the landing examples advance by keyboard and keep the trigger focused', async ({ page, context }) => {
+test('the landing is one screen on a phone: the deck still, the action in view', async ({ page, context }) => {
   await usePreferences(context, 'light')
-  await page.emulateMedia({ reducedMotion: 'reduce' })
-  await gotoHydrated(page, '/')
-  const next = page.getByRole('button', { name: 'Следующий пример' })
-  const current = page.locator('.deck__card[data-slot="0"]')
-  await expect(current).toContainText('Аня')
-  await next.focus()
-  await page.keyboard.press('Enter')
-  await expect(current).not.toContainText('Аня')
-  await expect(page.getByRole('status').filter({ hasText: /.+/ }).first()).toContainText(/.+/)
-  await page.keyboard.press('Space')
-  await page.keyboard.press('Enter')
-  await expect(current).toContainText('Аня')
-  await expect(next).toBeFocused()
+  // Safari's visible area on a 390 phone with its bars, and a small phone.
+  for (const viewport of [
+    { width: 390, height: 664 },
+    { width: 375, height: 667 },
+  ]) {
+    await page.setViewportSize(viewport)
+    await gotoHydrated(page, '/')
+    await expect(page.locator('.deck__card[data-slot="0"]')).toContainText('Аня')
+    await expect(page.getByRole('button', { name: 'Следующий пример' })).toHaveCount(0)
+    await expect(page.locator('.landing__cta')).toBeInViewport({ ratio: 1 })
+    expect(await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)).toBeLessThanOrEqual(1)
+  }
 })
 
 test('the report fits and its parts can be reached between phone, tablet and desktop', async ({ page, context }) => {

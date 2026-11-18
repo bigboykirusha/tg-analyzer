@@ -55,6 +55,13 @@ const isEvenShare = (pct: number) => {
   return low > 0 ? high / low < 1.25 : false
 }
 
+/** «Обновить можно через 59 мин»: a refusal already said when; the button would only be refused again. */
+const now = useNow(30_000)
+const later = computed(() => {
+  const until = actions.waitUntil(props.data.summary.chatId)
+  return until ? t('report.change.later', { wait: formatDuration(Math.ceil((until - now.value) / 1000)) }) : null
+})
+
 /** The chat has moved on since the report, even where its size is not known (groups). */
 const fresh = computed(() => Boolean(workspace.withNews[props.data.summary.chatId]))
 
@@ -97,7 +104,9 @@ const since = computed(() => {
     <span class="change__text t-label">{{
       unread ? t('report.change.unread', { count: formatNumber(unread) }) : t('report.change.fresh')
     }}</span>
+    <span v-if="later" class="change__text t-label">{{ later }}</span>
     <UiButton
+      v-else
       variant="secondary"
       size="sm"
       :icon="RotateCw"

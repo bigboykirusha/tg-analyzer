@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ReportDto } from '@tg-analyzer/shared'
+import { MIN_REPORT_MESSAGES, type ReportDto } from '@tg-analyzer/shared'
 import { AlertCircle } from '../../lib/icons'
 import { ApiClientError } from '../../composables/useApi'
 import type { StoryIntent } from '../../components/report/ShareDialog.vue'
@@ -131,12 +131,18 @@ onMounted(load)
         v-if="!data && notFound"
         :icon="AlertCircle"
         :title="t('report.notFoundTitle')"
-        :description="knownChat ? t('report.notFoundKnownText') : t('report.notFoundText')"
+        :description="
+          knownChat?.tooSmall
+            ? t('analysis.error.chat_too_small', { min: MIN_REPORT_MESSAGES })
+            : knownChat
+              ? t('report.notFoundKnownText')
+              : t('report.notFoundText')
+        "
       >
         <template #action>
-          <span v-if="knownChat && knownChat.tooSmall" class="t-label">{{ t('newAnalysis.tooSmall') }}</span>
+          <!-- A chat too small for a report says so and leads to another, instead of asking to analyse it. -->
           <AnalyseButton
-            v-else-if="knownChat"
+            v-if="knownChat && !knownChat.tooSmall"
             :chat-id="knownChat.id"
             :title="knownChat.title"
             variant="primary"

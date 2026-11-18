@@ -46,7 +46,7 @@ const bellLabel = computed(() =>
     <div class="app-bar__inner">
       <div id="header-page" class="app-bar__page" />
       <div class="app-bar__home">
-        <BrandLink to="/dashboard" bare :current="route.path === '/dashboard'" />
+        <BrandLink to="/dashboard" :current="route.path === '/dashboard'" />
         <span class="app-bar__end">
           <span class="app-bar__bell">
             <UiIconButton to="/notifications" :icon="Bell" :label="bellLabel" bare no-tooltip />
@@ -127,13 +127,13 @@ const bellLabel = computed(() =>
 
 /*
  * The dot sits on the glyph's shoulder, not on the corner of the tap area (there it hung apart from the bell).
- * The glyph is 24 in a 44 box: 8 from the top and the right puts the dot's centre on its upper right edge; the
+ * The glyph is 24 in a 36 box: 4 from the top and the right puts the dot's centre on its upper right edge; the
  * paper-coloured ring cuts the bell's line, as a badge on an iOS icon.
  */
 .app-bar__dot {
   position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
+  top: var(--space-1);
+  right: var(--space-1);
   width: var(--space-3);
   height: var(--space-3);
   border: var(--space-0-5) solid var(--bg);
@@ -143,18 +143,18 @@ const bellLabel = computed(() =>
 }
 
 /*
- * The usual mobile bar (18.11): plain 24 px glyphs with a 44 tap and no plates — back, share, ⋯ and the bell alike;
- * your avatar 32 beside them. Only over a poster the controls keep their translucent chips (a glyph alone would not
- * read on the person's colour), 36 to see and 44 to tap.
+ * The usual mobile bar (18.11): plain 24 px glyphs in 36 boxes with a 44 tap — back, share, ⋯ and the bell alike —
+ * and your avatar 32. Over a poster the same boxes get translucent chips (a glyph alone would not read on the
+ * person's colour); only the plate changes on scroll, never the size or the place.
  */
-.app-bar:not(.is-over-poster) :deep(.icon-btn) {
-  background: transparent;
+.app-bar :deep(.icon-btn--md) {
+  width: var(--control-sm);
+  height: var(--control-sm);
   --icon-size: var(--icon-lg);
 }
 
-.app-bar.is-over-poster :deep(.icon-btn--md) {
-  width: var(--control-sm);
-  height: var(--control-sm);
+.app-bar:not(.is-over-poster) :deep(.icon-btn) {
+  background: transparent;
 }
 
 .app-bar__account :deep(.avatar) {

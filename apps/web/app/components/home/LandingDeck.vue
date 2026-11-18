@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ChevronRight } from '../../lib/icons'
-
 export interface DeckCard {
   key: string
   chatId: string
@@ -12,18 +10,9 @@ export interface DeckCard {
 }
 
 const props = defineProps<{ cards: DeckCard[]; label: string }>()
-const { t } = useI18n()
-const front = ref(0)
-const announcement = ref('')
-
-const slotOf = (index: number) => (index - front.value + props.cards.length) % props.cards.length
-
-function nextExample() {
-  if (props.cards.length < 2) return
-  front.value = (front.value + 1) % props.cards.length
-  const card = props.cards[front.value]
-  if (card) announcement.value = `${card.title}. ${card.meta}`
-}
+/** A still fan of three posters (18.11: no «Следующий пример» — the landing is one screen with one action). */
+const front = 0
+const slotOf = (index: number) => (index - front + props.cards.length) % props.cards.length
 </script>
 
 <template>
@@ -52,17 +41,13 @@ function nextExample() {
         </li>
       </ul>
     </div>
-    <UiButton v-if="cards.length > 1" class="deck-stage__next" variant="link" size="lg" @click="nextExample">
-      {{ t('landing.nextExample') }}
-      <ChevronRight aria-hidden="true" />
-    </UiButton>
-    <p class="sr-only" role="status">{{ announcement }}</p>
   </div>
 </template>
 
 <style scoped>
 .deck-stage {
-  --deck-min-width: 240px;
+  /* Small enough for Safari's visible area on a short phone: the deck gives way, the action stays in view. */
+  --deck-min-width: 160px;
   --deck-max-width: 320px;
   --deck-fan-clearance: var(--space-6);
   --deck-min-height: calc(var(--deck-min-width) + var(--deck-fan-clearance));
@@ -73,7 +58,7 @@ function nextExample() {
   justify-content: center;
   gap: var(--space-2);
   min-width: 0;
-  min-height: calc(var(--deck-min-height) + var(--space-2) + var(--hit-min));
+  min-height: var(--deck-min-height);
 }
 
 .deck-stage__art {
@@ -138,14 +123,6 @@ function nextExample() {
 
 .deck__card :deep(.pulse) {
   --pulse-half: var(--space-5);
-}
-
-.deck-stage__next.btn--link {
-  min-height: var(--hit-min);
-  padding-inline: var(--space-2);
-  color: var(--text);
-  font: var(--text-label);
-  --icon-size: var(--icon-sm);
 }
 
 @media (prefers-reduced-motion: no-preference) {

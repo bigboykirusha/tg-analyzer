@@ -16,7 +16,6 @@ const { relogin } = useAuth()
 
 const search = ref('')
 const query = computed(() => search.value.trim().toLocaleLowerCase())
-const searchInput = useTemplateRef<{ focus: () => void }>('searchInput')
 const visibleCount = ref(PAGE_SIZE)
 const sentinel = ref<HTMLElement | null>(null)
 const matching = computed(() =>
@@ -51,10 +50,13 @@ const failed = computed(() => workspace.dialogsState === 'error' && !workspace.d
 watch(query, () => {
   visibleCount.value = PAGE_SIZE
 })
-function clearSearch() {
-  search.value = ''
-  searchInput.value?.focus()
+/** Scrolling the list puts the keyboard away, as in Telegram: iOS otherwise scrolls the field out of view. */
+function hideKeyboard(event: TouchEvent) {
+  const active = document.activeElement
+  if (active instanceof HTMLInputElement && !(event.target instanceof Node && active.contains(event.target)))
+    active.blur()
 }
+
 useIntersection(sentinel, () => {
   if (visibleCount.value < filteredChats.value.length) visibleCount.value += PAGE_SIZE
 })
@@ -64,10 +66,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="picker" :class="{ 'picker--sticky': standalone }">
+  <div class="picker" :class="{ 'picker--sticky': standalone }" @touchmove.passive="hideKeyboard">
     <div class="picker__tools">
       <UiInput
-        ref="searchInput"
         v-model="search"
         type="search"
         name="chat-search"
@@ -116,17 +117,13 @@ onMounted(() => {
           <ChatRow v-for="chat in group.chats" :key="chat.id" :chat="chat" />
         </UiGroup>
       </template>
+      <!-- Nothing found: the screen's empty state, centred; the field's own × clears the search (18.11). -->
       <UiEmptyState
         v-else
-        compact
         :icon="query ? Search : MessageSquare"
         :title="query ? t('dashboard.noMatchesTitle') : t('dashboard.emptyTitle')"
         :description="query ? t('dashboard.noMatchesText') : t('dashboard.emptyText')"
-      >
-        <template v-if="query" #action>
-          <UiButton variant="secondary" @click="clearSearch">{{ t('dashboard.clearSearch') }}</UiButton>
-        </template>
-      </UiEmptyState>
+      />
       <p v-if="visibleChats.length < filteredChats.length" :key="visibleCount" ref="sentinel" class="picker__foot">
         {{ t('dashboard.shown', { shown: visibleChats.length, total: filteredChats.length }) }}
       </p>
@@ -149,7 +146,8 @@ onMounted(() => {
 /* On its own page the search stays in reach while the list scrolls. */
 .picker--sticky .picker__tools {
   position: sticky;
-  top: var(--topbar-height);
+  /* Under the bar, which is the notch's height taller on an iPhone (it jumped under the bar there). */
+  top: calc(var(--topbar-height) + env(safe-area-inset-top, 0px));
   z-index: calc(var(--z-header) - 1);
   margin-inline: calc(var(--page-gutter) * -1);
   padding: var(--space-2) var(--page-gutter);

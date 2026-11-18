@@ -24,9 +24,19 @@ export function useReportActions() {
   const analysis = useAnalysis()
   const toast = useToast()
   const errorMessage = useErrorMessage()
+  const { relogin } = useAuth()
   const starting = useState<string | null>('report-actions-starting', () => null)
   const pendingDelete = useState<string | null>('report-actions-delete', () => null)
   const deleting = useState('report-actions-deleting', () => false)
+  /**
+   * When a refusal said «not before…» (a pause after an analysis, the day's limit): until then the report shows the
+   * wait instead of «Обновить» (18.11), so the button never leads to a refusal it already knows of. «*» is the day.
+   */
+  const waits = useState<Record<string, number>>('report-actions-waits', () => ({}))
+  function waitUntil(chatId: string) {
+    const until = Math.max(waits.value[chatId] ?? 0, waits.value['*'] ?? 0)
+    return until > Date.now() ? until : null
+  }
 
   /** This chat is being read or waits in the queue. */
   function busy(chatId: string) {
@@ -44,7 +54,23 @@ export function useReportActions() {
       await analysis.startAnalysis(chatId, title)
     } catch (error) {
       if (error instanceof ApiClientError && error.code === 'CHAT_TOO_SMALL') workspace.markTooSmall(chatId)
+      if (
+        error instanceof ApiClientError &&
+        error.retryAfter &&
+        ['PARSE_COOLDOWN', 'PARSE_DAILY_LIMIT'].includes(error.code)
+      ) {
+        const key = error.code === 'PARSE_DAILY_LIMIT' ? '*' : chatId
+        waits.value = { ...waits.value, [key]: Date.now() + error.retryAfter * 1000 }
+      }
       if (error instanceof ApiClientError && EXPECTED.has(error.code)) toast.info(errorMessage(error))
+      // The site's own session ended: the sign-in page is already on its way, a toast over it says nothing new.
+      else if (error instanceof ApiClientError && error.code.startsWith('AUTH_')) return
+      // Telegram ended the session: the one way on is to sign in again, so the banner offers it.
+      else if (error instanceof ApiClientError && error.code === 'TELEGRAM_REAUTH_REQUIRED')
+        toast.error(t('analysis.startError'), errorMessage(error), {
+          label: t('common.relogin'),
+          onClick: () => void relogin(),
+        })
       else toast.error(t('analysis.startError'), errorMessage(error))
     } finally {
       starting.value = null
@@ -72,5 +98,5 @@ export function useReportActions() {
     }
   }
 
-  return { starting, pendingDelete, deleting, busy, analyse, askDelete, confirmDelete }
+  return { starting, pendingDelete, deleting, busy, waitUntil, analyse, askDelete, confirmDelete }
 }
