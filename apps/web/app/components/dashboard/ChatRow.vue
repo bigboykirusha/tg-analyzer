@@ -164,9 +164,16 @@ onBeforeUnmount(() => clearTimeout(pressTimer))
   cursor: progress;
 }
 
+/* «Разобрать» wears the quiet sm capsule of `AnalyseButton` (18.11): the row is the button, so this is its
+   picture, and the place keeps one shape from «Разобрать» through «17 %» and «В очереди». */
 .chat-row__action {
   display: grid;
   place-items: center;
+  height: var(--control-sm);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--fill-control);
+  color: var(--text);
 }
 
 .chat-row__action > span {
