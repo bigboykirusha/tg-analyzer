@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { AlertCircle, Search } from './lib/icons'
+
 const props = defineProps<{ error: { statusCode?: number; statusMessage?: string; message?: string } }>()
 const { t, locale } = useI18n()
 const notFound = computed(() => props.error.statusCode === 404)
@@ -19,6 +21,7 @@ function retry() {
 <template>
   <NuxtLayout>
     <StatusPage
+      :icon="notFound ? Search : AlertCircle"
       :title="notFound ? t('error.notFoundTitle') : t('error.title')"
       :text="notFound ? t('error.notFoundText') : t('error.text')"
       :action="t('error.backHome')"

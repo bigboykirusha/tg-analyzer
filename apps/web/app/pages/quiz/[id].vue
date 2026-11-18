@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PublicQuizDto, ReportDto } from '@tg-analyzer/shared'
 import { hueOf } from '../../lib/hue'
+import { AlertCircle, Users } from '../../lib/icons'
 
 /**
  * «Пройти самому» (17.11): the author plays the quiz of their own report — the same game the guest gets by link,
@@ -53,9 +54,14 @@ const back = computed(() => `/chat/${chatId.value}`)
   <UiPageBar :title="t('share.quiz.short')" :back="back" bar />
   <PublicQuiz v-if="quiz" :key="chatId" :quiz="quiz" self :back="back" />
   <UiPageContainer v-else-if="loadError || (data && !quiz)" size="narrow">
-    <UiEmptyState :title="loadError ? errorMessage(loadError) : t('share.quiz.unavailable')">
+    <UiEmptyState
+      :icon="loadError ? AlertCircle : Users"
+      :tone="loadError ? 'danger' : 'neutral'"
+      :title="loadError ? t('report.loadError') : t('share.quiz.unavailable')"
+      :description="loadError ? errorMessage(loadError) : null"
+    >
       <template #action>
-        <UiButton variant="secondary" :to="back">{{ t('quizSelf.back') }}</UiButton>
+        <UiButton variant="primary" :to="back">{{ t('quizSelf.back') }}</UiButton>
       </template>
     </UiEmptyState>
   </UiPageContainer>

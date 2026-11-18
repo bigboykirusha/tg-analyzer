@@ -154,7 +154,7 @@ onMounted(load)
         :description="errorMessage(loadError)"
       >
         <template #action>
-          <UiButton variant="secondary" @click="load">{{ t('common.retry') }}</UiButton>
+          <UiButton variant="primary" @click="load">{{ t('common.retry') }}</UiButton>
         </template>
       </UiEmptyState>
 

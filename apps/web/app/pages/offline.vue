@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { WifiOff } from '../lib/icons'
+
 const { t } = useI18n()
 const route = useRoute()
 
@@ -26,5 +28,5 @@ function retry() {
 </script>
 
 <template>
-  <StatusPage :title="title" :text="text" :action="t('offline.retry')" @action="retry" />
+  <StatusPage :icon="WifiOff" :title="title" :text="text" :action="t('offline.retry')" @action="retry" />
 </template>

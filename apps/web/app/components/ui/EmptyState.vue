@@ -21,8 +21,10 @@ withDefaults(
     tone?: 'neutral' | 'danger'
     /** Inside a section or a sheet: the row card. */
     compact?: boolean
+    /** A status page has no other heading: its title is the page's h1, styled the same. */
+    level?: 1 | 2
   }>(),
-  { description: null, icon: null, tone: 'neutral', compact: false },
+  { description: null, icon: null, tone: 'neutral', compact: false, level: 2 },
 )
 </script>
 
@@ -37,7 +39,7 @@ withDefaults(
       <slot name="icon"><component :is="icon ?? MessageSquare" /></slot>
     </span>
     <div class="empty__copy">
-      <h2 class="empty__title">{{ title }}</h2>
+      <component :is="`h${level}`" class="empty__title">{{ title }}</component>
       <p v-if="description" class="empty__text">{{ description }}</p>
     </div>
     <div v-if="$slots.action" class="empty__action"><slot name="action" /></div>

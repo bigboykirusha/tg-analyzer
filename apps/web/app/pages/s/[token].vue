@@ -2,6 +2,7 @@
 import { buildApiPath, type PublicShareDto } from '@tg-analyzer/shared'
 import { FetchError, ofetch } from 'ofetch'
 import { hueAt } from '../../lib/hue'
+import { Hourglass, Unlink, WifiOff } from '../../lib/icons'
 
 /**
  * What a share link opens, without signing in: the quiz for the other side or the report as its owner
@@ -54,6 +55,7 @@ onMounted(open)
     </p>
     <StatusPage
       v-else-if="state === 'failed'"
+      :icon="WifiOff"
       :title="t('publicShare.failedTitle')"
       :text="t('errors.network')"
       :action="t('common.retry')"
@@ -61,6 +63,7 @@ onMounted(open)
     />
     <StatusPage
       v-else-if="state === 'expired'"
+      :icon="Hourglass"
       :title="t('publicShare.expiredTitle')"
       :text="t('publicShare.expiredText')"
       :action="t('publicReport.cta')"
@@ -70,6 +73,7 @@ onMounted(open)
     />
     <StatusPage
       v-else-if="state === 'gone' || !share"
+      :icon="Unlink"
       :title="t('publicShare.goneTitle')"
       :text="t('publicShare.goneText')"
       :action="t('publicReport.cta')"

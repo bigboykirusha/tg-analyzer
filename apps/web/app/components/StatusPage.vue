@@ -1,15 +1,19 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 
 /**
- * A full-page state (not found, an error, offline, a link that no longer works): the title, one line on
- * what happened, the way on. Phones: the page itself, left-aligned, the action full width. Desktop: one
- * 440 card in the middle — the same anatomy as sign-in.
+ * A full-page state (not found, an error, offline, a link that no longer works). The same anatomy as every
+ * «nothing to show» in the product (`UiEmptyState` full, 18.11): the symbol in a well, the title, one line on
+ * what happened, the way on — centred. Phones: on the page itself. Desktop: inside one 440 card in the middle,
+ * like sign-in.
  */
 defineProps<{
   title: string
   text: string
   action: string
+  icon?: Component | null
+  tone?: 'neutral' | 'danger'
   to?: RouteLocationRaw
   secondary?: string
   secondaryTo?: RouteLocationRaw
@@ -19,13 +23,15 @@ defineEmits<{ action: [] }>()
 
 <template>
   <div class="status">
-    <section class="status__card" aria-labelledby="status-title">
-      <h1 id="status-title" class="status__title">{{ title }}</h1>
-      <p class="status__text">{{ text }}</p>
-      <div class="status__actions">
-        <UiButton variant="primary" size="lg" block :to="to" @click="!to && $emit('action')">{{ action }}</UiButton>
-        <UiButton v-if="secondary" variant="secondary" size="lg" block :to="secondaryTo">{{ secondary }}</UiButton>
-      </div>
+    <section class="status__card">
+      <UiEmptyState :level="1" :icon="icon" :tone="tone" :title="title" :description="text">
+        <template #action>
+          <div class="status__actions">
+            <UiButton variant="primary" :to="to" @click="!to && $emit('action')">{{ action }}</UiButton>
+            <UiButton v-if="secondary" variant="secondary" :to="secondaryTo">{{ secondary }}</UiButton>
+          </div>
+        </template>
+      </UiEmptyState>
     </section>
   </div>
 </template>
@@ -42,27 +48,14 @@ defineEmits<{ action: [] }>()
 .status__card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
   width: 100%;
-}
-
-.status__title {
-  font: var(--text-h1);
-  letter-spacing: var(--tracking-h1);
-  text-wrap: balance;
-}
-
-.status__text {
-  max-width: var(--measure);
-  color: var(--text-muted);
-  font: var(--text-body);
 }
 
 .status__actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-2);
-  margin-top: var(--space-4);
 }
 
 @media (min-width: 901px) {
@@ -79,8 +72,10 @@ defineEmits<{ action: [] }>()
     box-shadow: var(--ring-card);
   }
 
-  .status__actions {
-    margin-top: var(--space-2);
+  /* The card is the frame: no screen-high empty space inside it. */
+  .status__card :deep(.empty--full) {
+    min-height: 0;
+    padding-block: 0;
   }
 }
 </style>
