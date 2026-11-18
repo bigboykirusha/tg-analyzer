@@ -24,9 +24,9 @@ export interface ToastInput extends Omit<ToastMessage, 'id'> {
 
 /**
  * One banner at a time, as on iPhone (18.11): a new one takes the old one's place instead of stacking under it,
- * so the banners never cover the header's buttons. The events stay in «Уведомления».
+ * so the banners never cover the header's buttons. An error or a banner with an action is not pushed out by
+ * anything milder: the newcomer waits until it is read or put away.
  */
-const MAX_VISIBLE = 1
 const DEFAULT_DURATION_MS = 5000
 const ACTION_DURATION_MS = 8000
 /** An error waits longer to be read; a tap or a flick up puts it away sooner (there is no close button). */
@@ -55,11 +55,30 @@ function durationFor(input: ToastInput) {
 export function useToast() {
   const toasts = useState<ToastMessage[]>('toast-messages', () => [])
 
-  function remove(id: string) {
+  /** What waits behind an error or an action banner, oldest first. */
+  const waiting = useState<{ toast: ToastMessage; ms: number }[]>('toast-waiting', () => [])
+
+  function drop(id: string) {
     const timer = timers.get(id)
     if (timer) window.clearTimeout(timer.handle)
     timers.delete(id)
     toasts.value = toasts.value.filter((toast) => toast.id !== id)
+  }
+
+  function show(toast: ToastMessage, ms: number) {
+    for (const shown of toasts.value) drop(shown.id)
+    toasts.value = [toast]
+    if (import.meta.client && ms > 0) startTimer(toast.id, ms)
+  }
+
+  function remove(id: string) {
+    waiting.value = waiting.value.filter((item) => item.toast.id !== id)
+    drop(id)
+    const next = toasts.value.length ? undefined : waiting.value[0]
+    if (next) {
+      waiting.value = waiting.value.slice(1)
+      show(next.toast, next.ms)
+    }
   }
 
   function startTimer(id: string, ms: number) {
@@ -91,12 +110,11 @@ export function useToast() {
       chatId: input.chatId,
       avatarTitle: input.avatarTitle,
     }
-    const next = [...toasts.value, toast]
-    for (const dropped of next.slice(0, Math.max(0, next.length - MAX_VISIBLE))) remove(dropped.id)
-    toasts.value = [...toasts.value, toast]
-
     const ms = durationFor(input)
-    if (import.meta.client && ms > 0) startTimer(toast.id, ms)
+    const current = toasts.value[0]
+    const keeps = current && (current.variant === 'error' || current.action) && toast.variant !== 'error'
+    if (keeps) waiting.value = [...waiting.value, { toast, ms }]
+    else show(toast, ms)
     return toast.id
   }
 
