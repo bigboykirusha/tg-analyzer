@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ReportDto } from '@tg-analyzer/shared'
+import { MIN_CONVERSATIONS, MIN_REPLY_SAMPLES, type ReportDto } from '@tg-analyzer/shared'
 import { HeartHandshake } from '../../lib/icons'
 
 /**
@@ -8,7 +8,18 @@ import { HeartHandshake } from '../../lib/icons'
 const props = defineProps<{ data: ReportDto }>()
 const { t, formatNumber } = useI18n()
 
-const score = computed(() => props.data.report.relationship)
+const score = computed(() => {
+  const { sessions, responses, relationship } = props.data.report
+  if (
+    sessions.totalSessions < MIN_CONVERSATIONS ||
+    responses.mineSamples < MIN_REPLY_SAMPLES ||
+    responses.theirsSamples < MIN_REPLY_SAMPLES ||
+    responses.iWriteFirstPct == null ||
+    relationship?.responsiveness == null
+  )
+    return null
+  return relationship
+})
 const parts = computed(() => {
   const value = score.value
   if (!value) return []

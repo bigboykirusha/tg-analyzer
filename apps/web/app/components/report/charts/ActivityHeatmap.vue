@@ -3,13 +3,15 @@ import type { DatedActivityDto } from '@tg-analyzer/shared'
 
 /**
  * Every day of the last year as month calendars, Monday-first, the way a paper calendar reads.
- * Months wrap to the card's width, so nothing scrolls sideways; a phone shows the last six.
+ * Months wrap to the card's width. Phones start with six and can reveal the older months.
  */
 const props = defineProps<{ points: DatedActivityDto[] }>()
 const { t, tc, formatDay } = useI18n()
 
 const MAX_MONTHS = 12
 const PHONE_MONTHS = 6
+const showOlder = ref(false)
+const monthsId = useId()
 
 interface Cell {
   date: string
@@ -59,9 +61,31 @@ function describe(cell: Cell) {
 
 <template>
   <div v-if="months.length" class="calendar">
-    <div class="calendar__months" role="img" :aria-label="t('report.rhythm.heatmapTitle')">
+    <UiButton
+      v-if="months.length > PHONE_MONTHS"
+      class="calendar__toggle"
+      variant="quiet"
+      size="sm"
+      :aria-expanded="showOlder"
+      :aria-controls="monthsId"
+      @click="showOlder = !showOlder"
+    >
+      {{ t(showOlder ? 'chart.calendar.collapse' : 'chart.calendar.expand') }}
+    </UiButton>
+    <div
+      :id="monthsId"
+      class="calendar__months"
+      :class="{ 'calendar__months--expanded': showOlder }"
+      role="img"
+      :aria-label="t('report.rhythm.heatmapTitle')"
+    >
       <div v-for="(month, index) in months" :key="month.key" class="month" :class="{ 'month--old': month.old }">
-        <span class="month__name">{{ showYear(index) ? `${month.name} ${month.year}` : month.name }}</span>
+        <span class="month__name">
+          {{ month.name }}<span v-if="showYear(index)">{{ '\u00a0' + month.year }}</span>
+          <span v-else-if="index === months.length - PHONE_MONTHS" class="month__compact-year">{{
+            '\u00a0' + month.year
+          }}</span>
+        </span>
         <div class="month__days">
           <span
             v-for="(cell, cellIndex) in month.cells"
@@ -73,6 +97,13 @@ function describe(cell: Cell) {
         </div>
       </div>
     </div>
+    <p class="calendar__legend t-caption">
+      {{ t('chart.calendar.quiet') }}
+      <span class="calendar__scale" aria-hidden="true">
+        <i v-for="level in 5" :key="level" class="calendar__cell" :class="`calendar__cell--${level - 1}`" />
+      </span>
+      {{ t('chart.calendar.busy') }}
+    </p>
   </div>
   <div v-else class="calendar-empty t-label">{{ t('chart.noActivity') }}</div>
 </template>
@@ -98,6 +129,30 @@ function describe(cell: Cell) {
 .month__name {
   color: var(--text-muted);
   font: var(--text-caption);
+}
+
+.month__compact-year,
+.calendar__toggle {
+  display: none;
+}
+
+.calendar__legend,
+.calendar__scale {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.calendar__legend {
+  color: var(--text-muted);
+}
+
+.calendar__scale {
+  gap: var(--space-1);
+}
+
+.calendar__scale i {
+  width: var(--space-3);
 }
 
 .month__days {
@@ -144,15 +199,23 @@ function describe(cell: Cell) {
   text-align: center;
 }
 
-/* A phone: three months a row, the last six. */
 @media (max-width: 640px) {
   .calendar__months {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-4) var(--space-3);
   }
 
-  .month--old {
+  .calendar__months:not(.calendar__months--expanded) .month--old {
     display: none;
+  }
+
+  .calendar__months:not(.calendar__months--expanded) .month__compact-year {
+    display: inline;
+  }
+
+  .calendar__toggle {
+    display: inline-flex;
+    justify-self: start;
   }
 }
 </style>

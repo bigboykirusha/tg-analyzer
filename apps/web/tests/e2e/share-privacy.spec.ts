@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import type { PublicReportDto } from '@tg-analyzer/shared'
 import { analyseChat, backendAvailable, gotoHydrated, signIn, usePreferences } from './helpers'
 
 test('a public report link matches the share settings and waits for account changes', async ({
@@ -97,6 +98,16 @@ test('a public report link matches the share settings and waits for account chan
   const sides = page.locator('.balance__sides')
   await expect(sides.getByText('Автор', { exact: true })).toBeVisible()
   await expect(sides.getByText('Собеседник', { exact: true })).toBeVisible()
+
+  await page.route(`**/api/v1/public/${privateLink.token}`, async (route) => {
+    const response = await route.fetch()
+    const share: PublicReportDto = await response.json()
+    share.data.report.totals.sent = share.data.report.totals.messages
+    share.data.report.totals.received = 0
+    await route.fulfill({ response, json: share })
+  })
+  await gotoHydrated(page, `/s/${privateLink.token}`)
+  await expect(page.locator('#part-balance')).toContainText('Все сообщения от автора')
 
   await gotoHydrated(page, '/account')
   const link = page.getByRole('switch', { name: /^Отчёт «Катя»/ })

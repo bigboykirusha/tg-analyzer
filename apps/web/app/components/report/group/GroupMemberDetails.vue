@@ -10,6 +10,7 @@ import type { Fact } from '../ReportFacts.vue'
 const props = defineProps<{ participant: GroupParticipantDto; group: GroupReportDto; topWords: TopItemDto[] }>()
 const { t, formatNumber, formatPercent, formatDate } = useI18n()
 const nameOf = useParticipantName()
+const pairDetail = useGroupPairDetail()
 
 const facts = computed<Fact[]>(() => {
   const person = props.participant
@@ -42,7 +43,7 @@ const connections = computed(() =>
         name: left ? pair.rightParticipantName : pair.leftParticipantName,
         isSelf: false,
       }
-      return { person, score: pair.symmetricScore }
+      return { person, score: pair.symmetricScore, detail: pairDetail(pair) }
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, 3),
@@ -76,7 +77,13 @@ const connections = computed(() =>
     <section v-if="connections.length" class="member__block member__block--rows">
       <h4 class="member__label">{{ t('group.topConnections') }}</h4>
       <div class="member__rows">
-        <UiListRow v-for="item in connections" :key="item.person.id" :title="nameOf(item.person)">
+        <UiListRow
+          v-for="item in connections"
+          :key="item.person.id"
+          :title="nameOf(item.person)"
+          :subtitle="item.detail"
+          wrap
+        >
           <template #leading>
             <UiAvatar
               :title="nameOf(item.person)"
@@ -85,9 +92,6 @@ const connections = computed(() =>
               size="sm"
             />
           </template>
-          <template #trailing
-            ><span class="member__score">{{ formatNumber(item.score) }}</span></template
-          >
         </UiListRow>
       </div>
     </section>
@@ -114,11 +118,9 @@ const connections = computed(() =>
 }
 
 .member__name {
-  overflow: hidden;
   font: var(--text-h2);
   letter-spacing: var(--tracking-h2);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .member__role,
@@ -139,10 +141,5 @@ const connections = computed(() =>
 
 .member__rows > :deep(:last-child .list-row__body) {
   box-shadow: none;
-}
-
-.member__score {
-  color: var(--text);
-  font: var(--text-label);
 }
 </style>

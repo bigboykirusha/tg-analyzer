@@ -5,12 +5,12 @@ import {
   type QuizQuestionId,
   type QuizUnit,
 } from '../api/types'
+import { MIN_REPLY_SAMPLES } from './significance'
 
 /** The game asks this many questions at most (17.11: more questions, the owner asked). */
 export const QUIZ_LENGTH = 10
 /** Fewer messages make every answer a coin flip. */
 const MIN_MESSAGES = MIN_REPORT_MESSAGES
-const MIN_REPLIES = 10
 /**
  * Only sides this close are a tie (17.11: a near call is still a question, «only if they are all but equal»). A
  * question whose two numbers would read the same on screen is a tie too, whatever the lead (see `shown`).
@@ -50,7 +50,7 @@ interface Candidate {
 export function deriveQuiz(report: ChatReport): QuizQuestionDto[] {
   if (report.group || report.totals.messages < MIN_MESSAGES) return []
   const { responses, habits, vocabulary, voice, stickers, reactions, rituals } = report
-  const enoughReplies = responses.mineSamples >= MIN_REPLIES && responses.theirsSamples >= MIN_REPLIES
+  const enoughReplies = responses.mineSamples >= MIN_REPLY_SAMPLES && responses.theirsSamples >= MIN_REPLY_SAMPLES
   const writesFirst = responses.iWriteFirstPct
   const lastWord = habits?.lastWordMinePct
 
@@ -79,7 +79,7 @@ export function deriveQuiz(report: ChatReport): QuizQuestionDto[] {
       theirs: voice ? voice.voice.seconds.theirs + voice.round.seconds.theirs : null,
       minTotal: 60,
     },
-    // By turn, as the report counts them (useMatch, useVersus): one chat, one answer to «who asks more».
+    // The report also counts questions by conversational turn.
     {
       id: 'questions',
       unit: 'count',

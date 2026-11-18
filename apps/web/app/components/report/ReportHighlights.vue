@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 import type { ReportDto } from '@tg-analyzer/shared'
-import { ChevronRight, Clock, Flame, Quote, Scale, Users } from '../../lib/icons'
+import { ChevronRight, Clock, Flame, Quote, Scale } from '../../lib/icons'
 
 /**
  * One finding on the poster's material, then up to two quieter routes into the report. Each link leads to the
@@ -12,7 +12,6 @@ const { t, tc, formatNumber } = useI18n()
 
 const streak = useStreak(() => props.data)
 const words = useWordsFacts(() => props.data)
-const match = useMatch(() => props.data)
 const balance = useBalance(() => props.data)
 const peak = usePeakWindow(() => props.data)
 
@@ -64,9 +63,6 @@ const findings = computed(() => {
       figure: peakFigure.value,
       sub: t('report.highlights.peak'),
     })
-  // Head to head: only when someone leads; «almost even everywhere» is the weakest thing it can say.
-  if (match.answer.value && !match.mostlyEven.value && match.tally.value.mine !== match.tally.value.theirs)
-    out.push({ key: 'match', target: 'part-match', icon: Users, figure: match.answer.value, text: true })
   if (balance.answer.value && balance.headline.value)
     out.push({
       key: 'balance',

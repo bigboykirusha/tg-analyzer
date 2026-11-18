@@ -68,6 +68,7 @@ const facts = computed(() => {
   <ReportSection
     v-if="window && answer"
     id="part-time"
+    class="time-section"
     hero
     :wide="!compact"
     :icon="Clock"
@@ -99,6 +100,10 @@ const facts = computed(() => {
   gap: var(--space-3);
 }
 
+.time-section {
+  container-type: inline-size;
+}
+
 /*
  * A computer: the dial on the left at its own size, what it adds on the right (17.11: a 320 px dial in the middle
  * of a 1000 px card left two empty fields).
@@ -122,13 +127,42 @@ const facts = computed(() => {
   }
 
   .time-layout--compact {
+    display: flex;
+  }
+
+  .time-layout--compact .day-parts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .time-layout--compact .facts {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+  }
+}
+
+@container (min-width: 21rem) {
+  .time-layout--compact {
+    display: grid;
     grid-template-columns: min(62%, calc(var(--space-16) * 4)) minmax(0, 1fr);
+    align-items: center;
     column-gap: var(--space-6);
+  }
+
+  .time-layout--compact .day-parts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--space-3);
   }
 
   .time-layout--compact .facts {
     grid-template-columns: minmax(0, 1fr);
+    grid-auto-flow: row;
     row-gap: var(--space-3);
+  }
+
+  .time-layout--compact :is(.day-parts, .facts) {
+    padding-top: 0;
+    box-shadow: none;
+    text-align: left;
   }
 }
 

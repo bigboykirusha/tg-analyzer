@@ -29,9 +29,9 @@ const { t } = useI18n()
       <GroupTalk :data="data" :group="data.report.group" />
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">
-      <!-- The calendar takes its row; the dial and the week share the next one, no dial alone in a whole row (17.11). -->
-      <ReportDays :data="data" week-beside />
       <GroupTime :data="data" />
+      <ReportWeek :weekday="data.report.activity.weekday" />
+      <ReportDays :data="data" />
     </ReportPart>
     <GroupWords :data="data" :group="data.report.group" />
   </div>

@@ -64,7 +64,7 @@ const spoken = computed(
 <style scoped>
 .cmp--lg {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-1) var(--space-2);
 }
 
@@ -76,6 +76,7 @@ const spoken = computed(
 
 .cmp__name {
   color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 
 .cmp__name--them,
@@ -88,7 +89,7 @@ const spoken = computed(
 }
 
 .cmp__num {
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .cmp__value {

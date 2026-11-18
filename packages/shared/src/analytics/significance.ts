@@ -33,6 +33,8 @@ export const MIN_QUESTION_EVENTS = 20
 export const MIN_LAUGH_EVENTS = 20
 /** Conversations a chat needs before «who starts them» says anything. */
 export const MIN_CONVERSATIONS = 10
+/** Replies from each side before their typical reply times can be compared. */
+export const MIN_REPLY_SAMPLES = 10
 /** Answered mornings: they are rare by nature (the other side must answer within hours), so 6 is already a pattern. */
 export const MIN_MORNINGS = 6
 /** «Спокойной ночи» is said once a night at most; 6 wishes in the chat are enough to compare. */

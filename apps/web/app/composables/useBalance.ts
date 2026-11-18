@@ -1,4 +1,4 @@
-import { isEven, type ReportDto } from '@tg-analyzer/shared'
+import { isEven, MIN_REPLY_SAMPLES, type ReportDto } from '@tg-analyzer/shared'
 import { nbsp } from '../lib/nbsp'
 
 export interface BalanceRow {
@@ -17,7 +17,11 @@ export interface BalanceRow {
  * second person by default («Пишете на равных»); with an `author` it is the third («Мила и Аня пишут на равных»),
  * for a reader who is the other side.
  */
-export function useBalance(data: () => ReportDto, author: () => string | null = () => null) {
+export function useBalance(
+  data: () => ReportDto,
+  author: () => string | null = () => null,
+  anonymous: () => boolean = () => false,
+) {
   const { t, formatNumber, formatDuration, formatPercent } = useI18n()
 
   const name = computed(() => data().summary.title)
@@ -32,8 +36,8 @@ export function useBalance(data: () => ReportDto, author: () => string | null = 
     const { sent, received } = totals.value
     if (!sent && !received) return null
     if (isEven(sent, received)) return { even: true as const }
-    const ratio = Math.max(sent, received) / Math.max(1, Math.min(sent, received))
-    return { even: false as const, figure: times(ratio), mine: sent > received }
+    const ratio = sent && received ? Math.max(sent, received) / Math.min(sent, received) : null
+    return { even: false as const, figure: ratio === null ? null : times(ratio), mine: sent > received }
   })
 
   const answer = computed(() => {
@@ -42,10 +46,14 @@ export function useBalance(data: () => ReportDto, author: () => string | null = 
     const other = name.value
     const writer = author()
     if (writer) {
+      if (anonymous() && item.even) return t('publicReport.evenAnonymous')
       if (item.even) return t('publicReport.even', { me: writer, name: other })
+      if (anonymous() && !item.figure) return t(item.mine ? 'publicReport.onlyAuthor' : 'publicReport.onlyPartner')
+      if (!item.figure) return t('publicReport.onlyWriter', { name: item.mine ? writer : other })
       return t('publicReport.writesMore', { name: item.mine ? writer : other })
     }
     if (item.even) return t('report.balance.even')
+    if (!item.figure) return item.mine ? t('report.balance.onlyMine') : t('report.balance.onlyTheirs', { name: other })
     return item.mine ? t('report.balance.mine') : t('report.balance.theirs', { name: other })
   })
   const figure = computed(() => (lead.value && !lead.value.even ? lead.value.figure : null))
@@ -72,14 +80,20 @@ export function useBalance(data: () => ReportDto, author: () => string | null = 
         right: formatPercent((received / Math.max(1, messages)) * 100),
       },
     ]
-    const { medianMineSec: mineSec, medianTheirsSec: theirsSec, iWriteFirstPct } = data().report.responses
+    const {
+      medianMineSec: mineSec,
+      medianTheirsSec: theirsSec,
+      iWriteFirstPct,
+      mineSamples,
+      theirsSamples,
+    } = data().report.responses
     // The bar of the reply time is the share of speed: the faster side has the longer part.
-    if (mineSec && theirsSec)
+    if (mineSec != null && theirsSec != null && mineSamples >= MIN_REPLY_SAMPLES && theirsSamples >= MIN_REPLY_SAMPLES)
       out.push({
         key: 'speed',
         label: t('report.balance.speed'),
-        mine: 1 / mineSec,
-        theirs: 1 / theirsSec,
+        mine: 1 / Math.max(1, mineSec),
+        theirs: 1 / Math.max(1, theirsSec),
         left: nbsp(formatDuration(mineSec)),
         right: nbsp(formatDuration(theirsSec)),
       })

@@ -116,40 +116,55 @@ const sections = computed(() => [morning.value, evening.value].filter((item) => 
     :title="t('report.match.group.day')"
     :answer="answer"
   >
-    <section v-for="section in sections" :key="section.title" class="rituals__section">
-      <h4 class="t-label rituals__head">{{ section.title }}</h4>
-      <div v-for="item in section.lines" :key="item.key" class="ritual">
-        <p class="ritual__label t-body">
-          <span
-            >{{ item.label
-            }}<template v-if="item.of"
-              >{{ ' ' }}<span class="t-label ritual__of">{{ item.of }}</span></template
-            ></span
-          >
-          <b
-            class="t-label"
-            :class="{ 'ritual__tag--theirs': item.lead === 'theirs', 'ritual__tag--even': !item.lead }"
-          >
-            <template v-if="!item.lead">{{ t('report.duel.evenFigure') }}</template>
-            <template v-else-if="item.only">{{ item.words }}</template>
-            <template v-else-if="item.lead === 'mine'">{{ t('report.you') }} — {{ item.words }}</template>
-            <template v-else>{{ name }} — {{ item.words }}</template>
-          </b>
-        </p>
-        <div class="ritual__bar" aria-hidden="true">
-          <i v-if="item.mine" class="ritual__mine" :style="{ flexGrow: item.mine }" />
-          <i v-if="item.theirs" class="ritual__theirs" :style="{ flexGrow: item.theirs }" />
+    <div class="rituals">
+      <section v-for="section in sections" :key="section.title" class="rituals__section">
+        <h4 class="t-label rituals__head">{{ section.title }}</h4>
+        <div v-for="item in section.lines" :key="item.key" class="ritual">
+          <p class="ritual__label t-body">
+            <span
+              >{{ item.label
+              }}<template v-if="item.of"
+                >{{ ' ' }}<span class="t-label ritual__of">{{ item.of }}</span></template
+              ></span
+            >
+            <b
+              class="t-label"
+              :class="{ 'ritual__tag--theirs': item.lead === 'theirs', 'ritual__tag--even': !item.lead }"
+            >
+              <template v-if="!item.lead">{{ t('report.duel.evenFigure') }}</template>
+              <template v-else-if="item.only">{{ item.words }}</template>
+              <template v-else-if="item.lead === 'mine'">{{ t('report.you') }} — {{ item.words }}</template>
+              <template v-else>{{ name }} — {{ item.words }}</template>
+            </b>
+          </p>
+          <div class="ritual__bar" aria-hidden="true">
+            <i v-if="item.mine" class="ritual__mine" :style="{ flexGrow: item.mine }" />
+            <i v-if="item.theirs" class="ritual__theirs" :style="{ flexGrow: item.theirs }" />
+          </div>
+          <p class="ritual__counts t-label">
+            <span :class="{ 'is-lead': item.lead === 'mine' }">{{ formatNumber(item.mine) }}</span>
+            <span :class="{ 'is-lead': item.lead === 'theirs' }">{{ formatNumber(item.theirs) }}</span>
+          </p>
         </div>
-        <p class="ritual__counts t-label">
-          <span :class="{ 'is-lead': item.lead === 'mine' }">{{ formatNumber(item.mine) }}</span>
-          <span :class="{ 'is-lead': item.lead === 'theirs' }">{{ formatNumber(item.theirs) }}</span>
-        </p>
-      </div>
-    </section>
+      </section>
+    </div>
   </ReportSection>
 </template>
 
 <style scoped>
+.rituals {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--card-gap);
+}
+
+@media (min-width: 901px) {
+  .rituals:has(.rituals__section + .rituals__section) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-6);
+  }
+}
+
 .rituals__section {
   display: flex;
   flex-direction: column;
@@ -177,7 +192,10 @@ const sections = computed(() => [morning.value, evening.value].filter((item) => 
 
 /* The verdict is a label (500 by its role), not a bold <b> and not the body's 400. */
 .ritual__label b {
-  flex: none;
+  flex: 0 1 45%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .ritual__of {

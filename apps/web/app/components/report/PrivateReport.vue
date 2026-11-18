@@ -5,7 +5,7 @@ import { Info } from '../../lib/icons'
 /**
  * A private chat's report under its poster: long on purpose, every finding at the size of a finding.
  *   «Главное» — the few things this chat stands out with (the run of days, the balance, the busiest day);
- *   «Вы и {имя}» — the relationship score and the match sheet of everything the two sides compare in;
+ *   «Вы и {имя}» — message balance, conversation habits and the combined score;
  *   «Время» — the hours and parts of the day, mornings and nights, the calendar and weekdays, the records, the milestones;
  *   «Как говорите» — what the chat is made of, voice, reactions, stickers;
  *   «О чём» — the word of the chat, the top words, each side's own words, the favourite emoji.
@@ -31,13 +31,14 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
     <ReportHighlights :data="data" :no-words="noWords" />
     <ReportPart id="together" :title="t('report.tabs.withName', { name: data.summary.title })">
       <ReportSplit :data="data" />
-      <ReportMatch :data="data" />
+      <ReportConversation :data="data" />
       <ReportRelationship :data="data" />
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">
-      <ReportTime :data="data" parts />
-      <ReportRituals :data="data" />
+      <ReportTime :data="data" parts compact />
+      <ReportWeek :weekday="data.report.activity.weekday" />
       <ReportDays :data="data" streak />
+      <ReportRituals :data="data" />
       <ReportRecords :data="data" />
       <ReportMilestones :data="data" />
     </ReportPart>

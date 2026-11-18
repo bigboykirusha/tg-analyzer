@@ -2,10 +2,11 @@
 import type { GroupParticipantDto, GroupReportDto } from '@tg-analyzer/shared'
 import { HeartHandshake } from '../../../lib/icons'
 
-/** «Пары»: the three pairs who answer each other most, one row each — two avatars and the two names. */
+/** The three closest pairs, with direct replies and adjoining turns shown separately. */
 const props = defineProps<{ group: GroupReportDto }>()
 const { t } = useI18n()
 const nameOf = useParticipantName()
+const pairDetail = useGroupPairDetail()
 
 const byId = computed(() => new Map(props.group.participants.map((person) => [person.id, person])))
 const member = (id: string, name: string): Pick<GroupParticipantDto, 'id' | 'name' | 'isSelf'> =>
@@ -16,6 +17,7 @@ const pairs = computed(() =>
     key: `${pair.leftParticipantId}-${pair.rightParticipantId}`,
     left: member(pair.leftParticipantId, pair.leftParticipantName),
     right: member(pair.rightParticipantId, pair.rightParticipantName),
+    detail: pairDetail(pair),
   })),
 )
 </script>
@@ -27,12 +29,15 @@ const pairs = computed(() =>
     :icon="HeartHandshake"
     :title="t('group.pairs.title')"
     :answer="t('group.pairs.lead')"
+    wide
   >
     <div class="pairs">
       <UiListRow
         v-for="pair in pairs"
         :key="pair.key"
+        wrap
         :title="t('group.pairs.names', { left: nameOf(pair.left), right: nameOf(pair.right) })"
+        :subtitle="pair.detail"
       >
         <template #leading>
           <span class="duo">
@@ -52,6 +57,7 @@ const pairs = computed(() =>
         </template>
       </UiListRow>
     </div>
+    <template #note>{{ t('group.pairs.note') }}</template>
   </ReportSection>
 </template>
 
@@ -64,5 +70,17 @@ const pairs = computed(() =>
 .duo {
   display: inline-flex;
   gap: var(--space-1);
+}
+
+@media (min-width: 901px) {
+  .pairs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-16) * 4)), 1fr));
+    gap: var(--space-2) var(--space-6);
+  }
+
+  .pairs > :deep(.list-row .list-row__body) {
+    box-shadow: none;
+  }
 }
 </style>

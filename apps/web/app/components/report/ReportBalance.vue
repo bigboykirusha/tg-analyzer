@@ -14,6 +14,7 @@ const { t } = useI18n()
 const { name, me, answer, figure, rows } = useBalance(
   () => props.data,
   () => props.author ?? null,
+  () => Boolean(props.anonymous),
 )
 </script>
 
@@ -25,7 +26,7 @@ const { name, me, answer, figure, rows } = useBalance(
     :icon="Scale"
     :title="t('report.balance.title')"
     :figure="figure"
-    :answer="anonymous && !figure ? t('publicReport.evenAnonymous') : answer"
+    :answer="answer"
   >
     <div class="balance">
       <p class="balance__sides t-label" aria-hidden="true">

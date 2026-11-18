@@ -24,6 +24,13 @@ const starters = computed(() =>
     .sort((a, b) => b.starterShare - a.starterShare)
     .slice(0, 3),
 )
+const starterAnswer = computed(() => {
+  const [first, next] = starters.value
+  if (!first) return null
+  const share = formatPercent(first.starterShare)
+  if (next && share === formatPercent(next.starterShare)) return t('group.startersTie', { share })
+  return t('group.startersAnswer', { name: nameOf(first) })
+})
 
 /** Each talker's words as `derived` keeps them: the same source as every other word on the report. */
 const signatureOf = (id: string) => props.data.derived.words.group?.members[id]?.topicSignature ?? []
@@ -60,12 +67,7 @@ const stickerAnswer = computed(() => {
     <ReportPodium :items="reactions" />
   </ReportSection>
 
-  <ReportSection
-    v-if="starters.length"
-    :icon="MessageCircle"
-    :title="t('group.startersTitle')"
-    :answer="t('group.startersAnswer', { name: nameOf(starters[0]!) })"
-  >
+  <ReportSection v-if="starters.length" :icon="MessageCircle" :title="t('group.startersTitle')" :answer="starterAnswer">
     <div class="rows">
       <UiListRow v-for="person in starters" :key="person.id" :title="nameOf(person)">
         <template #leading>

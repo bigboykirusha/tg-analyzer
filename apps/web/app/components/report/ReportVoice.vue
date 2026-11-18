@@ -6,7 +6,7 @@ import type { ReportTile } from './ReportTiles.vue'
 /**
  * «Голосом»: how long you talked to each other in voice messages and video notes as the one big number,
  * with a picture of that length («это два фильма подряд»), then the counts and the longest recordings as
- * numbers of their own — whose and when. Who talks more lives in «Вы и {имя}».
+ * numbers of their own. Compare time spent speaking here with its recording counts.
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, tc, formatDuration, formatCountdown, formatDay, formatNumber } = useI18n()
@@ -24,11 +24,14 @@ const count = computed(() => {
   if (!stats) return 0
   return stats.voice.count.mine + stats.voice.count.theirs + stats.round.count.mine + stats.round.count.theirs
 })
-const seconds = computed(() => {
+const speaking = computed(() => {
   const stats = voice.value
-  if (!stats) return 0
-  return stats.voice.seconds.mine + stats.voice.seconds.theirs + stats.round.seconds.mine + stats.round.seconds.theirs
+  return {
+    mine: stats ? stats.voice.seconds.mine + stats.round.seconds.mine : 0,
+    theirs: stats ? stats.voice.seconds.theirs + stats.round.seconds.theirs : 0,
+  }
 })
+const seconds = computed(() => speaking.value.mine + speaking.value.theirs)
 
 const answer = computed(() => {
   if (seconds.value < MIN_PICTURE_SEC) return t('report.voice.together')
@@ -91,6 +94,15 @@ const tiles = computed<ReportTile[]>(() => {
     :figure="formatDuration(seconds)"
     :answer="answer"
   >
+    <ReportLine
+      size="lg"
+      :mine="speaking.mine"
+      :theirs="speaking.theirs"
+      :left="speaking.mine ? formatDuration(speaking.mine) : formatNumber(0)"
+      :right="speaking.theirs ? formatDuration(speaking.theirs) : formatNumber(0)"
+      :left-name="t('report.you')"
+      :right-name="name"
+    />
     <ReportTiles :tiles="tiles" />
   </ReportSection>
 </template>

@@ -5,7 +5,7 @@ import { Trophy } from '../../../lib/icons'
 /**
  * «Роли»: who plays which part in the chat, at most six — who starts conversations, the star of the
  * reactions, who wakes the chat and who puts it to bed, the voice. One row per role: the winner's avatar,
- * the role, «Юля, 15% разговоров». The answer names whoever holds the most roles.
+ * the role, «Юля, 15% разговоров». A role needs one clear leader at the precision shown.
  */
 const props = defineProps<{ group: GroupReportDto }>()
 const { t, tc, locale, formatDecimal, formatPercent } = useI18n()
@@ -63,17 +63,18 @@ const specs = computed(() => [
 const roles = computed(() =>
   specs.value
     .map((spec): Role | null => {
-      const [first] = props.group.participants
+      const [first, second] = props.group.participants
         .filter((participant) => spec.amount(participant) > 0)
         .sort((left, right) => spec.amount(right) - spec.amount(left))
-      return first
-        ? { key: spec.key, title: spec.title, winner: first, value: spec.describe(spec.amount(first)) }
-        : null
+      if (!first) return null
+      const value = spec.describe(spec.amount(first))
+      if (second && value === spec.describe(spec.amount(second))) return null
+      return { key: spec.key, title: spec.title, winner: first, value }
     })
     .filter((item): item is Role => item !== null),
 )
 
-/** «Больше всех ролей у Юли», or that the roles are shared out. */
+/** Name a leader only when they hold strictly more roles than anyone else. */
 const answer = computed(() => {
   const counts = new Map<string, { winner: GroupParticipantDto; n: number }>()
   for (const role of roles.value) {
@@ -81,14 +82,14 @@ const answer = computed(() => {
     entry.n += 1
     counts.set(role.winner.id, entry)
   }
-  const top = [...counts.values()].sort((a, b) => b.n - a.n)[0]
-  return top && top.n > 1 ? t('group.roles.most', { name: nameOf(top.winner) }) : t('group.roles.shared')
+  const [top, next] = [...counts.values()].sort((a, b) => b.n - a.n)
+  return top && top.n > 1 && top.n > (next?.n ?? 0) ? t('group.roles.most', { name: nameOf(top.winner) }) : null
 })
 </script>
 
 <template>
   <ReportSection
-    v-if="roles.length > 1"
+    v-if="roles.length"
     id="part-roles"
     :icon="Trophy"
     :title="t('group.awards.title')"
@@ -99,6 +100,7 @@ const answer = computed(() => {
       <UiListRow
         v-for="item in roles"
         :key="item.key"
+        wrap
         :title="item.title"
         :subtitle="t('group.awards.line', { name: nameOf(item.winner), value: item.value })"
       >

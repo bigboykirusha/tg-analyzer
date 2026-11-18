@@ -3,21 +3,14 @@ import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
 import { CalendarDays, Flame } from '../../lib/icons'
 
 /**
- * «Активность по дням»: every day of the period as a calendar, and the seven days of the week as bars.
- * The answers say how many days you were in touch and which weekday is the busiest. Private chats and
- * groups read the same two cards. `streak` (a private chat): a run of a week and more turns the calendar into the
- * part's poster — «Дней подряд», the run as its figure, the days you wrote to each other under the calendar —
- * so the run and the count of days are told once, in one place.
+ * The calendar of the whole period. In a private chat it also shows a run of consecutive days.
  */
 const props = defineProps<{
   data: ReportDto
   streak?: boolean
-  /** The week as a half card, beside the next one (a group's dial): not a whole row of its own. */
-  weekBeside?: boolean
 }>()
 const { t, tc, formatNumber } = useI18n()
 const days = computed(() => fillDailyGaps(props.data.report.activity.daily))
-const weekday = computed(() => props.data.report.activity.weekday)
 
 const activeDays = computed(() => {
   const total = days.value.length
@@ -30,13 +23,6 @@ const run = useStreak(
   () => props.data,
   () => Boolean(props.streak),
 )
-const busiestDay = computed(() => {
-  let best = -1
-  weekday.value.forEach((count, index) => {
-    if (count.total > 0 && (best < 0 || count.total > weekday.value[best]!.total)) best = index
-  })
-  return best < 0 ? null : t('group.time.busiestDay', { day: t('chart.weekdaysLong').split(',')[best] ?? '' })
-})
 </script>
 
 <template>
@@ -44,7 +30,6 @@ const busiestDay = computed(() => {
     v-if="activeDays && run"
     id="part-streak"
     wide
-    tone="ink"
     :icon="Flame"
     :title="t('report.main.streakTitle')"
     :figure="run.figure"
@@ -61,14 +46,5 @@ const busiestDay = computed(() => {
     :answer="activeDays"
   >
     <ActivityHeatmap :points="days" />
-  </ReportSection>
-  <ReportSection
-    v-if="busiestDay"
-    :wide="!weekBeside"
-    :icon="CalendarDays"
-    :title="t('report.rhythm.weekdaysTitle')"
-    :answer="busiestDay"
-  >
-    <WeekdayChart :weekday="weekday" />
   </ReportSection>
 </template>

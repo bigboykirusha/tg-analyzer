@@ -25,6 +25,10 @@ defineProps<{ id: string; title: string }>()
   box-shadow: var(--divider-top);
 }
 
+.report-part:not(:has(.report-cards > *)) {
+  display: none;
+}
+
 .report-part:first-child {
   margin-top: 0;
   padding-top: 0;

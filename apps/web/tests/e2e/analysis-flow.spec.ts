@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import type { ReportDto } from '@tg-analyzer/shared'
 import { readFile } from 'node:fs/promises'
 import {
   analyseChat,
@@ -42,13 +43,37 @@ test('sign in, analyse a private chat and read the report', async ({ page }, tes
   await expect(page.locator('.report-section')).not.toHaveCount(0)
   await openCard(page, 'balance')
   await expect(page.locator('#part-balance')).toBeInViewport()
+  await expect(page.locator('#part-match table')).toBeVisible()
   await expect(page.locator('.page-bar__lede')).toHaveCount(0)
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.goto('/new')
   await expect(page.locator('a.chat-row[href="/chat/1006"]')).toBeVisible()
 })
 
-test('the first report opens by itself when the analysis starts on the home page', async ({ page }) => {
+test('the report explains a one-sided chat and shows all tied weekdays', async ({ page }) => {
+  await signIn(page)
+  await analyseChat(page, 'Катя')
+  await page.waitForURL('**/chat/1006', { timeout: 30_000 })
+  await page.route('**/api/v1/reports/1006', async (route) => {
+    const response = await route.fetch()
+    const data: ReportDto = await response.json()
+    data.report.totals.sent = data.report.totals.messages
+    data.report.totals.received = 0
+    data.report.responses.mineSamples = 2
+    data.report.responses.theirsSamples = 2
+    data.report.activity.weekday = [1, 30, 30, 4, 2, 1, 0].map((total) => ({ sent: total, received: 0, total }))
+    await route.fulfill({ response, json: data })
+  })
+  await gotoHydrated(page, '/chat/1006')
+  await expect(page.locator('#part-balance')).toContainText('100 на 0')
+  await expect(page.locator('#part-balance')).toContainText('Все сообщения от вас')
+  await expect(page.locator('#part-match')).toBeVisible()
+  await expect(page.getByRole('rowheader', { name: 'Обычное время ответа' })).toHaveCount(0)
+  await expect(page.locator('#part-relation')).toHaveCount(0)
+  await expect(page.locator('#part-week')).toContainText('Больше всего сообщений по понедельникам и по вторникам')
+})
+
+test('the first report opens by itself when the analysis starts on the home page', async ({ page }, testInfo) => {
   await signIn(page)
   // A newcomer: «С кого начнём?» and the whole chat list under it, each row with «Разобрать».
   await expect(page.getByRole('heading', { name: 'С кого начнём?' })).toBeVisible()
@@ -59,6 +84,18 @@ test('the first report opens by itself when the analysis starts on the home page
     .getByRole('button', { name: /^Разобрать чат/ })
     .click()
   await page.waitForURL('**/chat/**', { timeout: 30_000 })
+  if (testInfo.project.name !== 'desktop') {
+    const calendar = page.locator('#part-streak .calendar')
+    const earlier = calendar.getByRole('button', { name: 'Показать предыдущие месяцы' })
+    await expect(calendar.locator('.month__name:visible').first()).toHaveText(/^\p{L}+\s+\d{4}$/u)
+    await expect(calendar.locator('.month--old').first()).toBeHidden()
+    await earlier.click()
+    await expect(calendar.locator('.month--old').first()).toBeVisible()
+    await expect(calendar.getByRole('button', { name: 'Свернуть предыдущие месяцы' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+  }
 })
 
 test('a chat with too few messages has no «Разобрать» in the full list', async ({ page }) => {
@@ -85,7 +122,7 @@ test('group chats get the group report', async ({ page }, testInfo) => {
   await page.waitForURL('**/chat/-1002004', { timeout: 60_000 })
   await page.goto('/chat/-1002004')
   await expect(page.locator('#part-people')).toContainText('Пишут почти поровну')
-  for (const part of ['people', 'roles', 'pairs', 'time', 'words']) {
+  for (const part of ['people', 'roles', 'pairs', 'time', 'week', 'words']) {
     await openCard(page, part)
     await expect(page.locator(`#part-${part}`)).toBeInViewport()
   }
@@ -105,6 +142,18 @@ test('group chats get the group report', async ({ page }, testInfo) => {
   }
   // The pairs stay in the report, three rows at most.
   expect(await page.locator('#part-pairs .list-row').count()).toBeLessThanOrEqual(3)
+  await expect(page.locator('#part-pairs .list-row__subtitle').first()).toContainText(/Прямых ответов|Соседних реплик/)
+
+  await page.route('**/api/v1/reports/-1002004', async (route) => {
+    const response = await route.fetch()
+    const data: ReportDto = await response.json()
+    for (const participant of data.report.group?.participants ?? []) participant.starterShare = 25
+    await route.fulfill({ response, json: data })
+  })
+  await gotoHydrated(page, '/chat/-1002004')
+  await expect(page.locator('#part-people')).toBeVisible()
+  await expect(page.locator('#part-roles').getByText('Заводит разговоры', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Несколько участников начинают по 25% разговоров')).toBeVisible()
 })
 
 test('a completed analysis is recovered when websocket progress is unavailable', async ({ page }) => {

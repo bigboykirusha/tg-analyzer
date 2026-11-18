@@ -63,6 +63,8 @@ const total = computed(() => props.weekday.reduce((sum, day) => sum + (day?.tota
 .week__bar {
   display: block;
   align-self: end;
+  justify-self: center;
+  width: min(100%, var(--space-10));
   border-radius: var(--radius-mark) var(--radius-mark) 0 0;
   background: var(--chart-neutral);
 }
