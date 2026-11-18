@@ -49,7 +49,6 @@ const sides = computed(() => {
   <ReportSection
     v-if="answer"
     id="part-favourites"
-    appearance="inline"
     :icon="Smile"
     :title="t(lean ? 'report.favourites.titleLean' : 'report.favourites.title')"
     :answer="answer"

@@ -66,11 +66,12 @@ const answer = computed(() => {
   border-radius: var(--radius-pill);
 }
 
+/* A share of the whole chat, not of one person: ink on the card's well — the colour means a person (18.11). */
 .share__text {
-  background: var(--them);
+  background: var(--text);
 }
 
 .share__rest {
-  background: var(--room-tint);
+  background: var(--surface-2);
 }
 </style>

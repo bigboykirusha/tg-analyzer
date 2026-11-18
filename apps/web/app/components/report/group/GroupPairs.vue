@@ -26,7 +26,6 @@ const pairs = computed(() =>
   <ReportSection
     v-if="pairs.length"
     id="part-pairs"
-    appearance="inline"
     :icon="HeartHandshake"
     :title="t('group.pairs.title')"
     :answer="t('group.pairs.lead')"

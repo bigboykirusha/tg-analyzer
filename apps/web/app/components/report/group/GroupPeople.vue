@@ -70,15 +70,8 @@ const finding = computed(() => {
 </script>
 
 <template>
-  <div class="tile people report-section--wide" :class="{ 'people--solo': !selected }">
-    <ReportSection
-      id="part-people"
-      appearance="inline"
-      :icon="Users"
-      :title="t('group.people.title')"
-      :answer="finding?.answer"
-      hero
-    >
+  <div class="people report-section--wide" :class="{ 'people--solo': !selected }">
+    <ReportSection id="part-people" :icon="Users" :title="t('group.people.title')" :answer="finding?.answer" hero>
       <p v-if="finding?.detail" class="people__detail t-label">{{ finding.detail }}</p>
       <div class="people__list">
         <template v-for="person in visible" :key="person.id">
@@ -116,7 +109,7 @@ const finding = computed(() => {
       </div>
     </ReportSection>
 
-    <aside v-if="selected && wide" class="people__panel">
+    <aside v-if="selected && wide" class="tile people__panel">
       <GroupMemberDetails
         :participant="selected"
         :group="group"
@@ -154,21 +147,20 @@ const finding = computed(() => {
   margin-right: calc(var(--icon-sm) + var(--space-3));
 }
 
-/* Desktop: the list on the left, the member beside it, staying in view while the list scrolls. */
+/* Desktop: the list card on the left, the member's card beside it, staying in view while the list scrolls (18.11:
+   two cards side by side, as every pair of findings, instead of a card inside a card). */
 @media (min-width: 901px) {
   .people:not(.people--solo) {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
-    gap: var(--space-6);
+    gap: var(--space-4);
   }
 
   .people__panel {
     position: sticky;
     top: calc(var(--topbar-height) + var(--space-4));
     min-width: 0;
-    padding-inline-start: var(--space-6);
-    border-inline-start: 1px solid var(--border);
   }
 }
 </style>

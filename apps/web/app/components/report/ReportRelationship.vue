@@ -41,7 +41,6 @@ const parts = computed(() => {
     v-if="score"
     id="part-relation"
     class="relationship"
-    appearance="inline"
     :icon="HeartHandshake"
     :title="t('report.relation.title')"
     :answer="t('report.relation.score', { score: formatNumber(score.score) })"
@@ -87,7 +86,8 @@ const parts = computed(() => {
   height: var(--space-1);
   margin-top: var(--space-1);
   border-radius: var(--radius-pill);
-  background: var(--room-tint);
+  /* A score of the chat, not of one side: ink on the card's well — the colour means a person (18.11). */
+  background: var(--surface-2);
   overflow: hidden;
 }
 
@@ -95,7 +95,7 @@ const parts = computed(() => {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--them);
+  background: var(--text);
 }
 
 @media (min-width: 901px) {

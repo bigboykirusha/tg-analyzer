@@ -58,7 +58,6 @@ const answer = computed(() => {
     v-if="rows.length"
     id="part-match"
     class="conversation-section"
-    appearance="inline"
     :icon="MessageSquare"
     :title="t('report.conversation.title')"
     :answer="answer"

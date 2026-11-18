@@ -91,7 +91,6 @@ const answer = computed(() => {
   <ReportSection
     v-if="roles.length"
     id="part-roles"
-    appearance="inline"
     :icon="Trophy"
     :title="t('group.awards.title')"
     :answer="answer"

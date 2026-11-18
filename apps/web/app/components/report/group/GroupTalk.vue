@@ -67,13 +67,7 @@ const stickerAnswer = computed(() => {
     <ReportPodium :items="reactions" />
   </ReportSection>
 
-  <ReportSection
-    v-if="starters.length"
-    appearance="inline"
-    :icon="MessageCircle"
-    :title="t('group.startersTitle')"
-    :answer="starterAnswer"
-  >
+  <ReportSection v-if="starters.length" :icon="MessageCircle" :title="t('group.startersTitle')" :answer="starterAnswer">
     <div class="rows">
       <UiListRow v-for="person in starters" :key="person.id" :title="nameOf(person)">
         <template #leading>
@@ -86,7 +80,7 @@ const stickerAnswer = computed(() => {
     </div>
   </ReportSection>
 
-  <ReportSection v-if="signatures.length" appearance="inline" :icon="Quote" :title="t('group.signatureTitle')">
+  <ReportSection v-if="signatures.length" :icon="Quote" :title="t('group.signatureTitle')">
     <ReportFacts
       :facts="signatures.map((item) => ({ key: item.person.id, label: nameOf(item.person), value: item.words }))"
     />
