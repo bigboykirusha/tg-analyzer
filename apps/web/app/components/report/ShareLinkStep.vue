@@ -32,6 +32,19 @@ const settings = reactive({
 watch(settings, () => {
   copyLink.fallback.value = ''
 })
+/**
+ * The dialog loads its links after it opens: a step opened before they arrive starts on the defaults and would
+ * take the published link for a changed one (and show the refreshed report instead of the published cover).
+ * A link that arrives, or a new one made by «Скопировать», sets the choices to its own.
+ */
+watch(
+  () => props.link?.token,
+  () => {
+    if (!props.link?.settings) return
+    settings.showName = props.link.settings.showName
+    settings.words = props.link.settings.words
+  },
+)
 const busy = ref(false)
 const name = computed(() => props.data.summary.title)
 const changed = computed(
