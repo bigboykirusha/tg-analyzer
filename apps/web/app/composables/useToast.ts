@@ -22,7 +22,11 @@ export interface ToastInput extends Omit<ToastMessage, 'id'> {
   duration?: number
 }
 
-const MAX_VISIBLE = 3
+/**
+ * One banner at a time, as on iPhone (18.11): a new one takes the old one's place instead of stacking under it,
+ * so the banners never cover the header's buttons. The events stay in «Уведомления».
+ */
+const MAX_VISIBLE = 1
 const DEFAULT_DURATION_MS = 5000
 const ACTION_DURATION_MS = 8000
 /** An error waits longer to be read; a tap or a flick up puts it away sooner (there is no close button). */
