@@ -17,10 +17,9 @@ const { t } = useI18n()
         <UiIconButton class="skeleton-report__share" :icon="Share" :label="t('share.open')" disabled no-tooltip />
       </template>
     </UiPageBar>
-    <div class="skeleton-report__part">
-      <!-- The part's title (t-h1, as in ReportPart), then its cards. -->
-      <UiSkeleton class="line line--h1" width="40%" />
-      <div class="skeleton-report__cards">
+    <div class="report-content skeleton-report__part">
+      <UiSkeleton class="line line--h2" width="40%" />
+      <div class="report-row">
         <div v-for="card in 2" :key="card" class="tile">
           <UiSkeleton class="line line--label" width="30%" />
           <UiSkeleton class="line line--h2" width="60%" />
@@ -36,22 +35,11 @@ const { t } = useI18n()
 .skeleton-report__part {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding-top: var(--space-4);
-}
-
-.skeleton-report__cards {
-  display: flex;
-  flex-direction: column;
-  gap: var(--card-gap);
+  gap: var(--space-4);
 }
 
 .skeleton-report .line {
   height: 1lh;
-}
-
-.line--h1 {
-  font: var(--text-h1);
 }
 
 .line--label {
@@ -64,17 +52,5 @@ const { t } = useI18n()
 
 .skeleton-report__share {
   visibility: hidden;
-}
-
-@media (min-width: 901px) {
-  .skeleton-report__part {
-    gap: var(--space-4);
-    padding-top: var(--space-6);
-  }
-
-  .skeleton-report__cards {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 </style>

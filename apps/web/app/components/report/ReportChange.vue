@@ -104,7 +104,6 @@ const since = computed(() => {
     <span class="change__text t-label">{{
       unread ? t('report.change.unread', { count: formatNumber(unread) }) : t('report.change.fresh')
     }}</span>
-    <span class="change__sep t-label" aria-hidden="true">·</span>
     <span v-if="later" class="change__text t-label">{{ later }}</span>
     <button
       v-else
@@ -131,10 +130,6 @@ const since = computed(() => {
   color: var(--text);
 }
 
-.change__sep {
-  color: var(--text-muted);
-}
-
 /* «Обновить» is a word in the line, as «Приватность» is under the sign-in field (19.11): a capsule beside the name's
    quiet facts outweighed them. The line keeps a 44 tap height around it. */
 .change__action {
@@ -149,7 +144,7 @@ const since = computed(() => {
 /* Being refreshed: the same quiet line with the one spinner; the whole line opens the running analysis. */
 .change--busy {
   align-self: flex-start;
-  min-height: var(--control-sm);
+  min-height: var(--control-md);
   color: var(--text);
   text-align: left;
 }

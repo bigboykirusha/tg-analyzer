@@ -58,37 +58,51 @@ const stickerAnswer = computed(() => {
 </script>
 
 <template>
-  <ReportSection
-    v-if="reactions.length"
-    :icon="Heart"
-    :title="t('group.talk.reactionsTitle')"
-    :answer="favourite(reactions[0]!.value, reactions[0]!.count)"
-  >
-    <ReportPodium :items="reactions" />
-  </ReportSection>
+  <div class="report-row">
+    <ReportSection
+      v-if="reactions.length"
+      :icon="Heart"
+      :title="t('group.talk.reactionsTitle')"
+      :answer="favourite(reactions[0]!.value, reactions[0]!.count)"
+    >
+      <ReportPodium :items="reactions" />
+    </ReportSection>
 
-  <ReportSection v-if="starters.length" :icon="MessageCircle" :title="t('group.startersTitle')" :answer="starterAnswer">
-    <div class="rows">
-      <UiListRow v-for="person in starters" :key="person.id" :title="nameOf(person)">
-        <template #leading>
-          <UiAvatar :title="nameOf(person)" :seed="person.id" :side="person.isSelf ? 'mine' : null" size="xs" />
-        </template>
-        <template #trailing
-          ><span class="rows__value tnum">{{ formatPercent(person.starterShare) }}</span></template
-        >
-      </UiListRow>
-    </div>
-  </ReportSection>
+    <ReportSection
+      v-if="starters.length"
+      :icon="MessageCircle"
+      :title="t('group.startersTitle')"
+      :answer="starterAnswer"
+    >
+      <div class="rows">
+        <UiListRow v-for="person in starters" :key="person.id" :title="nameOf(person)">
+          <template #leading>
+            <UiAvatar :title="nameOf(person)" :seed="person.id" :side="person.isSelf ? 'mine' : null" size="xs" />
+          </template>
+          <template #trailing
+            ><span class="rows__value tnum">{{ formatPercent(person.starterShare) }}</span></template
+          >
+        </UiListRow>
+      </div>
+    </ReportSection>
+  </div>
 
-  <ReportSection v-if="signatures.length" :icon="Quote" :title="t('group.signatureTitle')">
-    <ReportFacts
-      :facts="signatures.map((item) => ({ key: item.person.id, label: nameOf(item.person), value: item.words }))"
-    />
-  </ReportSection>
+  <div class="report-row">
+    <ReportSection v-if="signatures.length" :icon="Quote" :title="t('group.signatureTitle')">
+      <ReportFacts
+        :facts="signatures.map((item) => ({ key: item.person.id, label: nameOf(item.person), value: item.words }))"
+      />
+    </ReportSection>
 
-  <ReportSection v-if="stickers.length" :icon="Sticker" :title="t('report.talk.stickersTitle')" :answer="stickerAnswer">
-    <StickerGrid :stickers="stickers.slice(0, stickers.length >= 8 ? 8 : Math.min(4, stickers.length))" />
-  </ReportSection>
+    <ReportSection
+      v-if="stickers.length"
+      :icon="Sticker"
+      :title="t('report.talk.stickersTitle')"
+      :answer="stickerAnswer"
+    >
+      <StickerGrid :stickers="stickers.slice(0, stickers.length >= 8 ? 8 : Math.min(4, stickers.length))" />
+    </ReportSection>
+  </div>
 </template>
 
 <style scoped>

@@ -29,7 +29,6 @@ const run = useStreak(
   <ReportSection
     v-if="activeDays && run"
     id="part-streak"
-    wide
     :icon="Flame"
     :title="t('report.main.streakTitle')"
     :figure="run.figure"
@@ -40,7 +39,6 @@ const run = useStreak(
   </ReportSection>
   <ReportSection
     v-else-if="activeDays"
-    wide
     :icon="CalendarDays"
     :title="t('report.rhythm.heatmapTitle')"
     :answer="activeDays"

@@ -12,8 +12,7 @@ withDefaults(
     answer?: string | null
     /** One big number («×3,2»): the answer then says in a few words what it is the number of. */
     figure?: string | null
-    wide?: boolean
-    /** The first finding of a part: its answer in the larger h2; other findings answer in h3. */
+    /** Emphasize the answer of a lead finding. */
     hero?: boolean
     tone?: 'ink'
     icon?: Component | null
@@ -23,11 +22,7 @@ withDefaults(
 </script>
 
 <template>
-  <article
-    tabindex="-1"
-    class="report-section"
-    :class="['tile', { 'report-section--wide': wide, 'tile--ink': tone === 'ink' }]"
-  >
+  <article tabindex="-1" class="report-section tile" :class="{ 'tile--ink': tone === 'ink' }">
     <header v-if="title || answer || figure" class="report-section__head">
       <h3 v-if="title" class="t-label report-section__title" :class="{ 'report-section__title--topic': icon }">
         <span v-if="icon" class="report-section__icon" aria-hidden="true"><component :is="icon" /></span>
@@ -49,6 +44,7 @@ withDefaults(
   flex-direction: column;
   gap: var(--space-1);
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .report-section__title,
@@ -58,9 +54,8 @@ withDefaults(
 
 .report-section__title--topic {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: var(--space-2);
-  color: var(--them-ink);
 }
 
 /* The topic's glyph, bare, in the person's ink: it names the theme without a badge around it. */
@@ -69,15 +64,18 @@ withDefaults(
   flex: none;
   place-items: center;
   color: var(--them-ink);
+  align-self: flex-start;
   --icon-size: var(--icon-md);
 }
 
-.report-section__figure {
-  overflow-wrap: anywhere;
+.report-section__note {
+  padding-block-start: var(--space-3);
+  box-shadow: var(--divider-top);
+  text-wrap: pretty;
 }
 
 .report-section__answer {
-  text-wrap: balance;
+  text-wrap: pretty;
 }
 
 .report-section__answer::first-letter {

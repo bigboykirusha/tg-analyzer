@@ -157,6 +157,12 @@ const summary = computed(() => {
   container-type: inline-size;
 }
 
+@media (max-width: 640px) {
+  .dial__face {
+    width: min(100%, calc(var(--space-16) * 4));
+  }
+}
+
 .dial__svg {
   position: absolute;
   inset: 0;

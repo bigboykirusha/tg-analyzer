@@ -753,7 +753,6 @@ export const ru: Record<MessageKey, string> = {
   'report.voice.longestVoice': 'Самое длинное голосовое',
   'report.voice.longestRound': 'Самый длинный кружок',
   'report.topWords.title': 'Чаще всего',
-  'report.topWords.answer': 'Первая тройка: {words}',
   'accountPage.notifyError': 'Не удалось изменить уведомления',
   'share.lede.one': '{count} кадр о вашей переписке',
   'share.lede.few': '{count} кадра о вашей переписке',

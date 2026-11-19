@@ -111,7 +111,6 @@ const sections = computed(() => [morning.value, evening.value].filter((item) => 
   <ReportSection
     v-if="sections.length && answer"
     id="part-rituals"
-    wide
     :icon="Sun"
     :title="t('report.match.group.day')"
     :answer="answer"

@@ -20,7 +20,7 @@ useHead({ htmlAttrs: { 'data-hue': () => hueOf('example') } })
   <div>
     <ReportPoster :data="data" :caption="t('example.title')" h1 />
     <UiPageContainer>
-      <div class="page example-page">
+      <div class="report-content report-flow">
         <PrivateReport :data="data" />
 
         <section class="tile example-invite">
@@ -34,10 +34,6 @@ useHead({ htmlAttrs: { 'data-hue': () => hueOf('example') } })
 </template>
 
 <style scoped>
-.example-page {
-  padding-top: var(--space-4);
-}
-
 .example-invite {
   align-items: flex-start;
 }

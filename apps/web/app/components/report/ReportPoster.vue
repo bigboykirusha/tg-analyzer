@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { fillDailyGaps, type ReportDto } from '@tg-analyzer/shared'
+import { fillDailyGaps, reportChatSpan, type ReportDto } from '@tg-analyzer/shared'
 import { Play, Share } from '../../lib/icons'
 
 /**
@@ -38,26 +38,8 @@ const report = computed(() => props.data?.report ?? null)
 const isGroup = computed(() => Boolean(report.value?.group))
 const days = computed(() => (report.value ? fillDailyGaps(report.value.activity.daily) : []))
 
-/** «4 800 сообщений · май — ноябрь 2026» (useChatSpan). */
-const chatSpan = useChatSpan()
-const meta = computed(() => (props.data ? chatSpan(props.data) : ''))
-/**
- * The owner's poster says how much was written as a figure of its own («5 078», the h1 role) and the rest of the
- * line small beside it. The line is `useChatSpan`'s, so it is the same fact the link's preview says; if it does not
- * begin with the number as formatted here, the whole line is shown plainly.
- */
-const countLine = computed(() => {
-  if (!props.data) return null
-  const total = formatNumber(props.data.report.totals.messages)
-  const line = meta.value
-  if (!line.startsWith(total)) return null
-  // The number and its unit never part (CLAUDE.md, «Числа»): «5 078 сообщений» is one unit, the span after «·» wraps.
-  const rest = line.slice(total.length).trim()
-  const cut = rest.indexOf(' · ')
-  return cut === -1
-    ? { count: total, unit: rest, tail: '' }
-    : { count: total, unit: rest.slice(0, cut), tail: rest.slice(cut + 3) }
-})
+const spanParts = useChatSpanParts()
+const meta = computed(() => (props.data ? spanParts(reportChatSpan(props.data.report)) : null))
 
 const pulseData = computed(() => (props.data && days.value.length > 1 ? days.value : null))
 const partner = computed(() => (isGroup.value ? t('report.pulse.others') : (props.data?.summary.title ?? '')))
@@ -98,11 +80,11 @@ const cast = computed(() => {
             {{ data?.summary.title ?? title }}
           </p>
           <UiSkeleton v-else class="poster__name-skeleton" width="55%" radius="var(--radius-well)" />
-          <p v-if="countLine" class="poster__meta poster__meta--count">
-            <span class="poster__count nowrap">{{ countLine.count }} {{ countLine.unit }}</span>
-            <span v-if="countLine.tail">{{ countLine.tail }}</span>
+          <p v-if="meta" class="poster__meta">
+            <span class="poster__count">{{ meta.messages }}</span>
+            <span v-if="meta.members">{{ meta.members }}</span>
+            <span v-if="meta.period" class="poster__period">{{ meta.period }}</span>
           </p>
-          <p v-else-if="meta" class="poster__meta">{{ meta }}</p>
           <UiSkeleton v-else class="poster__meta-skeleton" width="62%" />
           <slot name="badge" />
         </div>
@@ -140,7 +122,7 @@ const cast = computed(() => {
       </ul>
 
       <!-- The pulse is the poster's picture, the key to its two sides under it (19.11). -->
-      <figure class="poster__pulse">
+      <figure v-if="pulseData || !data" class="poster__pulse">
         <Pulse
           v-if="pulseData"
           :data="pulseData"
@@ -270,17 +252,16 @@ const cast = computed(() => {
 }
 
 .poster__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
   color: var(--on-poster-muted);
   font: var(--text-label);
 }
 
-/*
- * One quiet block under the name (19.11): how much — in ink, the body role — over the whole span, then what changed
- * (ReportChange). Three lines of one voice instead of a figure, a caption and a button stacked in three sizes.
- */
-.poster__meta--count {
-  display: flex;
-  flex-direction: column;
+.poster__period {
+  flex-basis: 100%;
 }
 
 .poster__count {
@@ -345,9 +326,13 @@ const cast = computed(() => {
 
 .cast {
   display: flex;
-  gap: var(--space-3);
-  overflow-x: auto;
-  scrollbar-width: none;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.cast > li {
+  flex: 0 1 calc(var(--avatar-md) + var(--space-2));
+  min-width: var(--avatar-md);
 }
 
 .cast__person {
@@ -355,7 +340,6 @@ const cast = computed(() => {
   flex-direction: column;
   align-items: center;
   gap: var(--space-1);
-  width: calc(var(--avatar-md) + var(--space-4));
   color: var(--on-poster-muted);
   font: var(--text-label);
   text-align: center;
@@ -396,10 +380,7 @@ const cast = computed(() => {
   }
 
   .poster__in {
-    --page-gutter: var(--space-8);
-  }
-
-  .poster__in {
+    --page-gutter: var(--card-padding);
     gap: var(--space-6);
   }
 

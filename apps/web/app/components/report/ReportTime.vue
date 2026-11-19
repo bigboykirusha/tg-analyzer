@@ -9,7 +9,7 @@ import { Clock } from '../../lib/icons'
  * busiest day, the longest run of days, the days you were in touch. No calendar and no parts of the day:
  * the pulse on the poster already shows the rhythm in time.
  */
-const props = defineProps<{ data: ReportDto; parts?: boolean; compact?: boolean }>()
+const props = defineProps<{ data: ReportDto; parts?: boolean; hero?: boolean }>()
 const { t, tc, formatDay, formatNumber, formatPercent } = useI18n()
 
 /** `parts`: the owner's report says the share of the four parts of the day under the hours instead. */
@@ -69,13 +69,15 @@ const facts = computed(() => {
     v-if="window && answer"
     id="part-time"
     class="time-section"
-    hero
-    :wide="!compact"
+    :hero="hero"
     :icon="Clock"
     :title="t('report.time.title')"
     :answer="answer"
   >
-    <div class="time-layout" :class="{ 'time-layout--compact': compact }">
+    <div
+      class="time-layout"
+      :class="{ 'time-layout--with-details': parts ? dayParts.length : !report.group && facts.length }"
+    >
       <HourlyChart :hourly="report.activity.hourly" :peak="peakHours" :second="secondHours" />
       <ol v-if="parts && dayParts.length" class="day-parts">
         <li v-for="part in dayParts" :key="part.key">
@@ -83,7 +85,7 @@ const facts = computed(() => {
           <span class="t-label">{{ t(part.label) }}</span>
         </li>
       </ol>
-      <dl v-else-if="!parts && facts.length" class="facts">
+      <dl v-else-if="!parts && !report.group && facts.length" class="facts">
         <div v-for="fact in facts" :key="fact.key" class="facts__item">
           <dt class="t-label">{{ fact.label }}</dt>
           <dd class="t-body">{{ fact.value }}</dd>
@@ -104,62 +106,26 @@ const facts = computed(() => {
   container-type: inline-size;
 }
 
-/*
- * A computer: the dial on the left at its own size, what it adds on the right (17.11: a 320 px dial in the middle
- * of a 1000 px card left two empty fields).
- */
-@media (min-width: 901px) {
-  .time-layout {
-    display: grid;
-    grid-template-columns: calc(var(--space-16) * 5) minmax(0, 1fr);
-    align-items: center;
-    column-gap: var(--space-10);
-  }
-
-  .time-layout .day-parts,
-  .time-layout .facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-flow: row;
-    row-gap: var(--space-6);
-    padding-top: 0;
-    box-shadow: none;
-    text-align: left;
-  }
-
-  .time-layout--compact {
-    display: flex;
-  }
-
-  .time-layout--compact .day-parts {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .time-layout--compact .facts {
-    grid-template-columns: none;
-    grid-auto-flow: column;
-  }
-}
-
-@container (min-width: 21rem) {
-  .time-layout--compact {
+@container (min-width: 24rem) {
+  .time-layout--with-details {
     display: grid;
     grid-template-columns: min(62%, calc(var(--space-16) * 4)) minmax(0, 1fr);
     align-items: center;
     column-gap: var(--space-6);
   }
 
-  .time-layout--compact .day-parts {
+  .time-layout--with-details .day-parts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     row-gap: var(--space-3);
   }
 
-  .time-layout--compact .facts {
+  .time-layout--with-details .facts {
     grid-template-columns: minmax(0, 1fr);
     grid-auto-flow: row;
     row-gap: var(--space-3);
   }
 
-  .time-layout--compact :is(.day-parts, .facts) {
+  .time-layout--with-details :is(.day-parts, .facts) {
     padding-top: 0;
     box-shadow: none;
     text-align: left;

@@ -105,10 +105,11 @@ const { frames } = useStoryFrames(() => props.data)
     flex-direction: row-reverse;
     align-items: center;
     gap: var(--space-10);
-    padding: var(--space-8);
-    border-radius: var(--radius-poster);
+    padding: var(--card-padding);
+    border-radius: var(--radius-sheet);
     background-color: var(--poster);
     background-image: var(--poster-image);
+    box-shadow: var(--edge-light);
   }
 
   .ending__pulse {

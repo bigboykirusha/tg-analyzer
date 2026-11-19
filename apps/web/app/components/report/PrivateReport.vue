@@ -27,30 +27,44 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
       <Info aria-hidden="true" />
       {{ t('report.lowData') }}
     </p>
-    <ReportPart id="together" :title="t('report.tabs.withName', { name: data.summary.title })" comparison>
-      <ReportSplit :data="data" />
-      <ReportConversation :data="data" />
+    <ReportPart id="together" :title="t('report.tabs.withName', { name: data.summary.title })">
+      <div class="report-row">
+        <ReportSplit :data="data" />
+        <ReportConversation :data="data" />
+      </div>
       <ReportRelationship :data="data" />
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">
-      <ReportTime :data="data" parts compact />
-      <ReportWeek :weekday="data.report.activity.weekday" />
+      <div class="report-row">
+        <ReportTime :data="data" parts />
+        <ReportWeek :weekday="data.report.activity.weekday" />
+      </div>
       <ReportDays :data="data" streak />
       <ReportRituals :data="data" />
-      <ReportRecords :data="data" />
-      <ReportMilestones :data="data" />
+      <div class="report-row">
+        <ReportRecords :data="data" />
+        <ReportMilestones :data="data" />
+      </div>
     </ReportPart>
     <ReportPart id="talk" :title="t('report.tabs.talk')">
-      <ReportFormats :data="data" />
-      <ReportVoice :data="data" />
-      <DuelReactions v-if="known('reactions')" :data="data" :item="versus.reactions ?? null" />
-      <DuelStickers v-if="known('stickers')" :data="data" />
+      <div class="report-row">
+        <ReportFormats :data="data" />
+        <ReportVoice :data="data" />
+      </div>
+      <div class="report-row">
+        <DuelReactions v-if="known('reactions')" :data="data" :item="versus.reactions ?? null" />
+        <DuelStickers v-if="known('stickers')" :data="data" />
+      </div>
     </ReportPart>
     <ReportPart v-if="!noWords" id="words" :title="t('report.tabs.words')">
-      <ReportWordOfChat :data="data" />
-      <ReportTopWords :data="data" />
-      <ReportVocabulary :data="data" />
-      <ReportFavourites :data="data" lean />
+      <div class="report-row">
+        <ReportWordOfChat :data="data" />
+        <ReportTopWords :data="data" />
+      </div>
+      <div class="report-row">
+        <ReportVocabulary :data="data" />
+        <ReportFavourites :data="data" lean />
+      </div>
     </ReportPart>
     <p v-if="outdated" class="report-note t-label" role="status">
       <Info aria-hidden="true" />

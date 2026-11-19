@@ -35,22 +35,24 @@ const allowed = computed(() => props.share.settings.words)
     />
     <UiPageContainer>
       <h2 class="sr-only">{{ t('publicReport.mainTitle') }}</h2>
-      <div class="report-flow guest__flow">
+      <div class="report-content report-flow guest__flow">
         <GroupReport v-if="isGroup" :data="data" />
         <template v-else>
-          <div class="guest__overview">
+          <div class="report-row">
             <ReportBalance
               class="guest__balance"
               :data="data"
               :author="cover.author"
               :anonymous="!share.settings.showName"
             />
-            <ReportTime :data="data" compact />
+            <ReportTime :data="data" hero />
           </div>
 
           <ReportPart v-if="allowed" id="words" :title="t('report.tabs.words')">
-            <ReportWords :data="data" :author="cover.author" />
-            <ReportFavourites :data="data" />
+            <div class="report-row">
+              <ReportWords :data="data" :author="cover.author" />
+              <ReportFavourites :data="data" />
+            </div>
           </ReportPart>
         </template>
 
@@ -68,17 +70,7 @@ const allowed = computed(() => props.share.settings.words)
 
 <style scoped>
 .guest__flow {
-  padding: var(--space-4) 0 var(--space-6);
-}
-
-.guest__overview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--card-gap);
-}
-
-.guest__overview:empty {
-  display: none;
+  padding-block-end: var(--space-6);
 }
 
 .guest__invite {
@@ -101,22 +93,6 @@ const allowed = computed(() => props.share.settings.words)
 }
 
 @media (min-width: 901px) {
-  .guest__flow {
-    padding-top: var(--space-8);
-  }
-
-  .guest__overview {
-    flex-direction: row;
-  }
-
-  .guest__overview > :deep(.report-section) {
-    flex: 5 1 0;
-  }
-
-  .guest__overview > .guest__balance {
-    flex-grow: 4;
-  }
-
   .guest__balance :deep(.balance) {
     margin-block: auto;
   }

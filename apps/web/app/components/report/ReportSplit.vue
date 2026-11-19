@@ -32,7 +32,6 @@ const shown = computed(() => {
   <ReportSection
     v-if="shown && split"
     id="part-balance"
-    class="split-section"
     :icon="Scale"
     :title="t('report.balance.title')"
     :figure="shown.figure"
@@ -65,16 +64,6 @@ const shown = computed(() => {
   margin-block: auto;
 }
 
-@media (min-width: 901px) {
-  .split-section {
-    min-block-size: calc(var(--space-16) * 4 + var(--space-6));
-  }
-
-  .split__details {
-    margin-block: auto 0;
-  }
-}
-
 .split {
   display: flex;
   gap: var(--space-0-5);
@@ -94,7 +83,6 @@ const shown = computed(() => {
   background: var(--them);
 }
 
-/* The two counts stand under the ends of the bar they measure, each with the colour of its side. */
 .split__key {
   display: inline-flex;
   align-items: center;

@@ -70,12 +70,12 @@ const finding = computed(() => {
 </script>
 
 <template>
-  <div class="people report-section--wide" :class="{ 'people--solo': !selected }">
+  <div class="people" :class="{ 'people--solo': !selected }">
     <ReportSection id="part-people" :icon="Users" :title="t('group.people.title')" :answer="finding?.answer" hero>
       <p v-if="finding?.detail" class="people__detail t-label">{{ finding.detail }}</p>
       <div class="people__list">
         <template v-for="person in visible" :key="person.id">
-          <UiListRow v-if="person.isSelf" :title="nameOf(person)" :subtitle="roleLabel(person.role)">
+          <UiListRow v-if="person.isSelf" wrap :title="nameOf(person)" :subtitle="roleLabel(person.role)">
             <template #leading><UiAvatar :title="nameOf(person)" side="mine" size="md" /></template>
             <template #trailing>
               <span class="people__share people__share--self tnum">{{ formatPercent(person.messageShare) }}</span>
@@ -85,6 +85,7 @@ const finding = computed(() => {
             v-else
             as="button"
             chevron
+            wrap
             :title="nameOf(person)"
             :subtitle="roleLabel(person.role)"
             :selected="wide && person.id === selected?.id"
@@ -154,7 +155,7 @@ const finding = computed(() => {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
-    gap: var(--space-4);
+    gap: var(--card-gap);
   }
 
   .people__panel {

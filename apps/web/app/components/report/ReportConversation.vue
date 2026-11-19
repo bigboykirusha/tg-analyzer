@@ -57,7 +57,6 @@ const answer = computed(() => {
   <ReportSection
     v-if="rows.length"
     id="part-match"
-    class="conversation-section"
     :icon="MessageSquare"
     :title="t('report.conversation.title')"
     :answer="answer"
@@ -84,10 +83,6 @@ const answer = computed(() => {
 </template>
 
 <style scoped>
-.conversation-section {
-  padding-block-start: var(--space-3);
-}
-
 .conversation {
   width: 100%;
   border-collapse: collapse;
@@ -96,7 +91,7 @@ const answer = computed(() => {
 
 .conversation th,
 .conversation td {
-  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+  padding: var(--space-1) 0 var(--space-1) var(--space-3);
   vertical-align: baseline;
 }
 
@@ -121,6 +116,10 @@ const answer = computed(() => {
 
 .conversation td {
   white-space: nowrap;
+}
+
+.conversation tbody tr:last-child > * {
+  padding-block-end: 0;
 }
 
 .conversation__them {

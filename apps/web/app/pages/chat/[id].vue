@@ -100,7 +100,7 @@ onMounted(load)
       <template v-if="data" #menu><ReportMenu :summary="data.summary" /></template>
     </ReportPoster>
     <UiPageContainer>
-      <div v-if="data" class="page report-page">
+      <div v-if="data" class="report-content">
         <ReportHeader :summary="data.summary" @share="openShare" />
 
         <!-- Charts (ECharts) belong to groups only, and the share sheet and stories load on first use:
@@ -170,20 +170,3 @@ onMounted(load)
     <ReportEnding v-if="data" :data="data" @story="openStory('view')" @share="openShare" />
   </div>
 </template>
-
-<style scoped>
-/* Under the poster: the cards, one step below it. */
-.report-page {
-  display: flex;
-  flex-direction: column;
-  padding-top: var(--space-4);
-}
-
-/* A computer: the first part's title stands as far from the poster as one part from the next (19.11: with «Главное»
-   gone it touched the poster). */
-@media (min-width: 901px) {
-  .report-page {
-    padding-top: var(--space-10);
-  }
-}
-</style>

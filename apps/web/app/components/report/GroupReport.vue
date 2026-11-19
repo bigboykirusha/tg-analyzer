@@ -29,8 +29,10 @@ const { t } = useI18n()
       <GroupTalk :data="data" :group="data.report.group" />
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">
-      <GroupTime :data="data" />
-      <ReportWeek :weekday="data.report.activity.weekday" />
+      <div class="report-row">
+        <ReportTime :data="data" />
+        <ReportWeek :weekday="data.report.activity.weekday" />
+      </div>
       <ReportDays :data="data" />
     </ReportPart>
     <GroupWords :data="data" :group="data.report.group" />

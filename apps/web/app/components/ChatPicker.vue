@@ -10,16 +10,17 @@ const props = defineProps<{ standalone?: boolean }>()
 const PAGE_SIZE = 30
 const { t, tc, formatDuration } = useI18n()
 const actions = useReportActions()
+const workspace = useWorkspaceStore()
 const now = useNow(30_000)
-/** The day's analyses are used up: said before «Разобрать» is pressed, not as a refusal after it (19.11). */
+/** Show the daily wait in the picker once the workspace has a report. */
 const limitNote = computed(() => {
+  if (!workspace.reports.length) return null
   const until = actions.waitUntil('*')
   return until
     ? t('errors.parseDailyLimit', { wait: formatDuration(Math.max(60, Math.ceil((until - now.value) / 1000))) })
     : null
 })
 const auth = useAuthStore()
-const workspace = useWorkspaceStore()
 const errorMessage = useErrorMessage()
 const { relogin } = useAuth()
 

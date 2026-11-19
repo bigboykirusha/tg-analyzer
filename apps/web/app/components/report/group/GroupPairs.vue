@@ -29,7 +29,6 @@ const pairs = computed(() =>
     :icon="HeartHandshake"
     :title="t('group.pairs.title')"
     :answer="t('group.pairs.lead')"
-    wide
   >
     <div class="pairs">
       <UiListRow

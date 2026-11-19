@@ -1,34 +1,56 @@
-/* Chapter rhythm shared by private, group and public reports. */
+.report-content {
+  padding-block-start: var(--page-gap);
+}
+
+/* The same chapter and card spacing applies to all report variants. */
 .report-flow {
-  --report-chapter-gap: var(--space-8);
-  display: flex;
-  flex-direction: column;
-  gap: var(--report-chapter-gap);
+  display: grid;
+  gap: var(--page-gap);
   min-width: 0;
 }
 
-.report-flow > * + .report-part::before {
+.report-flow > :is(.report-part:has(.report-section), .report-row:has(> *)) ~ .report-part::before {
   position: absolute;
-  inset: calc(var(--report-chapter-gap) / -2) 0 auto;
+  inset: calc(var(--page-gap) / -2) 0 auto;
   border-block-start: 1px solid var(--border);
   content: '';
 }
 
-@media (min-width: 901px) {
-  .report-flow {
-    --report-chapter-gap: var(--space-10);
-  }
-}
-
-.report-section,
-.tile {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+.report-part {
+  position: relative;
+  display: grid;
+  gap: var(--space-4);
   min-width: 0;
 }
 
+.report-part:not(:has(.report-section)),
+.report-row:not(:has(> *)) {
+  display: none;
+}
+
+.report-part__blocks,
+.report-row {
+  display: grid;
+  gap: var(--card-gap);
+  min-width: 0;
+}
+
+/* A pair shares the available width. A single finding fills the row. */
+.report-row {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+@media (max-width: 640px) {
+  .report-content {
+    padding-block-start: var(--space-6);
+  }
+}
+
 .tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
   --btn-secondary-bg: transparent;
   padding: var(--card-padding);
   border-radius: var(--radius-card);

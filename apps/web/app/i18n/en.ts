@@ -751,7 +751,6 @@ export const en = {
   'report.voice.longestVoice': 'The longest voice message',
   'report.voice.longestRound': 'The longest video note',
   'report.topWords.title': 'Said most often',
-  'report.topWords.answer': 'Top three: {words}',
   'accountPage.notifyError': 'Could not change notifications',
   'share.lede.one': '{count} frame about your chat',
   'share.lede.few': '{count} frames about your chat',

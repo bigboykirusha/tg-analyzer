@@ -88,14 +88,7 @@ const answer = computed(() => {
 </script>
 
 <template>
-  <ReportSection
-    v-if="roles.length"
-    id="part-roles"
-    :icon="Trophy"
-    :title="t('group.awards.title')"
-    :answer="answer"
-    wide
-  >
+  <ReportSection v-if="roles.length" id="part-roles" :icon="Trophy" :title="t('group.awards.title')" :answer="answer">
     <div class="roles">
       <UiListRow
         v-for="item in roles"
