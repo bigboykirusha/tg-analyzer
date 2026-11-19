@@ -276,6 +276,8 @@ export const capturedMedia = pgTable(
     /** Relative to `MEDIA_DIR` once saved. */
     path: text('path'),
     bytes: bigint('bytes', { mode: 'number' }),
+    /** Time spent downloading it, summed over its slices (without the pauses for analyses). */
+    downloadMs: integer('download_ms').default(0).notNull(),
     createdAt: createdAt(),
     savedAt: timestamp('saved_at', { withTimezone: true }),
   },

@@ -2,7 +2,7 @@ import { createWriteStream } from 'node:fs'
 import { mkdir, rename, rm, stat } from 'node:fs/promises'
 import { isAbsolute, join, resolve } from 'node:path'
 import { DelayedError, Queue, type Job } from 'bullmq'
-import { and, asc, countDistinct, eq } from 'drizzle-orm'
+import { and, asc, countDistinct, eq, sql } from 'drizzle-orm'
 import type { MessageInput } from '@tg-analyzer/shared'
 import { config } from '../../config'
 import { db, schema } from '../../db'
@@ -161,7 +161,10 @@ export async function runMediaCapture(job: Job<MediaJobData>, token?: string) {
       .where(and(eq(schema.capturedMedia.userId, userId), eq(schema.capturedMedia.status, 'pending')))
       .orderBy(asc(schema.capturedMedia.tgChatId), asc(schema.capturedMedia.messageId))
       .limit(1)
-    if (!item) return
+    if (!item) {
+      await logTotals(userId)
+      return
+    }
 
     const session = await getTelegramSession(userId)
     // Signed out of Telegram: the rows wait for the next sign-in and analysis.
@@ -173,11 +176,13 @@ export async function runMediaCapture(job: Job<MediaJobData>, token?: string) {
     const offset = await sizeOf(part)
 
     let slice
+    let tookMs = 0
     try {
       slice = await telegram.withSession(
         userId,
         session,
         async (api) => {
+          const started = Date.now()
           const out = createWriteStream(part, { flags: 'a' })
           const closed = new Promise<void>((done, fail) => {
             out.on('close', done)
@@ -195,6 +200,7 @@ export async function runMediaCapture(job: Job<MediaJobData>, token?: string) {
           } finally {
             out.end()
             await closed
+            tookMs = Date.now() - started
           }
         },
         { waitMs: SESSION_WAIT_MS },
@@ -208,6 +214,13 @@ export async function runMediaCapture(job: Job<MediaJobData>, token?: string) {
       await rm(part, { force: true })
       continue
     }
+
+    // Pure download time, without the pauses for analyses: what a file really costs.
+    if (tookMs)
+      await db
+        .update(schema.capturedMedia)
+        .set({ downloadMs: sql`${schema.capturedMedia.downloadMs} + ${tookMs}` })
+        .where(eq(schema.capturedMedia.id, item.id))
 
     // The report was deleted meanwhile: its files go with it.
     if (!(await rowExists(item.id))) {
@@ -236,6 +249,35 @@ export async function runMediaCapture(job: Job<MediaJobData>, token?: string) {
       .returning({ id: schema.capturedMedia.id })
     if (!saved) await rm(file, { force: true })
   }
+}
+
+/** One log line per chat once nothing is left to fetch: files, size, download time and the whole way with pauses. */
+async function logTotals(userId: string) {
+  const rows = await db
+    .select({
+      chatId: schema.capturedMedia.tgChatId,
+      files: sql<number>`count(*) filter (where ${schema.capturedMedia.status} = 'saved')::int`,
+      failed: sql<number>`count(*) filter (where ${schema.capturedMedia.status} in ('failed', 'skipped'))::int`,
+      bytes: sql<number>`coalesce(sum(${schema.capturedMedia.bytes}), 0)::bigint`,
+      downloadMs: sql<number>`coalesce(sum(${schema.capturedMedia.downloadMs}), 0)::bigint`,
+      wallMs: sql<number>`coalesce(extract(epoch from max(${schema.capturedMedia.savedAt}) - min(${schema.capturedMedia.createdAt})) * 1000, 0)::bigint`,
+    })
+    .from(schema.capturedMedia)
+    .where(eq(schema.capturedMedia.userId, userId))
+    .groupBy(schema.capturedMedia.tgChatId)
+  for (const row of rows)
+    logger.info(
+      {
+        userId,
+        chatId: row.chatId,
+        files: row.files,
+        failed: row.failed,
+        megabytes: Math.round(Number(row.bytes) / 1048576),
+        downloadSeconds: Math.round(Number(row.downloadMs) / 1000),
+        wallSeconds: Math.round(Number(row.wallMs) / 1000),
+      },
+      'media capture totals',
+    )
 }
 
 /** On start: wakes the queue for everyone with files still to fetch (a restart mid-file continues it). */

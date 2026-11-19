@@ -176,6 +176,13 @@
       "when": 1796083200000,
       "tag": "0024_captured_media",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1796169600000,
+      "tag": "0025_captured_media_download_ms",
+      "breakpoints": true
     }
   ]
 }
