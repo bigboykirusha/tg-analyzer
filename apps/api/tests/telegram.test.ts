@@ -49,6 +49,7 @@ test('gramjs messages are projected onto analysis metadata', () => {
     kind: 'text',
     durationSec: null,
     round: false,
+    attachment: null,
     reactions: undefined,
     sticker: null,
   })
