@@ -3,9 +3,7 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { Quote } from '../../lib/icons'
 
 /**
- * The word of the chat, the one tile of «О чём» in the person's poster colour: the word at the size of
- * the report's one big number, how many times it was written and who wrote it more. The places after it are
- * «Чаще всего», right under this card (one number, one place). The same word as on the «Итоги» frame.
+ * The lead word of «О чём»: its count and how it divides between the two sides.
  */
 const props = defineProps<{ data: ReportDto }>()
 const { t, tc, formatNumber } = useI18n()
@@ -22,14 +20,13 @@ const sides = computed(() => {
 </script>
 
 <template>
-  <ReportSection v-if="word" id="part-word" tone="ink" :icon="Quote" :title="t('report.fmt.wordTitle')">
+  <ReportSection v-if="word" id="part-word" :icon="Quote" :title="t('report.fmt.wordTitle')">
     <div class="word">
       <p class="word__value">{{ word.value }}</p>
       <p class="word__count">{{ tc('report.fmt.wordCount', word.count) }}</p>
     </div>
     <ReportLine
       v-if="sides"
-      class="word__line"
       size="lg"
       :mine="sides.mine"
       :theirs="sides.theirs"
@@ -41,16 +38,6 @@ const sides = computed(() => {
 </template>
 
 <style scoped>
-/* The other side's name on the poster colour reads in the poster's ink: their own tone is too close to it in the dark theme. */
-.word__line :deep(.cmp__name--them) {
-  color: var(--on-poster);
-}
-
-/* Beside a taller card in a row (a computer) the split rests at the bottom, the word at the top. */
-.word__line {
-  margin-top: auto;
-}
-
 .word {
   display: flex;
   flex-direction: column;

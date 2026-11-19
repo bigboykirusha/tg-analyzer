@@ -3,13 +3,7 @@ import type { HabitId, ReportDto } from '@tg-analyzer/shared'
 import { Info } from '../../lib/icons'
 
 /**
- * A private chat's report under its poster: long on purpose, every finding at the size of a finding.
- *   «Вы и {имя}» — message balance, conversation habits and the combined score;
- *   «Время» — the hours and parts of the day, mornings and nights, the calendar and weekdays, the records, the milestones;
- *   «Как говорите» — what the chat is made of, voice, reactions, stickers;
- *   «О чём» — the word of the chat, the top words, each side's own words, the favourite emoji.
- * A card the chat is too small for is not drawn at all (the floors live in `@tg-analyzer/shared`), so a
- * short chat shows fewer cards, never weak ones.
+ * The body of a private report. Related findings share a surface and stack in reading order on narrow screens.
  * `noWords`: a shared link without words — the words and emoji go away instead of standing empty.
  */
 const props = defineProps<{ data: ReportDto; noWords?: boolean }>()
@@ -28,43 +22,46 @@ const outdated = computed(() => !props.data.report.voice || !props.data.report.r
       {{ t('report.lowData') }}
     </p>
     <ReportPart id="together" :title="t('report.tabs.withName', { name: data.summary.title })">
-      <div class="report-row">
+      <ReportPanel wide-aside>
         <ReportSplit :data="data" />
-        <ReportConversation :data="data" />
-      </div>
-      <ReportRelationship :data="data" />
+        <ReportReplyDistribution :data="data" />
+        <template #aside><ReportConversation :data="data" /></template>
+        <template #footer><ReportRelationship :data="data" /></template>
+      </ReportPanel>
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">
-      <div class="report-row">
+      <ReportPanel wide-aside>
         <ReportTime :data="data" parts />
-        <ReportWeek :weekday="data.report.activity.weekday" />
-      </div>
-      <ReportDays :data="data" streak />
+        <template #aside>
+          <ReportWeek :weekday="data.report.activity.weekday" :heatmap="data.report.activity.heatmap" />
+        </template>
+        <template #footer><ReportDays :data="data" streak /></template>
+      </ReportPanel>
       <ReportRituals :data="data" />
-      <div class="report-row">
+      <ReportPanel>
         <ReportRecords :data="data" />
-        <ReportMilestones :data="data" />
-      </div>
+        <template #aside><ReportMilestones :data="data" /></template>
+      </ReportPanel>
     </ReportPart>
     <ReportPart id="talk" :title="t('report.tabs.talk')">
-      <div class="report-row">
+      <ReportPanel>
         <ReportFormats :data="data" />
-        <ReportVoice :data="data" />
-      </div>
-      <div class="report-row">
+        <template #aside><ReportVoice :data="data" /></template>
+      </ReportPanel>
+      <ReportPanel>
         <DuelReactions v-if="known('reactions')" :data="data" :item="versus.reactions ?? null" />
-        <DuelStickers v-if="known('stickers')" :data="data" />
-      </div>
+        <template #aside><DuelStickers v-if="known('stickers')" :data="data" /></template>
+      </ReportPanel>
     </ReportPart>
     <ReportPart v-if="!noWords" id="words" :title="t('report.tabs.words')">
-      <div class="report-row">
+      <ReportPanel wide-aside>
         <ReportWordOfChat :data="data" />
-        <ReportTopWords :data="data" />
-      </div>
-      <div class="report-row">
         <ReportVocabulary :data="data" />
-        <ReportFavourites :data="data" lean />
-      </div>
+        <template #aside>
+          <ReportTopWords :data="data" />
+          <ReportFavourites :data="data" lean />
+        </template>
+      </ReportPanel>
     </ReportPart>
     <p v-if="outdated" class="report-note t-label" role="status">
       <Info aria-hidden="true" />

@@ -38,21 +38,16 @@ const allowed = computed(() => props.share.settings.words)
       <div class="report-content report-flow guest__flow">
         <GroupReport v-if="isGroup" :data="data" />
         <template v-else>
-          <div class="report-row">
-            <ReportBalance
-              class="guest__balance"
-              :data="data"
-              :author="cover.author"
-              :anonymous="!share.settings.showName"
-            />
-            <ReportTime :data="data" hero />
-          </div>
+          <ReportPanel>
+            <ReportBalance :data="data" :author="cover.author" :anonymous="!share.settings.showName" />
+            <template #aside><ReportTime :data="data" hero /></template>
+          </ReportPanel>
 
           <ReportPart v-if="allowed" id="words" :title="t('report.tabs.words')">
-            <div class="report-row">
+            <ReportPanel>
               <ReportWords :data="data" :author="cover.author" />
-              <ReportFavourites :data="data" />
-            </div>
+              <template #aside><ReportFavourites :data="data" /></template>
+            </ReportPanel>
           </ReportPart>
         </template>
 
@@ -93,10 +88,6 @@ const allowed = computed(() => props.share.settings.words)
 }
 
 @media (min-width: 901px) {
-  .guest__balance :deep(.balance) {
-    margin-block: auto;
-  }
-
   .guest__invite {
     flex-direction: row;
     justify-content: space-between;

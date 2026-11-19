@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import type { GroupReportDto, ReportDto } from '@tg-analyzer/shared'
-import { Heart, MessageCircle, Quote, Sticker } from '../../../lib/icons'
-
-/**
- * «Общение» in a group, card by card: the favourite reactions on a podium, who starts conversations, each
- * talker's own words and the stickers. The pairs have their own card, the shared words and emoji too.
- */
+import { Heart, MessageCircle, Sticker } from '../../../lib/icons'
 const props = defineProps<{ data: ReportDto; group: GroupReportDto }>()
 const { t, tc, formatNumber, formatPercent } = useI18n()
 const nameOf = useParticipantName()
+const author = useReportAuthor()
 
 const report = computed(() => props.data.report)
 // Custom emoji have no picture here, so only regular ones are shown.
@@ -32,22 +28,6 @@ const starterAnswer = computed(() => {
   return t('group.startersAnswer', { name: nameOf(first) })
 })
 
-/** Each talker's words as `derived` keeps them: the same source as every other word on the report. */
-const signatureOf = (id: string) => props.data.derived.words.group?.members[id]?.topicSignature ?? []
-const signatures = computed(() =>
-  [...props.group.participants]
-    .filter((person) => signatureOf(person.id).length)
-    .sort((a, b) => b.messageCount - a.messageCount)
-    .slice(0, 4)
-    .map((person) => ({
-      person,
-      words: signatureOf(person.id)
-        .slice(0, 3)
-        .map((word) => word.value)
-        .join(', '),
-    })),
-)
-
 const stickers = computed(() => report.value.stickers?.top ?? [])
 const stickerAnswer = computed(() => {
   const first = stickers.value[0]
@@ -58,7 +38,30 @@ const stickerAnswer = computed(() => {
 </script>
 
 <template>
-  <div class="report-row">
+  <ReportPanel>
+    <ReportFormats v-if="author === null" :data="data" />
+    <template #aside>
+      <ReportSection
+        v-if="starters.length"
+        :icon="MessageCircle"
+        :title="t('group.startersTitle')"
+        :answer="starterAnswer"
+      >
+        <div class="rows">
+          <UiListRow v-for="person in starters" :key="person.id" :title="nameOf(person)">
+            <template #leading>
+              <UiAvatar :title="nameOf(person)" :seed="person.id" :side="person.isSelf ? 'mine' : null" size="xs" />
+            </template>
+            <template #trailing
+              ><span class="rows__value tnum">{{ formatPercent(person.starterShare) }}</span></template
+            >
+          </UiListRow>
+        </div>
+      </ReportSection>
+    </template>
+  </ReportPanel>
+
+  <ReportPanel>
     <ReportSection
       v-if="reactions.length"
       :icon="Heart"
@@ -67,42 +70,17 @@ const stickerAnswer = computed(() => {
     >
       <ReportPodium :items="reactions" />
     </ReportSection>
-
-    <ReportSection
-      v-if="starters.length"
-      :icon="MessageCircle"
-      :title="t('group.startersTitle')"
-      :answer="starterAnswer"
-    >
-      <div class="rows">
-        <UiListRow v-for="person in starters" :key="person.id" :title="nameOf(person)">
-          <template #leading>
-            <UiAvatar :title="nameOf(person)" :seed="person.id" :side="person.isSelf ? 'mine' : null" size="xs" />
-          </template>
-          <template #trailing
-            ><span class="rows__value tnum">{{ formatPercent(person.starterShare) }}</span></template
-          >
-        </UiListRow>
-      </div>
-    </ReportSection>
-  </div>
-
-  <div class="report-row">
-    <ReportSection v-if="signatures.length" :icon="Quote" :title="t('group.signatureTitle')">
-      <ReportFacts
-        :facts="signatures.map((item) => ({ key: item.person.id, label: nameOf(item.person), value: item.words }))"
-      />
-    </ReportSection>
-
-    <ReportSection
-      v-if="stickers.length"
-      :icon="Sticker"
-      :title="t('report.talk.stickersTitle')"
-      :answer="stickerAnswer"
-    >
-      <StickerGrid :stickers="stickers.slice(0, stickers.length >= 8 ? 8 : Math.min(4, stickers.length))" />
-    </ReportSection>
-  </div>
+    <template #aside>
+      <ReportSection
+        v-if="stickers.length"
+        :icon="Sticker"
+        :title="t('report.talk.stickersTitle')"
+        :answer="stickerAnswer"
+      >
+        <StickerGrid :stickers="stickers.slice(0, stickers.length >= 8 ? 8 : Math.min(4, stickers.length))" />
+      </ReportSection>
+    </template>
+  </ReportPanel>
 </template>
 
 <style scoped>

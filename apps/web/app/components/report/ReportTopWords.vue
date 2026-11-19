@@ -3,33 +3,27 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { BarChart2 } from '../../lib/icons'
 
 const props = defineProps<{ data: ReportDto }>()
-const { t, formatNumber, quote } = useI18n()
+const { t, formatNumber } = useI18n()
 
 const LIMIT = 10
 const MIN = 5
 
-const words = computed(() => props.data.derived.words.topWords.slice(0, LIMIT))
-const answer = computed(() => {
-  const top = words.value.slice(0, 3)
-  if (!top.length) return null
-  return t('report.topWords.answer', {
-    words: top.map((word) => quote(word.value)).join(', '),
-  })
+const words = computed(() => {
+  const { topWords, wordOfChat } = props.data.derived.words
+  if (topWords.length < MIN) return []
+  return topWords
+    .slice(0, LIMIT)
+    .map((word, index) => ({ ...word, rank: index + 1 }))
+    .filter((word) => word.value !== wordOfChat?.value)
 })
 </script>
 
 <template>
-  <ReportSection
-    v-if="words.length >= MIN"
-    class="word-ranking"
-    :icon="BarChart2"
-    :title="t('report.topWords.title')"
-    :answer="answer"
-  >
+  <ReportSection v-if="words.length" class="word-ranking" :icon="BarChart2" :title="t('report.topWords.title')">
     <ol class="ranking" role="list" :style="{ '--ranking-rows': Math.ceil(words.length / 2) }">
-      <li v-for="(word, index) in words" :key="word.value" class="ranking__row">
-        <span class="t-label tnum ranking__rank">{{ index + 1 }}</span>
-        <span class="t-body ranking__word" :class="{ 'ranking__word--leading': index < 3 }">{{ word.value }}</span>
+      <li v-for="word in words" :key="word.value" :value="word.rank" class="ranking__row">
+        <span class="t-label tnum ranking__rank" aria-hidden="true">{{ word.rank }}</span>
+        <span class="t-body ranking__word" :class="{ 'ranking__word--leading': word.rank <= 3 }">{{ word.value }}</span>
         <span class="t-label tnum ranking__count">{{ formatNumber(word.count) }}</span>
       </li>
     </ol>

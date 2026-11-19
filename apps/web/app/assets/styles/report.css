@@ -9,7 +9,7 @@
   min-width: 0;
 }
 
-.report-flow > :is(.report-part:has(.report-section), .report-row:has(> *)) ~ .report-part::before {
+.report-flow > :is(.report-part:has(.report-section), .report-panel:has(.report-section)) ~ .report-part::before {
   position: absolute;
   inset: calc(var(--page-gap) / -2) 0 auto;
   border-block-start: 1px solid var(--border);
@@ -29,8 +29,7 @@
   }
 }
 
-.report-part:not(:has(.report-section)),
-.report-row:not(:has(> *)) {
+.report-part:not(:has(.report-section)) {
   display: none;
 }
 
@@ -38,20 +37,6 @@
   display: grid;
   gap: var(--card-gap);
   min-width: 0;
-}
-
-/* A pair shares the available width in two equal columns on desktop, stacked on mobile. */
-.report-row {
-  display: grid;
-  gap: var(--card-gap);
-  grid-template-columns: 1fr;
-  min-width: 0;
-}
-
-@media (min-width: 901px) {
-  .report-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 640px) {
@@ -71,33 +56,4 @@
   background: var(--surface);
   box-shadow: var(--ring-card);
   color: var(--text);
-}
-
-/*
- * A tile in the person's poster colour (the guest page's word of the chat). Every role re-points to the
- * poster: ink type, the muted line, the person's deep tone for their side.
- */
-.tile--ink {
-  --text: var(--on-poster);
-  --text-muted: var(--on-poster-muted);
-  --border: var(--on-poster-line);
-  --border-strong: var(--on-poster-line);
-  --surface-2: var(--on-poster-chip);
-  --room-tint: var(--on-poster-chip);
-  --you: var(--on-poster);
-  --them: var(--on-them);
-  --them-ink: var(--on-them);
-  --pulse-you: var(--on-poster);
-  --pulse-them: var(--on-them);
-  /* Intensity on a poster is the poster's own ink at four densities (grey dots on a colour read as faded). */
-  --heat-1: var(--gray-heat-a1);
-  --heat-2: var(--gray-heat-a2);
-  --heat-3: var(--gray-heat-a3);
-  --heat-4: var(--on-poster);
-  --focus-ring-color: var(--on-poster);
-  border-radius: var(--radius-poster);
-  background-color: var(--poster);
-  background-image: var(--poster-image);
-  box-shadow: var(--edge-light);
-  color: var(--on-poster);
 }

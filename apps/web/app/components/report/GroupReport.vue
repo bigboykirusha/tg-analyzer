@@ -22,20 +22,22 @@ const { t } = useI18n()
   <div v-else class="report-flow">
     <ReportPart id="people" :title="t('group.tabs.people')">
       <GroupPeople :group="data.report.group" :words="data.derived.words.group" :total="data.report.totals.messages" />
-      <div class="report-row">
+      <ReportPanel>
         <GroupRoles :group="data.report.group" />
-        <GroupPairs :group="data.report.group" />
-      </div>
+        <template #aside><GroupPairs :group="data.report.group" /></template>
+      </ReportPanel>
     </ReportPart>
     <ReportPart id="talk" :title="t('group.tabs.talk')">
       <GroupTalk :data="data" :group="data.report.group" />
     </ReportPart>
     <ReportPart id="time" :title="t('report.tabs.time')">
-      <div class="report-row">
+      <ReportPanel wide-aside>
         <ReportTime :data="data" />
-        <ReportWeek :weekday="data.report.activity.weekday" />
-      </div>
-      <ReportDays :data="data" />
+        <template #aside>
+          <ReportWeek :weekday="data.report.activity.weekday" :heatmap="data.report.activity.heatmap" />
+        </template>
+        <template #footer><ReportDays :data="data" /></template>
+      </ReportPanel>
     </ReportPart>
     <GroupWords :data="data" :group="data.report.group" />
   </div>

@@ -2,9 +2,8 @@
 import type { Component } from 'vue'
 
 /**
- * A report finding with a topic, an answer, supporting content and an optional note.
- * Every finding is a card (18.11): tables and lists too, so the reader never has to guess why one block has a frame
- * and its neighbour does not. `tone="ink"` gives the card the person's poster material.
+ * A finding with its topic, answer, supporting content and optional note.
+ * Related findings can share a surface in ReportPanel.
  */
 withDefaults(
   defineProps<{
@@ -14,15 +13,14 @@ withDefaults(
     figure?: string | null
     /** Emphasize the answer of a lead finding. */
     hero?: boolean
-    tone?: 'ink'
     icon?: Component | null
   }>(),
-  { title: '', answer: null, figure: null, tone: undefined, icon: null },
+  { title: '', answer: null, figure: null, icon: null },
 )
 </script>
 
 <template>
-  <article tabindex="-1" class="report-section tile" :class="{ 'tile--ink': tone === 'ink' }">
+  <article tabindex="-1" class="report-section tile">
     <header v-if="title || answer || figure" class="report-section__head">
       <h3 v-if="title" class="t-label report-section__title" :class="{ 'report-section__title--topic': icon }">
         <span v-if="icon" class="report-section__icon" aria-hidden="true"><component :is="icon" /></span>

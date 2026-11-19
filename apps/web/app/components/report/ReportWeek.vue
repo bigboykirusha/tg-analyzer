@@ -2,7 +2,7 @@
 import type { DirectionalCountDto } from '@tg-analyzer/shared'
 import { CalendarDays } from '../../lib/icons'
 
-const props = defineProps<{ weekday: DirectionalCountDto[] }>()
+const props = defineProps<{ weekday: DirectionalCountDto[]; heatmap?: number[] }>()
 const { t, tc, locale, formatNumber } = useI18n()
 
 const peak = computed(() => Math.max(0, ...props.weekday.map((day) => day.total)))
@@ -30,7 +30,8 @@ const note = computed(() =>
     :title="t('report.rhythm.weekdaysTitle')"
     :answer="answer"
   >
-    <WeekdayChart :weekday="weekday" />
+    <WeekHourChart v-if="heatmap?.length === 7 * 24 && heatmap.some(Boolean)" :heatmap="heatmap" />
+    <WeekdayChart v-else :weekday="weekday" />
     <template #note>{{ note }}</template>
   </ReportSection>
 </template>
