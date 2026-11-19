@@ -49,7 +49,7 @@ const favourites = computed(() => {
           <span v-else class="favourite__emoji" aria-hidden="true">{{ item.sticker!.emoji ?? '🃏' }}</span>
         </span>
         <strong class="favourite__who">{{ item.label }}</strong>
-        <span class="favourite__count t-h2">{{ tc('report.stickers.favourite', item.sticker![item.key]) }}</span>
+        <span class="favourite__count tnum">{{ tc('report.stickers.favourite', item.sticker![item.key]) }}</span>
       </li>
     </ul>
   </ReportSection>
@@ -61,6 +61,7 @@ const favourites = computed(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
   margin: 0;
+  margin-block: auto;
   padding: 0;
   list-style: none;
 }

@@ -55,8 +55,8 @@ const sides = computed(() => {
   >
     <ul v-if="chips.length" class="emoji">
       <li v-for="item in chips" :key="item.value" class="emoji__chip t-label">
-        <span class="t-h2">{{ item.value }}</span>
-        {{ formatNumber(item.count) }}
+        <span class="emoji__glyph">{{ item.value }}</span>
+        <span class="tnum">{{ formatNumber(item.count) }}</span>
       </li>
     </ul>
     <div v-if="sides.length && !lean" class="sides">
@@ -77,6 +77,7 @@ const sides = computed(() => {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+  margin-block: auto;
 }
 
 .emoji__chip {
@@ -86,6 +87,10 @@ const sides = computed(() => {
   padding: 0 var(--space-3) 0 var(--space-2);
   border-radius: var(--radius-pill);
   background: var(--surface-2);
+}
+
+.emoji__glyph {
+  font: var(--text-h2);
 }
 
 .sides {

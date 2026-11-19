@@ -20,7 +20,7 @@ useHead({ htmlAttrs: { 'data-hue': () => hueOf('example') } })
   <div>
     <ReportPoster :data="data" :caption="t('example.title')" h1 />
     <UiPageContainer>
-      <div class="report-content report-flow">
+      <div class="report-content">
         <PrivateReport :data="data" />
 
         <section class="tile example-invite">
@@ -35,6 +35,7 @@ useHead({ htmlAttrs: { 'data-hue': () => hueOf('example') } })
 
 <style scoped>
 .example-invite {
+  margin-top: var(--page-gap);
   align-items: flex-start;
 }
 

@@ -3,17 +3,30 @@ import type { ReportDto } from '@tg-analyzer/shared'
 import { BarChart2 } from '../../lib/icons'
 
 const props = defineProps<{ data: ReportDto }>()
-const { t, formatNumber } = useI18n()
+const { t, formatNumber, quote } = useI18n()
 
 const LIMIT = 10
 const MIN = 5
 
 const words = computed(() => props.data.derived.words.topWords.slice(0, LIMIT))
+const answer = computed(() => {
+  const top = words.value.slice(0, 3)
+  if (!top.length) return null
+  return t('report.topWords.answer', {
+    words: top.map((word) => quote(word.value)).join(', '),
+  })
+})
 </script>
 
 <template>
-  <ReportSection v-if="words.length >= MIN" class="word-ranking" :icon="BarChart2" :title="t('report.topWords.title')">
-    <ol class="ranking" role="list">
+  <ReportSection
+    v-if="words.length >= MIN"
+    class="word-ranking"
+    :icon="BarChart2"
+    :title="t('report.topWords.title')"
+    :answer="answer"
+  >
+    <ol class="ranking" role="list" :style="{ '--ranking-rows': Math.ceil(words.length / 2) }">
       <li v-for="(word, index) in words" :key="word.value" class="ranking__row">
         <span class="t-label tnum ranking__rank">{{ index + 1 }}</span>
         <span class="t-body ranking__word" :class="{ 'ranking__word--leading': index < 3 }">{{ word.value }}</span>
@@ -35,6 +48,8 @@ const words = computed(() => props.data.derived.words.topWords.slice(0, LIMIT))
 
 @container (min-width: 25rem) {
   .ranking {
+    grid-auto-flow: column;
+    grid-template-rows: repeat(var(--ranking-rows, 5), auto);
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

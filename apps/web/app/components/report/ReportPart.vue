@@ -4,7 +4,7 @@ defineProps<{ id: string; title: string }>()
 
 <template>
   <section :id="`chapter-${id}`" class="report-part" :aria-labelledby="`chapter-${id}-title`">
-    <h2 :id="`chapter-${id}-title`" class="t-h2 report-part__title">{{ title }}</h2>
+    <h2 :id="`chapter-${id}-title`" class="t-h1 report-part__title">{{ title }}</h2>
     <div class="report-part__blocks"><slot /></div>
   </section>
 </template>

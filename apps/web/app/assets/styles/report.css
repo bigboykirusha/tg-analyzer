@@ -23,21 +23,35 @@
   min-width: 0;
 }
 
+@media (min-width: 901px) {
+  .report-part {
+    gap: var(--space-6);
+  }
+}
+
 .report-part:not(:has(.report-section)),
 .report-row:not(:has(> *)) {
   display: none;
 }
 
-.report-part__blocks,
-.report-row {
+.report-part__blocks {
   display: grid;
   gap: var(--card-gap);
   min-width: 0;
 }
 
-/* A pair shares the available width. A single finding fills the row. */
+/* A pair shares the available width in two equal columns on desktop, stacked on mobile. */
 .report-row {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  display: grid;
+  gap: var(--card-gap);
+  grid-template-columns: 1fr;
+  min-width: 0;
+}
+
+@media (min-width: 901px) {
+  .report-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {

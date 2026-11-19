@@ -17,7 +17,7 @@ const { t, formatNumber } = useI18n()
         <img v-if="sticker.thumb" :src="sticker.thumb" :alt="sticker.emoji ?? t('report.talk.sticker')" />
         <span v-else class="sticker__emoji" aria-hidden="true">{{ sticker.emoji ?? '🃏' }}</span>
       </span>
-      <span class="sticker__count t-h2">{{ formatNumber(count(sticker)) }}</span>
+      <span class="sticker__count tnum">{{ formatNumber(count(sticker)) }}</span>
     </li>
   </ul>
 </template>

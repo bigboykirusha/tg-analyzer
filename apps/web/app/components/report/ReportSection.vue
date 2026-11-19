@@ -54,7 +54,7 @@ withDefaults(
 
 .report-section__title--topic {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
 }
 
@@ -64,11 +64,11 @@ withDefaults(
   flex: none;
   place-items: center;
   color: var(--them-ink);
-  align-self: flex-start;
   --icon-size: var(--icon-md);
 }
 
 .report-section__note {
+  margin-block-start: auto;
   padding-block-start: var(--space-3);
   box-shadow: var(--divider-top);
   text-wrap: pretty;

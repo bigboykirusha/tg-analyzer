@@ -100,8 +100,10 @@ const answer = computed(() => {
 }
 
 .conversation thead th {
-  max-width: var(--avatar-lg);
-  overflow-wrap: anywhere;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .conversation tbody tr {

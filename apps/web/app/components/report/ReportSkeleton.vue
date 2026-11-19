@@ -18,7 +18,7 @@ const { t } = useI18n()
       </template>
     </UiPageBar>
     <div class="report-content skeleton-report__part">
-      <UiSkeleton class="line line--h2" width="40%" />
+      <UiSkeleton class="line line--h1" width="40%" />
       <div class="report-row">
         <div v-for="card in 2" :key="card" class="tile">
           <UiSkeleton class="line line--label" width="30%" />
@@ -38,12 +38,22 @@ const { t } = useI18n()
   gap: var(--space-4);
 }
 
+@media (min-width: 901px) {
+  .skeleton-report__part {
+    gap: var(--space-6);
+  }
+}
+
 .skeleton-report .line {
   height: 1lh;
 }
 
 .line--label {
   font: var(--text-label);
+}
+
+.line--h1 {
+  font: var(--text-h1);
 }
 
 .line--h2 {
