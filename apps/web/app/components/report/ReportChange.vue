@@ -104,16 +104,16 @@ const since = computed(() => {
     <span class="change__text t-label">{{
       unread ? t('report.change.unread', { count: formatNumber(unread) }) : t('report.change.fresh')
     }}</span>
+    <span class="change__sep t-label" aria-hidden="true">·</span>
     <span v-if="later" class="change__text t-label">{{ later }}</span>
-    <UiButton
+    <button
       v-else
-      variant="secondary"
-      size="sm"
-      :icon="RotateCw"
+      type="button"
+      class="change__action link t-label"
       @click="actions.analyse(data.summary.chatId, data.summary.title)"
     >
-      {{ t('report.change.refresh') }}
-    </UiButton>
+      <RotateCw aria-hidden="true" />{{ t('report.change.refresh') }}
+    </button>
   </div>
   <p v-else-if="since" class="change change__text t-label" role="status">{{ since }}</p>
 </template>
@@ -123,12 +123,27 @@ const since = computed(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2) var(--space-3);
+  gap: 0 var(--space-2);
   min-width: 0;
 }
 
 .change__text {
   color: var(--text);
+}
+
+.change__sep {
+  color: var(--text-muted);
+}
+
+/* «Обновить» is a word in the line, as «Приватность» is under the sign-in field (19.11): a capsule beside the name's
+   quiet facts outweighed them. The line keeps a 44 tap height around it. */
+.change__action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--control-md);
+  margin-block: calc((var(--control-md) - 1lh) / -2);
+  --icon-size: var(--icon-sm);
 }
 
 /* Being refreshed: the same quiet line with the one spinner; the whole line opens the running analysis. */

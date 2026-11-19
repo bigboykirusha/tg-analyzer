@@ -99,13 +99,8 @@ const cast = computed(() => {
           </p>
           <UiSkeleton v-else class="poster__name-skeleton" width="55%" radius="var(--radius-well)" />
           <p v-if="countLine" class="poster__meta poster__meta--count">
-            <span class="nowrap"
-              ><b class="poster__count">{{ countLine.count }}</b> <span>{{ countLine.unit }}</span></span
-            >
-            <template v-if="countLine.tail">
-              <span class="poster__sep" aria-hidden="true">·</span>
-              <span class="poster__tail">{{ countLine.tail }}</span>
-            </template>
+            <span class="poster__count nowrap">{{ countLine.count }} {{ countLine.unit }}</span>
+            <span v-if="countLine.tail">{{ countLine.tail }}</span>
           </p>
           <p v-else-if="meta" class="poster__meta">{{ meta }}</p>
           <UiSkeleton v-else class="poster__meta-skeleton" width="62%" />
@@ -144,7 +139,16 @@ const cast = computed(() => {
         </li>
       </ul>
 
+      <!-- The pulse is the poster's picture, the key to its two sides under it (19.11). -->
       <figure class="poster__pulse">
+        <Pulse
+          v-if="pulseData"
+          :data="pulseData"
+          :bars="wide ? 120 : 60"
+          :height="wide ? 48 : 40"
+          :label="pulseLabel"
+        />
+        <UiSkeleton v-else class="poster__pulse-skeleton" radius="var(--radius-well)" />
         <figcaption class="legend" :class="{ 'legend--loading': !data }" aria-hidden="true">
           <span class="legend__key">
             <i class="legend__dot" /><span class="legend__label">{{ you }}</span>
@@ -153,14 +157,6 @@ const cast = computed(() => {
             <i class="legend__dot legend__dot--them" /><span class="legend__label">{{ partner }}</span>
           </span>
         </figcaption>
-        <Pulse
-          v-if="pulseData"
-          :data="pulseData"
-          :bars="wide ? 120 : 60"
-          :height="wide ? 40 : 32"
-          :label="pulseLabel"
-        />
-        <UiSkeleton v-else class="poster__pulse-skeleton" radius="var(--radius-well)" />
       </figure>
     </UiPageContainer>
   </section>
@@ -268,8 +264,9 @@ const cast = computed(() => {
   height: var(--display-max);
 }
 
+/* The count's body line and the span's label line. */
 .poster .poster__meta-skeleton {
-  height: calc(var(--space-8) + var(--space-1));
+  height: calc(var(--space-10) + var(--space-1));
 }
 
 .poster__meta {
@@ -277,32 +274,18 @@ const cast = computed(() => {
   font: var(--text-label);
 }
 
+/*
+ * One quiet block under the name (19.11): how much — in ink, the body role — over the whole span, then what changed
+ * (ReportChange). Three lines of one voice instead of a figure, a caption and a button stacked in three sizes.
+ */
 .poster__meta--count {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--space-2);
+  flex-direction: column;
 }
 
-/*
- * On a phone the big count leaves no room for the rest: it takes a line of its own, with no «·» left hanging at either
- * end of a line. A computer keeps the one line «4 800 сообщений · май — ноябрь 2026».
- */
-@media (max-width: 900px) {
-  .poster__sep {
-    display: none;
-  }
-
-  .poster__tail {
-    flex-basis: 100%;
-  }
-}
-
-/* How much was written is a figure, not a caption: the h1 role, in ink. */
 .poster__count {
   color: var(--on-poster);
-  font: var(--text-h1);
-  letter-spacing: var(--tracking-h1);
+  font: var(--text-body);
 }
 
 .poster__actions {
@@ -316,8 +299,9 @@ const cast = computed(() => {
   min-width: 0;
 }
 
+/* The pulse's two halves (40 each on a phone, 48 on a computer) and the line between. */
 .poster .poster__pulse-skeleton {
-  height: calc(var(--space-16) + var(--space-0-5));
+  height: calc(var(--space-10) * 2 + var(--space-0-5));
 }
 
 .legend {
@@ -431,8 +415,8 @@ const cast = computed(() => {
     letter-spacing: var(--tracking-display);
   }
 
-  .poster .poster__meta-skeleton {
-    height: calc(var(--space-10) + var(--space-1));
+  .poster .poster__pulse-skeleton {
+    height: calc(var(--space-12) * 2 + var(--space-0-5));
   }
 }
 </style>
