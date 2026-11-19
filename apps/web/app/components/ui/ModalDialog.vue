@@ -372,9 +372,11 @@ const grab = computed(() => (isSheet.value ? drag.handlers : {}))
   text-align: left;
 }
 
-/* The picture pane belongs to wide dialogs: a sheet shows its own compact version in the body. */
+/* The picture pane belongs to wide dialogs: a sheet shows its own compact version in the body, and is as tall as
+   what it holds (19.11: the dialog's fixed height left a phone's sheet half empty). */
 .modal-panel--sheet.modal-panel--aside {
   display: flex;
+  height: auto;
 }
 
 .modal-panel--sheet .modal-aside {

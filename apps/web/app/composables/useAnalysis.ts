@@ -40,6 +40,8 @@ export function useAnalysis() {
   const queued = useState<QueuedAnalysisDto[]>('analysis-queued', () => [])
   /** «Разбираем переписку» is open: one sheet for the whole app (ReportActionsHost), opened from wherever the analysis shows. */
   const details = useState('analysis-details', () => false)
+  /** When the day's free analyses allow the next start (epoch ms), as the status said; 0 when one can start now. */
+  const dailyLimitUntil = useState('analysis-daily-limit', () => 0)
   const config = useRuntimeConfig()
   const isActive = computed(() => ACTIVE.has(progress.value.status))
 
@@ -49,6 +51,8 @@ export function useAnalysis() {
       finished.value = next
     }
     progress.value = isFinal ? idle() : next
+    if (next.dailyLimitRetryAfter !== undefined)
+      dailyLimitUntil.value = next.dailyLimitRetryAfter ? Date.now() + next.dailyLimitRetryAfter * 1000 : 0
     if (next.queued) queued.value = next.queued
     else if (next.status === 'idle') queued.value = []
     if (ACTIVE.has(progress.value.status)) connect()
@@ -150,6 +154,7 @@ export function useAnalysis() {
     finished.value = null
     queued.value = []
     details.value = false
+    dailyLimitUntil.value = 0
   }
 
   async function startAnalysis(chatId: string, chatTitle: string | null) {
@@ -179,5 +184,17 @@ export function useAnalysis() {
     await refresh()
   }
 
-  return { progress, finished, queued, details, isActive, start, stop, refresh, startAnalysis, cancel }
+  return {
+    progress,
+    finished,
+    queued,
+    details,
+    dailyLimitUntil,
+    isActive,
+    start,
+    stop,
+    refresh,
+    startAnalysis,
+    cancel,
+  }
 }

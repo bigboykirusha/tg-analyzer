@@ -3,6 +3,26 @@ import { db, schema } from '../../db'
 import { ApiError, conflict, notFound } from '../../lib/errors'
 import { DAY_MS } from '../../lib/time'
 
+type Reader = Pick<typeof db, 'select'>
+
+/**
+ * Seconds until the user may start another analysis under the day's limit, or null when they may now. `daily` 0 is
+ * no limit. The one count behind both the refusal and the status that tells it in advance.
+ */
+export async function dailyLimitWait(userId: string, daily: number, reader: Reader = db): Promise<number | null> {
+  if (!daily) return null
+  const recent = await reader
+    .select({ createdAt: schema.analysisUsage.createdAt })
+    .from(schema.analysisUsage)
+    .where(
+      and(eq(schema.analysisUsage.userId, userId), gt(schema.analysisUsage.createdAt, new Date(Date.now() - DAY_MS))),
+    )
+    .orderBy(asc(schema.analysisUsage.createdAt))
+    .limit(daily)
+  if (recent.length < daily) return null
+  return Math.max(Math.ceil((recent[0]!.createdAt.getTime() + DAY_MS - Date.now()) / 1000), 60)
+}
+
 /** Reserve quota and a queue slot together, including across API instances. */
 export function admitAnalysis(
   input: { userId: string; chatId: string; chatTitle: string | null },
@@ -17,23 +37,8 @@ export function admitAnalysis(
       .for('update')
     if (!user) throw notFound()
 
-    if (limits.daily) {
-      const recent = await tx
-        .select({ createdAt: schema.analysisUsage.createdAt })
-        .from(schema.analysisUsage)
-        .where(
-          and(
-            eq(schema.analysisUsage.userId, input.userId),
-            gt(schema.analysisUsage.createdAt, new Date(Date.now() - DAY_MS)),
-          ),
-        )
-        .orderBy(asc(schema.analysisUsage.createdAt))
-        .limit(limits.daily)
-      if (recent.length >= limits.daily) {
-        const wait = Math.ceil((recent[0]!.createdAt.getTime() + DAY_MS - Date.now()) / 1000)
-        throw new ApiError(429, 'PARSE_DAILY_LIMIT', 'The free daily limit of analyses is used up', Math.max(wait, 60))
-      }
-    }
+    const wait = await dailyLimitWait(input.userId, limits.daily, tx)
+    if (wait !== null) throw new ApiError(429, 'PARSE_DAILY_LIMIT', 'The free daily limit of analyses is used up', wait)
 
     const waiting = await tx
       .select({ id: schema.parseJobs.id })

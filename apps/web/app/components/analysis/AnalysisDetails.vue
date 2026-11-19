@@ -27,7 +27,8 @@ watch(
 async function cancel() {
   cancelling.value = true
   try {
-    await analysis.cancel()
+    // This very job, not «whatever runs now»: the next one may have started while the question was open.
+    await analysis.cancel(analysis.progress.value.jobId ?? undefined)
     confirming.value = false
     emit('close')
   } catch {

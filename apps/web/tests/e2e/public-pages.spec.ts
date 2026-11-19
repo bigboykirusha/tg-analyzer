@@ -135,7 +135,8 @@ test('the example report opens without signing in', async ({ page, context }, te
   // The name is the poster's h1; the public header is the logo and one «Войти», with no back circle.
   await expect(page.getByRole('heading', { name: 'Аня', level: 1 })).toBeVisible()
   await expect(page.getByText('Пример отчёта', { exact: true })).toBeVisible()
-  await expect(page.locator('#chapter-highlights').getByRole('link', { name: /40 дней подряд/ })).toContainText(finding)
+  // The deck's finding is the answer of the report's own card (18.11: no «Главное» block repeats it).
+  await expect(page.locator('#chapter-time')).toContainText(finding)
   await expect(page.locator('.site-header').getByRole('link', { name: 'Войти' })).toBeVisible()
   await expect(page.locator('.site-header').getByRole('link', { name: 'Назад' })).toHaveCount(0)
   // The example is the same report as an owner's: three parts, «Вы двое», «Время» and «О чём».
@@ -143,12 +144,6 @@ test('the example report opens without signing in', async ({ page, context }, te
   await expect(page.locator('.report-section')).not.toHaveCount(0)
   await expect.poll(() => noHorizontalScroll(page)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('example-header.png'), animations: 'disabled' })
-  const timeLink = page.locator('#chapter-highlights').getByRole('link', { name: /Самые активные часы/ })
-  await timeLink.focus()
-  await page.keyboard.press('Enter')
-  await expect(page).toHaveURL(/#part-time$/)
-  await expect(page.locator('#part-time')).toBeFocused()
-  await expect(page.locator('#part-time')).toBeInViewport()
 })
 
 test('the landing is one screen on a phone: the deck still, the action in view', async ({ page, context }) => {

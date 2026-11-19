@@ -264,6 +264,11 @@ export interface ParseProgressDto {
   error: ParseErrorCode | null
   /** Analyses waiting after this one, oldest first. Only in the status response. */
   queued?: QueuedAnalysisDto[]
+  /**
+   * Seconds until the day's free analyses allow another start; null when one can start now. Only in the status
+   * response, so a refusal can be told before «Разобрать» is pressed.
+   */
+  dailyLimitRetryAfter?: number | null
 }
 
 export interface StartParseBody {

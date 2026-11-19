@@ -5,7 +5,8 @@ import { Play, Share } from '../../lib/icons'
 /**
  * The top of a report, like a contact poster: the name very large on the person's light colour, how
  * much you have written over which days, then the mirrored pulse of the whole chat — you above the line
- * in ink, them below in their deep tone — and the way into «Итоги». A group shows its cast instead of
+ * in ink, them below in their deep tone — and the way into «Итоги». No months under the pulse (19.11): the span is
+ * already said under the count, and the ends of a pulse need no captions. A group shows its cast instead of
  * one person. Full width under the bar, which takes the poster's colour until the page scrolls past.
  *
  * Without `data` it is the loading shape of the same blocks, so nothing moves when the report arrives.
@@ -28,7 +29,7 @@ const props = withDefaults(
   { data: null, title: null, actions: false, caption: '', heading: null, anonymousCast: false, h1: false },
 )
 const emit = defineEmits<{ story: []; share: [] }>()
-const { t, formatNumber, formatDay } = useI18n()
+const { t, formatNumber } = useI18n()
 const nameOf = useParticipantName()
 const you = useYouLabel()
 const wide = useMediaQuery('(min-width: 901px)')
@@ -58,15 +59,6 @@ const countLine = computed(() => {
     : { count: total, unit: rest.slice(0, cut), tail: rest.slice(cut + 3) }
 })
 
-/** The two ends of the pulse: «апрель» and «ноябрь», with the year on wide screens. */
-const axis = computed(() => {
-  const first = days.value[0]?.date
-  const last = days.value.at(-1)?.date
-  if (!first || !last) return null
-  const month = (day: string) => formatDay(day, { month: 'long' })
-  const year = (day: string) => day.slice(0, 4)
-  return { from: month(first), fromYear: year(first), to: month(last), toYear: year(last) }
-})
 const pulseData = computed(() => (props.data && days.value.length > 1 ? days.value : null))
 const partner = computed(() => (isGroup.value ? t('report.pulse.others') : (props.data?.summary.title ?? '')))
 const pulseLabel = computed(() => t('report.pulse.label', { above: you.value, below: partner.value }))
@@ -169,16 +161,6 @@ const cast = computed(() => {
           :label="pulseLabel"
         />
         <UiSkeleton v-else class="poster__pulse-skeleton" radius="var(--radius-well)" />
-        <div class="poster__axis" aria-hidden="true">
-          <template v-if="axis">
-            <span
-              >{{ axis.from }}<span class="poster__year">{{ axis.fromYear }}</span></span
-            >
-            <span
-              >{{ axis.to }}<span class="poster__year">{{ axis.toYear }}</span></span
-            >
-          </template>
-        </div>
       </figure>
     </UiPageContainer>
   </section>
@@ -373,18 +355,6 @@ const cast = computed(() => {
   background: var(--on-them);
 }
 
-.poster__axis {
-  display: flex;
-  justify-content: space-between;
-  min-height: var(--space-4);
-  color: var(--on-poster-muted);
-  font: var(--text-label);
-}
-
-.poster__year {
-  display: none;
-}
-
 .poster__caption {
   color: var(--on-poster-muted);
 }
@@ -425,7 +395,7 @@ const cast = computed(() => {
   font: var(--text-label);
 }
 
-/* Desktop: the actions stand at the top right, the name in full display size, the year on the axis. */
+/* Desktop: the actions stand at the top right, the name in full display size. */
 @media (min-width: 901px) {
   /* A computer: the poster is an object in the column — a rounded card on the page, the bar's controls over it. */
   .poster {
@@ -459,11 +429,6 @@ const cast = computed(() => {
   .poster__name--pair {
     font: var(--text-display);
     letter-spacing: var(--tracking-display);
-  }
-
-  .poster__year {
-    display: inline;
-    margin-left: var(--space-1);
   }
 
   .poster .poster__meta-skeleton {

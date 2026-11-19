@@ -130,15 +130,19 @@ function updating(report: ReportSummaryDto) {
   box-shadow: var(--divider-right);
 }
 
+/*
+ * One hierarchy for the column (19.11): «Главная» and «Уведомления» in the body style, as the names below — before,
+ * 14 px medium nav labels outweighed the names under them.
+ */
 .sidebar__row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: var(--control-sm);
+  min-height: var(--control-md);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-well);
   color: var(--text);
-  font: var(--text-label);
+  font: var(--text-body);
   transition: background-color var(--transition-fast);
 }
 
@@ -162,7 +166,7 @@ function updating(report: ReportSummaryDto) {
 }
 
 /*
- * «Главная» and «Уведомления»: one tight group, like the report rows below (36 tall, 2 apart), the icon in the
+ * «Главная» and «Уведомления»: one tight group, like the report rows below (44 tall, 2 apart), the icon in the
  * avatar's place.
  */
 .sidebar__navs {
@@ -201,13 +205,22 @@ function updating(report: ReportSummaryDto) {
   margin-top: var(--space-4);
   padding: var(--space-1);
   overflow-y: auto;
+  /* The rail shows when the pointer is over the list, as in a Mac sidebar: a grey rail beside the names is noise.
+     Only its colour changes, never its width, so the rows do not move. */
   scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sidebar__list:hover {
+    scrollbar-color: var(--border-strong) transparent;
+  }
 }
 
 .sidebar__heading {
   padding: 0 var(--space-2) var(--space-1);
   color: var(--text-muted);
-  font: var(--text-caption);
+  font: var(--text-label);
 }
 
 .sidebar__person {

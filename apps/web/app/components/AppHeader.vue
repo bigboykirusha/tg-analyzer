@@ -143,14 +143,15 @@ const bellLabel = computed(() =>
 }
 
 /*
- * The usual mobile bar (18.11): plain 24 px glyphs in 36 boxes with a 44 tap — back, share, ⋯ and the bell alike —
+ * The usual mobile bar (18.11): 20 px glyphs in 36 boxes with a 44 tap — back, share, ⋯ and the bell alike —
  * and your avatar 32. Over a poster the same boxes get translucent chips (a glyph alone would not read on the
- * person's colour); only the plate changes on scroll, never the size or the place.
+ * person's colour), and a 24 glyph filled the chip to its edge (19.11); only the plate changes on scroll, never the
+ * size or the place.
  */
 .app-bar :deep(.icon-btn--md) {
   width: var(--control-sm);
   height: var(--control-sm);
-  --icon-size: var(--icon-lg);
+  --icon-size: var(--icon-md);
 }
 
 .app-bar:not(.is-over-poster) :deep(.icon-btn) {

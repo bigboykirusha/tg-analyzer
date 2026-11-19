@@ -140,7 +140,7 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
                 <!-- The time stands in the name's line, as in iOS notifications: the line under it keeps the full width. -->
                 <span class="note__head">
                   <span class="note__name">{{ item.title }}</span>
-                  <time class="note__time tnum" :datetime="item.createdAt">{{ time(item.createdAt) }}</time>
+                  <time class="note__time" :datetime="item.createdAt">{{ time(item.createdAt) }}</time>
                 </span>
                 <template #leading>
                   <span class="note__avatar">

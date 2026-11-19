@@ -179,9 +179,11 @@ onMounted(load)
   padding-top: var(--space-4);
 }
 
+/* A computer: the first part's title stands as far from the poster as one part from the next (19.11: with «Главное»
+   gone it touched the poster). */
 @media (min-width: 901px) {
   .report-page {
-    padding-top: var(--space-6);
+    padding-top: var(--space-10);
   }
 }
 </style>

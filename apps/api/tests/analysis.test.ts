@@ -326,7 +326,16 @@ test('the free plan stops new analyses after the daily limit', async () => {
   ;(config as { FREE_ANALYSES_PER_DAY?: number }).FREE_ANALYSES_PER_DAY = 1
   try {
     const session = await login()
+    const before = (
+      await app.inject({ url: '/api/v1/parse/status', headers: session.headers })
+    ).json<ParseProgressDto>()
+    assert.equal(before.dailyLimitRetryAfter, null)
     await analyse(session, PRIVATE_CHAT)
+    // The status says so before «Разобрать» is pressed, with the same wait the refusal gives.
+    const status = (
+      await app.inject({ url: '/api/v1/parse/status', headers: session.headers })
+    ).json<ParseProgressDto>()
+    assert.ok((status.dailyLimitRetryAfter ?? 0) > 0)
     const second = await post(session, '/api/v1/parse/start', { chatId: GROUP_CHAT })
     assert.equal(second.statusCode, 429)
     assert.equal(second.json<{ code: string }>().code, 'PARSE_DAILY_LIMIT')

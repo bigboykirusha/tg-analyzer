@@ -25,6 +25,16 @@ const { t, formatNumber } = useI18n()
 const actions = useReportActions()
 const analysis = useAnalysis()
 const view = useAnalysisView()
+const toast = useToast()
+
+/** Out of the line at once: nothing is lost, so no question first; a failure says so as the running one's does. */
+async function leaveQueue(jobId: string) {
+  try {
+    await analysis.cancel(jobId)
+  } catch {
+    toast.error(t('analysis.cancelError'))
+  }
+}
 
 const queuedJob = computed(() => analysis.queued.value.find((item) => item.chatId === props.chatId)?.jobId ?? null)
 const reading = computed(() => analysis.isActive.value && analysis.progress.value.chatId === props.chatId)
@@ -39,7 +49,7 @@ const percent = computed(() => view.value?.percent ?? null)
     :block="block"
     :icon="X"
     :aria-label="t('analysis.cancelQueued', { name: title })"
-    @click.prevent="analysis.cancel(queuedJob)"
+    @click.prevent="leaveQueue(queuedJob)"
   >
     {{ t('dashboard.queued') }}
   </UiButton>

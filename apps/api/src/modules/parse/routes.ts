@@ -35,7 +35,7 @@ import {
   toJobDto,
   listUserActiveJobs,
 } from './jobs'
-import { admitAnalysis, releaseAnalysis } from './admission'
+import { admitAnalysis, dailyLimitWait, releaseAnalysis } from './admission'
 import { announceCancellation } from './cancellation'
 import { enqueueAnalysis } from './queue'
 import {
@@ -200,7 +200,10 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
   app.get('/status', async (request): Promise<ParseProgressDto> => {
     const userId = userIdOf(request)
     const { jobId } = parse(parseStatusQuerySchema, request.query)
-    const jobs = await listUserActiveJobs(userId)
+    const [jobs, dailyLimitRetryAfter] = await Promise.all([
+      listUserActiveJobs(userId),
+      dailyLimitWait(userId, config.FREE_ANALYSES_PER_DAY).catch(() => null),
+    ])
     // A suspended phone can miss the final socket frame, even as the next job starts.
     // Let it recover the result of the job it was following from durable storage.
     const tracked = jobId ? await findJob(jobId) : null
@@ -223,16 +226,17 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
             chatId: String(item.chatId),
             chatTitle: item.chatTitle,
           })),
+        dailyLimitRetryAfter,
       }
     }
     const job = jobs.find((item) => item.status === 'running') ?? jobs[0]
-    if (!job) return { ...idleProgress(), queued: [] }
+    if (!job) return { ...idleProgress(), queued: [], dailyLimitRetryAfter }
 
     const queued = jobs
       .filter((item) => item.id !== job.id && item.chatId !== null)
       .map((item) => ({ jobId: item.id, chatId: String(item.chatId), chatTitle: item.chatTitle }))
     const snapshot = await readProgress(userId)
-    if (snapshot?.jobId === job.id) return { ...snapshot, queued }
+    if (snapshot?.jobId === job.id) return { ...snapshot, queued, dailyLimitRetryAfter }
     return {
       ...idleProgress(),
       jobId: job.id,
@@ -242,6 +246,7 @@ export const parseRoutes: FastifyPluginAsync = async (app) => {
       chatTitle: job.chatTitle,
       startedAt: (job.startedAt ?? job.createdAt).getTime(),
       queued,
+      dailyLimitRetryAfter,
     }
   })
 

@@ -34,7 +34,8 @@ export function useReportActions() {
    */
   const waits = useState<Record<string, number>>('report-actions-waits', () => ({}))
   function waitUntil(chatId: string) {
-    const until = Math.max(waits.value[chatId] ?? 0, waits.value['*'] ?? 0)
+    // The day's limit is known before any press: the status tells it on load (19.11).
+    const until = Math.max(waits.value[chatId] ?? 0, waits.value['*'] ?? 0, analysis.dailyLimitUntil.value)
     return until > Date.now() ? until : null
   }
 

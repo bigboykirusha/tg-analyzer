@@ -572,7 +572,8 @@
    *   first finding · h3 — a card's answer, a dialog · body — reading, rows, names · label — a card's
    *   question, buttons, fields, meta · caption — axes and counts
    */
-  /* Big type is 600 and set tight — a name, a number, a screen title are objects; reading stays 400, controls 500. */
+  /* Headings are 600 and set tight — a name, a number, a screen title, a card's answer are objects (h3 too since
+     19.11: a report tile's name at 500 read as body text); reading stays 400, controls 500. */
   --text-display: 600 64px/64px var(--font-sans);
   --display-max: 64px;
   /* A fitted display line (a long name on a poster) never goes below the h1 size. */
@@ -582,7 +583,7 @@
   --text-figure: 600 44px/48px var(--font-sans);
   --text-h1: 600 32px/36px var(--font-sans);
   --text-h2: 600 24px/28px var(--font-sans);
-  --text-h3: 500 20px/28px var(--font-sans);
+  --text-h3: 600 20px/28px var(--font-sans);
   --text-body: 400 16px/24px var(--font-sans);
   --text-label: 500 14px/20px var(--font-sans);
   --text-caption: 500 12px/16px var(--font-sans);
@@ -658,7 +659,7 @@
     --text-figure: 600 60px/64px var(--font-sans);
     --text-h1: 600 40px/44px var(--font-sans);
     --text-h2: 600 28px/32px var(--font-sans);
-    --text-h3: 500 20px/28px var(--font-sans);
+    --text-h3: 600 20px/28px var(--font-sans);
     --brand-mark-size: 28px;
     --brand-word: 600 18px/24px var(--font-sans);
     --page-top: var(--space-12);

@@ -8,7 +8,16 @@ import { AlertCircle, MessageSquare, Search, WifiOff } from '../lib/icons'
 const props = defineProps<{ standalone?: boolean }>()
 
 const PAGE_SIZE = 30
-const { t, tc } = useI18n()
+const { t, tc, formatDuration } = useI18n()
+const actions = useReportActions()
+const now = useNow(30_000)
+/** The day's analyses are used up: said before «Разобрать» is pressed, not as a refusal after it (19.11). */
+const limitNote = computed(() => {
+  const until = actions.waitUntil('*')
+  return until
+    ? t('errors.parseDailyLimit', { wait: formatDuration(Math.max(60, Math.ceil((until - now.value) / 1000))) })
+    : null
+})
 const auth = useAuthStore()
 const workspace = useWorkspaceStore()
 const errorMessage = useErrorMessage()
@@ -86,6 +95,8 @@ onMounted(() => {
       {{ t('dashboard.sessionInactive') }}
       <button type="button" class="link" @click="relogin">{{ t('common.relogin') }}</button>
     </p>
+
+    <p v-if="limitNote" class="picker__note" role="status">{{ limitNote }}</p>
 
     <!-- The list on its way: rows of the real height, so nothing jumps. -->
     <UiGroup v-if="firstLoad" aria-hidden="true">
