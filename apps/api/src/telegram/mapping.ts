@@ -53,6 +53,14 @@ function displayName(entity: EntityLike | undefined): string | null {
   return fullName || entity.title?.trim() || entity.username?.trim() || null
 }
 
+function attachmentOf(message: Api.Message): MessageInput['attachment'] {
+  if (message.videoNote) return 'round'
+  if (message.gif || message.sticker) return null
+  if (message.photo) return 'photo'
+  if (message.video) return 'video'
+  return null
+}
+
 function messageKind(message: Api.Message): MessageInput['kind'] {
   if (!message.media) return 'text'
   if (message.voice) return 'voice'
@@ -129,6 +137,7 @@ export function toMessageInput(message: Api.Message | Api.MessageService | Api.M
     kind: messageKind(message),
     durationSec: recordingSeconds(message),
     round: Boolean(message.videoNote),
+    attachment: attachmentOf(message),
     reactions: reactions(message),
     sticker: message.sticker ? sticker(message) : null,
   }

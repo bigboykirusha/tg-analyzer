@@ -4,6 +4,7 @@ import { parse } from '../../http/validation'
 import { notFound } from '../../lib/errors'
 import { requireAuth, userIdOf } from '../auth/guard'
 import { announceCancellation } from '../parse/cancellation'
+import { removeChatMediaFiles } from '../media/capture'
 import { deleteReport, getReport, listReportSummaries } from './repository'
 
 export const reportRoutes: FastifyPluginAsync = async (app) => {
@@ -25,6 +26,9 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
     const deleted = await deleteReport(userIdOf(request), chatId)
     if (!deleted) throw notFound('CHAT_NOT_FOUND', 'Report not found')
     if (deleted.cancelledJob) void announceCancellation(deleted.cancelledJob)
+    await removeChatMediaFiles(userIdOf(request), chatId).catch((error: unknown) =>
+      request.log.warn({ err: error }, 'could not remove the kept media files'),
+    )
     return { success: true }
   })
 }

@@ -23,6 +23,7 @@ import { notify } from '../notify/notifications'
 import { saveReportAndCompleteJob } from '../reports/repository'
 import { failJob, isJobActive, markJobRunning, setJobChatTitle } from './jobs'
 import type { AnalysisJobData } from './queue'
+import { capturesMediaOf, recordOwnMedia, type OwnAttachment } from '../media/capture'
 import { idleProgress, publishProgress, rememberChatSize, startCooldown } from './state'
 
 const PROGRESS_INTERVAL_MS = 1_000
@@ -90,6 +91,8 @@ export async function runAnalysis(job: Job<AnalysisJobData>, token?: string) {
     if (!(await isJobActive(jobId))) throw new AnalysisStoppedError()
   }
 
+  /** The user's own photos, videos and video notes of this chat, for a developer's media capture (19.11). */
+  let ownMedia: OwnAttachment[]
   try {
     await publish(true)
 
@@ -103,7 +106,16 @@ export async function runAnalysis(job: Job<AnalysisJobData>, token?: string) {
       userId,
       session,
       async (api) => {
-        const scanned = await scanChat(api, userId, chatId, user.timezone, progress, publish, ensureActive)
+        const scanned = await scanChat(
+          api,
+          userId,
+          chatId,
+          user.timezone,
+          progress,
+          publish,
+          ensureActive,
+          capturesMediaOf(user.username),
+        )
         const previews = await api
           .stickerPreviews(
             chatId,
@@ -141,6 +153,7 @@ export async function runAnalysis(job: Job<AnalysisJobData>, token?: string) {
       })
     })
     if (!saved) throw new AnalysisStoppedError()
+    ownMedia = result.ownMedia
   } catch (error) {
     await handleFailure(job, error, progress)
     return
@@ -154,6 +167,10 @@ export async function runAnalysis(job: Job<AnalysisJobData>, token?: string) {
     logger.warn({ err: error, jobId }, 'analysis completed, but announcing it failed')
   }
   logger.info({ jobId, messages: progress.scannedMessages }, 'analysis completed')
+  // After the report and outside it: a failure here only leaves the files unfetched.
+  await recordOwnMedia(userId, chatId, ownMedia).catch((error: unknown) =>
+    logger.warn({ err: error, jobId }, 'could not note the media to capture'),
+  )
   await notify(
     userId,
     { chatId, title: progress.chatTitle ?? chatId },
@@ -181,7 +198,8 @@ async function scanChat(
   progress: ParseProgressDto,
   publish: (force?: boolean) => Promise<void>,
   ensureActive: (force?: boolean) => Promise<void>,
-): Promise<{ dialog: TelegramDialog; builder: ChatReportBuilder }> {
+  captureMedia = false,
+): Promise<{ dialog: TelegramDialog; builder: ChatReportBuilder; ownMedia: OwnAttachment[] }> {
   const dialog = await api.getDialog(chatId)
   if (!dialog || !(ANALYZABLE_CHAT_TYPES as readonly string[]).includes(dialog.type)) {
     throw new AnalysisFailedError('chat_unavailable')
@@ -192,6 +210,9 @@ async function scanChat(
   await publish(true)
 
   const builder = new ChatReportBuilder(timeZone, { wordKey: await createLemmatizer() })
+  // Only ids and kinds, noted on the way: the files themselves are fetched later, never during the analysis.
+  const ownMedia: OwnAttachment[] = []
+  const noteMedia = captureMedia && dialog.type === 'private'
   let offsetId: number | null = 0
   while (offsetId !== null) {
     await ensureActive()
@@ -209,7 +230,11 @@ async function scanChat(
       await rememberChatSize(userId, chatId, page.total, MIN_REPORT_MESSAGES).catch(() => undefined)
       throw new AnalysisFailedError('chat_too_small')
     }
-    for (const message of page.messages) builder.add(message)
+    for (const message of page.messages) {
+      builder.add(message)
+      if (noteMedia && message.outgoing && message.attachment)
+        ownMedia.push({ messageId: message.id, kind: message.attachment, sentAt: message.date })
+    }
     progress.scannedMessages = builder.messageCount
     const oldest = page.messages[page.messages.length - 1]
     if (oldest) progress.reachedAt = oldest.date.toISOString()
@@ -221,7 +246,7 @@ async function scanChat(
 
   await ensureActive(true)
   if (builder.messageCount < MIN_REPORT_MESSAGES) throw new AnalysisFailedError('chat_too_small')
-  return { dialog, builder }
+  return { dialog, builder, ownMedia }
 }
 
 async function waitOutFloodControl(

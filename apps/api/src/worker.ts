@@ -4,6 +4,13 @@ import { pool } from './db'
 import { applyMigrations, assertSchema, shouldMigrateOnStart } from './db/migrations-runner'
 import { logger } from './lib/logger'
 import { createRedisConnection, redis } from './lib/redis'
+import {
+  closeMediaQueue,
+  MEDIA_QUEUE,
+  resumeMediaCapture,
+  runMediaCapture,
+  type MediaJobData,
+} from './modules/media/capture'
 import { runAnalysis } from './modules/parse/analysis'
 import { ANALYSIS_QUEUE, closeAnalysisQueue, type AnalysisJobData } from './modules/parse/queue'
 import { reconcileActiveJobs } from './modules/parse/reconcile'
@@ -32,6 +39,15 @@ async function main() {
     logger.error({ err: error }, 'analysis worker error')
     recordError('worker')
   })
+  // Developers' own files: one at a time, and only while no analysis wants the session (modules/media/capture.ts).
+  const mediaConnection = createRedisConnection()
+  const mediaWorker = new Worker<MediaJobData>(MEDIA_QUEUE, runMediaCapture, {
+    connection: mediaConnection,
+    concurrency: 1,
+    lockDuration: 2 * 60 * 1000,
+  })
+  mediaWorker.on('error', (error) => logger.error({ err: error }, 'media capture worker error'))
+  await resumeMediaCapture().catch((error: unknown) => logger.warn({ err: error }, 'could not resume media capture'))
   const maintenanceWorker = await startMaintenance()
   const stopBot = startBotPolling()
 
@@ -51,10 +67,11 @@ async function main() {
     logger.info({ signal }, 'worker shutting down')
     clearInterval(heartbeat)
     clearInterval(reconcile)
-    await Promise.allSettled([analysisWorker.close(), maintenanceWorker.close(), stopBot()])
+    await Promise.allSettled([analysisWorker.close(), mediaWorker.close(), maintenanceWorker.close(), stopBot()])
     await workerConnection.quit().catch(() => undefined)
+    await mediaConnection.quit().catch(() => undefined)
     await clearWorkerHeartbeat().catch(() => undefined)
-    await Promise.allSettled([closeAnalysisQueue(), telegram.close()])
+    await Promise.allSettled([closeAnalysisQueue(), closeMediaQueue(), telegram.close()])
     await Promise.allSettled([redis.quit(), pool.end()])
     process.exit(0)
   }

@@ -19,3 +19,6 @@ dump.rdb
 
 # production backups on the server
 deploy/backups/
+
+# Developers kept media in local runs (MEDIA_DIR)
+var/

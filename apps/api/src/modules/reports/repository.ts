@@ -19,6 +19,7 @@ import {
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db, schema } from '../../db'
 import type { ChatReportRow } from '../../db/schema'
+import { deleteChatMediaRows } from '../media/capture'
 import { cancelChatJob } from '../parse/jobs'
 
 const EMPTY_RESPONSES: ResponseStatsDto = {
@@ -113,6 +114,8 @@ export function deleteReport(userId: string, chatId: string) {
     // Match the worker's lock order: both transactions update the job before changing the report.
     const cancelledJob = await cancelChatJob(tx, userId, Number(chatId))
     await tx.delete(schema.chatReports).where(eq(schema.chatReports.id, report.id))
+    // A developer's kept files of this chat go with the report (the files themselves after the commit).
+    await deleteChatMediaRows(tx, userId, Number(chatId))
     return { cancelledJob }
   })
 }

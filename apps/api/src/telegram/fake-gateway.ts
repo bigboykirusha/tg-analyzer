@@ -4,7 +4,14 @@ import type { Redis } from 'ioredis'
 import { DAY_MS, HOUR_MS, MINUTE_MS, sleep } from '../lib/time'
 import { TelegramLoginError } from './errors'
 import { acquireSessionLease } from './session-lease'
-import type { HistoryPage, TelegramAccountApi, TelegramDialog, TelegramGateway, TelegramUser } from './types'
+import {
+  mediaExtension as extensionOf,
+  type HistoryPage,
+  type TelegramAccountApi,
+  type TelegramDialog,
+  type TelegramGateway,
+  type TelegramUser,
+} from './types'
 
 /**
  * A deterministic stand-in for Telegram used by `TELEGRAM_MODE=fake`.
@@ -18,6 +25,7 @@ export const FAKE_PASSWORD = 'secret'
 
 const PAGE_SIZE = 100
 const PAGE_DELAY_MS = 120
+const FAKE_CHUNK_BYTES = 64 * 1024
 
 interface FakeChatSpec {
   id: string
@@ -157,6 +165,8 @@ function generateChat(spec: FakeChatSpec, now: number): MessageInput[] {
       durationSec:
         kind === 'voice' ? Math.round(3 + rand() * rand() * 240) : round ? Math.round(5 + rand() * 55) : null,
       round,
+      // No draw of its own: an extra rand() would change every demo chat after it.
+      attachment: kind === 'media' ? (round ? 'round' : id % 4 === 0 ? 'video' : 'photo') : null,
       sticker,
       reactions: reacted
         ? [
@@ -293,6 +303,22 @@ export class FakeTelegramGateway implements TelegramGateway {
       downloadAvatar: async () => null,
       // The demo has no sticker files: the report shows each sticker's emoji instead.
       stickerPreviews: async () => new Map(),
+      // The demo's own media are made-up bytes of a plausible size, streamed in 64 KB chunks.
+      downloadOwnMedia: async (chatId, messageId, offset, budgetMs, write) => {
+        const spec = CHATS.find((chat) => chat.id === chatId)
+        const message = spec ? this.messagesOf(spec).find((item) => item.id === messageId) : undefined
+        if (!message?.outgoing || !message.attachment) return null
+        const size = message.attachment === 'photo' ? 300 * 1024 : 2 * 1024 * 1024
+        const deadline = Date.now() + budgetMs
+        let at = offset
+        while (at < size) {
+          if (Date.now() > deadline) return { done: false, extension: extensionOf(message.attachment) }
+          const length = Math.min(FAKE_CHUNK_BYTES, size - at)
+          await write(Buffer.alloc(length, Number(messageId) % 251))
+          at += length
+        }
+        return { done: true, extension: extensionOf(message.attachment) }
+      },
       logOut: async () => undefined,
     }
   }

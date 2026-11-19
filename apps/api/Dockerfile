@@ -21,6 +21,9 @@ COPY --from=build --chown=app:app /out/package.json ./package.json
 COPY --from=build --chown=app:app /app/apps/api/dist ./dist
 COPY --from=build --chown=app:app /app/apps/api/src/db/migrations ./src/db/migrations
 
+# Developers' kept media (MEDIA_DIR): a fresh named volume takes this folder's owner.
+RUN mkdir -p /data/media && chown app:app /data/media
+
 USER app
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

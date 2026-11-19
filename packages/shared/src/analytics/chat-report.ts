@@ -49,6 +49,8 @@ export interface MessageInput {
   durationSec?: number | null
   /** A video note («кружочек»); its `kind` is `media`. */
   round?: boolean
+  /** A photo, a video or a video note that can be downloaded as a file (no GIFs, stickers or documents). */
+  attachment?: 'photo' | 'video' | 'round' | null
   /** Reactions under the message, by emoji. */
   reactions?: ReactionInput[]
   sticker?: StickerInput | null

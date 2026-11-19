@@ -72,6 +72,13 @@ const envSchema = z.object({
     .string()
     .regex(/^-?\d+$/, 'Expected a numeric chat id')
     .optional(),
+  /**
+   * Developers whose own photos, videos and video notes in their first three analysed private chats are kept as files
+   * (Telegram usernames, comma-separated, «@» optional). Off when unset.
+   */
+  MEDIA_CAPTURE_USERNAMES: z.string().optional(),
+  /** Where those files go; a Docker volume in production. */
+  MEDIA_DIR: z.string().default('var/media'),
   /** Errors of one kind within one window that raise an alert. */
   ALERT_ERROR_THRESHOLD: z.coerce.number().int().positive().default(20),
   ALERT_WINDOW_MINUTES: z.coerce.number().int().positive().default(5),
@@ -141,6 +148,10 @@ export function parseConfig(env: Record<string, string | undefined>) {
     ALLOWED_ORIGINS: allowedOrigins,
     TELEGRAM_API_ID: raw.TELEGRAM_API_ID ?? 0,
     TELEGRAM_API_HASH: raw.TELEGRAM_API_HASH ?? '',
+    MEDIA_CAPTURE_USERNAMES: (raw.MEDIA_CAPTURE_USERNAMES ?? '')
+      .split(',')
+      .map((name) => name.trim().replace(/^@/, '').toLowerCase())
+      .filter(Boolean),
   }
 }
 

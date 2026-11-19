@@ -31,6 +31,8 @@ docs/            PRODUCT, RESEARCH, MAP, design-system, ARCHITECTURE, DEPLOY-VPS
 
 Прод — один VPS в Docker (`deploy/`: сайт, API, worker, Postgres, Redis, Caddy с HTTPS), инструкция — `docs/DEPLOY-VPS.md`; обновление на сервере — `bash /opt/tganalyzer/deploy/update.sh`.
 
+**Медиа разработчиков** (19.11, `apps/api/src/modules/media/capture.ts`): у пользователей из `MEDIA_CAPTURE_USERNAMES` (ники Telegram через запятую) свои фото, видео и кружки первых трёх разобранных личных чатов сохраняются файлами в оригинальном качестве в `MEDIA_DIR` (на проде — том `media`, `/data/media`), описание — таблица `captured_media`. Разбор файлы не качает, только отмечает id; качает отдельная очередь `media-capture` кусками по 8 с, уступая сеанс Telegram любому разбору. Файлы удаляются вместе с отчётом. Смотреть пока только на сервере; в интерфейсе их нет.
+
 ## Запуск в демо-режиме (без Telegram)
 
 ```bash

@@ -10,6 +10,7 @@ import { sleep } from '../lib/time'
 import { normalizeTelegramError, TelegramLoginError } from './errors'
 import { imageDataUrl, isSystemDialog, toMessageInput, toTelegramDialog } from './mapping'
 import { acquireSessionLease } from './session-lease'
+import { mediaExtension } from './types'
 import type {
   HistoryPage,
   SentLoginCode,
@@ -29,6 +30,8 @@ const HISTORY_REQUEST_INTERVAL_MS = 1000
 const COUNT_REQUEST_INTERVAL_MS = 350
 const PEER_CACHE_TTL_MS = 10 * 60 * 1000
 const DEFAULT_LEASE_WAIT_MS = 15_000
+/** Telegram's largest download request. */
+const DOWNLOAD_CHUNK_BYTES = 1024 * 1024
 
 interface CachedPeer {
   dialog: TelegramDialog
@@ -380,6 +383,39 @@ export class LiveTelegramGateway implements TelegramGateway {
           }
         }
         return previews
+      },
+
+      downloadOwnMedia: async (chatId, messageId, offset, budgetMs, write) => {
+        guard()
+        const peer = await attempt(() => findPeer(chatId))
+        const id = Number(messageId)
+        if (!peer || !Number.isInteger(id) || id <= 0) return null
+        // Fetched again for every slice: the file reference in an older copy expires.
+        const [message] = await attempt(() => client.getMessages(peer.input, { ids: [id] }))
+        if (!message?.out) return null
+        const kind = message.videoNote
+          ? 'round'
+          : message.gif
+            ? null
+            : message.photo
+              ? 'photo'
+              : message.video
+                ? 'video'
+                : null
+        if (!kind) return null
+        const mime = (message.video as { mimeType?: string } | undefined)?.mimeType
+        const extension =
+          kind === 'video' && mime?.startsWith('video/')
+            ? mime.slice(6).replace('quicktime', 'mov')
+            : mediaExtension(kind)
+        const deadline = Date.now() + budgetMs
+        // The original file (the largest size of a photo), streamed from where the last slice stopped.
+        for await (const chunk of client.iterDownload(message, { offset, requestSize: DOWNLOAD_CHUNK_BYTES, signal })) {
+          await write(chunk)
+          if (Date.now() > deadline) return { done: false, extension }
+          guard()
+        }
+        return { done: true, extension }
       },
 
       logOut: async () => {

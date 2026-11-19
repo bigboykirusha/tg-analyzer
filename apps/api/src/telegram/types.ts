@@ -27,6 +27,17 @@ export interface HistoryPage {
   nextOffsetId: number | null
 }
 
+export interface OwnMediaSlice {
+  done: boolean
+  /** File extension without the dot: `jpg` for a photo, the video's own (`mp4`) otherwise. */
+  extension: string
+}
+
+/** The usual file extension of a kind of attachment. */
+export function mediaExtension(kind: 'photo' | 'video' | 'round') {
+  return kind === 'photo' ? 'jpg' : 'mp4'
+}
+
 export type SignInResult =
   | { status: 'authorized'; session: string; user: TelegramUser }
   | { status: 'password_required'; session: string; hint: string | null }
@@ -64,6 +75,18 @@ export interface TelegramAccountApi {
   downloadAvatar(chatId: string | null): Promise<Buffer | null>
   /** Small previews of the stickers in the given messages, as data URLs keyed by message id. */
   stickerPreviews(chatId: string, messageIds: string[]): Promise<Map<string, string>>
+  /**
+   * Streams the file of one of the user's own photos, videos or video notes from byte `offset`, for at most
+   * `budgetMs`, into `write`, in its original quality. `done` says the file is complete. Null when the message is gone,
+   * is not the user's own or carries no such file.
+   */
+  downloadOwnMedia(
+    chatId: string,
+    messageId: string,
+    offset: number,
+    budgetMs: number,
+    write: (chunk: Buffer) => Promise<void>,
+  ): Promise<OwnMediaSlice | null>
   logOut(): Promise<void>
 }
 

@@ -253,3 +253,34 @@ export const botSubscribers = pgTable('bot_subscribers', {
   startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
   stoppedAt: timestamp('stopped_at', { withTimezone: true }),
 })
+
+/**
+ * The user's own photos, videos and video notes kept as files (developers only, `MEDIA_CAPTURE_USERNAMES`): a row
+ * per message, `pending` until the capture worker has the whole file under `MEDIA_DIR`. Removed with the report.
+ */
+export const capturedMedia = pgTable(
+  'captured_media',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tgChatId: bigint('tg_chat_id', { mode: 'number' }).notNull(),
+    messageId: integer('message_id').notNull(),
+    kind: varchar('kind', { length: 8 }).$type<'photo' | 'video' | 'round'>().notNull(),
+    sentAt: timestamp('sent_at', { withTimezone: true }).notNull(),
+    status: varchar('status', { length: 8 })
+      .$type<'pending' | 'saved' | 'skipped' | 'failed'>()
+      .default('pending')
+      .notNull(),
+    /** Relative to `MEDIA_DIR` once saved. */
+    path: text('path'),
+    bytes: bigint('bytes', { mode: 'number' }),
+    createdAt: createdAt(),
+    savedAt: timestamp('saved_at', { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('captured_media_message_idx').on(table.userId, table.tgChatId, table.messageId),
+    index('captured_media_pending_idx').on(table.userId, table.status),
+  ],
+)
