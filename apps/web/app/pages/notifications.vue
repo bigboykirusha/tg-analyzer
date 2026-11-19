@@ -212,7 +212,7 @@ const time = (value: string) => formatDate(value, { hour: '2-digit', minute: '2-
   /* The circle as before (20 with its ring); only the glyph in it is small (18.11): a mark, not a second picture. */
   width: var(--icon-md);
   height: var(--icon-md);
-  border: var(--space-0-5) solid var(--surface);
+  border: var(--space-0-5) solid var(--bg);
   border-radius: var(--radius-pill);
   background: var(--text);
   color: var(--bg);

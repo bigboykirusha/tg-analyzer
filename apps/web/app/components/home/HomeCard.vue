@@ -92,7 +92,9 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
   /* The pulse's half: 16 on a phone, 24 from 641 px. */
   --pulse-half: var(--space-4);
   color: var(--text);
-  transition: transform var(--duration-fast) var(--ease-standard);
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
 }
 
 /* A report is its poster: the person's colour, ink type, the pulse in their two inks. */
@@ -129,6 +131,11 @@ const hue = computed(() => (props.chatId ? hueOf(props.chatId) : undefined))
 @media (hover: hover) and (pointer: fine) {
   .home-card:has(a.home-card__name):hover::before {
     opacity: 1;
+  }
+
+  .home-card--poster:has(a.home-card__name):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--edge-light), var(--ring-card), var(--shadow-float);
   }
 }
 

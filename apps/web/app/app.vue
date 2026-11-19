@@ -57,7 +57,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <NuxtLoadingIndicator color="var(--them)" :height="2" :throttle="200" />
+  <NuxtLoadingIndicator color="var(--text)" :height="2" :throttle="200" />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>

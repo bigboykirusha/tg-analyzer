@@ -78,7 +78,7 @@ const loading = computed(
   () => !reports.value.length && workspace.reportsState !== 'ready' && workspace.reportsState !== 'error',
 )
 const failed = computed(() => !reports.value.length && workspace.reportsState === 'error')
-const newcomer = computed(() => !reports.value.length && !loading.value && !failed.value)
+const newcomer = computed(() => !reports.value.length && !loading.value && !failed.value && !growing.value)
 const showActionBar = computed(() => narrow.value && !loading.value && (!newcomer.value || analysis.isActive.value))
 const reportsError = ref<unknown>(null)
 function loadReports() {

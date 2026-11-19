@@ -162,7 +162,10 @@ onMounted(() => {
   z-index: calc(var(--z-header) - 1);
   margin-inline: calc(var(--page-gutter) * -1);
   padding: var(--space-2) var(--page-gutter);
-  background: var(--bg);
+  background: var(--header-glass);
+  box-shadow: var(--divider-bottom);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
 }
 
 @media (min-width: 901px) {

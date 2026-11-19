@@ -45,7 +45,7 @@ defineExpose({ el })
   padding: var(--space-1);
   border-radius: var(--radius-card);
   background: var(--surface-raised);
-  box-shadow: var(--ring-card), var(--shadow-float);
+  box-shadow: var(--ring-card), var(--shadow-overlay);
 }
 
 .menu-panel--scroll {

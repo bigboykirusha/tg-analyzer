@@ -24,6 +24,10 @@ const analysis = useAnalysis()
 .first__head {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
+}
+
+.first__head .t-lede {
+  max-width: var(--measure);
 }
 </style>

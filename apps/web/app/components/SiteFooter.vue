@@ -44,7 +44,7 @@ const { channelUrl, supportUrl } = useRuntimeConfig().public
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0 var(--space-6);
+  gap: var(--space-2) var(--space-6);
 }
 
 /* One line on a computer: the links on the left, the notice on the right. */

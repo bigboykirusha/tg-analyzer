@@ -153,8 +153,12 @@ function updating(report: ReportSummaryDto) {
 
 @media (hover: hover) and (pointer: fine) {
   .sidebar__row:not([aria-current='page']):hover {
-    background: var(--selection);
+    background: var(--hover);
   }
+}
+
+.sidebar__row:active:not([aria-current='page']) {
+  background: var(--pressed);
 }
 
 /* The logo sits on the row grid: its mark lines up with the avatars below. */

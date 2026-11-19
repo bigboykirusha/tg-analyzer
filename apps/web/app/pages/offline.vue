@@ -22,7 +22,9 @@ const text = computed(() => (online.value ? t('offline.serverText') : t('offline
 
 function retry() {
   const target = route.query.redirect
-  const path = typeof target === 'string' && target.startsWith('/') && !target.startsWith('//') ? target : '/dashboard'
+  const auth = useAuthStore()
+  const fallback = auth.isAuthenticated ? '/dashboard' : '/'
+  const path = typeof target === 'string' && target.startsWith('/') && !target.startsWith('//') ? target : fallback
   return navigateTo(path, { replace: true })
 }
 </script>

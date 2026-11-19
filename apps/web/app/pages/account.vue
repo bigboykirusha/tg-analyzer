@@ -232,7 +232,7 @@ onMounted(() => {
           />
         </UiGroup>
 
-        <UiGroup v-if="links.length" :header="t('accountPage.linksTitle')">
+        <UiGroup v-if="links.length" :header="t('accountPage.linksTitle')" class="account__links">
           <UiSwitch
             v-for="link in links"
             :key="linkKey(link)"
@@ -310,6 +310,21 @@ onMounted(() => {
 @media (min-width: 901px) {
   .account {
     gap: var(--page-gap);
+  }
+}
+
+.account__links {
+  animation: account-fade var(--duration-fast) var(--ease-standard);
+}
+
+@keyframes account-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

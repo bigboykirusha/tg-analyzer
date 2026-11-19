@@ -34,10 +34,19 @@ const phonePlaceholder = computed(() => {
   return [prefix, suffix].filter(Boolean).join(' ')
 })
 
-/** A pasted or autofilled «+49…» picks the country; anything else is the national number. UiInput shows the formatted value. */
+/** A pasted or autofilled number picks the country; handles «+49…» and 11-digit numbers like 8999... or 7999... */
 function handleInput(value: string) {
-  if (value.trim().startsWith('+')) phoneInput.setFromNormalized(value)
-  else phoneInput.displayValue.value = value
+  const trimmed = value.trim()
+  if (trimmed.startsWith('+')) {
+    phoneInput.setFromNormalized(trimmed)
+    return
+  }
+  const digits = trimmed.replace(/\D/g, '')
+  if (digits.length === 11 && (digits.startsWith('8') || digits.startsWith('7'))) {
+    phoneInput.setFromNormalized(`+7${digits.slice(1)}`)
+    return
+  }
+  phoneInput.displayValue.value = value
 }
 
 // Sync with parent phone model
