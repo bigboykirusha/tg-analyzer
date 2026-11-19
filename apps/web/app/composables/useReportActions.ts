@@ -30,12 +30,13 @@ export function useReportActions() {
   const deleting = useState('report-actions-deleting', () => false)
   /**
    * When a refusal said «not before…» (a pause after an analysis, the day's limit): until then the report shows the
-   * wait instead of «Обновить» (18.11), so the button never leads to a refusal it already knows of. «*» is the day.
+   * wait instead of «Обновить» (18.11), so the button never leads to a refusal it already knows of. Per chat; the
+   * day's limit lives in `useAnalysis().dailyLimitUntil`, `waitUntil('*')` reads it alone.
    */
   const waits = useState<Record<string, number>>('report-actions-waits', () => ({}))
   function waitUntil(chatId: string) {
-    // The day's limit is known before any press: the status tells it on load (19.11).
-    const until = Math.max(waits.value[chatId] ?? 0, waits.value['*'] ?? 0, analysis.dailyLimitUntil.value)
+    // The day's limit has one home, `dailyLimitUntil`: the status sets and clears it, a refusal sets it (19.11).
+    const until = Math.max(chatId === '*' ? 0 : (waits.value[chatId] ?? 0), analysis.dailyLimitUntil.value)
     return until > Date.now() ? until : null
   }
 
@@ -60,8 +61,9 @@ export function useReportActions() {
         error.retryAfter &&
         ['PARSE_COOLDOWN', 'PARSE_DAILY_LIMIT'].includes(error.code)
       ) {
-        const key = error.code === 'PARSE_DAILY_LIMIT' ? '*' : chatId
-        waits.value = { ...waits.value, [key]: Date.now() + error.retryAfter * 1000 }
+        const until = Date.now() + error.retryAfter * 1000
+        if (error.code === 'PARSE_DAILY_LIMIT') analysis.dailyLimitUntil.value = until
+        else waits.value = { ...waits.value, [chatId]: until }
       }
       if (error instanceof ApiClientError && EXPECTED.has(error.code)) toast.info(errorMessage(error))
       // The site's own session ended: the sign-in page is already on its way, a toast over it says nothing new.

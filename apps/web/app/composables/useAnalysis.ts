@@ -155,6 +155,8 @@ export function useAnalysis() {
     queued.value = []
     details.value = false
     dailyLimitUntil.value = 0
+    // Another account may sign in to this tab: the pauses after its analyses were not theirs.
+    useState<Record<string, number>>('report-actions-waits').value = {}
   }
 
   async function startAnalysis(chatId: string, chatTitle: string | null) {

@@ -259,7 +259,7 @@ const invitation = wave(4, 40)
   --them-ink: var(--on-them);
   /*
    * The poster is one in both themes (17.11), so what stands on it — the answers, the list — takes its light tone and
-   * its ink, as the light tiles of «Главное» do, not the page's surface (dark rows on a bright poster at night).
+   * its ink, as a poster's light tiles do, not the page's surface (dark rows on a bright poster at night).
    */
   --surface: var(--poster-light);
   --text: var(--on-poster);

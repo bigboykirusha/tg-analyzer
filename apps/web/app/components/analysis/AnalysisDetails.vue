@@ -15,6 +15,8 @@ const view = useAnalysisView()
 const analysis = useAnalysis()
 const toast = useToast()
 const confirming = ref(false)
+/** The job the question was asked about, taken when it opens: the next one may start while it is open. */
+const asked = ref<string | null>(null)
 const cancelling = ref(false)
 // The analysis finished (or stopped) while «Отменить разбор?» was asking: there is nothing left to cancel.
 watch(
@@ -24,11 +26,16 @@ watch(
   },
 )
 
+function ask() {
+  asked.value = analysis.progress.value.jobId
+  confirming.value = true
+}
+
 async function cancel() {
   cancelling.value = true
   try {
     // This very job, not «whatever runs now»: the next one may have started while the question was open.
-    await analysis.cancel(analysis.progress.value.jobId ?? undefined)
+    await analysis.cancel(asked.value ?? undefined)
     confirming.value = false
     emit('close')
   } catch {
@@ -72,7 +79,7 @@ async function cancel() {
       <PushRow :title="t('analysis.details.notify')" :text="t('analysis.details.notifyHint')" offer-only />
     </template>
     <template #actions>
-      <UiButton variant="secondary" block @click="confirming = true">{{ t('analysis.cancel') }}</UiButton>
+      <UiButton variant="secondary" block @click="ask">{{ t('analysis.cancel') }}</UiButton>
     </template>
   </UiModalDialog>
   <UiConfirmDialog
